@@ -1,0 +1,128 @@
+/* =====================================================================
+   polish.css —— 全站视觉 / 交互润色层（追加加载，可整体移除）
+   ---------------------------------------------------------------------
+   目标：给所有页面统一的"质感升级"，且随 body.theme-* 自动换模块专属渐变：
+   - 每模块专属渐变色（主色 → 模块辅色 g2）
+   - Hero / 主按钮 / 导航当前项 / 统计数字 / 筛选 chip 使用该渐变
+   - 顶部轻柔氛围光、页面切入动画、卡片/按钮反馈动效
+   ===================================================================== */
+
+:root { --g2: #8B5CF6; }
+body.theme-home { --g2: #7C6CFF; }
+body.theme-cet { --g2: #27C6D6; }
+body.theme-exam { --g2: #FF7A59; }
+body.theme-comm { --g2: #D86BF0; }
+body.theme-interview { --g2: #F5A623; }
+body.theme-ppt { --g2: #18C29C; }
+
+/* ---------- 顶部氛围光（固定浅层，不影响点击） ---------- */
+body::before {
+  content: '';
+  position: fixed; top: 0; left: 0; right: 0; height: 360px;
+  background: linear-gradient(180deg, var(--primary-light), rgba(255,255,255,0));
+  opacity: .6; pointer-events: none; z-index: 0;
+}
+.app { position: relative; z-index: 1; }
+
+/* ---------- 页面切入动画（SPA 视图切换 / 单页加载） ---------- */
+@keyframes imPageIn { from { opacity: .15; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.page.active { animation: imPageIn .32s ease-out; }
+@keyframes imFadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.card, .module-hero { animation: imFadeUp .34s ease-out; }
+
+/* ---------- 模块 Hero：模块专属渐变 + 光斑装饰 ---------- */
+.module-hero {
+  background: linear-gradient(135deg, var(--primary), var(--g2));
+  box-shadow: 0 16px 32px -18px var(--primary);
+}
+.module-hero::after {
+  width: 220px; height: 220px; right: -60px; top: -90px;
+  background: radial-gradient(circle at center, rgba(255,255,255,.25), transparent 70%);
+}
+.module-hero::before {
+  content: '';
+  position: absolute; left: 46%; bottom: -90px; width: 260px; height: 150px;
+  background: radial-gradient(circle at center, rgba(255,255,255,.14), transparent 70%);
+  border-radius: 50%;
+}
+
+/* ---------- 主按钮：渐变 + 阴影 + 反馈 ---------- */
+.btn { border-radius: 10px; }
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--g2));
+  box-shadow: 0 10px 20px -10px var(--primary);
+}
+.btn-primary:hover { background: linear-gradient(135deg, var(--primary), var(--g2)); filter: brightness(1.06); transform: translateY(-1px); }
+.btn:active { transform: scale(.97); }
+
+/* ---------- 导航：当前项渐变 ---------- */
+.nav-item.active {
+  background: linear-gradient(135deg, var(--primary), var(--g2));
+  box-shadow: 0 8px 18px -10px var(--primary);
+}
+.nav-section { letter-spacing: .05em; }
+
+/* ---------- 卡片：描边 + 悬浮 + 标题图标方块 ---------- */
+.card { border: 1px solid var(--border); }
+.card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--primary) 30%, transparent); }
+.card-title .title-icon {
+  display: inline-flex; width: 30px; height: 30px; align-items: center; justify-content: center;
+  font-size: 15px; border-radius: 10px; background: var(--primary-light); flex-shrink: 0;
+}
+
+/* ---------- 统计数字：模块渐变色文字 ---------- */
+.stat-card .stat-num, .profile-stat .ps-num {
+  background: linear-gradient(135deg, var(--primary), var(--g2));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+/* ---------- 筛选 chip：激活态渐变 ---------- */
+.blog-filters .chip.active { background: linear-gradient(135deg, var(--primary), var(--g2)); border-color: transparent; box-shadow: 0 4px 12px -6px var(--primary); }
+
+/* ---------- 细微滚动条 ---------- */
+::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--text-muted) 60%, transparent); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ---------- 无障碍：跟随系统减弱动效 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+/* ========== 外观：界面配色皮肤（覆盖模块主题色，全局统一） ========== */
+body.skin-violet { --primary:#7C4DFF; --primary-dark:#5E35B1; --primary-light:#ECE6FF; --g2:#D500F9; }
+body.skin-forest { --primary:#2E7D32; --primary-dark:#1B5E20; --primary-light:#E6F4E6; --g2:#43A047; }
+body.skin-sunset { --primary:#E65100; --primary-dark:#BF360C; --primary-light:#FFF0E0; --g2:#FFA000; }
+body.skin-ocean  { --primary:#0D47A1; --primary-dark:#0A3D91; --primary-light:#E3F0FF; --g2:#1976D2; }
+body.skin-mono   { --primary:#37474F; --primary-dark:#263238; --primary-light:#ECEFF1; --g2:#607D8B; }
+body.skin-rose   { --primary:#C2185B; --primary-dark:#880E4F; --primary-light:#FDE7F0; --g2:#EC407A; }
+body.dark.skin-violet { --primary-light:rgba(124,77,255,.16); }
+body.dark.skin-forest { --primary-light:rgba(46,125,50,.16); }
+body.dark.skin-sunset { --primary-light:rgba(230,81,0,.16); }
+body.dark.skin-ocean  { --primary-light:rgba(13,71,161,.16); }
+body.dark.skin-mono   { --primary-light:rgba(96,125,139,.16); }
+body.dark.skin-rose   { --primary-light:rgba(194,24,91,.16); }
+
+/* ========== 首页：功能中心 + 舒适度微调 ========== */
+.home-greeting { font-size: 22px; font-weight: 800; color: var(--text); }
+.home-subtitle { color: var(--text-secondary); font-size: 13px; margin-top: 2px; }
+.home-quick { background: linear-gradient(180deg, var(--card), color-mix(in srgb, var(--card) 60%, var(--primary-light))); }
+.hq-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+.hq-it { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--card); color: var(--text); text-decoration: none; transition: all .18s ease; min-width: 0; box-sizing: border-box; overflow: hidden; }
+.hq-it:hover { transform: translateY(-2px); border-color: var(--primary); box-shadow: 0 10px 22px -12px var(--primary); }
+.hq-ic { font-size: 24px; width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, var(--primary-light), color-mix(in srgb, var(--primary-light) 55%, #fff)); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.hq-tx { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+.hq-tx b { font-size: 14px; line-height: 1.2; }
+.hq-tx i { font-style: normal; font-size: 11px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 3px; }
+
+/* 全站舒适度：更柔和的卡片与留白 */
+.card { padding: 20px 22px; }
+.module-hero { border-radius: 22px; }
+.stat-card, .profile-stat { border-radius: 14px; }
+
+/* ========== 无障碍 / 文字细节（#9 #11） ========== */
+::selection { background: var(--primary); color: #fff; }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 6px; }
+button, a, .chip, .theme-option { -webkit-tap-highlight-color: transparent; }
+body { letter-spacing: .01em; }
+input, textarea, select { color: var(--text); }
+body.dark .blog-grid .note-card, body.dark .vp-en { color: var(--text); }

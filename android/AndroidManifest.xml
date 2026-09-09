@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.study.workbench"
+    android:versionCode="17"
+    android:versionName="1.16">
+
+    <!-- 预留：将来若连接局域网后端（多人在线模式）需要联网权限；单机离线其实用不到 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 语音跟读/语音输入：系统 SpeechRecognizer 需要麦克风（Android 6.0+ 运行时申请） -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="33" />
+
+    <application
+        android:label="学习工作台"
+        android:icon="@drawable/ic_launcher"
+        android:usesCleartextTraffic="true"
+        android:allowBackup="true"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

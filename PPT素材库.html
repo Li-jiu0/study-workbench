@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PPT模板库 - 学习工作台</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: #f5f7fa;
+  min-height: 100vh;
+}
+.header {
+  background: linear-gradient(135deg, #5B8DEF 0%, #7B61FF 100%);
+  padding: 16px 20px;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+.header-back {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  border: none;
+  color: white;
+}
+.header-title {
+  font-size: 18px;
+  font-weight: 700;
+  flex: 1;
+}
+.header-desc {
+  font-size: 12px;
+  opacity: 0.8;
+}
+.content {
+  padding: 16px;
+  padding-bottom: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.tips-banner {
+  background: linear-gradient(135deg, #eff6ff, #e0e7ff);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+  border-left: 4px solid #5B8DEF;
+}
+.tips-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e40af;
+  margin-bottom: 8px;
+}
+.tips-content {
+  font-size: 13px;
+  color: #3730a3;
+  line-height: 1.7;
+}
+
+/* 模板卡片 */
+.template-card {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  margin-bottom: 24px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.template-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+.template-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #f5f5f5;
+}
+.template-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.template-info { flex: 1; }
+.template-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 4px;
+}
+.template-desc {
+  font-size: 12px;
+  color: #888;
+}
+.template-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.template-tag {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.template-pages {
+  padding: 16px 20px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  background: #fafafa;
+}
+@media (max-width: 768px) {
+  .template-pages { grid-template-columns: repeat(3, 1fr); }
+}
+.page-thumb {
+  aspect-ratio: 16/9;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  position: relative;
+}
+.page-label {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+.template-footer {
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #f5f5f5;
+}
+.template-pages-count {
+  font-size: 12px;
+  color: #999;
+}
+.template-features {
+  font-size: 12px;
+  color: #666;
+}
+
+/* PPT页面通用样式 */
+.ppt-page {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+}
+
+/* ========== 模板1：商务汇报（蓝黑） ========== */
+.t1-cover { background: linear-gradient(135deg, #1a365d, #2d3748); display: flex; flex-direction: column; justify-content: center; padding: 12px; }
+.t1-cover .t { color: white; font-size: 11px; font-weight: bold; margin-bottom: 4px; }
+.t1-cover .line { width: 24px; height: 2px; background: #4299e1; margin: 4px 0; }
+.t1-cover .s { color: #a0aec0; font-size: 6px; }
+.t1-toc { background: white; padding: 8px; }
+.t1-toc .title { font-size: 8px; font-weight: bold; color: #1a365d; border-bottom: 2px solid #4299e1; padding-bottom: 3px; margin-bottom: 6px; display: inline-block; }
+.t1-toc .item { display: flex; align-items: center; gap: 4px; margin-bottom: 3px; }
+.t1-toc .num { width: 12px; height: 12px; background: #4299e1; color: white; border-radius: 2px; font-size: 6px; display: flex; align-items: center; justify-content: center; }
+.t1-toc .text { font-size: 6px; color: #4a5568; flex: 1; }
+.t1-content { background: white; padding: 8px; display: flex; gap: 6px; }
+.t1-content .left { width: 35%; background: #ebf8ff; border-radius: 3px; display: flex; align-items: center; justify-content: center; }
+.t1-content .left .icon { font-size: 18px; }
+.t1-content .right { flex: 1; }
+.t1-content .right .t { font-size: 7px; font-weight: bold; color: #1a365d; margin-bottom: 3px; }
+.t1-content .right .bar { width: 16px; height: 2px; background: #4299e1; margin-bottom: 3px; }
+.t1-content .right .p { font-size: 5px; color: #718096; line-height: 1.3; }
+.t1-data { background: white; padding: 8px; }
+.t1-data .title { font-size: 7px; font-weight: bold; color: #1a365d; margin-bottom: 5px; }
+.t1-data .chart { height: 60%; display: flex; align-items: flex-end; justify-content: space-around; border-left: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; padding: 0 4px; }
+.t1-data .bar { width: 10px; background: linear-gradient(180deg, #4299e1, #2b6cb0); border-radius: 2px 2px 0 0; }
+.t1-end { background: linear-gradient(135deg, #1a365d, #2d3748); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.t1-end .t { color: white; font-size: 12px; font-weight: bold; margin-bottom: 4px; }
+.t1-end .s { color: #a0aec0; font-size: 6px; }
+
+/* ========== 模板2：教育培训（青绿） ========== */
+.t2-cover { background: linear-gradient(135deg, #48bb78, #38b2ac); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.t2-cover .icon { font-size: 24px; margin-bottom: 4px; }
+.t2-cover .t { color: white; font-size: 10px; font-weight: bold; margin-bottom: 2px; }
+.t2-cover .s { color: rgba(255,255,255,0.85); font-size: 6px; }
+.t2-toc { background: #f0fff4; padding: 8px; }
+.t2-toc .title { font-size: 8px; font-weight: bold; color: #276749; text-align: center; margin-bottom: 6px; }
+.t2-toc .cards { display: flex; gap: 4px; justify-content: center; }
+.t2-toc .card { width: 28px; height: 32px; background: white; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+.t2-toc .card .icon { font-size: 10px; }
+.t2-toc .card .text { font-size: 5px; color: #4a5568; }
+.t2-content { background: white; padding: 8px; }
+.t2-content .title { font-size: 7px; font-weight: bold; color: #276749; margin-bottom: 5px; text-align: center; }
+.t2-content .cards { display: flex; gap: 4px; justify-content: center; }
+.t2-content .card { flex: 1; background: #f0fff4; border-radius: 4px; padding: 5px 3px; text-align: center; border-top: 2px solid #48bb78; }
+.t2-content .card .icon { font-size: 10px; margin-bottom: 2px; }
+.t2-content .card .t { font-size: 5px; font-weight: bold; color: #276749; margin-bottom: 1px; }
+.t2-content .card .d { font-size: 4px; color: #718096; }
+.t2-data { background: white; padding: 8px; display: flex; gap: 6px; }
+.t2-data .pie { width: 40%; display: flex; align-items: center; justify-content: center; }
+.t2-data .pie-circle { width: 36px; height: 36px; border-radius: 50%; background: conic-gradient(#48bb78 0% 50%, #38b2ac 50% 75%, #f6ad55 75% 100%); }
+.t2-data .info { flex: 1; display: flex; flex-direction: column; gap: 2px; justify-content: center; }
+.t2-data .info .item { display: flex; align-items: center; gap: 3px; }
+.t2-data .info .dot { width: 5px; height: 5px; border-radius: 1px; }
+.t2-data .info .text { font-size: 5px; color: #4a5568; flex: 1; }
+.t2-data .info .val { font-size: 5px; font-weight: bold; color: #276749; }
+.t2-end { background: linear-gradient(135deg, #48bb78, #38b2ac); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.t2-end .t { color: white; font-size: 11px; font-weight: bold; margin-bottom: 3px; }
+.t2-end .s { color: rgba(255,255,255,0.85); font-size: 6px; }
+
+/* ========== 模板3：数据分析（深色仪表盘） ========== */
+.t3-cover { background: linear-gradient(135deg, #0f172a, #1e293b); display: flex; flex-direction: column; justify-content: center; padding: 10px; }
+.t3-cover .t { color: #22d3ee; font-size: 10px; font-weight: bold; margin-bottom: 3px; }
+.t3-cover .s { color: #94a3b8; font-size: 6px; margin-bottom: 4px; }
+.t3-cover .kpis { display: flex; gap: 4px; }
+.t3-cover .kpi { flex: 1; background: rgba(34,211,238,0.1); border: 1px solid rgba(34,211,238,0.3); border-radius: 3px; padding: 3px; text-align: center; }
+.t3-cover .kpi .v { color: #22d3ee; font-size: 8px; font-weight: bold; }
+.t3-cover .kpi .l { color: #64748b; font-size: 4px; }
+.t3-toc { background: #0f172a; padding: 8px; }
+.t3-toc .title { font-size: 7px; font-weight: bold; color: #22d3ee; margin-bottom: 5px; }
+.t3-toc .item { display: flex; align-items: center; gap: 4px; margin-bottom: 3px; padding: 2px 4px; background: rgba(34,211,238,0.05); border-radius: 2px; }
+.t3-toc .num { color: #22d3ee; font-size: 6px; font-weight: bold; }
+.t3-toc .text { font-size: 5px; color: #94a3b8; flex: 1; }
+.t3-content { background: #0f172a; padding: 8px; }
+.t3-content .title { font-size: 7px; font-weight: bold; color: #22d3ee; margin-bottom: 5px; }
+.t3-content .cards { display: flex; gap: 4px; }
+.t3-content .card { flex: 1; background: #1e293b; border-radius: 3px; padding: 5px 3px; border-left: 2px solid #22d3ee; }
+.t3-content .card .v { color: #22d3ee; font-size: 9px; font-weight: bold; }
+.t3-content .card .l { color: #64748b; font-size: 4px; margin-top: 2px; }
+.t3-data { background: #0f172a; padding: 8px; }
+.t3-data .title { font-size: 7px; font-weight: bold; color: #22d3ee; margin-bottom: 5px; }
+.t3-data .chart { height: 55%; display: flex; align-items: flex-end; justify-content: space-around; padding: 0 4px; }
+.t3-data .bar { width: 10px; background: linear-gradient(180deg, #22d3ee, #0891b2); border-radius: 2px 2px 0 0; }
+.t3-end { background: linear-gradient(135deg, #0f172a, #1e293b); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.t3-end .t { color: #22d3ee; font-size: 11px; font-weight: bold; margin-bottom: 3px; }
+.t3-end .s { color: #64748b; font-size: 6px; }
+
+/* ========== 模板4：毕业答辩（简约学术） ========== */
+.t4-cover { background: white; display: flex; flex-direction: column; justify-content: center; padding: 12px; border-top: 4px solid #7c3aed; }
+.t4-cover .t { color: #1f2937; font-size: 10px; font-weight: bold; margin-bottom: 4px; line-height: 1.4; }
+.t4-cover .s { color: #6b7280; font-size: 6px; margin-bottom: 2px; }
+.t4-cover .info { color: #9ca3af; font-size: 5px; margin-top: 6px; }
+.t4-toc { background: white; padding: 8px; }
+.t4-toc .title { font-size: 8px; font-weight: bold; color: #1f2937; margin-bottom: 6px; padding-bottom: 3px; border-bottom: 1px solid #e5e7eb; }
+.t4-toc .item { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.t4-toc .num { color: #7c3aed; font-size: 7px; font-weight: bold; width: 14px; }
+.t4-toc .text { font-size: 6px; color: #4b5563; flex: 1; }
+.t4-content { background: white; padding: 8px; }
+.t4-content .title { font-size: 7px; font-weight: bold; color: #1f2937; margin-bottom: 5px; padding-bottom: 3px; border-bottom: 1px solid #e5e7eb; }
+.t4-content .p { font-size: 5px; color: #4b5563; line-height: 1.5; margin-bottom: 4px; }
+.t4-content .formula { background: #f5f3ff; padding: 4px; border-radius: 3px; font-size: 5px; color: #7c3aed; text-align: center; }
+.t4-data { background: white; padding: 8px; }
+.t4-data .title { font-size: 7px; font-weight: bold; color: #1f2937; margin-bottom: 5px; }
+.t4-data .chart { height: 55%; display: flex; align-items: flex-end; justify-content: space-around; border-left: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; padding: 0 4px; }
+.t4-data .bar { width: 10px; background: #7c3aed; border-radius: 2px 2px 0 0; }
+.t4-end { background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; border-bottom: 4px solid #7c3aed; }
+.t4-end .t { color: #1f2937; font-size: 11px; font-weight: bold; margin-bottom: 3px; }
+.t4-end .s { color: #6b7280; font-size: 6px; }
+
+/* ========== 模板5：产品介绍（渐变科技） ========== */
+.t5-cover { background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; padding: 10px; gap: 8px; }
+.t5-cover .left { width: 40%; display: flex; align-items: center; justify-content: center; }
+.t5-cover .left .icon { font-size: 28px; }
+.t5-cover .right { flex: 1; }
+.t5-cover .right .t { color: white; font-size: 10px; font-weight: bold; margin-bottom: 3px; }
+.t5-cover .right .s { color: rgba(255,255,255,0.8); font-size: 5px; margin-bottom: 4px; }
+.t5-cover .right .btn { background: white; color: #667eea; font-size: 5px; padding: 3px 8px; border-radius: 10px; display: inline-block; font-weight: bold; }
+.t5-toc { background: #f8f7ff; padding: 8px; }
+.t5-toc .title { font-size: 8px; font-weight: bold; color: #667eea; text-align: center; margin-bottom: 6px; }
+.t5-toc .cards { display: flex; gap: 4px; justify-content: center; }
+.t5-toc .card { width: 28px; height: 30px; background: white; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; box-shadow: 0 2px 4px rgba(102,126,234,0.15); }
+.t5-toc .card .icon { font-size: 10px; }
+.t5-toc .card .text { font-size: 5px; color: #667eea; font-weight: 600; }
+.t5-content { background: white; padding: 8px; display: flex; gap: 6px; }
+.t5-content .left { width: 45%; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+.t5-content .left .icon { font-size: 22px; }
+.t5-content .right { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+.t5-content .right .item { display: flex; align-items: center; gap: 4px; }
+.t5-content .right .dot { width: 6px; height: 6px; background: #667eea; border-radius: 50%; }
+.t5-content .right .text { font-size: 5px; color: #4a5568; }
+.t5-data { background: white; padding: 8px; }
+.t5-data .title { font-size: 7px; font-weight: bold; color: #667eea; margin-bottom: 5px; text-align: center; }
+.t5-data .cards { display: flex; gap: 4px; justify-content: center; }
+.t5-data .card { flex: 1; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 4px; padding: 5px 3px; text-align: center; color: white; }
+.t5-data .card .v { font-size: 9px; font-weight: bold; }
+.t5-data .card .l { font-size: 4px; opacity: 0.9; margin-top: 1px; }
+.t5-end { background: linear-gradient(135deg, #667eea, #764ba2); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.t5-end .t { color: white; font-size: 11px; font-weight: bold; margin-bottom: 3px; }
+.t5-end .s { color: rgba(255,255,255,0.8); font-size: 6px; }
+
+/* ========== 模板6：求职简历（简约专业） ========== */
+.t6-cover { background: white; display: flex; padding: 10px; gap: 8px; }
+.t6-cover .left { width: 30%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.t6-cover .left .avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #f59e0b, #d97706); display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: bold; margin-bottom: 4px; }
+.t6-cover .left .name { font-size: 7px; font-weight: bold; color: #1f2937; }
+.t6-cover .left .pos { font-size: 5px; color: #6b7280; }
+.t6-cover .right { flex: 1; border-left: 2px solid #f59e0b; padding-left: 8px; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+.t6-cover .right .item { font-size: 5px; color: #4b5563; display: flex; align-items: center; gap: 3px; }
+.t6-cover .right .icon { font-size: 7px; }
+.t6-toc { background: #fffbeb; padding: 8px; }
+.t6-toc .title { font-size: 8px; font-weight: bold; color: #92400e; margin-bottom: 5px; }
+.t6-toc .item { display: flex; align-items: center; gap: 4px; margin-bottom: 3px; }
+.t6-toc .num { width: 12px; height: 12px; background: #f59e0b; color: white; border-radius: 50%; font-size: 6px; display: flex; align-items: center; justify-content: center; }
+.t6-toc .text { font-size: 6px; color: #78350f; flex: 1; }
+.t6-content { background: white; padding: 8px; }
+.t6-content .section { margin-bottom: 6px; }
+.t6-content .stitle { font-size: 7px; font-weight: bold; color: #92400e; border-bottom: 1px solid #fde68a; padding-bottom: 2px; margin-bottom: 3px; }
+.t6-content .item { font-size: 5px; color: #4b5563; margin-bottom: 2px; line-height: 1.3; }
+.t6-content .item .bold { font-weight: bold; color: #1f2937; }
+.t6-data { background: white; padding: 8px; }
+.t6-data .stitle { font-size: 7px; font-weight: bold; color: #92400e; border-bottom: 1px solid #fde68a; padding-bottom: 2px; margin-bottom: 5px; }
+.t6-data .skills { display: flex; flex-wrap: wrap; gap: 3px; }
+.t6-data .skill { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; font-size: 5px; padding: 2px 6px; border-radius: 8px; }
+.t6-end { background: linear-gradient(135deg, #f59e0b, #d97706); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.t6-end .t { color: white; font-size: 11px; font-weight: bold; margin-bottom: 3px; }
+.t6-end .s { color: rgba(255,255,255,0.85); font-size: 6px; }
+
+/* 网站推荐 */
+.websites {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.website-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f5f5f5;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.website-item:last-child { border-bottom: none; }
+.website-item:hover { background: #fafafa; }
+.website-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #5B8DEF, #7B61FF);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+.website-info { flex: 1; }
+.website-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 2px;
+}
+.website-desc {
+  font-size: 12px;
+  color: #888;
+}
+.website-arrow {
+  color: #ccc;
+  font-size: 18px;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <button class="header-back" onclick="goBack()">←</button>
+  <div>
+    <div class="header-title">PPT模板库</div>
+    <div class="header-desc">6套完整模板，每套5页预览，直接参考套用</div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="tips-banner">
+    <div class="tips-title">💡 模板使用建议</div>
+    <div class="tips-content">
+      ① 每套模板包含封面、目录、内容、数据、结束5页预览，统一配色和风格<br>
+      ② 选择一套模板后，保持整体风格统一，不要混用不同模板的元素<br>
+      ③ 替换文字和图片时，保留原有的版式结构、对齐方式和间距<br>
+      ④ 一套模板只用1-2种强调色，避免花哨，底部附免费模板下载网站
+    </div>
+  </div>
+
+  <!-- 模板1：商务汇报 -->
+  <div class="template-card">
+    <div class="template-header">
+      <div class="template-icon" style="background:#dbeafe">💼</div>
+      <div class="template-info">
+        <div class="template-name">商务汇报模板</div>
+        <div class="template-desc">蓝黑配色，专业稳重，适合工作报告、方案汇报、年终总结</div>
+      </div>
+      <div class="template-tags">
+        <span class="template-tag" style="background:#dbeafe;color:#1e40af">商务</span>
+        <span class="template-tag" style="background:#f3f4f6;color:#374151">正式</span>
+      </div>
+    </div>
+    <div class="template-pages">
+      <div class="page-thumb"><div class="ppt-page t1-cover"><div class="t">工作汇报</div><div class="line"></div><div class="s">汇报人：XXX | 2026年</div></div><div class="page-label">封面</div></div>
+      <div class="page-thumb"><div class="ppt-page t1-toc"><div class="title">CONTENTS</div><div class="item"><div class="num">1</div><div class="text">项目背景</div></div><div class="item"><div class="num">2</div><div class="text">市场分析</div></div><div class="item"><div class="num">3</div><div class="text">解决方案</div></div></div><div class="page-label">目录</div></div>
+      <div class="page-thumb"><div class="ppt-page t1-content"><div class="left"><div class="icon">📊</div></div><div class="right"><div class="t">核心观点</div><div class="bar"></div><div class="p">详细文字说明内容，支持多行展示。</div></div></div><div class="page-label">内容</div></div>
+      <div class="page-thumb"><div class="ppt-page t1-data"><div class="title">各季度销售额</div><div class="chart"><div class="bar" style="height:60%"></div><div class="bar" style="height:80%"></div><div class="bar" style="height:45%"></div><div class="bar" style="height:90%"></div><div class="bar" style="height:70%"></div></div></div><div class="page-label">数据</div></div>
+      <div class="page-thumb"><div class="ppt-page t1-end"><div class="t">感谢聆听</div><div class="s">欢迎提问交流</div></div><div class="page-label">结束</div></div>
+    </div>
+    <div class="template-footer">
+      <div class="template-pages-count">📄 共约15页 · 5页预览</div>
+      <div class="template-features">蓝黑主色 · 柱状图 · 左右分栏</div>
+    </div>
+  </div>
+
+  <!-- 模板2：教育培训 -->
+  <div class="template-card">
+    <div class="template-header">
+      <div class="template-icon" style="background:#dcfce7">📚</div>
+      <div class="template-info">
+        <div class="template-name">教育培训模板</div>
+        <div class="template-desc">青绿配色，清新活泼，适合课程课件、科普分享、内训材料</div>
+      </div>
+      <div class="template-tags">
+        <span class="template-tag" style="background:#dcfce7;color:#166534">教育</span>
+        <span class="template-tag" style="background:#f0fdf4;color:#15803d">清新</span>
+      </div>
+    </div>
+    <div class="template-pages">
+      <div class="page-thumb"><div class="ppt-page t2-cover"><div class="icon">🎓</div><div class="t">课程标题</div><div class="s">讲师：XXX | 2026年</div></div><div class="page-label">封面</div></div>
+      <div class="page-thumb"><div class="ppt-page t2-toc"><div class="title">课程目录</div><div class="cards"><div class="card"><div class="icon">📖</div><div class="text">基础</div></div><div class="card"><div class="icon">🔬</div><div class="text">进阶</div></div><div class="card"><div class="icon">🎯</div><div class="text">实战</div></div></div></div><div class="page-label">目录</div></div>
+      <div class="page-thumb"><div class="ppt-page t2-content"><div class="title">三大核心知识点</div><div class="cards"><div class="card"><div class="icon">⚡</div><div class="t">要点一</div><div class="d">说明</div></div><div class="card"><div class="icon">🎯</div><div class="t">要点二</div><div class="d">说明</div></div><div class="card"><div class="icon">🤝</div><div class="t">要点三</div><div class="d">说明</div></div></div></div><div class="page-label">内容</div></div>
+      <div class="page-thumb"><div class="ppt-page t2-data"><div class="pie"><div class="pie-circle"></div></div><div class="info"><div class="item"><div class="dot" style="background:#48bb78"></div><div class="text">A类</div><div class="val">50%</div></div><div class="item"><div class="dot" style="background:#38b2ac"></div><div class="text">B类</div><div class="val">25%</div></div><div class="item"><div class="dot" style="background:#f6ad55"></div><div class="text">C类</div><div class="val">25%</div></div></div></div><div class="page-label">数据</div></div>
+      <div class="page-thumb"><div class="ppt-page t2-end"><div class="t">谢谢观看</div><div class="s">下节课再见</div></div><div class="page-label">结束</div></div>
+    </div>
+    <div class="template-footer">
+      <div class="template-pages-count">📄 共约20页 · 5页预览</div>
+      <div class="template-features">青绿主色 · 三栏卡片 · 饼图</div>
+    </div>
+  </div>
+
+  <!-- 模板3：数据分析 -->
+  <div class="template-card">
+    <div class="template-header">
+      <div class="template-icon" style="background:#fce7f3">📊</div>
+      <div class="template-info">
+        <div class="template-name">数据分析模板</div>
+        <div class="template-desc">深色背景，科技感仪表盘风格，适合经营分析、数据复盘、BI报告</div>
+      </div>
+      <div class="template-tags">
+        <span class="template-tag" style="background:#fce7f3;color:#be185d">数据</span>
+        <span class="template-tag" style="background:#fdf2f8;color:#9d174d">科技</span>
+      </div>
+    </div>
+    <div class="template-pages">
+      <div class="page-thumb"><div class="ppt-page t3-cover"><div class="t">数据仪表盘</div><div class="s">2026年Q3经营分析</div><div class="kpis"><div class="kpi"><div class="v">120</div><div class="l">销售额</div></div><div class="kpi"><div class="v">98%</div><div class="l">满意度</div></div><div class="kpi"><div class="v">+26%</div><div class="l">增长</div></div></div></div><div class="page-label">封面</div></div>
+      <div class="page-thumb"><div class="ppt-page t3-toc"><div class="title">分析目录</div><div class="item"><div class="num">01</div><div class="text">整体概览</div></div><div class="item"><div class="num">02</div><div class="text">销售分析</div></div><div class="item"><div class="num">03</div><div class="text">用户分析</div></div></div><div class="page-label">目录</div></div>
+      <div class="page-thumb"><div class="ppt-page t3-content"><div class="title">核心指标</div><div class="cards"><div class="card"><div class="v">1.2w</div><div class="l">日活</div></div><div class="card"><div class="v">85%</div><div class="l">留存</div></div><div class="card"><div class="v">¥45</div><div class="l">ARPU</div></div></div></div><div class="page-label">内容</div></div>
+      <div class="page-thumb"><div class="ppt-page t3-data"><div class="title">月度趋势</div><div class="chart"><div class="bar" style="height:50%"></div><div class="bar" style="height:70%"></div><div class="bar" style="height:60%"></div><div class="bar" style="height:85%"></div><div class="bar" style="height:95%"></div></div></div><div class="page-label">数据</div></div>
+      <div class="page-thumb"><div class="ppt-page t3-end"><div class="t">THANKS</div><div class="s">数据驱动决策</div></div><div class="page-label">结束</div></div>
+    </div>
+    <div class="template-footer">
+      <div class="template-pages-count">📄 共约12页 · 5页预览</div>
+      <div class="template-features">深色背景 · 青色强调 · KPI卡片</div>
+    </div>
+  </div>
+
+  <!-- 模板4：毕业答辩 -->
+  <div class="template-card">
+    <div class="template-header">
+      <div class="template-icon" style="background:#f3e8ff">🎓</div>
+      <div class="template-info">
+        <div class="template-name">毕业答辩模板</div>
+        <div class="template-desc">简约白色，学术风格，适合毕业论文答辩、开题报告、学术汇报</div>
+      </div>
+      <div class="template-tags">
+        <span class="template-tag" style="background:#f3e8ff;color:#7c3aed">学术</span>
+        <span class="template-tag" style="background:#faf5ff;color:#6d28d9">简约</span>
+      </div>
+    </div>
+    <div class="template-pages">
+      <div class="page-thumb"><div class="ppt-page t4-cover"><div class="t">基于XXX的XXX研究</div><div class="s">学生：XXX | 导师：XXX</div><div class="info">XX大学XX学院 | 2026年</div></div><div class="page-label">封面</div></div>
+      <div class="page-thumb"><div class="ppt-page t4-toc"><div class="title">目录</div><div class="item"><div class="num">1</div><div class="text">研究背景与意义</div></div><div class="item"><div class="num">2</div><div class="text">研究方法</div></div><div class="item"><div class="num">3</div><div class="text">实验结果</div></div><div class="item"><div class="num">4</div><div class="text">结论与展望</div></div></div><div class="page-label">目录</div></div>
+      <div class="page-thumb"><div class="ppt-page t4-content"><div class="title">研究方法</div><div class="p">本文采用文献研究法与实证分析法相结合，首先梳理相关理论，然后构建模型进行验证。</div><div class="formula">Y = α + βX + ε</div></div><div class="page-label">内容</div></div>
+      <div class="page-thumb"><div class="ppt-page t4-data"><div class="title">实验结果对比</div><div class="chart"><div class="bar" style="height:55%"></div><div class="bar" style="height:75%"></div><div class="bar" style="height:65%"></div><div class="bar" style="height:90%"></div></div></div><div class="page-label">数据</div></div>
+      <div class="page-thumb"><div class="ppt-page t4-end"><div class="t">感谢聆听</div><div class="s">恳请各位老师批评指正</div></div><div class="page-label">结束</div></div>
+    </div>
+    <div class="template-footer">
+      <div class="template-pages-count">📄 共约18页 · 5页预览</div>
+      <div class="template-features">紫色点缀 · 公式展示 · 学术规范</div>
+    </div>
+  </div>
+
+  <!-- 模板5：产品介绍 -->
+  <div class="template-card">
+    <div class="template-header">
+      <div class="template-icon" style="background:#e0e7ff">🚀</div>
+      <div class="template-info">
+        <div class="template-name">产品介绍模板</div>
+        <div class="template-desc">渐变色，现代科技感，适合产品发布、商业路演、BP演示</div>
+      </div>
+      <div class="template-tags">
+        <span class="template-tag" style="background:#e0e7ff;color:#4338ca">科技</span>
+        <span class="template-tag" style="background:#eef2ff;color:#4f46e5">现代</span>
+      </div>
+    </div>
+    <div class="template-pages">
+      <div class="page-thumb"><div class="ppt-page t5-cover"><div class="left"><div class="icon">📱</div></div><div class="right"><div class="t">产品名称</div><div class="s">一句话产品定位说明</div><div class="btn">了解更多</div></div></div><div class="page-label">封面</div></div>
+      <div class="page-thumb"><div class="ppt-page t5-toc"><div class="title">产品亮点</div><div class="cards"><div class="card"><div class="icon">⚡</div><div class="text">高效</div></div><div class="card"><div class="icon">🎯</div><div class="text">精准</div></div><div class="card"><div class="icon">🤝</div><div class="text">协同</div></div></div></div><div class="page-label">目录</div></div>
+      <div class="page-thumb"><div class="ppt-page t5-content"><div class="left"><div class="icon">🖼️</div></div><div class="right"><div class="item"><div class="dot"></div><div class="text">核心功能一</div></div><div class="item"><div class="dot"></div><div class="text">核心功能二</div></div><div class="item"><div class="dot"></div><div class="text">核心功能三</div></div></div></div><div class="page-label">内容</div></div>
+      <div class="page-thumb"><div class="ppt-page t5-data"><div class="title">核心数据</div><div class="cards"><div class="card"><div class="v">100w+</div><div class="l">用户</div></div><div class="card"><div class="v">4.9</div><div class="l">评分</div></div><div class="card"><div class="v">98%</div><div class="l">好评</div></div></div></div><div class="page-label">数据</div></div>
+      <div class="page-thumb"><div class="ppt-page t5-end"><div class="t">THANKS</div><div class="s">期待与您合作</div></div><div class="page-label">结束</div></div>
+    </div>
+    <div class="template-footer">
+      <div class="template-pages-count">📄 共约15页 · 5页预览</div>
+      <div class="template-features">紫蓝渐变 · 圆角卡片 · 数据展示</div>
+    </div>
+  </div>
+
+  <!-- 模板6：求职简历 -->
+  <div class="template-card">
+    <div class="template-header">
+      <div class="template-icon" style="background:#fef3c7">📋</div>
+      <div class="template-info">
+        <div class="template-name">求职简历模板</div>
+        <div class="template-desc">简约专业，个人品牌风格，适合求职自我介绍、个人简历、竞聘展示</div>
+      </div>
+      <div class="template-tags">
+        <span class="template-tag" style="background:#fef3c7;color:#92400e">求职</span>
+        <span class="template-tag" style="background:#fffbeb;color:#78350f">专业</span>
+      </div>
+    </div>
+    <div class="template-pages">
+      <div class="page-thumb"><div class="ppt-page t6-cover"><div class="left"><div class="avatar">张</div><div class="name">张三</div><div class="pos">产品经理</div></div><div class="right"><div class="item"><div class="icon">📧</div>xxx@email.com</div><div class="item"><div class="icon">📱</div>138-xxxx-xxxx</div><div class="item"><div class="icon">🎓</div>XX大学</div></div></div><div class="page-label">封面</div></div>
+      <div class="page-thumb"><div class="ppt-page t6-toc"><div class="title">个人简介</div><div class="item"><div class="num">1</div><div class="text">教育背景</div></div><div class="item"><div class="num">2</div><div class="text">实习经历</div></div><div class="item"><div class="num">3</div><div class="text">项目经验</div></div><div class="item"><div class="num">4</div><div class="text">技能证书</div></div></div><div class="page-label">目录</div></div>
+      <div class="page-thumb"><div class="ppt-page t6-content"><div class="section"><div class="stitle">实习经历</div><div class="item"><span class="bold">XX公司 · 产品实习生</span>（2025.06-2025.09）</div><div class="item">负责用户调研，输出需求文档，推动功能上线</div></div><div class="section"><div class="stitle">项目经验</div><div class="item"><span class="bold">校园二手交易平台</span> · 项目负责人</div></div></div><div class="page-label">内容</div></div>
+      <div class="page-thumb"><div class="ppt-page t6-data"><div class="stitle">专业技能</div><div class="skills"><span class="skill">Axure</span><span class="skill">Figma</span><span class="skill">SQL</span><span class="skill">Python</span><span class="skill">数据分析</span><span class="skill">用户调研</span><span class="skill">需求文档</span><span class="skill">项目管理</span></div></div><div class="page-label">技能</div></div>
+      <div class="page-thumb"><div class="ppt-page t6-end"><div class="t">感谢观看</div><div class="s">期待加入贵公司</div></div><div class="page-label">结束</div></div>
+    </div>
+    <div class="template-footer">
+      <div class="template-pages-count">📄 共约10页 · 5页预览</div>
+      <div class="template-features">琥珀主色 · 左右分栏 · 技能标签</div>
+    </div>
+  </div>
+
+  <!-- 免费PPT模板网站推荐（保留） -->
+  <div class="section-title" style="font-size:17px;font-weight:700;color:#333;margin:28px 0 14px;display:flex;align-items:center;gap:10px;">
+    <div style="width:32px;height:32px;border-radius:8px;background:#dcfce7;display:flex;align-items:center;justify-content:center;font-size:16px;">🌐</div>
+    免费PPT模板网站推荐
+  </div>
+  <div class="websites">
+    <div class="website-item" onclick="window.open('https://www.1ppt.com','_blank')">
+      <div class="website-icon">1</div>
+      <div class="website-info">
+        <div class="website-name">第一PPT (1ppt.com)</div>
+        <div class="website-desc">国内老牌站点，所有资源完全免费，课件类资源丰富</div>
+      </div>
+      <div class="website-arrow">›</div>
+    </div>
+    <div class="website-item" onclick="window.open('https://www.51pptmoban.com','_blank')">
+      <div class="website-icon">51</div>
+      <div class="website-info">
+        <div class="website-name">51PPT模板网</div>
+        <div class="website-desc">超过10万模板，分类细致，无需注册直接下载</div>
+      </div>
+      <div class="website-arrow">›</div>
+    </div>
+    <div class="website-item" onclick="window.open('https://www.ypppt.com','_blank')">
+      <div class="website-icon">优</div>
+      <div class="website-info">
+        <div class="website-name">优品PPT (ypppt.com)</div>
+        <div class="website-desc">简约清新风格，所有模板免费无需注册，适合答辩简历</div>
+      </div>
+      <div class="website-arrow">›</div>
+    </div>
+    <div class="website-item" onclick="window.open('https://officeplus.cn','_blank')">
+      <div class="website-icon">O</div>
+      <div class="website-info">
+        <div class="website-name">OfficePLUS (officeplus.cn)</div>
+        <div class="website-desc">微软官方出品，商务职场风格，高质量无版权风险</div>
+      </div>
+      <div class="website-arrow">›</div>
+    </div>
+    <div class="website-item" onclick="window.open('https://slidescarnival.com','_blank')">
+      <div class="website-icon">S</div>
+      <div class="website-info">
+        <div class="website-name">SlidesCarnival</div>
+        <div class="website-desc">国外独立设计师网站，完全免费可商用，设计品味高</div>
+      </div>
+      <div class="website-arrow">›</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function goBack() { location.href='学习工作台.html'; }
+</script>
+
+</body>
+</html>

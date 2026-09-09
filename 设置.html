@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#5B8DEF">
+<title>设置 · 学习工作台</title>
+<link rel="stylesheet" href="assets/common.css">
+<link rel="stylesheet" href="assets/polish.css">
+</head>
+<body class="theme-home">
+
+<div class="app">
+<nav class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">📚</div>
+      <div>
+        <div class="logo-text">学习工作台</div>
+        <div class="logo-sub">一站式备考平台</div>
+      </div>
+    </div>
+    <div class="nav-list">
+      <div class="nav-item" data-page="home">
+        <span class="nav-icon">🏠</span><span>首页</span>
+      </div>
+      <div class="nav-section">学习模块</div>
+      <div class="nav-item" data-page="cet">
+        <span class="nav-icon">📖</span><span>四级备考</span>
+      </div>
+      <div class="nav-item" data-page="exam">
+        <span class="nav-icon">📝</span><span>央国企笔试</span>
+      </div>
+      <div class="nav-item" data-page="comm">
+        <span class="nav-icon">💬</span><span>高情商表达</span>
+      </div>
+      <div class="nav-item" data-page="interview">
+        <span class="nav-icon">🤝</span><span>商务礼仪面试</span>
+      </div>
+      <div class="nav-item" data-page="ppt">
+        <span class="nav-icon">🎨</span><span>PPT训练</span>
+      </div>
+      <div class="nav-section">创作</div>
+      <div class="nav-item" data-page="blog">
+        <span class="nav-icon">📝</span><span>学习博客</span>
+      </div>
+      <div class="nav-section">互动</div>
+      <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+        <span class="nav-icon">💬</span><span>私信 · 好友</span>
+      </div>
+      <div class="nav-item" data-external="1" onclick="gotoBlogMine()" title="我的笔记 · 回收站">
+        <span class="nav-icon">🗂️</span><span>我的笔记</span>
+      </div>
+      <div class="nav-section">中心</div>
+      <div class="nav-item" data-page="exam-center">
+        <span class="nav-icon">🧮</span><span>行测刷题</span>
+      </div>
+      <div class="nav-item" data-page="wrong-book">
+        <span class="nav-icon">📒</span><span>错题本</span>
+      </div>
+      <div class="nav-item" data-page="cet-vocab">
+        <span class="nav-icon">📖</span><span>四级词汇</span>
+      </div>
+      <div class="nav-item" data-page="etiquette">
+        <span class="nav-icon">🎩</span><span>商务礼仪</span>
+      </div>
+      <div class="nav-item" data-page="iv-questions">
+        <span class="nav-icon">🗂️</span><span>面试题库</span>
+      </div>
+      <div class="nav-item" data-page="ppt-layouts">
+        <span class="nav-icon">🧱</span><span>PPT版式库</span>
+      </div>
+      <div class="nav-item" data-page="ppt-cases">
+        <span class="nav-icon">🏷️</span><span>PPT案例拆解</span>
+      </div>
+      <div class="nav-item" data-page="comm-scenes">
+        <span class="nav-icon">🎭</span><span>场景话术库</span>
+      </div>
+      <div class="nav-item" data-page="comm-quotes">
+        <span class="nav-icon">💬</span><span>万能金句库</span>
+      </div>
+            <div class="nav-item" data-page="profile">
+        <span class="nav-icon">👤</span><span>个人中心</span>
+      </div>
+<div class="nav-section">系统</div>
+      <div class="nav-item active" data-page="settings">
+        <span class="nav-icon">⚙️</span><span>设置</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心">
+        <div class="user-avatar">学</div>
+        <div class="user-info">
+          <div class="user-name">同学</div>
+          <div class="user-streak">🔥 连续打卡 0 天</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+<header class="topbar">
+      <div class="topbar-title" id="topbarTitle">设置</div>
+      <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
+      <div class="gs-wrap" id="gsWrap">
+        <input type="text" class="gs-input" id="gsInput" placeholder="🔍 搜索笔记 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <div class="gs-dropdown" id="gsDropdown"></div>
+      </div>
+      <div class="topbar-stats">
+        <div class="stat-item"><span class="stat-icon">🔥</span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon">⏱️</span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+        <div class="stat-item"><span class="stat-icon">✅</span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
+      </div>
+      <div class="topbar-date" id="topbarDate"></div>
+      <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式">🌙</div>
+    </header>
+<div class="page active" id="page-settings">
+        <div class="module-hero">
+          <div class="module-hero-left">
+            <div class="module-hero-title">⚙️ 设置</div>
+            <div class="module-hero-desc">外观主题、数据管理与扩展功能配置</div>
+          </div>
+        </div>
+
+        <!-- 外观设置 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="title-icon">🎨</span>外观</div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">主题模式</div>
+              <div class="setting-desc">深色模式适合夜间学习，选择会自动保存</div>
+            </div>
+            <div class="setting-actions" id="themeOptions">
+              <button class="theme-option active" data-mode="light" onclick="setTheme('light')">☀️ 浅色</button>
+              <button class="theme-option" data-mode="dark" onclick="setTheme('dark')">🌙 深色</button>
+              <button class="theme-option" data-mode="auto" onclick="setTheme('auto')">🖥️ 跟随系统</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">界面配色</div>
+              <div class="setting-desc">全局配色皮肤（会覆盖模块主色），选择后自动保存</div>
+            </div>
+            <div class="setting-actions" style="flex-wrap:wrap">
+              <button class="theme-option" data-skin="default" onclick="setSkin('default')">🎨 默认</button>
+              <button class="theme-option" data-skin="violet" onclick="setSkin('violet')">🟣 暮紫</button>
+              <button class="theme-option" data-skin="forest" onclick="setSkin('forest')">🌲 森林</button>
+              <button class="theme-option" data-skin="sunset" onclick="setSkin('sunset')">🌅 暖阳</button>
+              <button class="theme-option" data-skin="ocean" onclick="setSkin('ocean')">🌊 深蓝</button>
+              <button class="theme-option" data-skin="mono" onclick="setSkin('mono')">⚫ 极简</button>
+              <button class="theme-option" data-skin="rose" onclick="setSkin('rose')">🌸 樱花</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 学习目标 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="title-icon">🎯</span>学习目标与习惯</div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">每日新增学习内容</div>
+              <div class="setting-desc">内容库（商务礼仪 / 面试题库 / PPT版式 / 场景话术 / 金句）每天为你安排的新条目数</div>
+            </div>
+            <div class="setting-actions">
+              <select class="form-input" id="stDailyNew" onchange="setSetting('dailyNew',+this.value);showToast('✅ 每日新增条数已保存')">
+                <option value="1">1 条/天</option><option value="2">2 条/天</option><option value="3">3 条/天</option>
+                <option value="4">4 条/天</option><option value="5">5 条/天</option><option value="6">6 条/天</option>
+                <option value="8">8 条/天</option><option value="10">10 条/天</option>
+              </select>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">专注学习时长（默认）</div>
+              <div class="setting-desc">番茄钟专注的默认分钟数，可在任意页面快速开始</div>
+            </div>
+            <div class="setting-actions" style="gap:6px">
+              <select class="form-input" id="stFocus" style="width:110px" onchange="setSetting('focusMinutes',+this.value)">
+                <option value="15">15 分钟</option><option value="25">25 分钟</option>
+                <option value="45">45 分钟</option><option value="60">60 分钟</option>
+              </select>
+              <button class="btn btn-primary" onclick="openFocusTimer()">▶ 开始专注</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 语音 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="title-icon">🔊</span>语音与朗读</div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">朗读开关</div>
+              <div class="setting-desc">控制词汇 / 口语 / 面试练习里的语音朗读（浏览器语音合成）</div>
+            </div>
+            <div class="setting-actions" id="swAutoSpeak">
+              <button class="theme-option" data-val="1" onclick="stToggle('autoSpeak',true,this)">✅ 开启</button>
+              <button class="theme-option" data-val="0" onclick="stToggle('autoSpeak',false,this)">🚫 关闭</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">朗读语速</div>
+              <div class="setting-desc">没有单独指定语速的朗读会使用该默认值</div>
+            </div>
+            <div class="setting-actions">
+              <select class="form-input" id="stVoiceRate" onchange="setSetting('voiceRate',+this.value)">
+                <option value="0.7">慢速</option><option value="0.9">标准</option>
+                <option value="1.15">较快</option><option value="1.4">快速</option>
+              </select>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">英文发音口音</div>
+              <div class="setting-desc">英文单词 / 句子朗读的音色口音</div>
+            </div>
+            <div class="setting-actions">
+              <select class="form-input" id="stVoiceLang" onchange="setSetting('voiceLang',this.value)">
+                <option value="en-US">🇺🇸 美式</option><option value="en-GB">🇬🇧 英式</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 通知 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="title-icon">🔔</span>提醒与通知</div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">新私信提醒</div>
+              <div class="setting-desc">在线登录后，收到好友新私信时给出网页提示（需允许通知权限）</div>
+            </div>
+            <div class="setting-actions" id="swChatNotify">
+              <button class="theme-option" data-val="1" onclick="stToggle('chatNotify',true,this)">✅ 开启</button>
+              <button class="theme-option" data-val="0" onclick="stToggle('chatNotify',false,this)">🚫 关闭</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 数据管理 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="title-icon">💾</span>数据管理</div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">导入本地题库（Word / txt / CSV）</div>
+              <div class="setting-desc">把文档里的单词、行测题、面试题等内容，选择导入到对应模块的题库（四级词汇 / 行测 / 面试），支持手动加题与 JSON 备份在“各题库→🧠 我的题库”里管理</div>
+            </div>
+            <div class="setting-actions">
+              <button class="btn btn-primary" onclick="openImporter()">📥 导入题库</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">导出数据</div>
+              <div class="setting-desc">将全部学习记录（倒计时、任务、错题、词汇进度等）导出为 JSON 文件备份</div>
+            </div>
+            <div class="setting-actions">
+              <button class="btn btn-primary" onclick="exportData()">📤 导出 JSON</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">导入数据</div>
+              <div class="setting-desc">从之前导出的 JSON 备份文件恢复数据，导入后会覆盖当前数据</div>
+            </div>
+            <div class="setting-actions">
+              <button class="btn btn-outline" onclick="document.getElementById('importFileInput').click()">📥 导入 JSON</button>
+              <!-- 隐藏的文件选择框：供导入功能使用 -->
+              <input type="file" id="importFileInput" accept=".json,application/json" style="display:none" onchange="importData(event)">
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">清空数据</div>
+              <div class="setting-desc">删除全部本地学习记录，恢复初始状态（操作不可撤销，请先导出备份）</div>
+            </div>
+            <div class="setting-actions">
+              <button class="btn btn-danger" onclick="clearAllData()">🗑️ 清空</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI 模型选择：多人在线版为服务端密钥（表单由 api.js 覆盖渲染）；单机版（安卓 APK / 无 api.js）
+             由页面底部脚本改标题并渲染本地直连表单（app.js 的 renderAiProviderForm，密钥仅存本机 localStorage） -->
+        <div class="card" id="aiServerCard">
+          <div class="card-header">
+            <div class="card-title" id="aiServerCardTitle"><span class="title-icon">🤖</span>AI 模型选择（服务端密钥）</div>
+            <div class="card-action" id="aiProviderBadge">右下角 AI 助手</div>
+          </div>
+          <div class="setting-row" id="aiServerNoteRow">
+            <div class="setting-info">
+              <div class="setting-name">选择对话模型</div>
+              <div class="setting-desc">API 密钥保存在服务器 server/.env，前端不保存、不传输任何密钥；此处仅选择要使用的模型（带流式输出与上下文记忆）</div>
+            </div>
+          </div>
+          <div id="aiProviderForm"></div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">AI 温度（创作/严谨）</div>
+              <div class="setting-desc">越低越严谨、越高越有创意；空=使用模型默认</div>
+            </div>
+            <div class="setting-actions">
+              <select class="form-input" id="stAiTemp" onchange="setSetting('aiTemp',this.value);showToast('✅ 已保存')">
+                <option value="">跟随模型默认</option><option value="0.3">更严谨 0.3</option>
+                <option value="0.7">平衡 0.7</option><option value="1.0">活泼 1.0</option><option value="1.3">有创意 1.3</option>
+              </select>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">AI 最大输出</div>
+              <div class="setting-desc">单次回答最多 token 数（空=使用模型默认）</div>
+            </div>
+            <div class="setting-actions">
+              <select class="form-input" id="stAiMax" onchange="setSetting('aiMax',this.value);showToast('✅ 已保存')">
+                <option value="">跟随模型默认</option><option value="1024">较短 1024</option>
+                <option value="2048">标准 2048</option><option value="4096">较长 4096</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 本地笔记迁移（多人在线版：把旧 localStorage 笔记一键上传服务器，函数见 assets/api.js 的 migrateLocalNotes()。
+             单机版由页面底部脚本自动隐藏本卡片） -->
+        <div class="card" id="migrateCard">
+          <div class="card-header">
+            <div class="card-title"><span class="title-icon">📥</span>本地笔记迁移</div>
+            <div class="card-action">旧数据 → 服务器</div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">迁移到服务器数据库</div>
+              <div class="setting-desc">把本机 localStorage 里的旧版笔记（含评论、标签、点赞数）导入当前登录账号名下；重复迁移自动跳过，详见 运行说明.md</div>
+            </div>
+            <div class="setting-actions">
+              <button class="btn btn-primary" onclick="migrateLocalNotes()">📥 一键迁移</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 关于 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="title-icon">ℹ️</span>关于</div>
+          </div>
+          <div style="font-size:13px;color:var(--text-secondary);line-height:1.9">
+            <div style="font-size:15px;font-weight:800;color:var(--text)">📚 学习工作台 v2.1 · 一站式备考平台</div>
+            <div style="margin-top:6px">本应用<b>数据默认保存在本机浏览器</b>；登录服务器后，笔记/私信/AI 记录可多端同步（数据库存服务器）。</div>
+            <div style="margin-top:8px;font-weight:600;color:var(--text)">🗂️ 学习模块</div>
+            <div>四级词汇(间隔重复) · 听说训练(情景口语/听力精听) · 行测刷题 · 错题本 · 央国企笔试 · 面试题库 · 高情商表达 · 商务礼仪 · PPT训练 · 万能金句/场景话术 · 学习博客(笔记/评论/点赞) · 好友私信</div>
+            <div style="margin-top:8px;font-weight:600;color:var(--text)">🧰 便捷能力</div>
+            <div>导入题库(Word/Excel/文本选目标导入) · 各题库“我的题库”自建/导入导出 · AI(多模型/用量/记录/读笔记) · 笔记回收站 · Markdown 导出 · 外观(主题跟随系统+7套配色) · 专注计时 · 数据备份</div>
+            <div style="margin-top:10px;border-top:1px dashed var(--border);padding-top:8px;color:var(--text-muted);font-size:12px">v2.1 更新：外观皮肤与跟随系统 · 好友私信与已读 · AI 用量/对话记录 · 听说训练播放器 · 导入题库 · 题库自建 · 笔记回收站 · 个人资料(bio/生日/城市) 等。</div>
+            <div style="margin-top:14px;text-align:right;font-style:italic;color:var(--text-secondary)">—— 小叶子</div>
+          </div>
+        </div>
+      </div>
+  </div>
+
+
+
+  <!-- 底部导航（手机端） -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-list">
+      <div class="bottom-nav-item" data-page="home">
+        <div class="bn-icon">🏠</div><div class="bn-label">首页</div>
+      </div>
+      <div class="bottom-nav-item" data-page="cet">
+        <div class="bn-icon">📖</div><div class="bn-label">四级</div>
+      </div>
+      <div class="bottom-nav-item" data-page="exam">
+        <div class="bn-icon">📝</div><div class="bn-label">笔试</div>
+      </div>
+      <div class="bottom-nav-item" data-page="comm">
+        <div class="bn-icon">💬</div><div class="bn-label">表达</div>
+      </div>
+      <div class="bottom-nav-item" onclick="toggleMorePanel()">
+        <div class="bn-icon">☰</div><div class="bn-label">更多</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 更多面板遮罩 -->
+  <div class="more-overlay" onclick="toggleMorePanel()"></div>
+
+  <!-- 更多面板 -->
+  <div class="bottom-more-panel" id="morePanel">
+    <div class="bottom-more-title">更多功能</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="navigateTo('interview');toggleMorePanel()">
+        <div class="bm-icon">🤝</div><div class="bm-label">礼仪面试</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('ppt');toggleMorePanel()">
+        <div class="bm-icon">🎨</div><div class="bm-label">PPT训练</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogStats()">
+        <div class="bm-icon">📊</div><div class="bm-label">学习统计</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogFavorites()">
+        <div class="bm-icon">🔖</div><div class="bm-label">我的收藏</div>
+      </div>
+      <div class="bottom-more-item" onclick="gotoChat()">
+        <div class="bm-icon">💬</div><div class="bm-label">私信/好友</div>
+      </div>
+      <div class="bottom-more-item" onclick="gotoBlogMine()">
+        <div class="bm-icon">🗂️</div><div class="bm-label">我的博客</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
+        <div class="bm-icon">📒</div><div class="bm-label">错题本</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('cet-vocab');toggleMorePanel()">
+        <div class="bm-icon">📖</div><div class="bm-label">四级词汇</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
+        <div class="bm-icon">⚙️</div><div class="bm-label">设置</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogProfile()">
+        <div class="bm-icon">👤</div><div class="bm-label">个人中心</div>
+      </div>
+      <div class="bottom-more-item" onclick="location.href='设置.html'">
+        <div class="bm-icon">ℹ️</div><div class="bm-label">关于</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加倒计时弹窗 -->
+  <div class="modal-overlay" id="countdownModal">    <div class="modal">
+      <div class="modal-title" id="countdownModalTitle">添加倒计时</div>
+      <div class="form-group">
+        <div class="form-label">名称</div>
+        <input type="text" class="form-input" id="cdName" placeholder="如：四级考试、秋招截止">
+      </div>
+      <div class="form-group">
+        <div class="form-label">日期</div>
+        <input type="date" class="form-input" id="cdDate">
+      </div>
+      <div class="form-group">
+        <div class="form-label">颜色</div>
+        <div class="color-picker" id="cdColorPicker">
+          <div class="color-dot active" style="background:#5B8DEF" data-color="#5B8DEF"></div>
+          <div class="color-dot" style="background:#E05040" data-color="#E05040"></div>
+          <div class="color-dot" style="background:#9B6BD9" data-color="#9B6BD9"></div>
+          <div class="color-dot" style="background:#D4A056" data-color="#D4A056"></div>
+          <div class="color-dot" style="background:#36CFC9" data-color="#36CFC9"></div>
+          <div class="color-dot" style="background:#FF9F68" data-color="#FF9F68"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary)">
+          <input type="checkbox" id="cdPinned"> 置顶显示
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeCountdownModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveCountdown()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast提示 -->
+  <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center"></div>
+
+  <!-- ==================== AI学习助手（悬浮聊天窗口） ====================
+       说明：
+       1. 默认“本地演示模式”：不联网、不调API、无密钥，由内置规则引擎回复；
+       2. 【后续扩展点】启动 ai-server 后端后，把下方 JS 里的 AI_CONFIG.apiUrl
+          填上后端地址（如 http://localhost:3000/api/chat），即可切换为真实AI流式对话；
+       3. 安全约束：大模型密钥只放在后端 .env 里，前端代码永远不出现密钥。 -->
+  <!-- 悬浮头像：可按住拖拽到任意位置（见下方 JS.initAiFabDrag），点击打开/收起面板，双击复位 -->
+  <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">
+    🤖<span class="ai-mode-badge" id="aiModeBadge">演示</span>
+  </div>
+  <div class="ai-panel" id="aiPanel">
+    <div class="ai-panel-header">
+      <div class="ai-avatar">🤖</div>
+      <div style="flex:1">
+        <div class="ai-title">AI学习助手</div>
+        <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
+      </div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录">🧹</div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板">✕</div>
+    </div>
+    <div class="ai-messages" id="aiMessages"></div>
+    <div class="ai-input-row">
+      <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()">➤</div>
+    </div>
+  </div>
+
+
+
+</div>
+
+<script src="assets/app.js?v=20260913s"></script>
+<script src="assets/api.js?v=20260909e"></script>
+<script src="assets/qbank.js?v=6"></script>
+<script src="assets/importer.js?v=3"></script>
+<script>
+/* 单机离线版（如安卓 APK，未打包 assets/api.js）适配：
+   ① 隐藏依赖后端的「本地笔记迁移」卡片；
+   ② AI 卡片改为「本地直连 / 演示」配置（app.js 的 renderAiProviderForm，密钥仅存本机 localStorage）。
+   在线多人版（加载了 api.js）不受影响，仍走服务端密钥表单。 */
+(function () {
+  if (typeof loadCurrentUser !== 'function') {
+    var mig = document.getElementById('migrateCard');
+    if (mig) mig.style.display = 'none';
+    var aiCard = document.getElementById('aiServerCard');
+    if (aiCard) {
+      aiCard.style.display = '';
+      var t = document.getElementById('aiServerCardTitle');
+      if (t) t.innerHTML = '<span class="title-icon">🤖</span>AI 助手（本地直连 / 演示）';
+      var note = document.getElementById('aiServerNoteRow');
+      if (note) note.style.display = 'none';
+      var badge = document.getElementById('aiProviderBadge');
+      if (badge) badge.textContent = '密钥仅存本机';
+      if (typeof renderAiProviderForm === 'function') renderAiProviderForm();
+    }
+  }
+})();
+</script>
+
+<script>
+/* 设置页：把控件初始化为已保存值；开关用 theme-option 双按钮 */
+function stToggle(key, val, el) {
+  setSetting(key, val);
+  var wrap = el.parentElement;
+  wrap.querySelectorAll('.theme-option').forEach(function (b) {
+    b.classList.toggle('active', (b.getAttribute('data-val') === '1') === !!val);
+  });
+  showToast('✅ 设置已保存');
+}
+(function initSettingsUI() {
+  var set = loadAllSettings();
+  var pick = function (id, v) { var el = document.getElementById(id); if (el) el.value = v; };
+  pick('stDailyNew', set.dailyNew);
+  pick('stAiTemp', set.aiTemp == null ? '' : set.aiTemp);
+  pick('stAiMax', set.aiMax == null ? '' : set.aiMax);
+  pick('stFocus', set.focusMinutes);
+  pick('stVoiceRate', set.voiceRate);
+  pick('stVoiceLang', set.voiceLang);
+  var apply = function (id, on) {
+    var wrap = document.getElementById(id); if (!wrap) return;
+    wrap.querySelectorAll('.theme-option').forEach(function (b) {
+      b.classList.toggle('active', (b.getAttribute('data-val') === '1') === !!on);
+    });
+  };
+  apply('swAutoSpeak', set.autoSpeak);
+  apply('swChatNotify', set.chatNotify);
+})();
+</script>
+
+<script>
+/* 外观配色皮肤：激活态高亮 */
+function __applySkinUI() {
+  if (typeof currentSkin === 'undefined') return;
+  document.querySelectorAll('[data-skin]').forEach(function (b) {
+    b.classList.toggle('active', b.getAttribute('data-skin') === currentSkin);
+  });
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(__applySkinUI, 200); });
+else setTimeout(__applySkinUI, 200);
+</script>
+</body>
+</html>
