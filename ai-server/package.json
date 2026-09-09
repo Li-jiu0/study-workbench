@@ -1,0 +1,17 @@
+{
+  "name": "study-workbench-ai-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "学习工作台 AI 后端中转服务（密钥安全存放 + 流式转发大模型回答）",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

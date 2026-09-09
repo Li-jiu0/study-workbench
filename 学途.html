@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>学途 · 个人学习中枢</title>
+<link rel="stylesheet" href="assets/common.css">
+<style>
+/* ================= 学途 · 个人学习中枢（v1.15） ================= */
+body { margin: 0; background: var(--bg); }
+.xt { max-width: 520px; margin: 0 auto; padding: 14px 14px 96px; box-sizing: border-box; }
+.xt-page { min-height: 70vh; }
+
+/* 底部导航 */
+.xt-tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 520px;
+  background: var(--card); border-top: 1px solid var(--border);
+  display: flex; z-index: 800; padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.xt-tab { flex: 1; text-align: center; padding: 7px 0 9px; cursor: pointer; color: var(--text-muted); font-size: 11px; -webkit-user-select: none; user-select: none; }
+.xt-tab .ti { font-size: 20px; display: block; margin-bottom: 1px; }
+.xt-tab.on { color: var(--primary); font-weight: 700; }
+.xt-tab:active { opacity: .7; }
+
+/* 卡片与通用 */
+.xt-card { background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+.xt-card-title { font-size: 15px; font-weight: 800; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+.xt-card-title .more { font-size: 12px; font-weight: 400; color: var(--text-muted); cursor: pointer; }
+.xt-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; border: none; border-radius: 12px; padding: 11px 16px; font-size: 14px; font-weight: 700; cursor: pointer; background: var(--primary); color: #fff; }
+.xt-btn:active { opacity: .8; }
+.xt-btn.ghost { background: var(--bg); color: var(--primary); border: 1px solid var(--border); }
+.xt-btn.sm { padding: 7px 12px; font-size: 12px; border-radius: 10px; }
+.xt-empty { text-align: center; color: var(--text-muted); font-size: 13px; padding: 24px 0; }
+.xt-progress { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+.xt-progress > i { display: block; height: 100%; background: linear-gradient(90deg, var(--primary), var(--primary-dark, var(--primary))); border-radius: 4px; }
+
+/* 首页 */
+.xt-hello { padding: 6px 4px 12px; }
+.xt-hello-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.xt-greet { font-size: 22px; font-weight: 800; color: var(--text); }
+.xt-date { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.xt-hello-ic { font-size: 18px; cursor: pointer; color: var(--text-muted); margin-left: 10px; }
+.xt-stat-row { display: flex; }
+.xt-stat { flex: 1; text-align: center; }
+.xt-stat .n { font-size: 20px; font-weight: 800; color: var(--text); }
+.xt-stat .l { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+.xt-stat + .xt-stat { border-left: 1px solid var(--border); }
+
+/* 任务清单 */
+.xt-task { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+.xt-task:last-child { border-bottom: none; }
+.xt-task .t-ic { font-size: 20px; width: 30px; text-align: center; }
+.xt-task .t-name { flex: 1; font-size: 14px; color: var(--text); }
+.xt-task .t-btn { font-size: 12px; padding: 5px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--primary); cursor: pointer; }
+.xt-task.done .t-name { color: var(--text-muted); text-decoration: line-through; }
+.xt-task .t-btn.on { background: #E8F8E8; color: #2E9E4F; border-color: #B8E8C0; }
+
+/* 快速开始 */
+.xt-quick { display: flex; gap: 10px; flex-wrap: wrap; }
+.xt-q { flex: 1 1 calc(50% - 5px); min-width: 0; background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 14px 12px; text-align: center; cursor: pointer; box-sizing: border-box; }
+.xt-q .qi { font-size: 24px; }
+.xt-q .qn { font-size: 13px; font-weight: 700; color: var(--text); margin-top: 6px; }
+
+/* 学习页分组 */
+.xt-group { margin-bottom: 16px; }
+.xt-group-title { font-size: 13px; font-weight: 800; color: var(--text-muted); margin: 18px 2px 10px; }
+.xt-mod { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: 14px; padding: 13px 14px; margin-bottom: 10px; cursor: pointer; }
+.xt-mod .m-ic { font-size: 22px; width: 34px; text-align: center; }
+.xt-mod .m-tx { flex: 1; }
+.xt-mod .m-name { font-size: 14px; font-weight: 700; color: var(--text); }
+.xt-mod .m-meta { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+.xt-mod .m-ar { color: var(--text-muted); font-size: 16px; }
+.xt-chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.xt-chip { font-size: 12px; padding: 6px 12px; border-radius: 16px; background: var(--bg); border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; }
+.xt-chip.on { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* 错题本 */
+.xt-wrong { border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; background: #fffdf5; }
+.xt-wrong .w-tag { display: inline-block; font-size: 11px; background: #FFE9E6; color: #D04A3A; border-radius: 8px; padding: 2px 8px; margin-bottom: 8px; }
+.xt-wrong .w-q { font-size: 13px; color: var(--text); line-height: 1.6; }
+.xt-wrong .w-a { font-size: 12px; color: #2E9E4F; margin-top: 8px; }
+.xt-wrong .w-e { font-size: 12px; color: var(--text-secondary); margin-top: 6px; line-height: 1.6; }
+.xt-reasons { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.xt-reason { font-size: 11px; padding: 4px 10px; border-radius: 14px; border: 1px solid var(--border); background: var(--card); color: var(--text-secondary); cursor: pointer; }
+.xt-reason.on { background: var(--primary); color: #fff; border-color: var(--primary); }
+.xt-reason-chosen { font-size: 12px; color: var(--primary); margin-top: 8px; font-weight: 600; }
+
+/* 错因统计 */
+.xt-reason-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12px; }
+.xt-reason-bar .rb-name { width: 72px; color: var(--text-secondary); flex-shrink: 0; }
+.xt-reason-bar .rb-track { flex: 1; height: 12px; background: var(--bg); border-radius: 6px; overflow: hidden; }
+.xt-reason-bar .rb-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, #F2A93B, #E87A3A); }
+.xt-reason-bar .rb-num { width: 48px; text-align: right; color: var(--text-muted); flex-shrink: 0; }
+
+/* 笔记 */
+.xt-note-search { width: 100%; box-sizing: border-box; border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; font-size: 14px; background: var(--card); color: var(--text); outline: none; }
+.xt-note { display: flex; gap: 10px; align-items: flex-start; padding: 11px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+.xt-note:last-child { border-bottom: none; }
+.xt-note .no-ic { font-size: 18px; }
+.xt-note .no-tx { flex: 1; }
+.xt-note .no-title { font-size: 14px; color: var(--text); font-weight: 600; }
+.xt-note .no-meta { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+/* 我的页 */
+.xt-me-head { text-align: center; padding: 18px 0 4px; }
+.xt-me-avatar { width: 78px; height: 78px; border-radius: 50%; margin: 0 auto 10px; background: linear-gradient(135deg, var(--primary), var(--primary-dark, var(--primary))); display: flex; align-items: center; justify-content: center; font-size: 34px; font-weight: 800; color: #fff; overflow: hidden; }
+.xt-me-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.xt-me-name { font-size: 19px; font-weight: 800; color: var(--text); }
+.xt-me-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.xt-cal { display: flex; gap: 8px; justify-content: space-between; }
+.xt-cal .c-day { flex: 1; text-align: center; font-size: 11px; color: var(--text-muted); }
+.xt-cal .c-dot { width: 26px; height: 26px; line-height: 26px; margin: 4px auto 0; border-radius: 50%; background: var(--bg); color: var(--text-muted); font-size: 11px; }
+.xt-cal .c-dot.on { background: var(--primary); color: #fff; }
+.xt-bar-row { display: flex; align-items: flex-end; gap: 6px; height: 96px; }
+.xt-bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+.xt-bar { width: 60%; max-width: 20px; background: linear-gradient(180deg, var(--primary), var(--primary-dark, var(--primary))); border-radius: 4px 4px 0 0; min-height: 2px; }
+.xt-bar-col .b-day { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+.xt-goal { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.xt-goal:last-child { border-bottom: none; }
+.xt-goal .g-name { flex: 1; font-size: 14px; color: var(--text); }
+.xt-goal .g-pct { font-size: 12px; color: var(--text-muted); width: 44px; text-align: right; }
+.xt-goal .g-del { border: none; background: none; color: var(--danger); font-size: 16px; cursor: pointer; padding: 2px 6px; }
+.xt-me-row { display: flex; align-items: center; gap: 12px; padding: 13px 14px; background: var(--card); border-radius: 14px; margin-bottom: 10px; cursor: pointer; }
+.xt-me-row .mr-ic { font-size: 19px; width: 28px; text-align: center; }
+.xt-me-row .mr-tx { flex: 1; font-size: 14px; color: var(--text); }
+.xt-me-row .mr-ar { color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<!-- Toast（app.js showToast 依赖） -->
+<div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform .3s;pointer-events:none;"></div>
+
+<!-- AI 学习助手（复用 app.js：规则引擎演示模式，无密钥） -->
+<div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">🤖<span class="ai-mode-badge" id="aiModeBadge">演示</span></div>
+<div class="ai-panel" id="aiPanel">
+  <div class="ai-panel-header">
+    <div class="ai-avatar">🤖</div>
+    <div style="flex:1">
+      <div class="ai-title">AI学习助手</div>
+      <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
+    </div>
+    <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录">🧹</div>
+    <div class="ai-close" onclick="toggleAiPanel()" title="收起面板">✕</div>
+  </div>
+  <div class="ai-messages" id="aiMessages"></div>
+  <div class="ai-input-row">
+    <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：今天该学什么？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
+    <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()">➤</div>
+  </div>
+</div>
+
+<!-- ============ 学途主体：5 Tab ============ -->
+<div class="xt">
+  <div id="tab-home" class="xt-page"></div>
+  <div id="tab-study" class="xt-page" style="display:none"></div>
+  <div id="tab-exam" class="xt-page" style="display:none"></div>
+  <div id="tab-notes" class="xt-page" style="display:none"></div>
+  <div id="tab-me" class="xt-page" style="display:none"></div>
+</div>
+
+<nav class="xt-tabbar">
+  <div class="xt-tab on" data-tab="home" onclick="xtSwitch('home')"><span class="ti">🏠</span>首页</div>
+  <div class="xt-tab" data-tab="study" onclick="xtSwitch('study')"><span class="ti">📚</span>学习</div>
+  <div class="xt-tab" data-tab="exam" onclick="xtSwitch('exam')"><span class="ti">🎯</span>刷题</div>
+  <div class="xt-tab" data-tab="notes" onclick="xtSwitch('notes')"><span class="ti">📝</span>笔记</div>
+  <div class="xt-tab" data-tab="me" onclick="xtSwitch('me')"><span class="ti">👤</span>我的</div>
+</nav>
+
+<script src="assets/app.js?v=20260913s"></script>
+<script src="assets/voiceplayer.js?v=1"></script>
+<script>
+/* ================= 学途 · 逻辑（v1.15） ================= */
+(function () {
+  var TAB = 'home';
+  var MODULE_URLS = {
+    vocab: '四级词汇.html',
+    reading: '四级备考.html',
+    writing: '四级备考.html',
+    translate: '四级备考.html',
+    exam: '行测刷题.html',
+    iv: '面试题库.html',
+    blog: '学习博客.html'
+  };
+
+  /* ---------- 通用 ---------- */
+  function el(id) { return document.getElementById(id); }
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function todayStr() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function greet() { var h = new Date().getHours(); return h < 6 ? '夜深了' : h < 12 ? '早上好' : h < 14 ? '中午好' : h < 18 ? '下午好' : '晚上好'; }
+  function weekdayCN() { return ['日', '一', '二', '三', '四', '五', '六'][new Date().getDay()]; }
+  function fmtDate() { var d = new Date(); return d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日 周' + weekdayCN(); }
+  function todayDone() { var r = loadStudyRecords(); var t = todayStr(); return (r[t] && r[t].done) || []; }
+  function isDone(k) { return todayDone().indexOf(k) >= 0; }
+  function dayMinutes() { return calcTodayMinutes(); }
+
+  /* 学习任务清单（今日任务） */
+  var TASKS = [
+    { key: 'vocab', name: '背单词 50 个', icon: '📖', type: 'vocab', url: MODULE_URLS.vocab },
+    { key: 'reading', name: '四级阅读 1 篇', icon: '📚', type: 'reading', url: MODULE_URLS.reading },
+    { key: 'listen', name: '听力 15 分钟', icon: '🎧', type: 'listen', url: '' },
+    { key: 'exam', name: '行测 20 题', icon: '📝', type: 'exam', url: MODULE_URLS.exam }
+  ];
+
+  function startTask(t) {
+    if (t.type === 'listen') { goStudy('listen', ''); if (typeof openVoiceTrain === 'function') openVoiceTrain('listen'); else location.href = MODULE_URLS.reading; return; }
+    goStudy(t.type, t.url);
+  }
+
+  /* ---------- Tab 切换 ---------- */
+  function xtSwitch(tab) {
+    TAB = tab;
+    try { endStudySession(); } catch (e) { }
+    var pages = document.querySelectorAll('.xt-page');
+    for (var i = 0; i < pages.length; i++) pages[i].style.display = 'none';
+    el('tab-' + tab).style.display = '';
+    var tabs = document.querySelectorAll('.xt-tab');
+    for (var j = 0; j < tabs.length; j++) tabs[j].className = 'xt-tab' + (tabs[j].getAttribute('data-tab') === tab ? ' on' : '');
+    if (tab === 'home') renderHome();
+    else if (tab === 'study') renderStudy();
+    else if (tab === 'exam') renderExam();
+    else if (tab === 'notes') renderNotes();
+    else renderMe();
+    window.scrollTo(0, 0);
+  }
+  window.xtSwitch = xtSwitch;
+
+  /* ---------- 首页 ---------- */
+  function vocabToday() {
+    var rec = (appData && appData.vocabRecords) || {};
+    var t = todayStr();
+    var learned = 0, mastered = 0, review = 0;
+    var keys = Object.keys(rec);
+    for (var i = 0; i < keys.length; i++) {
+      var r = rec[keys[i]];
+      if (r.mastered) mastered++;
+      if (r.learnedDate === t) learned++;
+    }
+    try { review = getReviewVocabs().length; } catch (e) { }
+    return { learned: learned, review: review, mastered: mastered, total: (typeof CET_VOCAB !== 'undefined') ? CET_VOCAB.length : 200 };
+  }
+
+  function renderHome() {
+    var streak = calcStreakDays();
+    var todayMin = dayMinutes();
+    var done = todayDone();
+    var vt = vocabToday();
+    var vocabGoal = 50;
+    var vocabTodayN = Math.min(vt.learned + vt.review, vocabGoal);
+    var last = null; try { last = getLastStudySession(); } catch (e) { }
+    var taskHtml = '';
+    for (var i = 0; i < TASKS.length; i++) {
+      var t = TASKS[i];
+      var dn = done.indexOf(t.key) >= 0;
+      taskHtml += '<div class="xt-task' + (dn ? ' done' : '') + '" onclick="xtTask(' + i + ')">' +
+        '<span class="t-ic">' + t.icon + '</span>' +
+        '<span class="t-name">' + t.name + '</span>' +
+        '<span class="t-btn' + (dn ? ' on' : '') + '">' + (dn ? '✅ 完成' : '开始 →') + '</span></div>';
+    }
+    el('tab-home').innerHTML =
+      '<div class="xt-hello">' +
+        '<div class="xt-hello-top">' +
+          '<div><div class="xt-greet">👋 ' + greet() + '</div><div class="xt-date">' + fmtDate() + ' · 今天也要加油，一步一步来</div></div>' +
+          '<div><span class="xt-hello-ic" onclick="location.href=\'设置.html\'">⚙️</span></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="xt-card"><div class="xt-stat-row">' +
+        '<div class="xt-stat"><div class="n">🔥 ' + streak + '</div><div class="l">连续学习(天)</div></div>' +
+        '<div class="xt-stat"><div class="n">' + todayMin + ' 分</div><div class="l">今日学习</div></div>' +
+        '<div class="xt-stat"><div class="n">' + done.length + '/' + TASKS.length + '</div><div class="l">任务完成</div></div>' +
+      '</div></div>' +
+      '<div class="xt-card"><div class="xt-card-title">📖 今日词汇<span class="more">四级核心词库 · 共 ' + vt.total + ' 词</span></div>' +
+        '<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:8px"><span>已学 ' + vt.learned + ' · 待复习 ' + vt.review + '</span><span>' + vocabTodayN + '/' + vocabGoal + '</span></div>' +
+        '<div class="xt-progress"><i style="width:' + Math.min(100, Math.round(vocabTodayN / vocabGoal * 100)) + '%"></i></div>' +
+        '<div style="margin-top:12px"><button class="xt-btn sm" onclick="goStudy(\'vocab\',\'' + MODULE_URLS.vocab + '\')">🚀 开始背词</button>' +
+        '<button class="xt-btn sm ghost" style="margin-left:8px" onclick="location.href=\'' + MODULE_URLS.vocab + '\'">📖 词汇详情</button></div>' +
+      '</div>' +
+      '<div class="xt-card"><div class="xt-card-title">🚀 继续学习<span class="more">' + (last ? '上次 ' + last.date + ' · ' + last.minutes + ' 分钟' : '今天还没开始') + '</span></div>' +
+        (last ? '<button class="xt-btn" style="width:100%" onclick="xtContinue()">继续学习 →</button>' : '<div class="xt-empty">点击下方任务开始今天的学习吧</div>') +
+      '</div>' +
+      '<div class="xt-card"><div class="xt-card-title">📚 今日任务<span class="more">学完自动记录</span></div>' + taskHtml + '</div>' +
+      '<div class="xt-card"><div class="xt-card-title">⚡ 快速开始</div>' +
+        '<div class="xt-quick">' +
+          '<div class="xt-q" onclick="goStudy(\'vocab\',\'' + MODULE_URLS.vocab + '\')"><div class="qi">📖</div><div class="qn">背单词</div></div>' +
+          '<div class="xt-q" onclick="xtListen()"><div class="qi">🎧</div><div class="qn">听力</div></div>' +
+          '<div class="xt-q" onclick="goStudy(\'exam\',\'' + MODULE_URLS.exam + '\')"><div class="qi">📝</div><div class="qn">刷题</div></div>' +
+          '<div class="xt-q" onclick="location.href=\'' + MODULE_URLS.blog + '\'"><div class="qi">✍️</div><div class="qn">写笔记</div></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="xt-card" style="background:linear-gradient(135deg,var(--primary),var(--primary-dark,var(--primary)));color:#fff">' +
+        '<div style="font-size:15px;font-weight:800">🤖 AI 学习助手</div>' +
+        '<div style="font-size:12px;opacity:.92;margin:6px 0 12px">问它：今天该学什么 / 帮我出 10 道四级题 / 总结我的错题</div>' +
+        '<button class="xt-btn sm" style="background:#fff;color:var(--primary)" onclick="toggleAiPanel()">打开助手</button>' +
+      '</div>';
+  }
+  window.xtTask = function (i) {
+    var t = TASKS[i];
+    if (isDone(t.key)) { startTask(t); return; }
+    startTask(t);
+  };
+  window.xtContinue = function () {
+    for (var i = 0; i < TASKS.length; i++) {
+      if (!isDone(TASKS[i].key)) { startTask(TASKS[i]); return; }
+    }
+    goStudy('study', MODULE_URLS.vocab);
+  };
+  window.xtListen = function () {
+    goStudy('listen', '');
+    if (typeof openVoiceTrain === 'function') openVoiceTrain('listen'); else location.href = MODULE_URLS.reading;
+  };
+
+  /* ---------- 学习页 ---------- */
+  function renderStudy() {
+    var vt = vocabToday();
+    var subs = []; try { subs = loadSubjects(); } catch (e) { }
+    var subHtml = '';
+    for (var i = 0; i < subs.length; i++) {
+      subHtml += '<div class="xt-mod"><span class="m-ic">📘</span><div class="m-tx"><div class="m-name">' + esc(subs[i].name) + '</div><div class="m-meta">自定义学科' + (subs[i].url ? ' · 可跳转' : '') + '</div></div>' +
+        (subs[i].url ? '<span class="m-ar" onclick="event.stopPropagation();location.href=\'' + esc(subs[i].url) + '\'">进入 →</span>' : '') +
+        '<span class="m-ar" style="color:var(--danger)" onclick="event.stopPropagation();xtDelSubject(' + i + ')">✕</span></div>';
+    }
+    if (!subHtml) subHtml = '<div class="xt-empty">还没有自定义学科，点下方按钮添加（如：高数 / 专业课 / 考研政治 / Java）</div>';
+    el('tab-study').innerHTML =
+      '<div class="xt-group-title">📚 英语</div>' +
+      '<div class="xt-card">' +
+        '<div class="xt-card-title">📖 四级词汇<span class="more">已掌握 ' + vt.mastered + ' · 待复习 ' + vt.review + ' · 总 ' + vt.total + '</span></div>' +
+        '<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:8px"><span>今日目标 ' + Math.min(vt.learned + vt.review, 50) + '/50</span><span>新词 ' + vt.learned + ' · 复习 ' + vt.review + '</span></div>' +
+        '<div class="xt-progress"><i style="width:' + Math.min(100, Math.round(Math.min(vt.learned + vt.review, 50) / 50 * 100)) + '%"></i></div>' +
+        '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
+          '<button class="xt-btn sm" onclick="goStudy(\'vocab\',\'' + MODULE_URLS.vocab + '\')">📖 顺序背词</button>' +
+          '<button class="xt-btn sm ghost" onclick="location.href=\'' + MODULE_URLS.vocab + '\'">🔄 艾宾浩斯复习</button>' +
+          '<button class="xt-btn sm ghost" onclick="location.href=\'' + MODULE_URLS.vocab + '\'">🔊 听音辨词</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="xt-mod" onclick="location.href=\'' + MODULE_URLS.reading + '\'"><span class="m-ic">📚</span><div class="m-tx"><div class="m-name">四级阅读</div><div class="m-meta">阅读理解专项训练</div></div><span class="m-ar">›</span></div>' +
+      '<div class="xt-mod" onclick="xtListen()"><span class="m-ic">🎧</span><div class="m-tx"><div class="m-name">四级听力</div><div class="m-meta">精听 · 慢速 · 情景对话</div></div><span class="m-ar">›</span></div>' +
+      '<div class="xt-mod" onclick="openVoiceTrain(\'speak\')"><span class="m-ic">🗣️</span><div class="m-tx"><div class="m-name">口语跟读</div><div class="m-meta">听一句 · 读一句 · 系统识别反馈</div></div><span class="m-ar">›</span></div>' +
+      '<div class="xt-mod" onclick="location.href=\'' + MODULE_URLS.writing + '\'"><span class="m-ic">✍️</span><div class="m-tx"><div class="m-name">四级写作</div><div class="m-meta">作文模板与训练</div></div><span class="m-ar">›</span></div>' +
+      '<div class="xt-mod" onclick="location.href=\'' + MODULE_URLS.translate + '\'"><span class="m-ic">🔁</span><div class="m-tx"><div class="m-name">四级翻译</div><div class="m-meta">汉译英翻译练习</div></div><span class="m-ar">›</span></div>' +
+      '<div class="xt-group-title">🎯 公考</div>' +
+      '<div class="xt-mod" onclick="goStudy(\'exam\',\'' + MODULE_URLS.exam + '\')"><span class="m-ic">🧮</span><div class="m-tx"><div class="m-name">行测</div><div class="m-meta">图形推理 · 数量关系 · 资料分析等</div></div><span class="m-ar">›</span></div>' +
+      '<div class="xt-mod" onclick="location.href=\'央国企笔试.html\'"><span class="m-ic">📝</span><div class="m-tx"><div class="m-name">申论 / 综合</div><div class="m-meta">央国企笔试备考</div></div><span class="m-ar">›</span></div>' +
+      '<div class="xt-mod" onclick="location.href=\'' + MODULE_URLS.iv + '\'"><span class="m-ic">🎙️</span><div class="m-tx"><div class="m-name">面试</div><div class="m-meta">面试题库 · 高频问题</div></div><span class="m-ar">›</span></div>' +
+      '<div class="xt-group-title">📖 自定义学科</div>' + subHtml +
+      '<button class="xt-btn ghost" style="width:100%" onclick="xtAddSubject()">＋ 添加自定义学科</button>' +
+      '<div class="xt-empty" style="font-size:12px">想学什么自己加：高数 / 专业课 / 考研政治 / Java…不用再改 App</div>';
+  }
+  window.xtAddSubject = function () {
+    var name = prompt('学科名称（如：高数 / 考研政治）');
+    if (!name) return;
+    var url = prompt('学习页面地址（可留空，如：四级词汇.html）', '');
+    addSubject(name, url || '');
+    renderStudy();
+  };
+  window.xtDelSubject = function (i) {
+    if (!confirm('删除该自定义学科？')) return;
+    removeSubject(i);
+    renderStudy();
+  };
+
+  /* ---------- 刷题页 ---------- */
+  function renderExam() {
+    var wq = (appData.wrongQuestions || []).length;
+    var fav = (appData.favoriteQuestions || []).length;
+    var wrongs = []; try { wrongs = getWrongDetails(10); } catch (e) { }
+    var stats = null; try { stats = getWrongReasonStats(30); } catch (e) { }
+    var wrongHtml = '';
+    if (!wrongs.length) {
+      wrongHtml = '<div class="xt-empty">🎉 错题本是空的，继续保持！</div>';
+    } else {
+      for (var i = 0; i < wrongs.length; i++) {
+        var w = wrongs[i];
+        var opts = '';
+        for (var oi = 0; oi < (w.options || []).length; oi++) {
+          opts += '<div style="font-size:12px;color:var(--text-secondary);margin-top:3px">' + esc(String.fromCharCode(65 + oi)) + '. ' + esc(w.options[oi]) + (oi === w.answer ? ' ✅' : '') + '</div>';
+        }
+        var reasonsHtml = '';
+        for (var ri = 0; ri < WRONG_REASONS.length; ri++) {
+          reasonsHtml += '<span class="xt-reason' + (w.reason === WRONG_REASONS[ri] ? ' on' : '') + '" onclick="xtPickReason(' + w.id + ',\'' + WRONG_REASONS[ri] + '\')">' + WRONG_REASONS[ri] + '</span>';
+        }
+        wrongHtml += '<div class="xt-wrong">' +
+          '<span class="w-tag">' + esc(w.type || '行测') + (w.sub ? ' · ' + esc(w.sub) : '') + '</span>' +
+          '<div class="w-q">' + esc(w.q) + '</div>' +
+          '<div class="w-a">✅ 正确答案：' + esc(String.fromCharCode(65 + w.answer)) + '. ' + esc((w.options || [])[w.answer] || '') + '</div>' +
+          (w.exp ? '<div class="w-e">📖 解析：' + esc(w.exp) + '</div>' : '') +
+          '<div class="xt-reasons">' + reasonsHtml + '</div>' +
+          (w.reason ? '<div class="xt-reason-chosen">已记录错因：' + esc(w.reason) + '</div>' : '') +
+        '</div>';
+      }
+    }
+    var statsHtml = '';
+    if (stats && stats.total > 0) {
+      var order = ['知识点不会', '粗心', '看错题', '计算错误', '时间不够', '方法不会'];
+      var max = 1;
+      for (var k in stats.counts) if (stats.counts[k] > max) max = stats.counts[k];
+      for (var oi2 = 0; oi2 < order.length; oi2++) {
+        var nm = order[oi2];
+        var c = stats.counts[nm] || 0;
+        if (!c) continue;
+        statsHtml += '<div class="xt-reason-bar"><span class="rb-name">' + nm + '</span><div class="rb-track"><div class="rb-fill" style="width:' + Math.round(c / max * 100) + '%"></div></div><span class="rb-num">' + Math.round(c / stats.total * 100) + '%</span></div>';
+      }
+      statsHtml = '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px">最近 ' + stats.total + ' 道错题归因</div>' + statsHtml;
+    }
+    var cats = [['数量关系', '🧮'], ['判断推理', '🧠'], ['资料分析', '📊'], ['言语理解', '📖'], ['常识判断', '🌍']];
+    var catHtml = '';
+    for (var ci = 0; ci < cats.length; ci++) {
+      catHtml += '<div class="xt-mod" style="margin-bottom:8px" onclick="goStudy(\'exam\',\'' + MODULE_URLS.exam + '\')"><span class="m-ic">' + cats[ci][1] + '</span><div class="m-tx"><div class="m-name">' + cats[ci][0] + '</div><div class="m-meta">行测专项</div></div><span class="m-ar">›</span></div>';
+    }
+    el('tab-exam').innerHTML =
+      '<div class="xt-card" style="background:linear-gradient(135deg,var(--primary),var(--primary-dark,var(--primary)));color:#fff">' +
+        '<div style="font-size:15px;font-weight:800">🎯 今日推荐</div>' +
+        '<div style="font-size:12px;opacity:.92;margin:6px 0 12px">行测 20 道 · 预计 15 分钟</div>' +
+        '<button class="xt-btn sm" style="background:#fff;color:var(--primary)" onclick="goStudy(\'exam\',\'' + MODULE_URLS.exam + '\')">开始 →</button>' +
+      '</div>' +
+      '<div class="xt-group-title">📚 我的题库</div>' + catHtml +
+      '<div class="xt-group-title">📒 错题本（自动收录）</div>' +
+      '<div class="xt-card">' +
+        '<div class="xt-card-title">🔴 ' + wq + ' 道待复习<span class="more" onclick="goStudy(\'exam\',\'' + MODULE_URLS.exam + '\')">去刷题 →</span></div>' +
+        statsHtml + wrongHtml +
+      '</div>' +
+      '<div style="display:flex;gap:10px;margin-bottom:16px">' +
+        '<div class="xt-mod" style="flex:1;margin-bottom:0" onclick="location.href=\'' + MODULE_URLS.exam + '\'"><span class="m-ic">⭐</span><div class="m-tx"><div class="m-name">收藏题 ' + fav + '</div><div class="m-meta">行测页内收藏</div></div></div>' +
+        '<div class="xt-mod" style="flex:1;margin-bottom:0" onclick="location.href=\'' + MODULE_URLS.exam + '\'"><span class="m-ic">📅</span><div class="m-tx"><div class="m-name">历史记录</div><div class="m-meta">最近刷题</div></div></div>' +
+      '</div>';
+  }
+  window.xtPickReason = function (qid, reason) {
+    chooseWrongReason(qid, reason);
+    renderExam();
+    showToast('✅ 错因已记录：' + reason);
+  };
+
+  /* ---------- 笔记页 ---------- */
+  var noteFilter = 'all';
+  var noteQuery = '';
+  function renderNotes() {
+    var notes = (appData && appData.notes) || [];
+    var cats = [['all', '全部', '📚']].concat((typeof BLOG_CATS !== 'undefined' ? BLOG_CATS : []).map(function (c) { return [c.id, c.name, c.icon]; }));
+    var chipHtml = '';
+    for (var ci = 0; ci < cats.length; ci++) {
+      chipHtml += '<span class="xt-chip' + (noteFilter === cats[ci][0] ? ' on' : '') + '" onclick="xtNoteFilter(\'' + cats[ci][0] + '\')">' + cats[ci][1] + '</span>';
+    }
+    var recent = notes.slice().sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); }).slice(0, 3);
+    var recentHtml = '';
+    for (var ri = 0; ri < recent.length; ri++) {
+      var rn = recent[ri];
+      var rc = (typeof noteCat === 'function') ? noteCat(rn.category) : { icon: '📝', name: '其他' };
+      recentHtml += '<div class="xt-note" onclick="location.href=\'学习博客.html\'"><span class="no-ic">' + (rc.icon || '📝') + '</span><div class="no-tx"><div class="no-title">' + esc(rn.title || '无标题') + '</div><div class="no-meta">' + esc((rc.name || '其他') + ' · 最近编辑') + '</div></div></div>';
+    }
+    if (!recentHtml) recentHtml = '<div class="xt-empty">还没有笔记</div>';
+    var list = notes.filter(function (n) {
+      if (noteFilter !== 'all' && n.category !== noteFilter) return false;
+      if (noteQuery && ((n.title || '').indexOf(noteQuery) < 0) && ((n.content || '').indexOf(noteQuery) < 0)) return false;
+      return true;
+    });
+    var listHtml = '';
+    for (var li = 0; li < list.length; li++) {
+      var n = list[li];
+      var lc = (typeof noteCat === 'function') ? noteCat(n.category) : { icon: '📝', name: '其他' };
+      listHtml += '<div class="xt-note" onclick="location.href=\'学习博客.html\'"><span class="no-ic">' + (lc.icon || '📝') + '</span><div class="no-tx"><div class="no-title">' + esc(n.title || '无标题') + '</div><div class="no-meta">' + esc(lc.name || '其他') + ' · ' + ((n.status === 'draft') ? '草稿' : (n.status === 'archived' ? '归档' : '已发布')) + '</div></div></div>';
+    }
+    if (!listHtml) listHtml = '<div class="xt-empty">没有匹配的笔记</div>';
+    el('tab-notes').innerHTML =
+      '<div class="xt-card">' +
+        '<input class="xt-note-search" placeholder="🔍 搜索笔记标题或内容…" value="' + esc(noteQuery) + '" oninput="xtNoteSearch(this.value)">' +
+      '</div>' +
+      '<div class="xt-card"><div class="xt-card-title">📁 我的笔记本</div><div class="xt-chip-row">' + chipHtml + '</div></div>' +
+      '<div class="xt-card"><div class="xt-card-title">📌 最近使用</div>' + recentHtml + '</div>' +
+      '<div class="xt-card"><div class="xt-card-title">🗂 笔记列表<span class="more">' + list.length + ' 篇</span></div>' + listHtml +
+        '<button class="xt-btn" style="width:100%;margin-top:10px" onclick="location.href=\'学习博客.html\'">✍️ 写笔记</button>' +
+      '</div>';
+  }
+  window.xtNoteFilter = function (id) { noteFilter = id; renderNotes(); };
+  window.xtNoteSearch = function (q) { noteQuery = q; renderNotes(); };
+
+  /* ---------- 我的页 ---------- */
+  function renderMe() {
+    var p = (appData && appData.profile) || { name: '同学', avatar: '🎓' };
+    var streak = calcStreakDays();
+    var week = []; try { week = calcWeekMinutes(); } catch (e) { week = [0, 0, 0, 0, 0, 0, 0]; }
+    var weekTotal = 0; for (var wi = 0; wi < week.length; wi++) weekTotal += week[wi];
+    var month = calcMonthMinutes();
+    var max = 1; for (var mj = 0; mj < week.length; mj++) if (week[mj] > max) max = week[mj];
+    var days = ['一', '二', '三', '四', '五', '六', '日'];
+    var barHtml = '';
+    for (var bi = 0; bi < 7; bi++) {
+      var h = week[bi] > 0 ? Math.max(6, Math.round(week[bi] / max * 88)) : 2;
+      barHtml += '<div class="xt-bar-col"><div class="xt-bar" style="height:' + h + 'px"></div><div class="b-day">' + days[bi] + '</div></div>';
+    }
+    var r = loadStudyRecords();
+    var today = todayStr();
+    var calHtml = '';
+    for (var di = 6; di >= 0; di--) {
+      var d = new Date(); d.setDate(d.getDate() - di);
+      var ds = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      var on = r[ds] && (r[ds].minutes > 0 || (r[ds].done && r[ds].done.length));
+      calHtml += '<div class="c-day">' + ['日', '一', '二', '三', '四', '五', '六'][d.getDay()] + '<div class="c-dot' + (on ? ' on' : '') + '">' + (on ? '●' : '○') + '</div></div>';
+    }
+    var goals = []; try { goals = loadGoals(); } catch (e) { }
+    var goalHtml = '';
+    for (var gi = 0; gi < goals.length; gi++) {
+      var g = goals[gi];
+      goalHtml += '<div class="xt-goal"><span class="g-name">🎯 ' + esc(g.name) + '</span>' +
+        '<div class="xt-progress" style="width:90px"><i style="width:' + Math.min(100, g.progress) + '%"></i></div>' +
+        '<span class="g-pct">' + g.progress + '%</span>' +
+        '<button class="g-del" onclick="xtSetGoal(' + gi + ')">✏️</button>' +
+        '<button class="g-del" onclick="xtDelGoal(' + gi + ')">🗑</button></div>';
+    }
+    if (!goalHtml) goalHtml = '<div class="xt-empty">还没有目标，点下方添加（如：英语四级）</div>';
+    var daysLearned = Object.keys(r).length;
+    el('tab-me').innerHTML =
+      '<div class="xt-card" style="padding-top:6px">' +
+        '<div class="xt-me-head">' +
+          '<div class="xt-me-avatar">' + (p.avatarImg && /^data:image\//.test(p.avatarImg) ? '<img src="' + p.avatarImg + '" alt="头像">' : esc(p.avatar || '🎓')) + '</div>' +
+          '<div class="xt-me-name">' + esc(p.name || '同学') + '</div>' +
+          '<div class="xt-me-sub">学习 ' + daysLearned + ' 天 · 🔥 连续 ' + streak + ' 天</div>' +
+        '</div>' +
+        '<div style="display:flex;justify-content:center;gap:10px;margin-top:12px;flex-wrap:wrap">' +
+          '<button class="xt-btn sm ghost" onclick="location.href=\'个人中心.html\'">👤 个人中心</button>' +
+          '<button class="xt-btn sm ghost" onclick="location.href=\'设置.html\'">⚙️ 设置</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="xt-card"><div class="xt-card-title">📊 学习统计</div><div class="xt-stat-row">' +
+        '<div class="xt-stat"><div class="n">' + dayMinutes() + ' 分</div><div class="l">今日</div></div>' +
+        '<div class="xt-stat"><div class="n">' + weekTotal + ' 分</div><div class="l">本周</div></div>' +
+        '<div class="xt-stat"><div class="n">' + month + ' 分</div><div class="l">本月</div></div>' +
+      '</div>' +
+      '<div class="xt-bar-row" style="margin-top:16px">' + barHtml + '</div></div>' +
+      '<div class="xt-card"><div class="xt-card-title">📅 学习日历<span class="more">近 7 天</span></div><div class="xt-cal">' + calHtml + '</div></div>' +
+      '<div class="xt-card"><div class="xt-card-title">🎯 我的目标<button class="xt-btn sm ghost" onclick="xtAddGoal()">＋</button></div>' + goalHtml + '</div>' +
+      '<div class="xt-me-row" onclick="location.href=\'学习工作台.html\'"><span class="mr-ic">🗂</span><span class="mr-tx">全部功能（旧版入口）</span><span class="mr-ar">›</span></div>' +
+      '<div class="xt-me-row" onclick="location.href=\'学习博客.html\'"><span class="mr-ic">📝</span><span class="mr-tx">笔记广场</span><span class="mr-ar">›</span></div>';
+  }
+  window.xtAddGoal = function () {
+    var name = prompt('目标名称（如：英语四级）');
+    if (!name) return;
+    var pr = prompt('当前进度（0-100）', '0');
+    addGoal(name, pr === null ? 0 : Number(pr) || 0);
+    renderMe();
+  };
+  window.xtSetGoal = function (i) {
+    var pr = prompt('当前进度（0-100）', '0');
+    updateGoalProgress(i, pr === null ? 0 : Number(pr) || 0);
+    renderMe();
+  };
+  window.xtDelGoal = function (i) {
+    if (!confirm('删除该目标？')) return;
+    removeGoal(i);
+    renderMe();
+  };
+
+  /* ---------- 启动：结算上次会话并渲染首页 ---------- */
+  function init() {
+    try {
+      var s = endStudySession();
+      if (s && s.type) showToast('✅ 已记录 ' + s.type + ' 学习，继续加油！');
+    } catch (e) { }
+    renderHome();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>

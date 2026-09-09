@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#5B8DEF">
+<title>四级备考 · 学习工作台</title>
+<link rel="stylesheet" href="assets/common.css">
+<link rel="stylesheet" href="assets/polish.css">
+</head>
+<body class="theme-cet">
+
+<div class="app">
+<nav class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">📚</div>
+      <div>
+        <div class="logo-text">学习工作台</div>
+        <div class="logo-sub">一站式备考平台</div>
+      </div>
+    </div>
+    <div class="nav-list">
+      <div class="nav-item" data-page="home">
+        <span class="nav-icon">🏠</span><span>首页</span>
+      </div>
+      <div class="nav-section">学习模块</div>
+      <div class="nav-item active" data-page="cet">
+        <span class="nav-icon">📖</span><span>四级备考</span>
+      </div>
+      <div class="nav-item" data-page="exam">
+        <span class="nav-icon">📝</span><span>央国企笔试</span>
+      </div>
+      <div class="nav-item" data-page="comm">
+        <span class="nav-icon">💬</span><span>高情商表达</span>
+      </div>
+      <div class="nav-item" data-page="interview">
+        <span class="nav-icon">🤝</span><span>商务礼仪面试</span>
+      </div>
+      <div class="nav-item" data-page="ppt">
+        <span class="nav-icon">🎨</span><span>PPT训练</span>
+      </div>
+      <div class="nav-section">创作</div>
+      <div class="nav-item" data-page="blog">
+        <span class="nav-icon">📝</span><span>学习博客</span>
+      </div>
+      <div class="nav-section">互动</div>
+      <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+        <span class="nav-icon">💬</span><span>私信 · 好友</span>
+      </div>
+      <div class="nav-item" data-external="1" onclick="gotoBlogMine()" title="我的笔记 · 回收站">
+        <span class="nav-icon">🗂️</span><span>我的笔记</span>
+      </div>
+      <div class="nav-section">中心</div>
+      <div class="nav-item" data-page="exam-center">
+        <span class="nav-icon">🧮</span><span>行测刷题</span>
+      </div>
+      <div class="nav-item" data-page="wrong-book">
+        <span class="nav-icon">📒</span><span>错题本</span>
+      </div>
+      <div class="nav-item" data-page="cet-vocab">
+        <span class="nav-icon">📖</span><span>四级词汇</span>
+      </div>
+      <div class="nav-item" data-page="etiquette">
+        <span class="nav-icon">🎩</span><span>商务礼仪</span>
+      </div>
+      <div class="nav-item" data-page="iv-questions">
+        <span class="nav-icon">🗂️</span><span>面试题库</span>
+      </div>
+      <div class="nav-item" data-page="ppt-layouts">
+        <span class="nav-icon">🧱</span><span>PPT版式库</span>
+      </div>
+      <div class="nav-item" data-page="ppt-cases">
+        <span class="nav-icon">🏷️</span><span>PPT案例拆解</span>
+      </div>
+      <div class="nav-item" data-page="comm-scenes">
+        <span class="nav-icon">🎭</span><span>场景话术库</span>
+      </div>
+      <div class="nav-item" data-page="comm-quotes">
+        <span class="nav-icon">💬</span><span>万能金句库</span>
+      </div>
+            <div class="nav-item" data-page="profile">
+        <span class="nav-icon">👤</span><span>个人中心</span>
+      </div>
+<div class="nav-section">系统</div>
+      <div class="nav-item" data-page="settings">
+        <span class="nav-icon">⚙️</span><span>设置</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心">
+        <div class="user-avatar">学</div>
+        <div class="user-info">
+          <div class="user-name">同学</div>
+          <div class="user-streak">🔥 连续打卡 0 天</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+<header class="topbar">
+      <div class="topbar-title" id="topbarTitle">四级备考</div>
+      <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
+      <div class="gs-wrap" id="gsWrap">
+        <input type="text" class="gs-input" id="gsInput" placeholder="🔍 搜索笔记 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <div class="gs-dropdown" id="gsDropdown"></div>
+      </div>
+      <div class="topbar-stats">
+        <div class="stat-item"><span class="stat-icon">🔥</span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon">⏱️</span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+        <div class="stat-item"><span class="stat-icon">✅</span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
+      </div>
+      <div class="topbar-date" id="topbarDate"></div>
+      <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式">🌙</div>
+    </header>
+    <div class="content">
+<div class="page active" id="page-cet">
+        <div class="module-hero">
+          <div class="module-hero-left">
+            <div class="module-hero-title">📚 四级备考</div>
+            <div class="module-hero-desc">词汇、听力、阅读、写作、翻译、口语，全方位突破四级</div>
+            <div class="module-hero-stats">
+              <div class="module-hero-stat"><div class="num" id="cetWords">0</div><div class="label">已学词汇</div></div>
+              <div class="module-hero-stat"><div class="num" id="cetListening">0</div><div class="label">听力练习</div></div>
+              <div class="module-hero-stat"><div class="num" id="cetSpeaking">0</div><div class="label">口语场景</div></div>
+            </div>
+          </div>
+          <div class="module-hero-right">
+            <div class="hero-illustration">
+              <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+                <circle cx="60" cy="60" r="55" fill="rgba(255,255,255,0.15)"/>
+                <rect x="30" y="35" width="60" height="50" rx="6" fill="#fff" opacity="0.95"/>
+                <rect x="38" y="45" width="35" height="4" rx="2" fill="#5B8DEF"/>
+                <rect x="38" y="55" width="44" height="3" rx="1.5" fill="#ccc"/>
+                <rect x="38" y="63" width="40" height="3" rx="1.5" fill="#ccc"/>
+                <rect x="38" y="71" width="30" height="3" rx="1.5" fill="#ccc"/>
+                <circle cx="82" cy="78" r="12" fill="#FFD93D"/>
+                <path d="M78 78 L80 80 L86 74" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <text x="60" y="100" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">词汇 · 听力 · 口语</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="feature-grid">
+          <div class="feature-card" onclick="navigateTo('cet-vocab')">
+            <div class="feature-icon">📖</div>
+            <div class="feature-title">词汇打卡</div>
+            <div class="feature-desc">50个高频核心词，卡片式学习，点击显示释义，标记认识进度</div>
+            <span class="feature-badge tag-primary">完整版</span>
+          </div>
+          <div class="feature-card" onclick="openVoiceTrain('listen')">
+            <div class="feature-icon">🎧</div>
+            <div class="feature-title">听力训练</div>
+            <div class="feature-desc">精听+泛听，短篇新闻/长对话/篇章，逐句听写</div>
+          </div>
+          <div class="feature-card" onclick="openMiniQuiz('cet-read')">
+            <div class="feature-icon">📄</div>
+            <div class="feature-title">阅读理解</div>
+            <div class="feature-desc">仔细阅读/长篇阅读/选词填空，技巧+刷题</div>
+          </div>
+          <div class="feature-card" onclick="openMiniQuiz('cet-write')">
+            <div class="feature-icon">✍️</div>
+            <div class="feature-title">写作提升</div>
+            <div class="feature-desc">话题分类、高分句型、模板框架、范文拆解</div>
+          </div>
+          <div class="feature-card" onclick="openMiniQuiz('cet-translate')">
+            <div class="feature-icon">🌐</div>
+            <div class="feature-title">翻译专项</div>
+            <div class="feature-desc">中国文化/历史/经济话题，常用表达积累</div>
+          </div>
+          <div class="feature-card" onclick="openMiniQuiz('cet-mock')">
+            <div class="feature-icon">📋</div>
+            <div class="feature-title">真题模考</div>
+            <div class="feature-desc">历年真题套卷，计时模考，错题本复盘</div>
+          </div>
+          <div class="feature-card" onclick="openVoiceTrain('speak')">
+            <div class="feature-icon">🎬</div>
+            <div class="feature-title">情景式口语</div>
+            <div class="feature-desc">播放器式动画对话，语音输入，即时评定+发音指导</div>
+            <span class="feature-badge tag-primary">体验版</span>
+          </div>
+        </div>
+      </div>
+
+<div class="page" id="page-speaking-demo">
+        <div class="player-container">
+          <div class="player-header">
+            <div class="player-title">☕ 咖啡店点单 · 中级</div>
+            <div class="player-progress-text">第 <span id="speakingCurrent">1</span> / 6 句</div>
+          </div>
+          <div class="player-stage">
+            <div class="player-chars">
+              <div class="character-container">
+                <div class="character" id="charShopkeeper">
+                  <svg viewBox="0 0 120 140" class="char-svg">
+                    <!-- 尾巴 -->
+                    <path d="M90 110 Q110 100 105 80 Q100 70 92 75" fill="none" stroke="#9E9E9E" stroke-width="10" stroke-linecap="round"/>
+                    <path d="M90 110 Q110 100 105 80 Q100 70 92 75" fill="none" stroke="#2D3436" stroke-width="3" stroke-linecap="round" fill="none"/>
+                    <!-- 身体 -->
+                    <ellipse cx="60" cy="105" rx="32" ry="28" fill="#E0E0E0" stroke="#2D3436" stroke-width="3"/>
+                    <ellipse cx="60" cy="110" rx="20" ry="18" fill="#F5F5F5"/>
+                    <!-- 前爪 -->
+                    <ellipse cx="42" cy="128" rx="10" ry="8" fill="#E0E0E0" stroke="#2D3436" stroke-width="3"/>
+                    <ellipse cx="78" cy="128" rx="10" ry="8" fill="#E0E0E0" stroke="#2D3436" stroke-width="3"/>
+                    <!-- 头 -->
+                    <circle cx="60" cy="52" r="36" fill="#F5F5F5" stroke="#2D3436" stroke-width="3"/>
+                    <!-- 耳朵 -->
+                    <path d="M30 30 L25 10 L45 22 Z" fill="#9E9E9E" stroke="#2D3436" stroke-width="3" stroke-linejoin="round"/>
+                    <path d="M90 30 L95 10 L75 22 Z" fill="#9E9E9E" stroke="#2D3436" stroke-width="3" stroke-linejoin="round"/>
+                    <path d="M32 26 L30 16 L40 22 Z" fill="#FFB5B5"/>
+                    <path d="M88 26 L90 16 L80 22 Z" fill="#FFB5B5"/>
+                    <!-- 头顶斑纹 -->
+                    <path d="M45 22 Q48 32 45 40" stroke="#9E9E9E" stroke-width="4" fill="none" stroke-linecap="round"/>
+                    <path d="M60 18 Q60 28 60 36" stroke="#9E9E9E" stroke-width="4" fill="none" stroke-linecap="round"/>
+                    <path d="M75 22 Q72 32 75 40" stroke="#9E9E9E" stroke-width="4" fill="none" stroke-linecap="round"/>
+                    <!-- 腮红 -->
+                    <ellipse cx="36" cy="60" rx="7" ry="5" fill="#FFB5B5" opacity="0.7"/>
+                    <ellipse cx="84" cy="60" rx="7" ry="5" fill="#FFB5B5" opacity="0.7"/>
+                    <!-- 眼睛 -->
+                    <g class="char-eyes">
+                      <ellipse cx="46" cy="52" rx="7" ry="9" fill="#5D4037"/>
+                      <ellipse cx="74" cy="52" rx="7" ry="9" fill="#5D4037"/>
+                      <circle cx="48" cy="49" r="2.5" fill="#fff"/>
+                      <circle cx="76" cy="49" r="2.5" fill="#fff"/>
+                      <circle cx="44" cy="55" r="1.2" fill="#fff" opacity="0.6"/>
+                      <circle cx="72" cy="55" r="1.2" fill="#fff" opacity="0.6"/>
+                    </g>
+                    <!-- 鼻子 -->
+                    <ellipse cx="60" cy="62" rx="3.5" ry="2.5" fill="#FF8A80" stroke="#2D3436" stroke-width="1.5"/>
+                    <!-- 嘴巴 -->
+                    <path class="char-mouth-svg" d="M54 66 Q57 70 60 67 Q63 70 66 66" stroke="#2D3436" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                    <!-- 胡须 -->
+                    <line x1="20" y1="58" x2="34" y2="60" stroke="#2D3436" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="20" y1="64" x2="34" y2="64" stroke="#2D3436" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="86" y1="60" x2="100" y2="58" stroke="#2D3436" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="86" y1="64" x2="100" y2="64" stroke="#2D3436" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="char-name">店员喵</div>
+              </div>
+              <div class="character-container">
+                <div class="character" id="charUser">
+                  <svg viewBox="0 0 120 140" class="char-svg">
+                    <!-- 身体 -->
+                    <ellipse cx="60" cy="105" rx="32" ry="28" fill="#A1887F" stroke="#2D3436" stroke-width="3"/>
+                    <ellipse cx="60" cy="110" rx="20" ry="18" fill="#D7CCC8"/>
+                    <!-- 前爪 -->
+                    <ellipse cx="42" cy="128" rx="10" ry="8" fill="#A1887F" stroke="#2D3436" stroke-width="3"/>
+                    <ellipse cx="78" cy="128" rx="10" ry="8" fill="#A1887F" stroke="#2D3436" stroke-width="3"/>
+                    <!-- 耳朵 -->
+                    <circle cx="32" cy="26" r="12" fill="#A1887F" stroke="#2D3436" stroke-width="3"/>
+                    <circle cx="88" cy="26" r="12" fill="#A1887F" stroke="#2D3436" stroke-width="3"/>
+                    <circle cx="32" cy="26" r="6" fill="#D7CCC8"/>
+                    <circle cx="88" cy="26" r="6" fill="#D7CCC8"/>
+                    <!-- 头 -->
+                    <circle cx="60" cy="52" r="34" fill="#A1887F" stroke="#2D3436" stroke-width="3"/>
+                    <!-- 脸部浅色区域 -->
+                    <ellipse cx="60" cy="58" rx="22" ry="18" fill="#D7CCC8"/>
+                    <!-- 腮红 -->
+                    <ellipse cx="38" cy="60" rx="6" ry="4" fill="#FFB5B5" opacity="0.7"/>
+                    <ellipse cx="82" cy="60" rx="6" ry="4" fill="#FFB5B5" opacity="0.7"/>
+                    <!-- 眼睛 -->
+                    <g class="char-eyes">
+                      <ellipse cx="48" cy="50" rx="6" ry="8" fill="#2D3436"/>
+                      <ellipse cx="72" cy="50" rx="6" ry="8" fill="#2D3436"/>
+                      <circle cx="50" cy="47" r="2" fill="#fff"/>
+                      <circle cx="74" cy="47" r="2" fill="#fff"/>
+                    </g>
+                    <!-- 鼻子（熊的大鼻子） -->
+                    <ellipse cx="60" cy="60" rx="6" ry="4.5" fill="#5D4037" stroke="#2D3436" stroke-width="2"/>
+                    <ellipse cx="58" cy="58.5" rx="1.5" ry="1" fill="#8D6E63"/>
+                    <!-- 嘴巴 -->
+                    <path class="char-mouth-svg" d="M54 66 Q60 72 66 66" stroke="#2D3436" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                    <line x1="60" y1="64.5" x2="60" y2="67" stroke="#2D3436" stroke-width="1.5"/>
+                  </svg>
+                </div>
+                <div class="char-name">你（小熊）</div>
+              </div>
+            </div>
+            <div class="player-dialogue" id="speakingDialogue">
+              <div class="chat-bubble ai">Hi, what can I get for you today?</div>
+              <div class="player-subtitle">你好，今天想喝点什么？</div>
+            </div>
+          </div>
+          <div class="player-controls">
+            <div class="player-btn" onclick="showToast('上一句')">⏮️</div>
+            <div class="player-btn play" id="speakingPlayBtn" onclick="toggleSpeakingPlay()">▶️</div>
+            <div class="player-btn" onclick="showToast('下一句')">⏭️</div>
+            <div class="player-progress"><div class="player-progress-fill" id="speakingProgress" style="width:16%"></div></div>
+            <div class="player-time">00:12 / 01:30</div>
+            <div class="player-btn" onclick="showToast('字幕开关')">📝</div>
+          </div>
+        </div>
+        <div style="text-align:center;margin:20px 0">
+          <button class="player-record-btn" id="speakingRecordBtn" onclick="toggleSpeakingRecord()">
+            🎤 点击说话回答
+          </button>
+        </div>
+        <div id="speakingEval" style="display:none">
+          <div class="eval-panel">
+            <div class="eval-title">📊 本句评定</div>
+            <div class="eval-scores">
+              <div class="eval-score-item"><div class="eval-score-label">语法</div><div class="eval-stars">⭐⭐⭐⭐</div></div>
+              <div class="eval-score-item"><div class="eval-score-label">用词</div><div class="eval-stars">⭐⭐⭐⭐⭐</div></div>
+              <div class="eval-score-item"><div class="eval-score-label">流利度</div><div class="eval-stars">⭐⭐⭐</div></div>
+            </div>
+            <div class="eval-feedback good">
+              <div class="eval-feedback-title">✅ 做得好</div>
+              <div class="eval-feedback-content">latte发音准确，句末please升调礼貌，整体句式正确。</div>
+            </div>
+            <div class="eval-feedback tip">
+              <div class="eval-feedback-title">💡 改进建议</div>
+              <div class="eval-feedback-content">"I want" 不如 "I'd like" 礼貌地道，口语中建议用 I'd like a medium hot latte with less sugar, please.</div>
+            </div>
+            <div class="eval-reference">
+              <div class="eval-reference-title">🔊 参考发音</div>
+              <div class="eval-reference-text">I'd like a medium hot latte with less sugar, please.</div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:14px">
+              <button class="btn btn-secondary btn-sm" onclick="showToast('播放参考发音')">🔊 听参考</button>
+              <button class="btn btn-primary btn-sm" onclick="showToast('跟读功能')">🎤 跟读一遍</button>
+              <button class="btn btn-outline btn-sm" onclick="nextSpeakingSentence()">下一句 →</button>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:20px">
+          <button class="btn btn-outline" onclick="navigateTo('cet')">← 返回四级</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- 底部导航（手机端） -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-list">
+      <div class="bottom-nav-item" data-page="home">
+        <div class="bn-icon">🏠</div><div class="bn-label">首页</div>
+      </div>
+      <div class="bottom-nav-item active" data-page="cet">
+        <div class="bn-icon">📖</div><div class="bn-label">四级</div>
+      </div>
+      <div class="bottom-nav-item" data-page="exam">
+        <div class="bn-icon">📝</div><div class="bn-label">笔试</div>
+      </div>
+      <div class="bottom-nav-item" data-page="comm">
+        <div class="bn-icon">💬</div><div class="bn-label">表达</div>
+      </div>
+      <div class="bottom-nav-item" onclick="toggleMorePanel()">
+        <div class="bn-icon">☰</div><div class="bn-label">更多</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 更多面板遮罩 -->
+  <div class="more-overlay" onclick="toggleMorePanel()"></div>
+
+  <!-- 更多面板 -->
+  <div class="bottom-more-panel" id="morePanel">
+    <div class="bottom-more-title">更多功能</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="navigateTo('interview');toggleMorePanel()">
+        <div class="bm-icon">🤝</div><div class="bm-label">礼仪面试</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('ppt');toggleMorePanel()">
+        <div class="bm-icon">🎨</div><div class="bm-label">PPT训练</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogStats()">
+        <div class="bm-icon">📊</div><div class="bm-label">学习统计</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogFavorites()">
+        <div class="bm-icon">🔖</div><div class="bm-label">我的收藏</div>
+      </div>
+      <div class="bottom-more-item" onclick="gotoChat()">
+        <div class="bm-icon">💬</div><div class="bm-label">私信/好友</div>
+      </div>
+      <div class="bottom-more-item" onclick="gotoBlogMine()">
+        <div class="bm-icon">🗂️</div><div class="bm-label">我的博客</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
+        <div class="bm-icon">📒</div><div class="bm-label">错题本</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('cet-vocab');toggleMorePanel()">
+        <div class="bm-icon">📖</div><div class="bm-label">四级词汇</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
+        <div class="bm-icon">⚙️</div><div class="bm-label">设置</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogProfile()">
+        <div class="bm-icon">👤</div><div class="bm-label">个人中心</div>
+      </div>
+      <div class="bottom-more-item" onclick="location.href='设置.html'">
+        <div class="bm-icon">ℹ️</div><div class="bm-label">关于</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加倒计时弹窗 -->
+  <div class="modal-overlay" id="countdownModal">    <div class="modal">
+      <div class="modal-title" id="countdownModalTitle">添加倒计时</div>
+      <div class="form-group">
+        <div class="form-label">名称</div>
+        <input type="text" class="form-input" id="cdName" placeholder="如：四级考试、秋招截止">
+      </div>
+      <div class="form-group">
+        <div class="form-label">日期</div>
+        <input type="date" class="form-input" id="cdDate">
+      </div>
+      <div class="form-group">
+        <div class="form-label">颜色</div>
+        <div class="color-picker" id="cdColorPicker">
+          <div class="color-dot active" style="background:#5B8DEF" data-color="#5B8DEF"></div>
+          <div class="color-dot" style="background:#E05040" data-color="#E05040"></div>
+          <div class="color-dot" style="background:#9B6BD9" data-color="#9B6BD9"></div>
+          <div class="color-dot" style="background:#D4A056" data-color="#D4A056"></div>
+          <div class="color-dot" style="background:#36CFC9" data-color="#36CFC9"></div>
+          <div class="color-dot" style="background:#FF9F68" data-color="#FF9F68"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary)">
+          <input type="checkbox" id="cdPinned"> 置顶显示
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeCountdownModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveCountdown()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast提示 -->
+  <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center"></div>
+
+  <!-- ==================== AI学习助手（悬浮聊天窗口） ====================
+       说明：
+       1. 默认“本地演示模式”：不联网、不调API、无密钥，由内置规则引擎回复；
+       2. 【后续扩展点】启动 ai-server 后端后，把下方 JS 里的 AI_CONFIG.apiUrl
+          填上后端地址（如 http://localhost:3000/api/chat），即可切换为真实AI流式对话；
+       3. 安全约束：大模型密钥只放在后端 .env 里，前端代码永远不出现密钥。 -->
+  <!-- 悬浮头像：可按住拖拽到任意位置（见下方 JS.initAiFabDrag），点击打开/收起面板，双击复位 -->
+  <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">
+    🤖<span class="ai-mode-badge" id="aiModeBadge">演示</span>
+  </div>
+  <div class="ai-panel" id="aiPanel">
+    <div class="ai-panel-header">
+      <div class="ai-avatar">🤖</div>
+      <div style="flex:1">
+        <div class="ai-title">AI学习助手</div>
+        <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
+      </div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录">🧹</div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板">✕</div>
+    </div>
+    <div class="ai-messages" id="aiMessages"></div>
+    <div class="ai-input-row">
+      <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()">➤</div>
+    </div>
+  </div>
+
+
+
+</div>
+
+<script src="assets/app.js?v=20260913s"></script>
+<script src="assets/voiceplayer.js?v=1"></script>
+<script src="assets/api.js?v=20260909e"></script>
+
+<script src="assets/mini-cet.js"></script>
+<script src="assets/mini.js"></script>
+</body>
+</html>

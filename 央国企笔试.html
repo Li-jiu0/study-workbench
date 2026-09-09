@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#5B8DEF">
+<title>央国企笔试备考 · 学习工作台</title>
+<link rel="stylesheet" href="assets/common.css">
+<link rel="stylesheet" href="assets/polish.css">
+</head>
+<body class="theme-exam">
+
+<div class="app">
+<nav class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">📚</div>
+      <div>
+        <div class="logo-text">学习工作台</div>
+        <div class="logo-sub">一站式备考平台</div>
+      </div>
+    </div>
+    <div class="nav-list">
+      <div class="nav-item" data-page="home">
+        <span class="nav-icon">🏠</span><span>首页</span>
+      </div>
+      <div class="nav-section">学习模块</div>
+      <div class="nav-item" data-page="cet">
+        <span class="nav-icon">📖</span><span>四级备考</span>
+      </div>
+      <div class="nav-item active" data-page="exam">
+        <span class="nav-icon">📝</span><span>央国企笔试</span>
+      </div>
+      <div class="nav-item" data-page="comm">
+        <span class="nav-icon">💬</span><span>高情商表达</span>
+      </div>
+      <div class="nav-item" data-page="interview">
+        <span class="nav-icon">🤝</span><span>商务礼仪面试</span>
+      </div>
+      <div class="nav-item" data-page="ppt">
+        <span class="nav-icon">🎨</span><span>PPT训练</span>
+      </div>
+      <div class="nav-section">创作</div>
+      <div class="nav-item" data-page="blog">
+        <span class="nav-icon">📝</span><span>学习博客</span>
+      </div>
+      <div class="nav-section">互动</div>
+      <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+        <span class="nav-icon">💬</span><span>私信 · 好友</span>
+      </div>
+      <div class="nav-item" data-external="1" onclick="gotoBlogMine()" title="我的笔记 · 回收站">
+        <span class="nav-icon">🗂️</span><span>我的笔记</span>
+      </div>
+      <div class="nav-section">中心</div>
+      <div class="nav-item" data-page="exam-center">
+        <span class="nav-icon">🧮</span><span>行测刷题</span>
+      </div>
+      <div class="nav-item" data-page="wrong-book">
+        <span class="nav-icon">📒</span><span>错题本</span>
+      </div>
+      <div class="nav-item" data-page="cet-vocab">
+        <span class="nav-icon">📖</span><span>四级词汇</span>
+      </div>
+      <div class="nav-item" data-page="etiquette">
+        <span class="nav-icon">🎩</span><span>商务礼仪</span>
+      </div>
+      <div class="nav-item" data-page="iv-questions">
+        <span class="nav-icon">🗂️</span><span>面试题库</span>
+      </div>
+      <div class="nav-item" data-page="ppt-layouts">
+        <span class="nav-icon">🧱</span><span>PPT版式库</span>
+      </div>
+      <div class="nav-item" data-page="ppt-cases">
+        <span class="nav-icon">🏷️</span><span>PPT案例拆解</span>
+      </div>
+      <div class="nav-item" data-page="comm-scenes">
+        <span class="nav-icon">🎭</span><span>场景话术库</span>
+      </div>
+      <div class="nav-item" data-page="comm-quotes">
+        <span class="nav-icon">💬</span><span>万能金句库</span>
+      </div>
+            <div class="nav-item" data-page="profile">
+        <span class="nav-icon">👤</span><span>个人中心</span>
+      </div>
+<div class="nav-section">系统</div>
+      <div class="nav-item" data-page="settings">
+        <span class="nav-icon">⚙️</span><span>设置</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心">
+        <div class="user-avatar">学</div>
+        <div class="user-info">
+          <div class="user-name">同学</div>
+          <div class="user-streak">🔥 连续打卡 0 天</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+<header class="topbar">
+      <div class="topbar-title" id="topbarTitle">央国企笔试备考</div>
+      <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
+      <div class="gs-wrap" id="gsWrap">
+        <input type="text" class="gs-input" id="gsInput" placeholder="🔍 搜索笔记 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <div class="gs-dropdown" id="gsDropdown"></div>
+      </div>
+      <div class="topbar-stats">
+        <div class="stat-item"><span class="stat-icon">🔥</span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon">⏱️</span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+        <div class="stat-item"><span class="stat-icon">✅</span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
+      </div>
+      <div class="topbar-date" id="topbarDate"></div>
+      <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式">🌙</div>
+    </header>
+    <div class="content">
+<div class="page active" id="page-exam">
+        <div class="module-hero">
+          <div class="module-hero-left">
+            <div class="module-hero-title">🏢 央国企笔试备考</div>
+            <div class="module-hero-desc">行测刷题+图解解析，综合知识、企业定向、时政热点全覆盖</div>
+            <div class="module-hero-stats">
+              <div class="module-hero-stat"><div class="num" id="examQuestions">0</div><div class="label">已做题数</div></div>
+              <div class="module-hero-stat"><div class="num" id="examWrong">0</div><div class="label">错题数</div></div>
+              <div class="module-hero-stat"><div class="num" id="examAccuracy">0%</div><div class="label">正确率</div></div>
+            </div>
+          </div>
+          <div class="module-hero-right">
+            <div class="hero-illustration">
+              <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+                <circle cx="60" cy="60" r="55" fill="rgba(255,255,255,0.15)"/>
+                <rect x="28" y="32" width="64" height="56" rx="8" fill="#fff" opacity="0.95"/>
+                <rect x="36" y="42" width="48" height="6" rx="3" fill="#E05040"/>
+                <rect x="36" y="54" width="20" height="20" rx="4" fill="#FFE0E0"/>
+                <text x="46" y="68" text-anchor="middle" fill="#E05040" font-size="14" font-weight="800">A</text>
+                <rect x="62" y="54" width="20" height="20" rx="4" fill="#E8F8E8"/>
+                <text x="72" y="68" text-anchor="middle" fill="#4CAF50" font-size="14" font-weight="800">B</text>
+                <rect x="36" y="80" width="48" height="4" rx="2" fill="#ddd"/>
+                <path d="M85 30 L90 40 L100 42 L92 50 L94 60 L85 55 L76 60 L78 50 L70 42 L80 40 Z" fill="#FFD93D"/>
+                <text x="60" y="100" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">行测 · 刷题 · 解析</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="feature-grid">
+          <div class="feature-card" onclick="navigateTo('exam-center')">
+            <div class="feature-icon">🧩</div>
+            <div class="feature-title">行测刷题</div>
+            <div class="feature-desc">五大题型40道精选题，每题配详细解析，错题自动收录</div>
+            <span class="feature-badge tag-primary">完整版</span>
+          </div>
+          <div class="feature-card" onclick="openMiniQuiz('exam-quant')">
+            <div class="feature-icon">🔢</div>
+            <div class="feature-title">数量关系</div>
+            <div class="feature-desc">工程/行程/利润/排列组合，线段图辅助理解</div>
+          </div>
+          <div class="feature-card" onclick="openMiniQuiz('exam-deduce')">
+            <div class="feature-icon">🧠</div>
+            <div class="feature-title">判断推理</div>
+            <div class="feature-desc">图形推理/定义判断/类比推理/逻辑判断，推理路径标注</div>
+          </div>
+          <div class="feature-card" onclick="openMiniQuiz('exam-data')">
+            <div class="feature-icon">📊</div>
+            <div class="feature-title">资料分析</div>
+            <div class="feature-desc">速算技巧、图表解读，在原题上标注关键数据</div>
+          </div>
+          <div class="feature-card" onclick="openMiniQuiz('exam-common')">
+            <div class="feature-icon">📚</div>
+            <div class="feature-title">综合知识</div>
+            <div class="feature-desc">经济/管理/法律/计算机基础，高频考点卡片</div>
+          </div>
+          <div class="feature-card" onclick="openMiniQuiz('exam-company')">
+            <div class="feature-icon">🏛️</div>
+            <div class="feature-title">企业定向库</div>
+            <div class="feature-desc">目标企业企业文化、最新动态、历年笔试形式</div>
+          </div>
+          <div class="feature-card" onclick="openHotNewsPanel()">
+            <div class="feature-icon">🔥</div>
+            <div class="feature-title">时政热点</div>
+            <div class="feature-desc">自动获取最新网络热点议题，实时更新（可切换题库模式）</div>
+          </div>
+          <div class="feature-card" onclick="openMiniQuiz('exam-mock')">
+            <div class="feature-icon">📋</div>
+            <div class="feature-title">真题模考</div>
+            <div class="feature-desc">历年真题套卷，计时模考，各题型正确率分析</div>
+          </div>
+          <div class="feature-card" onclick="TopicExpress.open()">
+            <div class="feature-icon">🎤</div>
+            <div class="feature-title">话题表达训练</div>
+            <div class="feature-desc">随机话题+深度解读+1分钟语音表达，练综合分析</div>
+            <span class="feature-badge tag-primary">新上线</span>
+          </div>
+        </div>
+      </div>
+
+<div class="page" id="page-exam-demo">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="title-icon">🧩</span>行测刷题 · 判断推理 · 图形推理</div>
+            <div>
+              <span class="tag tag-primary">第 1 / 5 题</span>
+              <span class="tag tag-warning" style="margin-left:6px">中等</span>
+            </div>
+          </div>
+          <div style="margin-bottom:20px">
+            <p style="font-size:15px;font-weight:600;margin-bottom:16px">从所给的四个选项中，选择最合适的一个填入问号处，使之呈现一定的规律性：</p>
+            <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:20px">
+              <div style="width:80px;height:80px;background:var(--bg);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:32px;position:relative">
+                <span style="position:absolute;top:8px;left:8px;font-size:20px">🔴</span>
+              </div>
+              <div style="width:80px;height:80px;background:var(--bg);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:32px;position:relative">
+                <span style="position:absolute;top:8px;right:8px;font-size:20px">🔴</span>
+              </div>
+              <div style="width:80px;height:80px;background:var(--bg);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:32px;position:relative">
+                <span style="position:absolute;bottom:8px;right:8px;font-size:20px">🔴</span>
+              </div>
+              <div style="width:80px;height:80px;background:var(--bg);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:32px;position:relative">
+                <span style="position:absolute;bottom:8px;left:8px;font-size:20px">🔴</span>
+              </div>
+              <div style="width:80px;height:80px;background:var(--primary-light);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--primary);border:2px dashed var(--primary)">?</div>
+            </div>
+            <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+              <button class="option-btn" onclick="answerQuestion(this, 'A')" style="width:80px;height:80px;background:var(--bg);border-radius:12px;border:2px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;transition:var(--transition)">
+                <span style="position:absolute;top:6px;left:6px;font-size:11px;font-weight:700;color:var(--text-muted)">A</span>
+                <span style="position:absolute;bottom:8px;left:8px;font-size:20px">🔴</span>
+              </button>
+              <button class="option-btn" onclick="answerQuestion(this, 'B')" style="width:80px;height:80px;background:var(--bg);border-radius:12px;border:2px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;transition:var(--transition)">
+                <span style="position:absolute;top:6px;left:6px;font-size:11px;font-weight:700;color:var(--text-muted)">B</span>
+                <span style="position:absolute;top:8px;right:8px;font-size:20px">🔵</span>
+              </button>
+              <button class="option-btn" onclick="answerQuestion(this, 'C')" style="width:80px;height:80px;background:var(--bg);border-radius:12px;border:2px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;transition:var(--transition)">
+                <span style="position:absolute;top:6px;left:6px;font-size:11px;font-weight:700;color:var(--text-muted)">C</span>
+                <span style="position:absolute;top:8px;left:8px;font-size:20px">🔴</span>
+              </button>
+              <button class="option-btn" onclick="answerQuestion(this, 'D')" style="width:80px;height:80px;background:var(--bg);border-radius:12px;border:2px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;transition:var(--transition)">
+                <span style="position:absolute;top:6px;left:6px;font-size:11px;font-weight:700;color:var(--text-muted)">D</span>
+                <span style="position:absolute;bottom:8px;right:8px;font-size:20px">🔴</span>
+              </button>
+            </div>
+          </div>
+          <div id="examExplanation" style="display:none">
+            <div style="padding:16px;background:#F0FFF0;border-radius:12px;border-left:4px solid var(--success);margin-bottom:12px">
+              <div style="font-weight:700;color:var(--success);margin-bottom:6px">✅ 回答正确！答案是 C</div>
+              <div style="font-size:13px;color:var(--text-secondary)">小红点沿顺时针方向依次移动：左上→右上→右下→左下→（回到左上）</div>
+            </div>
+            <div style="padding:16px;background:var(--bg);border-radius:12px">
+              <div style="font-weight:700;margin-bottom:10px">📖 解题思路（图解）</div>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--text-secondary)">
+                <span style="padding:4px 10px;background:var(--card);border-radius:8px">图1: 左上</span>
+                <span>→</span>
+                <span style="padding:4px 10px;background:var(--card);border-radius:8px">图2: 右上</span>
+                <span>→</span>
+                <span style="padding:4px 10px;background:var(--card);border-radius:8px">图3: 右下</span>
+                <span>→</span>
+                <span style="padding:4px 10px;background:var(--card);border-radius:8px">图4: 左下</span>
+                <span>→</span>
+                <span style="padding:4px 10px;background:var(--primary-light);color:var(--primary);border-radius:8px;font-weight:600">?: 左上 = C</span>
+              </div>
+              <div style="margin-top:12px;padding:10px 12px;background:#FFF8E6;border-radius:8px;font-size:12px;color:var(--warning)">
+                ⚠️ 易错点：容易只看移动忽略旋转方向，或顺时针/逆时针搞反。看到位置变化先画移动路径！
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:14px">
+              <button class="btn btn-secondary btn-sm" onclick="showToast('已加入错题本')">📝 加入错题本</button>
+              <button class="btn btn-primary btn-sm" onclick="showToast('下一题')">下一题 →</button>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center">
+          <button class="btn btn-outline" onclick="navigateTo('exam')">← 返回笔试</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- 底部导航（手机端） -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-list">
+      <div class="bottom-nav-item" data-page="home">
+        <div class="bn-icon">🏠</div><div class="bn-label">首页</div>
+      </div>
+      <div class="bottom-nav-item" data-page="cet">
+        <div class="bn-icon">📖</div><div class="bn-label">四级</div>
+      </div>
+      <div class="bottom-nav-item active" data-page="exam">
+        <div class="bn-icon">📝</div><div class="bn-label">笔试</div>
+      </div>
+      <div class="bottom-nav-item" data-page="comm">
+        <div class="bn-icon">💬</div><div class="bn-label">表达</div>
+      </div>
+      <div class="bottom-nav-item" onclick="toggleMorePanel()">
+        <div class="bn-icon">☰</div><div class="bn-label">更多</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 更多面板遮罩 -->
+  <div class="more-overlay" onclick="toggleMorePanel()"></div>
+
+  <!-- 更多面板 -->
+  <div class="bottom-more-panel" id="morePanel">
+    <div class="bottom-more-title">更多功能</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="navigateTo('interview');toggleMorePanel()">
+        <div class="bm-icon">🤝</div><div class="bm-label">礼仪面试</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('ppt');toggleMorePanel()">
+        <div class="bm-icon">🎨</div><div class="bm-label">PPT训练</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogStats()">
+        <div class="bm-icon">📊</div><div class="bm-label">学习统计</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogFavorites()">
+        <div class="bm-icon">🔖</div><div class="bm-label">我的收藏</div>
+      </div>
+      <div class="bottom-more-item" onclick="gotoChat()">
+        <div class="bm-icon">💬</div><div class="bm-label">私信/好友</div>
+      </div>
+      <div class="bottom-more-item" onclick="gotoBlogMine()">
+        <div class="bm-icon">🗂️</div><div class="bm-label">我的博客</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
+        <div class="bm-icon">📒</div><div class="bm-label">错题本</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('cet-vocab');toggleMorePanel()">
+        <div class="bm-icon">📖</div><div class="bm-label">四级词汇</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
+        <div class="bm-icon">⚙️</div><div class="bm-label">设置</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogProfile()">
+        <div class="bm-icon">👤</div><div class="bm-label">个人中心</div>
+      </div>
+      <div class="bottom-more-item" onclick="location.href='设置.html'">
+        <div class="bm-icon">ℹ️</div><div class="bm-label">关于</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加倒计时弹窗 -->
+  <div class="modal-overlay" id="countdownModal">    <div class="modal">
+      <div class="modal-title" id="countdownModalTitle">添加倒计时</div>
+      <div class="form-group">
+        <div class="form-label">名称</div>
+        <input type="text" class="form-input" id="cdName" placeholder="如：四级考试、秋招截止">
+      </div>
+      <div class="form-group">
+        <div class="form-label">日期</div>
+        <input type="date" class="form-input" id="cdDate">
+      </div>
+      <div class="form-group">
+        <div class="form-label">颜色</div>
+        <div class="color-picker" id="cdColorPicker">
+          <div class="color-dot active" style="background:#5B8DEF" data-color="#5B8DEF"></div>
+          <div class="color-dot" style="background:#E05040" data-color="#E05040"></div>
+          <div class="color-dot" style="background:#9B6BD9" data-color="#9B6BD9"></div>
+          <div class="color-dot" style="background:#D4A056" data-color="#D4A056"></div>
+          <div class="color-dot" style="background:#36CFC9" data-color="#36CFC9"></div>
+          <div class="color-dot" style="background:#FF9F68" data-color="#FF9F68"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary)">
+          <input type="checkbox" id="cdPinned"> 置顶显示
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeCountdownModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveCountdown()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast提示 -->
+  <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center"></div>
+
+  <!-- ==================== AI学习助手（悬浮聊天窗口） ====================
+       说明：
+       1. 默认“本地演示模式”：不联网、不调API、无密钥，由内置规则引擎回复；
+       2. 【后续扩展点】启动 ai-server 后端后，把下方 JS 里的 AI_CONFIG.apiUrl
+          填上后端地址（如 http://localhost:3000/api/chat），即可切换为真实AI流式对话；
+       3. 安全约束：大模型密钥只放在后端 .env 里，前端代码永远不出现密钥。 -->
+  <!-- 悬浮头像：可按住拖拽到任意位置（见下方 JS.initAiFabDrag），点击打开/收起面板，双击复位 -->
+  <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">
+    🤖<span class="ai-mode-badge" id="aiModeBadge">演示</span>
+  </div>
+  <div class="ai-panel" id="aiPanel">
+    <div class="ai-panel-header">
+      <div class="ai-avatar">🤖</div>
+      <div style="flex:1">
+        <div class="ai-title">AI学习助手</div>
+        <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
+      </div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录">🧹</div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板">✕</div>
+    </div>
+    <div class="ai-messages" id="aiMessages"></div>
+    <div class="ai-input-row">
+      <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()">➤</div>
+    </div>
+  </div>
+
+
+
+</div>
+
+<script src="assets/app.js?v=20260913s"></script>
+<script src="assets/api.js?v=20260909e"></script>
+
+<script src="assets/mini-exam.js"></script>
+<script src="assets/mini.js"></script>
+<script src="assets/topic-express.js"></script>
+
+<script src="assets/qbank.js?v=6"></script>
+<script src="assets/hotnews.js"></script>
+</body>
+</html>

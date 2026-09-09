@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AI模拟面试 - 学习工作台</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  background: linear-gradient(135deg, #5B8DEF 0%, #7B61FF 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+/* 顶部栏 - 严肃风格 */
+.header {
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(10px);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-back {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  background: #f0f0f0;
+  color: #5B8DEF;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  border: none;
+  font-weight: bold;
+}
+.header-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #333;
+  flex: 1;
+  letter-spacing: 1px;
+}
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #e94560;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+.rec-dot {
+  width: 8px; height: 8px;
+  background: white;
+  border-radius: 50%;
+  animation: blink 1s infinite;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+/* 面试设置面板 */
+.setup-panel {
+  background: white;
+  margin: 20px;
+  border-radius: 16px;
+  padding: 28px 24px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+}
+.setup-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #eee;
+  margin-bottom: 6px;
+  text-align: center;
+  letter-spacing: 2px;
+}
+.setup-desc {
+  font-size: 13px;
+  color: #999;
+  text-align: center;
+  margin-bottom: 28px;
+}
+.setup-warning {
+  background: #fff3e0;
+  border-left: 3px solid #ff9800;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 24px;
+  font-size: 13px;
+  color: #e65100;
+  line-height: 1.6;
+}
+.setup-group {
+  margin-bottom: 20px;
+}
+.setup-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 10px;
+}
+.setup-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.setup-option {
+  padding: 8px 16px;
+  border: 1px solid #0f3460;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: linear-gradient(135deg, #5B8DEF 0%, #7B61FF 100%);
+}
+.setup-option:hover { border-color: #5B8DEF; color: #5B8DEF; }
+.setup-option.active {
+  background: linear-gradient(135deg, #5B8DEF, #7B61FF);
+  color: white;
+  border-color: transparent;
+}
+.start-btn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #5B8DEF, #7B61FF);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 12px;
+  letter-spacing: 2px;
+  transition: all 0.2s;
+}
+.start-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(91,141,239,0.4);
+}
+/* 倒计时条 */
+.timer-bar {
+  background: white;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #eee;
+}
+.timer-label {
+  font-size: 12px;
+  color: #999;
+  white-space: nowrap;
+}
+.timer-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #5B8DEF;
+  font-family: 'Courier New', monospace;
+  min-width: 50px;
+}
+.timer-value.warning { color: #f57c00; animation: shake 0.5s infinite; }
+.timer-value.danger { color: #e53935; animation: shake 0.3s infinite; }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+.timer-track {
+  flex: 1;
+  height: 8px;
+  background: linear-gradient(135deg, #5B8DEF 0%, #7B61FF 100%);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.timer-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4caf50, #ff9800, #e94560);
+  border-radius: 4px;
+  transition: width 1s linear;
+}
+.question-info {
+  font-size: 12px;
+  color: #999;
+  white-space: nowrap;
+}
+/* 对话区域 */
+.chat-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #5B8DEF 0%, #7B61FF 100%);
+}
+.chat-messages {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+/* 面试官区域 */
+.interviewer-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+.interviewer-avatar {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: #0f3460;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #e94560;
+  overflow: hidden;
+}
+.interviewer-name {
+  font-size: 16px;
+  color: #333;
+  margin-top: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.interviewer-role {
+  font-size: 12px;
+  color: #888;
+  margin-top: 4px;
+}
+.interviewer-desk {
+  margin-top: 8px;
+  background: #e94560;
+  color: white;
+  padding: 4px 16px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+/* 对话气泡 - 严肃风格 */
+.message {
+  display: flex;
+  gap: 10px;
+  max-width: 88%;
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.message.ai { align-self: flex-start; }
+.message.user { align-self: flex-end; flex-direction: row-reverse; }
+.msg-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+.message.ai .msg-avatar {
+  background: linear-gradient(135deg, #5B8DEF, #7B61FF);
+  border: none;
+}
+.message.user .msg-avatar {
+  background: linear-gradient(135deg, #5B8DEF, #7B61FF);
+  color: white;
+}
+.msg-bubble {
+  padding: 14px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.message.ai .msg-bubble {
+  background: white;
+  color: #333;
+  border: 1px solid #eee;
+  border-left: 3px solid #5B8DEF;
+}
+.message.user .msg-bubble {
+  background: linear-gradient(135deg, #5B8DEF, #7B61FF);
+  color: white;
+  border: none;
+}
+.msg-feedback {
+  background: #fff8e1;
+  border-left: 3px solid #ff9800;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #f57c00;
+  line-height: 1.6;
+}
+.msg-feedback.good {
+  background: #e8f5e9;
+  border-left-color: #4caf50;
+  color: #2e7d32;
+}
+/* 思考阶段提示 */
+.thinking-hint {
+  text-align: center;
+  padding: 20px;
+  color: #888;
+  font-size: 14px;
+}
+.thinking-hint strong {
+  color: #e94560;
+  font-size: 18px;
+}
+/* 输入区域 */
+.input-area {
+  background: white;
+  padding: 14px 16px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  border-top: 1px solid #eee;
+}
+.input-box {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid #0f3460;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  max-height: 120px;
+  outline: none;
+  background: linear-gradient(135deg, #5B8DEF 0%, #7B61FF 100%);
+  color: #eee;
+  transition: border-color 0.2s;
+}
+.input-box:focus { border-color: #5B8DEF; background: white; }
+.input-box::placeholder { color: #555; }
+.send-btn {
+  padding: 12px 20px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #5B8DEF, #7B61FF);
+  color: white;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  border-radius: 12px;
+}
+.send-btn:hover { transform: scale(1.05); }
+.send-btn:disabled {
+  background: #555;
+  cursor: not-allowed;
+}
+/* 评定面板 */
+.eval-panel {
+  background: white;
+  margin: 20px;
+  border-radius: 16px;
+  padding: 28px 24px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  animation: fadeIn 0.5s ease;
+}
+.eval-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #333;
+  text-align: center;
+  margin-bottom: 24px;
+  letter-spacing: 2px;
+}
+.eval-scores {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.eval-score-item {
+  background: linear-gradient(135deg, #5B8DEF 0%, #7B61FF 100%);
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid #0f3460;
+}
+.eval-score-label {
+  font-size: 13px;
+  color: #999;
+  margin-bottom: 8px;
+}
+.eval-stars {
+  font-size: 16px;
+  letter-spacing: 2px;
+}
+.eval-section {
+  margin-bottom: 18px;
+}
+.eval-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.eval-section-content {
+  font-size: 14px;
+  color: #aaa;
+  line-height: 1.8;
+  background: linear-gradient(135deg, #5B8DEF 0%, #7B61FF 100%);
+  padding: 14px 18px;
+  border-radius: 8px;
+  border: 1px solid #0f3460;
+}
+.eval-btn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #5B8DEF, #7B61FF);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 12px;
+  letter-spacing: 2px;
+}
+/* 打字指示器 */
+.typing-indicator {
+  display: flex;
+  gap: 4px;
+  padding: 8px 0;
+}
+.typing-dot {
+  width: 8px;
+  height: 8px;
+  background: #e94560;
+  border-radius: 50%;
+  animation: typing 1.4s infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typing {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-8px); opacity: 1; }
+}
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- 顶部栏 -->
+<div class="header">
+  <button class="header-back" onclick="goBack()">✕</button>
+  <div class="header-title">AI模拟面试</div>
+  <div class="header-status"><div class="rec-dot"></div>面试进行中</div>
+</div>
+
+<!-- 面试设置面板 -->
+<div class="setup-panel" id="setupPanel">
+  <div class="setup-title">🎯 面试准备</div>
+  <div class="setup-desc">请选择面试类型和岗位，准备好后开始</div>
+  
+  <div class="setup-warning">
+    ⚠️ <strong>注意：</strong>面试过程中每道题限时回答，倒计时结束将自动进入下一题。请认真对待，模拟真实面试场景。
+  </div>
+  
+  <div class="setup-group">
+    <div class="setup-label">面试类型</div>
+    <div class="setup-options" id="typeOptions">
+      <div class="setup-option active" data-type="structured">结构化面试</div>
+      <div class="setup-option" data-type="semi">半结构化面试</div>
+      <div class="setup-option" data-type="behavior">行为面试</div>
+    </div>
+  </div>
+  
+  <div class="setup-group">
+    <div class="setup-label">应聘岗位</div>
+    <div class="setup-options" id="posOptions">
+      <div class="setup-option active" data-pos="general">通用岗</div>
+      <div class="setup-option" data-pos="operation">运营岗</div>
+      <div class="setup-option" data-pos="product">产品岗</div>
+      <div class="setup-option" data-pos="tech">技术岗</div>
+      <div class="setup-option" data-pos="market">市场岗</div>
+    </div>
+  </div>
+  
+  <button class="start-btn" onclick="startInterview()">开始面试</button>
+</div>
+
+<!-- 对话区域 -->
+<div class="chat-container hidden" id="chatContainer">
+  <div class="timer-bar">
+    <span class="timer-label">剩余时间</span>
+    <span class="timer-value" id="timerValue">60</span>
+    <div class="timer-track">
+      <div class="timer-fill" id="timerFill" style="width: 100%"></div>
+    </div>
+    <span class="question-info" id="questionInfo">第 1 / 6 题</span>
+  </div>
+  
+  <div class="chat-messages" id="chatMessages">
+    <div class="interviewer-area">
+      <div class="interviewer-avatar">
+        <svg viewBox="0 0 100 100" width="80" height="80">
+          <!-- 头发 -->
+          <path d="M25 35 Q25 15 50 15 Q75 15 75 35 L75 40 L25 40 Z" fill="#2C1810"/>
+          <!-- 脸 -->
+          <ellipse cx="50" cy="52" rx="25" ry="28" fill="#D4A574"/>
+          <!-- 眼镜 -->
+          <rect x="30" y="42" width="18" height="14" rx="2" fill="none" stroke="#1a1a1a" stroke-width="2.5"/>
+          <rect x="52" y="42" width="18" height="14" rx="2" fill="none" stroke="#1a1a1a" stroke-width="2.5"/>
+          <line x1="48" y1="49" x2="52" y2="49" stroke="#1a1a1a" stroke-width="2.5"/>
+          <!-- 眼睛（严肃） -->
+          <line x1="35" y1="48" x2="43" y2="48" stroke="#1a1a1a" stroke-width="2"/>
+          <line x1="57" y1="48" x2="65" y2="48" stroke="#1a1a1a" stroke-width="2"/>
+          <!-- 眉毛（皱眉，严肃） -->
+          <path d="M32 40 L44 43" stroke="#2C1810" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M68 40 L56 43" stroke="#2C1810" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- 鼻子 -->
+          <path d="M50 54 L48 60 L52 60" stroke="#B8956A" stroke-width="1.5" fill="none"/>
+          <!-- 嘴巴（严肃，直线） -->
+          <line x1="42" y1="68" x2="58" y2="68" stroke="#5D4037" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- 西装 -->
+          <path d="M25 85 L35 75 L42 80 L50 78 L58 80 L65 75 L75 85 L75 100 L25 100 Z" fill="#1a1a2e"/>
+          <path d="M42 80 L50 95 L58 80 L50 85 Z" fill="#fff"/>
+          <!-- 领带（严肃的深色） -->
+          <path d="M47 82 L50 80 L53 82 L52 95 L50 98 L48 95 Z" fill="#8B0000"/>
+        </svg>
+      </div>
+      <div class="interviewer-name">李建国</div>
+      <div class="interviewer-role">人力资源总监 · 面试官</div>
+      <div class="interviewer-desk">面试官</div>
+    </div>
+  </div>
+  
+  <div class="input-area">
+    <textarea class="input-box" id="inputBox" placeholder="请输入你的回答..." rows="2" onkeydown="handleKeyDown(event)"></textarea>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">提交</button>
+  </div>
+</div>
+
+<!-- 评定面板 -->
+<div class="eval-panel hidden" id="evalPanel">
+  <div class="eval-title">📊 面试评定报告</div>
+  <div class="eval-scores" id="evalScores"></div>
+  <div class="eval-section">
+    <div class="eval-section-title">✅ 做得好的地方</div>
+    <div class="eval-section-content" id="evalGood"></div>
+  </div>
+  <div class="eval-section">
+    <div class="eval-section-title">💡 需要改进的地方</div>
+    <div class="eval-section-content" id="evalImprove"></div>
+  </div>
+  <div class="eval-section">
+    <div class="eval-section-title">📝 总体评价</div>
+    <div class="eval-section-content" id="evalOverall"></div>
+  </div>
+  <button class="eval-btn" onclick="restartInterview()">重新面试</button>
+</div>
+
+<script>
+const INTERVIEW_QUESTIONS = [
+  { q: '你好，请坐。我们今天的面试大概30分钟。首先，请你做一个简单的自我介绍。', keywords: ['姓名', '学校', '专业', '实习', '经历', '优势', '岗位'], tip: '自我介绍建议包含：基本信息+教育背景+实习/项目经历+为什么适合这个岗位，控制在2-3分钟。', time: 90 },
+  { q: '好的，我了解了。那么你为什么选择我们公司？为什么应聘这个岗位？', keywords: ['了解', '认同', '文化', '发展', '匹配', '兴趣', '规划'], tip: '回答要点：对公司的了解+对岗位的理解+自身匹配度+职业规划，不要只说"工资高、稳定"。', time: 60 },
+  { q: '嗯。那你觉得自己最大的优点和缺点分别是什么？请具体说明。', keywords: ['优点', '缺点', '改进', '例子', '成长', '克服'], tip: '优点要结合岗位需要，缺点要说"正在改进的特点"，不要说致命缺点，也不要说"我太追求完美"这种假缺点。', time: 60 },
+  { q: '请介绍一次你成功完成某项任务的经历。当时遇到了什么困难，你是怎么解决的？', keywords: ['背景', '目标', '行动', '结果', '反思', '收获', 'STAR'], tip: '用STAR法则：Situation背景+Task任务+Action行动+Result结果，重点说你做了什么、取得了什么成果。', time: 90 },
+  { q: '如果在工作中你和同事发生了冲突，你会怎么处理？请举个具体的例子。', keywords: ['沟通', '理解', '换位思考', '解决', '团队', '对事不对人'], tip: '回答要点：先冷静→换位思考理解对方→主动沟通→对事不对人→寻求共同解决方案，不要说"我会忍让"或者"我会坚持自己的观点"。', time: 60 },
+  { q: '好的，我的问题问完了。你有什么问题想问我们的吗？', keywords: ['培训', '发展', '团队', '挑战', '规划', '期待'], tip: '一定要问！可以问：这个岗位的发展路径是怎样的？团队目前最大的挑战是什么？您对这个岗位的期待是什么？不要问工资、加班、假期。', time: 60 }
+];
+
+let currentQuestion = 0;
+let userAnswers = [];
+let interviewStarted = false;
+let timerInterval = null;
+let timeLeft = 90;
+let selectedType = 'structured';
+let selectedPos = 'general';
+
+document.querySelectorAll('#typeOptions .setup-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    document.querySelectorAll('#typeOptions .setup-option').forEach(o => o.classList.remove('active'));
+    opt.classList.add('active');
+    selectedType = opt.dataset.type;
+  });
+});
+document.querySelectorAll('#posOptions .setup-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    document.querySelectorAll('#posOptions .setup-option').forEach(o => o.classList.remove('active'));
+    opt.classList.add('active');
+    selectedPos = opt.dataset.pos;
+  });
+});
+
+function startInterview() {
+  interviewStarted = true;
+  currentQuestion = 0;
+  userAnswers = [];
+  document.getElementById('setupPanel').classList.add('hidden');
+  document.getElementById('chatContainer').classList.remove('hidden');
+  document.getElementById('evalPanel').classList.add('hidden');
+  
+  const messages = document.getElementById('chatMessages');
+  const interviewerArea = messages.querySelector('.interviewer-area');
+  messages.innerHTML = '';
+  messages.appendChild(interviewerArea);
+  
+  updateProgress();
+  setTimeout(() => {
+    addAIMessage(INTERVIEW_QUESTIONS[0].q);
+    startTimer(INTERVIEW_QUESTIONS[0].time);
+  }, 800);
+}
+
+function updateProgress() {
+  const total = INTERVIEW_QUESTIONS.length;
+  document.getElementById('questionInfo').textContent = `第 ${currentQuestion + 1} / ${total} 题`;
+}
+
+function startTimer(seconds) {
+  clearInterval(timerInterval);
+  timeLeft = seconds;
+  updateTimerDisplay();
+  
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimerDisplay();
+    
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      // 时间到，自动提交（如果输入框有内容就提交，否则提交空答案）
+      const input = document.getElementById('inputBox');
+      if (input.value.trim()) {
+        sendMessage();
+      } else {
+        addUserMessage('（时间到，未作答）');
+        userAnswers.push('');
+        nextQuestion();
+      }
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const timerValue = document.getElementById('timerValue');
+  const timerFill = document.getElementById('timerFill');
+  const totalTime = INTERVIEW_QUESTIONS[currentQuestion]?.time || 60;
+  
+  timerValue.textContent = timeLeft;
+  timerFill.style.width = (timeLeft / totalTime * 100) + '%';
+  
+  timerValue.classList.remove('warning', 'danger');
+  if (timeLeft <= 10) {
+    timerValue.classList.add('danger');
+  } else if (timeLeft <= 20) {
+    timerValue.classList.add('warning');
+  }
+}
+
+function addAIMessage(text, feedback) {
+  const messages = document.getElementById('chatMessages');
+  const msgDiv = document.createElement('div');
+  msgDiv.className = 'message ai';
+  
+  let feedbackHtml = '';
+  if (feedback) {
+    feedbackHtml = `<div class="msg-feedback ${feedback.type}">${feedback.text}</div>`;
+  }
+  
+  msgDiv.innerHTML = `
+    <div class="msg-avatar">👔</div>
+    <div class="msg-bubble">${text}${feedbackHtml}</div>
+  `;
+  messages.appendChild(msgDiv);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function addUserMessage(text) {
+  const messages = document.getElementById('chatMessages');
+  const msgDiv = document.createElement('div');
+  msgDiv.className = 'message user';
+  msgDiv.innerHTML = `
+    <div class="msg-avatar">🧑</div>
+    <div class="msg-bubble">${text}</div>
+  `;
+  messages.appendChild(msgDiv);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function showTyping() {
+  const messages = document.getElementById('chatMessages');
+  const typingDiv = document.createElement('div');
+  typingDiv.className = 'message ai';
+  typingDiv.id = 'typingIndicator';
+  typingDiv.innerHTML = `
+    <div class="msg-avatar">👔</div>
+    <div class="msg-bubble"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>
+  `;
+  messages.appendChild(typingDiv);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function hideTyping() {
+  const typing = document.getElementById('typingIndicator');
+  if (typing) typing.remove();
+}
+
+function sendMessage() {
+  const input = document.getElementById('inputBox');
+  const text = input.value.trim();
+  if (!text || !interviewStarted) return;
+  
+  clearInterval(timerInterval);
+  addUserMessage(text);
+  userAnswers.push(text);
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById('sendBtn').disabled = true;
+  
+  showTyping();
+  
+  setTimeout(() => {
+    hideTyping();
+    
+    const question = INTERVIEW_QUESTIONS[currentQuestion];
+    const feedback = generateFeedback(text, question);
+    
+    nextQuestion(feedback);
+    
+    document.getElementById('sendBtn').disabled = false;
+  }, 1200 + Math.random() * 800);
+}
+
+function nextQuestion(feedback) {
+  currentQuestion++;
+  
+  if (currentQuestion < INTERVIEW_QUESTIONS.length) {
+    const nextQ = INTERVIEW_QUESTIONS[currentQuestion];
+    // 严肃的追问语气
+    const transitions = ['好的。下一个问题——', '嗯。我再问你一个问题。', '了解了。那么——', '好。继续。'];
+    const transition = transitions[Math.floor(Math.random() * transitions.length)];
+    addAIMessage(transition + ' ' + nextQ.q, feedback);
+    updateProgress();
+    startTimer(nextQ.time);
+  } else {
+    // 面试结束
+    addAIMessage('好的，今天的面试就到这里。你可以先出去，我们会在三个工作日内通知你结果。', feedback);
+    clearInterval(timerInterval);
+    setTimeout(() => {
+      showEvaluation();
+    }, 2000);
+  }
+}
+
+function generateFeedback(answer, question) {
+  const wordCount = answer.length;
+  let matchCount = 0;
+  question.keywords.forEach(kw => {
+    if (answer.includes(kw)) matchCount++;
+  });
+  
+  let type = 'good';
+  let text = '';
+  
+  if (wordCount < 20) {
+    type = '';
+    text = '⚠️ 回答过于简短。建议展开说明，多举具体例子。' + question.tip;
+  } else if (matchCount >= 3) {
+    type = 'good';
+    text = '✅ 回答较为全面，提到了' + matchCount + '个关键点。' + (matchCount < question.keywords.length ? '还可补充：' + question.keywords.slice(matchCount, matchCount + 2).join('、') : '');
+  } else {
+    type = '';
+    text = '💡 回答可更全面。参考方向：' + question.tip;
+  }
+  
+  return { type, text };
+}
+
+function showEvaluation() {
+  document.getElementById('chatContainer').classList.add('hidden');
+  document.getElementById('evalPanel').classList.remove('hidden');
+  
+  let totalLength = 0;
+  let totalKeywords = 0;
+  userAnswers.forEach((ans, idx) => {
+    totalLength += ans.length;
+    INTERVIEW_QUESTIONS[idx].keywords.forEach(kw => {
+      if (ans.includes(kw)) totalKeywords++;
+    });
+  });
+  
+  const avgLength = Math.round(totalLength / userAnswers.length);
+  const expressionScore = avgLength > 50 ? 5 : avgLength > 30 ? 4 : avgLength > 20 ? 3 : 2;
+  const logicScore = totalKeywords > 10 ? 5 : totalKeywords > 7 ? 4 : totalKeywords > 4 ? 3 : 2;
+  const matchScore = Math.min(5, Math.max(2, Math.round(totalKeywords / (INTERVIEW_QUESTIONS.length * 2) * 5)));
+  const attitudeScore = userAnswers.every(a => a.length > 10) ? 5 : 4;
+  const overallScore = Math.round((expressionScore + logicScore + matchScore + attitudeScore) / 4);
+  
+  const stars = n => '⭐'.repeat(n) + '☆'.repeat(5 - n);
+  
+  document.getElementById('evalScores').innerHTML = `
+    <div class="eval-score-item"><div class="eval-score-label">表达能力</div><div class="eval-stars">${stars(expressionScore)}</div></div>
+    <div class="eval-score-item"><div class="eval-score-label">逻辑思维</div><div class="eval-stars">${stars(logicScore)}</div></div>
+    <div class="eval-score-item"><div class="eval-score-label">岗位匹配</div><div class="eval-stars">${stars(matchScore)}</div></div>
+    <div class="eval-score-item"><div class="eval-score-label">态度认真</div><div class="eval-stars">${stars(attitudeScore)}</div></div>
+  `;
+  
+  document.getElementById('evalGood').innerHTML = 
+    '① 能够完成全部6道题的作答<br>' +
+    '② 平均回答长度' + avgLength + '字，' + (avgLength > 30 ? '表达较为充分' : '可进一步展开') + '<br>' +
+    '③ 提到了' + totalKeywords + '个面试相关关键词';
+  
+  document.getElementById('evalImprove').innerHTML = 
+    '① 建议使用STAR法则回答行为类问题（背景-任务-行动-结果）<br>' +
+    '② 多举具体例子和数据，避免空泛的观点<br>' +
+    '③ 回答前理清逻辑，分点作答更清晰<br>' +
+    '④ 注意时间控制，在限时内完整作答';
+  
+  document.getElementById('evalOverall').innerHTML = 
+    '综合评定：' + (overallScore >= 4 ? '良好' : overallScore >= 3 ? '中等' : '有待提高') + 
+    '（' + overallScore + '星）。' +
+    (overallScore >= 4 ? '具备较好的面试基础，继续保持，多练习可进一步提升。' : 
+     overallScore >= 3 ? '有一定基础，但仍有提升空间，建议多做模拟练习，熟悉面试套路。' :
+     '面试经验较欠缺，建议先系统学习面试技巧，从自我介绍开始准备，多做模拟练习。');
+  
+  window.scrollTo(0, 0);
+}
+
+function restartInterview() {
+  document.getElementById('evalPanel').classList.add('hidden');
+  document.getElementById('setupPanel').classList.remove('hidden');
+  interviewStarted = false;
+  clearInterval(timerInterval);
+}
+
+function handleKeyDown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+  const textarea = e.target;
+  textarea.style.height = 'auto';
+  textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+}
+
+function goBack() { location.href='学习工作台.html'; }
+</script>
+
+</body>
+</html>

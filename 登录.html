@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#5B8DEF">
+<title>登录 · 学习工作台</title>
+<!-- 复用全站配色/组件变量（.login-* 样式见 assets/common.css 末尾“登录页”段） -->
+<link rel="stylesheet" href="assets/common.css">
+<link rel="stylesheet" href="assets/polish.css">
+</head>
+<body class="theme-home">
+
+<div class="login-bg">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="lg-icon">📚</div>
+      <div class="lg-title">学习工作台</div>
+      <div class="lg-sub" id="lgSub">注册登录后开启学习</div>
+    </div>
+
+    <!-- 登录 / 注册 切换 -->
+    <div class="login-tabs">
+      <div class="login-tab active" id="tabLogin" onclick="switchMode('login')">登 录</div>
+      <div class="login-tab" id="tabRegister" onclick="switchMode('register')">注 册</div>
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">账号</div>
+      <input type="text" class="form-input" id="loginAccount" placeholder="3-20位字母 / 数字 / 中文" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <div class="form-label">昵称（注册时可选，不填默认用账号）</div>
+      <input type="text" class="form-input" id="loginNickname" placeholder="给自己起个昵称" style="display:none" maxlength="20">
+    </div>
+    <div class="form-group" id="confirmGroup" style="display:none">
+      <div class="form-label">确认密码</div>
+      <input type="password" class="form-input" id="loginConfirm" placeholder="再输入一次密码" autocomplete="new-password">
+    </div>
+    <div class="form-group">
+      <div class="form-label">密码</div>
+      <input type="password" class="form-input" id="loginPass" placeholder="至少 6 位" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter')submitLogin()">
+    </div>
+
+    <button class="btn btn-primary" style="width:100%;margin-top:6px" id="loginSubmitBtn" onclick="submitLogin()">🚀 登 录</button>
+
+    <div class="login-notice" id="loginNotice">💡 正在检测运行模式……</div>
+  </div>
+</div>
+
+<script>
+/* ==================== 登录页逻辑（独立于 app.js） =====================================
+   双模式（自动检测，互不影响）：
+   - 在线模式：检测到 FastAPI 后端（默认 http://localhost:8000）→ 注册/登录走服务器，
+               返回 JWT（study_workbench_token），多人博客/评论/点赞/AI 全部可用。
+   - 离线模式（手机 App / 后端未启动）：账号仅存本机 localStorage（study_workbench_users，
+               密码 simpleHash 混淆，非加密），登录只写 study_workbench_auth 门禁标记，
+               全站以单机本地模式运行（笔记/学习数据均在 localStorage）。
+   存储：
+   - study_workbench_token : JWT 令牌（仅在线模式；assets/api.js 请求带 Authorization: Bearer）
+   - study_workbench_auth  : {account, loginAt} app.js 顶部“未登录跳转登录页”的门禁标记 */
+var API_BASE = (location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://localhost:8000';
+var TOKEN_KEY = 'study_workbench_token';
+var REFRESH_KEY = 'study_workbench_refresh';
+var AUTH_KEY = 'study_workbench_auth';
+var USERS_KEY = 'study_workbench_users';
+var loginMode = 'login';
+var ONLINE = false; // 页面加载后探测后端得出，true=在线多人版，false=离线单机版
+
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+function saveSession(token, account, refreshToken) {
+  if (token) localStorage.setItem(TOKEN_KEY, token);
+  if (refreshToken) localStorage.setItem(REFRESH_KEY, refreshToken);
+  localStorage.setItem(AUTH_KEY, JSON.stringify({ account: account, loginAt: Date.now() }));
+}
+/* 在线续期：access 过期时用 refresh 令牌静默换新（access + refresh 一起轮换） */
+function apiTryRefresh() {
+  var rt = localStorage.getItem(REFRESH_KEY);
+  if (!rt) return Promise.resolve(false);
+  return fetch(API_BASE + '/api/auth/refresh', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh: rt })
+  }).then(function (res) {
+    return res.json().then(function (d) { return { ok: res.ok, data: d }; });
+  }).then(function (r) {
+    if (!r.ok || !r.data || !r.data.token) return false;
+    localStorage.setItem(TOKEN_KEY, r.data.token);
+    if (r.data.refreshToken) localStorage.setItem(REFRESH_KEY, r.data.refreshToken);
+    return true;
+  }).catch(function () { return false; });
+}
+/* ---------- 离线模式：本地账号表（simpleHash 混淆，非加密，仅本机单用户场景） ---------- */
+function simpleHash(s) {
+  var h = 5381;
+  for (var i = 0; i < s.length; i++) { h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; }
+  return 'h' + h.toString(36);
+}
+function loadLocalUsers() {
+  try { return JSON.parse(localStorage.getItem(USERS_KEY)) || {}; } catch (e) { return {}; }
+}
+function saveLocalUsers(u) { localStorage.setItem(USERS_KEY, JSON.stringify(u)); }
+function writeLocalProfile(account, nickname) {
+  // 同步昵称到 app.js 的 appData.profile（key: study_workbench_data）
+  try {
+    var d = JSON.parse(localStorage.getItem('study_workbench_data')) || {};
+    if (!d.profile) d.profile = { name: '', avatar: '', motto: '' };
+    d.profile.name = nickname || account || '同学';
+    localStorage.setItem('study_workbench_data', JSON.stringify(d));
+  } catch (e) { }
+}
+
+/* ---------- 模式探测：先探测后端，再决定自动登录策略 ---------- */
+function probeBackend() {
+  var ctrl = ('AbortController' in window) ? new AbortController() : null;
+  var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 3000) : null;
+  return fetch(API_BASE + '/api/health', { signal: ctrl ? ctrl.signal : undefined })
+    .then(function (r) { return r.ok; })
+    .catch(function () { return false; })
+    .finally(function () { if (timer) clearTimeout(timer); });
+}
+
+function applyModeNotice() {
+  var sub = document.getElementById('lgSub');
+  var n = document.getElementById('loginNotice');
+  if (ONLINE) {
+    if (sub) sub.textContent = '多人博客版 · 注册登录后开启学习';
+    if (n) n.innerHTML = '💡 <b>多人在线版</b>：账号密码保存在服务器 SQLite 数据库（密码加盐哈希），登录使用 JWT。<br>后端地址：<b>' + escHtml(API_BASE || '同源部署') + '</b>';
+  } else {
+    if (sub) sub.textContent = '单机离线版 · 数据保存在本机';
+    if (n) n.innerHTML = '📱 <b>单机离线模式</b>：未检测到后端服务器，账号仅保存在<b>本机</b>（localStorage，密码混淆存储）。<br>所有学习数据、笔记均在本机，适合个人使用；如需多人博客/在线 AI，请启动 <b>server/</b> 后端后重新打开。';
+  }
+}
+function escHtml(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+(function detectModeAndAutoLogin() {
+  probeBackend().then(function (ok) {
+    ONLINE = ok;
+    applyModeNotice();
+    if (ONLINE) {
+      // 在线：access 有效直接进；否则用 refresh 静默续期后再进
+      var t = getToken();
+      if (t) {
+        fetch(API_BASE + '/api/auth/me', { headers: { 'Authorization': 'Bearer ' + t } })
+          .then(function (r) { return r.ok ? location.replace('学习工作台.html') : apiTryRefresh(); })
+          .then(function (ok) { if (ok === true) location.replace('学习工作台.html'); })
+          .catch(function () { });
+      } else if (localStorage.getItem(REFRESH_KEY)) {
+        apiTryRefresh().then(function (ok) { if (ok) location.replace('学习工作台.html'); });
+      }
+    } else {
+      // 离线：门禁标记存在且本地账号仍在 → 直接进工作台
+      var auth = null;
+      try { auth = JSON.parse(localStorage.getItem(AUTH_KEY)); } catch (e) { }
+      if (auth && auth.account && loadLocalUsers()[auth.account]) {
+        location.replace('学习工作台.html');
+      }
+    }
+  });
+})();
+
+function switchMode(mode) {
+  loginMode = mode;
+  document.getElementById('tabLogin').classList.toggle('active', mode === 'login');
+  document.getElementById('tabRegister').classList.toggle('active', mode === 'register');
+  document.getElementById('confirmGroup').style.display = mode === 'register' ? '' : 'none';
+  document.getElementById('loginNickname').style.display = mode === 'register' ? '' : 'none';
+  document.getElementById('loginNickname').parentElement.style.display = mode === 'register' ? '' : 'none';
+  document.getElementById('loginSubmitBtn').textContent = mode === 'login' ? '🚀 登 录' : '✨ 注 册 并 进 入';
+}
+
+/* ---------- 离线模式：本地注册 / 登录 ---------- */
+function localRegister(account, pass, nickname) {
+  var users = loadLocalUsers();
+  if (users[account]) { alert('该账号已存在，请直接登录'); return false; }
+  users[account] = { pass: simpleHash(pass), nickname: nickname || '', createdAt: Date.now() };
+  saveLocalUsers(users);
+  saveSession(null, account);
+  writeLocalProfile(account, nickname || account);
+  return true;
+}
+function localLogin(account, pass) {
+  var users = loadLocalUsers();
+  var u = users[account];
+  if (!u) { alert('本机没有该账号，请先注册'); return false; }
+  if (u.pass !== simpleHash(pass)) { alert('密码错误'); return false; }
+  saveSession(null, account);
+  writeLocalProfile(account, u.nickname || account);
+  return true;
+}
+
+function submitLogin() {
+  var account = document.getElementById('loginAccount').value.trim();
+  var pass = document.getElementById('loginPass').value;
+  if (!account || account.length < 3) { alert('请输入账号（至少3位）'); return; }
+  if (!pass || pass.length < 6) { alert('密码至少 6 位'); return; }
+  var btn = document.getElementById('loginSubmitBtn');
+  btn.disabled = true;
+
+  /* —— 离线模式：纯本地 —— */
+  if (!ONLINE) {
+    var ok;
+    if (loginMode === 'register') {
+      var confirmPass = document.getElementById('loginConfirm').value;
+      if (confirmPass !== pass) { alert('两次输入的密码不一致'); btn.disabled = false; return; }
+      ok = localRegister(account, pass, document.getElementById('loginNickname').value.trim());
+    } else {
+      ok = localLogin(account, pass);
+    }
+    if (ok) location.href = '学习工作台.html'; else btn.disabled = false;
+    return;
+  }
+
+  /* —— 在线模式：走后端 API（原逻辑不变） —— */
+  var path, body;
+  if (loginMode === 'register') {
+    var confirmPass = document.getElementById('loginConfirm').value;
+    if (confirmPass !== pass) { alert('两次输入的密码不一致'); btn.disabled = false; return; }
+    var nickname = document.getElementById('loginNickname').value.trim();
+    path = '/api/auth/register';
+    body = { username: account, password: pass, nickname: nickname };
+  } else {
+    path = '/api/auth/login';
+    body = { username: account, password: pass };
+  }
+
+  fetch(API_BASE + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  }).then(function (res) {
+    return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+  }).then(function (r) {
+    if (!r.ok) { alert(r.data.detail || '操作失败，请稍后再试'); btn.disabled = false; return; }
+    saveSession(r.data.token, r.data.user.username, r.data.refreshToken);
+    location.href = '学习工作台.html';
+  }).catch(function () {
+    // 网络错误：后端可能刚好停了 → 切回离线模式提示（不自动用本地账号，避免账号混淆）
+    probeBackend().then(function (ok) {
+      ONLINE = ok; applyModeNotice();
+      if (!ok) {
+        alert('无法连接后端服务器，已切换为【单机离线模式】。\n如需多人在线功能，请先启动后端：\ncd server\npython -m uvicorn main:app --port 8000\n\n当前为离线模式，请重新提交即可使用本机账号。');
+      } else {
+        alert('网络异常，请稍后再试');
+      }
+      btn.disabled = false;
+    });
+  });
+}
+</script>
+</body>
+</html>

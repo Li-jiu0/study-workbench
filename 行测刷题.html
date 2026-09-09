@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#5B8DEF">
+<title>行测刷题中心 · 学习工作台</title>
+<link rel="stylesheet" href="assets/common.css">
+<link rel="stylesheet" href="assets/polish.css">
+</head>
+<body class="theme-home">
+
+<div class="app">
+<nav class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">📚</div>
+      <div>
+        <div class="logo-text">学习工作台</div>
+        <div class="logo-sub">一站式备考平台</div>
+      </div>
+    </div>
+    <div class="nav-list">
+      <div class="nav-item" data-page="home">
+        <span class="nav-icon">🏠</span><span>首页</span>
+      </div>
+      <div class="nav-section">学习模块</div>
+      <div class="nav-item" data-page="cet">
+        <span class="nav-icon">📖</span><span>四级备考</span>
+      </div>
+      <div class="nav-item" data-page="exam">
+        <span class="nav-icon">📝</span><span>央国企笔试</span>
+      </div>
+      <div class="nav-item" data-page="comm">
+        <span class="nav-icon">💬</span><span>高情商表达</span>
+      </div>
+      <div class="nav-item" data-page="interview">
+        <span class="nav-icon">🤝</span><span>商务礼仪面试</span>
+      </div>
+      <div class="nav-item" data-page="ppt">
+        <span class="nav-icon">🎨</span><span>PPT训练</span>
+      </div>
+      <div class="nav-section">创作</div>
+      <div class="nav-item" data-page="blog">
+        <span class="nav-icon">📝</span><span>学习博客</span>
+      </div>
+      <div class="nav-section">互动</div>
+      <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+        <span class="nav-icon">💬</span><span>私信 · 好友</span>
+      </div>
+      <div class="nav-item" data-external="1" onclick="gotoBlogMine()" title="我的笔记 · 回收站">
+        <span class="nav-icon">🗂️</span><span>我的笔记</span>
+      </div>
+      <div class="nav-section">中心</div>
+      <div class="nav-item active" data-page="exam-center">
+        <span class="nav-icon">🧮</span><span>行测刷题</span>
+      </div>
+      <div class="nav-item" data-page="wrong-book">
+        <span class="nav-icon">📒</span><span>错题本</span>
+      </div>
+      <div class="nav-item" data-page="cet-vocab">
+        <span class="nav-icon">📖</span><span>四级词汇</span>
+      </div>
+      <div class="nav-item" data-page="etiquette">
+        <span class="nav-icon">🎩</span><span>商务礼仪</span>
+      </div>
+      <div class="nav-item" data-page="iv-questions">
+        <span class="nav-icon">🗂️</span><span>面试题库</span>
+      </div>
+      <div class="nav-item" data-page="ppt-layouts">
+        <span class="nav-icon">🧱</span><span>PPT版式库</span>
+      </div>
+      <div class="nav-item" data-page="ppt-cases">
+        <span class="nav-icon">🏷️</span><span>PPT案例拆解</span>
+      </div>
+      <div class="nav-item" data-page="comm-scenes">
+        <span class="nav-icon">🎭</span><span>场景话术库</span>
+      </div>
+      <div class="nav-item" data-page="comm-quotes">
+        <span class="nav-icon">💬</span><span>万能金句库</span>
+      </div>
+            <div class="nav-item" data-page="profile">
+        <span class="nav-icon">👤</span><span>个人中心</span>
+      </div>
+<div class="nav-section">系统</div>
+      <div class="nav-item" data-page="settings">
+        <span class="nav-icon">⚙️</span><span>设置</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心">
+        <div class="user-avatar">学</div>
+        <div class="user-info">
+          <div class="user-name">同学</div>
+          <div class="user-streak">🔥 连续打卡 0 天</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+<header class="topbar">
+      <div class="topbar-title" id="topbarTitle">行测刷题中心</div>
+      <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
+      <div class="gs-wrap" id="gsWrap">
+        <input type="text" class="gs-input" id="gsInput" placeholder="🔍 搜索笔记 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <div class="gs-dropdown" id="gsDropdown"></div>
+      </div>
+      <div class="topbar-stats">
+        <div class="stat-item"><span class="stat-icon">🔥</span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon">⏱️</span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+        <div class="stat-item"><span class="stat-icon">✅</span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
+      </div>
+      <div class="topbar-date" id="topbarDate"></div>
+      <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式">🌙</div>
+    </header>
+<div class="page active" id="page-exam-center">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="title-icon">🧩</span>行测刷题中心</div>
+          <div>
+            <span class="tag tag-primary" id="ecProgress">第 1 / 40 题</span>
+            <span class="tag tag-success" style="margin-left:6px" id="ecAccuracy">正确率 0%</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px" id="ecTypeFilter">
+          <span class="type-filter active" data-type="全部" onclick="filterExamType('全部')">全部</span>
+          <span class="type-filter" data-type="图形推理" onclick="filterExamType('图形推理')">图形推理</span>
+          <span class="type-filter" data-type="定义判断" onclick="filterExamType('定义判断')">定义判断</span>
+          <span class="type-filter" data-type="类比推理" onclick="filterExamType('类比推理')">类比推理</span>
+          <span class="type-filter" data-type="逻辑判断" onclick="filterExamType('逻辑判断')">逻辑判断</span>
+          <span class="type-filter" data-type="言语理解" onclick="filterExamType('言语理解')">言语理解</span>
+          <span class="type-filter" data-type="数量关系" onclick="filterExamType('数量关系')">数量关系</span>
+          <span class="type-filter" data-type="资料分析" onclick="filterExamType('资料分析')">资料分析</span>
+          <span class="type-filter" style="border:1.5px solid var(--primary);color:var(--primary);background:var(--primary-light)" onclick="openQBank('exam')" title="添加/导入/导出自己的题目">🧠 我的题库</span>
+          <span class="type-filter" style="background:var(--primary);color:#fff;border-color:var(--primary)" onclick="shuffleExamQuestions()">🔀 随机刷题</span>
+        </div>
+        <div id="ecQuestionArea">
+          <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+            <span class="tag tag-warning" id="ecType">图形推理</span>
+            <span class="tag tag-primary" id="ecSub">位置类</span>
+            <span class="tag" id="ecDiff" style="background:#FFF3E0;color:#E65100">难度：中等</span>
+          </div>
+          <div style="font-size:15px;line-height:1.8;margin-bottom:20px;color:var(--text)" id="ecQuestionText"></div>
+          <div id="ecOptions" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+        <div id="ecExplanation" style="display:none;margin-top:20px">
+          <div id="ecResult" style="padding:14px 16px;border-radius:12px;margin-bottom:12px;font-weight:600"></div>
+          <div style="padding:16px;background:var(--bg);border-radius:12px;margin-bottom:12px">
+            <div style="font-weight:700;margin-bottom:8px">📖 解析</div>
+            <div style="font-size:14px;line-height:1.7;color:var(--text-secondary)" id="ecExpText"></div>
+          </div>
+          <div style="padding:12px 14px;background:#FFF8E6;border-radius:10px;font-size:13px;color:var(--warning)" id="ecTipText"></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" onclick="prevExamQuestion()">← 上一题</button>
+          <button class="btn btn-outline btn-sm" onclick="nextExamQuestion()">下一题 →</button>
+          <button class="btn btn-secondary btn-sm" id="ecFavBtn" onclick="toggleFavorite()">☆ 收藏</button>
+          <button class="btn btn-outline btn-sm" onclick="navigateTo('wrong-book')">📒 错题本</button>
+          <button class="btn btn-outline btn-sm" onclick="navigateTo('exam')">返回笔试</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- 底部导航（手机端） -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-list">
+      <div class="bottom-nav-item" data-page="home">
+        <div class="bn-icon">🏠</div><div class="bn-label">首页</div>
+      </div>
+      <div class="bottom-nav-item" data-page="cet">
+        <div class="bn-icon">📖</div><div class="bn-label">四级</div>
+      </div>
+      <div class="bottom-nav-item" data-page="exam">
+        <div class="bn-icon">📝</div><div class="bn-label">笔试</div>
+      </div>
+      <div class="bottom-nav-item" data-page="comm">
+        <div class="bn-icon">💬</div><div class="bn-label">表达</div>
+      </div>
+      <div class="bottom-nav-item" onclick="toggleMorePanel()">
+        <div class="bn-icon">☰</div><div class="bn-label">更多</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 更多面板遮罩 -->
+  <div class="more-overlay" onclick="toggleMorePanel()"></div>
+
+  <!-- 更多面板 -->
+  <div class="bottom-more-panel" id="morePanel">
+    <div class="bottom-more-title">更多功能</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="navigateTo('interview');toggleMorePanel()">
+        <div class="bm-icon">🤝</div><div class="bm-label">礼仪面试</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('ppt');toggleMorePanel()">
+        <div class="bm-icon">🎨</div><div class="bm-label">PPT训练</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogStats()">
+        <div class="bm-icon">📊</div><div class="bm-label">学习统计</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogFavorites()">
+        <div class="bm-icon">🔖</div><div class="bm-label">我的收藏</div>
+      </div>
+      <div class="bottom-more-item" onclick="gotoChat()">
+        <div class="bm-icon">💬</div><div class="bm-label">私信/好友</div>
+      </div>
+      <div class="bottom-more-item" onclick="gotoBlogMine()">
+        <div class="bm-icon">🗂️</div><div class="bm-label">我的博客</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
+        <div class="bm-icon">📒</div><div class="bm-label">错题本</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('cet-vocab');toggleMorePanel()">
+        <div class="bm-icon">📖</div><div class="bm-label">四级词汇</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
+        <div class="bm-icon">⚙️</div><div class="bm-label">设置</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogProfile()">
+        <div class="bm-icon">👤</div><div class="bm-label">个人中心</div>
+      </div>
+      <div class="bottom-more-item" onclick="location.href='设置.html'">
+        <div class="bm-icon">ℹ️</div><div class="bm-label">关于</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加倒计时弹窗 -->
+  <div class="modal-overlay" id="countdownModal">    <div class="modal">
+      <div class="modal-title" id="countdownModalTitle">添加倒计时</div>
+      <div class="form-group">
+        <div class="form-label">名称</div>
+        <input type="text" class="form-input" id="cdName" placeholder="如：四级考试、秋招截止">
+      </div>
+      <div class="form-group">
+        <div class="form-label">日期</div>
+        <input type="date" class="form-input" id="cdDate">
+      </div>
+      <div class="form-group">
+        <div class="form-label">颜色</div>
+        <div class="color-picker" id="cdColorPicker">
+          <div class="color-dot active" style="background:#5B8DEF" data-color="#5B8DEF"></div>
+          <div class="color-dot" style="background:#E05040" data-color="#E05040"></div>
+          <div class="color-dot" style="background:#9B6BD9" data-color="#9B6BD9"></div>
+          <div class="color-dot" style="background:#D4A056" data-color="#D4A056"></div>
+          <div class="color-dot" style="background:#36CFC9" data-color="#36CFC9"></div>
+          <div class="color-dot" style="background:#FF9F68" data-color="#FF9F68"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary)">
+          <input type="checkbox" id="cdPinned"> 置顶显示
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeCountdownModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveCountdown()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast提示 -->
+  <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center"></div>
+
+  <!-- ==================== AI学习助手（悬浮聊天窗口） ====================
+       说明：
+       1. 默认“本地演示模式”：不联网、不调API、无密钥，由内置规则引擎回复；
+       2. 【后续扩展点】启动 ai-server 后端后，把下方 JS 里的 AI_CONFIG.apiUrl
+          填上后端地址（如 http://localhost:3000/api/chat），即可切换为真实AI流式对话；
+       3. 安全约束：大模型密钥只放在后端 .env 里，前端代码永远不出现密钥。 -->
+  <!-- 悬浮头像：可按住拖拽到任意位置（见下方 JS.initAiFabDrag），点击打开/收起面板，双击复位 -->
+  <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">
+    🤖<span class="ai-mode-badge" id="aiModeBadge">演示</span>
+  </div>
+  <div class="ai-panel" id="aiPanel">
+    <div class="ai-panel-header">
+      <div class="ai-avatar">🤖</div>
+      <div style="flex:1">
+        <div class="ai-title">AI学习助手</div>
+        <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
+      </div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录">🧹</div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板">✕</div>
+    </div>
+    <div class="ai-messages" id="aiMessages"></div>
+    <div class="ai-input-row">
+      <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()">➤</div>
+    </div>
+  </div>
+
+
+
+</div>
+
+<script src="assets/app.js?v=20260913s"></script>
+<script src="assets/api.js?v=20260909e"></script>
+<script src="assets/qbank.js?v=6"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+# 构建产物
+android/build/
+android/gen/
+android/bin/
+*.class
+*.dex
+
+# 保留 APK（如需忽略取消下一行注释）
+# *.apk
+
+# 临时文件
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
+
+# 备份目录
+备份/
+
+# IDE
+.idea/
+.vscode/
+*.iml
