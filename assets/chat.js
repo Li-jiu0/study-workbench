@@ -6,7 +6,7 @@
   window.__IM_LOADED__ = true;
 
   var TOKEN_KEY = 'study_workbench_token', REFRESH_KEY = 'study_workbench_refresh';
-  function apiBase() { return (location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://localhost:8000'; }
+  function apiBase() { return (location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000'; }
   var API_BASE = apiBase();
   function gTok() { return localStorage.getItem(TOKEN_KEY) || ''; }
   function rTok() { return localStorage.getItem(REFRESH_KEY) || ''; }

@@ -3,14 +3,14 @@
    ---------------------------------------------------------------------
    本文件必须在 assets/app.js 之后加载（tools/inject-api.js 已注入除 登录.html 外的所有页面）。
    作用：把「用户 / 学习博客 / AI」原本读写 localStorage 的函数，
-        原地重定义为调用 FastAPI 后端（server/，默认 http://localhost:8000）。
+        原地重定义为调用 FastAPI 后端（server/，默认 http://110.42.134.62:8000）。
    其余学习模块（词汇 / 行测 / 错题本……）仍走本地 localStorage，互不影响。
    鉴权：JWT（登录后存 localStorage key: study_workbench_token，
         另写一个 study_workbench_auth 标记供 app.js 顶部登录门禁使用）。
    ===================================================================== */
 
 /* ---------- 基础：API 地址 / token / 请求封装 ---------- */
-window.API_BASE = (location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://localhost:8000';
+window.API_BASE = (location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000';
 var API_TOKEN_KEY = 'study_workbench_token';
 var API_REFRESH_KEY = 'study_workbench_refresh';   // 长时效 refresh 令牌，仅在 access 过期时换新
 var API_AI_MODEL_KEY = 'study_workbench_ai_model';
