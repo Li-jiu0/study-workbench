@@ -354,17 +354,95 @@
     var inp = $id('imSearch');
     var keyword = (inp.value || '').trim().toLowerCase();
     if (!keyword) { loadChats(); return; }
-    var results = PRESET_FRIENDS.filter(function (f) {
+    var box = $id('imList');
+
+    // 1. 搜预设 AI 好友
+    var presetResults = PRESET_FRIENDS.filter(function (f) {
       return f.nickname.toLowerCase().indexOf(keyword) !== -1 || f.motto.toLowerCase().indexOf(keyword) !== -1;
     });
-    var box = $id('imList');
-    if (results.length === 0) { box.innerHTML = '<div class="im-empty2">没有找到相关好友</div>'; return; }
-    box.innerHTML = results.map(function (f) {
+
+    // 2. 同时搜服务器注册用户（如果已登录）
+    var token = localStorage.getItem('study_workbench_token');
+    var API_BASE = (location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000';
+
+    if (!token) {
+      // 未登录，只显示预设好友
+      if (presetResults.length === 0) { box.innerHTML = '<div class="im-empty2">没有找到相关好友<br><span style="font-size:11px">登录后可搜索其他注册用户</span></div>'; return; }
+      box.innerHTML = presetResults.map(function (f) {
+        return '<div class="im-sess" onclick="imOpenChat(' + f.id + ')">' +
+          '<div class="im-av">' + f.avatar + '</div>' +
+          '<div class="im-si"><div class="im-n">' + esc(f.nickname) + '</div><div class="im-sub">' + esc(f.motto) + '</div></div>' +
+          '</div>';
+      }).join('');
+      return;
+    }
+
+    // 已登录，先显示预设好友，再异步加载服务器搜索结果
+    var html = presetResults.map(function (f) {
       return '<div class="im-sess" onclick="imOpenChat(' + f.id + ')">' +
         '<div class="im-av">' + f.avatar + '</div>' +
         '<div class="im-si"><div class="im-n">' + esc(f.nickname) + '</div><div class="im-sub">' + esc(f.motto) + '</div></div>' +
         '</div>';
     }).join('');
+    box.innerHTML = html + '<div class="im-empty2">🔍 正在搜索注册用户…</div>';
+
+    fetch(API_BASE + '/api/friends/search?q=' + encodeURIComponent(keyword), {
+      headers: { 'Authorization': 'Bearer ' + token }
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      var serverUsers = data.items || [];
+      if (serverUsers.length === 0) {
+        if (presetResults.length === 0) {
+          box.innerHTML = '<div class="im-empty2">没有找到相关好友</div>';
+        } else {
+          // 保留预设好友结果
+          box.innerHTML = html + '<div class="im-empty2" style="padding:8px">服务器上没有找到匹配的注册用户</div>';
+        }
+        return;
+      }
+      var serverHtml = serverUsers.map(function (u) {
+        var av = (u.avatarUrl && /^(https?:|\/uploads\/|data:)/.test(u.avatarUrl))
+          ? '<img src="' + (u.avatarUrl.startsWith('http') ? u.avatarUrl : API_BASE + u.avatarUrl) + '" alt="">'
+          : esc((u.nickname || '友').slice(0, 1));
+        var btn = u.isFriend
+          ? '<span style="font-size:12px;color:#999">已是好友</span>'
+          : '<button class="btn btn-primary" style="font-size:12px;padding:4px 10px" onclick="imAddServerFriend(' + u.id + ',\'' + esc(u.nickname || '').replace(/'/g, "\\'") + '\')">加好友</button>';
+        return '<div class="im-sess">' +
+          '<div class="im-av">' + av + '</div>' +
+          '<div class="im-si"><div class="im-n">' + esc(u.nickname) + ' <span style="font-size:11px;color:#999">@' + esc(u.username) + '</span></div>' +
+          '<div class="im-sub">' + esc(u.motto || '') + '</div></div>' + btn + '</div>';
+      }).join('');
+      box.innerHTML = (presetResults.length ? '<div style="font-size:11px;color:#999;padding:8px 0 4px">🤖 AI好友</div>' + html : '') +
+        (serverUsers.length ? '<div style="font-size:11px;color:#999;padding:8px 0 4px">👥 注册用户</div>' + serverHtml : '');
+    })
+    .catch(function (e) {
+      if (presetResults.length === 0) {
+        box.innerHTML = '<div class="im-empty2">搜索失败：' + esc(e.message || '网络错误') + '</div>';
+      }
+    });
+  };
+
+  // 加服务器用户为好友
+  window.imAddServerFriend = function (uid, nickname) {
+    var token = localStorage.getItem('study_workbench_token');
+    var API_BASE = (location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000';
+    fetch(API_BASE + '/api/friends/requests', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ toUserId: uid })
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d.autoAccepted) {
+        toast('✅ 你们已是好友，可以聊天了');
+      } else if (d.ok) {
+        toast('✅ 好友申请已发送给 ' + nickname);
+      } else {
+        toast(d.detail || '操作失败');
+      }
+    })
+    .catch(function (e) { toast('失败：' + (e.message || '网络错误')); });
   };
 
   function boot() {
