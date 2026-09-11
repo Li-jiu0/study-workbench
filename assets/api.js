@@ -206,28 +206,35 @@ async function renderUserHome(userId, box) {
     '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">👤</span>TA 的主页</div><div class="card-action">公开发贴 ' + u.notes.length + ' 篇</div></div>' +
       '<div style="display:flex;align-items:center;gap:16px;padding:6px 0;flex-wrap:wrap">' +
         '<div class="profile-avatar-lg">' + (u.avatarUrl ? '<img src="' + apiFileUrl(u.avatarUrl) + '" alt="头像">' : esc((u.nickname || '学').slice(0, 1))) + '</div>' +
-        '<div style="flex:1;min-width:180px"><div style="font-size:18px;font-weight:800;color:var(--text)">' + esc(u.nickname) + '</div><div style="font-size:13px;color:var(--text-secondary);margin-top:4px">' + esc(u.motto || '这个人很懒，什么都没写~') + '</div></div>' +
+        '<div style="flex:1;min-width:180px">' +
+          '<div style="font-size:18px;font-weight:800;color:var(--text)">' + esc(u.nickname) + '</div>' +
+          '<div style="font-size:13px;color:var(--text-secondary);margin-top:4px">' + esc(u.motto || '这个人很懒，什么都没写~') + '</div>' +
+          (u.bio ? '<div style="font-size:13px;color:var(--text);margin-top:6px;line-height:1.6">' + esc(u.bio) + '</div>' : '') +
+          _profileMeta(u.gender, u.birthday, u.city) +
+          (u.createdAt ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:6px">📅 加入于 ' + esc(String(u.createdAt).slice(0, 10)) + '</div>' : '') +
+          _tagChips(u.tags) + _goalLine(u.goal) +
+        '</div>' +
         '<div style="display:flex;gap:8px;flex-wrap:wrap">' + actionBtns + '</div>' +
       '</div>' +
-      '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">🔒 出于隐私保护：这里只能看到 TA 的公开发贴，草稿 / 私密 / 归档内容不对外展示。</div>' +
+      '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">🔒 出于隐私保护：性别 / 生日不对外展示；草稿、私密、归档发贴不可见。</div>' +
     '</div>' +
-    
-    // ===== 学习数据 =====
-    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>学习数据</div></div>' +
+
+    // ===== 创作数据（服务端可核算；学习时长等本机数据不对外） =====
+    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>创作数据</div></div>' +
     '<div class="profile-grid">' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🔥 ' + (s.streakDays || 0) + '</div><div class="ps-label">连续打卡</div></div>' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">⏱ ' + (s.totalHours || 0) + 'h</div><div class="ps-label">总学习时长</div></div>' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🧮 ' + (s.totalQuestions || 0) + '</div><div class="ps-label">做题总数</div></div>' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🎯 ' + (s.accuracy || 0) + '%</div><div class="ps-label">正确率</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">📝 ' + (s.published || 0) + '</div><div class="ps-label">公开发贴</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">👍 ' + (s.likes || 0) + '</div><div class="ps-label">获赞</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">👁 ' + (s.views || 0) + '</div><div class="ps-label">总阅读</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">💬 ' + (s.comments || 0) + '</div><div class="ps-label">获评论</div></div>' +
     '</div></div>' +
-    
-    // ===== 成就徽章墙 =====
+
+    // ===== 成就徽章墙（按公开创作数据） =====
     '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">🏅</span>TA 的成就</div></div>' +
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">' +
     '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🌱</div><div style="font-size:12px;margin-top:4px">初学者</div></div>' +
-    ((s.streakDays || 0) >= 7 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🔥</div><div style="font-size:12px;margin-top:4px">坚持一周</div></div>' : '') +
-    ((s.totalQuestions || 0) >= 100 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🧮</div><div style="font-size:12px;margin-top:4px">百题斩</div></div>' : '') +
-    ((s.totalQuestions || 0) >= 500 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">💪</div><div style="font-size:12px;margin-top:4px">刷题达人</div></div>' : '') +
+    ((s.published || 0) >= 1 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">✍️</div><div style="font-size:12px;margin-top:4px">处女作</div></div>' : '') +
+    ((s.published || 0) >= 5 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">📚</div><div style="font-size:12px;margin-top:4px">勤于笔耕</div></div>' : '') +
+    ((s.likes || 0) >= 10 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">👍</div><div style="font-size:12px;margin-top:4px">人气博主</div></div>' : '') +
     '</div></div>' +
     
     '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">🗒️</span>公开发贴</div></div>' +
@@ -1076,6 +1083,22 @@ function _profileMeta(g, b, c) {
   var parts = [_genderSym(g), _ageOf(b), (c || '').trim()].filter(function (x) { return x; });
   return parts.length ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:6px">' + esc(parts.join(' · ')) + '</div>' : '';
 }
+/* 标签 chips / 学习目标 展示（自己主页与 TA 公开主页共用） */
+function _tagChips(s) {
+  if (!s) return '';
+  // 兼容中文逗号（老数据/手工导入可能未规范化），去空、去重，最多 8 个
+  var seen = {}, arr = [];
+  String(s).replace(/，/g, ',').split(',').forEach(function (x) {
+    x = x.trim();
+    if (x && !seen[x] && arr.length < 8) { seen[x] = 1; arr.push(x); }
+  });
+  if (!arr.length) return '';
+  return '<div class="pp-tags">' + arr.map(function (t) { return '<span class="pp-tag">' + esc(t) + '</span>'; }).join('') + '</div>';
+}
+function _goalLine(g) {
+  g = (g || '').trim();
+  return g ? '<div class="pp-goal">🎯 学习目标：<b>' + esc(g) + '</b></div>' : '';
+}
 
 function _peSource() {
   if (typeof CURRENT_USER !== 'undefined' && CURRENT_USER) return { u: CURRENT_USER, online: true };
@@ -1106,6 +1129,7 @@ function _renderProfileLocal(box, p) {
     '<div style="flex:1;min-width:180px"><div style="font-size:18px;font-weight:800;color:var(--text)">' + esc(p.name || '同学') + '</div>' +
     '<div style="font-size:13px;color:var(--text-secondary);margin-top:2px">' + esc(p.motto || '') + '</div>' +
     (p.bio ? '<div style="font-size:13px;color:var(--text);margin-top:6px;line-height:1.6">' + esc(p.bio) + '</div>' : '') + _profileMeta(p.gender, p.birthday, p.city) +
+    _tagChips(p.tags) + _goalLine(p.goal) +
     '</div>' +
     '<button class="btn btn-outline" onclick="editProfile()">✏️ 编辑资料</button>' +
     '<button class="btn btn-danger" onclick="doLogout()">🚪 退出登录</button></div>' +
@@ -1119,6 +1143,8 @@ function _localNotesCard() {
   var draft = notes.filter(function (n) { return n.status === 'draft'; });
   var likes = pub.reduce(function (s, n) { return s + (n.likes || 0); }, 0);
   var views = pub.reduce(function (s, n) { return s + (n.views || 0); }, 0);
+  var d = (typeof appData !== 'undefined' && appData && appData.stats) || {};
+  var acc = d.totalQuestions > 0 ? Math.round(d.correctQuestions / d.totalQuestions * 100) : 0;
   return '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>本机发贴统计</div></div>' +
     '<div class="profile-grid">' +
     [['📝', pub.length, '已发布'], ['💾', draft.length, '草稿'], ['👍', likes, '点赞'], ['👁', views, '阅读']].map(function (x) {
@@ -1128,22 +1154,36 @@ function _localNotesCard() {
     '<button class="btn btn-outline" onclick="exportAllNotesMd()">📄 导出全部 Markdown</button>' +
     '<button class="btn btn-outline" onclick="location.href=' + "'学习博客.html'" + '">📝 去写发贴</button></div></div>' +
 
-    // ===== 新增：学习数据概览 =====
+    // ===== 今日学习时长（本机计时，与设置页上限联动）=====
+    (function () {
+      var st = (typeof loadAllSettings === 'function') ? loadAllSettings() : {};
+      var txt = (typeof getTodayStudyText === 'function') ? getTodayStudyText() : '0 分钟';
+      var on = st.studyLimitOn !== false;
+      return '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">⏱</span>今日学习时长</div>' +
+        '<div class="card-action">上限 ' + (on ? (st.studyLimitHours || 4) + ' 小时' : '未启用') + '</div></div>' +
+        '<div style="display:flex;align-items:baseline;gap:8px;padding:4px 0">' +
+        '<span id="pcStudyTime" style="font-size:26px;font-weight:800;color:var(--primary)">' + txt + '</span>' +
+        '<span id="pcStudyTimeTip" style="font-size:12px;color:var(--text-secondary)"></span></div>' +
+        '<div class="pc-studytime-bar"><i id="pcStudyTimeBar"></i></div>' +
+        '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.6">💡 打开任意页面即开始计时，切到后台自动暂停；到上限只友好提醒，不打断学习。可在 <a href="设置.html" style="color:var(--primary);text-decoration:none;font-weight:600">设置</a> 修改。</div></div>';
+    })() +
+
+    // ===== 学习数据概览（本机设备数据） =====
     '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>学习数据</div></div>' +
     '<div class="profile-grid">' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🔥 ' + (s.streakDays || 0) + '</div><div class="ps-label">连续打卡</div></div>' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">⏱ ' + (s.totalHours || 0) + 'h</div><div class="ps-label">总学习时长</div></div>' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🧮 ' + (s.totalQuestions || 0) + '</div><div class="ps-label">做题总数</div></div>' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🎯 ' + (s.accuracy || 0) + '%</div><div class="ps-label">正确率</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🔥 ' + (d.streakDays || 0) + '</div><div class="ps-label">连续打卡</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">⏱ ' + (d.totalHours || 0) + 'h</div><div class="ps-label">总学习时长</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🧮 ' + (d.totalQuestions || 0) + '</div><div class="ps-label">做题总数</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🎯 ' + acc + '%</div><div class="ps-label">正确率</div></div>' +
     '</div></div>' +
 
-    // ===== 新增：成就徽章墙 =====
+    // ===== 成就徽章墙（本机设备数据） =====
     '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">🏅</span>我的成就</div></div>' +
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">' +
     '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🌱</div><div style="font-size:12px;margin-top:4px">初学者</div></div>' +
-    ((s.streakDays || 0) >= 7 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🔥</div><div style="font-size:12px;margin-top:4px">坚持一周</div></div>' : '') +
-    ((s.totalQuestions || 0) >= 100 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🧮</div><div style="font-size:12px;margin-top:4px">百题斩</div></div>' : '') +
-    ((s.totalQuestions || 0) >= 500 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">💪</div><div style="font-size:12px;margin-top:4px">刷题达人</div></div>' : '') +
+    ((d.streakDays || 0) >= 7 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🔥</div><div style="font-size:12px;margin-top:4px">坚持一周</div></div>' : '') +
+    ((d.totalQuestions || 0) >= 100 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🧮</div><div style="font-size:12px;margin-top:4px">百题斩</div></div>' : '') +
+    ((d.totalQuestions || 0) >= 500 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">💪</div><div style="font-size:12px;margin-top:4px">刷题达人</div></div>' : '') +
     '</div></div>' +
 
     // ===== 新增：学习模块快捷入口 =====
@@ -1157,6 +1197,8 @@ function _localNotesCard() {
 
 function _renderProfileOnline(box, u) {
   var s = u.stats || {};
+  var d = (typeof appData !== 'undefined' && appData && appData.stats) || {};
+  var acc = d.totalQuestions > 0 ? Math.round(d.correctQuestions / d.totalQuestions * 100) : 0;
   var catCount = s.catCount || {};
   var maxCat = 1;
   for (var k in catCount) { if (catCount[k] > maxCat) maxCat = catCount[k]; }
@@ -1173,7 +1215,10 @@ function _renderProfileOnline(box, u) {
     '<div class="profile-avatar-lg">' + (u.avatarUrl ? '<img src="' + apiFileUrl(u.avatarUrl) + '" alt="头像">' : esc((u.nickname || '学').slice(0, 1))) + '</div>' +
     '<div style="flex:1;min-width:180px"><div style="font-size:18px;font-weight:800;color:var(--text)">' + esc(u.nickname) + '</div>' +
     '<div style="font-size:13px;color:var(--text-secondary);margin-top:2px">' + esc(u.motto || '') + '</div>' +
-    (u.bio ? '<div style="font-size:13px;color:var(--text);margin-top:6px;line-height:1.6">' + esc(u.bio) + '</div>' : '') + _profileMeta(u.gender, u.birthday, u.city) +
+    // 公开主页：性别/生日一律不传（即使服务端异常返回也不展示），只展示城市
+    (u.bio ? '<div style="font-size:13px;color:var(--text);margin-top:6px;line-height:1.6">' + esc(u.bio) + '</div>' : '') + _profileMeta('', '', u.city) +
+    _tagChips(u.tags) + _goalLine(u.goal) +
+    (u.createdAt ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:6px">📅 加入于 ' + esc(u.createdAt) + '</div>' : '') +
     '</div>' +
     '<button class="btn btn-outline" onclick="editProfile()">✏️ 编辑资料</button>' +
     '<button class="btn btn-danger" onclick="doLogout()">🚪 退出登录</button></div>' +
@@ -1188,22 +1233,36 @@ function _renderProfileOnline(box, u) {
     '<button class="btn btn-outline" onclick="exportAllNotesMd()">📄 导出全部 Markdown</button>' +
     '<button class="btn btn-outline" onclick="location.href=' + "'学习博客.html'" + '">📝 去写发贴</button></div></div>' +
 
-    // ===== 新增：学习数据概览 =====
+    // ===== 今日学习时长（本机计时，与设置页上限联动）=====
+    (function () {
+      var st = (typeof loadAllSettings === 'function') ? loadAllSettings() : {};
+      var txt = (typeof getTodayStudyText === 'function') ? getTodayStudyText() : '0 分钟';
+      var on = st.studyLimitOn !== false;
+      return '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">⏱</span>今日学习时长</div>' +
+        '<div class="card-action">上限 ' + (on ? (st.studyLimitHours || 4) + ' 小时' : '未启用') + '</div></div>' +
+        '<div style="display:flex;align-items:baseline;gap:8px;padding:4px 0">' +
+        '<span id="pcStudyTime" style="font-size:26px;font-weight:800;color:var(--primary)">' + txt + '</span>' +
+        '<span id="pcStudyTimeTip" style="font-size:12px;color:var(--text-secondary)"></span></div>' +
+        '<div class="pc-studytime-bar"><i id="pcStudyTimeBar"></i></div>' +
+        '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.6">💡 打开任意页面即开始计时，切到后台自动暂停；到上限只友好提醒，不打断学习。可在 <a href="设置.html" style="color:var(--primary);text-decoration:none;font-weight:600">设置</a> 修改。</div></div>';
+    })() +
+
+    // ===== 学习数据概览（本机设备数据） =====
     '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>学习数据</div></div>' +
     '<div class="profile-grid">' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🔥 ' + (s.streakDays || 0) + '</div><div class="ps-label">连续打卡</div></div>' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">⏱ ' + (s.totalHours || 0) + 'h</div><div class="ps-label">总学习时长</div></div>' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🧮 ' + (s.totalQuestions || 0) + '</div><div class="ps-label">做题总数</div></div>' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🎯 ' + (s.accuracy || 0) + '%</div><div class="ps-label">正确率</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🔥 ' + (d.streakDays || 0) + '</div><div class="ps-label">连续打卡</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">⏱ ' + (d.totalHours || 0) + 'h</div><div class="ps-label">总学习时长</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🧮 ' + (d.totalQuestions || 0) + '</div><div class="ps-label">做题总数</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🎯 ' + acc + '%</div><div class="ps-label">正确率</div></div>' +
     '</div></div>' +
 
-    // ===== 新增：成就徽章墙 =====
+    // ===== 成就徽章墙（本机设备数据） =====
     '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">🏅</span>我的成就</div></div>' +
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">' +
     '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🌱</div><div style="font-size:12px;margin-top:4px">初学者</div></div>' +
-    ((s.streakDays || 0) >= 7 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🔥</div><div style="font-size:12px;margin-top:4px">坚持一周</div></div>' : '') +
-    ((s.totalQuestions || 0) >= 100 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🧮</div><div style="font-size:12px;margin-top:4px">百题斩</div></div>' : '') +
-    ((s.totalQuestions || 0) >= 500 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">💪</div><div style="font-size:12px;margin-top:4px">刷题达人</div></div>' : '') +
+    ((d.streakDays || 0) >= 7 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🔥</div><div style="font-size:12px;margin-top:4px">坚持一周</div></div>' : '') +
+    ((d.totalQuestions || 0) >= 100 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🧮</div><div style="font-size:12px;margin-top:4px">百题斩</div></div>' : '') +
+    ((d.totalQuestions || 0) >= 500 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">💪</div><div style="font-size:12px;margin-top:4px">刷题达人</div></div>' : '') +
     '</div></div>' +
 
     // ===== 新增：学习模块快捷入口 =====
@@ -1221,6 +1280,7 @@ function editProfile() {
   var src = _peSource();
   var nameEl = document.getElementById('peName'), mottoEl = document.getElementById('peMotto'), bioEl = document.getElementById('peBio');
   var gEl = document.getElementById('peGender'), bEl = document.getElementById('peBirthday'), cEl = document.getElementById('peCity');
+  var tagEl = document.getElementById('peTags'), goalEl = document.getElementById('peGoal');
   if (src.online) {
     apiAvatarTemp = src.u.avatarUrl || null;
     if (nameEl) nameEl.value = src.u.nickname || '';
@@ -1229,6 +1289,8 @@ function editProfile() {
     if (gEl) gEl.value = src.u.gender || 'secret';
     if (bEl) bEl.value = src.u.birthday || '';
     if (cEl) cEl.value = src.u.city || '';
+    if (tagEl) tagEl.value = src.u.tags || '';
+    if (goalEl) goalEl.value = src.u.goal || '';
   } else {
     apiAvatarTemp = (src.p.avatarImg && /^data:image\//.test(src.p.avatarImg)) ? src.p.avatarImg : null;
     if (nameEl) nameEl.value = src.p.name || '';
@@ -1237,8 +1299,11 @@ function editProfile() {
     if (gEl) gEl.value = src.p.gender || 'secret';
     if (bEl) bEl.value = src.p.birthday || '';
     if (cEl) cEl.value = src.p.city || '';
+    if (tagEl) tagEl.value = src.p.tags || '';
+    if (goalEl) goalEl.value = src.p.goal || '';
   }
   renderPeAvatarPreview();
+  if (typeof window.peSyncUI === 'function') window.peSyncUI(); // 刷新标签chips/字数/完成度/预览
   m.classList.add('active');
   if (nameEl) nameEl.focus();
 }
@@ -1293,23 +1358,27 @@ function resetProfileAvatar() {
 function saveProfileEditor() {
   var nameEl = document.getElementById('peName'), mottoEl = document.getElementById('peMotto'), bioEl = document.getElementById('peBio');
   var gEl = document.getElementById('peGender'), bEl = document.getElementById('peBirthday'), cEl = document.getElementById('peCity');
+  var tagEl = document.getElementById('peTags'), goalEl = document.getElementById('peGoal');
   var name = (nameEl && nameEl.value.trim()) || '';
   var motto = (mottoEl && mottoEl.value.trim()) || '';
   var bio = (bioEl && bioEl.value.trim()) || '';
   var gender = (gEl && gEl.value) || 'secret';
   var birthday = (bEl && bEl.value) || '';
   var city = (cEl && cEl.value.trim()) || '';
+  var tags = (tagEl && tagEl.value) || '';
+  var goal = (goalEl && goalEl.value.trim()) || '';
   var src = _peSource();
   var finish = function (okMsg) { closeProfileEditor(); renderProfilePage(); showToast(okMsg); };
   if (src.online) {
     if (!name) { showToast('⚠️ 昵称不能为空'); return; }
-    api('/api/users/me', { method: 'PUT', body: { nickname: name, motto: motto, bio: bio, gender: gender, birthday: birthday, city: city } })
+    api('/api/users/me', { method: 'PUT', body: { nickname: name, motto: motto, bio: bio, gender: gender, birthday: birthday, city: city, tags: tags, goal: goal } })
       .then(function () { return loadCurrentUser(); })
       .then(function () { finish('👤 个人资料已更新'); if (typeof renderHomeOnlineNav === 'function') renderHomeOnlineNav(); })
       .catch(function (e) { showToast('⚠️ 保存失败：' + e.message); });
   } else {
     var p = src.p;
     p.name = name || p.name; p.motto = motto; p.bio = bio; p.gender = gender; p.birthday = birthday; p.city = city;
+    p.tags = tags; p.goal = goal;
     if (apiAvatarTemp) { p.avatarImg = apiAvatarTemp; } else { delete p.avatarImg; }
     if (typeof saveData === 'function') saveData();
     try {

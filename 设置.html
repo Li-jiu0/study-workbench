@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#5B8DEF" data-page-node-id="EXvc7QppIKtHC8PUM71nFK">
 <title>设置 · 星途</title>
 <link rel="stylesheet" href="assets/common.css" data-page-node-id="oNplQZjsSu34O6b7wLTk3t">
-<link rel="stylesheet" href="assets/polish.css?v=20260911b" data-page-node-id="gZ2lwtNBjEq5CgqQTlbjFi">
+<link rel="stylesheet" href="assets/polish.css?v=20260911c" data-page-node-id="gZ2lwtNBjEq5CgqQTlbjFi">
 </head>
 <body class="theme-home" data-page-node-id="wneJ1qXxVLXB9kpk29RxqH">
 
@@ -73,7 +73,7 @@
   <div class="main" data-page-node-id="NIf9PmWo8FeFJ98LAdetyY">
 <header class="topbar" data-page-node-id="0rJrCT6HdAUjDv9M9GfF3l">
       <div class="topbar-title" id="topbarTitle" data-page-node-id="NL28KHzkGta4853wWGshRl">设置</div>
-      <!-- 全局搜索（检索范围与逻辑见 assets/app.js?v=20260913t 的 globalSearch()） -->
+      <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
       <div class="gs-wrap" id="gsWrap" data-page-node-id="IguuWuMsxQiedLs4FHHhT0">
         <input type="text" class="gs-input" id="gsInput" placeholder="🔍 搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)" data-page-node-id="1WlTOG7qVmoQ9HgEJGZBVp">
         <div class="gs-dropdown" id="gsDropdown" data-page-node-id="GjFhVnDPGyepk64JaHm4ZB"></div>
@@ -251,6 +251,38 @@
               </select>
               <button class="btn btn-primary" onclick="openFocusTimer()" data-page-node-id="xMQZgWIOOqZyfCPxtNtjiG">▶ 开始专注</button>
             </div>
+          </div>
+
+          <!-- 【9/11 新增】每日学习时长上限 -->
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">每日学习时长上限</div>
+              <div class="setting-desc">到站即开始计时（切到后台自动暂停）。达到上限后仅友好提醒，不会强制中断学习</div>
+            </div>
+            <div class="setting-actions" style="gap:6px">
+              <label class="st-switch" title="启用上限提醒">
+                <input type="checkbox" id="stLimitOn" onchange="setSetting('studyLimitOn',this.checked);syncStudyLimitUI();showToast(this.checked?'✅ 已开启每日时长上限':'已关闭时长上限')">
+                <span class="st-switch-slider"></span>
+              </label>
+              <select class="form-input" id="stLimitHours" style="width:110px" onchange="setSetting('studyLimitHours',+this.value);syncStudyLimitUI();showToast('✅ 每日上限已设为 '+this.value+' 小时')">
+                <option value="1">1 小时</option><option value="2">2 小时</option><option value="3">3 小时</option>
+                <option value="4">4 小时</option><option value="5">5 小时</option><option value="6">6 小时</option>
+                <option value="8">8 小时</option><option value="10">10 小时</option>
+              </select>
+            </div>
+          </div>
+          <div class="setting-row" style="border-top:none;padding-top:0">
+            <div class="setting-info">
+              <div class="setting-name">今日学习进度</div>
+              <div class="setting-desc" id="stLimitTodayDesc">正在统计…</div>
+            </div>
+            <div class="setting-actions">
+              <button class="btn btn-ghost" onclick="resetTodayStudyTime()">重置今日</button>
+            </div>
+          </div>
+          <div style="padding:0 18px 16px">
+            <div class="st-limit-bar"><i id="stLimitBar" style="width:0%"></i></div>
+            <div class="st-limit-tip" id="stLimitTip"></div>
           </div>
         </div>
 
@@ -659,8 +691,8 @@
 
 </div>
 
-<script src="assets/app.js?v=20260913t"></script>
-<script src="assets/api.js?v=20260909e"></script>
+<script src="assets/app.js?v=20260911c"></script>
+<script src="assets/api.js?v=20260911c"></script>
 <script src="assets/qbank.js?v=6"></script>
 <script src="assets/importer.js?v=3"></script>
 <script>

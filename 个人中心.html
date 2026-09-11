@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN" data-page-node-id="ILb2qfr6MbhWBPIG1ihJzV">
 <head data-page-node-id="jxesVYkm0UckrxDhrOosue">
 <meta charset="UTF-8" data-page-node-id="yEhsxvyzz2jaB9PkJEj8Zc">
@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#5B8DEF" data-page-node-id="xcIilqbK544vSHAWBPyO4w">
 <title>个人中心 · 星途</title>
 <link rel="stylesheet" href="assets/common.css?v=v2.3" data-page-node-id="tBLcp6JxdB6dWCmMCCx7F8">
-<link rel="stylesheet" href="assets/polish.css?v=20260911b" data-page-node-id="uqByqsnHV08jClPBpI9G16">
+<link rel="stylesheet" href="assets/polish.css?v=20260911c" data-page-node-id="uqByqsnHV08jClPBpI9G16">
 </head>
 <body class="theme-home" data-page-node-id="YOxnETeT4z4J4WFn6FB0qJ">
 
@@ -103,13 +103,29 @@
     </div>
   </div>
 
-  <!-- ==================== 编辑资料弹窗（头像上传 + 昵称 + 个性签名） ====================
-       逻辑见 assets/app.js 的 editProfile()/onProfileAvatarFile()/saveProfileEditor()。
-       头像为本地图片转 base64 存 localStorage（study_workbench_data.profile.avatarImg），
-       无需后端上传接口；图片过大会占用浏览器存储空间（已自动压缩到 256×256 JPEG）。 -->
+  <!-- ==================== 编辑资料弹窗 v3（头像 + 基本资料 + 个性展示 + 备考计划 + 完成度 + 实时预览） ====================
+       逻辑见 assets/api.js 的 editProfile()/onProfileAvatarFile()/saveProfileEditor()（在线存服务器，离线存本机）。
+       页面级交互（标签 chips / 字数统计 / 资料完成度 / 迷你实时预览）见本文件底部 peModal 脚本。 -->
   <div class="modal-overlay" id="profileEditModal" data-page-node-id="aN1QPjOJNhtQKAk7XF4hqn">
     <div class="modal" data-page-node-id="haDi0aFDMHYXN8T3YHG7j5">
       <div class="modal-title" data-page-node-id="MPmDoVnYVvApdyg8GjqPFs">✏️ 编辑资料</div>
+
+      <div class="pe-complete-wrap">
+        <div class="pe-complete-head"><span>📊 资料完成度</span><b id="pePct">0%</b></div>
+        <div class="pe-complete-bar"><i id="pePctBar" style="width:0%"></i></div>
+        <div class="pe-complete-tip" id="pePctTip">完善资料，让其他同学更了解你～</div>
+      </div>
+
+      <div class="pe-mini">
+        <div class="pe-mini-avatar" id="peMiniAvatar">学</div>
+        <div class="pe-mini-body">
+          <div class="pe-mini-name" id="peMiniName">同学</div>
+          <div class="pe-mini-motto" id="peMiniMotto">这个人很懒，什么都没写～</div>
+          <div class="pe-mini-tags" id="peMiniTags"></div>
+        </div>
+      </div>
+
+      <div class="pe-sec">🪪 基本资料</div>
       <div class="form-group" data-page-node-id="XtKQK1EFwIknYNME6rOGVI">
         <div class="form-label" data-page-node-id="RGAAfTZM54BJvxg3gbHOJy">头像</div>
         <div class="pe-avatar-row" data-page-node-id="R1kfewVf9cI32WUpsUUvJt">
@@ -120,41 +136,69 @@
           </div>
           <input type="file" id="peAvatarFile" accept="image/*" style="display:none" onchange="onProfileAvatarFile(this)" data-page-node-id="Eua3wJxtXVi3gejFJjWjNO">
         </div>
-        <div class="pe-tip" data-page-node-id="Zti7kWo3G3KCbGG7K8avMW">支持 JPG / PNG / WebP 等图片，自动居中裁圆并压缩为 256×256。本地版头像以 base64 存在浏览器 localStorage 中，图片体积大时会占用存储空间。</div>
+        <div class="pe-tip" data-page-node-id="Zti7kWo3G3KCbGG7K8avMW">支持 JPG / PNG / WebP 等图片，自动居中裁圆压缩。在线模式上传到服务器，离线模式以 base64 存本机浏览器。</div>
       </div>
       <div class="form-group" data-page-node-id="8UHhRo88ACHZXxGptoAGfR">
-        <div class="form-label" data-page-node-id="VVwiq1rZsyMfqfYc405M97">昵称</div>
+        <div class="form-label" data-page-node-id="VVwiq1rZsyMfqfYc405M97">昵称 <span class="pe-counter" id="peCntName">0/20</span></div>
         <input type="text" class="form-input" id="peName" maxlength="20" placeholder="输入新的昵称" data-page-node-id="cmv7HPtDsMYGxbTV6HPQdp">
       </div>
+      <div class="pe-grid2">
+        <div class="form-group" data-page-node-id="t1LtDotadopge7TNYB8lTT">
+          <div class="form-label" data-page-node-id="IF9jSLt5nFZ6ZdUg4kPWGF">性别</div>
+          <select class="form-input" id="peGender" data-page-node-id="gdpytyluAUEB9sApFXqlJp">
+            <option value="secret" data-page-node-id="nzVLniXoGWsVU2ndNnAc6m">🔒 保密</option>
+            <option value="female" data-page-node-id="RdyEClmsgeBVxcULTmA211">👩 女</option>
+            <option value="male" data-page-node-id="Gm3JKDRJeHFrrrRbxHNTuM">👨 男</option>
+          </select>
+        </div>
+        <div class="form-group" data-page-node-id="s48JYaLLym0HO04XTYONp2">
+          <div class="form-label" data-page-node-id="Dg2QLOf6IIhDeLWIFKTlGV">出生年月</div>
+          <input type="date" class="form-input" id="peBirthday" min="1950-01-01" max="2015-12-31" data-page-node-id="wmMbTNz3lwuG9Y0DIZuBu6">
+        </div>
+      </div>
+      <div class="pe-grid2">
+        <div class="form-group" data-page-node-id="U4j6ajc2Dys3OC03tzkfCK">
+          <div class="form-label" data-page-node-id="Ye7c6Te8QpYNOfsbA2RBz4">所在城市</div>
+          <input type="text" class="form-input" id="peCity" maxlength="20" placeholder="如：北京 / 上海" data-page-node-id="6DiOx2SpMqj2g0GatJYOF7">
+        </div>
+        <div class="form-group">
+          <div class="form-label">手机号 <span class="pe-private" id="pePhoneMask">仅自己可见</span></div>
+          <input type="tel" class="form-input" id="pePhone" maxlength="11" inputmode="numeric" placeholder="11 位手机号（可选）">
+        </div>
+      </div>
+      <div class="pe-tip" style="margin-top:-2px" data-page-node-id="nR7oubbZ2Y1uJYQXtnB1Qp">🔒 隐私说明：性别、生日、手机号仅自己可见（公开主页不展示）；城市、简介、标签、学习目标会展示。</div>
+
+      <div class="pe-sec">💬 个性展示</div>
       <div class="form-group" data-page-node-id="54KFGO7GdtfTWGda5GSuMp">
-        <div class="form-label" data-page-node-id="Gbf3TbE4OjxWvsoKK4Rzkn">个性签名</div>
-        <input type="text" class="form-input" id="peMotto" maxlength="60" placeholder="输入新的个性签名" data-page-node-id="LgqM083GYkBOvTdfFJRxrS">
+        <div class="form-label" data-page-node-id="Gbf3TbE4OjxWvsoKK4Rzkn">个性签名 <span class="pe-counter" id="peCntMotto">0/60</span></div>
+        <input type="text" class="form-input" id="peMotto" maxlength="60" placeholder="一句话展示自己，如：每天背 50 个单词" data-page-node-id="LgqM083GYkBOvTdfFJRxrS">
       </div>
       <div class="form-group" data-page-node-id="eIfBnboPmMv09c5HMgECFO">
-        <div class="form-label" data-page-node-id="t3cJI4q2o0w3qS2G2NmEGT">个人简介</div>
-        <textarea class="form-input" id="peBio" maxlength="300" rows="2" style="resize:vertical" placeholder="用一句话介绍自己，会展示在个人主页"></textarea>
+        <div class="form-label" data-page-node-id="t3cJI4q2o0w3qS2G2NmEGT">个人简介 <span class="pe-counter" id="peCntBio">0/300</span></div>
+        <textarea class="form-input" id="peBio" maxlength="300" rows="2" style="resize:vertical" placeholder="介绍一下自己：学校 / 专业 / 备考阶段 / 兴趣…会展示在个人主页"></textarea>
         <div class="pe-tip" data-page-node-id="DJF1jdTRO0mqeRioZy34E0">最多 300 字；在线模式下会同步到服务器数据库，离线模式下保存在本机。</div>
       </div>
-      <div class="form-group" data-page-node-id="t1LtDotadopge7TNYB8lTT">
-        <div class="form-label" data-page-node-id="IF9jSLt5nFZ6ZdUg4kPWGF">性别</div>
-        <select class="form-input" id="peGender" data-page-node-id="gdpytyluAUEB9sApFXqlJp">
-          <option value="secret" data-page-node-id="nzVLniXoGWsVU2ndNnAc6m">🔒 保密</option>
-          <option value="female" data-page-node-id="RdyEClmsgeBVxcULTmA211">👩 女</option>
-          <option value="male" data-page-node-id="Gm3JKDRJeHFrrrRbxHNTuM">👨 男</option>
-        </select>
+
+      <div class="pe-sec">🎯 备考计划</div>
+      <div class="form-group">
+        <div class="form-label">备考方向标签 <span class="pe-counter" id="peCntTags">0/8</span></div>
+        <div class="pe-chips" id="peChips"></div>
+        <div class="pe-addrow">
+          <input type="text" class="form-input" id="peTagInput" maxlength="12" placeholder="自定义标签，如：六级600" onkeydown="if(event.key==='Enter'){peAddTag();return false;}">
+          <button class="btn btn-outline" type="button" onclick="peAddTag()">＋ 添加</button>
+        </div>
+        <input type="hidden" id="peTags">
+        <div class="pe-tip">选择或添加备考方向，其他同学访问你的主页时可以看到（最多 8 个，每个 ≤12 字）。</div>
       </div>
-      <div class="form-group" data-page-node-id="s48JYaLLym0HO04XTYONp2">
-        <div class="form-label" data-page-node-id="Dg2QLOf6IIhDeLWIFKTlGV">出生年月</div>
-        <input type="date" class="form-input" id="peBirthday" max="2015-12-31" data-page-node-id="wmMbTNz3lwuG9Y0DIZuBu6">
-        <div class="pe-tip" data-page-node-id="nR7oubbZ2Y1uJYQXtnB1Qp">仅自己可见，不在公开主页展示。</div>
+      <div class="form-group">
+        <div class="form-label">学习目标 <span class="pe-counter" id="peCntGoal">0/60</span></div>
+        <input type="text" class="form-input" id="peGoal" maxlength="60" placeholder="如：六级 600+ / 拿到国企 offer / 考研上岸">
+        <div class="pe-tip">写一个阶段性小目标，主页会用 🎯 展示，激励自己也告诉别人你在冲刺什么。</div>
       </div>
-      <div class="form-group" data-page-node-id="U4j6ajc2Dys3OC03tzkfCK">
-        <div class="form-label" data-page-node-id="Ye7c6Te8QpYNOfsbA2RBz4">所在城市</div>
-        <input type="text" class="form-input" id="peCity" maxlength="20" placeholder="如：北京 / 上海" data-page-node-id="6DiOx2SpMqj2g0GatJYOF7">
-      </div>
+
       <div class="modal-actions" data-page-node-id="DIxgsdUKfhYouitRbAse15">
         <button class="btn btn-outline" onclick="closeProfileEditor()" data-page-node-id="FA3Xut1ss7ejC1AQ6wnQgf">取消</button>
-        <button class="btn btn-primary" onclick="saveProfileEditor()" data-page-node-id="NFZt2w0wBA6nI48B1EQtS9">保存</button>
+        <button class="btn btn-primary" id="peSaveBtn" onclick="saveProfileEditor()" data-page-node-id="NFZt2w0wBA6nI48B1EQtS9">保存</button>
       </div>
     </div>
   </div>
@@ -239,8 +283,8 @@
 
 </div>
 
-<script src="assets/app.js?v=20260913t"></script>
-<script src="assets/api.js?v=v2.3?v=20260913a"></script>
+<script src="assets/app.js?v=20260911c"></script>
+<script src="assets/api.js?v=20260911c"></script>
 
 <script>
 function overviewGo(key) {
@@ -312,6 +356,144 @@ window.addEventListener('load', function() {
     renderProfilePage();
   }
 });
+
+/* ==================== 编辑资料弹窗 v3 页面级交互 ====================
+   标签 chips / 字数统计 / 资料完成度 / 迷你实时预览 / 保存按钮状态。
+   字段回填与保存在 assets/api.js（在线存服务器，离线存本机）。 */
+(function () {
+  var PRESET_TAGS = ['四级', '六级', '考研', '考公', '行测', '申论', '国企笔试', '面试', '英语口语', 'PPT', '求职简历', '词汇'];
+  var $ = function (id) { return document.getElementById(id); };
+  if (!$('peChips')) return; // 仅个人中心页执行
+
+  function getTags() {
+    var v = ($('peTags') && $('peTags').value) || '';
+    return v.split(',').map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 8);
+  }
+  function setTags(arr) {
+    if (!$('peTags')) return;
+    $('peTags').value = arr.slice(0, 8).join(',');
+    renderChips();
+    peSyncUI();
+  }
+  // 标签内容安全化：去掉引号/反斜杠/逗号，避免破坏 onclick 属性与存储格式
+  function safeTag(t) { return (t || '').replace(/[,"'\\\s]+/g, '').slice(0, 12); }
+  window.peToggleTag = function (t) {
+    var arr = getTags();
+    var i = arr.indexOf(t);
+    if (i >= 0) arr.splice(i, 1);
+    else {
+      if (arr.length >= 8) { showToast('⚠️ 最多 8 个标签'); return; }
+      arr.push(t);
+    }
+    setTags(arr);
+  };
+  window.peAddTag = function () {
+    var inp = $('peTagInput'); if (!inp) return;
+    var t = safeTag(inp.value);
+    if (!t) { showToast('⚠️ 先输入标签内容'); return; }
+    var arr = getTags();
+    if (arr.indexOf(t) >= 0) { showToast('⚠️ 标签已存在'); inp.value = ''; return; }
+    if (arr.length >= 8) { showToast('⚠️ 最多 8 个标签'); return; }
+    arr.push(t);
+    inp.value = '';
+    setTags(arr);
+  };
+  function chipHtml(t, on, extra) {
+    var label = (on ? '✓ ' : '') + t + (extra ? ' ✕' : '');
+    return '<button type="button" class="pe-chip' + (on ? ' on' : '') + (extra ? ' custom' : '') + '" onclick="peToggleTag(\'' + t + '\')">' + label + '</button>';
+  }
+  function renderChips() {
+    var box = $('peChips'); if (!box) return;
+    var cur = getTags();
+    var html = PRESET_TAGS.map(function (t) { return chipHtml(t, cur.indexOf(t) >= 0, false); }).join('');
+    cur.forEach(function (t) { if (PRESET_TAGS.indexOf(t) < 0) html += chipHtml(t, true, true); });
+    box.innerHTML = html;
+  }
+
+  // 实时联动：字数统计 + 资料完成度 + 迷你预览（editProfile() 打开弹窗后由包装过的 renderPeAvatarPreview 触发）
+  window.peSyncUI = function () {
+    if (!$('peName')) return;
+    var val = function (id) { var el = $(id); return el ? el.value : ''; };
+    // 生日选择器：max 动态设为今天（避免选到未来日期）
+    var bd = $('peBirthday');
+    if (bd && !bd.getAttribute('data-synced')) {
+      var t = new Date();
+      bd.max = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+      bd.setAttribute('data-synced', '1');
+    }
+    var cnt = function (id, n, max) { var el = $(id); if (el) el.textContent = n + '/' + max; };
+    cnt('peCntName', val('peName').length, 20);
+    cnt('peCntMotto', val('peMotto').length, 60);
+    cnt('peCntBio', val('peBio').length, 300);
+    cnt('peCntGoal', val('peGoal').length, 60);
+    cnt('peCntTags', getTags().length, 8);
+    // 手机号：仅数字，11 位；实时回显（脱敏预览 + 合法性提示）
+    var phEl = $('pePhone');
+    if (phEl) {
+      var raw = phEl.value.replace(/\D/g, '').slice(0, 11);
+      if (raw !== phEl.value) phEl.value = raw;
+      var hint = $('pePhoneMask');
+      if (hint) {
+        if (!raw) hint.textContent = '仅自己可见';
+        else if (raw.length === 11) hint.textContent = raw.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') + ' ✓';
+        else hint.textContent = '还需 ' + (11 - raw.length) + ' 位';
+      }
+    }
+    var items = [
+      !!(typeof apiAvatarTemp !== 'undefined' && apiAvatarTemp),
+      !!val('peName').trim(),
+      !!val('peMotto').trim(),
+      val('peBio').trim().length >= 10,
+      val('peGender') !== 'secret',
+      !!val('peBirthday'),
+      !!val('peCity').trim(),
+      getTags().length > 0,
+      val('peGoal').trim().length >= 4
+    ];
+    var done = items.filter(Boolean).length;
+    var pct = Math.round(done / items.length * 100);
+    if ($('pePct')) $('pePct').textContent = pct + '%';
+    if ($('pePctBar')) $('pePctBar').style.width = pct + '%';
+    var tips = ['头像', '昵称', '个性签名', '个人简介（≥10字）', '性别', '生日', '城市', '备考标签', '学习目标'];
+    var miss = tips.filter(function (t, i) { return !items[i]; });
+    if ($('pePctTip')) $('pePctTip').textContent = pct >= 100 ? '🎉 太棒了！资料已全部完善' : ('还可以完善：' + miss.slice(0, 3).join('、'));
+    // 迷你预览
+    var src = $('peAvatarPreview'), img = src && src.querySelector('img'), ma = $('peMiniAvatar');
+    if (ma) {
+      if (img) ma.innerHTML = '<img src="' + img.getAttribute('src') + '" alt="">';
+      else ma.textContent = (val('peName').trim().slice(0, 1)) || '学';
+    }
+    if ($('peMiniName')) $('peMiniName').textContent = val('peName').trim() || '同学';
+    if ($('peMiniMotto')) $('peMiniMotto').textContent = val('peMotto').trim() || '这个人很懒，什么都没写～';
+    if ($('peMiniTags')) {
+      var ts = getTags();
+      $('peMiniTags').innerHTML = ts.slice(0, 4).map(function (t) { return '<span>' + t + '</span>'; }).join('') + (ts.length > 4 ? '<span>+' + (ts.length - 4) + '</span>' : '');
+    }
+  };
+
+  // 输入联动
+  ['peName', 'peMotto', 'peBio', 'peGoal', 'peCity', 'peGender', 'peBirthday', 'pePhone'].forEach(function (id) {
+    var el = $(id); if (!el) return;
+    el.addEventListener('input', peSyncUI);
+    el.addEventListener('change', peSyncUI);
+  });
+
+  // 头像预览刷新后同步迷你预览（api.js 的 renderPeAvatarPreview 选图/恢复默认时都会调用）
+  var _rpe = window.renderPeAvatarPreview;
+  if (typeof _rpe === 'function') {
+    window.renderPeAvatarPreview = function () { _rpe(); peSyncUI(); };
+  }
+  // 保存按钮 loading 态（api.js saveProfileEditor 期间禁用，1.5s 后兜底恢复）
+  var _save = window.saveProfileEditor;
+  if (typeof _save === 'function') {
+    window.saveProfileEditor = function () {
+      var btn = $('peSaveBtn');
+      if (btn) { btn.disabled = true; btn.textContent = '保存中…'; }
+      try { return _save(); }
+      finally { setTimeout(function () { if (btn) { btn.disabled = false; btn.textContent = '保存'; } }, 1500); }
+    };
+  }
+})();
 </script>
 </body>
 </html>
