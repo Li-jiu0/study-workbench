@@ -128,6 +128,36 @@ async function loadCurrentUser() {
   return CURRENT_USER;
 }
 
+/* ---------- 在线状态（批次二 需求6，2026-09-11）：相对时间格式化（纯函数，jsdom 可断言） ----------
+   输入：lastSeenAt —— 服务端 last_seen_at（'YYYY-MM-DD HH:MM:SS'，users.last_seen_at，60s 节流刷新）；
+        online —— 服务端按 ONLINE_THRESHOLD_SECONDS 计算的布尔；
+        now（可选）—— 注入当前时间，便于边界测试；缺省取本机时间。
+   规则：在线 → 「在线」（绿点由 CSS 类 .on 渲染）；字段缺失/无法解析 → ''（调用方不显示，绝不造假）；
+        <5 分钟 → 「刚刚在线」；5 分钟~1 小时 → 「N分钟前」；跨自然日（昨天）→ 「昨天 HH:MM」；
+        1~24 小时 → 「N小时前」；更久 → 「N天前」。 */
+function formatPresence(lastSeenAt, online, now) {
+  if (online) return '在线';
+  if (!lastSeenAt) return '';
+  var t = new Date(String(lastSeenAt).replace(' ', 'T'));
+  if (isNaN(t.getTime())) return '';
+  var ref = now ? new Date(now) : new Date();
+  if (isNaN(ref.getTime())) ref = new Date();
+  var diffMs = ref.getTime() - t.getTime();
+  if (diffMs < 0) diffMs = 0; // 客户端时钟略慢于服务端时，按「刚刚」处理，绝不显示未来时间
+  var diffMin = diffMs / 60000;
+  if (diffMin < 5) return '刚刚在线';
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  // 跨自然日判定用 Date 回退一天再比对年月日（dayKey 数字减法会在月初/月初边界出错）
+  var yesterday = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate() - 1);
+  if (t.getFullYear() === yesterday.getFullYear() && t.getMonth() === yesterday.getMonth() && t.getDate() === yesterday.getDate()) {
+    return '昨天 ' + pad(t.getHours()) + ':' + pad(t.getMinutes());
+  }
+  if (diffMin < 60) return Math.floor(diffMin) + '分钟前';
+  if (diffMin < 60 * 24) return Math.floor(diffMin / 60) + '小时前';
+  return Math.floor(diffMin / (60 * 24)) + '天前';
+}
+window.formatPresence = formatPresence;
+
 /* ---------- 个人中心：侧栏头像 / 页面渲染（含他人公开主页） ---------- */
 function updateProfileUI() {
   var u = CURRENT_USER; if (!u) return;
@@ -215,6 +245,10 @@ async function renderUserHome(userId, box) {
           '<div style="font-size:18px;font-weight:800;color:var(--text)">' + esc(u.nickname) + '</div>' +
           '<div style="font-size:13px;color:var(--text-secondary);margin-top:4px">' + esc(u.motto || '这个人很懒，什么都没写~') + '</div>' +
           (u.bio ? '<div style="font-size:13px;color:var(--text);margin-top:6px;line-height:1.6">' + esc(u.bio) + '</div>' : '') +
+          // 批次二 需求6：公开主页响应自带 presence 白名单字段（lastSeenAt/online），有则显示相对时间；无后端/字段缺失时整行不渲染
+          ((u.lastSeenAt || u.online) && typeof formatPresence === 'function'
+            ? '<div style="font-size:12px;margin-top:6px;display:inline-flex;align-items:center;gap:5px"' + (u.online ? ' class="presence-line on"' : ' class="presence-line"') + '><span class="presence-dot' + (u.online ? ' on' : '') + '"></span>' + esc(formatPresence(u.lastSeenAt, u.online)) + '</div>'
+            : '') +
           _profileMeta(u.gender, u.birthday, u.city) +
           (u.createdAt ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:6px">📅 加入于 ' + esc(String(u.createdAt).slice(0, 10)) + '</div>' : '') +
           _tagChips(u.tags) + _goalLine(u.goal) +
