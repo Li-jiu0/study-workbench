@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from database import (Comment, Favorite, Like, Note, Notification, User,
+from database import (BoardLike, BoardMessage, BoardReply, Comment, Favorite, Like, Note, Notification, User,
                       get_db, now_str)
 from schemas import CommentIn
 from security import get_current_user
@@ -81,13 +81,18 @@ def list_comments(note_id: int, offset: int = 0, limit: int = 50,
 @router.post("/api/notes/{note_id}/comments")
 def add_comment(note_id: int, body: CommentIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     n = _visible_note(note_id, user, db)
-    c = Comment(note_id=n.id, user_id=user.id, content=body.content.strip(), created_at=now_str())
+    parent_id = body.parent_id
+    if parent_id:
+        parent = db.get(Comment, parent_id)
+        if not parent or parent.note_id != n.id:
+            parent_id = None
+    c = Comment(note_id=n.id, user_id=user.id, content=body.content.strip(), created_at=now_str(), parent_id=parent_id)
     db.add(c)
     n.comments_count += 1
     _notify(db, n, user, "comment")
     db.commit()
     return {"id": c.id, "userId": user.id, "nickname": user.nickname,
-            "avatarUrl": user.avatar, "text": c.content, "time": c.created_at}
+            "avatarUrl": user.avatar, "text": c.content, "time": c.created_at, "parentId": parent_id}
 
 
 @router.delete("/api/comments/{comment_id}")
@@ -135,3 +140,185 @@ def read_all(user: User = Depends(get_current_user), db: Session = Depends(get_d
     db.query(Notification).filter(Notification.user_id == user.id).update({"is_read": True})
     db.commit()
     return {"ok": True}
+
+
+# ========== 学习留言板（公开，所有人可见） ==========
+@router.get("/api/board")
+def list_board(offset: int = 0, limit: int = 50,
+               user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    rows = (
+        db.query(BoardMessage)
+        .order_by(BoardMessage.id.desc())
+        .offset(offset)
+        .limit(min(max(limit, 1), 100))
+        .all()
+    )
+    total = db.query(BoardMessage).count()
+    liked_ids = set()
+    if rows:
+        liked_rows = db.query(BoardLike.message_id).filter(
+            BoardLike.user_id == user.id,
+            BoardLike.message_id.in_([m.id for m in rows])
+        ).all()
+        liked_ids = set(r[0] for r in liked_rows)
+    return {
+        "items": [
+            {
+                "id": m.id,
+                "userId": m.user_id,
+                "nickname": m.author.nickname if m.author else "已注销",
+                "avatarUrl": m.author.avatar if m.author else None,
+                "content": m.content,
+                "time": m.created_at,
+                "isMine": m.user_id == user.id,
+                "likes": m.likes_count or 0,
+                "replies": m.replies_count or 0,
+                "liked": m.id in liked_ids,
+            }
+            for m in rows
+        ],
+        "total": total,
+        "hasMore": offset + len(rows) < total,
+    }
+
+
+@router.post("/api/board")
+def add_board(body: dict, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    content = (body.get("content") or "").strip()
+    if not content:
+        raise HTTPException(400, "留言内容不能为空")
+    if len(content) > 500:
+        raise HTTPException(400, "留言不能超过500字")
+    m = BoardMessage(user_id=user.id, content=content, created_at=now_str())
+    db.add(m)
+    db.commit()
+    db.refresh(m)
+    return {
+        "id": m.id,
+        "userId": user.id,
+        "nickname": user.nickname,
+        "avatarUrl": user.avatar,
+        "content": m.content,
+        "time": m.created_at,
+        "isMine": True,
+    }
+
+
+@router.delete("/api/board/{msg_id}")
+def delete_board(msg_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    m = db.get(BoardMessage, msg_id)
+    if not m:
+        raise HTTPException(404, "留言不存在")
+    if m.user_id != user.id:
+        raise HTTPException(403, "只能删除自己的留言")
+    db.delete(m)
+    db.commit()
+    return {"ok": True}
+
+
+# ========== 留言板点赞 ==========
+@router.post("/api/board/{msg_id}/like")
+def toggle_board_like(msg_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    m = db.get(BoardMessage, msg_id)
+    if not m:
+        raise HTTPException(404, "留言不存在")
+    exist = db.query(BoardLike).filter(BoardLike.message_id == msg_id, BoardLike.user_id == user.id).first()
+    if exist:
+        db.delete(exist)
+        m.likes_count = max(0, (m.likes_count or 0) - 1)
+        liked = False
+    else:
+        db.add(BoardLike(message_id=msg_id, user_id=user.id, created_at=now_str()))
+        m.likes_count = (m.likes_count or 0) + 1
+        liked = True
+    db.commit()
+    return {"liked": liked, "likes": m.likes_count}
+
+
+# ========== 留言板回复 ==========
+@router.get("/api/board/{msg_id}/replies")
+def list_board_replies(msg_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    m = db.get(BoardMessage, msg_id)
+    if not m:
+        raise HTTPException(404, "留言不存在")
+    rows = db.query(BoardReply).filter(BoardReply.message_id == msg_id).order_by(BoardReply.id.asc()).all()
+    return {
+        "items": [
+            {
+                "id": r.id,
+                "userId": r.user_id,
+                "nickname": r.author.nickname if r.author else "已注销",
+                "avatarUrl": r.author.avatar if r.author else None,
+                "content": r.content,
+                "time": r.created_at,
+                "isMine": r.user_id == user.id,
+            }
+            for r in rows
+        ]
+    }
+
+
+@router.post("/api/board/{msg_id}/replies")
+def add_board_reply(msg_id: int, body: dict, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    m = db.get(BoardMessage, msg_id)
+    if not m:
+        raise HTTPException(404, "留言不存在")
+    content = (body.get("content") or "").strip()
+    if not content:
+        raise HTTPException(400, "回复内容不能为空")
+    if len(content) > 300:
+        raise HTTPException(400, "回复不能超过300字")
+    r = BoardReply(message_id=msg_id, user_id=user.id, content=content, created_at=now_str())
+    db.add(r)
+    m.replies_count = (m.replies_count or 0) + 1
+    db.commit()
+    return {
+        "id": r.id,
+        "userId": user.id,
+        "nickname": user.nickname,
+        "avatarUrl": user.avatar,
+        "content": r.content,
+        "time": r.created_at,
+        "isMine": True,
+    }
+
+
+@router.delete("/api/board/replies/{reply_id}")
+def delete_board_reply(reply_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    r = db.get(BoardReply, reply_id)
+    if not r:
+        raise HTTPException(404, "回复不存在")
+    if r.user_id != user.id:
+        raise HTTPException(403, "只能删除自己的回复")
+    m = db.get(BoardMessage, r.message_id)
+    if m:
+        m.replies_count = max(0, (m.replies_count or 0) - 1)
+    db.delete(r)
+    db.commit()
+    return {"ok": True}
+
+
+# ========== TTS 代理（避免浏览器 CORS） ==========
+import httpx
+from fastapi import Response
+
+@router.get("/api/tts")
+async def tts_proxy(text: str = "", lang: str = "en"):
+    """代理有道词典 TTS，避免浏览器跨域问题。"""
+    if not text:
+        return Response(status_code=400, content="text required")
+    piece = text[:150]
+    is_zh = "zh" in lang.lower() or "cn" in lang.lower()
+    url = "https://dict.youdao.com/dictvoice?audio=" + piece + "&type=" + ("2" if is_zh else "2")
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.get(url)
+            if r.status_code == 200 and r.content:
+                return Response(
+                    content=r.content,
+                    media_type="audio/mpeg",
+                    headers={"Cache-Control": "public, max-age=86400"}
+                )
+    except Exception as e:
+        pass
+    return Response(status_code=500, content="TTS failed")

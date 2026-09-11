@@ -98,6 +98,8 @@ class Comment(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     content = Column(String(2000), nullable=False)
     created_at = Column(String(16), nullable=False)
+    # 回复目标评论 id（NULL = 顶层评论）。2026-09-11 补齐：social.py 的评论接口一直在用它。
+    parent_id = Column(Integer, nullable=True)
     note = relationship("Note", back_populates="comments")
 
 
@@ -364,6 +366,10 @@ def _upgrade_legacy_schema() -> None:
     if "messages" in names and "group_id" not in _table_columns("messages"):
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE messages ADD COLUMN group_id INTEGER REFERENCES chat_groups(id) ON DELETE CASCADE"))
+    # 修复（2026-09-11）：comments.parent_id 缺失导致 social.py 评论接口 AttributeError（生产 500），此处无损补列
+    if "comments" in names and "parent_id" not in _table_columns("comments"):
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE comments ADD COLUMN parent_id INTEGER"))
 
 
 def init_db() -> None:

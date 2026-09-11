@@ -50,6 +50,8 @@ class NotePatch(BaseModel):
 
 class CommentIn(BaseModel):
     content: str = Field(min_length=1, max_length=2000)
+    # 可选：回复某条评论（对应 comments.parent_id）。缺省为顶层评论。
+    parent_id: int | None = None
 
 
 class ChatIn(BaseModel):
