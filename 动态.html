@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#5B8DEF">
+<title>动态 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=v2.3">
+<link rel="stylesheet" href="assets/polish.css?v=20260911c">
+<style>
+  /* ===== 动态页（朋友圈式，2026-09-11 增量）===== */
+  .mo-wrap{max-width:640px;margin:0 auto;padding:16px 14px 80px;width:100%}
+  .mo-publish{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--shadow);margin-bottom:14px}
+  .mo-pub-row{display:flex;gap:10px}
+  .mo-pub-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--primary-light),#e9ecff);display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--primary);overflow:hidden;flex-shrink:0}
+  .mo-pub-avatar img{width:100%;height:100%;object-fit:cover}
+  .mo-pub-main{flex:1;min-width:0}
+  .mo-pub-main textarea{width:100%;min-height:72px;resize:none;border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:14px;font-family:inherit;outline:none;background:var(--bg);color:var(--text);box-sizing:border-box}
+  .mo-pub-main textarea:focus{border-color:var(--primary)}
+  .mo-imgs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+  .mo-img-cell{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--bg)}
+  .mo-img-cell img{width:100%;height:100%;object-fit:cover}
+  .mo-img-del{position:absolute;top:4px;right:4px;width:20px;height:20px;line-height:18px;text-align:center;background:rgba(0,0,0,.55);color:#fff;border-radius:50%;font-size:11px;cursor:pointer}
+  .mo-img-add{display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);border-radius:10px;color:var(--text-secondary);font-size:24px;cursor:pointer;aspect-ratio:1;background:var(--bg)}
+  .mo-pub-foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+  .mo-pub-tip{font-size:12px;color:var(--text-secondary)}
+  .mo-feed{display:flex;flex-direction:column;gap:12px}
+  .mo-card{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--shadow)}
+  .mo-head{display:flex;align-items:center;gap:10px}
+  .mo-av{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--primary-light),#e9ecff);display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--primary);overflow:hidden;flex-shrink:0;cursor:pointer}
+  .mo-av img{width:100%;height:100%;object-fit:cover}
+  .mo-name{font-size:14px;font-weight:600;cursor:pointer}
+  .mo-time{font-size:11px;color:var(--text-secondary)}
+  .mo-more{margin-left:auto;color:var(--text-secondary);cursor:pointer;padding:2px 8px;font-size:16px}
+  .mo-content{font-size:14px;line-height:1.6;margin:10px 0 0;white-space:pre-wrap;word-break:break-word}
+  .mo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+  .mo-grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;cursor:pointer}
+  .mo-actions{display:flex;gap:18px;margin-top:10px;padding-top:8px;border-top:1px solid var(--border)}
+  .mo-act{font-size:13px;color:var(--text-secondary);cursor:pointer;user-select:none}
+  .mo-act.liked{color:#ff5d5d;font-weight:600}
+  .mo-likes{font-size:12px;color:#ff5d5d;margin-top:8px}
+  .mo-cmt{margin-top:8px;background:var(--bg);border-radius:10px;padding:8px 10px}
+  .mo-cmt-row{font-size:13px;line-height:1.6}
+  .mo-cmt-row b{cursor:pointer}
+  .mo-cmt-del{color:var(--text-secondary);font-size:11px;cursor:pointer;margin-left:6px}
+  .mo-cmt-input{display:flex;gap:8px;margin-top:8px}
+  .mo-cmt-input input{flex:1;border:1px solid var(--border);border-radius:10px;padding:7px 10px;font-size:13px;outline:none;background:var(--card);color:var(--text)}
+  .mo-cmt-input button{border:none;background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff;border-radius:10px;padding:0 14px;cursor:pointer;font-size:13px}
+  .mo-empty{text-align:center;padding:48px 16px;color:var(--text-secondary);font-size:13px}
+  .mo-offline{background:#fff7ed;border:1px solid #fdba74;color:#c2410c;font-size:12px;border-radius:10px;padding:8px 12px;margin-top:10px}
+  @media (max-width:760px){ .mo-wrap{padding:12px 10px 80px} }
+</style>
+</head>
+<body class="theme-home">
+
+<div class="app">
+<nav class="sidebar"> <div class="logo"> <div class="logo-icon">📚</div> <div> <div class="logo-text">星途</div> <div class="logo-sub">致追梦的人->修身</div> </div> </div> <div class="nav-list"> <div class="nav-item" data-page="home"> <span class="nav-icon">🏠</span><span>首页</span> </div> <div class="nav-section">学习模块</div> <div class="nav-item" data-page="cet"> <span class="nav-icon">📖</span><span>四级备考</span> </div> <div class="nav-item" data-page="exam"> <span class="nav-icon">📝</span><span>央国企笔试</span> </div> <div class="nav-item" data-page="comm"> <span class="nav-icon">💬</span><span>高情商表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon">🤝</span><span>商务礼仪面试</span> </div> <div class="nav-item" data-page="ppt"> <span class="nav-icon">🎨</span><span>PPT训练</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon">📝</span><span>广场</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-page="moments" style="background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff;border-radius:10px"> <span class="nav-icon">🌏</span><span>动态</span> </div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon">💬</span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon">📒</span><span>错题本</span> </div> <div class="nav-item" data-page="profile"> <span class="nav-icon">👤</span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon">⚙️</span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak">🔥 连续打卡 0 天</div> </div> </div> </div> </nav>
+
+  <div class="main">
+<header class="topbar">
+      <div class="topbar-title" id="topbarTitle">动态</div>
+      <div class="gs-wrap" id="gsWrap"></div>
+      <div class="topbar-stats">
+        <div class="stat-item"><span class="stat-icon">🔥</span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon">⏱️</span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+        <div class="stat-item"><span class="stat-icon">✅</span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
+      </div>
+      <div class="topbar-date" id="topbarDate"></div>
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式">🌙</div>
+    </header>
+<div class="page active" id="page-moments" style="display:flex;overflow-y:auto">
+  <div class="mo-wrap">
+
+    <!-- 发布卡 -->
+    <div class="mo-publish" id="moPublish">
+      <div class="mo-pub-row">
+        <div class="mo-pub-avatar" id="moMyAv">学</div>
+        <div class="mo-pub-main">
+          <textarea id="moText" maxlength="2000" placeholder="记录今天的学习打卡…"></textarea>
+          <div class="mo-imgs" id="moImgs"></div>
+          <!-- 【后续扩展点：动态图片 lightbox 放大浏览】 -->
+          <div class="mo-pub-foot">
+            <div style="display:flex;gap:10px;align-items:center">
+              <button class="im-icon" title="添加图片（最多9张）" onclick="document.getElementById('moImgFile').click()">🖼</button>
+              <input type="file" id="moImgFile" accept="image/*" multiple style="display:none" onchange="moPickImages(this)">
+            </div>
+            <button class="btn btn-primary" id="moPubBtn" onclick="moPublish()">发布</button>
+          </div>
+          <div class="mo-offline" id="moOffline" style="display:none">动态需联网发布，当前不可用；内容已暂存本地，恢复后可一键补发。</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 动态流 -->
+    <div class="mo-feed" id="moFeed"><div class="mo-empty">加载中…</div></div>
+    <div style="text-align:center;margin:14px 0"><button class="btn btn-outline" id="moMore" onclick="moLoadMore()" style="display:none">加载更多</button></div>
+    <!-- 【后续扩展点：空状态推荐好友动态】 -->
+  </div>
+</div>
+  </div>
+
+  <!-- 底部导航（手机端） -->
+    <nav class="bottom-nav">
+    <div class="bottom-nav-list">
+      <div class="bottom-nav-item" data-page="home">
+        <div class="bn-icon">🏠</div><div class="bn-label">首页</div>
+      </div>
+      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon">💬</div><div class="bn-label">互动</div></div>
+      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon">👤</div><div class="bn-label">我的</div></div>
+      <div class="bottom-nav-item" onclick="toggleToolsPanel()"><div class="bn-icon">🧰</div><div class="bn-label">工具</div></div>
+      <div class="bottom-nav-item" onclick="toggleMorePanel()">
+        <div class="bn-icon">☰</div><div class="bn-label">更多</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 更多面板遮罩 -->
+    <div class="more-overlay" onclick="toggleMorePanel()"></div>
+
+  <!-- 更多面板 -->
+  <div class="bottom-more-panel" id="morePanel">
+    <div class="bottom-more-title">更多功能</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="location.href='动态.html'">
+        <div class="bm-icon">🌏</div><div class="bm-label">动态</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogStats()">
+        <div class="bm-icon">📊</div><div class="bm-label">学习统计</div>
+      </div>
+      <div class="bottom-more-item" onclick="gotoBlogMine()">
+        <div class="bm-icon">📁</div><div class="bm-label">互动广场</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
+        <div class="bm-icon">⚙️</div><div class="bm-label">设置</div>
+      </div>
+      <div class="bottom-more-item" onclick="showAbout()">
+        <div class="bm-icon">ℹ️</div><div class="bm-label">关于</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast提示 -->
+  <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center"></div>
+
+</div>
+
+<script src="assets/app.js?v=20260911c"></script>
+<script src="assets/config.js?v=20260911d"></script>
+<script src="assets/api.js?v=20260911c"></script>
+<script>
+/* ==================== 动态页逻辑（T5 增量 2026-09-11） ====================
+   好友动态流：发布（文字+≤9图，canvas 压缩后走 /api/uploads）→ /api/moments。
+   仅好友可见；点赞/评论/删评/删动态；离线降级：发布禁用+草稿暂存。 */
+(function () {
+  'use strict';
+  function $id(x) { return document.getElementById(x); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function apiBase() { return (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000')); }
+  function tok() { return localStorage.getItem('study_workbench_token') || ''; }
+  function myId() { try { return Number(localStorage.getItem('study_workbench_uid') || 0); } catch (e) { return 0; } }
+  function toastMsg(msg) { if (typeof showToast === 'function') showToast(msg); else console.log(msg); }
+
+  var DRAFT_KEY = 'study_workbench_moment_draft';
+  var MO = { items: [], nextBefore: 0, picked: [], online: !!tok() };
+
+  function fmtTime(t) {
+    if (!t) return '';
+    var d = new Date(String(t).replace(' ', 'T'));
+    if (isNaN(d)) return String(t || '');
+    var diff = (Date.now() - d.getTime()) / 60000;
+    if (diff < 1) return '刚刚';
+    if (diff < 60) return Math.floor(diff) + ' 分钟前';
+    if (diff < 60 * 24) return Math.floor(diff / 60) + ' 小时前';
+    var p = function (n) { return String(n).padStart(2, '0'); };
+    return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  function avatarHtml(url, name) {
+    if (url && /^(https?:|\/uploads\/|data:)/.test(url)) {
+      return '<img src="' + esc(url.startsWith('http') ? url : apiBase() + url) + '" alt="">';
+    }
+    return '<span>' + esc((name || '友').slice(0, 1)) + '</span>';
+  }
+
+  /* ---------- 发布卡 ---------- */
+  function renderPicked() {
+    var box = $id('moImgs');
+    if (!box) return;
+    box.innerHTML = MO.picked.map(function (p, i) {
+      return '<div class="mo-img-cell"><img src="' + esc(p.dataUrl) + '"><div class="mo-img-del" onclick="window.moRemovePicked(' + i + ')">✕</div></div>';
+    }).join('');
+    if (MO.picked.length < 9) {
+      box.insertAdjacentHTML('beforeend', '<div class="mo-img-add" onclick="document.getElementById(\'moImgFile\').click()">+</div>');
+    }
+  }
+  window.moRemovePicked = function (i) { MO.picked.splice(i, 1); renderPicked(); };
+
+  // canvas 压缩到 ≤1MB/张（最长边 1280）
+  window.moPickImages = function (input) {
+    var files = Array.prototype.slice.call(input.files || []);
+    input.value = '';
+    files.forEach(function (f) {
+      if (MO.picked.length >= 9) { toastMsg('最多 9 张图片'); return; }
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var img = new Image();
+        img.onload = function () {
+          var max = 1280, w = img.width, h = img.height;
+          if (Math.max(w, h) > max) { var k = max / Math.max(w, h); w = Math.round(w * k); h = Math.round(h * k); }
+          var cv = document.createElement('canvas');
+          cv.width = w; cv.height = h;
+          cv.getContext('2d').drawImage(img, 0, 0, w, h);
+          var quality = 0.85, dataUrl = cv.toDataURL('image/jpeg', quality);
+          while (dataUrl.length > 1.05 * 1024 * 1024 && quality > 0.3) {
+            quality -= 0.15;
+            dataUrl = cv.toDataURL('image/jpeg', quality);
+          }
+          MO.picked.push({ dataUrl: dataUrl, url: '' });
+          renderPicked();
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(f);
+    });
+  };
+
+  function uploadOne(dataUrl) {
+    // dataURL → Blob → /api/uploads
+    var arr = atob(dataUrl.split(',')[1]);
+    var buf = new Uint8Array(arr.length);
+    for (var i = 0; i < arr.length; i++) buf[i] = arr.charCodeAt(i);
+    var blob = new Blob([buf], { type: 'image/jpeg' });
+    var fd = new FormData();
+    fd.append('file', blob, 'moment.jpg');
+    return fetch(apiBase() + '/api/uploads', { method: 'POST', headers: { 'Authorization': 'Bearer ' + tok() }, body: fd })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d.url) throw new Error(d.detail || '上传失败');
+        return d.url;
+      });
+  }
+
+  window.moPublish = function () {
+    if (!MO.online) { toastMsg('动态需联网发布'); return; }
+    var text = ($id('moText') || {}).value || '';
+    if (!text.trim() && MO.picked.length === 0) { toastMsg('写点什么或选张图吧'); return; }
+    var btn = $id('moPubBtn');
+    btn.disabled = true; btn.textContent = '发布中…';
+    var uploads = MO.picked.map(function (p) { return p.url ? Promise.resolve(p.url) : uploadOne(p.dataUrl); });
+    Promise.all(uploads)
+      .then(function (urls) {
+        return fetch(apiBase() + '/api/moments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() },
+          body: JSON.stringify({ content: text.trim(), images: urls })
+        }).then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.detail || '发布失败'); return d; }); });
+      })
+      .then(function () {
+        toastMsg('✅ 已发布');
+        $id('moText').value = '';
+        try { localStorage.removeItem(DRAFT_KEY); } catch (e) { }
+        MO.picked = [];
+        renderPicked();
+        MO.items = []; MO.nextBefore = 0;
+        loadFeed(false);
+      })
+      .catch(function (e) {
+        toastMsg('发布失败：' + (e.message || '网络错误'));
+        // 离线降级：草稿暂存，恢复后一键补发【后续扩展点：动态草稿补发】
+        try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ content: text, at: Date.now() })); } catch (er) { }
+      })
+      .finally(function () { btn.disabled = false; btn.textContent = '发布'; });
+  };
+
+  /* ---------- 动态流 ---------- */
+  function momentCard(m) {
+    var imgs = (m.images || []).map(function (u) {
+      var src = u.startsWith('http') ? u : apiBase() + u;
+      return '<img src="' + esc(src) + '" alt="">';
+    }).join('');
+    var likes = (m.likes || []).length
+      ? '<div class="mo-likes">❤ ' + esc(m.likes.join('、')) + '</div>' : '';
+    var cmts = (m.comments || []).map(function (c) {
+      return '<div class="mo-cmt-row"><b onclick="window.moOpenUser(' + c.userId + ')">' + esc(c.nickname) + '</b>：' + esc(c.text) +
+        (c.canDelete ? '<span class="mo-cmt-del" onclick="window.moDelComment(' + m.id + ',' + c.id + ')">删除</span>' : '') + '</div>';
+    }).join('');
+    var more = m.canDelete
+      ? '<div class="mo-more" onclick="window.moDelMoment(' + m.id + ')">···</div>' : '';
+    return '<div class="mo-card">' +
+      '<div class="mo-head">' +
+        '<div class="mo-av" onclick="window.moOpenUser(' + m.author.id + ')">' + avatarHtml(m.author.avatarUrl, m.author.nickname) + '</div>' +
+        '<div><div class="mo-name" onclick="window.moOpenUser(' + m.author.id + ')">' + esc(m.author.nickname) + '</div>' +
+        '<div class="mo-time">' + esc(fmtTime(m.createdAt)) + '</div></div>' + more +
+      '</div>' +
+      (m.content ? '<div class="mo-content">' + esc(m.content) + '</div>' : '') +
+      ((m.images || []).length ? '<div class="mo-grid">' + imgs + '</div>' : '') +
+      '<div class="mo-actions">' +
+        '<span class="mo-act' + (m.likedByMe ? ' liked' : '') + '" id="moLike' + m.id + '" onclick="window.moLike(' + m.id + ')">' + (m.likedByMe ? '❤ 已赞' : '🤍 点赞') + '</span>' +
+        '<span class="mo-act" onclick="window.moFocusComment(' + m.id + ')">💬 评论</span>' +
+      '</div>' +
+      likes +
+      ((m.comments || []).length ? '<div class="mo-cmt">' + cmts + '</div>' : '') +
+      '<div class="mo-cmt-input" id="moCmtBox' + m.id + '" style="display:none">' +
+        '<input id="moCmtIn' + m.id + '" maxlength="500" placeholder="友善评论…" onkeydown="if(event.key===\'Enter\'){event.preventDefault();window.moSendComment(' + m.id + ')}">' +
+        '<button onclick="window.moSendComment(' + m.id + ')">发送</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function renderFeed(append) {
+    var box = $id('moFeed');
+    if (!box) return;
+    if (!append) box.innerHTML = '';
+    if (MO.items.length === 0) {
+      box.innerHTML = '<div class="mo-empty">还没有动态，发布第一条打卡吧</div>';
+      $id('moMore').style.display = 'none';
+      return;
+    }
+    box.innerHTML = MO.items.map(momentCard).join('');
+    $id('moMore').style.display = MO.nextBefore ? 'inline-block' : 'none';
+  }
+
+  function loadFeed(append) {
+    if (!MO.online) {
+      $id('moFeed').innerHTML = '<div class="mo-empty">动态需联网查看<br><span style="font-size:12px">后端不可用，本地草稿已暂存</span></div>';
+      $id('moOffline').style.display = 'block';
+      return;
+    }
+    var url = apiBase() + '/api/moments/feed?limit=20' + (append && MO.nextBefore ? '&beforeId=' + MO.nextBefore : '');
+    fetch(url, { headers: { 'Authorization': 'Bearer ' + tok() } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (append) MO.items = MO.items.concat(d.items || []);
+        else MO.items = d.items || [];
+        MO.nextBefore = d.nextBefore || 0;
+        renderFeed(append);
+      })
+      .catch(function () {
+        MO.online = false;
+        loadFeed(append);
+      });
+  }
+  window.moLoadMore = function () { loadFeed(true); };
+
+  /* ---------- 互动 ---------- */
+  window.moLike = function (mid) {
+    fetch(apiBase() + '/api/moments/' + mid + '/like', {
+      method: 'POST', headers: { 'Authorization': 'Bearer ' + tok() }
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      var m = MO.items.find(function (x) { return x.id === mid; });
+      if (!m) return;
+      m.likedByMe = d.liked;
+      if (d.liked && m.likes.indexOf(m.author.nickname) === -1 && !m.likes.length) m.likes.push('我');
+      else if (!d.liked) m.likes = m.likes.filter(function (n) { return n !== '我'; });
+      renderFeed(false);
+    })
+    .catch(function () { toastMsg('操作失败，请检查网络'); });
+  };
+
+  window.moFocusComment = function (mid) {
+    var box = $id('moCmtBox' + mid);
+    if (!box) return;
+    box.style.display = box.style.display === 'none' ? 'flex' : 'none';
+    var inp = $id('moCmtIn' + mid);
+    if (inp && box.style.display !== 'none') inp.focus();
+  };
+
+  window.moSendComment = function (mid) {
+    var inp = $id('moCmtIn' + mid);
+    var text = (inp.value || '').trim();
+    if (!text) return;
+    fetch(apiBase() + '/api/moments/' + mid + '/comments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() },
+      body: JSON.stringify({ content: text })
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (c) {
+      var m = MO.items.find(function (x) { return x.id === mid; });
+      if (m) {
+        m.comments = m.comments || [];
+        m.comments.push(c);
+        renderFeed(false);
+      }
+    })
+    .catch(function () { toastMsg('评论失败，请检查网络'); });
+  };
+
+  window.moDelComment = function (mid, cid) {
+    if (!confirm('确定删除这条评论吗？')) return;
+    fetch(apiBase() + '/api/moments/comments/' + cid, {
+      method: 'DELETE', headers: { 'Authorization': 'Bearer ' + tok() }
+    })
+    .then(function (r) { if (!r.ok) throw new Error('删除失败'); return r.json(); })
+    .then(function () {
+      var m = MO.items.find(function (x) { return x.id === mid; });
+      if (m) m.comments = (m.comments || []).filter(function (c) { return c.id !== cid; });
+      renderFeed(false);
+    })
+    .catch(function (e) { toastMsg(e.message || '网络错误'); });
+  };
+
+  window.moDelMoment = function (mid) {
+    if (!confirm('删除这条动态？点赞与评论会一并删除。')) return;
+    fetch(apiBase() + '/api/moments/' + mid, {
+      method: 'DELETE', headers: { 'Authorization': 'Bearer ' + tok() }
+    })
+    .then(function (r) { if (!r.ok) throw new Error('删除失败'); return r.json(); })
+    .then(function () {
+      MO.items = MO.items.filter(function (x) { return x.id !== mid; });
+      renderFeed(false);
+      toastMsg('已删除');
+    })
+    .catch(function (e) { toastMsg(e.message || '网络错误'); });
+  };
+
+  window.moOpenUser = function (uid) { if (uid) location.href = '个人中心.html?user=' + uid; };
+
+  /* ---------- 启动 ---------- */
+  function boot() {
+    // 我的头像
+    fetch(apiBase() + '/api/auth/me', { headers: { 'Authorization': 'Bearer ' + tok() } })
+      .then(function (r) { return r.json(); })
+      .then(function (me) {
+        if (me && me.id) {
+          try { localStorage.setItem('study_workbench_uid', String(me.id)); } catch (e) { }
+          var av = $id('moMyAv');
+          if (av) av.innerHTML = avatarHtml(me.avatarUrl, me.nickname);
+        }
+      })
+      .catch(function () { });
+    // 草稿恢复
+    try {
+      var draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
+      if (draft && draft.content) $id('moText').value = draft.content;
+    } catch (e) { }
+    loadFeed(false);
+  }
+  if (document.readyState !== 'loading') boot();
+  else document.addEventListener('DOMContentLoaded', boot);
+})();
+</script>
+</body>
+</html>

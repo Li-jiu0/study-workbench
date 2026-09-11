@@ -41,6 +41,15 @@
         <!-- 个人中心内容（由 assets/app.js 的 renderProfilePage() 渲染，v1.14 豆包风格） -->
         <div id="profileBox" data-page-node-id="pai821WhCBnDvGkFiQ3xiQ"></div>
 
+        <!-- 【后续扩展点】我的动态卡（T5 增量 2026-09-11）：本人动态列表（含删除），渲染逻辑见本文件底部脚本 -->
+        <div class="card" id="myMomentsCard">
+          <div class="card-header">
+            <div class="card-title"><span class="title-icon">🌏</span>我的动态</div>
+            <div class="card-action" onclick="location.href='动态.html'">去发布 →</div>
+          </div>
+          <div id="myMomentsBody" style="font-size:13px;padding:12px 16px;color:var(--text-secondary)">加载中…</div>
+        </div>
+
         <!-- 学习偏好（与设置联动）：v1.14 起由 renderProfilePage 的列表项呈现，DOM 保留 -->
         <div class="card" style="display:none" data-page-node-id="sGYAklXD8EhseTlHlPE0D1">
           <div class="card-header" data-page-node-id="tqhZHZtOh4Yd61ojVl1DWG">
@@ -494,6 +503,55 @@ window.addEventListener('load', function() {
       finally { setTimeout(function () { if (btn) { btn.disabled = false; btn.textContent = '保存'; } }, 1500); }
     };
   }
+})();
+</script>
+
+<script>
+/* ==================== 我的动态（T5 增量 2026-09-11） ====================
+   拉取本人动态列表（/api/moments/user/{我的id}），支持删除自己的动态。
+   离线/未登录降级为友好提示，不影响页面其他功能。 */
+(function () {
+  'use strict';
+  function $id(x) { return document.getElementById(x); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function apiBase() { return (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000')); }
+  function tok() { return localStorage.getItem('study_workbench_token') || ''; }
+
+  function loadMyMoments() {
+    var box = $id('myMomentsBody');
+    if (!box) return;
+    if (!tok()) { box.innerHTML = '登录后可查看和发布动态（<a href="动态.html">去动态页</a>）'; return; }
+    fetch(apiBase() + '/api/auth/me', { headers: { 'Authorization': 'Bearer ' + tok() } })
+      .then(function (r) { return r.json(); })
+      .then(function (me) {
+        if (!me || !me.id) throw new Error('未登录');
+        return fetch(apiBase() + '/api/moments/user/' + me.id + '?limit=10', { headers: { 'Authorization': 'Bearer ' + tok() } })
+          .then(function (r) { return r.json(); });
+      })
+      .then(function (d) {
+        var items = d.items || [];
+        if (!items.length) { box.innerHTML = '还没有动态，<a href="动态.html">去发布第一条打卡</a>'; return; }
+        box.innerHTML = items.map(function (m) {
+          var imgCount = (m.images || []).length;
+          return '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">' +
+            '<div style="flex:1;min-width:0"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)">' + esc(m.content || '[图片]') + '</div>' +
+            '<div style="font-size:11px;color:var(--text-secondary);margin-top:2px">❤ ' + (m.likes || []).length + ' · 💬 ' + (m.comments || []).length + (imgCount ? ' · 🖼 ' + imgCount : '') + ' · ' + esc(m.createdAt || '') + '</div></div>' +
+            '<span style="color:var(--danger);font-size:12px;cursor:pointer;flex-shrink:0" onclick="window.mmDelete(' + m.id + ')">删除</span>' +
+            '</div>';
+        }).join('');
+      })
+      .catch(function () { box.innerHTML = '动态需联网查看（后端不可用）'; });
+  }
+
+  window.mmDelete = function (mid) {
+    if (!confirm('删除这条动态？点赞与评论会一并删除。')) return;
+    fetch(apiBase() + '/api/moments/' + mid, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + tok() } })
+      .then(function (r) { if (!r.ok) throw new Error('删除失败'); loadMyMoments(); })
+      .catch(function (e) { alert(e.message || '网络错误'); });
+  };
+
+  if (document.readyState !== 'loading') loadMyMoments();
+  else document.addEventListener('DOMContentLoaded', loadMyMoments);
 })();
 </script>
 </body>
