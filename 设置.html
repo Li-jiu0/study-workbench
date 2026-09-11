@@ -409,6 +409,75 @@
           </div>
         </div>
 
+        <!-- 【后续扩展点】帮助与反馈卡（T6 增量 2026-09-11）：FAQ 手风琴（纯前端离线可用）+ 反馈表单 + 我的反馈。
+             提交走 /api/feedbacks（≥10 字，服务端限频 10 分钟 1 条）；失败暂存 study_workbench_feedback_outbox。
+             【后续扩展点：反馈处理台】管理员查询/处理接口本轮留空。 -->
+        <div class="card" id="feedbackCard">
+          <div class="card-header">
+            <div class="card-title"><span class="title-icon">🆘</span>帮助与反馈</div>
+            <div class="card-action" id="fbStatusBadge"></div>
+          </div>
+
+          <!-- 常见问题（纯前端静态内容，离线可用） -->
+          <div class="fb-faq" id="fbFaq">
+            <div class="fb-faq-item">
+              <div class="fb-faq-q" onclick="fbToggleFaq(this)">💬 消息发不出去怎么办？<span>▾</span></div>
+              <div class="fb-faq-a">① 确认后端已启动（设置页右上角能收到通知说明在线）；② 只能与好友互发消息，先在「好友」页添加；③ 若被对方拉黑会提示「无法发送消息」。离线时聊天会自动切到本地演示模式。</div>
+            </div>
+            <div class="fb-faq-item">
+              <div class="fb-faq-q" onclick="fbToggleFaq(this)">🖼 图片 / 头像不显示？<span>▾</span></div>
+              <div class="fb-faq-a">图片由后端 uploads 目录提供。file:// 打开页面时会自动拼接后端地址；请确认后端在运行，且没有浏览器插件拦截图片。</div>
+            </div>
+            <div class="fb-faq-item">
+              <div class="fb-faq-q" onclick="fbToggleFaq(this)">🔑 密码忘记了怎么找回？<span>▾</span></div>
+              <div class="fb-faq-a">当前版本暂不支持自助找回，请联系管理员在服务器端重置。注册后建议在「账号与安全」里记好密码。</div>
+            </div>
+            <div class="fb-faq-item">
+              <div class="fb-faq-q" onclick="fbToggleFaq(this)">📦 换电脑 / 换浏览器数据还在吗？<span>▾</span></div>
+              <div class="fb-faq-a">发贴、好友、消息存在服务器，登录即恢复；词汇进度、错题本等学习数据保存在本机，可在「数据管理」导出 JSON 备份后导入新设备。</div>
+            </div>
+            <div class="fb-faq-item">
+              <div class="fb-faq-q" onclick="fbToggleFaq(this)">🤖 AI 功能报「未配置密钥」？<span>▾</span></div>
+              <div class="fb-faq-a">密钥由管理员配置在服务器端，前端不接触任何密钥。若提示未配置，请联系管理员在 server/.env 填写对应 API Key 并重启后端。</div>
+            </div>
+            <div class="fb-faq-item">
+              <div class="fb-faq-q" onclick="fbToggleFaq(this)">📮 反馈提交了没人回？<span>▾</span></div>
+              <div class="fb-faq-a">反馈会进入开发者的处理队列，状态会显示在下方「我的反馈」里（待处理 / 已回复）。提交成功会返回一个编号（如 #123），方便追踪。</div>
+            </div>
+          </div>
+
+          <!-- 提交反馈表单 -->
+          <div class="fb-form">
+            <div class="fb-row">
+              <label class="fb-label">反馈类型</label>
+              <select id="fbType" class="fb-input">
+                <option value="bug">功能异常</option>
+                <option value="suggest">体验建议</option>
+                <option value="content">内容问题</option>
+                <option value="other">其他</option>
+              </select>
+            </div>
+            <div class="fb-row">
+              <label class="fb-label">问题描述（至少 10 字）</label>
+              <textarea id="fbContent" class="fb-input" rows="3" maxlength="2000" placeholder="请描述遇到的问题或建议…"></textarea>
+              <div class="fb-hint"><span id="fbLenTip">0 / 10 字</span></div>
+            </div>
+            <div class="fb-row fb-inline">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+                <input type="checkbox" id="fbAnonymous"> 匿名提交
+              </label>
+              <span style="flex:1"></span>
+              <button class="btn btn-primary" id="fbSubmitBtn" onclick="fbSubmit()">提交反馈</button>
+            </div>
+          </div>
+
+          <!-- 我的反馈 -->
+          <div class="fb-mine">
+            <div class="fb-mine-title">📮 我的反馈</div>
+            <div id="fbMineList" style="font-size:13px;color:var(--text-secondary)">加载中…</div>
+          </div>
+        </div>
+
         <!-- AI 模型选择：多人在线版为服务端密钥（表单由 api.js 覆盖渲染）；单机版（安卓 APK / 无 api.js）
              由页面底部脚本改标题并渲染本地直连表单（app.js 的 renderAiProviderForm，密钥仅存本机 localStorage） -->
         <div class="card" id="aiServerCard" data-page-node-id="OfysPTC9dEZhuyqAe8ltKZ">
@@ -1018,5 +1087,122 @@ function stDeleteAccount() {
   applyStudyReminder();
 })();
 </script>
+
+<script>
+/* ==================== 帮助与反馈（T6 增量 2026-09-11） ====================
+   FAQ 手风琴：纯前端，离线可用。
+   反馈提交：POST /api/feedbacks（≥10 字前端拦截；服务端限频 10 分钟 1 条 / 每天 5 条）。
+   成功 → toast 显示编号 #id 并刷新「我的反馈」；失败 → 暂存 study_workbench_feedback_outbox。
+   【后续扩展点：反馈处理台】管理员查询/标记已处理接口（后端 feedbackAdmin() 留空）。 */
+(function () {
+  'use strict';
+  function $id(x) { return document.getElementById(x); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function apiBase() { return (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000')); }
+  function tok() { return localStorage.getItem('study_workbench_token') || ''; }
+  var OUTBOX_KEY = 'study_workbench_feedback_outbox';
+  var FB_TYPE_TEXT = { bug: '功能异常', suggest: '体验建议', content: '内容问题', other: '其他' };
+  var FB_STATUS_TEXT = { pending: '待处理', replied: '已回复' };
+
+  window.fbToggleFaq = function (q) {
+    var item = q.parentElement;
+    if (item) item.classList.toggle('open');
+  };
+
+  // 字数提示（≥10 字才能提交）
+  var contentEl = $id('fbContent');
+  if (contentEl) {
+    contentEl.addEventListener('input', function () {
+      var n = (contentEl.value || '').trim().length;
+      var tip = $id('fbLenTip');
+      if (tip) {
+        tip.textContent = n + ' / 10 字';
+        tip.style.color = n >= 10 ? '#22c55e' : '';
+      }
+    });
+  }
+
+  window.fbSubmit = function () {
+    var content = (($id('fbContent') || {}).value || '').trim();
+    if (content.length < 10) { if (typeof showToast === 'function') showToast('反馈描述至少 10 个字'); else alert('反馈描述至少 10 个字'); return; }
+    var body = {
+      type: ($id('fbType') || {}).value || 'other',
+      content: content,
+      anonymous: !!($id('fbAnonymous') || {}).checked
+    };
+    var btn = $id('fbSubmitBtn');
+    if (btn) { btn.disabled = true; btn.textContent = '提交中…'; }
+    fetch(apiBase() + '/api/feedbacks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() },
+      body: JSON.stringify(body)
+    })
+    .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.detail || '提交失败'); return d; }); })
+    .then(function (d) {
+      if (typeof showToast === 'function') showToast('✅ 已收到，编号 #' + d.id);
+      $id('fbContent').value = '';
+      loadMine();
+    })
+    .catch(function (e) {
+      // 离线降级：本地暂存待补发【后续扩展点：反馈 outbox 自动补发】
+      try {
+        var box = JSON.parse(localStorage.getItem(OUTBOX_KEY) || '[]');
+        box.push(body);
+        localStorage.setItem(OUTBOX_KEY, JSON.stringify(box.slice(-10)));
+      } catch (er) { }
+      if (typeof showToast === 'function') showToast('反馈暂未送达，请稍后重试（已暂存本地）');
+      else alert('反馈暂未送达，请稍后重试：' + (e.message || ''));
+    })
+    .finally(function () { if (btn) { btn.disabled = false; btn.textContent = '提交反馈'; } });
+  };
+
+  function loadMine() {
+    var box = $id('fbMineList');
+    if (!box) return;
+    if (!tok()) { box.innerHTML = '登录后可提交和查看反馈'; return; }
+    fetch(apiBase() + '/api/feedbacks/mine', { headers: { 'Authorization': 'Bearer ' + tok() } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var items = d.items || [];
+        if (!items.length) { box.innerHTML = '还没有提交过反馈'; return; }
+        box.innerHTML = items.slice(0, 10).map(function (f) {
+          return '<div style="display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--border)">' +
+            '<div style="flex:1;min-width:0"><div style="color:var(--text)">' + esc(f.content) + '</div>' +
+            '<div style="font-size:11px;color:var(--text-secondary);margin-top:2px">#' + f.id + ' · ' + esc(FB_TYPE_TEXT[f.type] || f.type) + ' · ' + esc(f.createdAt || '') + '</div></div>' +
+            '<span style="font-size:12px;color:' + (f.status === 'replied' ? '#22c55e' : '#e6a23c') + ';flex-shrink:0">' + esc(FB_STATUS_TEXT[f.status] || f.status) + '</span>' +
+            '</div>';
+        }).join('');
+        var pending = items.filter(function (x) { return x.status === 'pending'; }).length;
+        var badge = $id('fbStatusBadge');
+        if (badge) badge.textContent = pending ? pending + ' 条待处理' : '无待处理';
+      })
+      .catch(function () { box.innerHTML = '反馈需联网查看（后端不可用）'; });
+  }
+
+  if (document.readyState !== 'loading') loadMine();
+  else document.addEventListener('DOMContentLoaded', loadMine);
+})();
+</script>
+
+<style>
+/* ==================== 帮助与反馈卡样式（T6 增量） ==================== */
+.fb-faq{padding:4px 0}
+.fb-faq-item{border-bottom:1px solid var(--border)}
+.fb-faq-item:last-child{border-bottom:none}
+.fb-faq-q{display:flex;justify-content:space-between;align-items:center;padding:10px 4px;font-size:13px;font-weight:600;cursor:pointer;user-select:none}
+.fb-faq-q span{color:var(--text-secondary);transition:transform .2s}
+.fb-faq-item.open .fb-faq-q span{transform:rotate(180deg)}
+.fb-faq-a{display:none;padding:0 4px 10px;font-size:12.5px;color:var(--text-secondary);line-height:1.7}
+.fb-faq-item.open .fb-faq-a{display:block}
+.fb-form{padding:10px 4px;border-top:1px solid var(--border)}
+.fb-row{margin-bottom:10px}
+.fb-label{display:block;font-size:12px;color:var(--text-secondary);margin-bottom:5px}
+.fb-input{width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-size:13px;font-family:inherit;outline:none;background:var(--bg);color:var(--text);resize:vertical}
+.fb-input:focus{border-color:var(--primary)}
+.fb-inline{display:flex;align-items:center;gap:10px}
+.fb-hint{text-align:right;font-size:11px;color:var(--text-secondary);margin-top:3px}
+.fb-mine{padding:10px 4px;border-top:1px solid var(--border)}
+.fb-mine-title{font-size:13px;font-weight:600;margin-bottom:6px}
+</style>
 </body>
 </html>
