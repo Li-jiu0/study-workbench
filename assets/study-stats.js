@@ -19,6 +19,12 @@
   var QUEUE_KEY = 'study_workbench_stats_queue';
   var VALID_MODULES = ['cet4', 'xingce', 'eq', 'etiquette', 'ppt', 'tools'];
 
+  /* ---------- 后端地址（统一走 config.js，本文件禁止硬编码 IP） ---------- */
+  function apiBase() {
+    if (typeof window.getApiBase === 'function') return window.getApiBase();
+    return window.STUDY_API_BASE != null ? window.STUDY_API_BASE : '';
+  }
+
   /* ---------- 本地存储 ---------- */
   function today() {
     var d = new Date();
@@ -87,8 +93,10 @@
     var q = loadQueue();
     if (!q.length) return;
     var batch = q.slice(0, 100);
-    var base = (window.STUDY_API_BASE != null ? window.STUDY_API_BASE
-      : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000'));
+    // 地址统一走 assets/config.js（window.getApiBase / window.STUDY_API_BASE），
+    // 不在本文件硬编码 IP；config.js 未加载时 file: 场景直接跳过，队列留存待重试。
+    var base = apiBase();
+    if (!base && location.protocol === 'file:') return;
     fetch(base + '/api/study/logs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },

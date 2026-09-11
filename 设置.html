@@ -1098,7 +1098,8 @@ function stDeleteAccount() {
   'use strict';
   function $id(x) { return document.getElementById(x); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function apiBase() { return (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000')); }
+  // 地址统一走 assets/config.js（本页禁止硬编码 IP）
+  function apiBase() { return (typeof window.getApiBase === 'function') ? window.getApiBase() : (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ''); }
   function tok() { return localStorage.getItem('study_workbench_token') || ''; }
   var OUTBOX_KEY = 'study_workbench_feedback_outbox';
   var FB_TYPE_TEXT = { bug: '功能异常', suggest: '体验建议', content: '内容问题', other: '其他' };
