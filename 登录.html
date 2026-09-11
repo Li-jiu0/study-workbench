@@ -1,51 +1,51 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#5B8DEF">
+<html lang="zh-CN" data-page-node-id="kEUCyLSS26PGTknAPE74Xh">
+<head data-page-node-id="5ZDG76UfmZyQou5pu7mSZC">
+<meta charset="UTF-8" data-page-node-id="gkb338etCBqXaEVIQaSYvX">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" data-page-node-id="K21F6j3Wtwcac5pvzS9hAn">
+<meta name="theme-color" content="#5B8DEF" data-page-node-id="bqcE5kDTXdZAgMfb27lKnR">
 <title>登录 · 学习工作台</title>
 <!-- 复用全站配色/组件变量（.login-* 样式见 assets/common.css 末尾“登录页”段） -->
-<link rel="stylesheet" href="assets/common.css">
-<link rel="stylesheet" href="assets/polish.css">
+<link rel="stylesheet" href="assets/common.css" data-page-node-id="TCgAAxGJiUfT1SOcjEAYHc">
+<link rel="stylesheet" href="assets/polish.css" data-page-node-id="3LDCtvCBniOGwZ8zE5xOUQ">
 </head>
-<body class="theme-home">
+<body class="theme-home" data-page-node-id="XvX83EPZHtYIwNiHR61YhN">
 
-<div class="login-bg">
-  <div class="login-card">
-    <div class="login-logo">
-      <div class="lg-icon">📚</div>
-      <div class="lg-title">学习工作台</div>
-      <div class="lg-sub" id="lgSub">注册登录后开启学习</div>
+<div class="login-bg" data-page-node-id="32OvzdC27SBtbetyFvWzbt">
+  <div class="login-card" data-page-node-id="9pau6AXp0GpfuYXaSCFY0z">
+    <div class="login-logo" data-page-node-id="EZvfwMxTKBKhgS4FG3nE6t">
+      <div class="lg-icon" data-page-node-id="wO8AJFjxJyr6TKDqtk249b">📚</div>
+      <div class="lg-title" data-page-node-id="ZRO25VehHSpBEeoJx6h5tF">学习工作台</div>
+      <div class="lg-sub" id="lgSub" data-page-node-id="ON8cYFLNhvQidtDh93EYNB">注册登录后开启学习</div>
     </div>
 
     <!-- 登录 / 注册 切换 -->
-    <div class="login-tabs">
-      <div class="login-tab active" id="tabLogin" onclick="switchMode('login')">登 录</div>
-      <div class="login-tab" id="tabRegister" onclick="switchMode('register')">注 册</div>
+    <div class="login-tabs" data-page-node-id="yKpXAh2HGTz3LoCQFCnNAn">
+      <div class="login-tab active" id="tabLogin" onclick="switchMode('login')" data-page-node-id="MW5ksVsTojYHriZLmJ30dB">登 录</div>
+      <div class="login-tab" id="tabRegister" onclick="switchMode('register')" data-page-node-id="O6spTTNUzVIbt7bQqvP0Av">注 册</div>
     </div>
 
-    <div class="form-group">
-      <div class="form-label">账号</div>
-      <input type="text" class="form-input" id="loginAccount" placeholder="3-20位字母 / 数字 / 中文" autocomplete="username">
+    <div class="form-group" data-page-node-id="KPirKRtfwNWnNYnqbjAfiQ">
+      <div class="form-label" data-page-node-id="a4H5FD6BxBDwbFV2Yp82cd">账号</div>
+      <input type="text" class="form-input" id="loginAccount" placeholder="3-20位字母 / 数字 / 中文" autocomplete="username" data-page-node-id="fVsUfOvN00xujHoABIS6W8">
     </div>
-    <div class="form-group">
-      <div class="form-label">昵称（注册时可选，不填默认用账号）</div>
-      <input type="text" class="form-input" id="loginNickname" placeholder="给自己起个昵称" style="display:none" maxlength="20">
+    <div class="form-group" data-page-node-id="ja1wiChECOpi8IQZaDpDcW">
+      <div class="form-label" data-page-node-id="eE9RSehwVJTsSeYPmpBgFW">昵称（注册时可选，不填默认用账号）</div>
+      <input type="text" class="form-input" id="loginNickname" placeholder="给自己起个昵称" style="display:none" maxlength="20" data-page-node-id="hatwMafLuylkzeJfFgREyl">
     </div>
-    <div class="form-group" id="confirmGroup" style="display:none">
-      <div class="form-label">确认密码</div>
-      <input type="password" class="form-input" id="loginConfirm" placeholder="再输入一次密码" autocomplete="new-password">
+    <div class="form-group" id="confirmGroup" style="display:none" data-page-node-id="mFXXT3T55hN1SewGeHRzaL">
+      <div class="form-label" data-page-node-id="9xtpGZjqx7ys0vxnlK3qvG">确认密码</div>
+      <input type="password" class="form-input" id="loginConfirm" placeholder="再输入一次密码" autocomplete="new-password" data-page-node-id="eHkOi8YYPIgXIaPwODIaxZ">
     </div>
-    <div class="form-group">
-      <div class="form-label">密码</div>
+    <div class="form-group" data-page-node-id="yF0XyLBIFDEublvGChbxjY">
+      <div class="form-label" data-page-node-id="zhtAps49yOFq35gi1FAFgC">密码</div>
       <input type="password" class="form-input" id="loginPass" placeholder="至少 6 位" autocomplete="current-password"
-             onkeydown="if(event.key==='Enter')submitLogin()">
+             onkeydown="if(event.key==='Enter')submitLogin()" data-page-node-id="W3qrD9TCqblYed0GtgOr0W">
     </div>
 
-    <button class="btn btn-primary" style="width:100%;margin-top:6px" id="loginSubmitBtn" onclick="submitLogin()">🚀 登 录</button>
+    <button class="btn btn-primary" style="width:100%;margin-top:6px" id="loginSubmitBtn" onclick="submitLogin()" data-page-node-id="BxzRr46DSCaNCPoymysEWv">🚀 登 录</button>
 
-    <div class="login-notice" id="loginNotice">💡 正在检测运行模式……</div>
+    <div class="login-notice" id="loginNotice" data-page-node-id="ZfI7aIf9yNUOP6X7L7S3SN">💡 正在检测运行模式……</div>
   </div>
 </div>
 

@@ -168,9 +168,10 @@
         ? 'event.stopPropagation();openUserHome(' + c.serverId + ')'
         : 'event.stopPropagation()';
       return '<div class="im-sess' + (active ? ' on' : '') + '" onclick="imOpenChat(' + c.id + ')">' +
-        '<div class="im-av" style="cursor:' + (c.isServer ? 'pointer' : 'default') + '" onclick="' + avClick + '">' + renderAvatar(c.avatar, c.nickname) + '</div>' +
+        '<div class="im-av" style="position:relative;cursor:' + (c.isServer ? 'pointer' : 'default') + '" onclick="' + avClick + '">' + renderAvatar(c.avatar, c.nickname) +
+        (c.unread > 0 ? '<span class="im-av-badge">' + (c.unread > 99 ? '99+' : c.unread) + '</span>' : '') + '</div>' +
         '<div class="im-si"><div class="im-n">' + esc(c.nickname) + '</div><div class="im-sub">' + esc(c.last || '') + '</div></div>' +
-        (c.unread > 0 ? '<div class="im-badge">' + c.unread + '</div>' : '') +
+        (c.unread > 0 ? '<div class="im-badge">' + (c.unread > 99 ? '99+' : c.unread) + '</div>' : '') +
         '</div>';
     }).join('');
   }
@@ -839,10 +840,28 @@
         });
         // 重新渲染会话列表（红点：未读显示、已读消失）
         renderList();
+        // tab 按钮角标：会话=未读消息总数
+        updateTabBadge('chats', totalUnread);
+        // 待处理好友申请数 → 申请 tab 角标
+        fetch(apiBase() + '/api/friends/requests', { headers: { 'Authorization': 'Bearer ' + token } })
+          .then(function (r) { return r.json(); })
+          .then(function (rd) { updateTabBadge('requests', (rd.incoming || []).length); })
+          .catch(function () { });
         // 顶栏 💬 角标由 assets/api.js 的 loadChatUnread() 轮询维护，这里不再越权改写
       })
       .catch(function () {});
     }, 5000);
+  }
+
+  /* tab 按钮角标：n>0 显示红色数字，n<=0 移除 */
+  function updateTabBadge(tab, n) {
+    var btn = document.querySelector('.im-tab[data-tab="' + tab + '"]');
+    if (!btn) return;
+    var b = btn.querySelector('.tab-badge');
+    if (n > 0) {
+      if (!b) { b = document.createElement('span'); b.className = 'tab-badge'; btn.appendChild(b); }
+      b.textContent = n > 99 ? '99+' : n;
+    } else if (b) { b.remove(); }
   }
 
   function $ready(fn) {
