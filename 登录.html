@@ -164,7 +164,7 @@
                返回 JWT（study_workbench_token），多人博客/评论/点赞/AI 全部可用。
    - 离线模式（手机 App / 后端未启动）：账号仅存本机 localStorage（study_workbench_users，
                密码 simpleHash 混淆，非加密），登录只写 study_workbench_auth 门禁标记，
-               全站以单机本地模式运行（笔记/学习数据均在 localStorage）。
+               全站以单机本地模式运行（发贴/学习数据均在 localStorage）。
    存储：
    - study_workbench_token : JWT 令牌（仅在线模式；assets/api.js 请求带 Authorization: Bearer）
    - study_workbench_auth  : {account, loginAt} app.js 顶部“未登录跳转登录页”的门禁标记
@@ -240,7 +240,7 @@ function applyModeNotice() {
     if (n) n.innerHTML = '💡 <b>多人在线版</b>：账号密码保存在服务器数据库（密码加盐哈希），登录使用 JWT 令牌，支持静态续期。<br>后端地址：<b>' + escHtml(API_BASE || '同源部署') + '</b>';
   } else {
     if (sub) sub.textContent = '单机离线版 · 数据保存在本机';
-    if (n) n.innerHTML = '📱 <b>单机离线模式</b>：未检测到后端服务器，账号仅保存在<b>本机</b>（localStorage，密码混淆存储）。<br>所有学习数据、笔记均在本机，适合个人使用；如需多人博客/在线 AI，请启动 <b>server/</b> 后端后重新打开。';
+    if (n) n.innerHTML = '📱 <b>单机离线模式</b>：未检测到后端服务器，账号仅保存在<b>本机</b>（localStorage，密码混淆存储）。<br>所有学习数据、发贴均在本机，适合个人使用；如需多人博客/在线 AI，请启动 <b>server/</b> 后端后重新打开。';
   }
 }
 function escHtml(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }

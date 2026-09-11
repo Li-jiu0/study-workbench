@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#5B8DEF">
 <title>互动广场 · 星途</title>
 <link rel="stylesheet" href="assets/common.css">
-<link rel="stylesheet" href="assets/polish.css">
+<link rel="stylesheet" href="assets/polish.css?v=20260911b">
 </head>
 <body class="theme-home">
 
@@ -40,11 +40,11 @@
       <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友 · 好友申请（需在线模式）">
         <span class="nav-icon">💬</span><span>好友</span>
       </div>
-      <div class="nav-item" data-external="1" onclick="gotoBlogMine()" title="互动广场 · 我的笔记">
+      <div class="nav-item" data-external="1" onclick="gotoBlogMine()" title="互动广场 · 我的发贴">
         <span class="nav-icon">🗂️</span><span>互动广场</span>
       </div>
       <div class="nav-section">中心</div>
-      <div class="nav-item" data-page="blog"><span class="nav-icon">📝</span><span>笔记广场</span></div>
+      <div class="nav-item" data-page="blog"><span class="nav-icon">📝</span><span>广场</span></div>
     <div class="sidebar-footer">
       <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心">
         <div class="user-avatar">学</div>
@@ -59,9 +59,9 @@
   <div class="main">
 <header class="topbar">
       <div class="topbar-title" id="topbarTitle">互动广场</div>
-      <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
+      <!-- 全局搜索（检索范围与逻辑见 assets/app.js?v=20260913t 的 globalSearch()） -->
       <div class="gs-wrap" id="gsWrap">
-        <input type="text" class="gs-input" id="gsInput" placeholder="🔍 搜索笔记 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <input type="text" class="gs-input" id="gsInput" placeholder="🔍 搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
         <div class="gs-dropdown" id="gsDropdown"></div>
       </div>
       <div class="topbar-stats">
@@ -77,19 +77,19 @@
         <div class="module-hero">
           <div class="module-hero-left">
             <div class="module-hero-title">📝 互动广场</div>
-            <div class="module-hero-desc">写学习笔记 · 分类标签 · 草稿归档 · 数据本地保存</div>
+            <div class="module-hero-desc">写发贴 · 分类标签 · 草稿归档 · 数据本地保存</div>
           </div>
         </div>
 
         <!-- 博客子导航 -->
         <div class="blog-subnav">
-          <div class="sb-tab active" id="blogTabList" onclick="showBlogView('list')">📚 笔记广场</div>
+          <div class="sb-tab active" id="blogTabList" onclick="showBlogView('list')">📚 广场</div>
           <div class="sb-tab" id="blogTabMine" onclick="showBlogView('mine')">👤 我的文章</div>
-          <div class="sb-tab" id="blogTabEdit" onclick="showBlogView('edit')">✍️ 写笔记</div>
+          <div class="sb-tab" id="blogTabEdit" onclick="showBlogView('edit')">✍️ 写发贴</div>
           <div class="sb-tab" id="blogTabStats" onclick="showBlogView('stats')">📊 统计</div>
         </div>
 
-        <!-- ===== 视图：笔记广场 ===== -->
+        <!-- ===== 视图：广场 ===== -->
         <div class="blog-wrap" id="blogViewList">
           <div class="blog-toolbar">
             <div class="blog-search-row">
@@ -98,7 +98,7 @@
             <div class="blog-filters" id="blogFilterChips"></div>
           </div>
           <div class="blog-empty" id="blogListEmpty" style="display:none;text-align:center;padding:40px;color:var(--text-secondary);font-size:13px">
-            还没有公开的学习笔记，点右上角“✍️ 写笔记”发布第一篇吧～
+            还没有公开的发贴，点右上角“✍️ 写发贴”发布第一篇吧～
           </div>
           <div class="blog-grid" id="blogGrid"></div>
         </div>
@@ -116,7 +116,7 @@
           <!-- 标题 -->
           <div class="editor-field">
             <label>标题 <span style="color:#E05040">*</span></label>
-            <input type="text" id="beTitle" placeholder="给这篇学习笔记起个标题…">
+            <input type="text" id="beTitle" placeholder="给这篇发贴起个标题…">
           </div>
           <!-- 分类 + 可见性 + 封面 -->
           <div class="editor-row">
@@ -179,7 +179,7 @@
           <div class="editor-actions">
             <button class="btn btn-primary" onclick="saveBlogNote('published')">📤 发布</button>
             <button class="btn btn-outline" onclick="saveBlogNote('draft')">💾 存草稿</button>
-            <button class="btn btn-outline" onclick="editorAiAssist()">🤖 AI 辅助写笔记</button>
+            <button class="btn btn-outline" onclick="editorAiAssist()">🤖 AI 辅助写发贴</button>
             <button class="btn btn-outline" onclick="resetBlogEditor()">↺ 清空</button>
             <div class="spacer"></div>
             <span id="blogEditStatus" style="font-size:12px;color:var(--text-secondary)"></span>
@@ -317,7 +317,7 @@
 
 </div>
 
-<script src="assets/app.js?v=20260913s"></script>
+<script src="assets/app.js?v=20260913t"></script>
 <script src="assets/api.js?v=20260909e"></script>
 
   <!-- 工具面板遮罩 -->

@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#5B8DEF" data-page-node-id="xcIilqbK544vSHAWBPyO4w">
 <title>个人中心 · 星途</title>
 <link rel="stylesheet" href="assets/common.css?v=v2.3" data-page-node-id="tBLcp6JxdB6dWCmMCCx7F8">
-<link rel="stylesheet" href="assets/polish.css?v=v2.3" data-page-node-id="uqByqsnHV08jClPBpI9G16">
+<link rel="stylesheet" href="assets/polish.css?v=20260911b" data-page-node-id="uqByqsnHV08jClPBpI9G16">
 </head>
 <body class="theme-home" data-page-node-id="YOxnETeT4z4J4WFn6FB0qJ">
 
@@ -16,9 +16,8 @@
   <div class="main" data-page-node-id="9bopuDa08t6vS7NC3NKjd2">
 <header class="topbar" data-page-node-id="qJPc52dgEhqzp4JZlJYJfQ">
       <div class="topbar-title" id="topbarTitle" data-page-node-id="wfikiVd1hSc2VfTug0Yur4">个人中心</div>
-      <!-- 全局搜索（检索范围与逻辑见 assets/app.js?v=v2.3 的 globalSearch()） -->
-      <div class="gs-wrap" id="gsWrap" data-page-node-id="6gYY6LavKSwCiI5qXGPGNC">
-        <input type="text" class="gs-input" id="gsInput" placeholder="🔍 搜索笔记 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)" data-page-node-id="MbjNEcHyCNBsNjdCnacKgd">
+      <!-- 全局搜索（检索范围与逻辑见 assets/app.js?v=20260913t"gs-wrap" id="gsWrap" data-page-node-id="6gYY6LavKSwCiI5qXGPGNC">
+        <input type="text" class="gs-input" id="gsInput" placeholder="🔍 搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)" data-page-node-id="MbjNEcHyCNBsNjdCnacKgd">
         <div class="gs-dropdown" id="gsDropdown" data-page-node-id="jCloUUasEijzjtk6yFVVQ3"></div>
       </div>
       <div class="topbar-stats" data-page-node-id="Q9uH1NL9k6fH6hnvuBq3lU">
@@ -34,12 +33,11 @@
         <div class="module-hero" style="display:none" data-page-node-id="WZ2Br25aKXQMUO9oVEEFI0"><!-- v1.14 豆包风格：隐藏旧横幅，DOM 保留 -->
           <div class="module-hero-left" data-page-node-id="1U0Aepc037F7p7xu138z3J">
             <div class="module-hero-title" data-page-node-id="0ce0n9DDRPzLOjxItNjvkQ">👤 个人中心</div>
-            <div class="module-hero-desc" data-page-node-id="hcTWuEhLCGrmJdWA8L8V32">个人资料 · 笔记统计 · 数据导出 · 退出登录</div>
+            <div class="module-hero-desc" data-page-node-id="hcTWuEhLCGrmJdWA8L8V32">个人资料 · 发贴统计 · 数据导出 · 退出登录</div>
           </div>
         </div>
 
-        <!-- 个人中心内容（由 assets/app.js?v=v2.3 的 renderProfilePage() 渲染，v1.14 豆包风格） -->
-        <div id="profileBox" data-page-node-id="pai821WhCBnDvGkFiQ3xiQ"></div>
+        <!-- 个人中心内容（由 assets/app.js?v=20260913t"profileBox" data-page-node-id="pai821WhCBnDvGkFiQ3xiQ"></div>
 
         <!-- 学习偏好（与设置联动）：v1.14 起由 renderProfilePage 的列表项呈现，DOM 保留 -->
         <div class="card" style="display:none" data-page-node-id="sGYAklXD8EhseTlHlPE0D1">
@@ -104,10 +102,7 @@
   </div>
 
   <!-- ==================== 编辑资料弹窗（头像上传 + 昵称 + 个性签名） ====================
-       逻辑见 assets/app.js?v=v2.3 的 editProfile()/onProfileAvatarFile()/saveProfileEditor()。
-       头像为本地图片转 base64 存 localStorage（study_workbench_data.profile.avatarImg），
-       无需后端上传接口；图片过大会占用浏览器存储空间（已自动压缩到 256×256 JPEG）。 -->
-  <div class="modal-overlay" id="profileEditModal" data-page-node-id="aN1QPjOJNhtQKAk7XF4hqn">
+       逻辑见 assets/app.js?v=20260913t"modal-overlay" id="profileEditModal" data-page-node-id="aN1QPjOJNhtQKAk7XF4hqn">
     <div class="modal" data-page-node-id="haDi0aFDMHYXN8T3YHG7j5">
       <div class="modal-title" data-page-node-id="MPmDoVnYVvApdyg8GjqPFs">✏️ 编辑资料</div>
       <div class="form-group" data-page-node-id="XtKQK1EFwIknYNME6rOGVI">
@@ -159,8 +154,7 @@
     </div>
   </div>
 
-  <!-- 退出登录确认弹窗（防止误触，逻辑见 assets/app.js?v=v2.3 的 doLogout()/confirmLogout()） -->
-  <div class="modal-overlay" id="logoutConfirmModal" data-page-node-id="w58HcoBkx3b7KH7ncV2jow">
+  <!-- 退出登录确认弹窗（防止误触，逻辑见 assets/app.js?v=20260913t"modal-overlay" id="logoutConfirmModal" data-page-node-id="w58HcoBkx3b7KH7ncV2jow">
     <div class="modal" data-page-node-id="T8iuHo4jkOGZmyV5mZLZkm">
       <div class="modal-title" data-page-node-id="pAbVHilpWNWZ0ALHCcPVYl">🚪 退出登录</div>
       <div style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:6px 0 4px" data-page-node-id="ijNz0Qv1kyYXj2PAUWb78d">确定要退出登录吗？</div>
@@ -239,7 +233,7 @@
 
 </div>
 
-<script src="assets/app.js?v=v2.3?v=20260913t"></script>
+<script src="assets/app.js?v=20260913t"></script>
 <script src="assets/api.js?v=v2.3?v=20260913a"></script>
 
 <script>
