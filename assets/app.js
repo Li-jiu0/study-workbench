@@ -182,7 +182,9 @@ let appData = {
     streakDays: 0,
     todayMinutes: 0
   },
-  weekData: [25, 40, 15, 60, 30, 0, 0],
+  // 首页本周柱图改由 study-stats.js 的真实数据驱动（见 renderWeekChart）；
+  // 此处保留字段仅为兼容旧存档，默认全 0，不再使用模拟数组。
+  weekData: [0, 0, 0, 0, 0, 0, 0],
   moduleProgress: {
     cet: 45, exam: 30, comm: 20, interview: 15, ppt: 10
   },
@@ -998,13 +1000,49 @@ function startTodayLearning() {
 }
 
 function renderStats() {
-  document.getElementById('totalHours').textContent = appData.stats.totalHours;
-  document.getElementById('totalQuestions').textContent = appData.stats.totalQuestions;
-  const acc = appData.stats.totalQuestions > 0 ? Math.round(appData.stats.correctQuestions / appData.stats.totalQuestions * 100) : 0;
-  document.getElementById('accuracy').textContent = acc + '%';
-  document.getElementById('streakDisplay').textContent = appData.stats.streakDays;
-  renderWeekChart();
+  var stats = appData.stats || {};
+  var summ = getStudySummary();
+
+  // 总学习时长（小时）：优先取本地真实统计（study-stats.js，分钟→小时），
+  // 与 appData 取较大值（不归零），都缺省时自然为 0，不显示假数据。
+  var appHours = stats.totalHours || 0;
+  var statHours = (summ && typeof summ.totalMinutes === 'number')
+    ? Math.round(summ.totalMinutes / 60) : 0;
+  var totalHours = Math.max(appHours, statHours);
+
+  // 做题数 / 正确率：来自做题记录；无记录即 0（不造假）
+  var totalQuestions = stats.totalQuestions || 0;
+  var correctQuestions = stats.correctQuestions || 0;
+  const acc = totalQuestions > 0 ? Math.round(correctQuestions / totalQuestions * 100) : 0;
+
+  // 连续打卡：本地真实统计与 appData 取较大值，不归零
+  var streak = Math.max(stats.streakDays || 0, (summ && summ.streak) || 0);
+
+  setStatText('totalHours', totalHours);
+  setStatText('totalQuestions', totalQuestions);
+  setStatText('accuracy', acc + '%');
+  setStatText('streakDisplay', streak);
+
+  // 空态：完全没有任何学习记录时给出引导文案（有记录则隐藏）
+  var hasData = (summ && summ.hasData) || totalQuestions > 0 || totalHours > 0 || streak > 0;
+  var hint = document.getElementById('statsEmptyHint');
+  if (hint) hint.style.display = hasData ? 'none' : 'block';
+
+  renderWeekChart(summ);
   updateGoalProgress();
+}
+
+/* 读取本地学习统计（study-stats.js）。不可用时返回 null（file:// 未加载该文件时降级）。 */
+function getStudySummary() {
+  if (window.StudyStats && typeof window.StudyStats.getSummary === 'function') {
+    try { return window.StudyStats.getSummary(); } catch (e) { return null; }
+  }
+  return null;
+}
+
+function setStatText(id, value) {
+  var el = document.getElementById(id);
+  if (el) el.textContent = value;
 }
 
 function updateGoalProgress() {
@@ -1035,15 +1073,23 @@ function updateGoalProgress() {
   }
 }
 
-function renderWeekChart() {
+function renderWeekChart(summ) {
   const chart = document.getElementById('weekChart');
   if (!chart) return;
   const weekdays = ['一', '二', '三', '四', '五', '六', '日'];
-  // 模拟最近7天数据（实际使用时从存储读取）
-  const weekData = appData.weekData || [25, 40, 15, 60, 30, 0, 0];
+  // 真实数据来源：study-stats.js 的本周（周一→周日）每日分钟数；
+  // 无统计底座时全 0 —— 不再回退到任何模拟数组（无假数据）。
+  const weekData = [0, 0, 0, 0, 0, 0, 0];
+  if (summ && Object.prototype.toString.call(summ.week) === '[object Array]') {
+    for (let w = 0; w < 7; w++) {
+      const cell = summ.week[w];
+      weekData[w] = (cell && typeof cell.minutes === 'number') ? cell.minutes : 0;
+    }
+  }
+  const hasWeekData = weekData.some(function (v) { return v > 0; });
   const today = new Date().getDay();
   const todayIdx = today === 0 ? 6 : today - 1; // 周一为0
-  const maxVal = Math.max(...weekData, 60);
+  const maxVal = Math.max.apply(null, weekData.concat([60]));
   let html = '';
   for (let i = 0; i < 7; i++) {
     const val = weekData[i];
@@ -1058,6 +1104,7 @@ function renderWeekChart() {
       </div>
     `;
   }
+  if (!hasWeekData) html += '<div class="week-chart-empty">还没有学习记录，去学一章吧</div>';
   chart.innerHTML = html;
 }
 

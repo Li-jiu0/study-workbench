@@ -9,6 +9,7 @@
    对外契约：
      StudyStats.track(module, event, payload)   埋点（同步写本地 + 异步上报）
      StudyStats.render(containerId, module)     渲染「📊 学习概况」卡（今日分钟/累计次数/连续打卡/7天柱图）
+     StudyStats.getSummary(modules?)            只读汇总（首页「学习数据」接真实值用）
      StudyStats.getToolUsage(tool)              读 tools 模块 tool_use 事件（更多工具卡用）
      StudyStats.syncFromCloud()                 【后续扩展点：账号级云同步】空函数
    ===================================================================== */
@@ -151,6 +152,67 @@
       p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
   }
 
+  /* ---------- 汇总（只读，供首页「学习数据」接真实值 · A9） ----------
+     返回：
+       todayMinutes  今日累计学习分钟（全部模块求和）
+       totalMinutes  历史累计学习分钟（全部模块求和）
+       totalEvents   历史累计事件次数（含 start/finish/tool_use 等）
+       streak        连续打卡天数
+       week          本周（周一→周日）每日分钟，[{date:'YYYY-MM-DD', minutes:N}] × 7
+       weekMinutes   本周合计分钟
+       hasData       是否存在任何本地学习记录（用于空态判断）
+     说明：只读聚合，不写入、不触发上报、不影响既有 track/render 行为。 */
+  function pad2(n) { return String(n).padStart(2, '0'); }
+  function dateKey(d) {
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+
+  function getSummary(modules) {
+    var list = (Object.prototype.toString.call(modules) === '[object Array]' && modules.length)
+      ? modules : VALID_MODULES;
+    var data = readLocal();
+    var tk = today();
+    var totalMinutes = 0, totalEvents = 0, todayMinutes = 0;
+
+    list.forEach(function (m) {
+      var mm = data.modules[m];
+      if (!mm || !mm.days) return;
+      totalEvents += (mm.total || 0);
+      Object.keys(mm.days).forEach(function (k) {
+        totalMinutes += (mm.days[k] && mm.days[k].minutes) || 0;
+      });
+      if (mm.days[tk]) todayMinutes += (mm.days[tk].minutes || 0);
+    });
+
+    // 本周（周一→周日）每日分钟数，用于首页「本周学习时长」柱图
+    var now = new Date();
+    var dow = now.getDay();                       // 0=周日
+    var mondayOffset = dow === 0 ? 6 : dow - 1;   // 周一为 0
+    var week = [];
+    for (var i = 0; i < 7; i++) {
+      var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - mondayOffset + i);
+      var k = dateKey(d);
+      var mins = 0;
+      list.forEach(function (m) {
+        var mm = data.modules[m];
+        var dd = mm && mm.days && mm.days[k];
+        if (dd && dd.minutes) mins += dd.minutes;
+      });
+      week.push({ date: k, minutes: mins });
+    }
+    var weekMinutes = week.reduce(function (a, x) { return a + x.minutes; }, 0);
+
+    return {
+      todayMinutes: todayMinutes,
+      totalMinutes: totalMinutes,
+      totalEvents: totalEvents,
+      streak: data.streak || 0,
+      week: week,
+      weekMinutes: weekMinutes,
+      hasData: totalEvents > 0
+    };
+  }
+
   /* ---------- 工具使用痕迹（更多工具卡） ---------- */
   function getToolUsage(tool) {
     var data = readLocal();
@@ -225,6 +287,7 @@
   window.StudyStats = {
     track: track,
     render: render,
+    getSummary: getSummary,
     getToolUsage: getToolUsage,
     markToolUse: markToolUse,
     flushQueue: flushQueue,
