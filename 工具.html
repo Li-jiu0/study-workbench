@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
-<title>面试题库 · 星途</title>
+<title>工具 · 星途</title>
 <link rel="stylesheet" href="assets/common.css">
 <link rel="stylesheet" href="assets/polish.css?v=20260911c">
 </head>
@@ -51,10 +51,10 @@
       <div class="nav-item" data-page="wrong-book">
         <span class="nav-icon">📒</span><span>错题本</span>
       </div>
-            <div class="nav-item" data-page="profile">
+      <div class="nav-item" data-page="profile">
         <span class="nav-icon">👤</span><span>个人中心</span>
       </div>
-<div class="nav-section">系统</div>
+      <div class="nav-section">系统</div>
       <div class="nav-item" data-page="settings">
         <span class="nav-icon">⚙️</span><span>设置</span>
       </div>
@@ -72,7 +72,7 @@
 
   <div class="main">
 <header class="topbar">
-      <div class="topbar-title" id="topbarTitle">面试题库</div>
+      <div class="topbar-title" id="topbarTitle">工具</div>
       <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
       <div class="gs-wrap" id="gsWrap">
         <input type="text" class="gs-input" id="gsInput" placeholder="🔍 搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
@@ -87,13 +87,55 @@
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
       <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式">🌙</div>
     </header>
-<div class="page active" id="page-iv-questions">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title"><span class="title-icon">❓</span>面试高频问题库</div>
-          <span class="tag tag-primary">8道精选题</span>
+    <div class="content">
+      <div class="page active" id="page-tools">
+        <!-- 顶部返回（独立页，history.back 回上一页；无历史时回首页） -->
+        <div class="morepage-head">
+          <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='学习工作台.html'}" title="返回">←</button>
+          <div class="morepage-title">🧰 工具</div>
         </div>
-        <div id="ivQuestionList" style="display:flex;flex-direction:column;gap:16px"></div>
+
+        <!-- 【A8】工具卡片网格：与旧底部弹层「工具」同项同行为；卡片可后续扩展 -->
+        <div class="morepage-grid">
+          <div class="morepage-card" onclick="if(window.openImporter){openImporter()}else{location.href='设置.html'}">
+            <div class="mpc-icon">📥</div>
+            <div class="mpc-title">导入题库</div>
+            <div class="mpc-desc">Excel/CSV 一键导入</div>
+          </div>
+          <div class="morepage-card" onclick="location.href='万能金句库.html'">
+            <div class="mpc-icon">📚</div>
+            <div class="mpc-title">万能金句</div>
+            <div class="mpc-desc">写作/表达金句库</div>
+          </div>
+          <div class="morepage-card" onclick="location.href='场景话术库.html'">
+            <div class="mpc-icon">💬</div>
+            <div class="mpc-title">场景话术</div>
+            <div class="mpc-desc">高情商沟通话术</div>
+          </div>
+          <div class="morepage-card" onclick="location.href='PPT版式库.html'">
+            <div class="mpc-icon">📊</div>
+            <div class="mpc-title">PPT版式</div>
+            <div class="mpc-desc">版式与案例素材</div>
+          </div>
+          <div class="morepage-card" onclick="location.href='AI模拟面试.html'">
+            <div class="mpc-icon">🎙️</div>
+            <div class="mpc-title">AI面试</div>
+            <div class="mpc-desc">多轮追问模拟面试</div>
+          </div>
+          <div class="morepage-card" onclick="location.href='四级经验分享.html'">
+            <div class="mpc-icon">📖</div>
+            <div class="mpc-title">四级经验</div>
+            <div class="mpc-desc">学霸备考方法</div>
+          </div>
+          <!-- 【铁律】「穿越英语」入口必须保留可见：指向现有 quest.js 的 openQuest()（不可用时回退到首页的穿越英语卡）。内容升级属批次三。 -->
+          <div class="morepage-card" onclick="if(window.openQuest){openQuest()}else{location.href='学习工作台.html'}">
+            <div class="mpc-icon">⚡</div>
+            <div class="mpc-title">穿越英语</div>
+            <div class="mpc-desc">闯关式剧情学英语</div>
+          </div>
+        </div>
+
+        <!-- 【后续扩展点：工具卡片自定义排序 / 使用痕迹展示】本轮固定顺序，后续可接 StudyStats.getToolUsage 排序。 -->
       </div>
     </div>
   </div>
@@ -108,17 +150,17 @@
       </div>
       <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon">💬</div><div class="bn-label">互动</div></div>
       <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon">👤</div><div class="bn-label">我的</div></div>
-      <div class="bottom-nav-item" onclick="location.href='工具.html'"><div class="bn-icon">🧰</div><div class="bn-label">工具</div></div>
+      <div class="bottom-nav-item active" onclick="location.href='工具.html'"><div class="bn-icon">🧰</div><div class="bn-label">工具</div></div>
       <div class="bottom-nav-item" onclick="location.href='更多.html'">
         <div class="bn-icon">☰</div><div class="bn-label">更多</div>
       </div>
     </div>
   </nav>
 
-  <!-- 更多面板遮罩 -->
+  <!-- 更多面板遮罩（【后续扩展点：旧弹层回退】保留旧弹层 DOM，默认不再从底部导航触发） -->
     <div class="more-overlay" onclick="toggleMorePanel()"></div>
 
-  <!-- 更多面板 -->
+  <!-- 更多面板（旧弹层保留，可回退） -->
   <div class="bottom-more-panel" id="morePanel">
     <div class="bottom-more-title">更多功能</div>
     <div class="bottom-more-grid">
@@ -140,7 +182,27 @@
     </div>
   </div>
 
-  <!-- 添加倒计时弹窗 -->
+  <!-- 工具面板遮罩 + 工具面板（旧弹层保留，可回退；app.js 的 toggleToolsPanel 需要它们存在） -->
+  <div class="more-overlay" onclick="toggleToolsPanel()" id="toolsOverlay"></div>
+  <div class="bottom-more-panel" id="toolsPanel">
+    <div class="bottom-more-title">🧰 更多工具</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="location.href='AI模拟面试.html';toggleToolsPanel()">
+        <div class="bm-icon">🎙️</div><div class="bm-label">AI面试</div>
+      </div>
+      <div class="bottom-more-item" onclick="location.href='PPT素材库.html';toggleToolsPanel()">
+        <div class="bm-icon">📊</div><div class="bm-label">PPT素材</div>
+      </div>
+      <div class="bottom-more-item" onclick="location.href='四级经验分享.html';toggleToolsPanel()">
+        <div class="bm-icon">📖</div><div class="bm-label">四级经验</div>
+      </div>
+      <div class="bottom-more-item" onclick="if(window.openQuest){openQuest()}else{location.href='工具.html'};toggleToolsPanel()">
+        <div class="bm-icon">⚡</div><div class="bm-label">穿越英语</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加倒计时弹窗（全站共用 DOM，app.js 顶层无守卫监听它，必须存在） -->
   <div class="modal-overlay" id="countdownModal">    <div class="modal">
       <div class="modal-title" id="countdownModalTitle">添加倒计时</div>
       <div class="form-group">
@@ -178,12 +240,7 @@
   <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center"></div>
 
   <!-- ==================== AI学习助手（悬浮聊天窗口） ====================
-       说明：
-       1. 默认“本地演示模式”：不联网、不调API、无密钥，由内置规则引擎回复；
-       2. 【后续扩展点】启动 ai-server 后端后，把下方 JS 里的 AI_CONFIG.apiUrl
-          填上后端地址（如 http://localhost:3000/api/chat），即可切换为真实AI流式对话；
-       3. 安全约束：大模型密钥只放在后端 .env 里，前端代码永远不出现密钥。 -->
-  <!-- 悬浮头像：可按住拖拽到任意位置（见下方 JS.initAiFabDrag），点击打开/收起面板，双击复位 -->
+       说明：默认“本地演示模式”；密钥只放在后端 .env，前端永不出现密钥。 -->
   <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">
     🤖<span class="ai-mode-badge" id="aiModeBadge">演示</span>
   </div>
@@ -209,9 +266,10 @@
 </div>
 
 <script src="assets/app.js?v=20260911c"></script>
+<script src="assets/quest.js"></script>
 <script src="assets/config.js?v=20260911d"></script>
 <script src="assets/api.js?v=20260911c"></script>
-
-<script src="assets/qbank.js?v=6"></script>
+<script src="assets/importer.js?v=3"></script>
+<script src="assets/study-stats.js?v=20260911a"></script>
 </body>
 </html>
