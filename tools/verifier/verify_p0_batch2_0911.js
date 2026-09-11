@@ -410,6 +410,71 @@ sec('[4] 需求11：好友行/搜索结果行无「删除」，主页删除入�
     check('需求2 顶部未读角标改用 imCountUnread（免打扰不计入）', /updateTabBadge\('chats', imCountUnread\(S\.chats, imLoadPrefs\(\)\)\)/.test(fs.readFileSync(path.join(ROOT, 'assets', 'chat-local.js'), 'utf8')));
   }
 
+  /* ========== [7] 需求1：申请角标 unreadCount 水位线 + 查看即已读 ========== */
+  sec('[7] 需求1：申请角标改 unreadCount + 打开列表即标记已读');
+  {
+    const { w, d } = loaded['私聊.html'];
+    // 7.1 新后端：unreadCount（未读水位线）优先于 incoming.length
+    check('需求1 window.imApplyRequestBadge 为函数', typeof w.imApplyRequestBadge === 'function');
+    check('需求1 unreadCount=2 且 incoming 有 3 条 → 角标显示 2（不是 3）',
+      w.imApplyRequestBadge({ incoming: [{}, {}, {}], unreadCount: 2 }) === 2
+      && (d.querySelector('.im-tab[data-tab="requests"] .tab-badge') || {}).textContent === '2',
+      (d.querySelector('.im-tab[data-tab="requests"] .tab-badge') || {}).textContent);
+    // 7.2 旧后端兼容：无 unreadCount 字段 → 回退为 incoming.length
+    check('需求1 旧后端（无 unreadCount）→ 回退 incoming.length=4',
+      w.imApplyRequestBadge({ incoming: [{}, {}, {}, {}] }) === 4
+      && d.querySelector('.im-tab[data-tab="requests"] .tab-badge').textContent === '4');
+    check('需求1 unreadCount=0 → 角标移除',
+      w.imApplyRequestBadge({ incoming: [{}], unreadCount: 0 }) === 0
+      && !d.querySelector('.im-tab[data-tab="requests"] .tab-badge'));
+
+    // 7.3 打开（渲染）申请列表 → POST seen + 角标归 0
+    const calls = [];
+    w.fetch = function (url, opts) {
+      calls.push({ url: String(url), method: (opts && opts.method) || 'GET' });
+      if (/\/api\/friends\/requests\/seen$/.test(String(url))) {
+        return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ ok: true, unreadCount: 0 }); } });
+      }
+      if (/\/api\/friends\/requests$/.test(String(url))) {
+        return Promise.resolve({ ok: true, json: function () { return Promise.resolve({
+          incoming: [{ id: 3, fromMe: false, status: 'pending', user: { id: 7, nickname: '小明', username: 'xm', motto: '', avatarUrl: '' } }],
+          outgoing: [], unreadCount: 1 }); } });
+      }
+      return Promise.resolve({ ok: true, json: function () { return Promise.resolve({}); } });
+    };
+    const T = w.__IM_TEST__;
+    T.renderRequests(d.getElementById('imList'));
+    await new Promise(r => setTimeout(r, 80));
+    check('需求1 申请列表成功渲染（含申请方昵称）', d.getElementById('imList').innerHTML.indexOf('小明') !== -1);
+    const seenCalls = calls.filter(c => /\/api\/friends\/requests\/seen$/.test(c.url) && c.method === 'POST');
+    check('需求1 渲染后发出 POST /api/friends/requests/seen', seenCalls.length === 1, JSON.stringify(seenCalls));
+    check('需求1 seen 成功（unreadCount:0）后角标归 0（badge 移除）', !d.querySelector('.im-tab[data-tab="requests"] .tab-badge'));
+
+    // 7.4 seen 接口 500 → 列表照常渲染、无未捕获异常、无错误 toast（静默降级）
+    w.fetch = function (url, opts) {
+      if (/\/api\/friends\/requests\/seen$/.test(String(url))) {
+        return Promise.resolve({ ok: false, status: 500, json: function () { return Promise.reject(new Error('HTTP 500')); } });
+      }
+      if (/\/api\/friends\/requests$/.test(String(url))) {
+        return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ incoming: [{ id: 5, fromMe: false, status: 'pending', user: { id: 8, nickname: '小红', username: 'xh', motto: '', avatarUrl: '' } }], outgoing: [], unreadCount: 1 }); } });
+      }
+      return Promise.resolve({ ok: true, json: function () { return Promise.resolve({}); } });
+    };
+    let threw = false;
+    try { T.renderRequests(d.getElementById('imList')); } catch (e) { threw = true; }
+    await new Promise(r => setTimeout(r, 80));
+    check('需求1 seen 500 → 列表照常渲染（小红可见）', d.getElementById('imList').innerHTML.indexOf('小红') !== -1);
+    check('需求1 seen 500 → 渲染调用不抛异常', !threw);
+    const toastEl = d.getElementById('toast');
+    check('需求1 seen 500 → 无错误 toast 打扰用户', !toastEl || (toastEl.textContent.indexOf('失败') === -1 && toastEl.textContent.indexOf('错误') === -1), toastEl && toastEl.textContent);
+
+    // 7.5 seen 只在渲染列表时触发、绝不在轮询里（源码断言）
+    const cl = fs.readFileSync(path.join(ROOT, 'assets', 'chat-local.js'), 'utf8');
+    const pollEnd = cl.indexOf('}, 5000);');
+    check('需求1 轮询体内不含 requests/seen（不会每 5 秒打接口）', pollEnd !== -1 && !cl.slice(Math.max(0, pollEnd - 2600), pollEnd).includes('requests/seen'));
+    check('需求1 renderRequests 成功路径调用 markRequestsSeen', /\n      markRequestsSeen\(token, API_BASE\);/.test(cl));
+  }
+
   console.log('\n========== 汇总 ==========');
   console.log('通过 ' + pass + ' 项，失败 ' + fail + ' 项。');
   process.exit(fail ? 1 : 0);
