@@ -113,6 +113,109 @@ LIVE.forEach(page => {
   check(page + ' 旧弹层 #morePanel 保留', html.includes('id="morePanel"'));
 });
 
-console.log('\n========== 汇总 ==========');
-console.log('通过 ' + pass + ' 项，失败 ' + fail + ' 项。');
-process.exit(fail ? 1 : 0);
+/* ========== [3] A4：他人主页 isFriend 判定 ========== */
+// 用探针替换 window.api 后调用真实 renderUserHome，断言按钮分支。
+async function renderUserHomeProbe(w, opts) {
+  opts = opts || {};
+  const userId = opts.userId || 2;
+  const user = {
+    id: userId, username: 'peer', nickname: '小明', motto: '你好',
+    avatarUrl: null, notes: [], stats: {}, isMe: false,
+  };
+  if (opts.isFriend !== undefined) user.isFriend = opts.isFriend;
+  w.CURRENT_USER = { id: 1, username: 'me', nickname: '我', stats: {} };
+  w.api = function (p) {
+    if (/\/api\/users\//.test(p)) return Promise.resolve(user);
+    if (/\/api\/friends/.test(p)) return Promise.resolve(opts.friendsPayload || { items: [] });
+    return Promise.resolve({});
+  };
+  const box = w.document.createElement('div');
+  w.document.body.appendChild(box);
+  await w.renderUserHome(userId, box);
+  return box.innerHTML;
+}
+
+(async function () {
+  sec('[3] A4：他人主页 isFriend 判定');
+  {
+    const { w } = load('个人中心.html');
+    // 3.1 服务端直接给 isFriend:true
+    let html = await renderUserHomeProbe(w, { isFriend: true, userId: 2 });
+    check('A4 isFriend:true → 显示「发消息」', html.indexOf('发消息') !== -1);
+    check('A4 isFriend:true → 显示「删除好友」', html.indexOf('删除好友') !== -1);
+    check('A4 isFriend:true → 不显示「加为好友」', html.indexOf('加为好友') === -1);
+    check('A4 isFriend:true → 发消息按钮调用 chatWithUser(2)', html.indexOf('chatWithUser(2') !== -1);
+
+    // 3.2 isFriend:false
+    html = await renderUserHomeProbe(w, { isFriend: false, userId: 3 });
+    check('A4 isFriend:false → 显示「加为好友」', html.indexOf('加为好友') !== -1);
+    check('A4 isFriend:false → 不显示「删除好友」', html.indexOf('删除好友') === -1);
+
+    // 3.3 isFriend 缺失 → 回退 /api/friends，兼容 {items:[...]}（bob 形如 {id:Name}）
+    html = await renderUserHomeProbe(w, { userId: 4, friendsPayload: { items: [{ id: 4, nickname: '小明' }] } });
+    check('A4 isFriend 缺失 + {items:[{id:4}]} → 判为好友', html.indexOf('删除好友') !== -1 && html.indexOf('加为好友') === -1);
+
+    // 3.4 isFriend 缺失 → 回退 /api/friends，兼容裸数组
+    html = await renderUserHomeProbe(w, { userId: 5, friendsPayload: [{ id: 5, nickname: '小明' }] });
+    check('A4 isFriend 缺失 + 裸数组 [{id:5}] → 判为好友', html.indexOf('删除好友') !== -1);
+
+    // 3.5 isFriend 缺失 + 好友列表不含该 id → 非好友（旧实现 f.user.id 恒 false，此处应仍为 false）
+    html = await renderUserHomeProbe(w, { userId: 6, friendsPayload: { items: [{ id: 99 }] } });
+    check('A4 isFriend 缺失 + 列表中无该 id → 非好友', html.indexOf('加为好友') !== -1);
+  }
+
+  /* ========== [4] A9：首页学习数据真实化 ========== */
+  sec('[4] A9：首页学习数据接本地真实统计');
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function todayKey() {
+    const d = new Date();
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+  {
+    // 4.1 预置 120 分钟 / 连续 7 天 → 应渲染 2 小时、7 天、无空态
+    const nowKey = todayKey();
+    const { w, d } = load('学习工作台.html', {
+      preset: (win) => {
+        win.localStorage.setItem('study_workbench_stats', JSON.stringify({
+          version: 1,
+          modules: { cet4: { total: 3, days: {} } , tools: { total: 2, days: {} } },
+          lastActiveDay: nowKey, streak: 7, syncAt: 0,
+        }));
+        // 两次写入，避免对象引用问题：把今日分钟塞进两个模块
+        const s = JSON.parse(win.localStorage.getItem('study_workbench_stats'));
+        s.modules.cet4.days[nowKey] = { minutes: 90, events: 2 };
+        s.modules.tools.days[nowKey] = { minutes: 30, events: 1 };
+        win.localStorage.setItem('study_workbench_stats', JSON.stringify(s));
+      },
+    });
+    check('A9 study-stats.js 已加载（StudyStats.getSummary 可用）', !!(w.StudyStats && typeof w.StudyStats.getSummary === 'function'));
+    w.renderStats();
+    const hours = (d.getElementById('totalHours') || {}).textContent;
+    const streak = (d.getElementById('streakDisplay') || {}).textContent;
+    const q = (d.getElementById('totalQuestions') || {}).textContent;
+    const hint = d.getElementById('statsEmptyHint');
+    check('A9 总学习(h) = round(120/60) = 2（真实非假）', hours === '2', 'totalHours=' + hours);
+    check('A9 连续天数 = 7（来自 study-stats）', streak === '7', 'streakDisplay=' + streak);
+    check('A9 做题数 = 0（无做题记录，不造假）', q === '0', 'totalQuestions=' + q);
+    check('A9 空态提示隐藏（有记录）', hint && hint.style.display === 'none', 'display=' + (hint && hint.style.display));
+    const chart = (d.getElementById('weekChart') || {}).innerHTML || '';
+    check('A9 本周柱图出现今日真实值 120', chart.indexOf('120') !== -1);
+    check('A9 本周柱图不显示空态', chart.indexOf('还没有学习记录') === -1);
+  }
+  {
+    // 4.2 无任何本地记录 → 全 0 + 空态文案「还没有学习记录，去学一章吧」，绝不出现模拟数据
+    const { w, d } = load('学习工作台.html');
+    w.renderStats();
+    const hours = (d.getElementById('totalHours') || {}).textContent;
+    const hint = d.getElementById('statsEmptyHint');
+    const chart = (d.getElementById('weekChart') || {}).innerHTML || '';
+    check('A9 无记录 → 总学习(h) = 0', hours === '0', 'totalHours=' + hours);
+    check('A9 无记录 → 空态提示显示', hint && hint.style.display === 'block', 'display=' + (hint && hint.style.display));
+    check('A9 无记录 → 柱图空态文案「还没有学习记录，去学一章吧」', chart.indexOf('还没有学习记录，去学一章吧') !== -1);
+    check('A9 无记录 → 不出现旧模拟数组[25/40/15/60]', chart.indexOf('60') === -1 && chart.indexOf('25') === -1);
+  }
+
+  console.log('\n========== 汇总 ==========');
+  console.log('通过 ' + pass + ' 项，失败 ' + fail + ' 项。');
+  process.exit(fail ? 1 : 0);
+})();

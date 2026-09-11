@@ -185,17 +185,22 @@ async function renderUserHome(userId, box) {
   try { u = await api('/api/users/' + userId); }
   catch (e) { box.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:var(--text-secondary)">⚠️ ' + esc(e.message) + '</div>'; return; }
   if (u.isMe) { location.replace('个人中心.html'); return; }
-  // 检查好友关系
-  var isFriend = false;
-  try {
-    var friends = await api('/api/friends');
-    isFriend = friends.some(function(f) { return f.user && f.user.id === userId; });
-  } catch(e) {}
+  // 好友关系：优先消费服务端 /api/users/{id} 已计算好的 isFriend 字段；
+  // 仅当其缺失时才回退查询 /api/friends，并兼容 {items:[...]} 与裸数组两种返回结构
+  // （旧实现误用 f.user.id，且未处理对象返回，导致一直是 false —— A4）。
+  var isFriend = (typeof u.isFriend === 'boolean') ? u.isFriend : false;
+  if (typeof u.isFriend !== 'boolean') {
+    try {
+      var fr = await api('/api/friends');
+      var list = Array.isArray(fr) ? fr : (fr && Array.isArray(fr.items) ? fr.items : []);
+      isFriend = list.some(function(f) { return Number(f.id) === Number(userId); });
+    } catch(e) { /* 关系未知时按「非好友」渲染，避免误显删除按钮 */ }
+  }
   var cards = u.notes.map(function (n) { return noteCardHtml(n); }).join('') ||
     '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-secondary);font-size:13px">TA 还没有公开发贴</div>';
   var actionBtns = '<button class="btn btn-outline" onclick="location.href=' + "'个人中心.html'" + '">← 回我的主页</button>';
   if (isFriend) {
-    actionBtns += ' <button class="btn btn-outline" onclick="chatWithUser(' + userId + ',\'' + esc(u.nickname) + '\')">💬 发私信</button>';
+    actionBtns += ' <button class="btn btn-outline" onclick="chatWithUser(' + userId + ',\'' + esc(u.nickname) + '\')">💬 发消息</button>';
     actionBtns += ' <button class="btn btn-danger" onclick="removeFriend(' + userId + ',\'' + esc(u.nickname) + '\')">🗑 删除好友</button>';
   } else {
     actionBtns += ' <button class="btn btn-primary" onclick="addFriend(' + userId + ')">👤 加为好友</button>';
