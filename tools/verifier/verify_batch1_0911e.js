@@ -323,6 +323,61 @@ async function renderUserHomeProbe(w, opts) {
     check('A6 成功后关闭模态', !modal.classList.contains('active'));
   }
 
+  /* ========== [9] T06：语音回退链可达 + shouldUseDictTts ========== */
+  sec('[9] T06：语音回退链（有道失败→Web Speech/原生）');
+  {
+    const { w } = load('学习工作台.html');
+    check('T06 shouldUseDictTts 为函数', typeof w.shouldUseDictTts === 'function');
+    check('T06 speakFallback 为函数', typeof w.speakFallback === 'function');
+
+    // 纯函数：词/短语 → true；句子 → false（有道对任意句子确定性 500）
+    const cases = [
+      ['hello', true], ['apple', true], ['thank you', true], ['how are you', true],
+      ['i like apples', true], ['well-known', true],
+      ['the quick brown fox', false],
+      ['i like red apples', false], ['Hi what can I get for you today', false],
+      ['Hello, world', false], ['', false], [null, false],
+    ];
+    cases.forEach(([t, exp]) => check('T06 shouldUseDictTts(' + JSON.stringify(t) + ') === ' + exp, w.shouldUseDictTts(t) === exp));
+
+    // 回退链：mock 一个失败的有道（onEnd(false)），断言 speakText 到达 Web Speech 分支
+    const realNetSpeak = w.netSpeak;
+    let wsCalled = 0, wsText = '';
+    w.speechSynthesis = { cancel: function () { }, speak: function (u) { wsCalled++; wsText = (u && u.text) || ''; } };
+    w.SpeechSynthesisUtterance = function (t) { this.text = t; };
+
+    w.netSpeak = function (text, lang, rate, onEnd) { if (onEnd) onEnd(false); return true; };
+    w.speakText('Hello there my friend', 'en-US', 0.9);
+    check('T06 speakText：有道失败 → 回退到 Web Speech', wsCalled === 1, 'wsCalled=' + wsCalled + ' text=' + wsText);
+    check('T06 speakText：回退朗读文本正确', wsText === 'Hello there my friend', wsText);
+
+    // 启发式边界：'hello world ok'（3 token/15 字）会命中规则→走有道，但上游无此短语→500。
+    // 规则无法穷尽词表，因此「保障」不靠启发式，而靠失败后回退链可达 —— 断言它仍能出声。
+    check('T06 启发式边界：hello world ok 命中规则(≤3token)', w.shouldUseDictTts('hello world ok') === true);
+    wsCalled = 0;
+    w.netSpeak = function (text, lang, rate, onEnd) { if (onEnd) onEnd(false); return true; };
+    w.speakText('hello world ok', 'en-US', 0.9);
+    check('T06 边界串有道失败 → 回退出声（不静默）', wsCalled === 1, 'wsCalled=' + wsCalled);
+
+    // 有道成功 → 不触发 Web Speech
+    wsCalled = 0;
+    w.netSpeak = function (text, lang, rate, onEnd) { if (onEnd) onEnd(true); return true; };
+    w.speakText('hello', 'en-US', 0.9);
+    check('T06 speakText：有道成功 → 不触发回退', wsCalled === 0, 'wsCalled=' + wsCalled);
+
+    // speakUtterance 同链：失败回退到 Web Speech
+    wsCalled = 0;
+    w.netSpeak = function (text, lang, rate, onEnd) { if (onEnd) onEnd(false); return true; };
+    w.speakUtterance('apple');
+    check('T06 speakUtterance：有道失败 → 回退到 Web Speech', wsCalled === 1, 'wsCalled=' + wsCalled);
+
+    // 真实 netSpeak：句子直接跳过有道、走回退（返回 true 表示已受理，兼容 quest.js/voiceplayer.js 直调）
+    wsCalled = 0;
+    w.netSpeak = realNetSpeak;
+    const r = w.netSpeak('Hi what can I get for you today', 'en-US', 0.9, null);
+    check('T06 真实 netSpeak：句子跳过有道、直接走回退', r === true && wsCalled === 1, 'r=' + r + ' wsCalled=' + wsCalled);
+  }
+
   console.log('\n========== 汇总 ==========');
   console.log('通过 ' + pass + ' 项，失败 ' + fail + ' 项。');
   process.exit(fail ? 1 : 0);

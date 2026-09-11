@@ -9,7 +9,8 @@
   3. 绝不触碰 HTML 注释、内联脚本正文、文本节点。
 
 改完自动校验每个改动文件：<!-- / --> 配对、<div / </div 配对、<script / </script 配对。
-用法：python tools/bump_versions_0911e.py [--check]
+用法：python tools/bump_versions_0911e.py [--check] [版本号]
+  版本号可选，默认 20260911e；例：python tools/bump_versions_0911e.py 20260911f
 """
 from __future__ import annotations
 
@@ -40,6 +41,14 @@ def bump_line(line: str) -> str:
     return line
 
 
+def _cli_version(default: str) -> str:
+    """可选：命令行首个非 - 开头的 [A-Za-z0-9]+ 参数覆盖版本号（例：... 20260911f）。"""
+    for a in sys.argv[1:]:
+        if not a.startswith("-") and re.fullmatch(r"[0-9A-Za-z]+", a):
+            return a
+    return default
+
+
 def balance(text: str, tag: str) -> tuple[int, int]:
     open_re = re.compile(r"<" + tag + r"(\s|>)", re.I)
     close_re = re.compile(r"</" + tag + r">", re.I)
@@ -47,6 +56,8 @@ def balance(text: str, tag: str) -> tuple[int, int]:
 
 
 def main() -> None:
+    global V
+    V = _cli_version(V)
     check_only = "--check" in sys.argv
     changed_files = 0
     total_lines_changed = 0
