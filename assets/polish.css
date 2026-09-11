@@ -139,3 +139,195 @@ button, a, .chip, .theme-option { -webkit-tap-highlight-color: transparent; }
 body { letter-spacing: .01em; }
 input, textarea, select { color: var(--text); }
 body.dark .blog-grid .note-card, body.dark .vp-en { color: var(--text); }
+
+/* =====================================================================
+   【9/11 新增】广场编辑页 —— 写作工作台美化
+   ===================================================================== */
+
+/* ---------- 写作台头部渐变卡 ---------- */
+.ed-hero {
+  display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap;
+  padding: 20px 22px; border-radius: 20px; color: #fff; position: relative; overflow: hidden;
+  background: linear-gradient(135deg, var(--primary), var(--g2));
+  box-shadow: 0 20px 38px -22px var(--primary);
+}
+.ed-hero::after {
+  content: ''; position: absolute; right: -50px; top: -80px; width: 210px; height: 210px; border-radius: 50%;
+  background: radial-gradient(circle at center, rgba(255,255,255,.3), transparent 70%);
+}
+.ed-hero::before {
+  content: ''; position: absolute; left: 34%; bottom: -100px; width: 240px; height: 150px; border-radius: 50%;
+  background: radial-gradient(circle at center, rgba(255,255,255,.16), transparent 70%);
+}
+.ed-hero-main { display: flex; align-items: center; gap: 14px; position: relative; z-index: 1; }
+.ed-hero-emoji {
+  width: 54px; height: 54px; border-radius: 17px; flex-shrink: 0; font-size: 27px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.22); box-shadow: inset 0 0 0 1px rgba(255,255,255,.25);
+}
+.ed-hero-title { font-size: 19px; font-weight: 800; letter-spacing: .02em; }
+.ed-hero-sub { font-size: 12px; opacity: .92; margin-top: 3px; }
+.ed-hero-stats { display: flex; gap: 10px; position: relative; z-index: 1; flex-wrap: wrap; }
+.ed-stat {
+  min-width: 78px; padding: 8px 12px; border-radius: 14px; text-align: center;
+  background: rgba(255,255,255,.18); box-shadow: inset 0 0 0 1px rgba(255,255,255,.2);
+}
+.ed-stat b { display: block; font-size: 17px; font-weight: 800; line-height: 1.15; }
+.ed-stat span { font-size: 10px; opacity: .9; }
+
+/* ---------- 快速模板行 ---------- */
+.ed-tpl-row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 12px 14px; border-radius: 15px;
+  background: var(--card); border: 1px dashed color-mix(in srgb, var(--primary) 40%, var(--border));
+}
+.ed-tpl-label { font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-right: 2px; }
+.ed-tpl {
+  padding: 7px 13px; border-radius: 999px; border: 1px solid var(--border);
+  background: var(--bg); color: var(--text); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: var(--transition); font-family: inherit; line-height: 1.2;
+}
+.ed-tpl:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-1px); box-shadow: 0 8px 16px -12px var(--primary); }
+.ed-tpl:active { transform: scale(.96); }
+
+/* ---------- 分区步骤卡 ---------- */
+.ed-step {
+  display: flex; flex-direction: column; gap: 14px; padding: 18px 20px 20px;
+  border-radius: 18px; background: var(--card); border: 1px solid var(--border);
+  box-shadow: 0 12px 30px -28px rgba(0,0,0,.7);
+}
+.ed-step-head { display: flex; align-items: center; gap: 9px; font-size: 14px; font-weight: 800; color: var(--text); }
+.ed-step-head .ed-step-tip { margin-left: auto; font-size: 11px; font-weight: 500; color: var(--text-secondary); }
+.ed-step-no {
+  width: 23px; height: 23px; border-radius: 50%; flex-shrink: 0; font-size: 12px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; color: #fff;
+  background: linear-gradient(135deg, var(--primary), var(--g2));
+  box-shadow: 0 6px 14px -8px var(--primary);
+}
+
+/* 编辑页输入控件：圆角 + 聚焦光晕 */
+.blog-editor .editor-field input[type="text"],
+.blog-editor .editor-field select,
+.blog-editor .editor-field input[type="url"] { border-radius: 11px; padding: 11px 13px; }
+.blog-editor .editor-field input:focus,
+.blog-editor .editor-field select:focus {
+  border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light);
+}
+.blog-editor .editor-field input[type="file"] { border-radius: 11px; }
+
+/* ---------- 富文本工具栏：分组 + 悬浮 ---------- */
+.ed-pane-wrap { display: flex; flex-direction: column; gap: 10px; }
+.rt-toolbar {
+  align-items: center; gap: 5px; padding: 9px 11px; border-radius: 14px;
+  background: linear-gradient(180deg, var(--card), var(--bg));
+}
+.rt-tool {
+  width: 34px; height: 34px; font-size: 14px; border-radius: 9px;
+  background: transparent; border: 1px solid transparent;
+}
+.rt-tool:hover { background: var(--primary-light); border-color: transparent; color: var(--primary); transform: translateY(-1px); }
+.rt-sep { width: 1px; height: 20px; background: var(--border); margin: 0 5px; flex-shrink: 0; }
+
+/* ---------- 双栏：编辑 / 预览 卡片化 ---------- */
+.editor-panes { gap: 14px; }
+.editor-pane-box {
+  gap: 0; border: 1px solid var(--border); border-radius: 14px;
+  background: var(--card); overflow: hidden;
+}
+.editor-pane-box .pane-label {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 9px 14px; background: var(--bg); border-bottom: 1px solid var(--border);
+  font-size: 11.5px; font-weight: 700; color: var(--text-secondary);
+}
+.pane-label .pane-hint { font-weight: 500; opacity: .8; font-size: 10.5px; }
+#blogEditorInput {
+  border: none; border-radius: 0; min-height: 400px; padding: 14px 16px;
+  background: var(--card); line-height: 1.9; font-size: var(--reader-fs, 13px);
+}
+#blogEditorInput:focus { border: none; box-shadow: inset 0 0 0 2px var(--primary-light); }
+.blog-preview {
+  border: none; border-radius: 0; min-height: 400px; padding: 16px 18px;
+  background: var(--card); font-size: var(--reader-fs, 13px); line-height: 1.85;
+}
+
+/* ---------- 底部操作栏：吸底玻璃质感 ---------- */
+.ed-actions-bar {
+  position: sticky; bottom: 10px; z-index: 6; gap: 9px;
+  padding: 12px 14px; border-radius: 16px;
+  background: color-mix(in srgb, var(--card) 90%, transparent);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  box-shadow: 0 16px 34px -24px rgba(0,0,0,.55);
+}
+.ed-actions-bar .btn { padding: 10px 18px; }
+.ed-actions-bar .btn-primary { padding: 10px 28px; }
+.ed-actions-bar #blogEditStatus { font-weight: 600; }
+
+/* ---------- 未完成草稿恢复条 ---------- */
+.ed-draft-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 11px 14px; border-radius: 14px; font-size: 12.5px;
+  background: var(--primary-light); color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+}
+.ed-draft-bar .ed-draft-tx { flex: 1; min-width: 160px; font-weight: 600; }
+.ed-draft-bar .btn { padding: 5px 12px; font-size: 12px; }
+
+/* 广场子导航：当前项渐变（与 chip 统一） */
+.blog-subnav .sb-tab.active {
+  background: linear-gradient(135deg, var(--primary), var(--g2));
+  border-color: transparent; box-shadow: 0 8px 18px -10px var(--primary);
+}
+
+/* =====================================================================
+   【9/11 新增】设置页 —— 数据总览 / 分段控件 / 快捷入口
+   ===================================================================== */
+.st-overview { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.st-ov-item {
+  padding: 12px 14px; border-radius: 14px; border: 1px solid var(--border); background: var(--bg);
+  display: flex; flex-direction: column; gap: 3px;
+}
+.st-ov-item b { font-size: 19px; font-weight: 800; line-height: 1.15;
+  background: linear-gradient(135deg, var(--primary), var(--g2));
+  -webkit-background-clip: text; background-clip: text; color: transparent; }
+.st-ov-item span { font-size: 11px; color: var(--text-secondary); }
+.st-bar { height: 8px; border-radius: 999px; background: var(--bg); border: 1px solid var(--border); overflow: hidden; margin-top: 10px; }
+.st-bar > i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--primary), var(--g2)); transition: width .4s ease; }
+.st-bar-tx { font-size: 11.5px; color: var(--text-secondary); margin-top: 6px; }
+
+/* 分段控件（字号 / 编辑器字号等） */
+.seg { display: inline-flex; padding: 3px; border-radius: 11px; background: var(--bg); border: 1px solid var(--border); gap: 2px; }
+.seg button {
+  padding: 6px 12px; border: none; background: transparent; border-radius: 9px; cursor: pointer;
+  font-size: 12px; font-weight: 600; color: var(--text-secondary); font-family: inherit; transition: var(--transition);
+}
+.seg button:hover { color: var(--primary); }
+.seg button.active { background: linear-gradient(135deg, var(--primary), var(--g2)); color: #fff; }
+
+/* 快捷入口磁贴 */
+.st-quick { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; }
+.st-quick-it {
+  display: flex; align-items: center; gap: 9px; padding: 11px 12px; border-radius: 13px;
+  border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer;
+  font-size: 12.5px; font-weight: 600; transition: var(--transition); text-align: left; font-family: inherit;
+}
+.st-quick-it:hover { transform: translateY(-2px); border-color: var(--primary); box-shadow: 0 12px 24px -16px var(--primary); }
+.st-quick-it .sq-ic {
+  width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0; font-size: 16px;
+  display: flex; align-items: center; justify-content: center; background: var(--primary-light);
+}
+
+/* ---------- 全局阅读字号变量 ---------- */
+body { --reader-fs: 13px; }
+body.reader-large { --reader-fs: 15px; }
+body.reader-xlarge { --reader-fs: 17px; }
+
+/* ---------- 减少动效 / 紧凑模式 ---------- */
+body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after {
+  animation: none !important; transition: none !important;
+}
+body.reduce-motion .page.active { animation: none !important; }
+body.compact .card { padding: 14px 16px; }
+body.compact .blog-wrap, body.compact .blog-editor { gap: 10px; }
+body.compact .setting-row { padding-top: 8px; padding-bottom: 8px; }
+body.compact .module-hero { padding: 16px 18px; }

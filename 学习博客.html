@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#5B8DEF">
 <title>广场 · 星途</title>
 <link rel="stylesheet" href="assets/common.css">
-<link rel="stylesheet" href="assets/polish.css">
+<link rel="stylesheet" href="assets/polish.css?v=20260911b">
 </head>
 <body class="theme-home">
 
@@ -73,9 +73,9 @@
   <div class="main">
 <header class="topbar">
       <div class="topbar-title" id="topbarTitle">广场</div>
-      <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
+      <!-- 全局搜索（检索范围与逻辑见 assets/app.js?v=20260913t 的 globalSearch()） -->
       <div class="gs-wrap" id="gsWrap">
-        <input type="text" class="gs-input" id="gsInput" placeholder="🔍 搜索笔记 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <input type="text" class="gs-input" id="gsInput" placeholder="🔍 搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
         <div class="gs-dropdown" id="gsDropdown"></div>
       </div>
       <div class="topbar-stats">
@@ -91,19 +91,19 @@
         <div class="module-hero">
           <div class="module-hero-left">
             <div class="module-hero-title">📝 广场</div>
-            <div class="module-hero-desc">写学习笔记 · 分类标签 · 草稿归档 · 数据本地保存</div>
+            <div class="module-hero-desc">写发贴 · 分类标签 · 草稿归档 · 数据本地保存</div>
           </div>
         </div>
 
         <!-- 博客子导航 -->
         <div class="blog-subnav">
-          <div class="sb-tab active" id="blogTabList" onclick="showBlogView('list')">📚 笔记广场</div>
+          <div class="sb-tab active" id="blogTabList" onclick="showBlogView('list')">📚 广场</div>
           <div class="sb-tab" id="blogTabMine" onclick="showBlogView('mine')">👤 我的文章</div>
-          <div class="sb-tab" id="blogTabEdit" onclick="showBlogView('edit')">✍️ 写笔记</div>
+          <div class="sb-tab" id="blogTabEdit" onclick="showBlogView('edit')">✍️ 写发贴</div>
           <div class="sb-tab" id="blogTabStats" onclick="showBlogView('stats')">📊 统计</div>
         </div>
 
-        <!-- ===== 视图：笔记广场 ===== -->
+        <!-- ===== 视图：广场 ===== -->
         <div class="blog-wrap" id="blogViewList">
           <div class="blog-toolbar">
             <div class="blog-search-row">
@@ -112,7 +112,7 @@
             <div class="blog-filters" id="blogFilterChips"></div>
           </div>
           <div class="blog-empty" id="blogListEmpty" style="display:none;text-align:center;padding:40px;color:var(--text-secondary);font-size:13px">
-            还没有公开的学习笔记，点右上角“✍️ 写笔记”发布第一篇吧～
+            还没有公开的发贴，点右上角“✍️ 写发贴”发布第一篇吧～
           </div>
           <div class="blog-grid" id="blogGrid"></div>
         </div>
@@ -125,75 +125,118 @@
           <div class="blog-grid" id="blogMineGrid"></div>
         </div>
 
-        <!-- ===== 视图：编辑器 ===== -->
+        <!-- ===== 视图：编辑器（写作工作台） ===== -->
         <div class="blog-wrap blog-editor" id="blogViewEdit" style="display:none">
-          <!-- 标题 -->
-          <div class="editor-field">
-            <label>标题 <span style="color:#E05040">*</span></label>
-            <input type="text" id="beTitle" placeholder="给这篇学习笔记起个标题…">
-          </div>
-          <!-- 分类 + 可见性 + 封面 -->
-          <div class="editor-row">
-            <div class="editor-field">
-              <label>分类（绑定侧边栏模块）</label>
-              <select id="beCat"></select>
+
+          <!-- 写作台头部：标题 + 实时字数/阅读时长/草稿状态 -->
+          <div class="ed-hero">
+            <div class="ed-hero-main">
+              <div class="ed-hero-emoji">✍️</div>
+              <div>
+                <div class="ed-hero-title">写发贴</div>
+                <div class="ed-hero-sub">支持轻量 Markdown · 左写右预览 · 草稿自动存到本机</div>
+              </div>
             </div>
-            <div class="editor-field">
-              <label>可见范围</label>
-              <select id="bePrivacy">
-                <option value="public">🌍 公开（所有人可见）</option>
-                <option value="private">🔒 私密（仅自己可见）</option>
-              </select>
-            </div>
-            <div class="editor-field">
-              <label>封面（emoji 或图片URL）</label>
-              <input type="text" id="beCover" placeholder="📚 或 https://…">
-            </div>
-          </div>
-          <!-- 标签 + 封面图上传 -->
-          <div class="editor-row">
-            <div class="editor-field editor-tags-input">
-              <label>自定义标签（用逗号分开，如：错题总结,英语单词）</label>
-              <input type="text" id="beTags" placeholder="错题总结, 英语单词">
-            </div>
-            <div class="editor-field">
-              <label>截图 / 插图（本地文件，会以 base64 存入）</label>
-              <input type="file" id="beImageInput" accept="image/*" style="padding:8px;background:var(--card);border:1px solid var(--border);border-radius:10px;font-size:12px" onchange="editorInsertImage(event)">
+            <div class="ed-hero-stats">
+              <div class="ed-stat"><b id="edWordCount">0</b><span>字数</span></div>
+              <div class="ed-stat"><b id="edReadTime">0</b><span>分钟阅读</span></div>
+              <div class="ed-stat"><b id="edDraftState">新发贴</b><span>草稿状态</span></div>
             </div>
           </div>
 
-          <!-- 富文本工具栏 -->
-          <div class="rt-toolbar">
-            <div class="rt-tool" title="加粗" onclick="editorTool('bold')"><b>B</b></div>
-            <div class="rt-tool" title="斜体" onclick="editorTool('italic')"><i>I</i></div>
-            <div class="rt-tool" title="标题" onclick="editorTool('h2')">H₂</div>
-            <div class="rt-tool" title="无序列表" onclick="editorTool('ul')">•≡</div>
-            <div class="rt-tool" title="待办清单" onclick="editorTool('task')">☑</div>
-            <div class="rt-tool" title="引用" onclick="editorTool('quote')">❝</div>
-            <div class="rt-tool" title="代码块" onclick="editorTool('code')">&lt;/&gt;</div>
-            <div class="rt-tool" title="行内代码" onclick="editorTool('inline')">`</div>
-            <div class="rt-tool" title="公式" onclick="editorTool('formula')">∑</div>
-            <div class="rt-tool" title="图片链接" onclick="editorTool('image')">🖼</div>
-            <div class="rt-tool" title="分割线" onclick="editorTool('hr')">—</div>
+          <!-- 未完成草稿恢复条（本机存在自动保存的草稿时才出现） -->
+          <div class="ed-draft-bar" id="edDraftBar" style="display:none">
+            <span class="ed-draft-tx" id="edDraftTx"></span>
+            <button class="btn btn-primary" onclick="edRestoreDraft()">↺ 恢复</button>
+            <button class="btn btn-outline" onclick="edDiscardDraft()">丢弃</button>
           </div>
 
-          <!-- 左写右预览 -->
-          <div class="editor-panes">
-            <div class="editor-pane-box">
-              <div class="pane-label">✍️ 编辑（支持轻量 Markdown）</div>
-              <textarea id="blogEditorInput" placeholder="写下你的知识点总结、错题记录、复习提纲…&#10;&#10;支持语法：# 标题 · **加粗** · *斜体* · `行内代码` · 行首 ``` 代码块 · $公式$ · 行首 - 列表 / - [ ] 待办 / &gt; 引用"></textarea>
+          <!-- 快速模板：一键插入常用写作骨架 -->
+          <div class="ed-tpl-row">
+            <span class="ed-tpl-label">🚀 快速模板</span>
+            <button class="ed-tpl" onclick="edInsertTemplate('review')">📝 复习提纲</button>
+            <button class="ed-tpl" onclick="edInsertTemplate('wrong')">❌ 错题总结</button>
+            <button class="ed-tpl" onclick="edInsertTemplate('note')">📚 课程/读书笔记</button>
+            <button class="ed-tpl" onclick="edInsertTemplate('mind')">🧠 知识点梳理</button>
+            <button class="ed-tpl" onclick="edInsertTemplate('plan')">🎯 今日计划</button>
+          </div>
+
+          <!-- 步骤一：基本信息 -->
+          <div class="ed-step">
+            <div class="ed-step-head"><span class="ed-step-no">1</span>基本信息<span class="ed-step-tip">标题必填，其余可留空</span></div>
+            <div class="editor-field">
+              <label>标题 <span style="color:#E05040">*</span></label>
+              <input type="text" id="beTitle" placeholder="给这篇发贴起个吸引人的标题…">
             </div>
-            <div class="editor-pane-box">
-              <div class="pane-label">👁️ 实时预览</div>
-              <div class="blog-preview" id="blogEditorPreview"></div>
+            <div class="editor-row">
+              <div class="editor-field">
+                <label>分类（绑定侧边栏模块）</label>
+                <select id="beCat"></select>
+              </div>
+              <div class="editor-field">
+                <label>可见范围</label>
+                <select id="bePrivacy">
+                  <option value="public">🌍 公开（所有人可见）</option>
+                  <option value="private">🔒 私密（仅自己可见）</option>
+                </select>
+              </div>
+              <div class="editor-field">
+                <label>封面（emoji 或图片URL）</label>
+                <input type="text" id="beCover" placeholder="📚 或 https://…">
+              </div>
+            </div>
+            <div class="editor-row">
+              <div class="editor-field editor-tags-input">
+                <label>自定义标签（用逗号分开，如：错题总结,英语单词）</label>
+                <input type="text" id="beTags" placeholder="错题总结, 英语单词">
+              </div>
+              <div class="editor-field">
+                <label>截图 / 插图（本地文件，会以 base64 存入）</label>
+                <input type="file" id="beImageInput" accept="image/*" style="padding:8px;background:var(--card);border:1px solid var(--border);border-radius:10px;font-size:12px" onchange="editorInsertImage(event)">
+              </div>
             </div>
           </div>
 
-          <!-- 操作区 -->
-          <div class="editor-actions">
+          <!-- 步骤二：正文 -->
+          <div class="ed-step">
+            <div class="ed-step-head"><span class="ed-step-no">2</span>正文内容<span class="ed-step-tip">写清「结论 / 依据 / 下一步」更利于复习</span></div>
+            <div class="ed-pane-wrap">
+              <!-- 富文本工具栏（分组：字符格式 / 段落结构 / 插入） -->
+              <div class="rt-toolbar">
+                <div class="rt-tool" title="加粗" onclick="editorTool('bold')"><b>B</b></div>
+                <div class="rt-tool" title="斜体" onclick="editorTool('italic')"><i>I</i></div>
+                <div class="rt-tool" title="行内代码" onclick="editorTool('inline')">`</div>
+                <div class="rt-sep"></div>
+                <div class="rt-tool" title="标题" onclick="editorTool('h2')">H₂</div>
+                <div class="rt-tool" title="无序列表" onclick="editorTool('ul')">•≡</div>
+                <div class="rt-tool" title="待办清单" onclick="editorTool('task')">☑</div>
+                <div class="rt-tool" title="引用" onclick="editorTool('quote')">❝</div>
+                <div class="rt-sep"></div>
+                <div class="rt-tool" title="代码块" onclick="editorTool('code')">&lt;/&gt;</div>
+                <div class="rt-tool" title="公式" onclick="editorTool('formula')">∑</div>
+                <div class="rt-tool" title="图片链接" onclick="editorTool('image')">🖼</div>
+                <div class="rt-tool" title="分割线" onclick="editorTool('hr')">—</div>
+              </div>
+
+              <!-- 左写右预览 -->
+              <div class="editor-panes">
+                <div class="editor-pane-box">
+                  <div class="pane-label"><span>✍️ 编辑</span><span class="pane-hint">支持 Markdown</span></div>
+                  <textarea id="blogEditorInput" placeholder="写下你的知识点总结、错题记录、复习提纲…&#10;&#10;支持语法：# 标题 · **加粗** · *斜体* · `行内代码` · 行首 ``` 代码块 · $公式$ · 行首 - 列表 / - [ ] 待办 / &gt; 引用&#10;&#10;也可以点上方「🚀 快速模板」一键插入骨架。"></textarea>
+                </div>
+                <div class="editor-pane-box">
+                  <div class="pane-label"><span>👁️ 实时预览</span><span class="pane-hint" id="edPreviewHint"></span></div>
+                  <div class="blog-preview" id="blogEditorPreview"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 操作区（吸底） -->
+          <div class="editor-actions ed-actions-bar">
             <button class="btn btn-primary" onclick="saveBlogNote('published')">📤 发布</button>
             <button class="btn btn-outline" onclick="saveBlogNote('draft')">💾 存草稿</button>
-            <button class="btn btn-outline" onclick="editorAiAssist()">🤖 AI 辅助写笔记</button>
+            <button class="btn btn-outline" onclick="editorAiAssist()">🤖 AI 辅助写发贴</button>
             <button class="btn btn-outline" onclick="resetBlogEditor()">↺ 清空</button>
             <div class="spacer"></div>
             <span id="blogEditStatus" style="font-size:12px;color:var(--text-secondary)"></span>
@@ -323,7 +366,136 @@
 
 </div>
 
-<script src="assets/app.js?v=20260913s"></script>
+<script src="assets/app.js?v=20260913t"></script>
 <script src="assets/api.js?v=20260909e"></script>
+<script>
+/* ===================================================================
+   广场（发贴）编辑页增强：【字数统计 / 阅读时长 / 草稿自动保存 / 快速模板】
+   -------------------------------------------------------------------
+   设计原则：不修改 assets/app.js?v=20260913t 中任何既有函数的内部实现，
+             只在其之上「叠加」行为（包装 clearEditorFields / updateEditorPreview），
+             因此不会影响原有发布、存草稿、AI 辅助等逻辑。
+   【后续扩展点】：可在此接入云端草稿（api.js 的 /api/notes 草稿接口）。
+   =================================================================== */
+(function () {
+  var DRAFT_KEY = 'study_workbench_editor_draft_v1';
+  // 快速模板骨架
+  var TPLS = {
+    review: '## 复习提纲\n\n**一、核心考点**\n- \n\n**二、易错点**\n- \n\n**三、复习建议**\n1. \n2. \n3. \n',
+    wrong: '## 错题总结\n\n**题目**：\n\n**我的错误**：\n\n**正确思路**：\n\n**同类题特征**：\n\n**下次注意**：\n',
+    note: '## 课程 / 读书笔记\n\n**来源**：\n\n**核心结论（3 条以内）**\n1. \n\n**关键概念**\n- \n\n**我的疑问**\n- \n',
+    mind: '## 知识点梳理\n\n**主知识点**：\n\n**分支一**\n- \n\n**分支二**\n- \n\n> 一句话总结：\n',
+    plan: '## 今日计划\n\n- [ ] \n- [ ] \n- [ ] \n\n**时间安排**\n| 时间段 | 任务 | 状态 |\n| --- | --- | --- |\n| 09:00-10:00 |  |  |\n| 14:00-15:00 |  |  |\n'
+  };
+  function $(id) { return document.getElementById(id); }
+  function isEditing() { try { return (typeof editingNoteId !== 'undefined') && !!editingNoteId; } catch (e) { return false; } }
+  function fmt(ts) {
+    var d = new Date(ts || Date.now());
+    function p(n) { return (n < 10 ? '0' : '') + n; }
+    return (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  // ① 字数 / 阅读时长统计
+  function edStats() {
+    var ta = $('blogEditorInput'); if (!ta) return;
+    var txt = ta.value || '';
+    var words = (txt.match(/[\u4e00-\u9fa5]/g) || []).length + (txt.match(/[A-Za-z0-9]+/g) || []).length;
+    if ($('edWordCount')) $('edWordCount').textContent = words;
+    if ($('edReadTime')) $('edReadTime').textContent = words ? Math.max(1, Math.round(words / 300)) : 0;
+    if ($('edPreviewHint')) $('edPreviewHint').textContent = words ? (words + ' 字') : '';
+  }
+  function edState(text) { var el = $('edDraftState'); if (el) el.textContent = text; }
+
+  // ② 草稿自动保存到本机（防误关丢失）
+  function saveDraft() {
+    var ta = $('blogEditorInput'); if (!ta) return;
+    if (!(ta.value || '').trim()) { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} return; }
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        title: ($('beTitle') || {}).value || '', content: ta.value, ts: Date.now()
+      }));
+    } catch (e) { /* 存储已满等，忽略 */ }
+  }
+  var timer = null;
+  function onInput() {
+    edStats();
+    edState(isEditing() ? '编辑中' : '未保存');
+    clearTimeout(timer);
+    timer = setTimeout(saveDraft, 900);
+  }
+
+  // ③ 未完成草稿恢复条
+  function showDraftBar() {
+    var raw = null;
+    try { raw = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (e) { }
+    if (!raw || !(raw.content || '').trim()) return;
+    var bar = $('edDraftBar'), tx = $('edDraftTx');
+    if (!bar || !tx) return;
+    tx.textContent = '发现未完成的草稿（' + fmt(raw.ts) + ' 自动保存 · ' + raw.content.length + ' 字符）';
+    bar.style.display = 'flex';
+  }
+  window.edRestoreDraft = function () {
+    var raw = null;
+    try { raw = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (e) { }
+    if (!raw) return;
+    var t = $('beTitle'); if (t && raw.title) t.value = raw.title;
+    var ta = $('blogEditorInput'); if (ta) ta.value = raw.content || '';
+    if (typeof updateEditorPreview === 'function') updateEditorPreview();
+    var bar = $('edDraftBar'); if (bar) bar.style.display = 'none';
+    edState('已恢复草稿');
+    if (typeof showToast === 'function') showToast('↺ 已恢复上次未完成的草稿');
+  };
+  window.edDiscardDraft = function () {
+    try { localStorage.removeItem(DRAFT_KEY); } catch (e) { }
+    var bar = $('edDraftBar'); if (bar) bar.style.display = 'none';
+    edState('新发贴');
+    if (typeof showToast === 'function') showToast('🗑️ 已丢弃本地草稿');
+  };
+
+  // ④ 快速模板插入
+  window.edInsertTemplate = function (kind) {
+    var ta = $('blogEditorInput'); if (!ta) return;
+    var t = TPLS[kind] || ''; if (!t) return;
+    if ((ta.value || '').trim() && !confirm('编辑器里已有内容，模板将追加到末尾，继续吗？')) return;
+    ta.value = (ta.value || '').replace(/\s*$/, '') + ((ta.value || '').trim() ? '\n\n' : '') + t;
+    if (typeof updateEditorPreview === 'function') updateEditorPreview();
+    onInput(); saveDraft();
+    ta.focus();
+    ta.setSelectionRange(ta.value.length, ta.value.length);
+    if (typeof showToast === 'function') showToast('🚀 已插入模板，按需修改即可');
+  };
+
+  // ⑤ 叠加：保存 / 清空后自动清掉本地草稿
+  if (typeof window.clearEditorFields === 'function') {
+    var _clear = window.clearEditorFields;
+    window.clearEditorFields = function () {
+      try { localStorage.removeItem(DRAFT_KEY); } catch (e) { }
+      var r = _clear.apply(this, arguments);
+      edStats(); edState('新发贴');
+      var bar = $('edDraftBar'); if (bar) bar.style.display = 'none';
+      return r;
+    };
+  }
+  // 叠加：任何预览刷新（含 startEditNote / AI 回填）后同步统计
+  if (typeof window.updateEditorPreview === 'function') {
+    var _upd = window.updateEditorPreview;
+    window.updateEditorPreview = function () {
+      var r = _upd.apply(this, arguments);
+      try { edStats(); } catch (e) { }
+      return r;
+    };
+  }
+
+  function initEd() {
+    var ta = $('blogEditorInput');
+    if (ta) ta.addEventListener('input', onInput);
+    edStats();
+    edState(isEditing() ? '编辑中' : '新发贴');
+    showDraftBar();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initEd);
+  else initEd();
+})();
+</script>
 </body>
 </html>

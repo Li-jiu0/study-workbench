@@ -82,3 +82,6 @@ profile_v*.html
 
 # 整站副本
 学习工作台(2)/
+
+# 部署打包产物
+tools/frontend_update_*.tar.gz

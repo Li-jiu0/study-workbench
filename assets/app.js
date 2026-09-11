@@ -31,10 +31,21 @@ const DEFAULT_SETTINGS = {
   cardAutoPlay: true,    // 卡片轮播自动播放
   
   // 隐私
-  notesPublic: true,     // 新笔记默认公开
+  notesPublic: true,     // 新发贴默认公开
   canSearch: true,       // 允许被搜索
   studyPublic: false,    // 学习记录公开
-  
+
+  // 发贴默认偏好（【9/11 新增】设置页可改，编辑器自动套用）
+  blogCat: 'cet',        // 新建发贴默认分类
+  blogPrivacy: 'public', // 新建发贴默认可见范围
+  blogTags: '',          // 新建发贴默认标签（逗号分隔）
+
+  // 阅读与交互偏好（【9/11 新增】）
+  readerFont: 'normal',  // 编辑/阅读字号：normal/large/xlarge
+  reduceMotion: false,   // 减少界面动效
+  compact: false,        // 紧凑模式
+  remindTime: '20:00',   // 每日学习提醒时间
+
   // AI
   aiTemp: '',            // AI 温度
   aiMax: '',             // AI 最大输出
@@ -93,6 +104,12 @@ function applySettings() {
   if (s.keepScreen && window.wakeLock) {
     try { window.wakeLock.request('screen'); } catch(e) {}
   }
+
+  // 6. 阅读与交互偏好（【9/11 新增】）
+  document.body.classList.toggle('reduce-motion', !!s.reduceMotion);
+  document.body.classList.toggle('compact', !!s.compact);
+  document.body.classList.toggle('reader-large', s.readerFont === 'large');
+  document.body.classList.toggle('reader-xlarge', s.readerFont === 'xlarge');
 }
 
 // 页面加载完成后应用所有设置
@@ -191,9 +208,9 @@ let appData = {
   viewedContent: {},   // 每日内容：各库已查看ID {commScenes: [], pptLayouts: [], etiquette: [], ivQuestions: []}
   lastVisitDate: "",    // 上次访问日期，用于每日重置随机顺序
   dailyQueues: {},      // 每日学习队列 {commScenes: {date, ids: []}, ...}
-  // ===== 分享广场（笔记系统）数据 =====
-  notes: [],            // 学习笔记文章 [{id,title,category,tags,cover,privacy,status,content,excerpt,views,likes,liked,comments,createdAt,updatedAt}]
-  favoriteNotes: [],    // 我收藏的笔记 ID 列表
+  // ===== 广场（发贴系统）数据 =====
+  notes: [],            // 发贴文章 [{id,title,category,tags,cover,privacy,status,content,excerpt,views,likes,liked,comments,createdAt,updatedAt}]
+  favoriteNotes: [],    // 我收藏的发贴 ID 列表
   profile: { name: '同学', avatar: '学', motto: '好好学习，天天向上', gender: 'secret', birthday: '', city: '' }  // 个人中心资料
 };
 
@@ -765,7 +782,7 @@ const pageTitles = {
   comm: '高情商表达', interview: '商务礼仪及面试', ppt: 'PPT训练',
   'speaking-demo': '情景式口语', 'exam-demo': '行测刷题',
   'roleplay-demo': '角色扮演', 'interview-demo': '模拟面试',
-  'exam-center': '行测刷题中心', 'wrong-book': '错题本', 'cet-vocab': '四级词汇', 'etiquette': '商务礼仪', 'iv-questions': '面试题库', 'ppt-layouts': 'PPT版式库', 'ppt-cases': 'PPT案例拆解', 'comm-scenes': '场景话术库', 'comm-quotes': '万能金句库', 'settings': '设置', 'blog': '分享广场', 'profile': '个人中心'
+  'exam-center': '行测刷题中心', 'wrong-book': '错题本', 'cet-vocab': '四级词汇', 'etiquette': '商务礼仪', 'iv-questions': '面试题库', 'ppt-layouts': 'PPT版式库', 'ppt-cases': 'PPT案例拆解', 'comm-scenes': '场景话术库', 'comm-quotes': '万能金句库', 'settings': '设置', 'blog': '广场', 'profile': '个人中心'
 };
 
 // ========== 多页面版：各模块独立网页的文件映射 ==========
@@ -1570,8 +1587,8 @@ const AI_QUICK_ACTIONS = [
     prompt: '请帮我批改这篇英语四级作文，从语法、词汇、结构、逻辑四个方面打分（满分10分），指出错误并给出修改建议和范文：\n\n[粘贴你的作文]' },
   { id: 'explain', name: '讲解知识点', emoji: '💡', desc: '不懂的知识点让AI用大白话讲清楚',
     prompt: '我在学习中遇到了一个不太懂的知识点：[粘贴知识点]。请用大白话给我讲清楚，最好举个例子，最后给我一个小测试看看我懂没懂。' },
-  { id: 'review', name: '复习提纲', emoji: '📝', desc: '根据笔记自动生成复习提纲和重点',
-    prompt: '请根据下面的学习笔记，生成一份复习提纲和重点总结：1）用要点列出核心考点；2）标注哪些是高频考点；3）给3条复习建议；4）简洁便于记忆。\n\n笔记内容：[粘贴笔记]' },
+  { id: 'review', name: '复习提纲', emoji: '📝', desc: '根据发贴自动生成复习提纲和重点',
+    prompt: '请根据下面的发贴，生成一份复习提纲和重点总结：1）用要点列出核心考点；2）标注哪些是高频考点；3）给3条复习建议；4）简洁便于记忆。\n\n发贴内容：[粘贴发贴]' },
   { id: 'mock_interview', name: '模拟面试', emoji: '🎤', desc: 'AI当面试官，模拟真实面试场景',
     prompt: '请开始一场模拟面试，岗位是[央国企/互联网/公务员]。你当面试官，先出第一个问题，我回答后你点评，然后再出下一个问题。一共5个问题，结束后给我总体评分和改进建议。' },
 ];
@@ -4352,7 +4369,7 @@ applyTheme();          // 应用上次保存的主题（深色/浅色）——�
 
 /* ========== 首页：功能中心快捷入口（可自选） + 最近打开 + 问候 ========== */
 var HOME_DEF = [
-  { k: 'plaza', ic: '🌍', t: '笔记广场', d: '看大家的', url: '学习博客.html' },
+  { k: 'plaza', ic: '🌍', t: '广场', d: '看大家的', url: '学习博客.html' },
   { k: 'cet', ic: '📖', t: '四级备考', d: '词汇听力阅读', url: '四级备考.html' },
   { k: 'exam', ic: '📝', t: '央国企笔试', d: '行测刷题', url: '央国企笔试.html' },
   { k: 'comm', ic: '💬', t: '高情商表达', d: '场景话术', url: '高情商表达.html' },
@@ -4535,7 +4552,7 @@ function initAiFabDrag() {
 // 初始化 AI 头像拖拽
 initAiFabDrag();
 
-// ==================== 分享广场（笔记系统） ====================
+// ==================== 广场（发贴系统） ====================
 const BLOG_CATS = [
   { id: 'cet', name: '四级备考', icon: '📖' },
   { id: 'exam', name: '央国企笔试', icon: '📝' },
@@ -4553,8 +4570,8 @@ const BLOG_COLORS = {
 let blogCatFilter = 'all';   // 广场分类筛选
 let blogTagFilter = '';      // 广场标签筛选
 let blogMineType = 'all';    // 我的文章筛选：all/published/draft/archived/favorite
-let currentNoteId = null;    // 详情页当前笔记
-let editingNoteId = null;    // 编辑器正在编辑的笔记 id
+let currentNoteId = null;    // 详情页当前发贴
+let editingNoteId = null;    // 编辑器正在编辑的发贴 id
 
 // ---- 通用工具 ----
 function esc(t) { return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
@@ -4701,7 +4718,7 @@ function renderBlogMine() {
   else if (blogMineType !== 'all') arr = arr.filter(n => n.status === blogMineType);
   arr.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
   document.getElementById('blogMineGrid').innerHTML = arr.map(n => noteCardHtml(n, { mine: true })).join('') ||
-    `<div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:13px;grid-column:1/-1">还没有相关的笔记</div>`;
+    `<div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:13px;grid-column:1/-1">还没有相关的发贴</div>`;
 }
 
 // ---- 详情页 ----
@@ -4797,19 +4814,19 @@ function deleteBlogComment(i) {
 
 // ---- 导出 Markdown ----
 function exportCurrentNoteMd() {
-  const n = appData.notes.find(x => x.id === currentNoteId); if (!n) { showToast('找不到笔记'); return; }
+  const n = appData.notes.find(x => x.id === currentNoteId); if (!n) { showToast('找不到发贴'); return; }
   const cat = noteCat(n.category);
   const md = `# ${n.title}\n\n> 分类：${cat.name} · 标签：${n.tags.join('、') || '无'} · 可见性：${n.privacy === 'private' ? '私密' : '公开'} · 创建于 ${fmtTime(n.createdAt)} · 更新于 ${fmtTime(n.updatedAt)}\n\n${n.content}\n`;
-  downloadBlob((n.title || '学习笔记') + '.md', md, 'text/markdown;charset=utf-8');
+  downloadBlob((n.title || '发贴') + '.md', md, 'text/markdown;charset=utf-8');
   showToast('📄 已导出 Markdown');
 }
 function exportAllNotesMd() {
   const pubs = appData.notes.filter(n => n.status === 'published');
-  if (!pubs.length) { showToast('还没有已发布的笔记'); return; }
-  let md = '# 学习笔记合集\n\n';
+  if (!pubs.length) { showToast('还没有已发布的发贴'); return; }
+  let md = '# 发贴合集\n\n';
   pubs.forEach(n => { md += `\n---\n\n# ${n.title}\n\n> 分类：${noteCat(n.category).name} · 创建于 ${fmtTime(n.createdAt)}\n\n${n.content}\n`; });
-  downloadBlob('学习笔记合集.md', md, 'text/markdown;charset=utf-8');
-  showToast('📄 已导出全部笔记');
+  downloadBlob('发贴合集.md', md, 'text/markdown;charset=utf-8');
+  showToast('📄 已导出全部发贴');
 }
 function downloadBlob(name, text, type) {
   // APK 内置浏览器环境:交给原生 AndroidBridge 落盘(WebView 不接管网页下载)
@@ -4826,7 +4843,7 @@ function downloadBlob(name, text, type) {
 function archiveNote(id) { const n = appData.notes.find(x => x.id === id); if (!n) return; n.status = 'archived'; saveData(); renderBlogMine(); showToast('📁 已归档到「归档箱」'); }
 function unarchiveNote(id) { const n = appData.notes.find(x => x.id === id); if (!n) return; n.status = 'published'; saveData(); renderBlogMine(); showToast('📤 已恢复为发布状态'); }
 function deleteNote(id) {
-  if (!confirm('确定删除这篇笔记吗？删除后不可恢复！')) return;
+  if (!confirm('确定删除这篇发贴吗？删除后不可恢复！')) return;
   appData.notes = appData.notes.filter(n => n.id !== id);
   appData.favoriteNotes = appData.favoriteNotes.filter(i => i !== id);
   saveData(); renderBlogList(); renderBlogMine();
@@ -4839,7 +4856,12 @@ function deleteNote(id) {
 function loadBlogEditor() {
   const sel = document.getElementById('beCat');
   sel.innerHTML = BLOG_CATS.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
-  sel.value = 'cet';
+  // 套用「设置 → 发贴默认偏好」（【9/11 新增】）
+  sel.value = getSetting('blogCat') || 'cet';
+  const prv = document.getElementById('bePrivacy');
+  if (prv) prv.value = getSetting('blogPrivacy') || 'public';
+  const tg = document.getElementById('beTags');
+  if (tg && !tg.value) tg.value = getSetting('blogTags') || '';
   document.getElementById('blogEditorInput').addEventListener('input', updateEditorPreview);
   updateEditorPreview();
 }
@@ -4920,9 +4942,9 @@ function clearEditorFields() {
   editingNoteId = null;
   document.getElementById('beTitle').value = '';
   document.getElementById('beCover').value = '';
-  document.getElementById('beTags').value = '';
-  document.getElementById('beCat').value = 'cet';
-  document.getElementById('bePrivacy').value = 'public';
+  document.getElementById('beCat').value = getSetting('blogCat') || 'cet';
+  document.getElementById('bePrivacy').value = getSetting('blogPrivacy') || 'public';
+  document.getElementById('beTags').value = getSetting('blogTags') || '';
   document.getElementById('blogEditorInput').value = '';
   document.getElementById('blogEditStatus').textContent = '';
   updateEditorPreview();
@@ -4946,7 +4968,7 @@ function startEditNote(id) {
   showBlogView('edit');
 }
 
-// ---- AI 辅助写笔记 ----
+// ---- AI 辅助写发贴 ----
 function buildOutlineFromContent(title, content) {
   const lines = String(content || '').split('\n').map(s => s.trim()).filter(Boolean);
   const out = [];
@@ -4965,9 +4987,9 @@ function buildOutlineFromContent(title, content) {
   return out.join('\n');
 }
 async function editorAiAssist() {
-  const title = document.getElementById('beTitle').value.trim() || '这篇学习笔记';
+  const title = document.getElementById('beTitle').value.trim() || '这篇发贴';
   const content = document.getElementById('blogEditorInput').value;
-  const prompt = `你是学习助手。请根据下面的学习笔记，生成一份【复习提纲】和【知识点总结】：1）用 Markdown 要点列出核心考点；2）给 3 条复习建议；3）简洁、便于复习。\n\n笔记标题：${title}\n笔记内容：\n${content.slice(0, 1500)}`;
+  const prompt = `你是学习助手。请根据下面的发贴，生成一份【复习提纲】和【知识点总结】：1）用 Markdown 要点列出核心考点；2）给 3 条复习建议；3）简洁、便于复习。\n\n发贴标题：${title}\n发贴内容：\n${content.slice(0, 1500)}`;
   const ta = document.getElementById('blogEditorInput');
   if (!content.trim()) { showToast('请先在编辑器里写点内容，AI 才能帮你总结'); return; }
   const aiMode = currentAiMode();
@@ -5041,7 +5063,7 @@ function renderBlogStats() {
       <span style="width:110px;font-size:12px;color:var(--text-secondary)">${c.icon} ${c.name}</span>
       <div style="flex:1;height:14px;background:var(--bg);border-radius:7px;overflow:hidden"><div style="height:100%;width:${Math.round(catCount[c.id] / maxCat * 100)}%;background:linear-gradient(90deg,${noteColors(c.id)[0]},${noteColors(c.id)[1]})"></div></div>
       <span style="width:60px;font-size:12px;color:var(--text-secondary)">${catCount[c.id]} 篇</span>
-    </div>`).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有笔记，去“✍️ 写笔记”试试吧</div>';
+    </div>`).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有发贴，去“✍️ 写发贴”试试吧</div>';
   const statsBox = document.getElementById('blogStatsBox');
   if (!statsBox) return; // 当前页面没有统计容器（如个人中心页）时静默跳过
   statsBox.innerHTML = `
@@ -5050,7 +5072,7 @@ function renderBlogStats() {
         ${[['📝', pub.length, '已发布'], ['💾', draft.length, '草稿'], ['📁', arch.length, '已归档'], ['👍', totalLikes, '总点赞'], ['💬', totalComments, '总评论'], ['👁', totalViews, '总阅读']].map(([ic, num, lb]) =>
           `<div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center"><div style="font-size:22px;font-weight:800;color:var(--text)">${ic} ${num}</div><div style="font-size:12px;color:var(--text-secondary);margin-top:4px">${lb}</div></div>`).join('')}
       </div>
-      <div style="margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📚 笔记分类分布</div>${catBars}</div>
+      <div style="margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📚 发贴分类分布</div>${catBars}</div>
       <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
         <button class="btn btn-outline" onclick="exportAllNotesMd()">📄 导出全部 Markdown</button>
         <button class="btn btn-outline" onclick="navigateTo('profile')">👤 前往个人中心</button>
@@ -5078,7 +5100,7 @@ function renderProfilePage() {
       <span style="width:110px;font-size:12px;color:var(--text-secondary)">${c.icon} ${c.name}</span>
       <div style="flex:1;height:14px;background:var(--bg);border-radius:7px;overflow:hidden"><div style="height:100%;width:${Math.round(catCount[c.id] / maxCat * 100)}%;background:linear-gradient(90deg,${noteColors(c.id)[0]},${noteColors(c.id)[1]})"></div></div>
       <span style="width:60px;font-size:12px;color:var(--text-secondary)">${catCount[c.id]} 篇</span>
-    </div>`).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有笔记，去「分享广场 → ✍️ 写笔记」试试吧</div>';
+    </div>`).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有发贴，去「广场 → ✍️ 写发贴」试试吧</div>';
   const auth = getAuth();
   let st = {};
   try { st = loadAllSettings(); } catch (e) { }
@@ -5095,7 +5117,7 @@ function renderProfilePage() {
   if ((d.streakDays || 0) >= 7) badges.push({ icon: '🔥', name: '坚持一周', desc: '连续学习7天' });
   if ((d.totalQuestions || 0) >= 100) badges.push({ icon: '🧮', name: '百题斩', desc: '完成100道题' });
   if ((d.totalQuestions || 0) >= 500) badges.push({ icon: '💪', name: '刷题达人', desc: '完成500道题' });
-  if (totalNotes >= 5) badges.push({ icon: '✍️', name: '勤于笔耕', desc: '发布5篇笔记' });
+  if (totalNotes >= 5) badges.push({ icon: '✍️', name: '勤于笔耕', desc: '发布5篇发贴' });
   if (totalLikes >= 10) badges.push({ icon: '👍', name: '人气博主', desc: '获得10个赞' });
   badges.push({ icon: '🌱', name: '初学者', desc: '开始学习之旅' });
 
@@ -5168,16 +5190,16 @@ function renderProfilePage() {
 
     <!-- 功能菜单 -->
     <div class="pp-card" style="margin-bottom:16px">
-      <div class="pp-row" onclick="toggleProfilePanel('ppStatPanel', this)"><span class="pp-ic">📊</span><span class="pp-tx">笔记统计</span><span class="pp-st">${totalNotes} 篇</span><span class="pp-ar">▾</span></div>
+      <div class="pp-row" onclick="toggleProfilePanel('ppStatPanel', this)"><span class="pp-ic">📊</span><span class="pp-tx">发贴统计</span><span class="pp-st">${totalNotes} 篇</span><span class="pp-ar">▾</span></div>
       <div class="pp-panel" id="ppStatPanel">
         <div class="profile-grid">
           ${[['📝', pub.length, '已发布'], ['💾', draft.length, '草稿'], ['📁', arch.length, '已归档'], ['👍', totalLikes, '总点赞'], ['💬', totalComments, '总评论'], ['👁', totalViews, '总阅读']].map(([ic, num, lb]) =>
             `<div class="profile-stat"><div class="ps-num">${ic} ${num}</div><div class="ps-label">${lb}</div></div>`).join('')}
         </div>
-        <div style="margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📚 笔记分类分布</div>${catBars}</div>
+        <div style="margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📚 发贴分类分布</div>${catBars}</div>
         <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
           <button class="btn btn-outline" onclick="exportAllNotesMd()">📄 导出 Markdown</button>
-          <button class="btn btn-outline" onclick="navigateTo('blog')">📝 去写笔记</button>
+          <button class="btn btn-outline" onclick="navigateTo('blog')">📝 去写发贴</button>
         </div>
       </div>
 
@@ -5232,7 +5254,7 @@ function renderProfilePage() {
     </div>`;
 }
 
-/** 展开/收起个人中心内嵌面板（笔记统计 / 本机学习数据） */
+/** 展开/收起个人中心内嵌面板（发贴统计 / 本机学习数据） */
 function toggleProfilePanel(panelId, rowEl) {
   const el = document.getElementById(panelId);
   if (!el) return;
@@ -5373,8 +5395,8 @@ if (document.getElementById('page-blog')) {
 updateProfileUI();
 
 // ==================== 全局搜索（顶栏，新增） ====================
-// 检索范围：① 分享广场笔记（标题/内容/标签/摘要） ② 各学习模块（标题/关键词）
-// 点击结果：笔记 → 跳 学习博客.html#note=ID 打开详情；模块 → navigateTo 跨页跳转
+// 检索范围：① 广场发贴（标题/内容/标签/摘要） ② 各学习模块（标题/关键词）
+// 点击结果：发贴 → 跳 学习博客.html#note=ID 打开详情；模块 → navigateTo 跨页跳转
 const MODULE_INDEX = [
   { page: 'home',           icon: '🏠', title: '首页',                 desc: '倒计时 · 今日任务 · 学习数据', kw: '首页 主页 倒计时 任务 统计' },
   { page: 'cet',            icon: '📖', title: '四级备考',             desc: '词汇速记 · 听力 · 阅读 · 写作翻译', kw: '四级 英语 词汇 单词 听力 阅读 写作 翻译 cet' },
@@ -5382,7 +5404,7 @@ const MODULE_INDEX = [
   { page: 'comm',           icon: '💬', title: '高情商表达',           desc: '场景话术 · 金句库 · 角色扮演', kw: '高情商 表达 话术 沟通 金句 情商' },
   { page: 'interview',      icon: '🤝', title: '商务礼仪面试',         desc: '商务礼仪 · 模拟面试', kw: '面试 礼仪 自我介绍 简历 offer' },
   { page: 'ppt',            icon: '🎨', title: 'PPT训练',             desc: '版式训练 · 案例拆解', kw: 'PPT 汇报 课件 幻灯片 版式 演示' },
-  { page: 'blog',           icon: '🗒️', title: '广场',             desc: '笔记广场 · 写笔记 · 统计', kw: '博客 笔记 写作 草稿 日记' },
+  { page: 'blog',           icon: '🗒️', title: '广场',             desc: '广场 · 写发贴 · 统计', kw: '博客 发贴 写作 草稿 日记' },
   { page: 'exam-center',    icon: '🧮', title: '行测刷题',             desc: '分题型专项刷题中心', kw: '行测 刷题 专项 刷题中心' },
   { page: 'wrong-book',     icon: '📒', title: '错题本',               desc: '错题收录与复盘', kw: '错题 错题本 复盘 收录' },
   { page: 'cet-vocab',      icon: '📖', title: '四级词汇',             desc: '间隔重复背单词', kw: '四级 词汇 单词 背单词 间隔重复' },
@@ -5393,7 +5415,7 @@ const MODULE_INDEX = [
   { page: 'comm-scenes',    icon: '🎭', title: '场景话术库',           desc: '职场沟通场景话术', kw: '话术 场景 沟通 拒绝 汇报' },
   { page: 'comm-quotes',    icon: '💬', title: '万能金句库',           desc: '面试/汇报金句', kw: '金句 万能金句 名言 句子' },
   { page: 'settings',       icon: '⚙️', title: '设置',                 desc: '主题 · 数据管理 · AI配置', kw: '设置 主题 深色 导出 导入 清空 AI 密钥' },
-  { page: 'profile',        icon: '👤', title: '个人中心',             desc: '资料 · 笔记统计 · 导出', kw: '个人中心 资料 头像 昵称 统计 退出' }
+  { page: 'profile',        icon: '👤', title: '个人中心',             desc: '资料 · 发贴统计 · 导出', kw: '个人中心 资料 头像 昵称 统计 退出' }
 ];
 function gsEscape(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function gsHighlight(text, kw) {
@@ -5408,7 +5430,7 @@ function globalSearch(kw) {
   kw = (kw || '').trim().toLowerCase();
   if (!kw) { dd.classList.remove('open'); dd.innerHTML = ''; return; }
   const results = [];
-  // ① 博客笔记：标题 / 内容 / 标签 / 摘要
+  // ① 博客发贴：标题 / 内容 / 标签 / 摘要
   appData.notes.forEach(n => {
     if (n.status !== 'published' && n.status !== 'draft') return; // 归档的不搜
     const hitTitle = (n.title || '').toLowerCase().includes(kw);
@@ -5419,7 +5441,7 @@ function globalSearch(kw) {
       const idx = (n.content || '').toLowerCase().indexOf(kw);
       if (idx >= 0) ctx = '…' + (n.content || '').slice(Math.max(0, idx - 12), idx + 40) + '…';
       else ctx = (n.excerpt || (n.tags || []).join(' / ') || '');
-      results.push({ icon: '📝', title: n.title, desc: ctx + ' · ' + (n.status === 'draft' ? '草稿' : '笔记'), action: "if(document.getElementById('page-blog')){closeGsDropdown();openBlogDetail('" + n.id + "');}else{location.href='学习博客.html#note=" + n.id + "';}" });
+      results.push({ icon: '📝', title: n.title, desc: ctx + ' · ' + (n.status === 'draft' ? '草稿' : '发贴'), action: "if(document.getElementById('page-blog')){closeGsDropdown();openBlogDetail('" + n.id + "');}else{location.href='学习博客.html#note=" + n.id + "';}" });
     }
   });
   const noteCount = results.length;
@@ -5431,13 +5453,13 @@ function globalSearch(kw) {
   });
   const shown = results.slice(0, 9);
   let html = '';
-  if (noteCount > 0) html += '<div class="gs-group">📚 学习笔记（' + noteCount + '）</div>';
+  if (noteCount > 0) html += '<div class="gs-group">📚 发贴（' + noteCount + '）</div>';
   html += shown.slice(0, noteCount).map(r =>
     '<div class="gs-item" onclick="' + r.action.replace(/"/g, '&quot;') + '"><div class="gs-item-icon">' + r.icon + '</div><div class="gs-item-main"><div class="gs-item-title">' + gsHighlight(r.title, kw) + '</div><div class="gs-item-desc">' + gsEscape(r.desc) + '</div></div></div>').join('');
   if (shown.length > noteCount) html += '<div class="gs-group">🧭 学习模块</div>';
   html += shown.slice(noteCount).map(r =>
     '<div class="gs-item" onclick="navigateTo(\'' + (MODULE_INDEX.find(m => m.title === r.title) || {}).page + '\');closeGsDropdown()"><div class="gs-item-icon">' + r.icon + '</div><div class="gs-item-main"><div class="gs-item-title">' + gsHighlight(r.title, kw) + '</div><div class="gs-item-desc">' + gsEscape(r.desc) + '</div></div></div>').join('');
-  if (!shown.length) html = '<div class="gs-empty">没有找到「' + gsEscape(kw) + '」相关内容<br>试试：四级 / 行测 / 面试 / PPT / 笔记关键词</div>';
+  if (!shown.length) html = '<div class="gs-empty">没有找到「' + gsEscape(kw) + '」相关内容<br>试试：四级 / 行测 / 面试 / PPT / 发贴关键词</div>';
   else if (results.length > 9) html += '<div class="gs-empty">还有 ' + (results.length - 9) + ' 条结果未显示，换个更具体的关键词试试</div>';
   dd.innerHTML = html;
   dd.classList.add('open');
@@ -5880,11 +5902,11 @@ function showAbout() {
     '</div>' +
     '<div style="font-size:15px;font-weight:800;color:#1a1b1c">🚀 星途 v2.1</div>' +
     '<div style="font-size:13px;color:#6b7280;margin-top:4px">一站式备考平台</div>' +
-    '<div style="margin-top:16px;font-size:13px;color:#374151;line-height:1.8">本应用数据默认保存在本机浏览器；登录服务器后，笔记/私信/AI 记录可多端同步。</div>' +
+    '<div style="margin-top:16px;font-size:13px;color:#374151;line-height:1.8">本应用数据默认保存在本机浏览器；登录服务器后，发贴/私信/AI 记录可多端同步。</div>' +
     '<div style="margin-top:14px;font-weight:700;color:#1a1b1c">🗂️ 学习模块</div>' +
-    '<div style="font-size:13px;color:#374151;line-height:1.7;margin-top:4px">四级词汇(间隔重复) · 听说训练 · 行测刷题 · 错题本 · 央国企笔试 · 面试题库 · 高情商表达 · 商务礼仪 · PPT训练 · 万能金句/场景话术 · 分享广场 · 好友私信</div>' +
+    '<div style="font-size:13px;color:#374151;line-height:1.7;margin-top:4px">四级词汇(间隔重复) · 听说训练 · 行测刷题 · 错题本 · 央国企笔试 · 面试题库 · 高情商表达 · 商务礼仪 · PPT训练 · 万能金句/场景话术 · 广场 · 好友私信</div>' +
     '<div style="margin-top:14px;font-weight:700;color:#1a1b1c">🧰 便捷能力</div>' +
-    '<div style="font-size:13px;color:#374151;line-height:1.7;margin-top:4px">导入题库 · AI多模型 · 笔记回收站 · Markdown导出 · 外观主题 · 专注计时 · 数据备份</div>' +
+    '<div style="font-size:13px;color:#374151;line-height:1.7;margin-top:4px">导入题库 · AI多模型 · 发贴回收站 · Markdown导出 · 外观主题 · 专注计时 · 数据备份</div>' +
     '<div style="margin-top:16px;border-top:1px dashed #e4e3dd;padding-top:10px;font-size:12px;color:#9ca3af">v2.1 更新：外观皮肤 · 好友私信 · AI对话记录 · 听说训练播放器 · 导入题库 · 个人资料等</div>' +
     '<div style="margin-top:16px;text-align:right;font-style:italic;color:#6b7280">—— 小叶子</div>' +
     '</div>';

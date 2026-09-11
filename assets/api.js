@@ -113,9 +113,9 @@ function renderHomeOnlineNav() {
     '<span style="font-size:11px;color:var(--text-secondary)">多人在线（好友私信 / 博客 / AI）</span></div>' +
     '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
     '<a class="chip" href="私聊.html" style="text-decoration:none">💬 好友私信</a>' +
-    '<a class="chip" href="学习博客.html#mine" style="text-decoration:none">🗂️ 我的笔记·回收站</a>' +
+    '<a class="chip" href="学习博客.html#mine" style="text-decoration:none">🗂️ 我的发贴·回收站</a>' +
     '<a class="chip" href="学习博客.html#favorite" style="text-decoration:none">🔖 我的收藏</a>' +
-    '<a class="chip" href="学习博客.html" style="text-decoration:none">🌍 笔记广场</a>' +
+    '<a class="chip" href="学习博客.html" style="text-decoration:none">🌍 广场</a>' +
     '</div>';
 }
 
@@ -153,7 +153,7 @@ async function renderProfilePage() {
       '<span style="width:110px;font-size:12px;color:var(--text-secondary)">' + c.icon + ' ' + c.name + '</span>' +
       '<div style="flex:1;height:14px;background:var(--bg);border-radius:7px;overflow:hidden"><div style="height:100%;width:' + Math.round(catCount[c.id] / maxCat * 100) + '%;background:linear-gradient(90deg,' + noteColors(c.id)[0] + ',' + noteColors(c.id)[1] + ')"></div></div>' +
       '<span style="width:60px;font-size:12px;color:var(--text-secondary)">' + catCount[c.id] + ' 篇</span></div>';
-  }).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有笔记，去「学习博客 → ✍️ 写笔记」试试吧</div>';
+  }).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有发贴，去「学习博客 → ✍️ 写发贴」试试吧</div>';
   box.innerHTML = `
     <div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">👤</span>个人资料</div><div class="card-action">@${esc(u.username)}</div></div>
       <div style="display:flex;align-items:center;gap:16px;padding:6px 0;flex-wrap:wrap">
@@ -164,21 +164,21 @@ async function renderProfilePage() {
       </div>
       <div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">✅ 多用户在线版：资料保存在服务器数据库；头像为文件上传（不再 base64 入库）。</div>
     </div>
-    <div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>笔记统计</div></div>
+    <div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>发贴统计</div></div>
       <div class="profile-grid">
         ${[['📝', s.published || 0, '已发布'], ['💾', s.draft || 0, '草稿'], ['📁', s.archived || 0, '已归档'], ['👍', s.likes || 0, '总点赞'], ['💬', s.comments || 0, '总评论'], ['👁', s.views || 0, '总阅读']].map(function (x) {
           return '<div class="profile-stat"><div class="ps-num">' + x[0] + ' ' + x[1] + '</div><div class="ps-label">' + x[2] + '</div></div>';
         }).join('')}
       </div>
-      <div style="margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📚 笔记分类分布</div>${catBars}</div>
+      <div style="margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📚 发贴分类分布</div>${catBars}</div>
       <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
         <button class="btn btn-outline" onclick="exportAllNotesMd()">📄 导出全部 Markdown</button>
-        <button class="btn btn-outline" onclick="navigateTo('blog')">📝 去写笔记</button>
+        <button class="btn btn-outline" onclick="navigateTo('blog')">📝 去写发贴</button>
       </div>
     </div>`;
 }
 
-/* 他人公开主页：只展示对方公开笔记（草稿 / 私密 / 归档服务端一律不返回） */
+/* 他人公开主页：只展示对方公开发贴（草稿 / 私密 / 归档服务端一律不返回） */
 async function renderUserHome(userId, box) {
   box.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary)">加载中…</div>';
   var u;
@@ -192,7 +192,7 @@ async function renderUserHome(userId, box) {
     isFriend = friends.some(function(f) { return f.user && f.user.id === userId; });
   } catch(e) {}
   var cards = u.notes.map(function (n) { return noteCardHtml(n); }).join('') ||
-    '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-secondary);font-size:13px">TA 还没有公开笔记</div>';
+    '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-secondary);font-size:13px">TA 还没有公开发贴</div>';
   var actionBtns = '<button class="btn btn-outline" onclick="location.href=' + "'个人中心.html'" + '">← 回我的主页</button>';
   if (isFriend) {
     actionBtns += ' <button class="btn btn-outline" onclick="chatWithUser(' + userId + ',\'' + esc(u.nickname) + '\')">💬 发私信</button>';
@@ -203,13 +203,13 @@ async function renderUserHome(userId, box) {
   var s = u.stats || {};
   
   box.innerHTML =
-    '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">👤</span>TA 的主页</div><div class="card-action">公开笔记 ' + u.notes.length + ' 篇</div></div>' +
+    '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">👤</span>TA 的主页</div><div class="card-action">公开发贴 ' + u.notes.length + ' 篇</div></div>' +
       '<div style="display:flex;align-items:center;gap:16px;padding:6px 0;flex-wrap:wrap">' +
         '<div class="profile-avatar-lg">' + (u.avatarUrl ? '<img src="' + apiFileUrl(u.avatarUrl) + '" alt="头像">' : esc((u.nickname || '学').slice(0, 1))) + '</div>' +
         '<div style="flex:1;min-width:180px"><div style="font-size:18px;font-weight:800;color:var(--text)">' + esc(u.nickname) + '</div><div style="font-size:13px;color:var(--text-secondary);margin-top:4px">' + esc(u.motto || '这个人很懒，什么都没写~') + '</div></div>' +
         '<div style="display:flex;gap:8px;flex-wrap:wrap">' + actionBtns + '</div>' +
       '</div>' +
-      '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">🔒 出于隐私保护：这里只能看到 TA 的公开笔记，草稿 / 私密 / 归档内容不对外展示。</div>' +
+      '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">🔒 出于隐私保护：这里只能看到 TA 的公开发贴，草稿 / 私密 / 归档内容不对外展示。</div>' +
     '</div>' +
     
     // ===== 学习数据 =====
@@ -230,7 +230,7 @@ async function renderUserHome(userId, box) {
     ((s.totalQuestions || 0) >= 500 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">💪</div><div style="font-size:12px;margin-top:4px">刷题达人</div></div>' : '') +
     '</div></div>' +
     
-    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">🗒️</span>公开笔记</div></div>' +
+    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">🗒️</span>公开发贴</div></div>' +
       '<div class="blog-grid">' + cards + '</div>' +
     '</div>';
 }
@@ -319,7 +319,7 @@ function closeLogoutConfirm() {
 }
 function confirmLogout() { closeLogoutConfirm(); apiForceLogout(); }
 
-/* ---------- 笔记卡片（增加作者行 / 修正评论计数） ---------- */
+/* ---------- 发贴卡片（增加作者行 / 修正评论计数） ---------- */
 function noteCardHtml(n, opts) {
   opts = opts || {};
   var cat = noteCat(n.category);
@@ -355,7 +355,7 @@ function noteCardHtml(n, opts) {
     '</div></div>';
 }
 
-/* ---------- 笔记广场 / 我的文章 ---------- */
+/* ---------- 广场 / 我的文章 ---------- */
 var blogFeed = { list: [], page: 0, hasMore: true, loading: false };
 var blogObs = null;
 async function renderBlogList(reset) {
@@ -422,12 +422,12 @@ async function renderBlogMine() {
     }).join('');
     if (blogMineType === 'trash') {
       grid.innerHTML = trashItems.map(function (n) { return trashCardHtml(n); }).join('') ||
-        '<div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:13px;grid-column:1/-1">回收站是空的，删除的笔记会在这里，可恢复或彻底删除</div>';
+        '<div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:13px;grid-column:1/-1">回收站是空的，删除的发贴会在这里，可恢复或彻底删除</div>';
       return;
     }
     var arr = (blogMineType === 'favorite') ? fav.items : (blogMineType === 'all' ? items : items.filter(function (n) { return n.status === blogMineType; }));
     grid.innerHTML = arr.map(function (n) { return noteCardHtml(n, { mine: n.userId === (CURRENT_USER && CURRENT_USER.id) }); }).join('') ||
-      '<div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:13px;grid-column:1/-1">还没有相关的笔记</div>';
+      '<div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:13px;grid-column:1/-1">还没有相关的发贴</div>';
   } catch (e) { showToast('⚠️ 我的文章加载失败：' + e.message); }
 }
 
@@ -445,7 +445,7 @@ function trashCardHtml(n) {
     '</div></div>';
 }
 async function restoreTrashNote(id) {
-  if (!await uiConfirm('恢复这篇笔记吗？')) return;
+  if (!await uiConfirm('恢复这篇发贴吗？')) return;
   try { await api('/api/notes/' + id + '/restore', { method: 'POST' }); showToast('♻️ 已从回收站恢复'); renderBlogMine(); }
   catch (e) { showToast('⚠️ ' + e.message); }
 }
@@ -455,7 +455,7 @@ async function purgeTrashNote(id) {
   catch (e) { showToast('⚠️ ' + e.message); }
 }
 
-/* ---------- 笔记详情 / 点赞 / 收藏 / 评论 ---------- */
+/* ---------- 发贴详情 / 点赞 / 收藏 / 评论 ---------- */
 var NOTE_DETAIL = null;
 var REPLY_TO_COMMENT = null; // 当前回复的评论ID和昵称
 async function openBlogDetail(id) {
@@ -579,7 +579,7 @@ async function deleteBlogComment(commentId) {
   } catch (e) { showToast('⚠️ ' + e.message); }
 }
 
-/* ---------- 编辑 / 归档 / 删除笔记 ---------- */
+/* ---------- 编辑 / 归档 / 删除发贴 ---------- */
 async function startEditNote(id) {
   try {
     var n = await api('/api/notes/' + id);
@@ -626,7 +626,7 @@ async function unarchiveNote(id) {
   catch (e) { showToast('⚠️ ' + e.message); }
 }
 async function deleteNote(id) {
-  if (!await uiConfirm('确定删除这篇笔记吗？删除后将移入回收站，可在「回收站」恢复。')) return;
+  if (!await uiConfirm('确定删除这篇发贴吗？删除后将移入回收站，可在「回收站」恢复。')) return;
   try {
     await api('/api/notes/' + id, { method: 'DELETE' });
     renderBlogList(); renderBlogMine();
@@ -647,7 +647,7 @@ function renderBlogStats() {
       '<span style="width:110px;font-size:12px;color:var(--text-secondary)">' + c.icon + ' ' + c.name + '</span>' +
       '<div style="flex:1;height:14px;background:var(--bg);border-radius:7px;overflow:hidden"><div style="height:100%;width:' + Math.round(catCount[c.id] / maxCat * 100) + '%;background:linear-gradient(90deg,' + noteColors(c.id)[0] + ',' + noteColors(c.id)[1] + ')"></div></div>' +
       '<span style="width:60px;font-size:12px;color:var(--text-secondary)">' + catCount[c.id] + ' 篇</span></div>';
-  }).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有笔记，去“✍️ 写笔记”试试吧</div>';
+  }).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有发贴，去“✍️ 写发贴”试试吧</div>';
   box.innerHTML = `
     <div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>博客数据统计</div></div>
       <div class="blog-grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">
@@ -655,7 +655,7 @@ function renderBlogStats() {
           return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center"><div style="font-size:22px;font-weight:800;color:var(--text)">' + x[0] + ' ' + x[1] + '</div><div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + x[2] + '</div></div>';
         }).join('')}
       </div>
-      <div style="margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📚 笔记分类分布</div>${catBars}</div>
+      <div style="margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📚 发贴分类分布</div>${catBars}</div>
       <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
         <button class="btn btn-outline" onclick="location.href='个人中心.html'">👤 前往个人中心</button>
         <button class="btn btn-outline" onclick="exportAllNotesMd()">📄 导出全部 Markdown</button>
@@ -663,20 +663,20 @@ function renderBlogStats() {
     </div>`;
 }
 function exportCurrentNoteMd() {
-  var n = NOTE_DETAIL; if (!n) { showToast('找不到笔记'); return; }
+  var n = NOTE_DETAIL; if (!n) { showToast('找不到发贴'); return; }
   var cat = noteCat(n.category);
   var md = '# ' + n.title + '\n\n> 分类：' + cat.name + ' · 标签：' + (n.tags || []).join('、') + ' · 可见性：' + (n.privacy === 'private' ? '私密' : '公开') + ' · 创建于 ' + fmtTime(n.createdAt) + ' · 更新于 ' + fmtTime(n.updatedAt) + '\n\n' + n.content + '\n';
-  downloadBlob((n.title || '学习笔记') + '.md', md, 'text/markdown;charset=utf-8');
+  downloadBlob((n.title || '发贴') + '.md', md, 'text/markdown;charset=utf-8');
   showToast('📄 已导出 Markdown');
 }
 async function exportAllNotesMd() {
   try {
     var d = await api('/api/notes?scope=mine&status=published&with_content=1&page_size=0');
-    if (!d.items.length) { showToast('还没有已发布的笔记'); return; }
-    var md = '# 学习笔记合集\n\n';
+    if (!d.items.length) { showToast('还没有已发布的发贴'); return; }
+    var md = '# 发贴合集\n\n';
     d.items.forEach(function (n) { md += '\n---\n\n# ' + n.title + '\n\n> 分类：' + noteCat(n.category).name + ' · 创建于 ' + fmtTime(n.createdAt) + '\n\n' + n.content + '\n'; });
-    downloadBlob('学习笔记合集.md', md, 'text/markdown;charset=utf-8');
-    showToast('📄 已导出全部笔记');
+    downloadBlob('发贴合集.md', md, 'text/markdown;charset=utf-8');
+    showToast('📄 已导出全部发贴');
   } catch (e) { showToast('⚠️ ' + e.message); }
 }
 
@@ -699,7 +699,7 @@ async function editorInsertImage(event) {
   event.target.value = '';
 }
 
-/* ---------- 全局搜索：服务端公开笔记 + 本地模块 ---------- */
+/* ---------- 全局搜索：服务端公开发贴 + 本地模块 ---------- */
 var gsTimer = null;
 function globalSearch(kw) {
   var dd = document.getElementById('gsDropdown');
@@ -729,7 +729,7 @@ function globalSearch(kw) {
     });
     var shown = results.slice(0, 9);
     var html = '';
-    if (noteCount > 0) html += '<div class="gs-group">📚 公开笔记（' + noteCount + '）</div>';
+    if (noteCount > 0) html += '<div class="gs-group">📚 公开发贴（' + noteCount + '）</div>';
     html += shown.slice(0, noteCount).map(function (r) {
       return '<div class="gs-item" onclick="' + r.action.replace(/"/g, '&quot;') + '"><div class="gs-item-icon">' + r.icon + '</div><div class="gs-item-main"><div class="gs-item-title">' + gsHighlight(r.title, kw) + '</div><div class="gs-item-desc">' + gsEscape(r.desc) + '</div></div></div>';
     }).join('');
@@ -737,7 +737,7 @@ function globalSearch(kw) {
     html += shown.slice(noteCount).map(function (r) {
       return '<div class="gs-item" onclick="navigateTo(\'' + (MODULE_INDEX.find(function (m) { return m.title === r.title; }) || {}).page + '\');closeGsDropdown()"><div class="gs-item-icon">' + r.icon + '</div><div class="gs-item-main"><div class="gs-item-title">' + gsHighlight(r.title, kw) + '</div><div class="gs-item-desc">' + gsEscape(r.desc) + '</div></div></div>';
     }).join('');
-    if (!shown.length) html = '<div class="gs-empty">没有找到「' + gsEscape(kw) + '」相关内容<br>试试：四级 / 行测 / 面试 / PPT / 笔记关键词</div>';
+    if (!shown.length) html = '<div class="gs-empty">没有找到「' + gsEscape(kw) + '」相关内容<br>试试：四级 / 行测 / 面试 / PPT / 发贴关键词</div>';
     else if (results.length > 9) html += '<div class="gs-empty">还有 ' + (results.length - 9) + ' 条结果未显示，换个更具体的关键词试试</div>';
     dd.innerHTML = html;
     dd.classList.add('open');
@@ -792,11 +792,11 @@ async function sendAiMsg() {
 }
 
 async function editorAiAssist() {
-  var title = document.getElementById('beTitle').value.trim() || '这篇学习笔记';
+  var title = document.getElementById('beTitle').value.trim() || '这篇发贴';
   var content = document.getElementById('blogEditorInput').value;
   var ta = document.getElementById('blogEditorInput');
   if (!content.trim()) { showToast('请先在编辑器里写点内容，AI 才能帮你总结'); return; }
-  var prompt = '你是学习助手。请根据下面的学习笔记，生成一份【复习提纲】和【知识点总结】：1）用 Markdown 要点列出核心考点；2）给 3 条复习建议；3）简洁、便于复习。\n\n笔记标题：' + title + '\n笔记内容：\n' + content.slice(0, 1500);
+  var prompt = '你是学习助手。请根据下面的发贴，生成一份【复习提纲】和【知识点总结】：1）用 Markdown 要点列出核心考点；2）给 3 条复习建议；3）简洁、便于复习。\n\n发贴标题：' + title + '\n发贴内容：\n' + content.slice(0, 1500);
   var modelId = getAiModelId();
   if (!modelId) {
     try {
@@ -946,7 +946,7 @@ function renderNotifyPanel(items) {
   if (!items || !items.length) html += '<div class="gs-empty">暂无消息，收到点赞 / 评论会在这里提醒</div>';
   else html += items.map(function (x) {
     var icon = x.type === 'like' ? '👍' : '💬';
-    var txt = icon + ' <b>' + esc(x.actor) + '</b> ' + (x.type === 'like' ? '赞了你的笔记' : '评论了你的笔记') + '《' + esc(x.noteTitle) + '》';
+    var txt = icon + ' <b>' + esc(x.actor) + '</b> ' + (x.type === 'like' ? '赞了你的发贴' : '评论了你的发贴') + '《' + esc(x.noteTitle) + '》';
     return '<div class="notify-item' + (x.isRead ? '' : ' unread') + '" onclick="openNotifyNote(' + (x.noteId || 0) + ')">' +
       '<div class="notify-text">' + txt + '</div><div class="notify-time">' + fmtTime(x.createdAt) + '</div></div>';
   }).join('');
@@ -1015,15 +1015,15 @@ async function syncAiFromServer() {
   } catch (e) { /* 静默：不影响离线模式 */ }
 }
 
-/* ---------- 旧本地笔记一键迁移 ---------- */
+/* ---------- 旧本地发贴一键迁移 ---------- */
 async function migrateLocalNotes() {
   var local = [];
   try {
     var d = JSON.parse(localStorage.getItem('study_workbench_data') || '{}');
     local = d.notes || [];
   } catch (e) { }
-  if (!local.length) { showToast('本地没有可迁移的笔记'); return; }
-  if (!confirm('将把本机 localStorage 中的 ' + local.length + ' 篇笔记上传到服务器（当前账号名下）。\n已迁移过的笔记会自动跳过，确定继续吗？')) return;
+  if (!local.length) { showToast('本地没有可迁移的发贴'); return; }
+  if (!confirm('将把本机 localStorage 中的 ' + local.length + ' 篇发贴上传到服务器（当前账号名下）。\n已迁移过的发贴会自动跳过，确定继续吗？')) return;
   try {
     var r = await api('/api/migrate/notes', { method: 'POST', body: { notes: local } });
     showToast('📥 迁移完成：导入 ' + r.imported + ' 篇，跳过 ' + r.skipped + ' 篇');
@@ -1060,7 +1060,7 @@ async function migrateLocalNotes() {
 
 /* =====================================================================
    档案双模式增强（覆盖同名单函数）：在线用服务器资料，离线用本机 appData；
-   新增「个人简介 bio」字段；导出在离线时导出本机笔记，不再失灵。
+   新增「个人简介 bio」字段；导出在离线时导出本机发贴，不再失灵。
    ===================================================================== */
 
 function _genderSym(g) { return g === 'male' ? '♂ 男' : (g === 'female' ? '♀ 女' : ''); }
@@ -1109,7 +1109,7 @@ function _renderProfileLocal(box, p) {
     '</div>' +
     '<button class="btn btn-outline" onclick="editProfile()">✏️ 编辑资料</button>' +
     '<button class="btn btn-danger" onclick="doLogout()">🚪 退出登录</button></div>' +
-    '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">📱 当前为本地单机模式，资料保存在本机浏览器。在线登录后资料/笔记会存到服务器并可多端同步。</div></div>' +
+    '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">📱 当前为本地单机模式，资料保存在本机浏览器。在线登录后资料/发贴会存到服务器并可多端同步。</div></div>' +
     _localNotesCard();
 }
 
@@ -1119,14 +1119,14 @@ function _localNotesCard() {
   var draft = notes.filter(function (n) { return n.status === 'draft'; });
   var likes = pub.reduce(function (s, n) { return s + (n.likes || 0); }, 0);
   var views = pub.reduce(function (s, n) { return s + (n.views || 0); }, 0);
-  return '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>本机笔记统计</div></div>' +
+  return '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>本机发贴统计</div></div>' +
     '<div class="profile-grid">' +
     [['📝', pub.length, '已发布'], ['💾', draft.length, '草稿'], ['👍', likes, '点赞'], ['👁', views, '阅读']].map(function (x) {
       return '<div class="profile-stat"><div class="ps-num">' + x[0] + ' ' + x[1] + '</div><div class="ps-label">' + x[2] + '</div></div>';
     }).join('') + '</div>' +
     '<div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">' +
     '<button class="btn btn-outline" onclick="exportAllNotesMd()">📄 导出全部 Markdown</button>' +
-    '<button class="btn btn-outline" onclick="location.href=' + "'学习博客.html'" + '">📝 去写笔记</button></div></div>' +
+    '<button class="btn btn-outline" onclick="location.href=' + "'学习博客.html'" + '">📝 去写发贴</button></div></div>' +
 
     // ===== 新增：学习数据概览 =====
     '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>学习数据</div></div>' +
@@ -1166,7 +1166,7 @@ function _renderProfileOnline(box, u) {
       '<span style="width:110px;font-size:12px;color:var(--text-secondary)">' + c.icon + ' ' + c.name + '</span>' +
       '<div style="flex:1;height:14px;background:var(--bg);border-radius:7px;overflow:hidden"><div style="height:100%;width:' + Math.round(catCount[c.id] / maxCat * 100) + '%;background:linear-gradient(90deg,' + cols[0] + ',' + cols[1] + ')"></div></div>' +
       '<span style="width:60px;font-size:12px;color:var(--text-secondary)">' + catCount[c.id] + ' 篇</span></div>';
-  }).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有笔记，去「学习博客 → ✍️ 写笔记」试试吧</div>';
+  }).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有发贴，去「学习博客 → ✍️ 写发贴」试试吧</div>';
   box.innerHTML =
     '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">👤</span>个人资料</div><div class="card-action">@' + esc(u.username) + '</div></div>' +
     '<div style="display:flex;align-items:center;gap:16px;padding:6px 0;flex-wrap:wrap">' +
@@ -1178,15 +1178,15 @@ function _renderProfileOnline(box, u) {
     '<button class="btn btn-outline" onclick="editProfile()">✏️ 编辑资料</button>' +
     '<button class="btn btn-danger" onclick="doLogout()">🚪 退出登录</button></div>' +
     '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">✅ 多人在线：资料保存在服务器数据库，头像为文件上传。</div></div>' +
-    '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>笔记统计</div></div>' +
+    '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>发贴统计</div></div>' +
     '<div class="profile-grid">' +
     [['📝', s.published || 0, '已发布'], ['💾', s.draft || 0, '草稿'], ['📁', s.archived || 0, '归档'], ['👍', s.likes || 0, '总点赞'], ['💬', s.comments || 0, '评论'], ['👁', s.views || 0, '阅读']].map(function (x) {
       return '<div class="profile-stat"><div class="ps-num">' + x[0] + ' ' + x[1] + '</div><div class="ps-label">' + x[2] + '</div></div>';
     }).join('') + '</div>' +
-    '<div style="margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📚 笔记分类分布</div>' + catBars + '</div>' +
+    '<div style="margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📚 发贴分类分布</div>' + catBars + '</div>' +
     '<div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">' +
     '<button class="btn btn-outline" onclick="exportAllNotesMd()">📄 导出全部 Markdown</button>' +
-    '<button class="btn btn-outline" onclick="location.href=' + "'学习博客.html'" + '">📝 去写笔记</button></div></div>' +
+    '<button class="btn btn-outline" onclick="location.href=' + "'学习博客.html'" + '">📝 去写发贴</button></div></div>' +
 
     // ===== 新增：学习数据概览 =====
     '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>学习数据</div></div>' +
@@ -1325,24 +1325,24 @@ function exportAllNotesMd() {
   var src = _peSource();
   if (src.online) {
     api('/api/notes?scope=mine&status=published&with_content=1&page_size=0').then(function (d) {
-      if (!d.items || !d.items.length) { showToast('还没有已发布的笔记'); return; }
-      var md = '# 学习笔记合集\n\n';
+      if (!d.items || !d.items.length) { showToast('还没有已发布的发贴'); return; }
+      var md = '# 发贴合集\n\n';
       d.items.forEach(function (n) {
         md += '\n---\n\n# ' + n.title + '\n\n> 分类：' + (typeof noteCat === 'function' ? noteCat(n.category).name : n.category) + ' · 创建于 ' + fmtTime(n.createdAt) + '\n\n' + n.content + '\n';
       });
-      downloadBlob('学习笔记合集.md', md, 'text/markdown;charset=utf-8');
-      showToast('📄 已导出全部笔记');
+      downloadBlob('发贴合集.md', md, 'text/markdown;charset=utf-8');
+      showToast('📄 已导出全部发贴');
     }).catch(function (e) { showToast('⚠️ 导出失败：' + e.message); });
   } else {
     var notes = (typeof appData !== 'undefined' && appData && appData.notes) || [];
     var pubs = notes.filter(function (n) { return n.status === 'published'; });
-    if (!pubs.length) { showToast('本机还没有已发布的笔记，先去写一篇吧'); return; }
-    var md2 = '# 学习笔记合集（本地导出）\n\n';
+    if (!pubs.length) { showToast('本机还没有已发布的发贴，先去写一篇吧'); return; }
+    var md2 = '# 发贴合集（本地导出）\n\n';
     pubs.forEach(function (n) {
       md2 += '\n---\n\n# ' + (n.title || '未命名') + '\n\n> 创建于 ' + ((n.createdAt || '').toString().slice(0, 16).replace('T', ' ')) + '\n\n' + (n.content || '') + '\n';
     });
-    downloadBlob('学习笔记合集-本地.md', md2, 'text/markdown;charset=utf-8');
-    showToast('📄 已导出本机全部笔记');
+    downloadBlob('发贴合集-本地.md', md2, 'text/markdown;charset=utf-8');
+    showToast('📄 已导出本机全部发贴');
   }
 }
 /* 离线首次进入个人中心时，也用新版双模式渲染（含性别/生日/城市元信息） */
