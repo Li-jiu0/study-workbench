@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>私信 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260911g">
-<link rel="stylesheet" href="assets/polish.css?v=20260911g">
+<link rel="stylesheet" href="assets/common.css?v=20260911h">
+<link rel="stylesheet" href="assets/polish.css?v=20260911h">
 <style>
 
   /* ===== 私信页（嵌在应用外壳内）===== */
@@ -206,8 +206,9 @@
     </div>
   </div>
 
-  <!-- ==================== 加好友模态（A3，2026-09-11）：与群聊弹层同源样式 ====================
-       搜索（300ms 防抖）→ imRenderFriendRows 统一渲染；旧整页 好友申请.html 保留可回退。 -->
+  <!-- ==================== 加好友模态（A3，2026-09-11；批次二 2026-09-11h 移除弹窗内「旧页回退」入口） ====================
+       搜索（300ms 防抖）→ imRenderFriendRows 统一渲染。
+       注：好友申请.html 文件本身保留（直连 URL 仍可访问作为后门），但弹窗内不再提供跳转入口。 -->
   <div class="im-overlay" id="imAddFriendModal" style="display:none" onclick="if(event.target===this)imCloseAddFriendModal()">
     <div class="im-modal">
       <div class="im-modal-head"><div style="font-size:16px;font-weight:700">添加好友</div><div style="cursor:pointer;color:#999;font-size:18px" onclick="imCloseAddFriendModal()">✕</div></div>
@@ -217,7 +218,6 @@
         </div>
         <div class="im-af-list" id="imAfResults"><div class="im-empty2">输入昵称或 @账号开始搜索</div></div>
       </div>
-      <div class="im-group-foot"><a href="好友申请.html" class="btn btn-outline" style="text-decoration:none">【后续扩展点：旧页回退】完整页面</a></div>
     </div>
   </div>
 
@@ -255,11 +255,11 @@
 
 </div>
 
-<script src="assets/app.js?v=20260911g"></script>
-<script src="assets/config.js?v=20260911g"></script>
-<script src="assets/emoji/manifest.js?v=20260911g"></script>
-<script src="assets/api.js?v=20260911g"></script>
-<script src="assets/chat-local.js?v=20260911g"></script>
+<script src="assets/app.js?v=20260911h"></script>
+<script src="assets/config.js?v=20260911h"></script>
+<script src="assets/emoji/manifest.js?v=20260911h"></script>
+<script src="assets/api.js?v=20260911h"></script>
+<script src="assets/chat-local.js?v=20260911h"></script>
 <style>
   .im-tab-add{background:#fff7ed;border-color:#fdba74;color:#c2410c;font-weight:600}
   .im-tab-add:hover{background:#ffedd5}

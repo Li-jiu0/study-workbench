@@ -2070,3 +2070,59 @@ body.dark .bottom-nav { background: rgba(30,34,40,0.92); }
 .im-m.ot .im-voice-bar i{background:var(--primary)}
 .im-voice-dur{font-size:11px;opacity:.85;flex-shrink:0}
 .im-voice.playing .im-voice-ic{opacity:.85}
+
+/* =====================================================================
+   批次二（2026-09-11h）：需求7 吸底操作栏 / 需求2 左滑操作 / 需求6 在线状态
+   —— 末尾追加，只做「增强」，不改既有选择器行为，旧页面不受影响。
+   ===================================================================== */
+
+/* ---------- 需求7：广场「发布 / 存草稿」按钮栏吸底 ----------
+   注意：只作用于学习博客编辑视图专用的 .ed-actions-bar（学习博客.html:236）。
+   基础类 .editor-actions 被 blog_wechat.html 等页共用，绝不能在此改成 fixed。
+   .editor-actions 位于 #blogViewEdit 内，仅编辑态显示；列表 / 详情 / 统计等只读视图
+   该节点为 display:none，不会出现悬空栏。 */
+.ed-actions-bar{
+  position:fixed;
+  left:0;right:0;
+  bottom:env(safe-area-inset-bottom,0px);
+  z-index:210; /* 高于底部导航(200)与 more-overlay(198)，低于 .im-overlay(10000) */
+  margin:0;
+  padding:10px 16px;
+  padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));
+  background:var(--card);
+  border-top:1px solid var(--border);
+  box-shadow:0 -4px 12px rgba(0,0,0,.06);
+  flex-wrap:nowrap;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
+/* 给正文让位：编辑视图补一条与吸底栏等高（约 56px）+ 安全区的内容 padding，避免遮挡正文 */
+.blog-editor{padding-bottom:calc(56px + env(safe-area-inset-bottom,0px))}
+body.dark .ed-actions-bar{background:var(--card);border-top-color:var(--border);box-shadow:0 -4px 12px rgba(0,0,0,.3)}
+/* 手机端（≤768px）底部导航(.bottom-nav, 64px+safe-area)显示：按钮栏叠在导航之上，不互相压住 */
+@media (max-width:768px){
+  .ed-actions-bar{bottom:calc(var(--bottom-nav-height) + env(safe-area-inset-bottom,0px))}
+  .blog-editor{padding-bottom:calc(56px + var(--bottom-nav-height) + env(safe-area-inset-bottom,0px))}
+}
+
+/* ---------- 需求2：会话列表左滑操作（置顶 / 免打扰 / 删除） ---------- */
+.im-swipe{position:relative;overflow:hidden}
+.im-swipe .im-sess{position:relative;z-index:1;background:var(--card);transition:transform .18s ease}
+.im-swipe .im-sess.on{background:var(--primary-light)} /* 保持原选中态视觉 */
+.im-swipe-actions{position:absolute;top:0;right:0;bottom:0;display:flex;z-index:0}
+.im-sa{width:52px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;cursor:pointer;user-select:none}
+.im-sa:active{filter:brightness(.9)}
+.im-sa-pin{background:#5B8DEF}
+.im-sa-mute{background:#E0A040}
+.im-sa-del{background:#E05040}
+.im-mute-tag{font-size:12px;flex-shrink:0;opacity:.85}
+.im-pin-tag{font-size:11px}
+
+/* ---------- 需求6：在线状态（绿点 + 相对时间，值一律来自服务端 lastSeenAt） ---------- */
+.im-presence{font-size:11px;color:var(--text-secondary);flex-shrink:0;white-space:nowrap}
+.im-presence.on{color:#22a35a;font-weight:600}
+.im-presence.on::before,.presence-dot.on{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c26a;margin-right:4px;vertical-align:1px;box-shadow:0 0 0 2px rgba(34,194,106,.18)}
+.presence-dot{display:none}
+.presence-dot.on{display:inline-block}
+.presence-line{font-size:12px;color:var(--text-secondary);align-items:center}
+.presence-line.on{color:#22a35a}

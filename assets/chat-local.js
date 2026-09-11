@@ -105,7 +105,67 @@
     { keywords: ['累', '压力', '焦虑'], reply: '累了就休息一下，不要给自己太大压力，你已经很棒了💪' }
   ];
 
-  var S = { tab: 'chats', peer: null, group: null, chats: [], groups: [], presence: {}, msgs: [], myId: 999, aiBusy: false };
+  var S = { tab: 'chats', peer: null, group: null, chats: [], groups: [], presence: {}, msgs: [], myId: 999, aiBusy: false, swipeOpen: null };
+
+  /* ==================== 批次二 需求2（2026-09-11h）：会话列表左滑操作（置顶 / 免打扰 / 删除） ====================
+     - 偏好持久化：localStorage key = study_workbench_chat_prefs，形如 { threadKey: {pinned, muted, hidden} }
+       （file:// 同源全页共享；纯本地行为，无后端 / 断网时照常可用）。
+     - threadKey：服务器私聊 'u<serverId>'；本地/AI 会话 'l<id>'；群聊 'g<id>'。
+     - 「删除」仅从本机会话列表隐藏（hidden），云端聊天记录保留；对方再发新消息时自动恢复显示
+       （与项目「删除好友默认保留聊天记录」口径一致）。
+     - 「免打扰」：行内 🔕 标识，且不计入「会话」tab 顶部未读角标总数。
+     - 「置顶」：置顶会话稳定排在列表最前，重启页面后保持（localStorage 持久化）。
+     - 触摸左滑 / 桌面右键均可展开操作；点击列表其他位置收起；同一时刻只允许一行展开。 */
+  var CHAT_PREFS_KEY = 'study_workbench_chat_prefs';
+  function imLoadPrefs() {
+    try {
+      var v = JSON.parse(localStorage.getItem(CHAT_PREFS_KEY) || '{}');
+      return (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
+    } catch (e) { return {}; }
+  }
+  function threadKeyOfChat(c) {
+    if (!c) return 'l0';
+    if (c.__isGroup) return 'g' + c.id;
+    if (c.isServer && c.serverId) return 'u' + c.serverId;
+    return 'l' + c.id;
+  }
+  /* 纯函数：按偏好过滤 / 排序会话（抽出来供 jsdom 直接断言）。
+     返回新数组：hidden 剔除；pinned 稳定置顶；其余按 time 降序；每项浅拷贝并附 muted/pinned 布尔。 */
+  function imApplyChatPrefs(chats, prefs) {
+    var visible = [];
+    (chats || []).forEach(function (c) {
+      var pf = (prefs || {})[threadKeyOfChat(c)] || {};
+      if (pf.hidden) return;
+      visible.push(Object.assign({}, c, { muted: !!pf.muted, pinned: !!pf.pinned }));
+    });
+    var byTime = function (a, b) { return (b.time || 0) - (a.time || 0); };
+    var pinned = visible.filter(function (c) { return c.pinned; }).sort(byTime);
+    var rest = visible.filter(function (c) { return !c.pinned; }).sort(byTime);
+    return pinned.concat(rest);
+  }
+  /* 纯函数：会话 tab 未读角标总数 = 未隐藏、未免打扰会话的 unread 之和（抽出来供 jsdom 直接断言） */
+  function imCountUnread(chats, prefs) {
+    var total = 0;
+    (chats || []).forEach(function (c) {
+      var pf = (prefs || {})[threadKeyOfChat(c)] || {};
+      if (pf.hidden || pf.muted) return;
+      total += (c.unread || 0);
+    });
+    return total;
+  }
+  window.imChatPrefs = {
+    load: imLoadPrefs,
+    threadKeyOf: threadKeyOfChat,
+    get: function (k) { return imLoadPrefs()[k] || {}; },
+    set: function (k, patch) {
+      var p = imLoadPrefs();
+      p[k] = Object.assign({}, p[k] || {}, patch);
+      try { localStorage.setItem(CHAT_PREFS_KEY, JSON.stringify(p)); } catch (e) { }
+      return p[k];
+    },
+    apply: imApplyChatPrefs,
+    countUnread: imCountUnread
+  };
 
   function $id(x) { return document.getElementById(x); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -160,32 +220,60 @@
   }
 
   function renderChats(box) {
-    if (S.chats.length === 0 && (S.groups || []).length === 0) { box.innerHTML = '<div class="im-empty2">还没有会话，去好友列表找个朋友聊聊吧</div>'; return; }
-    // T4 增量：群聊会话置顶展示（带未读角标）
-    var groupHtml = (S.groups || []).map(function (g) {
+    var prefs = imLoadPrefs();
+    // 需求2：被「删除」的群会话同样仅本机隐藏
+    var groups = (S.groups || []).filter(function (g) { return !((prefs['g' + g.id] || {}).hidden); });
+    var chatList = imApplyChatPrefs(S.chats, prefs);
+    if (chatList.length === 0 && groups.length === 0) { box.innerHTML = '<div class="im-empty2">还没有会话，去好友列表找个朋友聊聊吧</div>'; return; }
+    // T4 增量：群聊会话置顶展示（带未读角标）；批次二：包一层 .im-swipe 支持左滑操作
+    var groupHtml = groups.map(function (g) {
+      var gk = 'g' + g.id;
+      var gp = prefs[gk] || {};
       var active = S.group && S.group.id === g.id;
-      return '<div class="im-sess' + (active ? ' on' : '') + '" onclick="imOpenGroup(' + g.id + ')">' +
+      return '<div class="im-swipe" data-tid="' + esc(gk) + '">' +
+        '<div class="im-sess' + (active ? ' on' : '') + '" data-tid="' + esc(gk) + '" onclick="imOpenGroup(' + g.id + ')">' +
         '<div class="im-av" style="position:relative"><span>👥</span>' +
         (g.unreadCount > 0 ? '<span class="im-av-badge">' + (g.unreadCount > 99 ? '99+' : g.unreadCount) + '</span>' : '') + '</div>' +
         '<div class="im-si"><div class="im-n">' + esc(g.name) + ' <span style="font-size:11px;color:#999">(' + g.memberCount + ')</span></div>' +
         '<div class="im-sub">' + esc(g.lastMessage ? ((g.lastMessage.senderId === S.myId ? '我：' : '') + previewText(g.lastMessage.kind, g.lastMessage.content)) : '') + '</div></div>' +
+        (gp.muted ? '<div class="im-mute-tag" title="免打扰">🔕</div>' : '') +
         (g.unreadCount > 0 ? '<div class="im-badge">' + (g.unreadCount > 99 ? '99+' : g.unreadCount) + '</div>' : '') +
-        '</div>';
+        '</div>' + imSwipeActionsHtml(gk, gp) + '</div>';
     }).join('');
-    var chatHtml = S.chats.map(function (c) {
+    var chatHtml = chatList.map(function (c) {
+      var ck = threadKeyOfChat(c);
       var active = S.peer && S.peer.id === c.id;
       // A2 加固：头像点击不再直接跳对方主页（避免误触），改为提示；点整行才进入会话
       var avClick = c.isServer && c.serverId
         ? 'event.stopPropagation();imShowPeerHint(' + c.serverId + ')'
         : 'event.stopPropagation()';
-      return '<div class="im-sess' + (active ? ' on' : '') + '" onclick="imOpenChat(' + c.id + ')">' +
+      // 批次二 需求6：会话列表右侧在线状态。仅服务器会话且 presence 缓存命中时显示（值来自服务端 lastSeenAt）；
+      // 无后端 / file:// / 字段缺失时整段为空字符串，绝不显示假时间。
+      var p = (c.isServer && c.serverId) ? S.presence[c.serverId] : null;
+      var presHtml = (p && presenceText(p.lastSeenAt, p.online))
+        ? '<div class="im-presence im-presence-side' + (p.online ? ' on' : '') + '" data-uid="' + c.serverId + '">' + esc(presenceText(p.lastSeenAt, p.online)) + '</div>'
+        : '';
+      return '<div class="im-swipe" data-tid="' + esc(ck) + '">' +
+        '<div class="im-sess' + (active ? ' on' : '') + '" data-tid="' + esc(ck) + '" onclick="imOpenChat(' + c.id + ')">' +
         '<div class="im-av" style="position:relative;cursor:' + (c.isServer ? 'pointer' : 'default') + '" onclick="' + avClick + '">' + renderAvatar(c.avatar, c.nickname) +
         (c.unread > 0 ? '<span class="im-av-badge">' + (c.unread > 99 ? '99+' : c.unread) + '</span>' : '') + '</div>' +
-        '<div class="im-si"><div class="im-n">' + esc(c.nickname) + '</div><div class="im-sub">' + esc(c.last || '') + '</div></div>' +
+        '<div class="im-si"><div class="im-n">' + esc(c.nickname) + (c.pinned ? ' <span class="im-pin-tag" title="已置顶">📌</span>' : '') + '</div><div class="im-sub">' + esc(c.last || '') + '</div></div>' +
+        (c.muted ? '<div class="im-mute-tag" title="免打扰">🔕</div>' : '') +
+        presHtml +
         (c.unread > 0 ? '<div class="im-badge">' + (c.unread > 99 ? '99+' : c.unread) + '</div>' : '') +
-        '</div>';
+        '</div>' + imSwipeActionsHtml(ck, prefs[ck] || {}) + '</div>';
     }).join('');
     box.innerHTML = groupHtml + chatHtml;
+  }
+
+  /* 单行的左滑操作按钮（置于 .im-swipe 容器内、行内容下层，左滑行内容后露出） */
+  function imSwipeActionsHtml(key, pf) {
+    pf = pf || {};
+    return '<div class="im-swipe-actions">' +
+      '<div class="im-sa im-sa-pin" onclick="imSwipeAct(\'' + key + '\',\'pin\')">' + (pf.pinned ? '取消置顶' : '置顶') + '</div>' +
+      '<div class="im-sa im-sa-mute" onclick="imSwipeAct(\'' + key + '\',\'mute\')">' + (pf.muted ? '提醒' : '免打扰') + '</div>' +
+      '<div class="im-sa im-sa-del" onclick="imSwipeAct(\'' + key + '\',\'del\')">删除</div>' +
+      '</div>';
   }
 
   /* 消息预览文案（A7）：text→原文；image→[图片]；voice→[语音]；未知 kind 一律按文本 */
@@ -193,6 +281,100 @@
     if (kind === 'image') return '[图片]';
     if (kind === 'voice') return '[语音]';
     return content || '';
+  }
+
+  /* ==================== 批次二 需求2：左滑展开 / 收起与操作入口 ==================== */
+  var SWIPE_PX = 156; // 三个操作按钮总宽（3 × 52px），与 common.css .im-sa 宽度保持一致
+  var SW = { x: 0, y: 0, tid: null, dx: 0, tracking: false };
+
+  window.imOpenSwipe = function (tid) {
+    S.swipeOpen = tid;
+    var box = $id('imList');
+    if (!box) return;
+    Array.prototype.forEach.call(box.querySelectorAll('.im-swipe'), function (wEl) {
+      var open = wEl.getAttribute('data-tid') === tid;
+      wEl.classList.toggle('open', open);
+      var row = wEl.querySelector('.im-sess');
+      if (row) row.style.transform = open ? 'translateX(-' + SWIPE_PX + 'px)' : '';
+    });
+  };
+  window.imCloseSwipe = function () {
+    if (!S.swipeOpen) return;
+    S.swipeOpen = null;
+    var box = $id('imList');
+    if (!box) return;
+    Array.prototype.forEach.call(box.querySelectorAll('.im-swipe'), function (wEl) {
+      wEl.classList.remove('open');
+      var row = wEl.querySelector('.im-sess');
+      if (row) row.style.transform = '';
+    });
+  };
+  window.imToggleSwipe = function (tid) {
+    if (S.swipeOpen === tid) window.imCloseSwipe();
+    else window.imOpenSwipe(tid);
+  };
+  /* 左滑三个操作按钮的统一入口：置顶 / 免打扰 / 删除（均为纯本地偏好写 localStorage + 重渲染） */
+  window.imSwipeAct = function (key, act) {
+    var cur = imLoadPrefs()[key] || {};
+    if (act === 'pin') {
+      window.imChatPrefs.set(key, { pinned: !cur.pinned });
+      toast(cur.pinned ? '已取消置顶' : '📌 已置顶该会话');
+    } else if (act === 'mute') {
+      window.imChatPrefs.set(key, { muted: !cur.muted });
+      toast(cur.muted ? '已取消免打扰' : '🔕 已免打扰（不计入未读角标）');
+    } else if (act === 'del') {
+      // 仅从本机会话列表隐藏；云端聊天记录保留，对方再发消息会自动恢复显示
+      window.imChatPrefs.set(key, { hidden: true });
+      toast('已从列表移除（云端聊天记录保留）');
+    }
+    S.swipeOpen = null;
+    if (S.tab === 'chats') renderChats($id('imList'));
+  };
+  /* 手势绑定（事件委托在 #imList 上，只需绑一次；触摸左滑 / 桌面右键 / 点击空白收起） */
+  function imBindSwipeGestures() {
+    var list = $id('imList');
+    if (!list || list.getAttribute('data-swipe-bound')) return;
+    list.setAttribute('data-swipe-bound', '1');
+    list.addEventListener('touchstart', function (e) {
+      var t = e.touches && e.touches[0];
+      var row = (t && e.target && e.target.closest) ? e.target.closest('.im-sess[data-tid]') : null;
+      SW.tracking = !!row;
+      SW.tid = row ? row.getAttribute('data-tid') : null;
+      SW.x = t ? t.clientX : 0;
+      SW.y = t ? t.clientY : 0;
+      SW.dx = 0;
+    }, { passive: true });
+    list.addEventListener('touchmove', function (e) {
+      if (!SW.tracking || !SW.tid) return;
+      var t = e.touches && e.touches[0];
+      if (!t) return;
+      var dx = t.clientX - SW.x, dy = t.clientY - SW.y;
+      if (Math.abs(dy) > Math.abs(dx)) { SW.tracking = false; return; } // 纵向滚动让路
+      SW.dx = dx;
+      if (dx < 0 && e.cancelable) e.preventDefault(); // 阻止横向滚动，交给滑动展开
+      var row = $id('imList').querySelector('.im-sess[data-tid="' + SW.tid + '"]');
+      if (row && dx < 0) row.style.transform = 'translateX(' + Math.max(dx, -SWIPE_PX) + 'px)';
+    }, { passive: false });
+    list.addEventListener('touchend', function () {
+      if (SW.tracking && SW.tid) {
+        if (SW.dx <= -40) window.imOpenSwipe(SW.tid);
+        else window.imCloseSwipe();
+      }
+      SW.tracking = false;
+      SW.dx = 0;
+    });
+    // 桌面等价入口：右键（长按）展开 / 收起
+    list.addEventListener('contextmenu', function (e) {
+      var row = (e.target && e.target.closest) ? e.target.closest('.im-sess[data-tid]') : null;
+      if (row) { e.preventDefault(); window.imToggleSwipe(row.getAttribute('data-tid')); }
+    });
+    // 点击空白处 / 其他行收起（捕获阶段拦截，避免同一击又触发进入会话）
+    list.addEventListener('click', function (e) {
+      if (!S.swipeOpen) return;
+      if (e.target && e.target.closest && e.target.closest('.im-sa')) return; // 操作按钮自行处理
+      e.stopPropagation();
+      window.imCloseSwipe();
+    }, true);
   }
 
   /* A2：点会话头像时的提示（不再误跳对方主页） */
@@ -273,13 +455,14 @@
         var av = f.avatarUrl || f.avatar
           ? '<img src="' + (function(u){ return (u.startsWith('http') ? u : apiBase() + u); })(f.avatarUrl || f.avatar) + '" alt="" style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + f.serverId + ')">'
           : '<span style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + f.serverId + ')">' + esc((f.nickname || '友').slice(0, 1)) + '</span>';
+        /* 批次二 需求11（2026-09-11h）：好友行只保留「发消息」，删除好友入口统一收敛到
+           对方公开主页（个人中心.html?user=id → api.js renderUserHome 的「🗑 删除好友」，uiConfirm 二次确认）。 */
         return '<div class="im-sess" onclick="imOpenChat(' + f.id + ')">' +
           '<div class="im-av" style="position:relative">' + av + '<span class="im-dot" data-uid="' + f.serverId + '"></span></div>' +
           '<div class="im-si"><div class="im-n" style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + f.serverId + ')">' + esc(f.nickname) + ' <span style="font-size:11px;color:#999">@' + esc(f.username) + '</span></div>' +
           '<div class="im-sub">' + esc(f.motto) + ' <span class="im-presence" data-uid="' + f.serverId + '"></span></div></div>' +
           '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0">' +
             '<div style="color:#667eea;font-size:12px;cursor:pointer" onclick="event.stopPropagation();imOpenChat(' + f.id + ')">发消息</div>' +
-            '<div class="im-del" style="font-size:12px;cursor:pointer" onclick="event.stopPropagation();imRemoveFriend(' + f.serverId + ')">删除</div>' +
           '</div>' +
           '</div>';
       }).join('');
@@ -633,9 +816,14 @@
         body = '<div class="im-m ' + (isMe ? 'me' : 'ot') + '" data-mid="' + esc(m.id || '') + '">' + renderContent(m.content) + '<div class="im-mt">' + timeStr + '</div>' + readTag + '</div>';
       }
       // 群聊：他人消息左侧加发送者小头像 + 昵称（自己的消息保持右侧绿底）
+      // 批次二 需求9（2026-09-11h）：头像/昵称点击 → 打开该用户公开主页（复用 api.js openUserHome，
+      // 与私聊好友列表点头像行为一致；非好友主页只有「加为好友」，好友主页有「发消息」；
+      // 自己的消息本就不渲染头像/昵称，点击自己头像的场景不存在，无异常路径）。
+      // stopPropagation 防止冒泡触发消息区其他行为。
       if (isGroup && !isMe) {
-        var av = '<div class="im-gav">' + renderAvatar(m.senderAvatar, m.senderNickname) + '</div>';
-        var name = '<div class="im-gsender">' + esc(m.senderNickname || '') + '</div>';
+        var uhClick = 'event.stopPropagation();openUserHome(' + Number(m.senderId || 0) + ')';
+        var av = '<div class="im-gav" style="cursor:pointer" onclick="' + uhClick + '">' + renderAvatar(m.senderAvatar, m.senderNickname) + '</div>';
+        var name = '<div class="im-gsender" style="cursor:pointer" onclick="' + uhClick + '">' + esc(m.senderNickname || '') + '</div>';
         return '<div class="im-grow">' + av + '<div class="im-gcol">' + name + body + '</div></div>';
       }
       return body;
@@ -933,6 +1121,8 @@
     S.tab = tab;
     document.querySelectorAll('.im-tab').forEach(function (t) { t.classList.toggle('active', t.dataset.tab === tab); });
     renderList();
+    // 批次二 需求6：切到会话/好友 tab 时立即拉一次在线状态（批量单请求），不等 30s 轮询
+    if (tab === 'chats' || tab === 'friends') refreshPresence();
   };
 
   window.imDoSearch = function () {
@@ -1434,7 +1624,12 @@
   };
 
   // —— 在线状态（presence）：好友列表 30s 刷新一次 ——
+  /* 批次二 需求6：相对时间统一由 api.js 的 formatPresence 产出（纯函数，jsdom 可断言边界）。
+     规则：在线→「在线」（绿点由 .on 类渲染）；字段缺失/解析失败→''（调用方整段不显示，绝不造假）；
+     <5 分钟→「刚刚在线」；5 分钟~1 小时→「N分钟前」；跨自然日→「昨天 HH:MM」；1~24 小时→「N小时前」；更久→「N天前」。
+     api.js 未加载时保留旧实现兜底。 */
   function presenceText(lastSeenAt, online) {
+    if (typeof window.formatPresence === 'function') return window.formatPresence(lastSeenAt, online);
     if (online) return '在线';
     if (!lastSeenAt) return '';
     var t = new Date(lastSeenAt.replace(' ', 'T'));
@@ -1447,8 +1642,13 @@
   }
 
   function refreshPresence() {
-    if (S.tab !== 'friends' || !getToken()) return;
-    var ids = (SERVER_FRIENDS || []).map(function (f) { return f.serverId; }).filter(Boolean);
+    // 批次二 需求6：会话 tab 与好友 tab 都显示相对在线时间；一次批量请求（绝不做每行一请求）
+    if (!getToken()) return;
+    if (S.tab !== 'friends' && S.tab !== 'chats') return;
+    var idSet = {};
+    (SERVER_FRIENDS || []).forEach(function (f) { if (f.serverId) idSet[f.serverId] = true; });
+    (S.chats || []).forEach(function (c) { if (c.isServer && c.serverId) idSet[c.serverId] = true; });
+    var ids = Object.keys(idSet);
     if (!ids.length) return;
     fetch(apiBase() + '/api/users/presence?ids=' + ids.join(','), {
       headers: { 'Authorization': 'Bearer ' + getToken() }
@@ -1460,7 +1660,12 @@
         var dot = document.querySelector('.im-dot[data-uid="' + p.id + '"]');
         if (dot) dot.className = 'im-dot' + (p.online ? ' on' : '');
         var txt = document.querySelector('.im-presence[data-uid="' + p.id + '"]');
-        if (txt) txt.textContent = presenceText(p.lastSeenAt, p.online) ? '· ' + presenceText(p.lastSeenAt, p.online) : '';
+        if (txt) {
+          var label = presenceText(p.lastSeenAt, p.online);
+          // 会话列表右侧是独立元素（不带 · 分隔符）；好友列表嵌在签名后（带 · 分隔符）
+          txt.textContent = label ? (txt.classList.contains('im-presence-side') ? label : '· ' + label) : '';
+          txt.className = (txt.classList.contains('im-presence-side') ? 'im-presence im-presence-side' : 'im-presence') + (p.online ? ' on' : '');
+        }
       });
     })
     .catch(function () { /* 失败显示 -- ：占位符留空即可 */ });
@@ -1508,6 +1713,9 @@
       });
     }
 
+    // 批次二 需求2：会话列表左滑 / 右键操作（事件委托，只绑一次）
+    imBindSwipeGestures();
+
     // 先获取当前用户ID（用于区分消息左右），再加载会话和好友
     var token = getToken();
     if (token) {
@@ -1538,10 +1746,8 @@
       .then(function (r) { return r.json(); })
       .then(function (d) {
         var items = d.items || [];
-        var totalUnread = 0;
         items.forEach(function (item) {
           var cnt = item.count || 0;
-          totalUnread += cnt;
           // 找到对应的会话（后端字段：peerId / last / lastId）
           var chat = S.chats.find(function (c) { return c.isServer && c.serverId === item.peerId; });
           if (chat) {
@@ -1569,6 +1775,9 @@
               chat.unread = cnt;
               chat.last = item.last || chat.last;
               chat.time = Date.now();
+              // 批次二 需求2：被「删除」隐藏的会话，对方再发新消息时自动恢复显示（云端记录一直都在）
+              var hk = 'u' + item.peerId;
+              if ((imLoadPrefs()[hk] || {}).hidden) window.imChatPrefs.set(hk, { hidden: false });
             }
           }
         });
@@ -1578,8 +1787,8 @@
         });
         // 重新渲染会话列表（红点：未读显示、已读消失）
         renderList();
-        // tab 按钮角标：会话=未读消息总数
-        updateTabBadge('chats', totalUnread);
+        // tab 按钮角标：会话=未读消息总数（批次二 需求2：免打扰 / 已隐藏会话不计入）
+        updateTabBadge('chats', imCountUnread(S.chats, imLoadPrefs()));
         // 待处理好友申请数 → 申请 tab 角标
         fetch(apiBase() + '/api/friends/requests', { headers: { 'Authorization': 'Bearer ' + token } })
           .then(function (r) { return r.json(); })
@@ -1606,5 +1815,17 @@
     if (document.readyState !== 'loading') fn();
     else document.addEventListener('DOMContentLoaded', fn);
   }
+
+  /* 批次二（2026-09-11h）：仅供 tools/verifier jsdom 校验器使用的内部引用（零运行时行为影响） */
+  window.__IM_TEST__ = {
+    S: S,
+    renderChats: renderChats,
+    renderMsgs: renderMsgs,
+    renderFriends: renderFriends,
+    presenceText: presenceText,
+    loadChats: loadChats,
+    SWIPE_PX: SWIPE_PX
+  };
+
   $ready(boot);
 })();
