@@ -238,7 +238,7 @@
         '<div class="im-sub">' + esc(g.lastMessage ? ((g.lastMessage.senderId === S.myId ? '我：' : '') + previewText(g.lastMessage.kind, g.lastMessage.content)) : '') + '</div></div>' +
         (gp.muted ? '<div class="im-mute-tag" title="免打扰">🔕</div>' : '') +
         (g.unreadCount > 0 ? '<div class="im-badge">' + (g.unreadCount > 99 ? '99+' : g.unreadCount) + '</div>' : '') +
-        '</div>' + imSwipeActionsHtml(gk, gp) + '</div>';
+        '</div>' + imSwipeActionsHtml(gk, gp, true) + '</div>';
     }).join('');
     var chatHtml = chatList.map(function (c) {
       var ck = threadKeyOfChat(c);
@@ -264,13 +264,20 @@
         '</div>' + imSwipeActionsHtml(ck, prefs[ck] || {}) + '</div>';
     }).join('');
     box.innerHTML = groupHtml + chatHtml;
+    // BUG-1（QA Round1，2026-09-11h）：innerHTML 重建后左滑展开态的 DOM（transform/.open）已随旧节点销毁，
+    // 但 S.swipeOpen 若残留，捕获阶段 click 监听器会误判「有展开态」→ stopPropagation 吞掉第一次点击。
+    // 这里必须显式清空：重渲染即视为收起（每 5s 未读轮询都会重渲染，重放展开态反而会让操作栏常挂）。
+    // 不要"优化"掉这一行 —— imCloseSwipe 开头的 !S.swipeOpen 早退与它不冲突（先 null 再调用只是无害空转）。
+    S.swipeOpen = null;
   }
 
-  /* 单行的左滑操作按钮（置于 .im-swipe 容器内、行内容下层，左滑行内容后露出） */
-  function imSwipeActionsHtml(key, pf) {
+  /* 单行的左滑操作按钮（置于 .im-swipe 容器内、行内容下层，左滑行内容后露出）。
+     群聊行（isGroup=true）不提供「置顶」：群会话本就固定在列表顶部展示，
+     写 pinned 无任何视觉变化，只会让「📌 已置顶」toast 误导用户 —— 直接隐藏该按钮。 */
+  function imSwipeActionsHtml(key, pf, isGroup) {
     pf = pf || {};
     return '<div class="im-swipe-actions">' +
-      '<div class="im-sa im-sa-pin" onclick="imSwipeAct(\'' + key + '\',\'pin\')">' + (pf.pinned ? '取消置顶' : '置顶') + '</div>' +
+      (isGroup ? '' : '<div class="im-sa im-sa-pin" onclick="imSwipeAct(\'' + key + '\',\'pin\')">' + (pf.pinned ? '取消置顶' : '置顶') + '</div>') +
       '<div class="im-sa im-sa-mute" onclick="imSwipeAct(\'' + key + '\',\'mute\')">' + (pf.muted ? '提醒' : '免打扰') + '</div>' +
       '<div class="im-sa im-sa-del" onclick="imSwipeAct(\'' + key + '\',\'del\')">删除</div>' +
       '</div>';
@@ -295,7 +302,10 @@
       var open = wEl.getAttribute('data-tid') === tid;
       wEl.classList.toggle('open', open);
       var row = wEl.querySelector('.im-sess');
-      if (row) row.style.transform = open ? 'translateX(-' + SWIPE_PX + 'px)' : '';
+      if (row) {
+        // 位移 = 该行操作按钮数 × 52px（群聊行无「置顶」只有 2 个按钮，避免多滑出 52px 空隙）
+        row.style.transform = open ? 'translateX(-' + (52 * wEl.querySelectorAll('.im-sa').length) + 'px)' : '';
+      }
     });
   };
   window.imCloseSwipe = function () {
