@@ -87,6 +87,8 @@
             <button class="im-tab active" data-tab="chats" onclick="imSwitchTab('chats')">💬 会话</button>
             <button class="im-tab" data-tab="friends" onclick="imSwitchTab('friends')">👥 好友</button>
             <button class="im-tab im-tab-add" onclick="location.href='好友申请.html'" title="搜索用户名/昵称添加好友">➕ 加好友</button>
+            <!-- 【后续扩展点】发起群聊（T4 增量）：多选好友建群，本地模式提示「群聊需要联网」 -->
+            <button class="im-tab im-tab-add" onclick="imOpenGroupCreator()" title="多选好友发起群聊">👥 群聊</button>
             <button class="im-tab" data-tab="requests" onclick="imSwitchTab('requests')">📩 申请</button>
           </div>
         </div>
@@ -103,6 +105,9 @@
           <div class="im-msgs" id="imMsgs"></div>
           <div class="im-composer">
             <textarea id="imInput" placeholder="输入消息，回车发送（Shift+回车换行）"></textarea>
+            <!-- 【后续扩展点】表情面板（T4 增量）：[emoji:xx] 文本语法，Unicode 渲染，离线可用 -->
+            <button class="im-icon" title="表情" onclick="imToggleEmoji()">😊</button>
+            <div class="im-emoji-panel" id="imEmojiPanel" style="display:none"></div>
             <button class="im-icon" title="发图片" onclick="document.getElementById('imImgFile').click()">🖼</button>
             <input type="file" id="imImgFile" accept="image/*" style="display:none" onchange="imSendImage(this)">
             <button class="im-send" onclick="imSendText()">发送</button>
@@ -188,6 +193,17 @@
     </div>
   </div>
 
+  <!-- ==================== 【后续扩展点】发起群聊弹层（T4 增量 2026-09-11） ====================
+       步骤：好友多选（≥2 人）→ 命名（≤20 字）→ 创建并进入群会话。
+       内容由 chat-local.js 的 imOpenGroupCreator() 动态填充。 -->
+  <div class="im-overlay" id="imGroupModal" style="display:none" onclick="if(event.target===this)imCloseGroupCreator()">
+    <div class="im-modal">
+      <div class="im-modal-head"><div style="font-size:16px;font-weight:700">发起群聊</div><div style="cursor:pointer;color:#999;font-size:18px" onclick="imCloseGroupCreator()">✕</div></div>
+      <div class="im-group-body"></div>
+      <div class="im-group-foot"></div>
+    </div>
+  </div>
+
   <!-- Toast提示 -->
   <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center"></div>
 
@@ -224,6 +240,7 @@
 
 <script src="assets/app.js?v=20260911c"></script>
 <script src="assets/config.js?v=20260911d"></script>
+<script src="assets/emoji/manifest.js?v=20260911a"></script>
 <script src="assets/api.js?v=20260911c"></script>
 <script src="assets/chat-local.js"></script>
 <style>
