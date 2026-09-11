@@ -1,0 +1,100 @@
+classDiagram
+    class User {
+        +int id
+        +str username
+        +str nickname
+        +str avatar
+        +str last_seen_at
+    }
+    class Message {
+        +int id
+        +int sender_id
+        +int receiver_id
+        +int group_id
+        +str kind
+        +str content
+        +str read_at
+        +str created_at
+    }
+    class ChatGroup {
+        +int id
+        +str name
+        +int owner_id
+        +str created_at
+    }
+    class ChatGroupMember {
+        +int group_id
+        +int user_id
+        +str role
+        +int last_read_msg_id
+    }
+    class Moment {
+        +int id
+        +int user_id
+        +str content
+        +str images
+        +str created_at
+    }
+    class MomentLike {
+        +int moment_id
+        +int user_id
+    }
+    class MomentComment {
+        +int id
+        +int moment_id
+        +int user_id
+        +str content
+    }
+    class Feedback {
+        +int id
+        +int user_id
+        +str type
+        +str content
+        +str screenshot
+        +str status
+    }
+    class StudyLog {
+        +int id
+        +int user_id
+        +str module
+        +str event
+        +str payload
+    }
+    class RouterGroups {
+        +create_group(me, name, memberIds) dict
+        +list_groups(me) dict
+        +group_messages(me, gid, beforeId, markRead) dict
+        +send_group_message(me, gid, kind, content) dict
+        +mark_group_read(me, gid, upToId) dict
+    }
+    class RouterMoments {
+        +publish(me, content, images) dict
+        +feed(me, beforeId) dict
+        +like_toggle(me, mid) dict
+        +comments(me, mid) list
+        +delete_moment(me, mid) dict
+    }
+    class RouterStudy {
+        +batch_upload(me, logs) dict
+        +summary(me, module) dict
+    }
+    class StudyStatsJS {
+        +track(module, event, payload) void
+        +render(containerId, module) void
+        -readLocal() dict
+        -flushQueue() void
+        +syncFromCloud()$ 【后续扩展点】
+    }
+    ChatGroup "1" --> "2..50" ChatGroupMember : 拥有
+    ChatGroupMember --> User
+    ChatGroup "1" --> "*" Message : group_id 归属
+    User "1" --> "*" Message : 发送
+    Moment --> User : 作者
+    Moment "1" --> "*" MomentLike
+    Moment "1" --> "*" MomentComment
+    Feedback --> User : 可空(匿名)
+    StudyLog --> User
+    RouterGroups --> ChatGroup : 读写
+    RouterMoments --> Moment : 读写
+    RouterStudy --> StudyLog : 写入
+    StudyStatsJS --> RouterStudy : 队列批量上报(异步)
