@@ -121,7 +121,8 @@ def list_notifications(user: User = Depends(get_current_user), db: Session = Dep
             "type": x.type,
             "actor": x.actor.nickname if x.actor else "已注销用户",
             "noteId": x.note_id,
-            "noteTitle": x.note.title if x.note else "（笔记已删除）",
+            "noteTitle": x.note.title if x.note else (
+                "（动态已删除）" if str(x.type or "").startswith("moment") else "（笔记已删除）"),
             "isRead": bool(x.is_read),
             "createdAt": x.created_at,
         }
