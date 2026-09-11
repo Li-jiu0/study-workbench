@@ -992,7 +992,7 @@ async function loadChatUnread() {
       if (typeof showToast === 'function') showToast('💬 收到新的私信，点右上角 💬 查看');
       try {
         if ('Notification' in window && Notification.permission === 'granted') {
-          new Notification('学习工作台 · 新私信', { body: '有人给你发来新消息', tag: 'chat' });
+          new Notification('星途 · 新私信', { body: '有人给你发来新消息', tag: 'chat' });
         }
       } catch (e) { }
     }

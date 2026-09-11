@@ -31,14 +31,15 @@ def _auth_payload(user: User) -> dict:
 
 @router.post("/register")
 def register(body: RegisterIn, db: Session = Depends(get_db), _rl: None = Depends(rate_limit("auth"))):
-    if not _USERNAME_RE.match(body.username):
+    username = body.username.strip()  # 与 login 的 strip 行为保持一致，避免“注册带空格、登录匹配不上”
+    if not _USERNAME_RE.match(username):
         raise HTTPException(400, "账号需为 3-20 位字母 / 数字 / 中文 / 下划线")
-    if db.query(User).filter(User.username == body.username).first():
+    if db.query(User).filter(User.username == username).first():
         raise HTTPException(400, "该账号已被注册")
     user = User(
-        username=body.username,
+        username=username,
         password_hash=hash_password(body.password),
-        nickname=body.nickname.strip() or body.username,
+        nickname=body.nickname.strip() or username,
         motto="",
         avatar=None,
         created_at=now_str(),

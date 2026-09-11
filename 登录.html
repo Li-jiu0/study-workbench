@@ -1,52 +1,160 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-page-node-id="kEUCyLSS26PGTknAPE74Xh">
-<head data-page-node-id="5ZDG76UfmZyQou5pu7mSZC">
-<meta charset="UTF-8" data-page-node-id="gkb338etCBqXaEVIQaSYvX">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" data-page-node-id="K21F6j3Wtwcac5pvzS9hAn">
-<meta name="theme-color" content="#5B8DEF" data-page-node-id="bqcE5kDTXdZAgMfb27lKnR">
-<title>登录 · 学习工作台</title>
-<!-- 复用全站配色/组件变量（.login-* 样式见 assets/common.css 末尾“登录页”段） -->
-<link rel="stylesheet" href="assets/common.css" data-page-node-id="TCgAAxGJiUfT1SOcjEAYHc">
-<link rel="stylesheet" href="assets/polish.css" data-page-node-id="3LDCtvCBniOGwZ8zE5xOUQ">
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b1026">
+<title>登录 · 星途</title>
+<style>
+  :root{
+    --primary:#5b8def; --accent:#9b6bd9;
+    --text:#eef1ff; --text-dim:#9aa3c7;
+    --card:rgba(255,255,255,.07); --card-border:rgba(255,255,255,.14);
+    --field:rgba(255,255,255,.08); --field-border:rgba(255,255,255,.18);
+    --danger:#ff6b6b; --ok:#3ddc97;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:radial-gradient(1200px 800px at 20% -10%,#2b3a8f 0%,transparent 55%),
+               radial-gradient(1000px 700px at 110% 20%,#5b3a9f 0%,transparent 50%),
+               linear-gradient(160deg,#0b1026 0%,#141a3e 55%,#1c1440 100%);
+    color:var(--text);display:flex;align-items:center;justify-content:center;padding:20px;overflow-x:hidden;
+  }
+  /* 星空背景 */
+  .stars{position:fixed;inset:0;pointer-events:none;z-index:0}
+  .stars i{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;opacity:.7;animation:tw 3s infinite ease-in-out}
+  @keyframes tw{0%,100%{opacity:.15;transform:scale(.7)}50%{opacity:.9;transform:scale(1.15)}}
+  .shooting{position:fixed;top:12%;left:-10%;width:140px;height:1.5px;background:linear-gradient(90deg,transparent,#fff);transform:rotate(-25deg);animation:shoot 7s infinite;pointer-events:none;z-index:0}
+  @keyframes shoot{0%,92%{opacity:0;transform:rotate(-25deg) translateX(0)}94%{opacity:.9}100%{opacity:0;transform:rotate(-25deg) translateX(120vw)}}
+
+  .login-card{
+    position:relative;z-index:1;width:100%;max-width:400px;
+    background:var(--card);border:1px solid var(--card-border);border-radius:22px;
+    padding:34px 30px 26px;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    box-shadow:0 24px 70px rgba(0,0,0,.45);
+    animation:cardIn .5s ease both;
+  }
+  @keyframes cardIn{from{opacity:0;transform:translateY(22px) scale(.97)}to{opacity:1;transform:none}}
+  .login-card.shake{animation:shake .4s}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+
+  .login-logo{text-align:center;margin-bottom:22px}
+  .lg-icon{
+    width:66px;height:66px;margin:0 auto 12px;border-radius:20px;font-size:32px;
+    display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#5b8def,#9b6bd9 60%,#e06bd9);
+    box-shadow:0 10px 30px rgba(91,141,239,.45),inset 0 1px 0 rgba(255,255,255,.35);
+  }
+  .lg-title{font-size:26px;font-weight:900;letter-spacing:6px;text-indent:6px;
+    background:linear-gradient(90deg,#aebcff,#e0c8ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .lg-sub{font-size:12px;color:var(--text-dim);margin-top:6px;letter-spacing:1px}
+
+  .login-tabs{display:flex;background:rgba(255,255,255,.06);border:1px solid var(--card-border);border-radius:12px;padding:4px;margin-bottom:18px}
+  .login-tab{flex:1;text-align:center;padding:9px 0;border-radius:9px;font-size:14px;color:var(--text-dim);cursor:pointer;transition:.25s;font-weight:600;user-select:none}
+  .login-tab.active{background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff;box-shadow:0 4px 14px rgba(91,141,239,.4)}
+
+  .form-group{margin-bottom:14px}
+  .form-label{font-size:12px;color:var(--text-dim);margin-bottom:6px;letter-spacing:.5px}
+  .field{position:relative}
+  .form-input{
+    width:100%;padding:12px 42px 12px 14px;border-radius:12px;font-size:14px;color:var(--text);
+    background:var(--field);border:1px solid var(--field-border);outline:none;transition:.2s;
+  }
+  .form-input::placeholder{color:#6b7399}
+  .form-input:focus{border-color:var(--primary);background:rgba(91,141,239,.1);box-shadow:0 0 0 3px rgba(91,141,239,.18)}
+  .form-input.bad{border-color:var(--danger);box-shadow:0 0 0 3px rgba(255,107,107,.15)}
+  .eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:32px;height:32px;border:none;background:none;color:var(--text-dim);cursor:pointer;font-size:16px;border-radius:8px}
+  .eye:hover{color:var(--text);background:rgba(255,255,255,.08)}
+
+  /* 密码强度 */
+  .strength{display:flex;gap:5px;margin-top:7px;align-items:center}
+  .strength i{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.12);transition:.25s}
+  .strength i.on1{background:#ff6b6b}.strength i.on2{background:#ffb84d}.strength i.on3{background:#3ddc97}
+  .strength em{font-size:11px;color:var(--text-dim);font-style:normal;min-width:56px;text-align:right}
+  .match-ok{font-size:11px;color:var(--ok);margin-top:6px}
+  .match-bad{font-size:11px;color:var(--danger);margin-top:6px}
+
+  .btn-primary{
+    width:100%;margin-top:8px;padding:13px 0;border:none;border-radius:12px;cursor:pointer;
+    font-size:15px;font-weight:800;letter-spacing:3px;color:#fff;
+    background:linear-gradient(90deg,var(--primary),var(--accent));
+    box-shadow:0 8px 22px rgba(91,141,239,.4);transition:.25s;
+  }
+  .btn-primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 12px 28px rgba(91,141,239,.5)}
+  .btn-primary:disabled{opacity:.65;cursor:not-allowed}
+
+  .login-notice{
+    margin-top:16px;font-size:12px;line-height:1.8;color:var(--text-dim);
+    background:rgba(255,255,255,.05);border:1px solid var(--card-border);border-radius:12px;padding:10px 14px;
+  }
+  .login-notice b{color:var(--text)}
+  .err-box{
+    display:none;margin-bottom:14px;padding:10px 14px;border-radius:12px;font-size:13px;
+    background:rgba(255,107,107,.12);border:1px solid rgba(255,107,107,.4);color:#ffb4b4;
+  }
+  .err-box.show{display:block}
+  a{color:var(--primary)}
+</style>
 </head>
-<body class="theme-home" data-page-node-id="XvX83EPZHtYIwNiHR61YhN">
+<body>
 
-<div class="login-bg" data-page-node-id="32OvzdC27SBtbetyFvWzbt">
-  <div class="login-card" data-page-node-id="9pau6AXp0GpfuYXaSCFY0z">
-    <div class="login-logo" data-page-node-id="EZvfwMxTKBKhgS4FG3nE6t">
-      <div class="lg-icon" data-page-node-id="wO8AJFjxJyr6TKDqtk249b">📚</div>
-      <div class="lg-title" data-page-node-id="ZRO25VehHSpBEeoJx6h5tF">学习工作台</div>
-      <div class="lg-sub" id="lgSub" data-page-node-id="ON8cYFLNhvQidtDh93EYNB">注册登录后开启学习</div>
-    </div>
+<div class="stars" id="stars"></div>
+<div class="shooting"></div>
 
-    <!-- 登录 / 注册 切换 -->
-    <div class="login-tabs" data-page-node-id="yKpXAh2HGTz3LoCQFCnNAn">
-      <div class="login-tab active" id="tabLogin" onclick="switchMode('login')" data-page-node-id="MW5ksVsTojYHriZLmJ30dB">登 录</div>
-      <div class="login-tab" id="tabRegister" onclick="switchMode('register')" data-page-node-id="O6spTTNUzVIbt7bQqvP0Av">注 册</div>
-    </div>
-
-    <div class="form-group" data-page-node-id="KPirKRtfwNWnNYnqbjAfiQ">
-      <div class="form-label" data-page-node-id="a4H5FD6BxBDwbFV2Yp82cd">账号</div>
-      <input type="text" class="form-input" id="loginAccount" placeholder="3-20位字母 / 数字 / 中文" autocomplete="username" data-page-node-id="fVsUfOvN00xujHoABIS6W8">
-    </div>
-    <div class="form-group" data-page-node-id="ja1wiChECOpi8IQZaDpDcW">
-      <div class="form-label" data-page-node-id="eE9RSehwVJTsSeYPmpBgFW">昵称（注册时可选，不填默认用账号）</div>
-      <input type="text" class="form-input" id="loginNickname" placeholder="给自己起个昵称" style="display:none" maxlength="20" data-page-node-id="hatwMafLuylkzeJfFgREyl">
-    </div>
-    <div class="form-group" id="confirmGroup" style="display:none" data-page-node-id="mFXXT3T55hN1SewGeHRzaL">
-      <div class="form-label" data-page-node-id="9xtpGZjqx7ys0vxnlK3qvG">确认密码</div>
-      <input type="password" class="form-input" id="loginConfirm" placeholder="再输入一次密码" autocomplete="new-password" data-page-node-id="eHkOi8YYPIgXIaPwODIaxZ">
-    </div>
-    <div class="form-group" data-page-node-id="yF0XyLBIFDEublvGChbxjY">
-      <div class="form-label" data-page-node-id="zhtAps49yOFq35gi1FAFgC">密码</div>
-      <input type="password" class="form-input" id="loginPass" placeholder="至少 6 位" autocomplete="current-password"
-             onkeydown="if(event.key==='Enter')submitLogin()" data-page-node-id="W3qrD9TCqblYed0GtgOr0W">
-    </div>
-
-    <button class="btn btn-primary" style="width:100%;margin-top:6px" id="loginSubmitBtn" onclick="submitLogin()" data-page-node-id="BxzRr46DSCaNCPoymysEWv">🚀 登 录</button>
-
-    <div class="login-notice" id="loginNotice" data-page-node-id="ZfI7aIf9yNUOP6X7L7S3SN">💡 正在检测运行模式……</div>
+<div class="login-card" id="loginCard">
+  <div class="login-logo">
+    <div class="lg-icon">🚀</div>
+    <div class="lg-title">星 途</div>
+    <div class="lg-sub" id="lgSub">注册登录后开启学习</div>
   </div>
+
+  <!-- 登录 / 注册 切换 -->
+  <div class="login-tabs">
+    <div class="login-tab active" id="tabLogin" onclick="switchMode('login')">登 录</div>
+    <div class="login-tab" id="tabRegister" onclick="switchMode('register')">注 册</div>
+  </div>
+
+  <div class="err-box" id="errBox"></div>
+
+  <div class="form-group">
+    <div class="form-label">账号</div>
+    <div class="field">
+      <input type="text" class="form-input" id="loginAccount" placeholder="3-20位字母 / 数字 / 中文 / 下划线" autocomplete="username" maxlength="20">
+    </div>
+  </div>
+
+  <div class="form-group" id="nickGroup" style="display:none">
+    <div class="form-label">昵称（可选，不填默认用账号）</div>
+    <div class="field">
+      <input type="text" class="form-input" id="loginNickname" placeholder="给自己起个昵称" maxlength="20">
+    </div>
+  </div>
+
+  <div class="form-group">
+    <div class="form-label">密码</div>
+    <div class="field">
+      <input type="password" class="form-input" id="loginPass" placeholder="至少 6 位" autocomplete="current-password" maxlength="64">
+      <button type="button" class="eye" id="eyePass" onclick="togglePw('loginPass',this)" title="显示/隐藏密码">👁</button>
+    </div>
+    <div class="strength" id="pwStrength" style="display:none">
+      <i id="s1"></i><i id="s2"></i><i id="s3"></i><em id="sTxt"></em>
+    </div>
+  </div>
+
+  <div class="form-group" id="confirmGroup" style="display:none">
+    <div class="form-label">确认密码</div>
+    <div class="field">
+      <input type="password" class="form-input" id="loginConfirm" placeholder="再输入一次密码" autocomplete="new-password" maxlength="64" oninput="checkMatch()">
+      <button type="button" class="eye" onclick="togglePw('loginConfirm',this)">👁</button>
+    </div>
+    <div id="matchTip"></div>
+  </div>
+
+  <button class="btn-primary" id="loginSubmitBtn" onclick="submitLogin()">🚀 登 录</button>
+
+  <div class="login-notice" id="loginNotice">💡 正在检测运行模式……</div>
 </div>
 
 <script>
@@ -59,12 +167,14 @@
                全站以单机本地模式运行（笔记/学习数据均在 localStorage）。
    存储：
    - study_workbench_token : JWT 令牌（仅在线模式；assets/api.js 请求带 Authorization: Bearer）
-   - study_workbench_auth  : {account, loginAt} app.js 顶部“未登录跳转登录页”的门禁标记 */
+   - study_workbench_auth  : {account, loginAt} app.js 顶部“未登录跳转登录页”的门禁标记
+   - study_workbench_last_account : 记住上次登录的账号（仅预填） */
 var API_BASE = (location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000';
 var TOKEN_KEY = 'study_workbench_token';
 var REFRESH_KEY = 'study_workbench_refresh';
 var AUTH_KEY = 'study_workbench_auth';
 var USERS_KEY = 'study_workbench_users';
+var LAST_ACCOUNT_KEY = 'study_workbench_last_account';
 var loginMode = 'login';
 var ONLINE = false; // 页面加载后探测后端得出，true=在线多人版，false=离线单机版
 
@@ -73,6 +183,7 @@ function saveSession(token, account, refreshToken) {
   if (token) localStorage.setItem(TOKEN_KEY, token);
   if (refreshToken) localStorage.setItem(REFRESH_KEY, refreshToken);
   localStorage.setItem(AUTH_KEY, JSON.stringify({ account: account, loginAt: Date.now() }));
+  localStorage.setItem(LAST_ACCOUNT_KEY, account || '');
 }
 /* 在线续期：access 过期时用 refresh 令牌静默换新（access + refresh 一起轮换） */
 function apiTryRefresh() {
@@ -125,14 +236,87 @@ function applyModeNotice() {
   var sub = document.getElementById('lgSub');
   var n = document.getElementById('loginNotice');
   if (ONLINE) {
-    if (sub) sub.textContent = '多人博客版 · 注册登录后开启学习';
-    if (n) n.innerHTML = '💡 <b>多人在线版</b>：账号密码保存在服务器 SQLite 数据库（密码加盐哈希），登录使用 JWT。<br>后端地址：<b>' + escHtml(API_BASE || '同源部署') + '</b>';
+    if (sub) sub.textContent = '多人在线版 · 注册登录后开启学习';
+    if (n) n.innerHTML = '💡 <b>多人在线版</b>：账号密码保存在服务器数据库（密码加盐哈希），登录使用 JWT 令牌，支持静态续期。<br>后端地址：<b>' + escHtml(API_BASE || '同源部署') + '</b>';
   } else {
     if (sub) sub.textContent = '单机离线版 · 数据保存在本机';
     if (n) n.innerHTML = '📱 <b>单机离线模式</b>：未检测到后端服务器，账号仅保存在<b>本机</b>（localStorage，密码混淆存储）。<br>所有学习数据、笔记均在本机，适合个人使用；如需多人博客/在线 AI，请启动 <b>server/</b> 后端后重新打开。';
   }
 }
 function escHtml(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+/* ---------- 星空背景 ---------- */
+(function drawStars() {
+  var box = document.getElementById('stars'); if (!box) return;
+  var html = '';
+  for (var i = 0; i < 90; i++) {
+    var sz = (Math.random() * 2 + 1).toFixed(1);
+    html += '<i style="left:' + (Math.random() * 100).toFixed(2) + '%;top:' + (Math.random() * 100).toFixed(2) + '%;width:' + sz + 'px;height:' + sz + 'px;animation-delay:' + (Math.random() * 3).toFixed(2) + 's;animation-duration:' + (2 + Math.random() * 3).toFixed(2) + 's"></i>';
+  }
+  box.innerHTML = html;
+})();
+
+/* ---------- 表单交互增强 ---------- */
+var USERNAME_RE = /^[A-Za-z0-9_\u4e00-\u9fa5]{3,20}$/;
+function showErr(msg) {
+  var box = document.getElementById('errBox');
+  box.innerHTML = '⚠️ ' + escHtml(msg);
+  box.classList.add('show');
+  var card = document.getElementById('loginCard');
+  card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+}
+function clearErr() { var b = document.getElementById('errBox'); b.classList.remove('show'); b.innerHTML = ''; }
+function togglePw(id, btn) {
+  var inp = document.getElementById(id);
+  var show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  btn.textContent = show ? '🙈' : '👁';
+}
+function pwScore(v) {
+  if (!v) return 0;
+  var s = 0;
+  if (v.length >= 6) s++;
+  if (v.length >= 10 && /[A-Za-z]/.test(v) && /\d/.test(v)) s++;
+  if (v.length >= 12 && /[^A-Za-z0-9]/.test(v)) s++;
+  if (v.length < 6) s = Math.min(s, 1);
+  return Math.max(1, s); // 有输入至少 1 格
+}
+function refreshStrength() {
+  var v = document.getElementById('loginPass').value;
+  var box = document.getElementById('pwStrength');
+  if (loginMode !== 'register' || !v) { box.style.display = 'none'; return; }
+  box.style.display = 'flex';
+  var s = pwScore(v);
+  var names = { 1: '强度：弱', 2: '强度：中', 3: '强度：强' };
+  for (var i = 1; i <= 3; i++) {
+    var el = document.getElementById('s' + i);
+    el.className = i <= s ? 'on' + s : '';
+  }
+  document.getElementById('sTxt').textContent = names[s] || '';
+}
+function checkMatch() {
+  var tip = document.getElementById('matchTip');
+  var p = document.getElementById('loginPass').value;
+  var c = document.getElementById('loginConfirm').value;
+  if (loginMode !== 'register' || !c) { tip.innerHTML = ''; return null; }
+  if (p === c) { tip.innerHTML = '<div class="match-ok">✓ 两次密码一致</div>'; return true; }
+  tip.innerHTML = '<div class="match-bad">✗ 两次密码不一致</div>'; return false;
+}
+function markInput(id, bad) { document.getElementById(id).classList.toggle('bad', !!bad); }
+
+/* 回车流转：账号 → 密码 → 提交 */
+document.getElementById('loginAccount').addEventListener('keydown', function (e) { if (e.key === 'Enter') document.getElementById('loginPass').focus(); });
+document.getElementById('loginPass').addEventListener('keydown', function (e) { if (e.key === 'Enter') submitLogin(); });
+document.getElementById('loginConfirm').addEventListener('keydown', function (e) { if (e.key === 'Enter') submitLogin(); });
+document.getElementById('loginPass').addEventListener('input', refreshStrength);
+['loginAccount', 'loginPass', 'loginConfirm', 'loginNickname'].forEach(function (id) {
+  document.getElementById(id).addEventListener('input', function () { clearErr(); markInput(id, false); });
+});
+/* 记住上次登录的账号（仅预填，不存密码） */
+(function () {
+  var last = localStorage.getItem(LAST_ACCOUNT_KEY);
+  if (last) document.getElementById('loginAccount').value = last;
+})();
 
 (function detectModeAndAutoLogin() {
   probeBackend().then(function (ok) {
@@ -162,18 +346,20 @@ function escHtml(s) { return String(s).replace(/[&<>"']/g, function (c) { return
 
 function switchMode(mode) {
   loginMode = mode;
+  clearErr();
   document.getElementById('tabLogin').classList.toggle('active', mode === 'login');
   document.getElementById('tabRegister').classList.toggle('active', mode === 'register');
   document.getElementById('confirmGroup').style.display = mode === 'register' ? '' : 'none';
-  document.getElementById('loginNickname').style.display = mode === 'register' ? '' : 'none';
-  document.getElementById('loginNickname').parentElement.style.display = mode === 'register' ? '' : 'none';
+  document.getElementById('nickGroup').style.display = mode === 'register' ? '' : 'none';
   document.getElementById('loginSubmitBtn').textContent = mode === 'login' ? '🚀 登 录' : '✨ 注 册 并 进 入';
+  refreshStrength();
+  if (mode !== 'register') { document.getElementById('matchTip').innerHTML = ''; }
 }
 
 /* ---------- 离线模式：本地注册 / 登录 ---------- */
 function localRegister(account, pass, nickname) {
   var users = loadLocalUsers();
-  if (users[account]) { alert('该账号已存在，请直接登录'); return false; }
+  if (users[account]) { showErr('该账号已存在，请直接登录'); return false; }
   users[account] = { pass: simpleHash(pass), nickname: nickname || '', createdAt: Date.now() };
   saveLocalUsers(users);
   saveSession(null, account);
@@ -183,48 +369,61 @@ function localRegister(account, pass, nickname) {
 function localLogin(account, pass) {
   var users = loadLocalUsers();
   var u = users[account];
-  if (!u) { alert('本机没有该账号，请先注册'); return false; }
-  if (u.pass !== simpleHash(pass)) { alert('密码错误'); return false; }
+  if (!u) { showErr('本机没有该账号，请先注册'); return false; }
+  if (u.pass !== simpleHash(pass)) { showErr('密码错误，请重试'); return false; }
   saveSession(null, account);
   writeLocalProfile(account, u.nickname || account);
+  return true;
+}
+
+/* ---------- 统一前端校验 ---------- */
+function validate(account, pass) {
+  if (!account) { showErr('请输入账号'); markInput('loginAccount', true); return false; }
+  if (!USERNAME_RE.test(account)) { showErr('账号需为 3-20 位字母 / 数字 / 中文 / 下划线'); markInput('loginAccount', true); return false; }
+  if (!pass) { showErr('请输入密码'); markInput('loginPass', true); return false; }
+  if (pass.length < 6) { showErr('密码至少 6 位'); markInput('loginPass', true); return false; }
+  if (pass.length > 64) { showErr('密码最多 64 位'); markInput('loginPass', true); return false; }
+  if (loginMode === 'register') {
+    var c = document.getElementById('loginConfirm').value;
+    if (!c) { showErr('请再次输入确认密码'); markInput('loginConfirm', true); return false; }
+    if (c !== pass) { showErr('两次输入的密码不一致'); markInput('loginConfirm', true); return false; }
+  }
   return true;
 }
 
 function submitLogin() {
   var account = document.getElementById('loginAccount').value.trim();
   var pass = document.getElementById('loginPass').value;
-  if (!account || account.length < 3) { alert('请输入账号（至少3位）'); return; }
-  if (!pass || pass.length < 6) { alert('密码至少 6 位'); return; }
+  if (!validate(account, pass)) return;
   var btn = document.getElementById('loginSubmitBtn');
+  var btnText = btn.textContent;
   btn.disabled = true;
+  btn.textContent = loginMode === 'login' ? '⏳ 登录中…' : '⏳ 注册中…';
+
+  function fail(msg) { showErr(msg || '操作失败，请稍后再试'); btn.disabled = false; btn.textContent = btnText; }
+  function go() { location.href = '学习工作台.html'; }
 
   /* —— 离线模式：先尝试本地，找不到再尝试在线 —— */
   if (!ONLINE) {
-    var ok;
-    if (loginMode === 'register') {
-      var confirmPass = document.getElementById('loginConfirm').value;
-      if (confirmPass !== pass) { alert('两次输入的密码不一致'); btn.disabled = false; return; }
-      ok = localRegister(account, pass, document.getElementById('loginNickname').value.trim());
-    } else {
-      ok = localLogin(account, pass);
-      // 本地找不到账户，自动尝试在线登录
-      if (!ok && !loadLocalUsers()[account]) {
-        showOnlineRetry(account, pass, btn);
-        return;
+    setTimeout(function () { // 让按钮态渲染出来
+      var ok;
+      if (loginMode === 'register') {
+        ok = localRegister(account, pass, document.getElementById('loginNickname').value.trim());
+      } else {
+        ok = localLogin(account, pass);
+        // 本地找不到账户，自动尝试在线登录
+        if (!ok && !loadLocalUsers()[account]) { showOnlineRetry(account, pass, btn, btnText); return; }
       }
-    }
-    if (ok) location.href = '学习工作台.html'; else btn.disabled = false;
+      if (ok) go(); else { btn.disabled = false; btn.textContent = btnText; }
+    }, 60);
     return;
   }
 
-  /* —— 在线模式：走后端 API（原逻辑不变） —— */
+  /* —— 在线模式：走后端 API —— */
   var path, body;
   if (loginMode === 'register') {
-    var confirmPass = document.getElementById('loginConfirm').value;
-    if (confirmPass !== pass) { alert('两次输入的密码不一致'); btn.disabled = false; return; }
-    var nickname = document.getElementById('loginNickname').value.trim();
     path = '/api/auth/register';
-    body = { username: account, password: pass, nickname: nickname };
+    body = { username: account, password: pass, nickname: document.getElementById('loginNickname').value.trim() };
   } else {
     path = '/api/auth/login';
     body = { username: account, password: pass };
@@ -237,20 +436,38 @@ function submitLogin() {
   }).then(function (res) {
     return res.json().then(function (data) { return { ok: res.ok, data: data }; });
   }).then(function (r) {
-    if (!r.ok) { alert(r.data.detail || '操作失败，请稍后再试'); btn.disabled = false; return; }
+    if (!r.ok) { fail(r.data.detail || '操作失败，请稍后再试'); return; }
     saveSession(r.data.token, r.data.user.username, r.data.refreshToken);
-    location.href = '学习工作台.html';
+    go();
   }).catch(function () {
     // 网络错误：后端可能刚好停了 → 切回离线模式提示（不自动用本地账号，避免账号混淆）
     probeBackend().then(function (ok) {
       ONLINE = ok; applyModeNotice();
       if (!ok) {
-        alert('无法连接后端服务器，已切换为【单机离线模式】。\n如需多人在线功能，请先启动后端：\ncd server\npython -m uvicorn main:app --port 8000\n\n当前为离线模式，请重新提交即可使用本机账号。');
+        showErr('无法连接后端服务器，已切换为【单机离线模式】，请重新提交即可使用本机账号');
+        btn.disabled = false; btn.textContent = btnText;
       } else {
-        alert('网络异常，请稍后再试');
+        fail('网络异常，请稍后再试');
       }
-      btn.disabled = false;
     });
+  });
+}
+
+function showOnlineRetry(account, pass, btn, btnText) {
+  /* 离线模式下本地找不到账号 → 自动探测在线后端并尝试在线登录 */
+  probeBackend().then(function (ok) {
+    ONLINE = ok; applyModeNotice();
+    if (!ok) { showErr('本机没有该账号，且未检测到后端服务器；请先注册'); btn.disabled = false; btn.textContent = btnText; return; }
+    fetch(API_BASE + '/api/auth/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: account, password: pass })
+    }).then(function (res) {
+      return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+    }).then(function (r) {
+      if (!r.ok) { showErr(r.data.detail || '账号或密码错误'); btn.disabled = false; btn.textContent = btnText; return; }
+      saveSession(r.data.token, r.data.user.username, r.data.refreshToken);
+      location.href = '学习工作台.html';
+    }).catch(function () { showErr('网络异常，请稍后再试'); btn.disabled = false; btn.textContent = btnText; });
   });
 }
 </script>

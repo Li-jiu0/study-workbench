@@ -1279,14 +1279,14 @@ function exportData() {
     }
     var exportObj = {
       version: '1.0',
-      app: '学习工作台',
+      app: '星途',
       exportedAt: new Date().toISOString(),
       data: allData
     };
     var dataStr = JSON.stringify(exportObj, null, 2);
     var now = new Date();
     var dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
-    var filename = '学习工作台-数据备份-' + dateStr + '.json';
+    var filename = '星途-数据备份-' + dateStr + '.json';
 
     // APK 环境：原生桥保存文件
     if (window.AndroidBridge && typeof window.AndroidBridge.saveFile === 'function') {
@@ -1816,7 +1816,7 @@ const aiLocalRules = [
   { kw: ['PPT', '汇报', '课件', 'slide'], reply: '🎨 PPT训练建议：\n1. 先搭骨架再填内容：一页只讲一件事，标题写结论；\n2. 对齐和留白比炫技更重要：统一字号体系（标题28+/正文16+），多用色块和图标；\n3. 汇报逻辑：背景→问题→方案→成效→下一步。\n\n去「PPT训练」模块看版式库和真实案例拆解，边学边模仿最快。' },
   { kw: ['累', '困', '烦', '坚持不', '焦虑', '压力', '不想学'], reply: '抱抱你🫂 学习路上有低谷太正常了。\n\n试试这个方法：把今天的任务缩到最小——只背10个单词，只做5道题。\n完成最小任务后，往往就想继续了；就算没有，今天也算赢了。\n\n记住：慢一点没关系，停下才是问题。你已经在路上了💪' },
   { kw: ['怎么复习', '怎么学', '怎么准备', '计划', '规划'], reply: '🗓️ 通用复习规划思路：\n1. 先做摸底：用「行测刷题」或一套四级真题找到弱项；\n2. 倒推排期：用首页「重要倒计时」算清剩余天数，弱项多分配时间；\n3. 每天固定三件事：词汇/刷题/复盘，宁可少不可断；\n4. 每周日花30分钟复盘错题本，比刷新题更有用。\n\n具体想聊哪一科？我可以给更细的建议。' },
-  { kw: ['你是谁', '你是ai', '你是AI', '什么模式', '演示'], reply: '我是学习工作台里内置的AI学习助手🤖\n\n当前处于「本地演示模式」：由前端规则引擎回复，不联网、无密钥、零成本。\n\n想让我变成真正的大模型？按项目里 ai-server 文件夹的README启动后端，再把前端 AI_CONFIG.apiUrl 指向后端地址，就能获得流式打字的真实AI回答。' },
+  { kw: ['你是谁', '你是ai', '你是AI', '什么模式', '演示'], reply: '我是星途里内置的AI学习助手🤖\n\n当前处于「本地演示模式」：由前端规则引擎回复，不联网、无密钥、零成本。\n\n想让我变成真正的大模型？按项目里 ai-server 文件夹的README启动后端，再把前端 AI_CONFIG.apiUrl 指向后端地址，就能获得流式打字的真实AI回答。' },
 ];
 function localAiReply(text) {
   // 关键词匹配（命中多个关键词的规则优先）
@@ -5648,7 +5648,7 @@ async function testAiConnection() {
 if (document.getElementById('page-profile')) renderProfilePage();
 if (document.getElementById('aiProviderForm')) renderAiProviderForm();
 
-console.log('📚 学习工作台已启动');
+console.log('📚 星途已启动');
 console.log('💡 提示：所有数据保存在本地浏览器中');
 
 // ========== 统一确认弹层（替代原生 confirm；#2）==========
@@ -5878,7 +5878,7 @@ function showAbout() {
     '<div style="font-size:18px;font-weight:800;color:#1a1b1c">ℹ️ 关于</div>' +
     '<button id="aboutClose" style="background:none;border:none;font-size:22px;cursor:pointer;color:#999">×</button>' +
     '</div>' +
-    '<div style="font-size:15px;font-weight:800;color:#1a1b1c">📚 学习工作台 v2.1</div>' +
+    '<div style="font-size:15px;font-weight:800;color:#1a1b1c">🚀 星途 v2.1</div>' +
     '<div style="font-size:13px;color:#6b7280;margin-top:4px">一站式备考平台</div>' +
     '<div style="margin-top:16px;font-size:13px;color:#374151;line-height:1.8">本应用数据默认保存在本机浏览器；登录服务器后，笔记/私信/AI 记录可多端同步。</div>' +
     '<div style="margin-top:14px;font-weight:700;color:#1a1b1c">🗂️ 学习模块</div>' +
