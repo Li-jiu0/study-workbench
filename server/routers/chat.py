@@ -18,7 +18,7 @@ router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 class SendMsgIn(BaseModel):
     content: str = Field(max_length=5000)
-    kind: str = "text"  # text / image
+    kind: str = "text"  # text / image / voice
 
 
 class ReadIn(BaseModel):
@@ -95,7 +95,8 @@ async def send_message(peer_id: int, body: SendMsgIn, user: User = Depends(get_c
     content = body.content.strip()
     if not content:
         raise HTTPException(400, "消息不能为空")
-    if body.kind not in ("text", "image"):
+    # 放行 voice（A7）：kind 列已是 String(16)，无需改表；未知 kind 仍降级为 text（前向兼容）
+    if body.kind not in ("text", "image", "voice"):
         body.kind = "text"
     m = await store_and_deliver(db, user, peer_id, body.kind, content)
     return msg_dict(m)
@@ -121,7 +122,13 @@ def unread(user: User = Depends(get_current_user), db: Session = Depends(get_db)
         p["count"] += 1
         if m.id > p["lastId"]:
             p["lastId"] = m.id
-            p["last"] = f"[图片]" if m.kind == "image" else m.content[:80]
+            # 预览文案：图片 → [图片]，语音 → [语音]，其余按文本（前向兼容未知 kind）
+            if m.kind == "image":
+                p["last"] = "[图片]"
+            elif m.kind == "voice":
+                p["last"] = "[语音]"
+            else:
+                p["last"] = m.content[:80]
         total += 1
     return {"total": total, "items": sorted(by_peer.values(), key=lambda x: -x["lastId"])}
 

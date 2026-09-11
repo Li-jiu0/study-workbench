@@ -312,7 +312,9 @@ async def tts_proxy(text: str = "", lang: str = "en"):
         return Response(status_code=400, content="text required")
     piece = text[:150]
     is_zh = "zh" in lang.lower() or "cn" in lang.lower()
-    url = "https://dict.youdao.com/dictvoice?audio=" + piece + "&type=" + ("2" if is_zh else "2")
+    # 有道 dictvoice：type=2 为英音、type=1 为美音。此前两分支都写 "2"，导致英文固定英音、lang 参数无效。
+    # 修正（A7 顺手项）：中文用英音音色无意义，英文改走美音（type=1）。
+    url = "https://dict.youdao.com/dictvoice?audio=" + piece + "&type=" + ("2" if is_zh else "1")
     try:
         async with httpx.AsyncClient(timeout=10) as client:
             r = await client.get(url)

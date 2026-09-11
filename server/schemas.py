@@ -20,6 +20,12 @@ class RefreshIn(BaseModel):
     refresh: str = Field(min_length=1)
 
 
+class ChangePasswordIn(BaseModel):
+    """修改密码（A6）：旧密码校验 + 新密码强度（≥6 位）。"""
+    oldPassword: str = Field(min_length=1, max_length=64)
+    newPassword: str = Field(min_length=6, max_length=64)
+
+
 class ProfileIn(BaseModel):
     nickname: str = Field(default="", max_length=20)
     motto: str = Field(default="", max_length=60)
@@ -76,7 +82,7 @@ class GroupCreateIn(BaseModel):
 
 class GroupMsgIn(BaseModel):
     content: str = Field(max_length=5000)
-    kind: str = "text"  # text / image
+    kind: str = "text"  # text / image / voice
 
 
 class GroupReadIn(BaseModel):
