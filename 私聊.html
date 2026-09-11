@@ -86,7 +86,7 @@
           <div class="im-tabs">
             <button class="im-tab active" data-tab="chats" onclick="imSwitchTab('chats')">💬 会话</button>
             <button class="im-tab" data-tab="friends" onclick="imSwitchTab('friends')">👥 好友</button>
-            <button class="im-tab im-tab-add" onclick="location.href='好友申请.html'" title="搜索用户名/昵称添加好友">➕ 加好友</button>
+            <button class="im-tab im-tab-add" onclick="imOpenAddFriendModal()" title="搜索用户名/昵称添加好友">➕ 加好友</button>
             <!-- 【后续扩展点】发起群聊（T4 增量）：多选好友建群，本地模式提示「群聊需要联网」 -->
             <button class="im-tab im-tab-add" onclick="imOpenGroupCreator()" title="多选好友发起群聊">👥 群聊</button>
             <button class="im-tab" data-tab="requests" onclick="imSwitchTab('requests')">📩 申请</button>
@@ -105,6 +105,8 @@
           <div class="im-msgs" id="imMsgs"></div>
           <div class="im-composer">
             <textarea id="imInput" placeholder="输入消息，回车发送（Shift+回车换行）"></textarea>
+            <!-- A7：语音消息录制按钮（点击开始/结束，最长 60 秒；不支持时优雅降级） -->
+            <button class="im-icon" title="录音（点击开始/结束）" onclick="imToggleRecord()">🎤</button>
             <!-- 【后续扩展点】表情面板（T4 增量）：[emoji:xx] 文本语法，Unicode 渲染，离线可用 -->
             <button class="im-icon" title="表情" onclick="imToggleEmoji()">😊</button>
             <div class="im-emoji-panel" id="imEmojiPanel" style="display:none"></div>
@@ -201,6 +203,21 @@
       <div class="im-modal-head"><div style="font-size:16px;font-weight:700">发起群聊</div><div style="cursor:pointer;color:#999;font-size:18px" onclick="imCloseGroupCreator()">✕</div></div>
       <div class="im-group-body"></div>
       <div class="im-group-foot"></div>
+    </div>
+  </div>
+
+  <!-- ==================== 加好友模态（A3，2026-09-11）：与群聊弹层同源样式 ====================
+       搜索（300ms 防抖）→ imRenderFriendRows 统一渲染；旧整页 好友申请.html 保留可回退。 -->
+  <div class="im-overlay" id="imAddFriendModal" style="display:none" onclick="if(event.target===this)imCloseAddFriendModal()">
+    <div class="im-modal">
+      <div class="im-modal-head"><div style="font-size:16px;font-weight:700">添加好友</div><div style="cursor:pointer;color:#999;font-size:18px" onclick="imCloseAddFriendModal()">✕</div></div>
+      <div class="im-group-body">
+        <div class="im-af-search">
+          <input id="imAfInput" placeholder="输入昵称或 @账号" maxlength="30" oninput="imAfSearch(this.value)" onkeydown="if(event.key==='Enter')imAfSearch(this.value)">
+        </div>
+        <div class="im-af-list" id="imAfResults"><div class="im-empty2">输入昵称或 @账号开始搜索</div></div>
+      </div>
+      <div class="im-group-foot"><a href="好友申请.html" class="btn btn-outline" style="text-decoration:none">【后续扩展点：旧页回退】完整页面</a></div>
     </div>
   </div>
 

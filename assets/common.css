@@ -2040,3 +2040,33 @@ body.dark .bottom-nav { background: rgba(30,34,40,0.92); }
   .morepage-grid{grid-template-columns:repeat(2,1fr);gap:12px}
   .morepage-card{padding:14px 10px}
 }
+
+/* =====================================================================
+   批次一 T04（2026-09-11）：A1 弹层加固 / A3 加好友模态 / A5 删除好友 / A7 语音条
+   —— 末尾追加，只做「增强」，不改既有选择器行为，旧页面不受影响。
+   ===================================================================== */
+
+/* A1：统一弹层（群聊 / 加好友 / 删除好友）强制居中、层级高于底部导航、safe-area 适配 */
+.im-overlay{z-index:10000;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.im-modal{margin:auto;max-height:calc(100vh - 40px);max-height:calc(100dvh - 40px);overflow:auto}
+
+/* A3：加好友模态（复用 .im-modal/.im-modal-head/.im-group-body 同源视觉） */
+.im-af-search{display:flex;gap:8px;padding:0 0 6px}
+.im-af-search input{flex:1;min-width:0;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);font-size:14px;outline:none}
+.im-af-search input:focus{border-color:var(--primary)}
+.im-af-list{min-height:70px}
+.im-af-btn{font-size:12px;padding:6px 12px;border:none;border-radius:8px;background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.im-af-btn.gray{background:var(--bg-sub);color:var(--text-secondary);cursor:default}
+
+/* A5：删除好友确认弹层内的「清空本机记录」勾选项 */
+.im-del-row{display:flex;align-items:center;gap:8px;margin:12px 0 2px;font-size:13px;color:var(--text-secondary);cursor:pointer}
+
+/* A7：语音消息气泡（播放/暂停/续播 + 进度条 + 时长） */
+.im-voice{display:flex;align-items:center;gap:8px;cursor:pointer;min-width:110px;max-width:190px;user-select:none}
+.im-voice-ic{font-size:13px;flex-shrink:0;line-height:1}
+.im-voice-bar{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.45);position:relative;overflow:hidden}
+.im-m.ot .im-voice-bar{background:var(--border)}
+.im-voice-bar i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:3px;background:rgba(255,255,255,.95);transition:width .15s linear}
+.im-m.ot .im-voice-bar i{background:var(--primary)}
+.im-voice-dur{font-size:11px;opacity:.85;flex-shrink:0}
+.im-voice.playing .im-voice-ic{opacity:.85}
