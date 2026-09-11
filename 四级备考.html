@@ -115,6 +115,25 @@
             </div>
           </div>
         </div>
+
+        <!-- 【后续扩展点】T7 增量（2026-09-11）：学习概况统计卡（study-stats.js 渲染，本地优先可离线） -->
+        <div id="cetStatsCard" class="study-stats-card"></div>
+
+        <!-- 【后续扩展点】T7 增量（P0-9）：🎯 考试冲刺卡——倒计时 + 每日任务三勾选 + 完成率环形 -->
+        <div class="sprint-card" id="cetSprintCard">
+          <div class="sprint-head"><span>🎯 考试冲刺</span><span id="sprintGoalLabel" style="font-size:12px;color:var(--text-secondary);font-weight:400">未设置目标日期</span></div>
+          <div class="sprint-main">
+            <div class="sprint-count"><b id="sprintDays">--</b><span>距目标考试（天）</span></div>
+            <div class="sprint-ring" id="sprintRing"><i id="sprintPct">0%</i></div>
+            <div class="sprint-tasks">
+              <label class="sprint-task"><input type="checkbox" id="sprintTaskWords" onchange="sprintSaveTasks()"> 背 50 个高频词</label>
+              <label class="sprint-task"><input type="checkbox" id="sprintTaskRead" onchange="sprintSaveTasks()"> 完成 1 篇阅读</label>
+              <label class="sprint-task"><input type="checkbox" id="sprintTaskListen" onchange="sprintSaveTasks()"> 完成 1 套听力</label>
+            </div>
+          </div>
+          <div class="sprint-date">目标考试日期：<input type="date" id="sprintDate" onchange="sprintSaveDate()"> <span id="sprintDoneTip"></span></div>
+        </div>
+
         <div class="feature-grid">
           <div class="feature-card" onclick="navigateTo('cet-vocab')">
             <div class="feature-icon">📖</div>
@@ -421,5 +440,76 @@
 
 <script src="assets/mini-cet.js"></script>
 <script src="assets/mini.js"></script>
+<script src="assets/study-stats.js?v=20260911a"></script>
+<script>
+/* ==================== T7 增量（P0-8/P0-9）：统计卡 + 考试冲刺 ==================== */
+(function () {
+  'use strict';
+  function $id(x) { return document.getElementById(x); }
+  var GOAL_KEY = 'study_workbench_cet4_goal_date';
+  var TASK_KEY = 'study_workbench_cet4_daily_tasks'; // { 'YYYY-MM-DD': {words:1,read:1,listen:1} }
+
+  function todayKey() {
+    var d = new Date();
+    var p = function (n) { return String(n).padStart(2, '0'); };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  }
+  function loadTasks() {
+    try { return JSON.parse(localStorage.getItem(TASK_KEY) || '{}') || {}; } catch (e) { return {}; }
+  }
+
+  function renderSprint() {
+    var goal = localStorage.getItem(GOAL_KEY) || '';
+    var dateInp = $id('sprintDate');
+    if (dateInp && !dateInp.value) dateInp.value = goal;
+    var label = $id('sprintGoalLabel');
+    var daysEl = $id('sprintDays');
+    if (goal) {
+      var target = new Date(goal + 'T23:59:59');
+      var diff = Math.ceil((target - new Date()) / 86400000);
+      if (daysEl) daysEl.textContent = diff > 0 ? diff : (diff === 0 ? '今天' : '已开考');
+      if (label) label.textContent = '目标：' + goal;
+    } else {
+      if (daysEl) daysEl.textContent = '--';
+      if (label) label.textContent = '未设置目标日期';
+    }
+    // 每日任务勾选（按日期重置）
+    var t = loadTasks()[todayKey()] || {};
+    if ($id('sprintTaskWords')) $id('sprintTaskWords').checked = !!t.words;
+    if ($id('sprintTaskRead')) $id('sprintTaskRead').checked = !!t.read;
+    if ($id('sprintTaskListen')) $id('sprintTaskListen').checked = !!t.listen;
+    // 完成率环形（conic-gradient 纯 CSS）
+    var done = [t.words, t.read, t.listen].filter(Boolean).length;
+    var pct = Math.round(done / 3 * 100);
+    var ring = $id('sprintRing');
+    if (ring) ring.style.background = 'conic-gradient(var(--primary) ' + pct + '%, var(--bg) 0)';
+    var pctEl = $id('sprintPct');
+    if (pctEl) pctEl.textContent = pct + '%';
+    var tip = $id('sprintDoneTip');
+    if (tip) tip.textContent = done === 3 ? '今日任务全部完成 🎉' : '';
+  }
+
+  window.sprintSaveDate = function () {
+    var v = ($id('sprintDate') || {}).value || '';
+    if (v) { localStorage.setItem(GOAL_KEY, v); if (window.StudyStats) StudyStats.track('cet4', 'goal_set', { date: v }); }
+    renderSprint();
+  };
+
+  window.sprintSaveTasks = function () {
+    var t = loadTasks();
+    t[todayKey()] = {
+      words: $id('sprintTaskWords') && $id('sprintTaskWords').checked ? 1 : 0,
+      read: $id('sprintTaskRead') && $id('sprintTaskRead').checked ? 1 : 0,
+      listen: $id('sprintTaskListen') && $id('sprintTaskListen').checked ? 1 : 0
+    };
+    localStorage.setItem(TASK_KEY, JSON.stringify(t));
+    if (window.StudyStats) StudyStats.track('cet4', 'task', { task: 'daily' });
+    renderSprint();
+  };
+
+  if (document.readyState !== 'loading') { if (window.StudyStats) StudyStats.render('cetStatsCard', 'cet4'); renderSprint(); }
+  else document.addEventListener('DOMContentLoaded', function () { if (window.StudyStats) StudyStats.render('cetStatsCard', 'cet4'); renderSprint(); });
+})();
+</script>
 </body>
 </html>

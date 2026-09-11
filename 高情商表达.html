@@ -116,6 +116,26 @@
             </div>
           </div>
         </div>
+
+        <!-- 【后续扩展点】T7 增量（2026-09-11）：学习概况统计卡（study-stats.js 渲染） -->
+        <div id="eqStatsCard" class="study-stats-card"></div>
+
+        <!-- 【后续扩展点】T7 增量（P0-11）：情景选择题库扩充 + 答后正误反馈 + AI 点评
+             （独立题卡，不改原页面逻辑；AI 走 /api/ai/chat 后端中转，前端无密钥；断网降级为隐藏 AI 按钮） -->
+        <div class="qtab-card" id="eqQuizCard">
+          <div class="sprint-head"><span>💬 情景选择实战</span>
+            <div class="qtab-tabs" style="margin:0" id="eqQuizTabs"></div>
+          </div>
+          <div class="qtab-q" id="eqQuizQ">加载中…</div>
+          <div class="qtab-opts" id="eqQuizOpts"></div>
+          <div class="qtab-verdict" id="eqQuizVerdict"></div>
+          <div class="qtab-btns">
+            <button class="btn btn-outline" onclick="eqQuizNext()">换一题</button>
+            <button class="btn btn-primary" id="eqAiBtn" onclick="eqAiReview()" style="display:none">🤖 AI 点评我的回答</button>
+          </div>
+          <div class="qtab-ai" id="eqAiBox"><pre id="eqAiText"></pre></div>
+        </div>
+
         <div class="feature-grid">
           <div class="feature-card" onclick="navigateTo('comm-quotes')">
             <div class="feature-icon">✨</div>
@@ -427,5 +447,150 @@
 <script src="assets/mini-comm.js"></script>
 <script src="assets/mini.js"></script>
 <script src="assets/i-partner.js"></script>
+<script src="assets/study-stats.js?v=20260911a"></script>
+<script>
+/* ==================== T7 增量（P0-8/P0-11）：统计卡 + 情景题实战 + AI 点评 ==================== */
+(function () {
+  'use strict';
+  function $id(x) { return document.getElementById(x); }
+  function apiBase() { return (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000')); }
+  function tok() { return localStorage.getItem('study_workbench_token') || ''; }
+
+  // 情景题库（扩充批次，独立于页面既有题库，按分类组织）
+  var EQ_BANK = [
+    { cat: '职场沟通', q: '同事把你方案里的思路说成自己的，当众获得了表扬，你会：', opts: ['当场指出那是我的方案', '会后私下找同事沟通，说明情况并表达感受', '默默忍下，以后不分享想法', '在群里阴阳怪气地提醒'], right: 1, why: '私下沟通既维护了关系，又清晰表达了立场；当众撕破脸和隐忍都不是高情商解。' },
+    { cat: '职场沟通', q: '领导在会上批评了你的报表错误，但错误其实是数据源的问题，你会：', opts: ['立刻打断解释不是我的错', '先认下流程问题，会后带数据源证据再澄清', '怪数据同事没做对', '什么都不说，心里记恨'], right: 1, why: '先稳住会议节奏，会后用证据澄清，既专业又不让领导当众下不来台。' },
+    { cat: '职场沟通', q: '领导临时加了一个"明天要"的急活，而你手头已有更重要任务，你会：', opts: ['直接说做不完', '闷头全接，然后都做砸', '说明手头任务优先级，请领导排个先后或给支援', '偷偷把原来的任务糊弄完'], right: 2, why: '让领导做优先级决策，同时提供选项和困难说明，是最稳妥的向上沟通。' },
+    { cat: '人际交往', q: '朋友连续三次临时放你鸽子，你会：', opts: ['拉黑删除', '见面时冷嘲热讽', '坦诚说出感受，并重新约定更可靠的方式', '装作无所谓继续约'], right: 2, why: '用"我感受"句式表达失望，同时给出建设性方案，比情绪化回应更能修复关系。' },
+    { cat: '人际交往', q: '室友最近情绪低落，半夜还在唉声叹气，你会：', opts: ['假装没听见，给他空间', '直接问"你是不是抑郁了"', '递杯热水，轻轻问一句"想聊聊吗，不想聊也行"', '大谈人生道理开导他'], right: 2, why: '提供低压力的陪伴感，把选择权交给对方，是最舒服的关心方式。' },
+    { cat: '人际交往', q: '朋友向你借了一笔钱，约定时间已过却只字不提，你会：', opts: ['找各种理由暗示', '直接翻脸要债', '自然地提起自己最近需要用钱，给对方台阶并确认还款时间', '当作送给他了'], right: 2, why: '既维护了自己的正当权益，又给对方留了体面，避免关系直接破裂。' },
+    { cat: '亲密关系', q: '伴侣抱怨你最近陪伴太少，你会：', opts: ['反驳"我上班不累吗"', '承诺"下周补偿"然后忘记', '先承认对方的感受，再具体商量一个可执行的共处时间', '送个礼物哄好'], right: 2, why: '先接住情绪再谈解决方案；空口承诺和物质安抚都无法替代真实回应。' },
+    { cat: '亲密关系', q: '和伴侣吵架后对方主动示好，但你觉得问题没解决，你会：', opts: ['趁机翻旧账', '将计就计当没事发生', '接受善意，并约个平静的时间把分歧聊清楚', '冷战到底'], right: 2, why: '先修复关系温度，再解决问题内容；两者分开处理才是成熟的做法。' },
+    { cat: '自我表达', q: '面试官问"你最大的缺点是什么"，你会：', opts: ['说"我太追求完美"', '说"我没有什么缺点"', '说一个真实但可改进、且已有改进计划的缺点', '说和工作无关的私人缺点'], right: 2, why: '真诚+成长型表达：真实缺点加改进行动，比套路化或回避更打动人。' },
+    { cat: '自我表达', q: '会议上需要拒绝同事转给你的额外工作，最得体的说法是：', opts: ['"这不是我的活"', '"我最近忙，你找别人吧"', '"我手头有A和B两项优先任务，如果接这个，需要你帮我排个优先级或对齐时间"', '"我考虑一下"然后不回复'], right: 2, why: '说明现状+提供决策信息，拒绝的是任务而非人，专业且有温度。' },
+    { cat: '职场沟通', q: '下属交付的内容有明显疏漏，你会：', opts: ['当众指出让他长记性', '自己默默改掉', '先肯定已完成的部分，再具体指出疏漏并一起复盘改进方法', '扣绩效警告'], right: 2, why: '正面反馈+具体改进点，既保护积极性又解决问题，是有效的反馈模型。' },
+    { cat: '人际交往', q: '聚会上有人当众开让你难堪的玩笑，你会：', opts: ['当场发怒', '赔笑忍下', '笑着说"这个玩笑对我来说有点过了，换一个吧"', '离席而去'], right: 2, why: '用轻松但明确的语气划出边界，不升级冲突也守住了自己的体面。' }
+  ];
+  var EQ_CATS = ['职场沟通', '人际交往', '亲密关系', '自我表达'];
+  var EQ_STATE = { cat: '全部', idx: 0, answered: false, lastPick: -1, lastRight: false, order: [] };
+
+  function pickQuestion() {
+    var pool = EQ_BANK.map(function (_, i) { return i; })
+      .filter(function (i) { return EQ_STATE.cat === '全部' || EQ_BANK[i].cat === EQ_STATE.cat; })
+      .filter(function (i) { return EQ_STATE.order.indexOf(i) === -1; });
+    if (!pool.length) { EQ_STATE.order = []; pool = EQ_BANK.map(function (_, i) { return i; }).filter(function (i) { return EQ_STATE.cat === '全部' || EQ_BANK[i].cat === EQ_STATE.cat; }); }
+    var pick = pool[Math.floor(Math.random() * pool.length)];
+    EQ_STATE.order.push(pick);
+    EQ_STATE.idx = pick;
+    EQ_STATE.answered = false;
+    EQ_STATE.lastPick = -1;
+    renderQuiz();
+  }
+
+  function renderTabs() {
+    var tabs = ['全部'].concat(EQ_CATS);
+    $id('eqQuizTabs').innerHTML = tabs.map(function (c) {
+      return '<span class="qtab-tab' + (EQ_STATE.cat === c ? ' on' : '') + '" onclick="window.eqQuizCat(\'' + c + '\')">' + c + '</span>';
+    }).join('');
+  }
+
+  function renderQuiz() {
+    var q = EQ_BANK[EQ_STATE.idx];
+    $id('eqQuizQ').textContent = q.q;
+    $id('eqQuizOpts').innerHTML = q.opts.map(function (o, i) {
+      return '<button class="qtab-opt" onclick="window.eqQuizPick(' + i + ')">' + String.fromCharCode(65 + i) + '. ' + o + '</button>';
+    }).join('');
+    var v = $id('eqQuizVerdict');
+    v.className = 'qtab-verdict'; v.textContent = '';
+    $id('eqAiBtn').style.display = 'none';
+    $id('eqAiBox').style.display = 'none';
+  }
+
+  window.eqQuizCat = function (c) { EQ_STATE.cat = c; EQ_STATE.order = []; renderTabs(); pickQuestion(); };
+  window.eqQuizNext = function () { pickQuestion(); };
+
+  window.eqQuizPick = function (i) {
+    if (EQ_STATE.answered) return;
+    var q = EQ_BANK[EQ_STATE.idx];
+    EQ_STATE.answered = true;
+    EQ_STATE.lastPick = i;
+    EQ_STATE.lastRight = i === q.right;
+    var opts = $id('eqQuizOpts').children;
+    for (var k = 0; k < opts.length; k++) {
+      if (k === q.right) opts[k].classList.add('right');
+      else if (k === i) opts[k].classList.add('wrong');
+    }
+    var v = $id('eqQuizVerdict');
+    v.className = 'qtab-verdict ' + (EQ_STATE.lastRight ? 'ok' : 'no');
+    v.textContent = (EQ_STATE.lastRight ? '✅ 回答正确！' : '❌ 再想想～') + ' ' + q.why;
+    if (window.StudyStats) StudyStats.track('eq', 'answer', { right: EQ_STATE.lastRight ? 1 : 0, cat: q.cat });
+    // AI 点评按钮：仅登录且在线时展示（断网隐藏 + 提示）
+    if (tok()) $id('eqAiBtn').style.display = 'inline-block';
+    else if (typeof showToast === 'function') showToast('AI 点评需联网后登录使用');
+  };
+
+  window.eqAiReview = function () {
+    var q = EQ_BANK[EQ_STATE.idx];
+    var chosen = EQ_STATE.lastPick >= 0 ? String.fromCharCode(65 + EQ_STATE.lastPick) + '. ' + q.opts[EQ_STATE.lastPick] : '（未作答）';
+    var btn = $id('eqAiBtn');
+    btn.disabled = true;
+    $id('eqAiBox').style.display = 'block';
+    var out = $id('eqAiText');
+    out.textContent = 'AI 正在点评…';
+    // 取可用模型（密钥在服务端）
+    fetch(apiBase() + '/api/ai/models', { headers: { 'Authorization': 'Bearer ' + tok() } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var providers = d.providers || d.items || d.models || [];
+        var first = providers[0] && (providers[0].id || providers[0].provider);
+        if (!first) throw new Error('服务端未配置模型');
+        return fetch(apiBase() + '/api/ai/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() },
+          body: JSON.stringify({
+            provider: first,
+            messages: [
+              { role: 'system', content: '你是一位温和专业的「情景话术教练」，专注高情商沟通。用户会给你一道情景选择题和自己的选择，请：1)点评用户选择的合理性；2)指出更优思路或肯定其选择；3)给一句可以直接套用的话术。语气亲切，控制在150字内。' },
+              { role: 'user', content: '题目：' + q.q + '\n选项：' + q.opts.map(function (o, i) { return String.fromCharCode(65 + i) + '. ' + o; }).join('  ') + '\n正确答案：' + String.fromCharCode(65 + q.right) + '\n我的选择：' + chosen }
+            ]
+          })
+        }).then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.body ? readStream(r, out) : r.text().then(function (t) { out.textContent = t; });
+        });
+      })
+      .then(function () { if (out.textContent.trim() === '') out.textContent = '（AI 未返回内容）'; })
+      .catch(function (e) {
+        $id('eqAiBox').style.display = 'none';
+        btn.style.display = 'none';
+        if (typeof showToast === 'function') showToast('AI 点评需联网（' + (e.message || '网络错误') + '），答题不受影响');
+      })
+      .finally(function () { btn.disabled = false; });
+  };
+
+  // 流式读取（SSE 式纯文本流）
+  function readStream(resp, out) {
+    var reader = resp.body.getReader();
+    var dec = new TextDecoder();
+    function step() {
+      return reader.read().then(function (r) {
+        if (r.done) return;
+        out.textContent += dec.decode(r.value, { stream: true });
+        return step();
+      });
+    }
+    out.textContent = '';
+    return step();
+  }
+
+  if (document.readyState !== 'loading') boot();
+  else document.addEventListener('DOMContentLoaded', boot);
+  function boot() {
+    if (window.StudyStats) StudyStats.render('eqStatsCard', 'eq');
+    renderTabs();
+    pickQuestion();
+  }
+})();
+</script>
 </body>
 </html>

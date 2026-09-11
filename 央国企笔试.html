@@ -116,6 +116,17 @@
             </div>
           </div>
         </div>
+
+        <!-- 【后续扩展点】T7 增量（2026-09-11）：学习概况统计卡（study-stats.js 渲染） -->
+        <div id="examStatsCard" class="study-stats-card"></div>
+
+        <!-- 【后续扩展点】T7 增量（P0-10）：题型正确率条形组 + 弱项提示（只读行测本地做题记录，不改原逻辑） -->
+        <div class="typeacc-card" id="typeAccCard">
+          <div class="sprint-head"><span>📝 题型正确率</span><span style="font-size:11px;color:var(--text-secondary);font-weight:400">数据来自本机做题记录</span></div>
+          <div id="typeAccRows"></div>
+          <div class="typeacc-weak" id="typeAccWeak" style="display:none"></div>
+        </div>
+
         <div class="feature-grid">
           <div class="feature-card" onclick="navigateTo('exam-center')">
             <div class="feature-icon">🧩</div>
@@ -367,5 +378,58 @@
 
 <script src="assets/qbank.js?v=6"></script>
 <script src="assets/hotnews.js"></script>
+<script src="assets/study-stats.js?v=20260911a"></script>
+<script>
+/* ==================== T7 增量（P0-8/P0-10）：统计卡 + 题型正确率 ==================== */
+(function () {
+  'use strict';
+  function $id(x) { return document.getElementById(x); }
+
+  function renderTypeAcc() {
+    var rows = $id('typeAccRows');
+    if (!rows) return;
+    var acc = {}; // type -> {done, correct}
+    try {
+      var data = JSON.parse(localStorage.getItem('study_workbench_data') || '{}');
+      var records = (data && data.examRecords) || {};
+      var bank = (typeof EXAM_BANK !== 'undefined') ? EXAM_BANK : [];
+      Object.keys(records).forEach(function (qid) {
+        var q = bank.find(function (x) { return String(x.id) === String(qid); });
+        if (!q) return;
+        var t = acc[q.type] || (acc[q.type] = { done: 0, correct: 0 });
+        t.done += 1;
+        if (records[qid] && records[qid].correct) t.correct += 1;
+      });
+    } catch (e) { }
+    var keys = Object.keys(acc);
+    if (!keys.length) {
+      rows.innerHTML = '<div style="font-size:12px;color:var(--text-secondary);padding:6px 0">还没有做题记录，去「行测刷题」开始第一组练习吧</div>';
+      $id('typeAccWeak').style.display = 'none';
+      return;
+    }
+    var pctOf = function (t) { return Math.round(acc[t].correct / acc[t].done * 100); };
+    rows.innerHTML = keys.sort().map(function (t) {
+      var pct = pctOf(t);
+      var color = pct > 80 ? '#22c55e' : pct >= 50 ? '#e6a23c' : '#ef4444';
+      return '<div class="typeacc-row"><span class="name">' + t + '</span>' +
+        '<span class="track"><i style="width:' + pct + '%;background:' + color + '"></i></span>' +
+        '<span class="pct" style="color:' + color + '">' + pct + '%</span></div>';
+    }).join('');
+    // 弱项提示：正确率最低题型置顶
+    var weakest = keys.sort(function (a, b) { return pctOf(a) - pctOf(b); })[0];
+    var weakEl = $id('typeAccWeak');
+    if (weakEl) {
+      var wp = pctOf(weakest);
+      weakEl.style.display = 'flex';
+      weakEl.className = 'typeacc-weak' + (wp >= 80 ? ' typeacc-good' : '');
+      weakEl.innerHTML = '<span style="flex:1">今日建议练：<b>' + weakest + '</b>（正确率 ' + wp + '%）</span>' +
+        '<a href="行测刷题.html" style="color:inherit;font-weight:700;text-decoration:none">去练习 →</a>';
+    }
+  }
+
+  if (document.readyState !== 'loading') { if (window.StudyStats) StudyStats.render('examStatsCard', 'xingce'); renderTypeAcc(); }
+  else document.addEventListener('DOMContentLoaded', function () { if (window.StudyStats) StudyStats.render('examStatsCard', 'xingce'); renderTypeAcc(); });
+})();
+</script>
 </body>
 </html>
