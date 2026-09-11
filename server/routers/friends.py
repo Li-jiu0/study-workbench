@@ -91,17 +91,27 @@ def list_requests(user: User = Depends(get_current_user), db: Session = Depends(
         "incoming": [_row(r, user.id) for r in pending_in],
         "outgoing": [_row(r, user.id) for r in pending_out],
         # 2026-09-12 新增（仅新增字段，incoming/outgoing 原语义不变）：
-        # 未读申请数 = pending incoming 中 created_at 晚于本人已读水位线的条数。
-        # 格式已确认：FriendRequest.created_at 由 now_iso() 写入（见上方 send_request），
-        # 为 19 字符 'YYYY-MM-DD HH:MM:SS'；last_request_seen_at 亦由 now_iso() 写入，
-        # 两者同格式同长度，定长字符串的字典序与时间序一致，故直接比较字符串。
-        # last_request_seen_at 为 NULL（从未查看过）时视为全部未读。
-        "unreadCount": _unread_count(pending_in, user.last_request_seen_at),
+        # 未读申请数走双水位线（BUG-2 同秒边界修复，详见 _unread_count docstring）：
+        # 主路径按 last_seen_request_id（id 单调递增）计数；存量用户回退
+        # last_request_seen_at 时间比较（格式已确认：created_at 由 now_iso() 写入，
+        # 19 字符 'YYYY-MM-DD HH:MM:SS'，与水位线同格式，字典序=时间序）。
+        "unreadCount": _unread_count(pending_in, user.last_request_seen_at,
+                                     user.last_seen_request_id),
     }
 
 
-def _unread_count(pending_in: list[FriendRequest], seen_at: str | None) -> int:
-    """计算未读申请数。seen_at 为 NULL → 全部 pending incoming 都算未读。"""
+def _unread_count(pending_in: list[FriendRequest], seen_at: str | None,
+                  last_seen_request_id: int | None) -> int:
+    """计算未读申请数（双水位线，BUG-2 同秒边界修复）。
+
+    主路径：last_seen_request_id 非 NULL（新版 seen 写入过）→ 按申请 id 比较。
+    id 单调递增，天然无「同一秒内新申请被当已读」的问题，这是根治。
+    回退路径：last_seen_request_id 为 NULL（存量用户，列刚加、还没重新 seen 过）
+    → 沿用时间水位线 last_request_seen_at 比较，行为与旧版完全一致：
+    存量用户的已读状态不丢、角标不复活。
+    """
+    if last_seen_request_id is not None:
+        return sum(1 for r in pending_in if r.id > last_seen_request_id)
     if seen_at is None:
         return len(pending_in)
     return sum(1 for r in pending_in if (r.created_at or "") > seen_at)
@@ -111,13 +121,21 @@ def _unread_count(pending_in: list[FriendRequest], seen_at: str | None) -> int:
 def mark_requests_seen(user: User = Depends(get_current_user),
                        db: Session = Depends(get_db),
                        _rl: None = Depends(rate_limit("default"))):
-    """标记「已查看全部好友申请」：把当前用户的 last_request_seen_at 写为当前时间。
+    """标记「已查看全部好友申请」：写当前用户的已读水位线。
 
     配合 GET /api/friends/requests 的 unreadCount 做互动页申请角标：
     前端用户打开申请列表后调本接口，角标即清零；之后新到的申请重新计数。
-    时间统一用 now_iso()（19 字符 'YYYY-MM-DD HH:MM:SS'），与
-    friend_requests.created_at 同格式，保证字符串比较正确。
+
+    双水位线（BUG-2 同秒边界修复）：
+    - last_seen_request_id（主）：写当前 pending incoming 的最大申请 id（无 pending
+      时写 0）。id 单调递增，计数零歧义，根治「同一秒内新申请被当已读」。
+    - last_request_seen_at（辅）：继续写当前时间（now_iso()，19 字符
+      'YYYY-MM-DD HH:MM:SS'）。存量用户回退路径仍依赖它，前端无需感知。
     """
+    max_pending = db.query(FriendRequest.id).filter(
+        FriendRequest.to_user_id == user.id, FriendRequest.status == "pending"
+    ).order_by(FriendRequest.id.desc()).first()
+    user.last_seen_request_id = max_pending[0] if max_pending else 0
     user.last_request_seen_at = now_iso()
     db.commit()
     return {"ok": True, "unreadCount": 0}

@@ -16,6 +16,13 @@
      - POST seen 之后 GET → unreadCount == 0 且 incoming 数组内容不变（只加字段不改语义）
      - seen 后新到一条申请 → unreadCount == 1
      - 无任何申请的新账号 → unreadCount == 0 且 incoming == []
+  8) 已读水位线同秒边界（BUG-2 修复：双水位线 id 主路径 + 时间回退）：
+     - seen 后同一秒内新到申请 → unreadCount == 1（修前必 0，id 主路径根治）
+     - 连续两次 seen → 幂等，unreadCount 稳定为 0
+     - 存量回退：SQL 把 last_seen_request_id 置 NULL（保留时间水位线）→ 走时间路径计数正确
+     - 回退后首次 seen → last_seen_request_id 非 NULL 且 == 当时最大 pending id
+     - 无 pending 时 seen → last_seen_request_id 写 0（非 NULL）
+     （SQL 用例需要能定位隔离库：设 SW_DB 指向副本 smoke_data.db，否则这几条 SKIP）
 
 依赖：纯 stdlib + httpx（假上游用例额外用 fastapi.testclient，仅在后端依赖齐全时启用）。
 
@@ -30,6 +37,7 @@
 退出码：0 全过；1 有 FAIL；2 前置不满足（服务不可达 / 缺 httpx）。
 """
 import os
+import sqlite3
 import sys
 import time
 import uuid
@@ -329,6 +337,115 @@ def main() -> int:
         body = r.json() if r.status_code == 200 else {}
         ck("⑥无申请账号 unreadCount == 0", body.get("unreadCount") == 0, body.get("unreadCount"))
         ck("⑥无申请账号 incoming == []", body.get("incoming") == [], body.get("incoming"))
+
+    # ---------- 8. 已读水位线同秒边界（BUG-2：双水位线 id 主路径 + 时间回退） ----------
+    section("[8] BUG-2 同秒边界：last_seen_request_id 主水位线 + 存量回退")
+    # SQL 直改隔离库仅用于「存量回退」用例：SW_DB 未设且默认路径找不到库则这几条 SKIP
+    db_path = os.environ.get("SW_DB") or os.path.join(SERVER_DIR, "smoke_data.db")
+    db_ok = os.path.exists(db_path)
+    with _local_client() as c:
+        # 准备：u6（收件人）/ u7（发件人），u7 给 u6 发申请#1
+        tok6 = register(c, suffix, "smu", "冒烟六号", old_pw)
+        tok7 = register(c, suffix, "smv", "冒烟七号", old_pw)
+        ck("⑧u6/u7 注册均取得 token", bool(tok6) and bool(tok7),
+           "tok6=%s tok7=%s" % (bool(tok6), bool(tok7)))
+        me6 = c.get("/api/auth/me", headers=auth(tok6))
+        uid6 = (me6.json() if me6.status_code == 200 else {}).get("id", 0)
+        ck("⑧经 /api/auth/me 取得 uid6", isinstance(uid6, int) and uid6 > 0, uid6)
+        r = c.post("/api/friends/requests", json={"toUserId": uid6}, headers=auth(tok7))
+        ck("⑧u7 向 u6 发申请#1 → 200", r.status_code == 200, r.text[:80])
+        rid1 = (r.json().get("requestId") if r.status_code == 200 else 0) or 0
+
+        # ① 同秒边界（修前必 FAIL、修后必 PASS）：seen → decline 掉#1（腾出发送资格）
+        #    →【不 sleep】同秒内 u7 再发申请#2 → unreadCount == 1（id 主水位线）。
+        #    注：即使三连调用偶发跨秒，id 路径（id > 水位线）也能正确计数，断言天然稳健。
+        r = c.post("/api/friends/requests/seen", headers=auth(tok6))
+        ck("①u6 seen → 200", r.status_code == 200, r.status_code)
+        r = c.post("/api/friends/requests/%d/decline" % rid1, headers=auth(tok6))
+        ck("①u6 decline #1 → 200（腾出发送资格）", r.status_code == 200, r.text[:80])
+        r = c.post("/api/friends/requests", json={"toUserId": uid6}, headers=auth(tok7))
+        ck("①u7 同秒内再发申请#2 → 200", r.status_code == 200, r.text[:80])
+        rid2 = (r.json().get("requestId") if r.status_code == 200 else 0) or 0
+        r = c.get("/api/friends/requests", headers=auth(tok6))
+        body = r.json() if r.status_code == 200 else {}
+        ck("①同秒新申请计入未读：unreadCount == 1（id 主水位线根治）",
+           body.get("unreadCount") == 1, body.get("unreadCount"))
+
+        # ② 连调两次 seen → 幂等
+        r = c.post("/api/friends/requests/seen", headers=auth(tok6))
+        ck("②第一次 seen → 200", r.status_code == 200, r.status_code)
+        r = c.post("/api/friends/requests/seen", headers=auth(tok6))
+        ck("②第二次 seen → 200", r.status_code == 200, r.status_code)
+        r = c.get("/api/friends/requests", headers=auth(tok6))
+        body = r.json() if r.status_code == 200 else {}
+        ck("②幂等：unreadCount 稳定为 0", body.get("unreadCount") == 0, body.get("unreadCount"))
+
+        # ③ 存量回退：u6 先 decline #2 腾出发送资格 → SQL 把 u6 的 last_seen_request_id
+        #    置 NULL（保留时间水位线）→ sleep 1.2s 后 u7 发申请#3 → 走时间路径计数正确
+        #    （此刻 pending 只有 #3，且 created_at 严格晚于时间水位线 → 期望 == 1）。
+        if not db_ok:
+            skip("③SQL 回退用例（置 NULL → 时间路径）", "定位不到隔离库（SW_DB 未设/文件不存在）")
+        else:
+            r = c.post("/api/friends/requests/%d/decline" % rid2, headers=auth(tok6))
+            ck("③u6 decline #2 → 200（腾出发送资格）", r.status_code == 200, r.text[:80])
+            conn = sqlite3.connect(db_path)
+            try:
+                conn.execute("UPDATE users SET last_seen_request_id = NULL WHERE id = ?", (uid6,))
+                conn.commit()
+            finally:
+                conn.close()
+            time.sleep(1.2)
+            r = c.post("/api/friends/requests", json={"toUserId": uid6}, headers=auth(tok7))
+            ck("③u7 发申请#3（间隔 >1s）→ 200", r.status_code == 200, r.text[:80])
+            r = c.get("/api/friends/requests", headers=auth(tok6))
+            body = r.json() if r.status_code == 200 else {}
+            ck("③存量回退走时间路径：unreadCount == 1",
+               body.get("unreadCount") == 1, body.get("unreadCount"))
+
+            # ④ 回退后首次 seen → id 主水位线被正确写入（非 NULL 且 == 当时最大 pending id）
+            conn = sqlite3.connect(db_path)
+            try:
+                row = conn.execute(
+                    "SELECT MAX(id) FROM friend_requests WHERE to_user_id = ? AND status = 'pending'",
+                    (uid6,)).fetchone()
+                max_pending_id = row[0] if row and row[0] is not None else 0
+            finally:
+                conn.close()
+            r = c.post("/api/friends/requests/seen", headers=auth(tok6))
+            ck("④回退后首次 seen → 200", r.status_code == 200, r.status_code)
+            conn = sqlite3.connect(db_path)
+            try:
+                row = conn.execute(
+                    "SELECT last_seen_request_id FROM users WHERE id = ?", (uid6,)).fetchone()
+                watermark = row[0] if row else None
+            finally:
+                conn.close()
+            ck("④last_seen_request_id 非 NULL 且 == 当时最大 pending id",
+               watermark is not None and watermark == max_pending_id,
+               "watermark=%s max_pending=%s" % (watermark, max_pending_id))
+            r = c.get("/api/friends/requests", headers=auth(tok6))
+            body = r.json() if r.status_code == 200 else {}
+            ck("④回退→主路径切换后 unreadCount == 0", body.get("unreadCount") == 0,
+               body.get("unreadCount"))
+
+        # ⑤ 无 pending 时 seen → 水位线写 0（而不是 NULL/保持旧值）
+        if not db_ok:
+            skip("⑤无 pending 时 seen → 水位线写 0", "定位不到隔离库（SW_DB 未设/文件不存在）")
+        else:
+            me5 = c.get("/api/auth/me", headers=auth(tok5))
+            uid5 = (me5.json() if me5.status_code == 200 else {}).get("id", 0)
+            ck("⑤经 /api/auth/me 取得 uid5", isinstance(uid5, int) and uid5 > 0, uid5)
+            r = c.post("/api/friends/requests/seen", headers=auth(tok5))
+            ck("⑤u5（无任何申请）seen → 200", r.status_code == 200, r.status_code)
+            conn = sqlite3.connect(db_path)
+            try:
+                row = conn.execute(
+                    "SELECT last_seen_request_id FROM users WHERE id = ?", (uid5,)).fetchone()
+                watermark5 = row[0] if row else None
+            finally:
+                conn.close()
+            ck("⑤无 pending 时 last_seen_request_id == 0（非 NULL）",
+               watermark5 == 0, "watermark=%s" % (watermark5,))
 
     # ---------- 汇总 ----------
     total = PASS + FAIL

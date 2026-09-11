@@ -45,6 +45,10 @@ class User(Base):
     # 写入用 now_iso()（19 字符 'YYYY-MM-DD HH:MM:SS'），与 friend_requests.created_at
     # 同格式同长度，可做定长字符串比较；NULL = 从未查看过。
     last_request_seen_at = Column(String(19), nullable=True)
+    # 已读「主」水位线：seen 时记录当时 pending incoming 的最大申请 id（0 = seen 时无
+    # pending）。id 单调递增，用它计数可根治秒级时间戳「同一秒内新申请被当已读」的
+    # 同秒边界（BUG-2）。NULL = 存量用户（列刚加、还没重新 seen 过）→ 回退时间路径。
+    last_seen_request_id = Column(Integer, nullable=True)
     # 令牌版本号（A6/B3）：本批只加列不启用鉴权校验（避免全站鉴权风险），
     # 「退出所有设备」的签发/校验留到批次二 B3 落地。
     token_version = Column(Integer, nullable=False, default=0)
@@ -368,6 +372,8 @@ def _upgrade_legacy_schema() -> None:
                 conn.execute(text("ALTER TABLE users ADD COLUMN last_seen_at TEXT"))
             if "last_request_seen_at" not in cols:
                 conn.execute(text("ALTER TABLE users ADD COLUMN last_request_seen_at TEXT"))
+            if "last_seen_request_id" not in cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN last_seen_request_id INTEGER"))
     # 留言板旧表补列（无损）
     if "board_messages" in names:
         bcols = _table_columns("board_messages")
