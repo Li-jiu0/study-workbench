@@ -14,13 +14,42 @@ from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from config import ACCESS_TOKEN_MINUTES, JWT_SECRET, REFRESH_TOKEN_DAYS
-from database import get_db
+from database import get_db, now_iso
 from database import User  # noqa: F401
 
 _ITERATIONS = 120_000
 ALGORITHM = "HS256"
 TYPE_ACCESS = "access"
 TYPE_REFRESH = "refresh"
+
+# ---------- 在线状态：last_seen_at 节流刷新（2026-09-11 增量） ----------
+# 每次鉴权请求顺带刷新 last_seen_at，但距上次落库 >60s 才真正 UPDATE，避免每请求写库。
+_LAST_SEEN_THROTTLE_SECONDS = 60
+_last_seen_cache: dict[int, float] = {}  # user_id -> epoch 秒
+
+
+def _touch_last_seen(user) -> None:
+    """节流刷新用户 last_seen_at（失败静默，不影响正常请求）。
+
+    用独立会话落库：请求级 session 由路由自行提交，这里不等它。
+    """
+    now = time.time()
+    last = _last_seen_cache.get(user.id, 0)
+    if now - last <= _LAST_SEEN_THROTTLE_SECONDS:
+        return
+    _last_seen_cache[user.id] = now
+    try:
+        user.last_seen_at = now_iso()  # 同步内存对象，本请求内其他读取可见
+        from database import SessionLocal
+        db = SessionLocal()
+        try:
+            db.query(User).filter(User.id == user.id).update(
+                {"last_seen_at": user.last_seen_at})
+            db.commit()
+        finally:
+            db.close()
+    except Exception:
+        pass
 
 
 # ---------- 密码 ----------
@@ -93,6 +122,7 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=401, detail="账号不存在")
+    _touch_last_seen(user)  # 在线状态刷新（节流，见 _touch_last_seen）
     return user
 
 

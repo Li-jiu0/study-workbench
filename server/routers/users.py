@@ -1,12 +1,12 @@
-"""用户：个人资料修改 / 头像上传（存服务器文件）/ 公开主页。"""
+"""用户：个人资料修改 / 头像上传（存服务器文件）/ 公开主页 / 在线状态。"""
 import time
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy.orm import Session
 
 from config import AVATAR_DIR
-from database import User, get_db, now_str
+from database import User, get_db, is_friend, now_iso
 from filecheck import ext_for
 from schemas import ProfileIn, note_card, user_brief
 from security import get_current_user
@@ -14,6 +14,22 @@ from security import get_current_user
 router = APIRouter(prefix="/api/users", tags=["users"])
 
 _MAX_AVATAR = 8 * 1024 * 1024
+# 在线判定阈值：5 分钟内有任意鉴权请求即视为在线（决策见架构文档 §9-3）
+ONLINE_THRESHOLD_SECONDS = 5 * 60
+
+
+def _presence_fields(target: User) -> dict:
+    """在线状态白名单增量：lastSeenAt + online（非敏感，不碰隐私字段）。"""
+    last = target.last_seen_at or ""
+    online = False
+    if last:
+        try:
+            import datetime
+            t = datetime.datetime.strptime(last, "%Y-%m-%d %H:%M:%S")
+            online = (datetime.datetime.now() - t).total_seconds() <= ONLINE_THRESHOLD_SECONDS
+        except ValueError:
+            online = False
+    return {"lastSeenAt": last, "online": online}
 
 
 @router.put("/me")
@@ -81,6 +97,29 @@ def reset_avatar(user: User = Depends(get_current_user), db: Session = Depends(g
     return {"avatarUrl": None}
 
 
+@router.get("/presence")
+def presence(ids: str = Query(default=""), user: User = Depends(get_current_user),
+             db: Session = Depends(get_db)):
+    """批量在线状态：仅返回 {id, lastSeenAt, online}，非敏感（无任何隐私字段）。"""
+    out = []
+    seen: set[int] = set()
+    for part in ids.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        try:
+            uid = int(part)
+        except ValueError:
+            continue
+        if uid in seen or uid <= 0:
+            continue
+        seen.add(uid)
+        t = db.get(User, uid)
+        if t:
+            out.append({"id": t.id, **_presence_fields(t)})
+    return {"items": out}
+
+
 @router.get("/{user_id}")
 def public_profile(user_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """对外公开主页：只返回对方公开（published + public）笔记，草稿/私密/归档一律不可见。"""
@@ -107,6 +146,10 @@ def public_profile(user_id: int, user: User = Depends(get_current_user), db: Ses
         "tags": target.tags or "",   # 备考方向标签（主动填写，公开展示）
         "createdAt": target.created_at,
         "isMe": target.id == user.id,
+        # 好友关系增量（P0-5）：已好友时前端隐藏「添加好友」、显示「发消息」
+        "isFriend": target.id != user.id and is_friend(db, user.id, target.id),
+        # 在线状态增量（P0-6）：白名单字段，不含隐私信息
+        **_presence_fields(target),
         "stats": {  # 服务端可核算的创作数据（学习时长等本机数据不对外）
             "published": len(notes),
             "likes": sum(n.likes_count for n in notes),

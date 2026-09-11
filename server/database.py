@@ -2,7 +2,7 @@
 from datetime import datetime
 
 from sqlalchemy import (Boolean, Column, ForeignKey, Integer, String, Text,
-                        UniqueConstraint, create_engine, text)
+                        UniqueConstraint, create_engine, or_, text)
 from sqlalchemy.orm import DeclarativeBase, Session, relationship, sessionmaker
 
 from config import DB_URL
@@ -40,6 +40,7 @@ class User(Base):
     goal = Column(String(120), nullable=False, default="")         # 学习目标（公开主页展示）
     tags = Column(String(300), nullable=False, default="")         # 备考方向标签，逗号分隔（公开主页展示）
     avatar = Column(String(256), nullable=True)
+    last_seen_at = Column(String(19), nullable=True)  # 最近一次鉴权请求时间（在线状态展示）
     created_at = Column(String(16), nullable=False)
 
     notes = relationship("Note", back_populates="author", cascade="all, delete-orphan")
@@ -148,11 +149,13 @@ class UserBlock(Base):
 
 
 class Message(Base):
-    """私聊消息。kind: text / image。content: 文本内容或图片 URL。read_at NULL=对方未读。"""
+    """聊天消息。kind: text / image。content: 文本内容或图片 URL。read_at NULL=对方未读。
+    group_id NULL=私聊（按 sender/receiver 查询）；group_id 非空=群消息（receiver_id 恒为 0）。"""
     __tablename__ = "messages"
     id = Column(Integer, primary_key=True)
     sender_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     receiver_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    group_id = Column(Integer, ForeignKey("chat_groups.id", ondelete="CASCADE"), nullable=True)
     kind = Column(String(16), nullable=False, default="text")
     content = Column(Text, nullable=False, default="")
     read_at = Column(String(19), nullable=True)
@@ -160,6 +163,84 @@ class Message(Base):
 
     sender = relationship("User", foreign_keys=[sender_id])
     receiver = relationship("User", foreign_keys=[receiver_id])
+
+
+class ChatGroup(Base):
+    """群聊（P0-3）。name ≤20 字；owner 为创建者。"""
+    __tablename__ = "chat_groups"
+    id = Column(Integer, primary_key=True)
+    name = Column(String(64), nullable=False)
+    owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    avatar = Column(String(256), nullable=True)  # 群头像 URL，P0 默认 NULL（前端九宫格拼图占位）
+    created_at = Column(String(19), nullable=False)
+
+    owner = relationship("User", foreign_keys=[owner_id])
+
+
+class ChatGroupMember(Base):
+    """群成员。role: owner / member。last_read_msg_id 为群已读游标（每人独立推进）。"""
+    __tablename__ = "chat_group_members"
+    __table_args__ = (UniqueConstraint("group_id", "user_id", name="uq_group_member"),)
+    id = Column(Integer, primary_key=True)
+    group_id = Column(Integer, ForeignKey("chat_groups.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    role = Column(String(16), nullable=False, default="member")
+    last_read_msg_id = Column(Integer, nullable=False, default=0)
+    joined_at = Column(String(19), nullable=False)
+
+
+class Moment(Base):
+    """个人动态（朋友圈式，P0-4）。仅好友可见；images 为 JSON 数组字符串（≤9 个 /uploads/images/ URL）。"""
+    __tablename__ = "moments"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    content = Column(Text, nullable=False, default="")
+    images = Column(Text, nullable=False, default="[]")
+    created_at = Column(String(19), nullable=False)
+
+
+class MomentLike(Base):
+    """动态点赞（一人一条最多一次）。"""
+    __tablename__ = "moment_likes"
+    __table_args__ = (UniqueConstraint("moment_id", "user_id", name="uq_moment_like"),)
+    id = Column(Integer, primary_key=True)
+    moment_id = Column(Integer, ForeignKey("moments.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(String(19), nullable=False)
+
+
+class MomentComment(Base):
+    """动态评论。≤500 字；作者可删他人对自己动态的评论。"""
+    __tablename__ = "moment_comments"
+    id = Column(Integer, primary_key=True)
+    moment_id = Column(Integer, ForeignKey("moments.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    content = Column(String(500), nullable=False)
+    created_at = Column(String(19), nullable=False)
+
+
+class Feedback(Base):
+    """帮助与反馈（P0-7）。user_id 匿名时仍落库（防滥用），对外不回显昵称。
+    type: bug / suggest / content / other；status: pending / replied。"""
+    __tablename__ = "feedbacks"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    type = Column(String(16), nullable=False, default="other")
+    content = Column(Text, nullable=False)
+    screenshot = Column(String(256), nullable=True)
+    status = Column(String(16), nullable=False, default="pending")
+    created_at = Column(String(19), nullable=False)
+
+
+class StudyLog(Base):
+    """学习行为日志（P0-8 统计底座）。module: cet4/xingce/eq/etiquette/ppt/tools。"""
+    __tablename__ = "study_logs"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    module = Column(String(16), nullable=False)
+    event = Column(String(32), nullable=False)
+    payload = Column(Text, nullable=False, default="{}")  # JSON（题型、正确数等）
+    created_at = Column(String(19), nullable=False)
 
 
 class BoardMessage(Base):
@@ -226,6 +307,13 @@ def is_friend(db: Session, a: int, b: int) -> bool:
     return db.query(Friend).filter(Friend.user_a == x, Friend.user_b == y).first() is not None
 
 
+def friend_ids_of(db: Session, uid: int) -> set[int]:
+    """一次查出 uid 的全部好友 id（不含自己）。动态可见性、建群校验共用。"""
+    rows = db.query(Friend.user_a, Friend.user_b).filter(
+        or_(Friend.user_a == uid, Friend.user_b == uid)).all()
+    return {b if a == uid else a for a, b in rows}
+
+
 def _table_names() -> set[str]:
     with engine.connect() as conn:
         rows = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table'")).fetchall()
@@ -262,6 +350,8 @@ def _upgrade_legacy_schema() -> None:
                 conn.execute(text("ALTER TABLE users ADD COLUMN goal TEXT DEFAULT ''"))
             if "tags" not in cols:
                 conn.execute(text("ALTER TABLE users ADD COLUMN tags TEXT DEFAULT ''"))
+            if "last_seen_at" not in cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN last_seen_at TEXT"))
     # 留言板旧表补列（无损）
     if "board_messages" in names:
         bcols = _table_columns("board_messages")
@@ -270,6 +360,10 @@ def _upgrade_legacy_schema() -> None:
                 conn.execute(text("ALTER TABLE board_messages ADD COLUMN likes_count INTEGER DEFAULT 0"))
             if "replies_count" not in bcols:
                 conn.execute(text("ALTER TABLE board_messages ADD COLUMN replies_count INTEGER DEFAULT 0"))
+    # 增量升级（2026-09-11）：messages 补群聊归属列；新表（chat_groups 等 7 张）由 create_all 自动建，无需 ALTER
+    if "messages" in names and "group_id" not in _table_columns("messages"):
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE messages ADD COLUMN group_id INTEGER REFERENCES chat_groups(id) ON DELETE CASCADE"))
 
 
 def init_db() -> None:
