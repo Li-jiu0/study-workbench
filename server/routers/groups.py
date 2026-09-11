@@ -5,7 +5,7 @@
 ws 仅作在线加速：groupMsg / groupInvited 通过 wsmanager 点对点投递，离线静默。
 """
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func
+from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 
 from database import (ChatGroup, ChatGroupMember, Message, User,
