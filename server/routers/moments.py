@@ -1,0 +1,233 @@
+"""个人动态路由（P0-4，2026-09-11 增量）。
+
+可见性：仅好友可见（feed = user_id IN (me ∪ 我的好友集合)，一次 IN 查询避免 N+1）。
+隐私红线：所有响应的作者信息只含 user_brief 白名单（id/nickname/avatarUrl），
+绝不返回 phone/gender/birthday。
+通知：复用 notifications 表，type 扩展 moment_like / moment_comment，note_id 置 NULL。
+"""
+import json
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from database import (Moment, MomentComment, MomentLike, Notification, User,
+                      friend_ids_of, get_db, is_friend, now_str)
+from schemas import MomentCommentIn, MomentIn, user_brief
+from security import get_current_user
+
+router = APIRouter(prefix="/api/moments", tags=["moments"])
+
+_IMAGE_PREFIX = "/uploads/images/"
+
+
+def _parse_images(raw: str) -> list[str]:
+    try:
+        v = json.loads(raw or "[]")
+        return v if isinstance(v, list) else []
+    except Exception:
+        return []
+
+
+def _can_view(db: Session, viewer_id: int, author_id: int) -> bool:
+    return viewer_id == author_id or is_friend(db, viewer_id, author_id)
+
+
+def moment_dict(m: Moment, author: User, me_id: int, db: Session) -> dict:
+    """动态序列化：带点赞昵称串 / 评论列表 / likedByMe / canDelete（全部公开字段）。"""
+    likes = (
+        db.query(MomentLike, User.nickname)
+        .join(User, MomentLike.user_id == User.id)
+        .filter(MomentLike.moment_id == m.id)
+        .order_by(MomentLike.id)
+        .all()
+    )
+    comments = (
+        db.query(MomentComment, User.nickname, User.avatar)
+        .join(User, MomentComment.user_id == User.id)
+        .filter(MomentComment.moment_id == m.id)
+        .order_by(MomentComment.id)
+        .all()
+    )
+    return {
+        "id": m.id,
+        "author": user_brief(author),
+        "content": m.content,
+        "images": _parse_images(m.images),
+        "createdAt": m.created_at,
+        "likedByMe": any(l.user_id == me_id for l, _ in likes),
+        "likes": [nickname for _, nickname in likes],
+        "comments": [
+            {
+                "id": c.id,
+                "userId": c.user_id,
+                "nickname": nickname,
+                "avatarUrl": avatar,
+                "text": c.content,
+                "time": c.created_at,
+                "canDelete": c.user_id == me_id or m.user_id == me_id,
+            }
+            for c, nickname, avatar in comments
+        ],
+        "canDelete": m.user_id == me_id,
+    }
+
+
+def _visible_moment(db: Session, mid: int, me_id: int) -> Moment:
+    """仅作者本人或其好友可见，否则 404/403。"""
+    m = db.get(Moment, mid)
+    if not m:
+        raise HTTPException(404, "动态不存在或已删除")
+    if not _can_view(db, me_id, m.user_id):
+        raise HTTPException(403, "仅好友可见该动态")
+    return m
+
+
+def _notify_moment(db: Session, author_id: int, actor: User, ntype: str) -> None:
+    """给动态作者写通知（自己操作自己动态不提醒）。note_id 置 NULL。"""
+    if author_id == actor.id:
+        return
+    db.add(Notification(user_id=author_id, actor_id=actor.id, type=ntype,
+                        note_id=None, is_read=False, created_at=now_str()))
+
+
+@router.post("")
+def publish(body: MomentIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """发布动态：文字 + ≤9 张图（URL 必须以 /uploads/images/ 开头，复用 uploads 上传）。"""
+    content = body.content.strip()
+    if not content and not body.images:
+        raise HTTPException(400, "内容不能为空")
+    images = [u for u in body.images if isinstance(u, str) and u.startswith(_IMAGE_PREFIX)][:9]
+    if body.images and not images:
+        raise HTTPException(400, "图片地址不合法")
+    m = Moment(user_id=user.id, content=content, images=json.dumps(images, ensure_ascii=False),
+               created_at=now_str())
+    db.add(m)
+    db.commit()
+    return {"id": m.id}
+
+
+@router.get("/feed")
+def feed(before_id: int = 0, limit: int = 20,
+         user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """好友动态流（含自己的）：id 游标向前翻页，时间倒序。"""
+    limit = min(max(limit, 1), 50)
+    ids = friend_ids_of(db, user.id) | {user.id}
+    cond = Moment.user_id.in_(ids)
+    if before_id:
+        cond = cond & (Moment.id < before_id)
+    rows = db.query(Moment, User).join(User, Moment.user_id == User.id).filter(
+        cond).order_by(Moment.id.desc()).limit(limit + 1).all()
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+    return {
+        "items": [moment_dict(m, u, user.id, db) for m, u in rows],
+        "hasMore": has_more,
+        "nextBefore": rows[-1][0].id if has_more and rows else 0,
+    }
+
+
+@router.get("/user/{uid}")
+def user_moments(uid: int, before_id: int = 0, limit: int = 20,
+                 user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """某人动态列表（个人中心「我的动态」用）：本人或其好友可见。"""
+    target = db.get(User, uid)
+    if not target:
+        raise HTTPException(404, "用户不存在")
+    if not _can_view(db, user.id, uid):
+        raise HTTPException(403, "仅好友可见该动态")
+    limit = min(max(limit, 1), 50)
+    cond = Moment.user_id == uid
+    if before_id:
+        cond = cond & (Moment.id < before_id)
+    rows = db.query(Moment).filter(cond).order_by(Moment.id.desc()).limit(limit + 1).all()
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+    return {
+        "items": [moment_dict(m, target, user.id, db) for m in rows],
+        "hasMore": has_more,
+        "nextBefore": rows[-1].id if has_more and rows else 0,
+    }
+
+
+@router.post("/{mid}/like")
+def toggle_like(mid: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """点赞切换；点赞时通知作者 type='moment_like'。"""
+    m = _visible_moment(db, mid, user.id)
+    exist = db.query(MomentLike).filter(
+        MomentLike.moment_id == m.id, MomentLike.user_id == user.id).first()
+    if exist:
+        db.delete(exist)
+        liked = False
+    else:
+        db.add(MomentLike(moment_id=m.id, user_id=user.id, created_at=now_str()))
+        liked = True
+        _notify_moment(db, m.user_id, user, "moment_like")
+    db.commit()
+    count = db.query(MomentLike).filter(MomentLike.moment_id == m.id).count()
+    return {"liked": liked, "likesCount": count}
+
+
+@router.get("/{mid}/comments")
+def list_comments(mid: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """动态评论列表（旧→新）。"""
+    m = _visible_moment(db, mid, user.id)
+    rows = (
+        db.query(MomentComment, User.nickname, User.avatar)
+        .join(User, MomentComment.user_id == User.id)
+        .filter(MomentComment.moment_id == m.id)
+        .order_by(MomentComment.id)
+        .all()
+    )
+    return {"items": [
+        {"id": c.id, "userId": c.user_id, "nickname": nickname, "avatarUrl": avatar,
+         "text": c.content, "time": c.created_at,
+         "canDelete": c.user_id == user.id or m.user_id == user.id}
+        for c, nickname, avatar in rows
+    ]}
+
+
+@router.post("/{mid}/comments")
+def add_comment(mid: int, body: MomentCommentIn,
+                user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """发表评论（≤500 字）；通知作者 type='moment_comment'。"""
+    m = _visible_moment(db, mid, user.id)
+    content = body.content.strip()
+    if not content:
+        raise HTTPException(400, "评论不能为空")
+    c = MomentComment(moment_id=m.id, user_id=user.id, content=content, created_at=now_str())
+    db.add(c)
+    _notify_moment(db, m.user_id, user, "moment_comment")
+    db.commit()
+    return {"id": c.id, "userId": user.id, "nickname": user.nickname,
+            "avatarUrl": user.avatar, "text": c.content, "time": c.created_at,
+            "canDelete": True}
+
+
+@router.delete("/comments/{cid}")
+def delete_comment(cid: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """删评论：评论本人 或 动态作者（PRD 明确作者可删他人评论）。"""
+    c = db.get(MomentComment, cid)
+    if not c:
+        raise HTTPException(404, "评论不存在")
+    m = db.get(Moment, c.moment_id)
+    if not m or (c.user_id != user.id and m.user_id != user.id):
+        raise HTTPException(403, "只能删除自己的评论或自己动态下的评论")
+    db.delete(c)
+    db.commit()
+    return {"ok": True}
+
+
+@router.delete("/{mid}")
+def delete_moment(mid: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """删动态（仅作者本人）：级联删点赞/评论（DB FK CASCADE 由显式删除兜底）。"""
+    m = db.get(Moment, mid)
+    if not m:
+        raise HTTPException(404, "动态不存在或已删除")
+    if m.user_id != user.id:
+        raise HTTPException(403, "只能删除自己的动态")
+    # 显式清理子表（SQLite 默认不启用外键级联，避免孤儿行）
+    db.query(MomentLike).filter(MomentLike.moment_id == m.id).delete()
+    db.query(MomentComment).filter(MomentComment.moment_id == m.id).delete()
+    db.delete(m)
+    db.commit()
+    return {"ok": True}
