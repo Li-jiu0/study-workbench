@@ -114,7 +114,7 @@ function writeLocalProfile(account, nickname) {
 /* ---------- 模式探测：先探测后端，再决定自动登录策略 ---------- */
 function probeBackend() {
   var ctrl = ('AbortController' in window) ? new AbortController() : null;
-  var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 3000) : null;
+  var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 10000) : null;
   return fetch(API_BASE + '/api/health', { signal: ctrl ? ctrl.signal : undefined })
     .then(function (r) { return r.ok; })
     .catch(function () { return false; })
@@ -198,7 +198,7 @@ function submitLogin() {
   var btn = document.getElementById('loginSubmitBtn');
   btn.disabled = true;
 
-  /* —— 离线模式：纯本地 —— */
+  /* —— 离线模式：先尝试本地，找不到再尝试在线 —— */
   if (!ONLINE) {
     var ok;
     if (loginMode === 'register') {
@@ -207,6 +207,11 @@ function submitLogin() {
       ok = localRegister(account, pass, document.getElementById('loginNickname').value.trim());
     } else {
       ok = localLogin(account, pass);
+      // 本地找不到账户，自动尝试在线登录
+      if (!ok && !loadLocalUsers()[account]) {
+        showOnlineRetry(account, pass, btn);
+        return;
+      }
     }
     if (ok) location.href = '学习工作台.html'; else btn.disabled = false;
     return;

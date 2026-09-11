@@ -1,4 +1,4 @@
-
+﻿
 // ========== 登录门禁（本地演示版） ==========
 // 说明：账号信息仅存 localStorage（本机浏览器），刷新不丢失，但无法真正多用户。
 // 登录页 登录.html 不引用本文件，其余所有页面加载本文件时都会先做登录校验。
@@ -9,14 +9,39 @@ const USERS_KEY = 'study_workbench_users';     // 本地账号表 {账号: {pass
 // ========== 用户偏好设置（独立于业务数据，key: study_workbench_settings） ==========
 const SETTINGS_KEY = 'study_workbench_settings';
 const DEFAULT_SETTINGS = {
-  dailyNew: 3,        // 内容库每日新增条数（商务/面试/版式/场景/金句）
-  focusMinutes: 25,   // 专注学习默认时长（分钟）
-  autoSpeak: true,    // 朗读开关（关闭后 speakText 静默但不打断流程）
-  voiceRate: 0.9,     // 默认朗读语速
-  voiceLang: 'en-US', // 默认朗读语言（英文单词美音/英音）
-  chatNotify: true,   // 网页端新私信提醒开关
-  aiTemp: '',          // AI 温度：空=服务商默认
-  aiMax: ''            // AI 最大输出：空=服务商默认
+  // 外观
+  theme: 'light',        // 主题模式：light/dark/auto
+  color: 'blue',         // 界面配色：blue/green/purple/orange/pink
+  fontSize: 'normal',    // 字体大小：small/normal/large/xlarge
+  
+  // 学习
+  dailyNew: 50,          // 每日新增学习内容
+  focusMinutes: 25,      // 专注学习时长
+  autoSpeak: true,       // 朗读开关
+  voiceRate: 0.9,        // 朗读语速
+  voiceLang: 'en-US',    // 英文发音口音
+  
+  // 通知
+  chatNotify: true,      // 新私信提醒
+  studyRemind: false,    // 每日学习提醒
+  reviewRemind: true,    // 复习提醒
+  
+  // 显示与交互
+  keepScreen: false,     // 屏幕常亮
+  cardAutoPlay: true,    // 卡片轮播自动播放
+  
+  // 隐私
+  notesPublic: true,     // 新笔记默认公开
+  canSearch: true,       // 允许被搜索
+  studyPublic: false,    // 学习记录公开
+  
+  // AI
+  aiTemp: '',            // AI 温度
+  aiMax: '',             // AI 最大输出
+  aiStream: true,        // 流式输出
+  aiContext: true,       // 上下文记忆
+  aiAvatar: '🤖',        // AI助手头像
+  aiPanelWidth: 'normal' // AI面板宽度
 };
 function loadAllSettings() {
   try { return Object.assign({}, DEFAULT_SETTINGS, JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}); }
@@ -28,8 +53,52 @@ function setSetting(k, v) {
     const o = Object.assign({}, DEFAULT_SETTINGS, JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {});
     o[k] = v;
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(o));
+    applySettings(); // 立即应用设置
   } catch (e) { /* 忽略 */ }
 }
+
+// 真正应用所有设置到页面
+function applySettings() {
+  const s = loadAllSettings();
+  
+  // 1. 界面配色 - 直接修改CSS变量
+  const colorMap = {
+    blue: '#5B8DEF',
+    green: '#34C759',
+    purple: '#AF52DE',
+    orange: '#FF9500',
+    pink: '#FF2D55'
+  };
+  document.documentElement.style.setProperty('--primary', colorMap[s.color] || '#5B8DEF');
+  
+  // 2. 字体大小 - 直接修改body字体大小
+  const fontSizeMap = {
+    small: '13px',
+    normal: '14px',
+    large: '16px',
+    xlarge: '18px'
+  };
+  document.body.style.fontSize = fontSizeMap[s.fontSize] || '14px';
+  
+  // 3. 朗读设置
+  window._autoSpeak = s.autoSpeak;
+  window._voiceRate = s.voiceRate;
+  window._voiceLang = s.voiceLang;
+  
+  // 4. AI助手头像
+  var aiBtn = document.getElementById('aiFabBtn');
+  if (aiBtn) aiBtn.textContent = s.aiAvatar;
+  
+  // 5. 屏幕常亮
+  if (s.keepScreen && window.wakeLock) {
+    try { window.wakeLock.request('screen'); } catch(e) {}
+  }
+}
+
+// 页面加载完成后应用所有设置
+window.addEventListener('load', function() {
+  applySettings();
+});
 function getAuth() {
   try { return JSON.parse(localStorage.getItem(AUTH_KEY)); } catch (e) { return null; }
 }
@@ -122,7 +191,7 @@ let appData = {
   viewedContent: {},   // 每日内容：各库已查看ID {commScenes: [], pptLayouts: [], etiquette: [], ivQuestions: []}
   lastVisitDate: "",    // 上次访问日期，用于每日重置随机顺序
   dailyQueues: {},      // 每日学习队列 {commScenes: {date, ids: []}, ...}
-  // ===== 学习博客（笔记系统）数据 =====
+  // ===== 分享广场（笔记系统）数据 =====
   notes: [],            // 学习笔记文章 [{id,title,category,tags,cover,privacy,status,content,excerpt,views,likes,liked,comments,createdAt,updatedAt}]
   favoriteNotes: [],    // 我收藏的笔记 ID 列表
   profile: { name: '同学', avatar: '学', motto: '好好学习，天天向上', gender: 'secret', birthday: '', city: '' }  // 个人中心资料
@@ -696,7 +765,7 @@ const pageTitles = {
   comm: '高情商表达', interview: '商务礼仪及面试', ppt: 'PPT训练',
   'speaking-demo': '情景式口语', 'exam-demo': '行测刷题',
   'roleplay-demo': '角色扮演', 'interview-demo': '模拟面试',
-  'exam-center': '行测刷题中心', 'wrong-book': '错题本', 'cet-vocab': '四级词汇', 'etiquette': '商务礼仪', 'iv-questions': '面试题库', 'ppt-layouts': 'PPT版式库', 'ppt-cases': 'PPT案例拆解', 'comm-scenes': '场景话术库', 'comm-quotes': '万能金句库', 'settings': '设置', 'blog': '学习博客', 'profile': '个人中心'
+  'exam-center': '行测刷题中心', 'wrong-book': '错题本', 'cet-vocab': '四级词汇', 'etiquette': '商务礼仪', 'iv-questions': '面试题库', 'ppt-layouts': 'PPT版式库', 'ppt-cases': 'PPT案例拆解', 'comm-scenes': '场景话术库', 'comm-quotes': '万能金句库', 'settings': '设置', 'blog': '分享广场', 'profile': '个人中心'
 };
 
 // ========== 多页面版：各模块独立网页的文件映射 ==========
@@ -776,6 +845,23 @@ function toggleMorePanel() {
 function closeMorePanel() {
   document.getElementById('morePanel').classList.remove('active');
   document.querySelector('.more-overlay').classList.remove('active');
+}
+function toggleToolsPanel() {
+  // 先关闭更多面板
+  document.getElementById('morePanel').classList.remove('active');
+  // 切换工具面板
+  var panel = document.getElementById('toolsPanel');
+  var overlay = document.getElementById('toolsOverlay');
+  if (panel && overlay) {
+    panel.classList.toggle('active');
+    overlay.classList.toggle('active');
+  }
+}
+function closeToolsPanel() {
+  var panel = document.getElementById('toolsPanel');
+  var overlay = document.getElementById('toolsOverlay');
+  if (panel) panel.classList.remove('active');
+  if (overlay) overlay.classList.remove('active');
 }
 
 // ========== 首页渲染 ==========
@@ -872,6 +958,20 @@ function resetTasks() {
   renderTasks();
   updateTopbarStats();
   showToast('今日任务已重置');
+}
+
+// 开始今天的学习
+function startTodayLearning() {
+  var pending = (appData.tasks || []).filter(function(t) { return !t.done; });
+  var cta = document.getElementById('ctaSubtitle');
+  if (pending.length === 0) {
+    if (cta) cta.textContent = '🎉 今日任务全部完成！';
+    showToast('🎉 今日任务全部完成！');
+    return;
+  }
+  var t = pending[0];
+  if (cta) cta.textContent = '正在进入：' + t.title;
+  if (t.page) { switchPage(t.page); } else if (t.url) { location.href = t.url; } else { showToast('开始：' + t.title); }
 }
 
 function renderStats() {
@@ -1127,7 +1227,7 @@ function setSkin(name) {
  */
 function applyTheme() {
   document.body.classList.toggle('dark', isDarkMode);
-  ['default', 'violet', 'forest', 'sunset', 'ocean', 'mono', 'rose'].forEach(function (k) {
+  ['default', 'violet', 'forest', 'sunset', 'ocean', 'mono', 'rose', 'mint', 'peach', 'lavender', 'amber', 'graphite'].forEach(function (k) {
     document.body.classList.remove('skin-' + k);
   });
   if (currentSkin && currentSkin !== 'default') document.body.classList.add('skin-' + currentSkin);
@@ -1321,12 +1421,26 @@ const AI_CONFIG = {
 const AI_CFG_KEY = 'study_workbench_ai_config';
 // 预置服务商：均兼容 OpenAI Chat Completions 协议（/chat/completions + Bearer Token + SSE 流式）
 const AI_PROVIDERS = [
-  { id: 'deepseek',  name: 'DeepSeek 深度求索', baseUrl: 'https://api.deepseek.com/chat/completions',                                            model: 'deepseek-chat' },
-  { id: 'qwen',      name: '通义千问（阿里）',   baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',                  model: 'qwen-plus' },
-  { id: 'kimi',      name: 'Kimi（月之暗面）',   baseUrl: 'https://api.moonshot.cn/v1/chat/completions',                                          model: 'moonshot-v1-8k' },
-  { id: 'zhipu',     name: '智谱 GLM',          baseUrl: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',                                model: 'glm-4-flash' },
-  { id: 'openai',    name: 'OpenAI',            baseUrl: 'https://api.openai.com/v1/chat/completions',                                           model: 'gpt-4o-mini' },
-  { id: 'custom',    name: '自定义 / 兼容接口', baseUrl: '',                                                                             model: '' }
+  { id: 'deepseek',  name: 'DeepSeek 深度求索', baseUrl: 'https://api.deepseek.com/chat/completions', model: 'deepseek-chat',
+    models: ['deepseek-chat', 'deepseek-reasoner'], desc: '国产高性价比，推理能力强' },
+  { id: 'qwen',      name: '通义千问（阿里）',   baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', model: 'qwen-plus',
+    models: ['qwen-turbo', 'qwen-plus', 'qwen-max', 'qwen-long'], desc: '阿里云，中文能力优秀' },
+  { id: 'kimi',      name: 'Kimi（月之暗面）',   baseUrl: 'https://api.moonshot.cn/v1/chat/completions', model: 'moonshot-v1-8k',
+    models: ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'], desc: '长文本处理能力强' },
+  { id: 'zhipu',     name: '智谱AI（GLM）',      baseUrl: 'https://open.bigmodel.cn/api/paas/v4/chat/completions', model: 'glm-4-flash',
+    models: ['glm-4-flash', 'glm-4-plus', 'glm-4'], desc: '国产大模型，免费额度多' },
+  { id: 'openai',    name: 'OpenAI',            baseUrl: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o-mini',
+    models: ['gpt-4o-mini', 'gpt-4o', 'gpt-3.5-turbo'], desc: 'GPT系列，通用能力强' },
+  { id: 'claude',    name: 'Claude（Anthropic）', baseUrl: 'https://api.anthropic.com/v1/chat/completions', model: 'claude-3-5-sonnet-latest',
+    models: ['claude-3-5-sonnet-latest', 'claude-3-opus-latest', 'claude-3-haiku-20240307'], desc: '长上下文，写作能力强' },
+  { id: 'ernie',     name: '文心一言（百度）',    baseUrl: 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/completions', model: 'ernie-speed-128k',
+    models: ['ernie-speed-128k', 'ernie-lite-8k', 'ernie-4.0-8k'], desc: '百度，中文理解优秀' },
+  { id: 'spark',     name: '讯飞星火',          baseUrl: 'https://spark-api.xf-yun.com/v3.5/chat', model: 'generalv3.5',
+    models: ['generalv3.5', 'generalv2', 'general'], desc: '科大讯飞，语音+AI结合' },
+  { id: 'doubao',    name: '豆包（字节）',       baseUrl: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions', model: 'doubao-pro-4k',
+    models: ['doubao-pro-4k', 'doubao-lite-4k', 'doubao-pro-32k'], desc: '字节跳动，响应速度快' },
+  { id: 'custom',    name: '自定义 / 兼容接口', baseUrl: '', model: '',
+    models: [], desc: '任何OpenAI兼容接口' }
 ];
 function getAiProviderConfig() {
   try { return JSON.parse(localStorage.getItem(AI_CFG_KEY)) || {}; } catch (e) { return {}; }
@@ -1445,6 +1559,64 @@ const AI_PARTNERS = [
     greeting: '嘿老铁😎 又见面了！今天学得咋样？别整虚的，有啥问题直接说。',
     demoStyle: function (text) { return '老铁，关于「' + text.slice(0, 30) + '」这事——干就完了！先做 10 分钟，做不动了你再来找我，我陪你唠 😎\n\n（当前是本地演示模式，接入真实 AI 后我随叫随到）'; } },
 ];
+
+/* ========== AI 快捷功能（一键调用） ========== */
+const AI_QUICK_ACTIONS = [
+  { id: 'plan', name: '生成学习计划', emoji: '📅', desc: '根据你的情况生成个性化学习计划',
+    prompt: '我是一个正在备考的学生，目标是[四级/行测/面试]，现在是[基础薄弱/中等/良好]水平，每天能学[X]小时。请帮我制定一个[7天/1个月]的学习计划，要具体到每天做什么、做多少。' },
+  { id: 'analyze_wrong', name: '分析错题', emoji: '❌', desc: '把错题发给AI，帮你分析错因',
+    prompt: '我今天做了这道题做错了，请帮我分析一下错在哪里，为什么错，以及怎么避免再错：\n\n题目：[粘贴题目]\n我的答案：[粘贴你的答案]\n正确答案：[粘贴正确答案]' },
+  { id: 'essay', name: '批改英语作文', emoji: '✍️', desc: '把作文发给AI，帮你批改打分',
+    prompt: '请帮我批改这篇英语四级作文，从语法、词汇、结构、逻辑四个方面打分（满分10分），指出错误并给出修改建议和范文：\n\n[粘贴你的作文]' },
+  { id: 'explain', name: '讲解知识点', emoji: '💡', desc: '不懂的知识点让AI用大白话讲清楚',
+    prompt: '我在学习中遇到了一个不太懂的知识点：[粘贴知识点]。请用大白话给我讲清楚，最好举个例子，最后给我一个小测试看看我懂没懂。' },
+  { id: 'review', name: '复习提纲', emoji: '📝', desc: '根据笔记自动生成复习提纲和重点',
+    prompt: '请根据下面的学习笔记，生成一份复习提纲和重点总结：1）用要点列出核心考点；2）标注哪些是高频考点；3）给3条复习建议；4）简洁便于记忆。\n\n笔记内容：[粘贴笔记]' },
+  { id: 'mock_interview', name: '模拟面试', emoji: '🎤', desc: 'AI当面试官，模拟真实面试场景',
+    prompt: '请开始一场模拟面试，岗位是[央国企/互联网/公务员]。你当面试官，先出第一个问题，我回答后你点评，然后再出下一个问题。一共5个问题，结束后给我总体评分和改进建议。' },
+];
+
+// 打开AI快捷功能面板
+function openAiQuickActions() {
+  const panel = document.getElementById('aiPanel');
+  if (!panel) return;
+  if (!panel.classList.contains('open')) toggleAiPanel();
+  
+  // 在AI聊天输入框上方显示快捷功能
+  const inputArea = panel.querySelector('.ai-input-area');
+  if (!inputArea) return;
+  
+  // 移除已有的快捷功能条
+  const old = document.getElementById('aiQuickBar');
+  if (old) old.remove();
+  
+  const bar = document.createElement('div');
+  bar.id = 'aiQuickBar';
+  bar.style.cssText = 'padding:8px 12px;border-bottom:1px solid var(--border);display:flex;gap:8px;overflow-x:auto;';
+  bar.innerHTML = '<div style="font-size:12px;color:var(--text-secondary);align-self:center;flex-shrink:0;">⚡ 快捷功能：</div>' +
+    AI_QUICK_ACTIONS.map(a => 
+      `<button style="flex-shrink:0;padding:6px 12px;border:1px solid var(--border);border-radius:20px;background:var(--card);font-size:12px;cursor:pointer;white-space:nowrap;" onclick="useAiQuickAction('${a.id}')">${a.emoji} ${a.name}</button>`
+    ).join('');
+  
+  panel.insertBefore(bar, inputArea);
+}
+
+// 使用AI快捷功能
+function useAiQuickAction(id) {
+  const action = AI_QUICK_ACTIONS.find(a => a.id === id);
+  if (!action) return;
+  
+  // 把prompt放到输入框里，让用户补充具体内容
+  const input = document.getElementById('aiInput');
+  if (input) {
+    input.value = action.prompt;
+    input.focus();
+    // 滚动到输入框
+    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  
+  showToast(`${action.emoji} ${action.name}：请补充具体内容后发送`);
+}
 function getAiPartnerId() {
   try { return localStorage.getItem(AI_PARTNER_KEY) || AI_PARTNERS[0].id; } catch (e) { return AI_PARTNERS[0].id; }
 }
@@ -1751,65 +1923,153 @@ try {
 // 注入 AI 伙伴条 + 角色选择弹窗（所有页面通用，幂等）
 try { ensureAiPartnerUI(); } catch (e) {}
 
-// ========== 学习留言板（纯前端版：localStorage 本地保存） ==========
-// 说明：没有后端时留言仅保存在本机浏览器，刷新不丢、换设备不可见。
-// 【后续扩展点】多人互动留言需后端接口 + 数据库，参考 ai-server 方案扩展。
-const BOARD_KEY = 'study_workbench_board';
-let boardMsgs = [];
-
-function addBoardMsg() {
+// ========== 学习留言板（服务器版：点赞 + 回复） ==========
+async function addBoardMsg() {
   const input = document.getElementById('boardInput');
   const text = input.value.trim();
   if (!text) { showToast('先写点什么再发布吧～'); return; }
-  boardMsgs.unshift({ name: '我', text, time: Date.now() });
-  boardMsgs = boardMsgs.slice(0, 50); // 最多保留50条
-  localStorage.setItem(BOARD_KEY, JSON.stringify(boardMsgs));
-  input.value = '';
-  renderBoard();
-  showToast('✅ 已发布到留言板（仅本机可见）');
+  try {
+    await api('/api/board', { method: 'POST', body: { content: text } });
+    input.value = '';
+    renderBoard();
+    showToast('✅ 已发布到留言板');
+  } catch (e) { showToast('⚠️ 发布失败：' + e.message); }
 }
 
-function deleteBoardMsg(time) {
-  boardMsgs = boardMsgs.filter(m => m.time !== time);
-  localStorage.setItem(BOARD_KEY, JSON.stringify(boardMsgs));
-  renderBoard();
+async function deleteBoardMsg(id) {
+  if (!confirm('确定删除这条留言吗？')) return;
+  try {
+    await api('/api/board/' + id, { method: 'DELETE' });
+    renderBoard();
+    showToast('已删除');
+  } catch (e) { showToast('⚠️ 删除失败：' + e.message); }
 }
 
 function clearBoard() {
-  if (boardMsgs.length === 0) { showToast('留言板已经是空的啦'); return; }
-  if (!confirm('确定清空全部留言吗？')) return;
-  boardMsgs = [];
-  localStorage.setItem(BOARD_KEY, JSON.stringify(boardMsgs));
-  renderBoard();
-  showToast('🧹 留言板已清空');
+  showToast('留言板是公开的，不能一键清空哦～');
 }
 
-function renderBoard() {
+async function toggleBoardLike(id, btn) {
+  try {
+    var r = await api('/api/board/' + id + '/like', { method: 'POST' });
+    var countEl = btn.querySelector('.bd-like-count');
+    if (countEl) countEl.textContent = r.likes;
+    btn.classList.toggle('liked', r.liked);
+    btn.querySelector('.bd-like-icon').textContent = r.liked ? '❤️' : '🤍';
+  } catch (e) { showToast('⚠️ ' + e.message); }
+}
+
+async function toggleBoardReplies(id, btn) {
+  var container = document.getElementById('board-replies-' + id);
+  if (container.style.display === 'none' || !container.style.display) {
+    container.style.display = 'block';
+    await loadBoardReplies(id);
+  } else {
+    container.style.display = 'none';
+  }
+}
+
+async function loadBoardReplies(id) {
+  var box = document.getElementById('board-reply-list-' + id);
+  if (!box) return;
+  box.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:8px">加载中…</div>';
+  try {
+    var d = await api('/api/board/' + id + '/replies');
+    if (!d.items.length) {
+      box.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:8px">还没有回复，来说点什么吧</div>';
+      return;
+    }
+    box.innerHTML = d.items.map(function (r) {
+      var av = r.avatarUrl
+        ? '<img src="' + apiFileUrl(r.avatarUrl) + '" style="width:24px;height:24px;border-radius:50%;object-fit:cover;cursor:pointer" onclick="event.stopPropagation();openUserHome(' + r.userId + ')">'
+        : '<span style="width:24px;height:24px;border-radius:50%;background:var(--primary-light);display:inline-flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer" onclick="event.stopPropagation();openUserHome(' + r.userId + ')">' + (r.nickname || '?').charAt(0) + '</span>';
+      return '<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">'
+        + av
+        + '<div style="flex:1;min-width:0">'
+        + '<div style="font-size:12px;font-weight:600;cursor:pointer" onclick="event.stopPropagation();openUserHome(' + r.userId + ')">' + esc(r.nickname) + '<span style="font-weight:400;color:var(--text-muted);margin-left:6px">' + r.time + '</span></div>'
+        + '<div style="font-size:13px;color:var(--text-secondary);margin-top:2px;word-break:break-word">' + esc(r.content) + '</div>'
+        + '</div>'
+        + (r.isMine ? '<span style="font-size:11px;color:var(--danger);cursor:pointer;flex-shrink:0" onclick="event.stopPropagation();deleteBoardReply(' + r.id + ')">删除</span>' : '')
+        + '</div>';
+    }).join('');
+  } catch (e) {
+    box.innerHTML = '<div style="font-size:12px;color:var(--danger);padding:8px">加载失败：' + esc(e.message) + '</div>';
+  }
+}
+
+async function submitBoardReply(id) {
+  var input = document.getElementById('board-reply-input-' + id);
+  var text = input.value.trim();
+  if (!text) { showToast('回复内容不能为空'); return; }
+  try {
+    await api('/api/board/' + id + '/replies', { method: 'POST', body: { content: text } });
+    input.value = '';
+    await loadBoardReplies(id);
+    renderBoard();
+    showToast('✅ 回复成功');
+  } catch (e) { showToast('⚠️ 回复失败：' + e.message); }
+}
+
+async function deleteBoardReply(replyId) {
+  if (!confirm('确定删除这条回复吗？')) return;
+  try {
+    await api('/api/board/replies/' + replyId, { method: 'DELETE' });
+    renderBoard();
+    showToast('已删除');
+  } catch (e) { showToast('⚠️ ' + e.message); }
+}
+
+async function renderBoard() {
   const list = document.getElementById('boardList');
   if (!list) return;
-  if (boardMsgs.length === 0) {
-    list.innerHTML = '<div class="board-empty">还没有留言，写下第一条学习心得吧 ✍️</div>';
-    return;
+  list.innerHTML = '<div class="board-empty">加载中…</div>';
+  try {
+    var d = await api('/api/board?limit=50');
+    if (!d.items.length) {
+      list.innerHTML = '<div class="board-empty">还没有留言，写下第一条学习心得吧 ✍️</div>';
+      return;
+    }
+    list.innerHTML = '';
+    d.items.forEach(function (m) {
+      const div = document.createElement('div');
+      div.className = 'board-item';
+      const avatarHtml = m.avatarUrl
+        ? '<img class="bd-avatar" src="' + apiFileUrl(m.avatarUrl) + '" style="width:36px;height:36px;border-radius:50%;object-fit:cover;cursor:pointer" onclick="openUserHome(' + m.userId + ')">'
+        : '<div class="bd-avatar" style="cursor:pointer" onclick="openUserHome(' + m.userId + ')">' + (m.nickname || '?').charAt(0) + '</div>';
+      const likeClass = m.liked ? ' liked' : '';
+      const likeIcon = m.liked ? '❤️' : '🤍';
+      div.innerHTML = avatarHtml
+        + '<div class="bd-body" style="flex:1;min-width:0">'
+        + '<div class="bd-name" style="cursor:pointer" onclick="openUserHome(' + m.userId + ')">' + esc(m.nickname) + '<span class="bd-time">' + m.time + '</span></div>'
+        + '<div class="bd-text"></div>'
+        + '<div style="display:flex;gap:16px;margin-top:6px;align-items:center">'
+        + '<span class="bd-like-btn' + likeClass + '" style="cursor:pointer;font-size:12px;color:var(--text-secondary);display:inline-flex;align-items:center;gap:4px;user-select:none" onclick="event.stopPropagation();toggleBoardLike(' + m.id + ', this)">'
+        + '<span class="bd-like-icon">' + likeIcon + '</span><span class="bd-like-count">' + (m.likes || 0) + '</span></span>'
+        + '<span style="cursor:pointer;font-size:12px;color:var(--text-secondary);display:inline-flex;align-items:center;gap:4px" onclick="event.stopPropagation();toggleBoardReplies(' + m.id + ', this)">'
+        + '💬 ' + (m.replies || 0) + ' 回复</span>'
+        + '</div>'
+        + '<div id="board-replies-' + m.id + '" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">'
+        + '<div id="board-reply-list-' + m.id + '"></div>'
+        + '<div style="display:flex;gap:6px;margin-top:8px">'
+        + '<input id="board-reply-input-' + m.id + '" type="text" placeholder="写下回复…" style="flex:1;padding:6px 10px;font-size:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);outline:none">'
+        + '<button style="padding:6px 12px;font-size:12px;background:var(--primary);color:#fff;border:none;border-radius:8px;cursor:pointer;flex-shrink:0" onclick="event.stopPropagation();submitBoardReply(' + m.id + ')">回复</button>'
+        + '</div></div>'
+        + '</div>'
+        + (m.isMine ? '<div class="bd-del" title="删除" onclick="event.stopPropagation();deleteBoardMsg(' + m.id + ')">✕</div>' : '');
+      div.querySelector('.bd-text').textContent = m.content;
+      list.appendChild(div);
+    });
+  } catch (e) {
+    list.innerHTML = '<div class="board-empty">⚠️ 加载失败：' + esc(e.message) + '</div>';
   }
-  list.innerHTML = '';
-  boardMsgs.forEach(m => {
-    const d = new Date(m.time);
-    const timeStr = (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-    const div = document.createElement('div');
-    div.className = 'board-item';
-    div.innerHTML = '<div class="bd-avatar">我</div>'
-      + '<div class="bd-body"><div class="bd-name">同学<span class="bd-time">' + timeStr + '</span></div>'
-      + '<div class="bd-text"></div></div>'
-      + '<div class="bd-del" title="删除">✕</div>';
-    div.querySelector('.bd-text').textContent = m.text; // textContent防XSS
-    div.querySelector('.bd-del').onclick = () => deleteBoardMsg(m.time);
-    list.appendChild(div);
-  });
 }
 
-// 启动时读取留言
-try { boardMsgs = JSON.parse(localStorage.getItem(BOARD_KEY)) || []; } catch (e) { boardMsgs = []; }
-renderBoard();
+// 启动时加载留言（等api.js加载完成）
+function _initBoard() {
+  if (typeof api === 'function') renderBoard();
+  else setTimeout(_initBoard, 100);
+}
+_initBoard();
 
 // ========== 口语体验 ==========
 let speakingPlaying = false;
@@ -2677,6 +2937,61 @@ function nativeTtsStop() {
  */
 let _netTtsAudio = null;
 let _netTtsSeq = 0;
+// 把长文本拆成短句（按标点+空格），每句不超过 60 字符
+function splitTextForTTS(text) {
+  var t = String(text || '').trim();
+  if (!t) return [];
+  // 先按句号、问号、感叹号、分号拆
+  var sentences = t.split(/(?<=[\.\!\?\;])\s+/);
+  var out = [];
+  sentences.forEach(function (s) {
+    s = s.trim();
+    if (!s) return;
+    // 如果句子太长，再按逗号或空格拆
+    if (s.length > 60) {
+      var parts = s.split(/(?<=[\,\，\、])\s+/);
+      parts.forEach(function (p) {
+        p = p.trim();
+        if (!p) return;
+        // 还是太长就硬切
+        while (p.length > 60) {
+          out.push(p.slice(0, 60));
+          p = p.slice(60);
+        }
+        if (p) out.push(p);
+      });
+    } else {
+      out.push(s);
+    }
+  });
+  return out;
+}
+
+// 播放单个短句
+function playOnePiece(piece, lang, rate, onDone) {
+  const isZh = /zh|cn/i.test(String(lang || ''));
+  const url = (window.API_BASE || '') + '/api/tts?text=' + encodeURIComponent(piece) + '&lang=' + (isZh ? 'zh' : 'en');
+  let a = new Audio();
+  if (_netTtsAudio) { try { _netTtsAudio.pause(); _netTtsAudio = null; } catch (e) {} }
+  _netTtsAudio = a;
+  let settled = false;
+  const finish = function (ok) {
+    if (settled) return;
+    settled = true;
+    if (_netTtsAudio === a) _netTtsAudio = null;
+    onDone(ok);
+  };
+  a.onended = function () { finish(true); };
+  a.onerror = function () { finish(false); };
+  a.src = url;
+  a.load();
+  if (rate && Number(rate) > 0 && Number(rate) !== 1) {
+    try { a.playbackRate = Math.min(2, Math.max(0.3, Number(rate))); } catch (e) {}
+  }
+  const p = a.play();
+  if (p && typeof p.catch === 'function') p.catch(function () { finish(false); });
+}
+
 function netSpeak(text, lang, rate, onEnd) {
   try {
     const t = String(text == null ? '' : text).trim();
@@ -2692,36 +3007,31 @@ function netSpeak(text, lang, rate, onEnd) {
       if (ok) return true;
       delete _netTtsCbs[id]; // 原生桥异常：继续走下方 JS Audio 路径
     }
-    const piece = t.slice(0, 150); // 有道接口对超长文本不稳定，截断
-    const isZh = /zh|cn/i.test(String(lang || ''));
-    const url = 'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(piece) + '&type=' + (isZh ? 2 : 2);
-    let a = new Audio();
-    _netTtsSeq++;
-    if (_netTtsAudio) { try { _netTtsAudio.pause(); _netTtsAudio = null; } catch (e) {} }
-    _netTtsAudio = a;
-    let settled = false;
-    const finish = function (ok) {
-      if (settled) return;
-      settled = true;
-      if (_netTtsAudio === a) _netTtsAudio = null;
-      if (ok) { if (onEnd) onEnd(); return; }
-      // 网络失败：尝试一次原生 TTS（引擎可用时兜底），仍失败则明确提示、不卡流程
-      if (typeof nativeSpeak === 'function' && isNativeApp()) {
-        if (nativeSpeak(text, lang || 'en-US', Number(rate) > 0 ? Number(rate) : 0.9, onEnd)) return;
+    // 长文本拆分播放：有道 TTS 对长文本支持不好，拆成短句依次播放
+    var pieces = splitTextForTTS(t);
+    if (pieces.length === 0) { if (onEnd) onEnd(); return false; }
+    var idx = 0;
+    var totalOk = true;
+    function nextPiece() {
+      if (idx >= pieces.length) {
+        if (!totalOk) {
+          // 网络失败：尝试一次原生 TTS（引擎可用时兜底）
+          if (typeof nativeSpeak === 'function' && isNativeApp()) {
+            if (nativeSpeak(text, lang || 'en-US', Number(rate) > 0 ? Number(rate) : 0.9, onEnd)) return;
+          }
+          showToast('语音不可用：请检查网络连接');
+        }
+        if (onEnd) onEnd();
+        return;
       }
-      showToast('语音不可用：请检查网络连接');
-      if (onEnd) onEnd();
-    };
-    a.onended = function () { finish(true); };
-    a.onerror = function () { finish(false); };
-    a.src = url;
-    a.load();
-    if (rate && Number(rate) > 0 && Number(rate) !== 1) {
-      try { a.playbackRate = Math.min(2, Math.max(0.3, Number(rate))); } catch (e) {}
+      playOnePiece(pieces[idx], lang, rate, function (ok) {
+        if (!ok) totalOk = false;
+        idx++;
+        nextPiece();
+      });
     }
-    const p = a.play();
-    if (p && typeof p.catch === 'function') p.catch(function () { finish(false); });
-    return true; // 已受理（异步播放，成败走 finish）
+    nextPiece();
+    return true; // 已受理（异步播放，成败走 onEnd）
   } catch (e) { if (onEnd) onEnd(); return false; }
 }
 
@@ -2777,22 +3087,18 @@ function speakText(text, lang, rate, onEnd) {
   if (getSetting('autoSpeak') === false) { if (onEnd) onEnd(); return; }  // 朗读被关闭：静默但不中断流程
   const _lang = lang || getSetting('voiceLang') || 'en-US';
   const _rate = rate || Number(getSetting('voiceRate')) || 0.9;
-  // Android App：网络 TTS 优先（内置语音方案，不依赖系统引擎），失败自动回退原生
+  // 所有环境：网络 TTS 代理优先（后端代理有道TTS，避免浏览器CORS）
+  if (netSpeak(text, _lang, _rate, onEnd)) return;
+  // Native App：网络TTS失败后回退原生TTS
   if (isNativeApp()) {
-    if (netSpeak(text, _lang, _rate, onEnd)) return;
     if (attemptSpeak(text, _lang, _rate, onEnd)) return;
-    showToast('语音不可用：请检查网络，或到系统“文字转语音”设置启用引擎');
+    showToast('语音不可用：请检查网络，或到系统"文字转语音"设置启用引擎');
     if (onEnd) onEnd();
     return;
   }
-  if (attemptSpeak(text, _lang, _rate, onEnd)) return;  // 非 App：原生 Web Speech（含就绪等待）
-  if (isAndroidEnv() && !isNativeApp()) {
-    showToast('语音引擎未连接，请重启 App；如仍无效请检查系统“文字转语音”设置');
-    if (onEnd) onEnd();
-    return;
-  }
+  // 浏览器环境：网络TTS失败后尝试Web Speech API
   if (!('speechSynthesis' in window)) {
-    showToast(isNativeApp() ? '语音引擎不可用，请检查系统“文字转语音”设置' : '当前浏览器不支持语音发音');
+    showToast('语音不可用：请检查网络连接');
     if (onEnd) onEnd();
     return;
   }
@@ -3785,7 +4091,7 @@ function renderWrongBook() {
   const html = appData.wrongQuestions.map(qid => {
     const q = EXAM_BANK.find(item => item.id === qid);
     if (!q) return '';
-    return `<div style="padding:16px;background:var(--bg);border-radius:12px;border-left:3px solid var(--danger)">
+    return `<div style="padding:16px;background:var(--card);border-radius:12px;border:1px solid var(--border);border-left:4px solid var(--danger);box-shadow:0 1px 4px rgba(0,0,0,0.04)">
       <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
         <span class="tag tag-warning">${q.type}</span>
         <span class="tag tag-primary">${q.sub}</span>
@@ -3969,9 +4275,10 @@ function speakWord() {
   speakUtterance(v.word);
 }
 function speakUtterance(text, lang) {
-  // Android App：网络 TTS 优先（内置语音方案），失败自动回退原生
+  // 所有环境：网络 TTS 代理优先（后端代理有道TTS，避免浏览器CORS）
+  if (netSpeak(text, lang || 'en-US', Number(getSetting('voiceRate')) || 0.9, null)) return;
+  // 网络失败：回退原生TTS（App）或Web Speech API（浏览器）
   if (isNativeApp()) {
-    if (netSpeak(text, lang || 'en-US', Number(getSetting('voiceRate')) || 0.9, null)) return;
     if (attemptSpeak(text, lang || 'en-US', Number(getSetting('voiceRate')) || 0.9)) return;
     showToast('语音不可用：请检查网络，或到系统“文字转语音”设置启用引擎');
     return;
@@ -4045,14 +4352,12 @@ applyTheme();          // 应用上次保存的主题（深色/浅色）——�
 
 /* ========== 首页：功能中心快捷入口（可自选） + 最近打开 + 问候 ========== */
 var HOME_DEF = [
-  { k: 'blog', ic: '📝', t: '写笔记', d: '记录/发布', url: '学习博客.html#edit' },
   { k: 'plaza', ic: '🌍', t: '笔记广场', d: '看大家的', url: '学习博客.html' },
-  { k: 'chat', ic: '💬', t: '好友私信', d: '在线聊', url: '私聊.html' },
-  { k: 'exam', ic: '🧮', t: '行测刷题', d: '练一练', url: '行测刷题.html' },
-  { k: 'iv', ic: '🤝', t: '面试题库', d: '开口前先想好', url: '面试题库.html' },
-  { k: 'cet', ic: '📖', t: '四级词汇', d: '每天背一点', url: '四级词汇.html' },
-  { k: 'listen', ic: '🎧', t: '听力口语', d: '情景对话', url: '四级备考.html' },
-  { k: 'settings', ic: '🧭', t: '设置', d: '外观与习惯', url: '设置.html' }
+  { k: 'cet', ic: '📖', t: '四级备考', d: '词汇听力阅读', url: '四级备考.html' },
+  { k: 'exam', ic: '📝', t: '央国企笔试', d: '行测刷题', url: '央国企笔试.html' },
+  { k: 'comm', ic: '💬', t: '高情商表达', d: '场景话术', url: '高情商表达.html' },
+  { k: 'interview', ic: '🤝', t: '商务礼仪面试', d: '面试题库', url: '商务礼仪面试.html' },
+  { k: 'ppt', ic: '🎨', t: 'PPT训练', d: '版式案例', url: 'PPT训练.html' }
 ];
 var HOME_SHOW_KEY = 'study_workbench_home_show';
 function homePrefs() { try { return JSON.parse(localStorage.getItem(HOME_SHOW_KEY)) || {}; } catch (e) { return {}; } }
@@ -4230,7 +4535,7 @@ function initAiFabDrag() {
 // 初始化 AI 头像拖拽
 initAiFabDrag();
 
-// ==================== 学习博客（笔记系统） ====================
+// ==================== 分享广场（笔记系统） ====================
 const BLOG_CATS = [
   { id: 'cet', name: '四级备考', icon: '📖' },
   { id: 'exam', name: '央国企笔试', icon: '📝' },
@@ -4773,7 +5078,7 @@ function renderProfilePage() {
       <span style="width:110px;font-size:12px;color:var(--text-secondary)">${c.icon} ${c.name}</span>
       <div style="flex:1;height:14px;background:var(--bg);border-radius:7px;overflow:hidden"><div style="height:100%;width:${Math.round(catCount[c.id] / maxCat * 100)}%;background:linear-gradient(90deg,${noteColors(c.id)[0]},${noteColors(c.id)[1]})"></div></div>
       <span style="width:60px;font-size:12px;color:var(--text-secondary)">${catCount[c.id]} 篇</span>
-    </div>`).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有笔记，去「学习博客 → ✍️ 写笔记」试试吧</div>';
+    </div>`).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有笔记，去「分享广场 → ✍️ 写笔记」试试吧</div>';
   const auth = getAuth();
   let st = {};
   try { st = loadAllSettings(); } catch (e) { }
@@ -4781,15 +5086,88 @@ function renderProfilePage() {
   const d = (appData && appData.stats) || {};
   const acc = d.totalQuestions > 0 ? Math.round(d.correctQuestions / d.totalQuestions * 100) : 0;
   const totalNotes = pub.length + draft.length + arch.length;
+
+  // 本周学习天数（模拟：连续打卡天数）
+  const weekDays = Math.min(7, d.streakDays || 0);
+
+  // 成就徽章
+  const badges = [];
+  if ((d.streakDays || 0) >= 7) badges.push({ icon: '🔥', name: '坚持一周', desc: '连续学习7天' });
+  if ((d.totalQuestions || 0) >= 100) badges.push({ icon: '🧮', name: '百题斩', desc: '完成100道题' });
+  if ((d.totalQuestions || 0) >= 500) badges.push({ icon: '💪', name: '刷题达人', desc: '完成500道题' });
+  if (totalNotes >= 5) badges.push({ icon: '✍️', name: '勤于笔耕', desc: '发布5篇笔记' });
+  if (totalLikes >= 10) badges.push({ icon: '👍', name: '人气博主', desc: '获得10个赞' });
+  badges.push({ icon: '🌱', name: '初学者', desc: '开始学习之旅' });
+
+  // 好友数量（从服务器加载，先显示0）
+  const friendCount = (typeof SERVER_FRIENDS !== 'undefined') ? SERVER_FRIENDS.length : 0;
+
   box.innerHTML = `
-    <div class="pp-profile">
-      <div class="pp-avatar">${p.avatarImg && /^data:image\//.test(p.avatarImg) ? '<img src="' + p.avatarImg + '" alt="头像">' : esc(p.avatar)}</div>
-      <div class="pp-name">${esc(p.name)}</div>
-      <div class="pp-id">${auth ? '账号：' + esc(auth.account) : '本地学习账号'}${p.motto ? ' · ' + esc(p.motto) : ''}</div>
-      <button class="pp-account-btn" onclick="editProfile()">👤 账号管理</button>
+    <!-- 个人信息头部 -->
+    <div class="pp-profile" style="background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;border-radius:16px;padding:24px 20px;margin-bottom:16px;text-align:center">
+      <div class="pp-avatar" style="width:80px;height:80px;margin:0 auto 12px;border:3px solid rgba(255,255,255,0.3);font-size:32px">${p.avatarImg && /^data:image\//.test(p.avatarImg) ? '<img src="' + p.avatarImg + '" alt="头像" style="border-radius:50%;width:100%;height:100%;object-fit:cover">' : esc(p.avatar)}</div>
+      <div class="pp-name" style="color:#fff;font-size:20px;font-weight:700">${esc(p.name)}</div>
+      <div class="pp-id" style="color:rgba(255,255,255,0.8);font-size:13px;margin-top:4px">${auth ? '@' + esc(auth.account) : '本地学习账号'}${p.motto ? ' · ' + esc(p.motto) : ''}</div>
+      <button class="pp-account-btn" onclick="editProfile()" style="margin-top:12px;background:rgba(255,255,255,0.2);color:#fff;border:none;padding:8px 20px;border-radius:20px;font-size:13px;cursor:pointer">✏️ 编辑资料</button>
     </div>
-    <div class="pp-card">
-      <div class="pp-row" onclick="editProfile()"><span class="pp-ic">✏️</span><span class="pp-tx">编辑资料</span><span class="pp-ar">›</span></div>
+
+    <!-- 数据概览 -->
+    <div class="pp-card" style="margin-bottom:16px">
+      <div class="profile-grid" style="margin-bottom:16px">
+        <div class="profile-stat" style="text-align:center">
+          <div class="ps-num" style="font-size:22px;font-weight:800;color:var(--primary)">🔥 ${d.streakDays || 0}</div>
+          <div class="ps-label">连续打卡</div>
+        </div>
+        <div class="profile-stat" style="text-align:center">
+          <div class="ps-num" style="font-size:22px;font-weight:800;color:var(--primary)">⏱ ${d.totalHours || 0}h</div>
+          <div class="ps-label">总学习时长</div>
+        </div>
+        <div class="profile-stat" style="text-align:center">
+          <div class="ps-num" style="font-size:22px;font-weight:800;color:var(--primary)">🧮 ${d.totalQuestions || 0}</div>
+          <div class="ps-label">做题总数</div>
+        </div>
+        <div class="profile-stat" style="text-align:center">
+          <div class="ps-num" style="font-size:22px;font-weight:800;color:var(--primary)">🎯 ${acc}%</div>
+          <div class="ps-label">正确率</div>
+        </div>
+      </div>
+      <!-- 本周学习进度条 -->
+      <div style="background:var(--bg-sub);border-radius:10px;padding:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:13px;font-weight:600">📅 本周学习</span>
+          <span style="font-size:12px;color:var(--text-secondary)">${weekDays}/7 天</span>
+        </div>
+        <div style="display:flex;gap:4px">
+          ${['一','二','三','四','五','六','日'].map((day, i) => {
+            const active = i < weekDays;
+            return `<div style="flex:1;text-align:center">
+              <div style="width:100%;height:8px;border-radius:4px;background:${active ? 'var(--primary)' : 'var(--border)'};margin-bottom:4px"></div>
+              <div style="font-size:10px;color:${active ? 'var(--primary)' : 'var(--text-muted)'}">${day}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- 我的成就 -->
+    <div class="pp-card" style="margin-bottom:16px">
+      <div class="card-header" style="margin-bottom:12px">
+        <div class="card-title" style="font-size:15px;font-weight:700">🏅 我的成就</div>
+        <div class="card-action" style="font-size:12px;color:var(--text-secondary)">${badges.length} 枚徽章</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+        ${badges.map(b => `
+          <div style="text-align:center;padding:12px 8px;background:var(--bg-sub);border-radius:12px">
+            <div style="font-size:28px;margin-bottom:6px">${b.icon}</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text)">${b.name}</div>
+            <div style="font-size:10px;color:var(--text-secondary);margin-top:2px">${b.desc}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- 功能菜单 -->
+    <div class="pp-card" style="margin-bottom:16px">
       <div class="pp-row" onclick="toggleProfilePanel('ppStatPanel', this)"><span class="pp-ic">📊</span><span class="pp-tx">笔记统计</span><span class="pp-st">${totalNotes} 篇</span><span class="pp-ar">▾</span></div>
       <div class="pp-panel" id="ppStatPanel">
         <div class="profile-grid">
@@ -4798,24 +5176,57 @@ function renderProfilePage() {
         </div>
         <div style="margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📚 笔记分类分布</div>${catBars}</div>
         <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
-          <button class="btn btn-outline" onclick="exportAllNotesMd()">📄 导出全部 Markdown</button>
+          <button class="btn btn-outline" onclick="exportAllNotesMd()">📄 导出 Markdown</button>
           <button class="btn btn-outline" onclick="navigateTo('blog')">📝 去写笔记</button>
         </div>
       </div>
-      <div class="pp-row" onclick="location.href='设置.html'"><span class="pp-ic">🧭</span><span class="pp-tx">学习偏好</span><span class="pp-st">${speakState}</span><span class="pp-ar">›</span></div>
-      <div class="pp-row" onclick="toggleProfilePanel('ppLocalPanel', this)"><span class="pp-ic">📈</span><span class="pp-tx">本机学习数据</span><span class="pp-st">${d.totalHours || 0}h · ${d.totalQuestions || 0} 题</span><span class="pp-ar">▾</span></div>
+
+      <div class="pp-row" onclick="gotoChat()"><span class="pp-ic">💬</span><span class="pp-tx">好友互动</span><span class="pp-st">${friendCount} 位好友</span><span class="pp-ar">›</span></div>
+
+      <div class="pp-row" onclick="openBlogStats()"><span class="pp-ic">📈</span><span class="pp-tx">学习统计</span><span class="pp-st">详细报告</span><span class="pp-ar">›</span></div>
+
+      <div class="pp-row" onclick="toggleProfilePanel('ppLocalPanel', this)"><span class="pp-ic">📖</span><span class="pp-tx">学习模块</span><span class="pp-st">快速入口</span><span class="pp-ar">▾</span></div>
       <div class="pp-panel" id="ppLocalPanel">
-        <div class="profile-grid">
-          ${[['⏱', d.totalHours || 0, '总学习(h)'], ['🧮', d.totalQuestions || 0, '做题数'], ['🎯', acc + '%', '正确率'], ['🔥', d.streakDays || 0, '连续打卡']].map(x =>
-            `<div class="profile-stat"><div class="ps-num">${x[0]} ${x[1]}</div><div class="ps-label">${x[2]}</div></div>`).join('')}
-        </div>
-        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
-          <button class="btn btn-outline" style="font-size:12px;padding:6px 12px" onclick="overviewGo('wrong')">📒 错题本</button>
-          <button class="btn btn-outline" style="font-size:12px;padding:6px 12px" onclick="overviewGo('vocab')">📖 四级词汇</button>
-          <button class="btn btn-outline" style="font-size:12px;padding:6px 12px" onclick="overviewGo('settings')">⚙️ 偏好设置</button>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+          <div style="text-align:center;padding:12px;background:var(--bg-sub);border-radius:10px;cursor:pointer" onclick="navigateTo('wrong-book')">
+            <div style="font-size:24px;margin-bottom:4px">📒</div>
+            <div style="font-size:12px">错题本</div>
+          </div>
+          <div style="text-align:center;padding:12px;background:var(--bg-sub);border-radius:10px;cursor:pointer" onclick="location.href='四级词汇.html'">
+            <div style="font-size:24px;margin-bottom:4px">📖</div>
+            <div style="font-size:12px">四级词汇</div>
+          </div>
+          <div style="text-align:center;padding:12px;background:var(--bg-sub);border-radius:10px;cursor:pointer" onclick="location.href='行测刷题.html'">
+            <div style="font-size:24px;margin-bottom:4px">📝</div>
+            <div style="font-size:12px">行测刷题</div>
+          </div>
+          <div style="text-align:center;padding:12px;background:var(--bg-sub);border-radius:10px;cursor:pointer" onclick="location.href='面试题库.html'">
+            <div style="font-size:24px;margin-bottom:4px">🎤</div>
+            <div style="font-size:12px">面试题库</div>
+          </div>
+          <div style="text-align:center;padding:12px;background:var(--bg-sub);border-radius:10px;cursor:pointer" onclick="location.href='四级备考.html'">
+            <div style="font-size:24px;margin-bottom:4px">🎧</div>
+            <div style="font-size:12px">听力训练</div>
+          </div>
+          <div style="text-align:center;padding:12px;background:var(--bg-sub);border-radius:10px;cursor:pointer" onclick="location.href='万能金句库.html'">
+            <div style="font-size:24px;margin-bottom:4px">✨</div>
+            <div style="font-size:12px">金句库</div>
+          </div>
         </div>
       </div>
+
+      <div class="pp-row" onclick="location.href='设置.html'"><span class="pp-ic">⚙️</span><span class="pp-tx">设置</span><span class="pp-st">${speakState}</span><span class="pp-ar">›</span></div>
+
+      <div class="pp-row" onclick="showAbout()"><span class="pp-ic">ℹ️</span><span class="pp-tx">关于</span><span class="pp-st">v2.2</span><span class="pp-ar">›</span></div>
     </div>
+
+    <!-- 数据安全卡片 -->
+    <div class="pp-card" style="margin-bottom:16px">
+      <div class="pp-row" onclick="exportData()"><span class="pp-ic">📤</span><span class="pp-tx">导出数据备份</span><span class="pp-ar">›</span></div>
+      <div class="pp-row" onclick="migrateLocalNotes()"><span class="pp-ic">☁️</span><span class="pp-tx">同步到云端</span><span class="pp-ar">›</span></div>
+    </div>
+
+    <!-- 退出登录 -->
     <div class="pp-card">
       <div class="pp-row pp-danger" onclick="doLogout()"><span class="pp-ic">🚪</span><span class="pp-tx">退出登录</span><span class="pp-ar">›</span></div>
     </div>`;
@@ -4962,7 +5373,7 @@ if (document.getElementById('page-blog')) {
 updateProfileUI();
 
 // ==================== 全局搜索（顶栏，新增） ====================
-// 检索范围：① 学习博客笔记（标题/内容/标签/摘要） ② 各学习模块（标题/关键词）
+// 检索范围：① 分享广场笔记（标题/内容/标签/摘要） ② 各学习模块（标题/关键词）
 // 点击结果：笔记 → 跳 学习博客.html#note=ID 打开详情；模块 → navigateTo 跨页跳转
 const MODULE_INDEX = [
   { page: 'home',           icon: '🏠', title: '首页',                 desc: '倒计时 · 今日任务 · 学习数据', kw: '首页 主页 倒计时 任务 统计' },
@@ -4971,7 +5382,7 @@ const MODULE_INDEX = [
   { page: 'comm',           icon: '💬', title: '高情商表达',           desc: '场景话术 · 金句库 · 角色扮演', kw: '高情商 表达 话术 沟通 金句 情商' },
   { page: 'interview',      icon: '🤝', title: '商务礼仪面试',         desc: '商务礼仪 · 模拟面试', kw: '面试 礼仪 自我介绍 简历 offer' },
   { page: 'ppt',            icon: '🎨', title: 'PPT训练',             desc: '版式训练 · 案例拆解', kw: 'PPT 汇报 课件 幻灯片 版式 演示' },
-  { page: 'blog',           icon: '🗒️', title: '学习博客',             desc: '笔记广场 · 写笔记 · 统计', kw: '博客 笔记 写作 草稿 日记' },
+  { page: 'blog',           icon: '🗒️', title: '分享广场',             desc: '笔记广场 · 写笔记 · 统计', kw: '博客 笔记 写作 草稿 日记' },
   { page: 'exam-center',    icon: '🧮', title: '行测刷题',             desc: '分题型专项刷题中心', kw: '行测 刷题 专项 刷题中心' },
   { page: 'wrong-book',     icon: '📒', title: '错题本',               desc: '错题收录与复盘', kw: '错题 错题本 复盘 收录' },
   { page: 'cet-vocab',      icon: '📖', title: '四级词汇',             desc: '间隔重复背单词', kw: '四级 词汇 单词 背单词 间隔重复' },
@@ -5053,18 +5464,46 @@ function renderAiProviderForm() {
   const cfg = getAiProviderConfig();
   const cur = AI_PROVIDERS.find(p => p.id === cfg.provider) || AI_PROVIDERS[0];
   const m = currentAiMode();
+
+  // 连接状态
+  const connStatus = m.mode === 'provider'
+    ? '<span style="color:#67c23a;font-size:12px">✅ 已直连服务商</span>'
+    : m.mode === 'backend'
+    ? '<span style="color:#409eff;font-size:12px">☁️ 服务端中转</span>'
+    : '<span style="color:#e6a23c;font-size:12px">⚠️ 演示模式（不联网）</span>';
+
+  // 常用模型快速选择按钮
+  const modelBtns = (cur.models || []).map(mdl =>
+    `<button class="theme-option" data-model="${mdl}" onclick="quickSelectModel('${mdl}')" style="font-size:12px;padding:6px 12px">${mdl}</button>`
+  ).join('');
+
   box.innerHTML = `
+    <!-- 当前状态 -->
+    <div style="background:var(--bg-sub);border-radius:10px;padding:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:13px;font-weight:600">当前AI模式</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">${cur.name}</div>
+      </div>
+      <div>${connStatus}</div>
+    </div>
+
     <div class="ai-cfg-grid">
       <div class="form-group">
         <div class="form-label">AI 服务商</div>
         <select class="form-input" id="aipSelect" onchange="onAiProviderChange()">
           ${AI_PROVIDERS.map(p => '<option value="' + p.id + '"' + (p.id === (cfg.provider || 'deepseek') ? ' selected' : '') + '>' + p.name + '</option>').join('')}
         </select>
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">${cur.desc || ''}</div>
       </div>
       <div class="form-group">
         <div class="form-label">模型名称</div>
         <input type="text" class="form-input" id="aipModel" value="${gsEscape(cfg.model || cur.model || '')}" placeholder="如 deepseek-chat">
       </div>
+      ${modelBtns ? `
+      <div class="form-group full">
+        <div class="form-label">常用模型快速选择</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">${modelBtns}</div>
+      </div>` : ''}
       <div class="form-group full">
         <div class="form-label">接口地址（OpenAI 兼容 /chat/completions）</div>
         <input type="text" class="form-input" id="aipBaseUrl" value="${gsEscape(cfg.baseUrl || cur.baseUrl || '')}" placeholder="https://api.deepseek.com/chat/completions">
@@ -5074,17 +5513,87 @@ function renderAiProviderForm() {
         <input type="password" class="form-input" id="aipKey" value="${gsEscape(cfg.apiKey || '')}" placeholder="sk-…（只存本地，不上传任何服务器）" autocomplete="off">
       </div>
     </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
+
+    <!-- 助手外观设置 -->
+    <div style="margin-top:16px;padding-top:16px;border-top:1px dashed var(--border)">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px">🎨 AI助手外观</div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-name">助手头像</div>
+          <div class="setting-desc">悬浮按钮显示的头像</div>
+        </div>
+        <div class="setting-actions" id="swAiIcon">
+          <button class="theme-option active" data-val="🤖" onclick="setAiIcon('🤖',this)">🤖 机器人</button>
+          <button class="theme-option" data-val="🧠" onclick="setAiIcon('🧠',this)">🧠 大脑</button>
+          <button class="theme-option" data-val="💡" onclick="setAiIcon('💡',this)">💡 灯泡</button>
+          <button class="theme-option" data-val="📚" onclick="setAiIcon('📚',this)">📚 书本</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-name">面板宽度</div>
+          <div class="setting-desc">AI聊天面板的宽度</div>
+        </div>
+        <div class="setting-actions">
+          <select class="form-input" id="stAiWidth" onchange="setSetting('aiWidth',this.value);showToast('✅ 已保存')">
+            <option value="320">窄（320px）</option>
+            <option value="380" selected>标准（380px）</option>
+            <option value="450">宽（450px）</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
       <button class="btn btn-primary" onclick="saveAiProviderForm()">💾 保存配置</button>
       <button class="btn btn-outline" onclick="testAiConnection()">🔌 测试连接</button>
       <button class="btn btn-outline" onclick="clearAiProviderConfigUI()">🗑️ 清除配置</button>
+      <button class="btn btn-outline" onclick="showAiUsage()">📊 用量统计</button>
     </div>
-    <div class="ai-cfg-tip">
-      ⚠️ <b>安全提示：密钥仅保存在本浏览器 localStorage，适合个人本地体验。</b><br>
-      正式/多人环境必须改为<b>后端中转</b>（ai-server 的 /api/chat，密钥放后端 .env），<b>禁止把密钥硬编码进前端代码或提交到仓库</b>。<br>
-      当前模式：<b>${m.mode === 'provider' ? '服务商直连（' + cur.name + '）' : m.mode === 'backend' ? '后端中转' : '本地演示'}</b>；聊天时右下角 AI 助手会自动按此优先级切换：服务商直连 → 后端中转 → 本地演示。
-    </div>`;
+    <div id="aiTestResult" style="margin-top:8px;font-size:12px"></div>
+  `;
 }
+
+// 快速选择模型
+function quickSelectModel(mdl) {
+  document.getElementById('aipModel').value = mdl;
+  showToast('已选择：' + mdl);
+}
+
+// 设置AI助手图标
+function setAiIcon(icon, el) {
+  setSetting('aiIcon', icon);
+  var wrap = el.parentElement;
+  wrap.querySelectorAll('.theme-option').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  var fab = document.getElementById('aiFab');
+  if (fab) fab.firstChild.textContent = icon;
+  showToast('✅ 助手头像已更新');
+}
+
+// 显示AI用量统计
+function showAiUsage() {
+  var history = JSON.parse(localStorage.getItem('ai_chat_history') || '[]');
+  var totalMsgs = history.length;
+  var today = new Date().toDateString();
+  var todayMsgs = history.filter(m => new Date(m.time).toDateString() === today).length;
+  alert('📊 AI使用统计\n\n总对话条数：' + totalMsgs + '\n今日对话：' + todayMsgs + '\n\n（历史记录保存在本地浏览器）');
+}
+
+// 清空对话历史
+function clearAiHistory() {
+  if (!confirm('确定清空所有AI对话历史吗？此操作不可撤销。')) return;
+  localStorage.removeItem('ai_chat_history');
+  document.getElementById('aiMessages').innerHTML = '';
+  showToast('✅ 对话历史已清空');
+}
+
+// 旧代码占位（防止报错）
+// 旧代码占位（防止报错）
+function __oldClearConfig() {
+  clearAiProviderConfigUI();
+}
+
 function onAiProviderChange() {
   const id = document.getElementById('aipSelect').value;
   const p = AI_PROVIDERS.find(x => x.id === id) || {};
@@ -5352,3 +5861,35 @@ function updateGoalProgress(idx, progress) {
   const g = loadGoals();
   if (idx >= 0 && idx < g.length) { g[idx].progress = Number(progress) || 0; saveGoals(g); }
 }
+
+
+
+
+// ========== 关于弹窗 ==========
+function showAbout() {
+  var old = document.getElementById('aboutModal');
+  if (old) old.remove();
+  var mask = document.createElement('div');
+  mask.id = 'aboutModal';
+  mask.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  mask.onclick = function(e) { if (e.target === mask) mask.remove(); };
+  var html = '<div style="background:#fff;border-radius:20px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.3)">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">' +
+    '<div style="font-size:18px;font-weight:800;color:#1a1b1c">ℹ️ 关于</div>' +
+    '<button id="aboutClose" style="background:none;border:none;font-size:22px;cursor:pointer;color:#999">×</button>' +
+    '</div>' +
+    '<div style="font-size:15px;font-weight:800;color:#1a1b1c">📚 学习工作台 v2.1</div>' +
+    '<div style="font-size:13px;color:#6b7280;margin-top:4px">一站式备考平台</div>' +
+    '<div style="margin-top:16px;font-size:13px;color:#374151;line-height:1.8">本应用数据默认保存在本机浏览器；登录服务器后，笔记/私信/AI 记录可多端同步。</div>' +
+    '<div style="margin-top:14px;font-weight:700;color:#1a1b1c">🗂️ 学习模块</div>' +
+    '<div style="font-size:13px;color:#374151;line-height:1.7;margin-top:4px">四级词汇(间隔重复) · 听说训练 · 行测刷题 · 错题本 · 央国企笔试 · 面试题库 · 高情商表达 · 商务礼仪 · PPT训练 · 万能金句/场景话术 · 分享广场 · 好友私信</div>' +
+    '<div style="margin-top:14px;font-weight:700;color:#1a1b1c">🧰 便捷能力</div>' +
+    '<div style="font-size:13px;color:#374151;line-height:1.7;margin-top:4px">导入题库 · AI多模型 · 笔记回收站 · Markdown导出 · 外观主题 · 专注计时 · 数据备份</div>' +
+    '<div style="margin-top:16px;border-top:1px dashed #e4e3dd;padding-top:10px;font-size:12px;color:#9ca3af">v2.1 更新：外观皮肤 · 好友私信 · AI对话记录 · 听说训练播放器 · 导入题库 · 个人资料等</div>' +
+    '<div style="margin-top:16px;text-align:right;font-style:italic;color:#6b7280">—— 小叶子</div>' +
+    '</div>';
+  mask.innerHTML = html;
+  document.body.appendChild(mask);
+  document.getElementById('aboutClose').onclick = function() { mask.remove(); };
+}
+window.showAbout = showAbout;

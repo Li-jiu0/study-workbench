@@ -51,32 +51,8 @@
         <span class="nav-icon">🗂️</span><span>我的笔记</span>
       </div>
       <div class="nav-section">中心</div>
-      <div class="nav-item" data-page="exam-center">
-        <span class="nav-icon">🧮</span><span>行测刷题</span>
-      </div>
       <div class="nav-item" data-page="wrong-book">
         <span class="nav-icon">📒</span><span>错题本</span>
-      </div>
-      <div class="nav-item" data-page="cet-vocab">
-        <span class="nav-icon">📖</span><span>四级词汇</span>
-      </div>
-      <div class="nav-item" data-page="etiquette">
-        <span class="nav-icon">🎩</span><span>商务礼仪</span>
-      </div>
-      <div class="nav-item active" data-page="iv-questions">
-        <span class="nav-icon">🗂️</span><span>面试题库</span>
-      </div>
-      <div class="nav-item" data-page="ppt-layouts">
-        <span class="nav-icon">🧱</span><span>PPT版式库</span>
-      </div>
-      <div class="nav-item" data-page="ppt-cases">
-        <span class="nav-icon">🏷️</span><span>PPT案例拆解</span>
-      </div>
-      <div class="nav-item" data-page="comm-scenes">
-        <span class="nav-icon">🎭</span><span>场景话术库</span>
-      </div>
-      <div class="nav-item" data-page="comm-quotes">
-        <span class="nav-icon">💬</span><span>万能金句库</span>
       </div>
             <div class="nav-item" data-page="profile">
         <span class="nav-icon">👤</span><span>个人中心</span>
@@ -128,20 +104,14 @@
 
 
   <!-- 底部导航（手机端） -->
-  <nav class="bottom-nav">
+    <nav class="bottom-nav">
     <div class="bottom-nav-list">
       <div class="bottom-nav-item" data-page="home">
         <div class="bn-icon">🏠</div><div class="bn-label">首页</div>
       </div>
-      <div class="bottom-nav-item" data-page="cet">
-        <div class="bn-icon">📖</div><div class="bn-label">四级</div>
-      </div>
-      <div class="bottom-nav-item" data-page="exam">
-        <div class="bn-icon">📝</div><div class="bn-label">笔试</div>
-      </div>
-      <div class="bottom-nav-item" data-page="comm">
-        <div class="bn-icon">💬</div><div class="bn-label">表达</div>
-      </div>
+      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon">💬</div><div class="bn-label">互动</div></div>
+      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon">👤</div><div class="bn-label">我的</div></div>
+      <div class="bottom-nav-item" onclick="toggleToolsPanel()"><div class="bn-icon">🧰</div><div class="bn-label">工具</div></div>
       <div class="bottom-nav-item" onclick="toggleMorePanel()">
         <div class="bn-icon">☰</div><div class="bn-label">更多</div>
       </div>
@@ -149,43 +119,25 @@
   </nav>
 
   <!-- 更多面板遮罩 -->
-  <div class="more-overlay" onclick="toggleMorePanel()"></div>
+    <div class="more-overlay" onclick="toggleMorePanel()"></div>
 
   <!-- 更多面板 -->
   <div class="bottom-more-panel" id="morePanel">
     <div class="bottom-more-title">更多功能</div>
     <div class="bottom-more-grid">
-      <div class="bottom-more-item" onclick="navigateTo('interview');toggleMorePanel()">
-        <div class="bm-icon">🤝</div><div class="bm-label">礼仪面试</div>
-      </div>
-      <div class="bottom-more-item" onclick="navigateTo('ppt');toggleMorePanel()">
-        <div class="bm-icon">🎨</div><div class="bm-label">PPT训练</div>
-      </div>
       <div class="bottom-more-item" onclick="openBlogStats()">
         <div class="bm-icon">📊</div><div class="bm-label">学习统计</div>
       </div>
-      <div class="bottom-more-item" onclick="openBlogFavorites()">
-        <div class="bm-icon">🔖</div><div class="bm-label">我的收藏</div>
-      </div>
-      <div class="bottom-more-item" onclick="gotoChat()">
-        <div class="bm-icon">💬</div><div class="bm-label">私信/好友</div>
-      </div>
       <div class="bottom-more-item" onclick="gotoBlogMine()">
-        <div class="bm-icon">🗂️</div><div class="bm-label">我的博客</div>
+        <div class="bm-icon">📁</div><div class="bm-label">互动广场</div>
       </div>
       <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
         <div class="bm-icon">📒</div><div class="bm-label">错题本</div>
       </div>
-      <div class="bottom-more-item" onclick="navigateTo('cet-vocab');toggleMorePanel()">
-        <div class="bm-icon">📖</div><div class="bm-label">四级词汇</div>
-      </div>
       <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
         <div class="bm-icon">⚙️</div><div class="bm-label">设置</div>
       </div>
-      <div class="bottom-more-item" onclick="openBlogProfile()">
-        <div class="bm-icon">👤</div><div class="bm-label">个人中心</div>
-      </div>
-      <div class="bottom-more-item" onclick="location.href='设置.html'">
+      <div class="bottom-more-item" onclick="showAbout()">
         <div class="bm-icon">ℹ️</div><div class="bm-label">关于</div>
       </div>
     </div>
