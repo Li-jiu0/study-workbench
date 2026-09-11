@@ -64,6 +64,50 @@ class MigrateIn(BaseModel):
     notes: list[dict]
 
 
+# ---------- 增量（2026-09-11）：群聊 / 动态 / 反馈 / 学习统计 ----------
+
+class GroupCreateIn(BaseModel):
+    """建群：成员须均为我的好友，含创建者共 2~50 人。"""
+    name: str = Field(min_length=1, max_length=20)
+    memberIds: list[int] = Field(min_length=2, max_length=49)
+
+
+class GroupMsgIn(BaseModel):
+    content: str = Field(max_length=5000)
+    kind: str = "text"  # text / image
+
+
+class GroupReadIn(BaseModel):
+    upToId: int = Field(gt=0)
+
+
+class MomentIn(BaseModel):
+    content: str = Field(default="", max_length=2000)
+    images: list[str] = Field(default=[], max_length=9)
+
+
+class MomentCommentIn(BaseModel):
+    content: str = Field(min_length=1, max_length=500)
+
+
+class FeedbackIn(BaseModel):
+    type: str = Field(default="other", max_length=16)
+    content: str = Field(min_length=10, max_length=2000)
+    screenshot: str | None = Field(default=None, max_length=256)
+    anonymous: bool = False
+
+
+class StudyLogItem(BaseModel):
+    module: str = Field(max_length=16)
+    event: str = Field(max_length=32)
+    payload: dict = Field(default={})
+    createdAt: str = Field(max_length=19)
+
+
+class StudyLogBatchIn(BaseModel):
+    logs: list[StudyLogItem] = Field(min_length=1, max_length=100)
+
+
 # ---------- 序列化 ----------
 def user_brief(u) -> dict:
     return {
