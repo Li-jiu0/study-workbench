@@ -25,9 +25,25 @@ def update_profile(body: ProfileIn, user: User = Depends(get_current_user), db: 
     user.gender = body.gender if body.gender in ("secret", "male", "female") else "secret"
     user.birthday = body.birthday.strip()[:10]
     user.city = body.city.strip()
+    # 手机号：仅保留数字，长度 0 或 11 位（中国大陆），私密字段不对外暴露
+    ph = "".join(ch for ch in body.phone if ch.isdigit())[:11]
+    if ph and len(ph) != 11:
+        raise HTTPException(400, "手机号需为 11 位数字")
+    user.phone = ph
+    user.goal = body.goal.strip()[:120]
+    # 标签清洗：中英文逗号统一、去空、去重、最多 8 个、单个最长 12 字
+    seen: set[str] = set()
+    clean: list[str] = []
+    for t in body.tags.replace("，", ",").split(","):
+        t = t.strip()[:12]
+        if t and t not in seen and len(clean) < 8:
+            seen.add(t)
+            clean.append(t)
+    user.tags = ",".join(clean)
     db.commit()
     return {"id": user.id, "nickname": user.nickname, "motto": user.motto, "bio": user.bio,
-            "gender": user.gender, "birthday": user.birthday, "city": user.city, "avatarUrl": user.avatar}
+            "gender": user.gender, "birthday": user.birthday, "city": user.city,
+            "phone": user.phone, "goal": user.goal, "tags": user.tags, "avatarUrl": user.avatar}
 
 
 @router.post("/me/avatar")
@@ -87,7 +103,15 @@ def public_profile(user_id: int, user: User = Depends(get_current_user), db: Ses
         "motto": target.motto,
         "bio": target.bio or "",
         "city": target.city or "",   # 对外仅展示所在城市，不展示性别/生日等私密信息
+        "goal": target.goal or "",   # 学习目标（主动填写，公开展示）
+        "tags": target.tags or "",   # 备考方向标签（主动填写，公开展示）
         "createdAt": target.created_at,
         "isMe": target.id == user.id,
+        "stats": {  # 服务端可核算的创作数据（学习时长等本机数据不对外）
+            "published": len(notes),
+            "likes": sum(n.likes_count for n in notes),
+            "comments": sum(n.comments_count for n in notes),
+            "views": sum(n.views for n in notes),
+        },
         "notes": [note_card(n) for n in notes],
     }

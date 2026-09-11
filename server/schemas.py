@@ -27,6 +27,9 @@ class ProfileIn(BaseModel):
     gender: str = Field(default="secret", max_length=16)
     birthday: str = Field(default="", max_length=10)
     city: str = Field(default="", max_length=64)
+    phone: str = Field(default="", max_length=20)
+    goal: str = Field(default="", max_length=120)
+    tags: str = Field(default="", max_length=300)
 
 
 class NoteIn(BaseModel):

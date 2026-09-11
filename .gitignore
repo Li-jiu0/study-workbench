@@ -89,3 +89,7 @@ tools/frontend_update_*.tar.gz
 # 结果预览截图
 广场编辑页-改版效果.png
 设置页-新功能.png
+
+# Python 缓存
+__pycache__/
+*.pyc

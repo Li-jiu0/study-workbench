@@ -36,6 +36,9 @@ class User(Base):
     gender = Column(String(16), nullable=False, default="secret")  # secret/male/female
     birthday = Column(String(10), nullable=False, default="")      # YYYY-MM-DD
     city = Column(String(64), nullable=False, default="")          # 所在城市
+    phone = Column(String(20), nullable=False, default="")         # 手机号（私密，仅自己可见）
+    goal = Column(String(120), nullable=False, default="")         # 学习目标（公开主页展示）
+    tags = Column(String(300), nullable=False, default="")         # 备考方向标签，逗号分隔（公开主页展示）
     avatar = Column(String(256), nullable=True)
     created_at = Column(String(16), nullable=False)
 
@@ -159,6 +162,39 @@ class Message(Base):
     receiver = relationship("User", foreign_keys=[receiver_id])
 
 
+class BoardMessage(Base):
+    """留言板：所有人可见的公开留言。"""
+    __tablename__ = "board_messages"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    content = Column(String(500), nullable=False)
+    created_at = Column(String(16), nullable=False)
+    likes_count = Column(Integer, nullable=False, default=0)
+    replies_count = Column(Integer, nullable=False, default=0)
+    author = relationship("User", foreign_keys=[user_id])
+
+
+class BoardLike(Base):
+    """留言板点赞。"""
+    __tablename__ = "board_likes"
+    id = Column(Integer, primary_key=True)
+    message_id = Column(Integer, ForeignKey("board_messages.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(String(16), nullable=False)
+    __table_args__ = (UniqueConstraint("message_id", "user_id", name="uq_board_like"),)
+
+
+class BoardReply(Base):
+    """留言板回复。"""
+    __tablename__ = "board_replies"
+    id = Column(Integer, primary_key=True)
+    message_id = Column(Integer, ForeignKey("board_messages.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    content = Column(String(300), nullable=False)
+    created_at = Column(String(16), nullable=False)
+    author = relationship("User", foreign_keys=[user_id])
+
+
 class AiUsage(Base):
     """AI 每日调用计数（用于限额/防滥用）。"""
     __tablename__ = "ai_usage"
@@ -220,6 +256,20 @@ def _upgrade_legacy_schema() -> None:
                 conn.execute(text("ALTER TABLE users ADD COLUMN birthday TEXT DEFAULT ''"))
             if "city" not in cols:
                 conn.execute(text("ALTER TABLE users ADD COLUMN city TEXT DEFAULT ''"))
+            if "phone" not in cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN phone TEXT DEFAULT ''"))
+            if "goal" not in cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN goal TEXT DEFAULT ''"))
+            if "tags" not in cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN tags TEXT DEFAULT ''"))
+    # 留言板旧表补列（无损）
+    if "board_messages" in names:
+        bcols = _table_columns("board_messages")
+        with engine.begin() as conn:
+            if "likes_count" not in bcols:
+                conn.execute(text("ALTER TABLE board_messages ADD COLUMN likes_count INTEGER DEFAULT 0"))
+            if "replies_count" not in bcols:
+                conn.execute(text("ALTER TABLE board_messages ADD COLUMN replies_count INTEGER DEFAULT 0"))
 
 
 def init_db() -> None:

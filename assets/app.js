@@ -17,6 +17,9 @@ const DEFAULT_SETTINGS = {
   // 学习
   dailyNew: 50,          // 每日新增学习内容
   focusMinutes: 25,      // 专注学习时长
+  studyLimitOn: true,    // 【9/11 新增】每日学习时长上限开关
+  studyLimitHours: 4,    // 【9/11 新增】每日学习时长上限（小时），默认 4
+  studyLimitWarn: true,  // 【9/11 新增】超限后弹窗提醒（仅提醒，不阻断）
   autoSpeak: true,       // 朗读开关
   voiceRate: 0.9,        // 朗读语速
   voiceLang: 'en-US',    // 英文发音口音
@@ -115,6 +118,9 @@ function applySettings() {
 // 页面加载完成后应用所有设置
 window.addEventListener('load', function() {
   applySettings();
+  // 【9/11 新增】启动每日学习时长计时（各页统一；函数定义见文件末尾）
+  if (typeof initStudyTimer === 'function') initStudyTimer();
+  if (typeof seedStudyLimitUI === 'function') seedStudyLimitUI();
 });
 function getAuth() {
   try { return JSON.parse(localStorage.getItem(AUTH_KEY)); } catch (e) { return null; }
@@ -5171,6 +5177,23 @@ function renderProfilePage() {
       </div>
     </div>
 
+    <!-- 【9/11 新增】今日学习时长（与设置页上限联动）-->
+    <div class="pp-card" style="margin-bottom:16px">
+      <div class="card-header" style="margin-bottom:12px">
+        <div class="card-title" style="font-size:15px;font-weight:700">⏱ 今日学习时长</div>
+        <div class="card-action" style="font-size:12px;color:var(--text-secondary)">上限 ${st.studyLimitOn === false ? '未启用' : (st.studyLimitHours || 4) + ' 小时'}</div>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <span id="pcStudyTime" style="font-size:26px;font-weight:800;color:var(--primary)">${getTodayStudyText()}</span>
+        <span id="pcStudyTimeTip" style="font-size:12px;color:var(--text-secondary)"></span>
+      </div>
+      <div class="pc-studytime-bar"><i id="pcStudyTimeBar"></i></div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.6">
+        💡 打开任意页面即开始计时，切到后台自动暂停；到上限只会友好提醒，不会打断学习。可在
+        <a href="设置.html" style="color:var(--primary);text-decoration:none;font-weight:600">设置</a> 中修改上限或关闭。
+      </div>
+    </div>
+
     <!-- 我的成就 -->
     <div class="pp-card" style="margin-bottom:16px">
       <div class="card-header" style="margin-bottom:12px">
@@ -5252,6 +5275,8 @@ function renderProfilePage() {
     <div class="pp-card">
       <div class="pp-row pp-danger" onclick="doLogout()"><span class="pp-ic">🚪</span><span class="pp-tx">退出登录</span><span class="pp-ar">›</span></div>
     </div>`;
+  // 【9/11 新增】渲染完成后同步今日学习时长进度条
+  if (typeof syncStudyLimitUI === 'function') setTimeout(syncStudyLimitUI, 0);
 }
 
 /** 展开/收起个人中心内嵌面板（发贴统计 / 本机学习数据） */
@@ -5915,3 +5940,182 @@ function showAbout() {
   document.getElementById('aboutClose').onclick = function() { mask.remove(); };
 }
 window.showAbout = showAbout;
+
+// ========== 【9/11 新增】每日学习时长统计与上限提醒 ==========
+// 口径：页面可见即计时（visibilitychange / blur 暂停），按自然日 key 累计。
+// 存储：study_workbench_studytime = { "YYYY-MM-DD": 秒数, ... }（同源 file:// 全页共享）
+const STUDY_TIME_KEY = 'study_workbench_studytime';
+var _stTick = null;            // 计时器
+var _stLast = 0;               // 上次落账时间戳(ms)
+var _stWarnedDay = '';         // 已提醒过的日期，避免同一天反复弹
+
+function _stToday() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function loadStudyTime() {
+  try { return JSON.parse(localStorage.getItem(STUDY_TIME_KEY)) || {}; }
+  catch (e) { return {}; }
+}
+function _stSave(obj) {
+  try { localStorage.setItem(STUDY_TIME_KEY, JSON.stringify(obj)); } catch (e) { /* 忽略 */ }
+}
+/** 今日已学秒数 */
+function getTodayStudySeconds() {
+  var o = loadStudyTime();
+  return Math.max(0, Math.round(o[_stToday()] || 0));
+}
+/** 今日已学「x 小时 y 分钟」文本 */
+function getTodayStudyText() {
+  var sec = getTodayStudySeconds();
+  var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
+  if (h <= 0) return m + ' 分钟';
+  return h + ' 小时' + (m ? ' ' + m + ' 分钟' : '');
+}
+/** 累加秒数（内部用） */
+function _stAdd(sec) {
+  if (sec <= 0) return;
+  var o = loadStudyTime();
+  var k = _stToday();
+  o[k] = Math.max(0, Math.round((o[k] || 0) + sec));
+  // 只保留最近 60 天，避免 localStorage 膨胀
+  var keys = Object.keys(o).sort();
+  if (keys.length > 60) keys.slice(0, keys.length - 60).forEach(function (kk) { delete o[kk]; });
+  _stSave(o);
+}
+/** 重置今日时长（设置页按钮） */
+function resetTodayStudyTime() {
+  var o = loadStudyTime();
+  delete o[_stToday()];
+  _stSave(o);
+  _stWarnedDay = '';
+  syncStudyLimitUI();
+  if (typeof showToast === 'function') showToast('✅ 今日学习时长已重置');
+}
+window.resetTodayStudyTime = resetTodayStudyTime;
+
+/** 落账：把 _stLast 到现在的时间补进今日累计 */
+function _stFlush() {
+  if (!_stLast) return;
+  var now = Date.now();
+  var delta = (now - _stLast) / 1000;
+  _stLast = now;
+  // 单次最多记 5 分钟，防止长时间挂后台被误计
+  if (delta > 0 && delta <= 300) _stAdd(delta);
+}
+
+/** 是否已超限 */
+function isStudyLimitReached() {
+  var s = loadAllSettings();
+  if (!s.studyLimitOn) return false;
+  var limit = (Number(s.studyLimitHours) || 4) * 3600;
+  return getTodayStudySeconds() >= limit;
+}
+
+/** 超限提醒（每天一次，仅提醒不阻断） */
+function checkStudyLimitWarn() {
+  if (!isStudyLimitReached()) return;
+  var day = _stToday();
+  if (_stWarnedDay === day) return;
+  _stWarnedDay = day;
+  var s = loadAllSettings();
+  var tip = '今天已经学习 ' + getTodayStudyText() + ' 啦，超过了你设置的 ' + s.studyLimitHours + ' 小时上限 🌙';
+  showStudyLimitModal(tip);
+  if (typeof showToast === 'function') showToast('🌙 ' + tip);
+}
+
+/** 超限友好弹窗（自包含，不依赖外部组件；仅提醒不阻断） */
+function showStudyLimitModal(desc) {
+  var old = document.getElementById('studyLimitModal');
+  if (old) old.remove();
+  var mask = document.createElement('div');
+  mask.id = 'studyLimitModal';
+  mask.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10050;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px)';
+  mask.onclick = function (e) { if (e.target === mask) mask.remove(); };
+  mask.innerHTML =
+    '<div style="background:var(--card,#fff);color:var(--text,#1a1b1c);border-radius:20px;max-width:380px;width:100%;padding:26px 24px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)">' +
+    '<div style="font-size:44px;line-height:1">🌙</div>' +
+    '<div style="font-size:19px;font-weight:800;margin-top:10px">今日学习达标啦</div>' +
+    '<div style="font-size:14px;color:var(--text-secondary,#6b7280);line-height:1.7;margin-top:10px">' + desc + '</div>' +
+    '<div style="font-size:13px;color:var(--text-secondary,#6b7280);line-height:1.7;margin-top:8px">注意劳逸结合，休息好了明天继续加油 💪 继续学习不会被打断～</div>' +
+    '<div style="display:flex;gap:10px;margin-top:20px">' +
+    '<button id="slmRest" style="flex:1;padding:11px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--primary,#5B8DEF),var(--accent,#8AB4F8));color:#fff;font-size:14px;font-weight:700;cursor:pointer">好的，我去休息</button>' +
+    '<button id="slmGo" style="flex:1;padding:11px;border:1px solid var(--border,#e4e3dd);border-radius:12px;background:transparent;color:var(--text,#1a1b1c);font-size:14px;font-weight:600;cursor:pointer">再学一会儿</button>' +
+    '</div></div>';
+  document.body.appendChild(mask);
+  var close = function () { mask.remove(); };
+  document.getElementById('slmRest').onclick = close;
+  document.getElementById('slmGo').onclick = close;
+}
+window.showStudyLimitModal = showStudyLimitModal;
+
+/** 启动计时（各页 init 调用；重复调用安全） */
+function initStudyTimer() {
+  if (_stTick) return;
+  _stLast = document.visibilityState === 'hidden' ? 0 : Date.now();
+  // 每 15 秒落账一次（低开销）
+  _stTick = setInterval(function () {
+    if (document.visibilityState !== 'hidden') {
+      _stFlush();
+      checkStudyLimitWarn();
+      syncStudyLimitUI();
+    }
+  }, 15000);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') {
+      _stFlush(); _stLast = 0;
+    } else {
+      _stLast = Date.now();
+    }
+  });
+  window.addEventListener('pagehide', function () { _stFlush(); _stLast = 0; });
+  window.addEventListener('beforeunload', function () { _stFlush(); });
+  syncStudyLimitUI();
+}
+window.initStudyTimer = initStudyTimer;
+
+/** 同步设置页/个人中心的时长 UI（元素不存在则跳过） */
+function syncStudyLimitUI() {
+  var sec = getTodayStudySeconds();
+  var s = loadAllSettings();
+  var limit = (Number(s.studyLimitHours) || 4) * 3600;
+  var pct = limit > 0 ? Math.min(100, Math.round(sec / limit * 100)) : 0;
+  var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
+  var over = sec >= limit;
+  var bar = document.getElementById('stLimitBar');
+  if (bar) {
+    bar.style.width = pct + '%';
+    bar.style.background = over
+      ? 'linear-gradient(90deg,#F87171,#EF4444)'
+      : 'linear-gradient(90deg,var(--primary),var(--accent))';
+  }
+  var d = document.getElementById('stLimitTodayDesc');
+  if (d) d.textContent = '今日已学 ' + h + ' 小时 ' + m + ' 分钟 / 上限 ' + (s.studyLimitHours || 4) + ' 小时' + (over ? '（已达标 🎉）' : '');
+  var tip = document.getElementById('stLimitTip');
+  if (tip) {
+    if (!s.studyLimitOn) tip.textContent = '已关闭上限提醒，仍会照常统计今日时长。';
+    else if (over) tip.textContent = '🌙 已超过今日上限，注意休息；继续学习不会被打断。';
+    else tip.textContent = '距离上限还有 ' + Math.max(0, Math.floor((limit - sec) / 60)) + ' 分钟。';
+  }
+  // 个人中心卡片（若存在）
+  var pc = document.getElementById('pcStudyTime');
+  if (pc) pc.textContent = getTodayStudyText();
+  var pcBar = document.getElementById('pcStudyTimeBar');
+  if (pcBar) pcBar.style.width = pct + '%';
+  var pcTip = document.getElementById('pcStudyTimeTip');
+  if (pcTip) pcTip.textContent = s.studyLimitOn ? ('上限 ' + (s.studyLimitHours || 4) + ' 小时 · 已完成 ' + pct + '%') : ('今日已学 ' + getTodayStudyText());
+}
+window.syncStudyLimitUI = syncStudyLimitUI;
+window.getTodayStudySeconds = getTodayStudySeconds;
+window.getTodayStudyText = getTodayStudyText;
+
+/** 设置页控件回填（HTML 里 select/checkbox 的默认选中值与存储值可能不一致，这里统一同步）*/
+function seedStudyLimitUI() {
+  var s = loadAllSettings();
+  var on = document.getElementById('stLimitOn');
+  if (on) on.checked = !!s.studyLimitOn;
+  var sel = document.getElementById('stLimitHours');
+  if (sel) sel.value = String(s.studyLimitHours || 4);
+  syncStudyLimitUI();
+}
+window.seedStudyLimitUI = seedStudyLimitUI;

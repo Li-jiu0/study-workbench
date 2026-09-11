@@ -90,6 +90,9 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         "gender": user.gender or "secret",
         "birthday": user.birthday or "",
         "city": user.city or "",
+        "phone": user.phone or "",
+        "goal": user.goal or "",
+        "tags": user.tags or "",
         "avatarUrl": user.avatar,
         "createdAt": user.created_at,
         "stats": {
