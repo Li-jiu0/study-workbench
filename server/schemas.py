@@ -160,8 +160,10 @@ def note_detail(n, *, liked=False, favorited=False, prev=None, nxt=None) -> dict
         {
             "id": c.id,
             "userId": c.user_id,
-            "nickname": c.author.nickname,
-            "avatarUrl": c.author.avatar,
+            # 空值防御（2026-09-11 热修）：作者已注销时 author 为 None，避免再次 500。
+            # 文案「已注销用户」沿用 social.py 既有写法，保持一致。
+            "nickname": c.author.nickname if c.author else "已注销用户",
+            "avatarUrl": c.author.avatar if c.author else None,
             "text": c.content,
             "time": c.created_at,
         }

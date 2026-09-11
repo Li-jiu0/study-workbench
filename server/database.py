@@ -96,6 +96,11 @@ class Comment(Base):
     id = Column(Integer, primary_key=True)
     note_id = Column(Integer, ForeignKey("notes.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    # 评论作者关系（2026-09-11 热修）：schemas.note_detail 一直在访问 c.author，
+    # 但模型缺该关系 → 有评论的帖子 GET /api/notes/{id} 抛 AttributeError 500。
+    # 写法照抄 BoardMessage/BoardReply：带 foreign_keys 指定外键，不用 back_populates
+    # （User 上没有对应的 comments 关系）。
+    author = relationship("User", foreign_keys=[user_id])
     content = Column(String(2000), nullable=False)
     created_at = Column(String(16), nullable=False)
     # 回复目标评论 id（NULL = 顶层评论）。2026-09-11 补齐：social.py 的评论接口一直在用它。

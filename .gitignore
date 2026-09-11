@@ -126,3 +126,6 @@ node_modules/
 tools/deploy_*.tar.gz
 tools/frontend_update_*.tar.gz
 tools/server_fix_*.tar.gz
+
+# QA 过程产物（截图 / 探针脚本 / 线上资源快照，仅供人工排查，不入库）
+.qa/
