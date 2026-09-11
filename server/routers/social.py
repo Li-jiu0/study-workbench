@@ -72,8 +72,11 @@ def list_comments(note_id: int, offset: int = 0, limit: int = 50,
     total = len(all_rows)
     page_rows = list(reversed(all_rows))[offset:offset + min(max(limit, 1), 100)]  # 新→旧
     return {"comments": [
-        {"id": c.id, "userId": c.user_id, "nickname": c.author.nickname,
-         "avatarUrl": c.author.avatar, "text": c.content, "time": c.created_at}
+        # 空值防御（2026-09-11 热修）：作者已注销时 c.author 为 None，避免 AttributeError 500。
+        {"id": c.id, "userId": c.user_id,
+         "nickname": c.author.nickname if c.author else "已注销用户",
+         "avatarUrl": c.author.avatar if c.author else None,
+         "text": c.content, "time": c.created_at}
         for c in page_rows
     ], "total": total, "hasMore": offset + len(page_rows) < total}
 
