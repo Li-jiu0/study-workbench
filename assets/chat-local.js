@@ -105,7 +105,7 @@
     { keywords: ['累', '压力', '焦虑'], reply: '累了就休息一下，不要给自己太大压力，你已经很棒了💪' }
   ];
 
-  var S = { tab: 'chats', peer: null, chats: [], msgs: [], myId: 999, aiBusy: false };
+  var S = { tab: 'chats', peer: null, group: null, chats: [], groups: [], presence: {}, msgs: [], myId: 999, aiBusy: false };
 
   function $id(x) { return document.getElementById(x); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -160,8 +160,19 @@
   }
 
   function renderChats(box) {
-    if (S.chats.length === 0) { box.innerHTML = '<div class="im-empty2">还没有会话，去好友列表找个朋友聊聊吧</div>'; return; }
-    box.innerHTML = S.chats.map(function (c) {
+    if (S.chats.length === 0 && (S.groups || []).length === 0) { box.innerHTML = '<div class="im-empty2">还没有会话，去好友列表找个朋友聊聊吧</div>'; return; }
+    // T4 增量：群聊会话置顶展示（带未读角标）
+    var groupHtml = (S.groups || []).map(function (g) {
+      var active = S.group && S.group.id === g.id;
+      return '<div class="im-sess' + (active ? ' on' : '') + '" onclick="imOpenGroup(' + g.id + ')">' +
+        '<div class="im-av" style="position:relative"><span>👥</span>' +
+        (g.unreadCount > 0 ? '<span class="im-av-badge">' + (g.unreadCount > 99 ? '99+' : g.unreadCount) + '</span>' : '') + '</div>' +
+        '<div class="im-si"><div class="im-n">' + esc(g.name) + ' <span style="font-size:11px;color:#999">(' + g.memberCount + ')</span></div>' +
+        '<div class="im-sub">' + esc(g.lastMessage ? ((g.lastMessage.senderId === S.myId ? '我：' : '') + (g.lastMessage.kind === 'image' ? '[图片]' : g.lastMessage.content)) : '') + '</div></div>' +
+        (g.unreadCount > 0 ? '<div class="im-badge">' + (g.unreadCount > 99 ? '99+' : g.unreadCount) + '</div>' : '') +
+        '</div>';
+    }).join('');
+    var chatHtml = S.chats.map(function (c) {
       var active = S.peer && S.peer.id === c.id;
       // 头像点击：服务器好友打开主页，AI好友不处理
       var avClick = c.isServer && c.serverId
@@ -174,6 +185,7 @@
         (c.unread > 0 ? '<div class="im-badge">' + (c.unread > 99 ? '99+' : c.unread) + '</div>' : '') +
         '</div>';
     }).join('');
+    box.innerHTML = groupHtml + chatHtml;
   }
 
   // 服务器好友列表缓存
@@ -249,9 +261,9 @@
           ? '<img src="' + (function(u){ return (u.startsWith('http') ? u : apiBase() + u); })(f.avatarUrl || f.avatar) + '" alt="" style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + f.serverId + ')">'
           : '<span style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + f.serverId + ')">' + esc((f.nickname || '友').slice(0, 1)) + '</span>';
         return '<div class="im-sess" onclick="imOpenChat(' + f.id + ')">' +
-          '<div class="im-av">' + av + '</div>' +
+          '<div class="im-av" style="position:relative">' + av + '<span class="im-dot" data-uid="' + f.serverId + '"></span></div>' +
           '<div class="im-si"><div class="im-n" style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + f.id + ')">' + esc(f.nickname) + ' <span style="font-size:11px;color:#999">@' + esc(f.username) + '</span></div>' +
-          '<div class="im-sub">' + esc(f.motto) + '</div></div>' +
+          '<div class="im-sub">' + esc(f.motto) + ' <span class="im-presence" data-uid="' + f.serverId + '"></span></div></div>' +
           '<div style="color:#667eea;font-size:12px;cursor:pointer" onclick="event.stopPropagation();imOpenChat(' + f.id + ')">发消息</div>' +
           '</div>';
       }).join('');
@@ -441,7 +453,7 @@
         var items = d.items || [];
         if (items.length > 0) {
           S.msgs = items.map(function (m) {
-            return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime() };
+            return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read };
           });
           renderMsgs();
           // 标记最后一条消息为已读
@@ -472,6 +484,16 @@
   // 渲染聊天头部（适配当前 HTML：操作 imCAv/imCName/imBack 元素）
   function renderChatHeader() {
     var avEl = $id('imCAv');
+    var nameEl = $id('imCName');
+    if (S.group) {
+      // T4 增量：群会话头部（群名 + 成员数）
+      if (avEl) avEl.innerHTML = '<span>👥</span>';
+      if (nameEl) nameEl.innerHTML = esc(S.group.name) +
+        '<span style="font-size:10px;color:#667eea;background:#EEF1FF;padding:1px 6px;border-radius:4px;margin-left:6px;font-weight:400">' + esc(String(S.group.memberCount || '')) + '人群</span>';
+      var backBtn = $id('imBack');
+      if (backBtn) backBtn.style.display = window.innerWidth <= 760 ? 'block' : 'none';
+      return;
+    }
     if (avEl) avEl.innerHTML = renderAvatar(S.peer.avatar, S.peer.nickname);
     var nameEl = $id('imCName');
     if (nameEl) {
@@ -490,6 +512,7 @@
   function backToList() {
     document.body.classList.remove('im-mobile');
     S.peer = null;
+    S.group = null; // T4 增量：退出群会话状态
     var conv = $id('imConv');
     if (conv) conv.style.display = 'none';
     var empty = $id('imEmpty');
@@ -498,24 +521,53 @@
   window.imBackToList = backToList;
   window.imBackList = backToList; // 兼容 HTML 里的 imBackList()
 
+  // 消息文本渲染（T4 增量）：先 esc 再把 [emoji:xx] 替换为表情字符（防注入：先转义后替换）
+  function renderContent(text) {
+    var safe = esc(text);
+    return safe.replace(/\[emoji:([a-zA-Z0-9_]+)\]/g, function (all, code) {
+      var item = (window.STUDY_EMOJI && window.STUDY_EMOJI.map) ? window.STUDY_EMOJI.map[code] : null;
+      return item ? '<span class="im-emoji">' + item.char + '</span>' : all;
+    });
+  }
+
   function renderMsgs() {
     var box = $id('imMsgs');
     if (!box) return;
+    var title = S.group ? S.group.name : (S.peer ? S.peer.nickname : '好友');
     if (S.msgs.length === 0) {
-      box.innerHTML = '<div class="im-empty2">开始和' + esc(S.peer.nickname) + '聊天吧</div>';
+      box.innerHTML = '<div class="im-empty2">开始和' + esc(title) + '聊天吧</div>';
       return;
     }
+    var isGroup = !!S.group;
     box.innerHTML = S.msgs.map(function (m) {
       var isMe = m.senderId === S.myId;
       var time = new Date(m.time);
-      var timeStr = time.getHours().toString().padStart(2, '0') + ':' + time.getMinutes().toString().padStart(2, '0');
-      if (m.kind === 'image') {
-        return '<div class="im-m ' + (isMe ? 'me' : 'ot') + '"><img src="' + esc(m.content) + '" style="max-width:200px;border-radius:8px"><div class="im-mt">' + timeStr + '</div></div>';
+      var timeStr = isNaN(time) ? '' : time.getHours().toString().padStart(2, '0') + ':' + time.getMinutes().toString().padStart(2, '0');
+      // 已读角标（T4 增量）：仅服务器私聊消息展示 ✓已发送 / ✓✓已读
+      var readTag = '';
+      if (isMe && !isGroup && m.server) {
+        readTag = '<div class="im-read' + (m.read ? ' ok' : '') + '">' + (m.read ? '✓✓ 已读' : '✓ 已发送') + '</div>';
       }
-      return '<div class="im-m ' + (isMe ? 'me' : 'ot') + '">' + esc(m.content) + '<div class="im-mt">' + timeStr + '</div></div>';
+      var body;
+      if (m.kind === 'image') {
+        var src = /^(https?:|data:)/.test(m.content) ? m.content : apiBase() + m.content;
+        body = '<div class="im-m ' + (isMe ? 'me' : 'ot') + '" data-mid="' + esc(m.id || '') + '"><img src="' + esc(src) + '" style="max-width:200px;border-radius:8px"><div class="im-mt">' + timeStr + '</div>' + readTag + '</div>';
+      } else {
+        body = '<div class="im-m ' + (isMe ? 'me' : 'ot') + '" data-mid="' + esc(m.id || '') + '">' + renderContent(m.content) + '<div class="im-mt">' + timeStr + '</div>' + readTag + '</div>';
+      }
+      // 群聊：他人消息左侧加发送者小头像 + 昵称（自己的消息保持右侧绿底）
+      if (isGroup && !isMe) {
+        var av = '<div class="im-gav">' + renderAvatar(m.senderAvatar, m.senderNickname) + '</div>';
+        var name = '<div class="im-gsender">' + esc(m.senderNickname || '') + '</div>';
+        return '<div class="im-grow">' + av + '<div class="im-gcol">' + name + body + '</div></div>';
+      }
+      return body;
     }).join('');
     box.scrollTop = box.scrollHeight;
   }
+
+  /* 【后续扩展点：群消息逐人已读回执】群内只保证自己未读数准确（last_read_msg_id 游标），不渲染逐条已读。 */
+  function groupReadReceipt() { /* 空实现：预留群已读回执扩展 */ }
 
   // 发送图片（适配 HTML 里的 imSendImage(this)）
   window.imSendImage = function (input) {
@@ -624,7 +676,10 @@
     if (S.aiBusy) return;
     var inp = $id('imInput');
     var text = (inp.value || '').trim();
-    if (!text || !S.peer) return;
+    if (!text) return;
+    // T4 增量：群会话发送分支
+    if (S.group) { imSendGroupText(text); return; }
+    if (!S.peer) return;
     inp.value = '';
 
     var now = Date.now();
@@ -652,7 +707,19 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
           body: JSON.stringify({ content: text, kind: 'text' })
-        }).catch(function () {});
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (m) {
+          // T4 增量：发送成功即本地渲染（带 server 标记，等待对方已读）
+          if (m && m.id) {
+            S.msgs.push({ id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read });
+            renderMsgs();
+          }
+          // 发送后立即拉取一次消息列表 + 未读（不等下一轮轮询）
+          fetchPeerMsgs(true);
+          if (typeof window.loadChatUnread === 'function') window.loadChatUnread();
+        })
+        .catch(function () {});
       }
       return;
     }
@@ -762,6 +829,341 @@
     .catch(function (e) { toast('失败：' + (e.message || '网络错误')); });
   };
 
+  /* ==================== T4 增量（2026-09-11）：群聊 / 表情包 / 已读同步 / 在线状态 ==================== */
+
+  // —— 会话消息拉取（轮询主干；拉取即已读，后端 markRead 默认开启） ——
+  function fetchPeerMsgs(silent) {
+    if (!S.peer || !S.peer.isServer || !getToken()) return;
+    fetch(apiBase() + '/api/chat/' + S.peer.serverId + '/messages?limit=50&markRead=1', {
+      headers: { 'Authorization': 'Bearer ' + getToken() }
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      var items = d.items || [];
+      if (!items.length && silent) return;
+      var hadTyping = !!document.getElementById('typingIndicator');
+      S.msgs = items.map(function (m) {
+        return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read };
+      });
+      if (hadTyping) return; // AI 正在输入时不整表重绘
+      renderMsgs();
+      if (!silent) renderList();
+    })
+    .catch(function () { /* 离线静默：保留本地消息 */ });
+  }
+
+  function fetchGroupMsgs(silent) {
+    if (!S.group || !getToken()) return;
+    fetch(apiBase() + '/api/groups/' + S.group.id + '/messages?limit=50&markRead=1', {
+      headers: { 'Authorization': 'Bearer ' + getToken() }
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      S.msgs = (d.items || []).map(function (m) {
+        return { id: m.id, senderId: m.senderId, senderNickname: m.senderNickname, senderAvatar: m.senderAvatar, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true };
+      });
+      S.group.memberCount = S.group.memberCount || 0;
+      renderMsgs();
+      if (!silent) renderList();
+    })
+    .catch(function () { /* 离线静默 */ });
+  }
+
+  // —— 群列表（会话 tab 置顶展示，含未读角标） ——
+  function loadGroups() {
+    var token = getToken();
+    if (!token) { S.groups = []; return; }
+    fetch(apiBase() + '/api/groups', { headers: { 'Authorization': 'Bearer ' + token } })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { S.groups = d.items || []; if (S.tab === 'chats') renderChats($id('imList')); })
+    .catch(function () { S.groups = S.groups || []; });
+  }
+
+  // 打开群会话
+  window.imOpenGroup = function (gid) {
+    if (!getToken()) { toast('群聊需要联网'); return; }
+    var g = (S.groups || []).find(function (x) { return x.id === gid; });
+    S.peer = null;
+    S.group = g ? { id: g.id, name: g.name, memberCount: g.memberCount } : { id: gid, name: '群聊', memberCount: 0 };
+    var empty = $id('imEmpty');
+    if (empty) empty.style.display = 'none';
+    var conv = $id('imConv');
+    if (conv) conv.style.display = 'flex';
+    document.body.classList.add('im-mobile');
+    renderChatHeader();
+    S.msgs = [];
+    renderMsgs();
+    renderList();
+    fetchGroupMsgs(false);
+    var inp = $id('imInput');
+    if (inp) setTimeout(function () { inp.focus(); }, 100);
+  };
+
+  // 发送群消息（发送后立即拉取，不等下一轮轮询）
+  function imSendGroupText(text) {
+    var inp = $id('imInput');
+    if (inp) inp.value = '';
+    var token = getToken();
+    if (!token) { toast('群聊需要联网'); return; }
+    fetch(apiBase() + '/api/groups/' + S.group.id + '/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ content: text, kind: 'text' })
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (m) {
+      if (m && m.id) {
+        S.msgs.push({ id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true });
+        renderMsgs();
+      }
+      fetchGroupMsgs(true);
+    })
+    .catch(function (e) { toast('发送失败：' + (e.message || '网络错误')); });
+  }
+
+  // —— 发起群聊弹层（好友多选 → 命名 → 创建） ——
+  var GC = { step: 1, selected: [] }; // 弹层状态
+
+  window.imOpenGroupCreator = function () {
+    if (!getToken()) { toast('群聊需要联网'); return; }
+    GC.step = 1;
+    GC.selected = [];
+    var modal = $id('imGroupModal');
+    if (!modal) { toast('弹层未加载'); return; }
+    modal.style.display = 'flex';
+    loadServerFriends(function (friends) {
+      GC.friends = friends || [];
+      renderGroupStep1();
+    });
+  };
+
+  function renderGroupStep1() {
+    var modal = $id('imGroupModal');
+    if (!modal) return;
+    var body = modal.querySelector('.im-group-body');
+    var foot = modal.querySelector('.im-group-foot');
+    if (!body || !foot) return;
+    var kw = (GC.kw || '').toLowerCase();
+    var list = (GC.friends || []).filter(function (f) { return !kw || (f.nickname || '').toLowerCase().indexOf(kw) >= 0 || (f.username || '').toLowerCase().indexOf(kw) >= 0; });
+    var listHtml = list.length === 0
+      ? '<div class="im-empty2">没有可邀请的好友</div>'
+      : list.map(function (f) {
+          var idx = GC.selected.indexOf(f.serverId);
+          return '<div class="im-sess" onclick="window.imToggleGroupMember(' + f.serverId + ')">' +
+            '<div class="im-av">' + renderAvatar(f.avatarUrl || f.avatar, f.nickname) + '</div>' +
+            '<div class="im-si"><div class="im-n">' + esc(f.nickname) + ' <span style="font-size:11px;color:#999">@' + esc(f.username || '') + '</span></div></div>' +
+            '<div class="im-gcheck' + (idx >= 0 ? ' on' : '') + '">' + (idx >= 0 ? '✓' : '') + '</div></div>';
+        }).join('');
+    var selHtml = GC.selected.length === 0
+      ? '<div style="font-size:12px;color:#999;padding:4px 0">至少选择 2 位好友</div>'
+      : GC.selected.map(function (uid) {
+          var f = (GC.friends || []).find(function (x) { return x.serverId === uid; }) || {};
+          return '<div class="im-gsel">' + renderAvatar(f.avatarUrl || f.avatar, f.nickname) + '<span onclick="window.imToggleGroupMember(' + uid + ')">✕</span></div>';
+        }).join('');
+    body.innerHTML = '<div class="im-gsearch"><input id="imGroupKw" placeholder="搜索好友…" value="' + esc(GC.kw || '') + '" oninput="window.imGroupFilter(this.value)"></div>' +
+      '<div class="im-gsel-row">' + selHtml + '</div>' +
+      '<div class="im-glist">' + listHtml + '</div>';
+    foot.innerHTML = '<button class="btn btn-outline" onclick="window.imCloseGroupCreator()">取消</button>' +
+      '<button class="btn btn-primary" id="imGroupNext" ' + (GC.selected.length >= 2 ? '' : 'disabled') + ' onclick="window.imGroupNextStep()">下一步</button>';
+  }
+
+  window.imToggleGroupMember = function (uid) {
+    var idx = GC.selected.indexOf(uid);
+    if (idx >= 0) GC.selected.splice(idx, 1); else GC.selected.push(uid);
+    renderGroupStep1();
+  };
+
+  window.imGroupFilter = function (v) {
+    GC.kw = v;
+    // 只重渲染列表部分，避免输入框失焦
+    var list = (GC.friends || []).filter(function (f) {
+      var kw = (v || '').toLowerCase();
+      return !kw || (f.nickname || '').toLowerCase().indexOf(kw) >= 0 || (f.username || '').toLowerCase().indexOf(kw) >= 0;
+    });
+    var modal = $id('imGroupModal');
+    var listEl = modal && modal.querySelector('.im-glist');
+    if (listEl) {
+      listEl.innerHTML = list.length === 0 ? '<div class="im-empty2">没有可邀请的好友</div>' : list.map(function (f) {
+        var idx = GC.selected.indexOf(f.serverId);
+        return '<div class="im-sess" onclick="window.imToggleGroupMember(' + f.serverId + ')">' +
+          '<div class="im-av">' + renderAvatar(f.avatarUrl || f.avatar, f.nickname) + '</div>' +
+          '<div class="im-si"><div class="im-n">' + esc(f.nickname) + ' <span style="font-size:11px;color:#999">@' + esc(f.username || '') + '</span></div></div>' +
+          '<div class="im-gcheck' + (idx >= 0 ? ' on' : '') + '">' + (idx >= 0 ? '✓' : '') + '</div></div>';
+      }).join('');
+    }
+    var nextBtn = $id('imGroupNext');
+    if (nextBtn) nextBtn.disabled = GC.selected.length < 2;
+  };
+
+  window.imGroupNextStep = function () {
+    if (GC.selected.length < 2) { toast('至少选择 2 位好友'); return; }
+    GC.step = 2;
+    var modal = $id('imGroupModal');
+    var body = modal.querySelector('.im-group-body');
+    var foot = modal.querySelector('.im-group-foot');
+    var selNames = GC.selected.map(function (uid) {
+      var f = (GC.friends || []).find(function (x) { return x.serverId === uid; }) || {};
+      return esc(f.nickname || '');
+    }).join('、');
+    body.innerHTML = '<div class="im-gname-tip">已选 ' + GC.selected.length + ' 位成员：' + selNames + '</div>' +
+      '<div class="form-group"><div class="form-label">群名称（≤20 字）</div>' +
+      '<input type="text" class="form-input" id="imGroupName" maxlength="20" placeholder="如：四级冲刺打卡群"></div>';
+    foot.innerHTML = '<button class="btn btn-outline" onclick="window.imOpenGroupCreator()">上一步</button>' +
+      '<button class="btn btn-primary" onclick="window.imGroupCreate()">创建群聊</button>';
+    var nameInp = $id('imGroupName');
+    if (nameInp) setTimeout(function () { nameInp.focus(); }, 50);
+  };
+
+  window.imGroupCreate = function () {
+    var name = (($id('imGroupName') || {}).value || '').trim();
+    if (!name) { toast('请输入群名称'); return; }
+    if (name.length > 20) { toast('群名称最长 20 字'); return; }
+    var token = getToken();
+    fetch(apiBase() + '/api/groups', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ name: name, memberIds: GC.selected })
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d && d.id) {
+        window.imCloseGroupCreator();
+        toast('✅ 群聊已创建');
+        loadGroups();
+        setTimeout(function () { window.imOpenGroup(d.id); }, 200);
+      } else {
+        toast(d.detail || '创建失败');
+      }
+    })
+    .catch(function (e) { toast('创建失败：' + (e.message || '网络错误')); });
+  };
+
+  window.imCloseGroupCreator = function () {
+    var modal = $id('imGroupModal');
+    if (modal) modal.style.display = 'none';
+  };
+
+  // —— 表情面板（[emoji:xx] 文本语法，Unicode 渲染，离线可用） ——
+  var EMOJI_FAV_KEY = 'study_workbench_emoji_fav';
+  var EMOJI_RECENT_KEY = 'study_workbench_emoji_recent';
+
+  function emojiArr(key, max) {
+    try {
+      var v = JSON.parse(localStorage.getItem(key) || '[]');
+      return Array.isArray(v) ? v.slice(0, max || 16) : [];
+    } catch (e) { return []; }
+  }
+
+  window.imToggleEmoji = function () {
+    var panel = $id('imEmojiPanel');
+    if (!panel) return;
+    if (panel.style.display === 'none') { renderEmojiPanel('all'); panel.style.display = 'block'; }
+    else panel.style.display = 'none';
+  };
+
+  window.imEmojiTab = function (tab) {
+    renderEmojiPanel(tab);
+  };
+
+  function renderEmojiPanel(tab) {
+    var panel = $id('imEmojiPanel');
+    if (!panel || !window.STUDY_EMOJI) return;
+    var codes;
+    if (tab === 'recent') codes = emojiArr(EMOJI_RECENT_KEY, 16);
+    else if (tab === 'fav') codes = emojiArr(EMOJI_FAV_KEY, 16);
+    else codes = window.STUDY_EMOJI.list.map(function (e) { return e.code; });
+    var grid = codes.length === 0
+      ? '<div style="grid-column:1/-1;text-align:center;color:#999;font-size:12px;padding:12px 0">' + (tab === 'fav' ? '还没有收藏表情，点🌟收藏' : '暂无最近使用') + '</div>'
+      : codes.map(function (code) {
+          var e = window.STUDY_EMOJI.map[code];
+          if (!e) return '';
+          var fav = emojiArr(EMOJI_FAV_KEY, 16).indexOf(code) >= 0;
+          return '<div class="im-emoji-item" onclick="window.imPickEmoji(\'' + code + '\')" title="' + esc(e.name) + '">' + e.char +
+            '<span class="im-emoji-fav' + (fav ? ' on' : '') + '" onclick="event.stopPropagation();window.imFavEmoji(\'' + code + '\')">🌟</span></div>';
+        }).join('');
+    panel.innerHTML = '<div class="im-emoji-tabs">' +
+      '<span class="im-emoji-tab' + (tab === 'recent' ? ' on' : '') + '" onclick="window.imEmojiTab(\'recent\')">最近</span>' +
+      '<span class="im-emoji-tab' + (tab === 'all' ? ' on' : '') + '" onclick="window.imEmojiTab(\'all\')">全部</span>' +
+      '<span class="im-emoji-tab' + (tab === 'fav' ? ' on' : '') + '" onclick="window.imEmojiTab(\'fav\')">收藏</span>' +
+      '<span style="flex:1"></span>' +
+      '<span class="im-emoji-tab" onclick="window.imToggleEmoji()">收起</span></div>' +
+      '<div class="im-emoji-grid">' + grid + '</div>';
+  }
+
+  window.imPickEmoji = function (code) {
+    var inp = $id('imInput');
+    if (inp) inp.value = (inp.value || '') + '[emoji:' + code + ']';
+    // 记录最近使用（去重，最多 16 个）
+    var recent = emojiArr(EMOJI_RECENT_KEY, 16).filter(function (c) { return c !== code; });
+    recent.unshift(code);
+    try { localStorage.setItem(EMOJI_RECENT_KEY, JSON.stringify(recent.slice(0, 16))); } catch (e) { }
+    var panel = $id('imEmojiPanel');
+    if (panel && panel.style.display !== 'none') {
+      var cur = panel.querySelector('.im-emoji-tab.on');
+      renderEmojiPanel(cur ? (cur.textContent === '最近' ? 'recent' : cur.textContent === '收藏' ? 'fav' : 'all') : 'all');
+    }
+  };
+
+  window.imFavEmoji = function (code) {
+    var fav = emojiArr(EMOJI_FAV_KEY, 16);
+    var idx = fav.indexOf(code);
+    if (idx >= 0) fav.splice(idx, 1); else fav.unshift(code);
+    try { localStorage.setItem(EMOJI_FAV_KEY, JSON.stringify(fav.slice(0, 16))); } catch (e) { }
+    var panel = $id('imEmojiPanel');
+    if (panel && panel.style.display !== 'none') {
+      var cur = panel.querySelector('.im-emoji-tab.on');
+      renderEmojiPanel(cur ? (cur.textContent === '最近' ? 'recent' : cur.textContent === '收藏' ? 'fav' : 'all') : 'all');
+    }
+  };
+
+  // —— 在线状态（presence）：好友列表 30s 刷新一次 ——
+  function presenceText(lastSeenAt, online) {
+    if (online) return '在线';
+    if (!lastSeenAt) return '';
+    var t = new Date(lastSeenAt.replace(' ', 'T'));
+    if (isNaN(t)) return '';
+    var diff = (Date.now() - t.getTime()) / 60000; // 分钟
+    if (diff < 1) return '刚刚在线';
+    if (diff < 60) return Math.floor(diff) + ' 分钟前在线';
+    if (diff < 60 * 24) return Math.floor(diff / 60) + ' 小时前在线';
+    return Math.floor(diff / (60 * 24)) + ' 天前在线';
+  }
+
+  function refreshPresence() {
+    if (S.tab !== 'friends' || !getToken()) return;
+    var ids = (SERVER_FRIENDS || []).map(function (f) { return f.serverId; }).filter(Boolean);
+    if (!ids.length) return;
+    fetch(apiBase() + '/api/users/presence?ids=' + ids.join(','), {
+      headers: { 'Authorization': 'Bearer ' + getToken() }
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      (d.items || []).forEach(function (p) {
+        S.presence[p.id] = p;
+        var dot = document.querySelector('.im-dot[data-uid="' + p.id + '"]');
+        if (dot) dot.className = 'im-dot' + (p.online ? ' on' : '');
+        var txt = document.querySelector('.im-presence[data-uid="' + p.id + '"]');
+        if (txt) txt.textContent = presenceText(p.lastSeenAt, p.online) ? '· ' + presenceText(p.lastSeenAt, p.online) : '';
+      });
+    })
+    .catch(function () { /* 失败显示 -- ：占位符留空即可 */ });
+  }
+
+  // —— 会话轮询（2.5s 主干）：当前会话可见时高频拉取，页面隐藏暂停 ——
+  function startConvPoll() {
+    setInterval(function () {
+      if (document.visibilityState !== 'visible' || !getToken()) return;
+      if (S.group) { fetchGroupMsgs(true); return; }
+      if (S.peer && S.peer.isServer) fetchPeerMsgs(true);
+    }, 2500);
+    // 群列表 + 好友在线状态：30s
+    setInterval(function () {
+      if (document.visibilityState !== 'visible' || !getToken()) return;
+      loadGroups();
+      refreshPresence();
+    }, 30000);
+  }
+
   function boot() {
     var style = document.createElement('style');
     style.textContent = '@keyframes typing{0%,60%,100%{opacity:.3}30%{opacity:1}}';
@@ -786,11 +1188,15 @@
       .catch(function () {})
       .finally(function () {
         // 加载服务器好友后再渲染会话
-        loadServerFriends(function () { loadChats(); });
+        loadServerFriends(function () { loadChats(); refreshPresence(); });
       });
     } else {
       loadChats();
     }
+
+    // T4 增量：群列表加载 + 会话/在线状态轮询
+    loadGroups();
+    startConvPoll();
 
     // 每 5 秒轮询未读消息
     setInterval(function () {

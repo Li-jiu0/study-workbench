@@ -1865,3 +1865,56 @@ body.dark .bottom-nav { background: rgba(30,34,40,0.92); }
   width: 18px;
   border-radius: 3px;
 }
+
+/* ==========================================
+   T4 增量（2026-09-11）：聊天增强样式
+   （表情面板 / 已读角标 / 群聊会话 / 在线圆点 / 建群弹层）
+   ========================================== */
+
+/* —— 消息内 [emoji:xx] 表情字符 —— */
+.im-emoji{font-size:20px;line-height:1;vertical-align:-2px}
+
+/* —— 已读角标：✓ 已发送 / ✓✓ 已读 —— */
+.im-read{font-size:10px;opacity:.8;margin-top:2px;text-align:right}
+.im-read.ok{color:#b8ffd9}
+
+/* —— 表情面板 —— */
+.im-composer{position:relative}
+.im-emoji-panel{position:absolute;bottom:60px;right:12px;width:300px;max-width:90vw;background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.14);padding:10px;z-index:60}
+.im-emoji-tabs{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+.im-emoji-tab{font-size:12px;color:var(--text-secondary);cursor:pointer;padding:2px 8px;border-radius:8px}
+.im-emoji-tab.on{background:var(--primary-light);color:var(--primary);font-weight:600}
+.im-emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
+.im-emoji-item{position:relative;font-size:22px;text-align:center;padding:6px 0;cursor:pointer;border-radius:8px;transition:background .12s}
+.im-emoji-item:hover{background:var(--bg)}
+.im-emoji-fav{position:absolute;top:0;right:2px;font-size:9px;opacity:0;transition:opacity .12s}
+.im-emoji-item:hover .im-emoji-fav{opacity:.75}
+.im-emoji-fav.on{opacity:1}
+
+/* —— 群聊消息：发送者小头像 + 昵称 —— */
+.im-grow{display:flex;gap:8px;align-items:flex-start;max-width:85%}
+.im-gav{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--primary-light),#e9ecff);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--primary);overflow:hidden;flex-shrink:0}
+.im-gav img{width:100%;height:100%;object-fit:cover}
+.im-gcol{display:flex;flex-direction:column;min-width:0}
+.im-grow .im-m{max-width:100%}
+.im-gsender{font-size:11px;color:var(--text-secondary);margin:0 0 2px 2px}
+
+/* —— 在线状态：绿色圆点 + 最近在线文案 —— */
+.im-dot{position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;background:#ccc;border:2px solid #fff;display:none}
+.im-dot.on{display:block;background:#22c55e}
+.im-presence{color:#999;font-size:11px}
+
+/* —— 建群弹层 —— */
+.im-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:9998;display:flex;align-items:center;justify-content:center}
+.im-modal{background:var(--card);width:92%;max-width:420px;max-height:80vh;border-radius:16px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 12px 48px rgba(0,0,0,.22)}
+.im-modal-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border)}
+.im-group-body{padding:12px 16px;overflow-y:auto;flex:1}
+.im-group-foot{display:flex;justify-content:flex-end;gap:10px;padding:12px 16px;border-top:1px solid var(--border)}
+.im-gsearch input{width:100%;box-sizing:border-box;padding:8px 12px;border:1px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:var(--bg);color:var(--text)}
+.im-gsel-row{display:flex;flex-wrap:wrap;gap:8px;padding:10px 0;min-height:34px}
+.im-gsel{position:relative;width:34px;height:34px;border-radius:50%}
+.im-gsel span{position:absolute;top:-4px;right:-4px;width:14px;height:14px;line-height:12px;text-align:center;background:#ff5d5d;color:#fff;border-radius:50%;font-size:9px;cursor:pointer}
+.im-glist{max-height:300px;overflow-y:auto}
+.im-gcheck{width:20px;height:20px;border:2px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;flex-shrink:0}
+.im-gcheck.on{background:#07c160;border-color:#07c160}
+.im-gname-tip{font-size:12px;color:var(--text-secondary);margin-bottom:10px}
