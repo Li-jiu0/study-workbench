@@ -1,30 +1,91 @@
 sequenceDiagram
-    participant A as 甲(发送者前端)
-    participant R as groups.py(FastAPI)
+    autonumber
+    participant U as 用户
+    participant P as 私聊.html(chat-local.js)
+    participant C as config.js(STUDY_API_BASE)
+    participant API as FastAPI
     participant DB as SQLite
-    participant W as wsmanager
-    participant B as 乙(在线成员前端)
-    participant C as 丙(离线成员)
 
-    Note over A: 打开群会话
-    A->>R: GET /api/groups/{id}/messages?markRead=1
-    R->>DB: SELECT messages WHERE group_id=? (游标分页)
-    R->>DB: UPDATE chat_group_members SET last_read_msg_id=max(可见id)
-    R-->>A: items[](含发送者昵称头像) + hasMore
-
-    Note over A: 发送群消息
-    A->>R: POST /api/groups/{id}/messages {content}
-    R->>DB: INSERT messages(group_id, sender_id=甲, read_at=NULL)
-    R->>DB: SELECT 成员列表(排除甲)
-    loop 每个在线成员
-        R->>W: send_to(uid, {type:"groupMsg", groupId, message})
-        W-->>B: ws 推送 groupMsg
+    rect rgb(238,246,255)
+    note over U,API: A6 在线修改密码
+    U->>P: 设置页 点「修改密码」→ 填 旧/新/确认
+    P->>API: POST /api/auth/change-password {oldPassword,newPassword}
+    API->>DB: 查 User(id) by token
+    API->>API: verify_password(old) / 强度校验
+    alt 旧密码错误
+        API-->>P: 400 "当前密码不正确"
+        P-->>U: toast 错误
+    else 通过
+        API->>API: hash_password(new)
+        API->>DB: UPDATE users.password_hash
+        API-->>P: {ok:true}
+        P-->>U: toast「密码已修改」
     end
-    R-->>A: msg_dict(message)
-    B-->>B: ws 消息按 id 去重后渲染气泡(昵称+头像)
+    end
 
-    Note over C: 丙离线，ws 推送失败静默
-    C->>R: (上线后) GET /api/groups → unreadCount = id>last_read_msg_id 计数
-    C->>R: GET /api/groups/{id}/messages
-    R->>DB: 推进丙的 last_read_msg_id
-    R-->>C: 消息列表
+    rect rgb(238,255,238)
+    note over U,API: A7 聊天语音消息（在线）
+    U->>P: 长按 🎤 录制
+    P->>P: MediaRecorder 采集(<=60s/<=2MB)
+    P->>C: 读 STUDY_API_BASE
+    P->>API: POST /api/uploads/voice (FormData, Bearer)
+    API->>API: ext_for_audio 魔数校验
+    API-->>P: {url:/uploads/voice/x.webm}
+    P->>API: POST /api/chat/{peer}/messages {kind:voice,content:url}
+    API->>API: kind in (text,image,voice) 放行
+    API->>DB: INSERT messages(kind=voice)
+    API-->>P: {id,kind:voice,content:url}
+    P->>P: renderMsgs → 语音条 ▶
+    U->>P: 点语音条
+    P->>P: imTogglePlayVoice 播放/暂停/续播
+    end
+
+    rect rgb(255,248,238)
+    note over U,API: A4/A5 已是好友 & 删除好友
+    U->>P: 打开 个人中心.html?user=9001
+    P->>API: GET /api/users/9001
+    API-->>P: {..., isFriend:true}  (users.py:150)
+    P->>P: isFriend=!!u.isFriend → 渲染「发消息/删除好友」
+    U->>P: 点「删除好友」→ 二次确认(含 清空本地记录勾选)
+    P->>API: DELETE /api/friends/9001
+    API->>DB: DELETE friends(a,b)
+    API-->>P: {ok:true}
+    P->>P: 刷新列表 + toast + 跳回
+    opt 勾选清空
+        P->>P: 删 study_im_local_data.messages[9001]/chats[9001]
+    end
+    end
+
+    rect rgb(250,240,255)
+    note over U,P: A3 加好友模态（与群聊同源，无后端降级）
+    U->>P: 私聊页点「➕ 加好友」
+    P->>P: imOpenAddFriendModal()
+    alt 无 token(离线)
+        P-->>U: 入口置灰「加好友需要联网」
+    else 在线
+        U->>P: 输入关键词(防抖300ms)
+        P->>API: GET /api/friends/search?q=
+        API-->>P: {items:[{...,isFriend}]}
+        P->>P: imRenderFriendRows → 加好友/发消息/已发送
+        U->>P: 点「加好友」
+        P->>API: POST /api/friends/requests {toUserId}
+        API-->>P: {ok} / {autoAccepted}
+        P->>P: 行内变「已发送」+ toast
+    end
+    end
+
+    rect rgb(245,245,245)
+    note over U,P: A9 首页学习数据真实化（离线优先）
+    U->>P: 打开 学习工作台.html
+    P->>P: StudyStats.getSummary()(本地 study_workbench_stats)
+    P->>P: 读 appData.stats(本地做题/词汇)
+    opt 在线可静默
+        P->>API: GET /api/study/summary
+        API-->>P: {totalMinutes, totalEvents, days}
+        P->>P: max(本地, 云端) 合并(只增不减)
+    end
+    P->>P: renderStats/renderWeekChart 渲染真实值
+    alt 无任何记录
+        P-->>U: 显示 0 + 「还没有学习记录，去学一章吧」
+    end
+    end
