@@ -238,7 +238,13 @@ def scan_file(path, rels, attrs):
                         el = _element_of(node.value, env, rels, attrs)
                         if el:
                             env[tgt.id] = ("list", el)
-                elif isinstance(node, (ast.For,)):
+                elif isinstance(node, ast.For):
+                    if isinstance(node.target, ast.Name):
+                        el = _element_of(node.iter, env, rels, attrs)
+                        if el:
+                            env[node.target.id] = el
+                elif isinstance(node, ast.comprehension):
+                    # 列表/字典/集合/生成器推导式的 for 子句（如 [ {...} for c in page_rows ]）
                     if isinstance(node.target, ast.Name):
                         el = _element_of(node.iter, env, rels, attrs)
                         if el:
