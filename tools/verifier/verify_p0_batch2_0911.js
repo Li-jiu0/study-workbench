@@ -35,6 +35,52 @@ function check(label, cond, detail) {
 }
 function sec(t) { console.log('\n========== ' + t + ' =========='); }
 
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// 真渲染模式（BUG-1 回归用，搬自 tools/qa/ed_independent_0911h.js 的 harness）：
+// outside-only 模式 jsdom 不执行内联 onclick 属性，「点击 → 内联 handler」断言必须用本模式。
+// 本地 HTTP 服务 + runScripts:'dangerously' + resources:'usable'（端口与 QA harness 错开，避免并行冲突）。
+const http = require('http');
+const VR_PORT = 8131;
+const vrServer = http.createServer((req, res) => {
+  const p = path.join(ROOT, decodeURIComponent(req.url.split('?')[0]));
+  fs.readFile(p, (e, buf) => {
+    if (e) { res.writeHead(404); res.end('nf'); return; }
+    const ct = /\.css$/.test(p) ? 'text/css' : (/\.js$/.test(p) ? 'text/javascript; charset=utf-8' : 'text/html; charset=utf-8');
+    res.writeHead(200, { 'content-type': ct }); res.end(buf);
+  });
+});
+let vrServerReady = null;
+function ensureVrServer() {
+  if (!vrServerReady) vrServerReady = new Promise(res => vrServer.listen(VR_PORT, '127.0.0.1', res));
+  return vrServerReady;
+}
+async function loadReal(page) {
+  await ensureVrServer();
+  const vcErrors = [];
+  const vc = new VirtualConsole();
+  vc.on('jsdomError', e => vcErrors.push(String((e && e.message) || e)));
+  let wRef = null;
+  const html = fs.readFileSync(path.join(ROOT, page), 'utf8');
+  const dom = new JSDOM(html, {
+    runScripts: 'dangerously',
+    resources: 'usable',
+    pretendToBeVisual: true,
+    url: 'http://127.0.0.1:' + VR_PORT + '/' + page,
+    virtualConsole: vc,
+    beforeParse(w) {
+      wRef = w;
+      w.fetch = function () { return Promise.resolve({ ok: true, json: () => Promise.resolve({}), text: () => Promise.resolve('{}') }); };
+      try {
+        w.localStorage.setItem('study_workbench_auth', JSON.stringify({ account: 'tester', loginAt: Date.now() }));
+        w.localStorage.setItem('study_workbench_token', 'test-token');
+      } catch (e) { }
+    },
+  });
+  await sleep(600); // 等同步脚本链执行完
+  return { w: wRef, d: wRef.document, vcErrors };
+}
+
 // 载入一个页面：按 <script> 顺序 eval（src 读文件 / 内联读文本），并捕获未捕获异常
 function load(page, opts) {
   opts = opts || {};
@@ -473,6 +519,60 @@ sec('[4] 需求11：好友行/搜索结果行无「删除」，主页删除入�
     const pollEnd = cl.indexOf('}, 5000);');
     check('需求1 轮询体内不含 requests/seen（不会每 5 秒打接口）', pollEnd !== -1 && !cl.slice(Math.max(0, pollEnd - 2600), pollEnd).includes('requests/seen'));
     check('需求1 renderRequests 成功路径调用 markRequestsSeen', /\n      markRequestsSeen\(token, API_BASE\);/.test(cl));
+  }
+
+  /* ========== [8] BUG-1（QA Round1）：左滑展开态 × 5s 轮询重渲染 × 点击穿透（真渲染模式） ========== */
+  sec('[8] BUG-1：重渲染即收起，S.swipeOpen 不残留，首次点击不被吞（真渲染模式）');
+  {
+    const imr = await loadReal('私聊.html');
+    const Tr = imr.w.__IM_TEST__;
+    check('BUG-1 真渲染模式 __IM_TEST__ 暴露', !!Tr && typeof Tr.renderChats === 'function');
+    const listR = imr.d.getElementById('imList');
+    Tr.S.tab = 'chats';
+    Tr.S.peer = null; Tr.S.group = null; Tr.S.groups = [];
+    Tr.S.chats = [
+      { id: 10005, isServer: true, serverId: 5, nickname: '张三', unread: 2, last: '你好', time: 1000 },
+      { id: 3, nickname: '本地草稿', unread: 1, last: '笔记', time: 3000 },
+    ];
+    Tr.S.presence = {};
+    Tr.renderChats(listR);
+    const rowOfR = tid => listR.querySelector('.im-sess[data-tid="' + tid + '"]');
+
+    // 8.1 展开某行 → 手动触发一次重渲染（模拟 5s 轮询）→ S.swipeOpen 必须被清空
+    imr.w.imOpenSwipe('u5');
+    check('BUG-1 展开后 S.swipeOpen = u5（前置确认）', Tr.S.swipeOpen === 'u5');
+    check('BUG-1 展开后行位移 156px', rowOfR('u5') && rowOfR('u5').style.transform === 'translateX(-156px)');
+    Tr.renderChats(listR); // 模拟 5s 未读轮询 renderList → renderChats
+    check('BUG-1 重渲染后 S.swipeOpen 被清空（状态不残留）', Tr.S.swipeOpen === null, 'S.swipeOpen=' + Tr.S.swipeOpen);
+    check('BUG-1 重渲染后无位移残留', !rowOfR('u5') || rowOfR('u5').style.transform === '' || rowOfR('u5').style.transform === 'none');
+
+    // 8.2 BUG-1 复现路径：展开 → 重渲染 → 点击会话行 → imOpenChat 必须被调用 1 次
+    //     （修前：捕获阶段监听器只看 S.swipeOpen 残留 → stopPropagation 吞掉首次点击，调用 0 次）
+    let openChatCalls = [];
+    imr.w.imOpenChat = function (id) { openChatCalls.push(id); };
+    imr.w.imOpenSwipe('u5');
+    Tr.renderChats(listR);
+    rowOfR('l3').dispatchEvent(new imr.w.MouseEvent('click', { bubbles: true, cancelable: true }));
+    check('BUG-1 重渲染收起后点击行 → imOpenChat 被调用 1 次（修前为 0）', openChatCalls.length === 1, 'imOpenChat 调用=' + openChatCalls.length);
+
+    // 8.3 无展开态时点击行照常进入会话（防回归：清空逻辑不误伤正常路径）
+    rowOfR('l3').dispatchEvent(new imr.w.MouseEvent('click', { bubbles: true, cancelable: true }));
+    check('BUG-1 无展开态点击行 → imOpenChat 再调用 1 次（累计 2）', openChatCalls.length === 2, 'imOpenChat 调用=' + openChatCalls.length);
+
+    // 8.4 展开态下点击同一行 → 捕获阶段收起且不进会话（原防误触行为保留）
+    imr.w.imOpenSwipe('u5');
+    rowOfR('u5').dispatchEvent(new imr.w.MouseEvent('click', { bubbles: true, cancelable: true }));
+    check('BUG-1 展开态点击行 → 收起且不进会话（调用数不变）', Tr.S.swipeOpen === null && openChatCalls.length === 2);
+
+    // 8.5 群行无「置顶」按钮（QA 观察项处置：隐藏，避免「已置顶」toast 误导）+ 位移随按钮数收缩
+    Tr.S.groups = [{ id: 1, name: '四级冲刺群', memberCount: 3, unreadCount: 0 }];
+    Tr.renderChats(listR);
+    const gWrap = listR.querySelector('.im-swipe[data-tid="g1"]');
+    check('BUG-1/观察项 群行不渲染「置顶」按钮（只有免打扰+删除）',
+      !!gWrap && gWrap.querySelectorAll('.im-sa').length === 2 && !gWrap.querySelector('.im-sa-pin'));
+    imr.w.imOpenSwipe('g1');
+    check('BUG-1/观察项 群行展开位移 = 104px（2 按钮 × 52）', gWrap.querySelector('.im-sess').style.transform === 'translateX(-104px)');
+    imr.w.imCloseSwipe();
   }
 
   console.log('\n========== 汇总 ==========');
