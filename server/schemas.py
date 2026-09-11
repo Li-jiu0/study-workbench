@@ -72,6 +72,20 @@ class MigrateIn(BaseModel):
     notes: list[dict]
 
 
+class PrivacyIn(BaseModel):
+    """隐私设置部分更新（T03 增量，PUT /api/users/me/privacy）。
+
+    三字段均为「可选、部分更新」：只更新显式传入的字段。
+    - momentVisibility ∈ public/friends/private
+    - friendAllow ∈ everyone/need_confirm/nobody
+    - searchable：API 层 bool，DB 层 INTEGER 0/1
+    未传入字段保持 None，由路由层区分「未提供」与「显式值」。
+    """
+    momentVisibility: str | None = None
+    friendAllow: str | None = None
+    searchable: bool | None = None
+
+
 # ---------- 增量（2026-09-11）：群聊 / 动态 / 反馈 / 学习统计 ----------
 
 class GroupCreateIn(BaseModel):
@@ -87,6 +101,21 @@ class GroupMsgIn(BaseModel):
 
 class GroupReadIn(BaseModel):
     upToId: int = Field(gt=0)
+
+
+class GroupPatchIn(BaseModel):
+    """改群名 / 群公告（T04，D1）：部分更新。
+
+    长度/空值不走 pydantic 约束，统一在路由层抛中文 400
+    （空群名→「群名称不能为空」/超长→「群名称最长 20 字」/公告超长→「公告最长 300 字」）。
+    """
+    name: str | None = None
+    announcement: str | None = None
+
+
+class GroupMeIn(BaseModel):
+    """设置我在本群的群名片（T04，D5）：空串 = 清除，回退全局昵称。"""
+    groupNickname: str | None = None
 
 
 class MomentIn(BaseModel):
@@ -122,6 +151,20 @@ def user_brief(u) -> dict:
         "id": u.id,
         "nickname": u.nickname,
         "avatarUrl": u.avatar,
+    }
+
+
+def privacy_of(u) -> dict:
+    """隐私三项全量视图（T03 增量）：仅用于本人 /api/auth/me 与 PUT /me/privacy 响应。
+
+    - momentVisibility / friendAllow：老库/存量行取默认值（friends / need_confirm）。
+    - searchable：对外恒为 bool；存量 NULL（历史行）视为可搜索 True。
+    """
+    raw = getattr(u, "searchable", 1)
+    return {
+        "momentVisibility": getattr(u, "moment_visibility", None) or "friends",
+        "friendAllow": getattr(u, "friend_allow", None) or "need_confirm",
+        "searchable": not (raw is not None and raw == 0),
     }
 
 

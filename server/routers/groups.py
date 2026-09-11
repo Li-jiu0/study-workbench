@@ -10,7 +10,9 @@ from sqlalchemy.orm import Session
 
 from database import (ChatGroup, ChatGroupMember, Message, User,
                       friend_ids_of, get_db, now_iso)
-from schemas import GroupCreateIn, GroupMsgIn, GroupReadIn
+from rate_limit import rate_limit
+from schemas import (GroupCreateIn, GroupMeIn, GroupMsgIn, GroupPatchIn,
+                     GroupReadIn)
 from security import get_current_user
 from wsmanager import send_to
 
@@ -19,13 +21,31 @@ router = APIRouter(prefix="/api/groups", tags=["groups"])
 MAX_GROUP_SIZE = 50  # 建群第 51 人被拒（含创建者）
 
 
-def group_msg_dict(m: Message, sender: User | None, group_id: int) -> dict:
-    """群消息序列化（带发送者昵称头像，均为公开字段）。"""
+def _group_nick_map(db: Session, gid: int) -> dict[int, str]:
+    """构造群名片映射 {user_id: group_nickname}（T04，D5；空串保留以便回退全局昵称）。"""
+    rows = db.query(ChatGroupMember.user_id, ChatGroupMember.group_nickname).filter(
+        ChatGroupMember.group_id == gid).all()
+    return {uid: (nick or "") for uid, nick in rows}
+
+
+def group_msg_dict(m: Message, sender: User | None, group_id: int,
+                   nick_map: dict[int, str] | None = None) -> dict:
+    """群消息序列化（公开字段）。
+
+    昵称优先级（T04，D5）：群名片(非空) > 全局昵称 > "已注销用户"；头像恒取全局头像。
+    """
+    nick = (nick_map or {}).get(m.sender_id) or ""
+    if nick.strip():
+        display = nick.strip()
+    elif sender:
+        display = sender.nickname
+    else:
+        display = "已注销用户"
     return {
         "id": m.id,
         "groupId": group_id,
         "senderId": m.sender_id,
-        "senderNickname": sender.nickname if sender else "已注销用户",
+        "senderNickname": display,
         "senderAvatar": sender.avatar if sender else None,
         "kind": m.kind,
         "content": m.content,
@@ -121,9 +141,12 @@ def list_groups(user: User = Depends(get_current_user), db: Session = Depends(ge
 
 @router.get("/{gid}")
 def group_detail(gid: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """群详情 + 成员列表（user_brief 白名单 + role；绝不返回 phone/gender/birthday）。"""
+    """群详情 + 成员列表（user_brief 白名单 + role；绝不返回 phone/gender/birthday）。
+
+    T04 增量：额外返回 announcement / myRole / myGroupNickname，成员项补 groupNickname。
+    """
     g = require_group(db, gid)
-    require_member(db, gid, user.id)
+    me = require_member(db, gid, user.id)
     rows = db.query(ChatGroupMember, User).join(
         User, ChatGroupMember.user_id == User.id).filter(
         ChatGroupMember.group_id == gid).order_by(ChatGroupMember.id).all()
@@ -132,13 +155,58 @@ def group_detail(gid: int, user: User = Depends(get_current_user), db: Session =
         "name": g.name,
         "ownerId": g.owner_id,
         "avatar": g.avatar,
+        "announcement": g.announcement or "",
+        "myRole": me.role,
+        "myGroupNickname": me.group_nickname or "",
         "createdAt": g.created_at,
         "members": [
             {"id": u.id, "nickname": u.nickname, "avatarUrl": u.avatar,
-             "role": m.role, "joinedAt": m.joined_at}
+             "role": m.role, "groupNickname": m.group_nickname or "", "joinedAt": m.joined_at}
             for m, u in rows
         ],
     }
+
+
+@router.patch("/{gid}")
+def patch_group(gid: int, body: GroupPatchIn, user: User = Depends(get_current_user),
+                db: Session = Depends(get_db), _rl: None = Depends(rate_limit("default"))):
+    """改群名 / 群公告（T04，D1）：部分更新，仅群主/管理员。
+
+    权限判定统一写 role in ('owner','admin')。【后续扩展点：设置管理员】
+    """
+    g = require_group(db, gid)
+    me = require_member(db, gid, user.id)
+    if me.role not in ("owner", "admin"):  # 【后续扩展点：设置管理员】
+        raise HTTPException(403, "仅群主/管理员可以修改")
+    if body.name is not None:
+        name = body.name.strip()
+        if not name:
+            raise HTTPException(400, "群名称不能为空")
+        if len(name) > 20:
+            raise HTTPException(400, "群名称最长 20 字")
+        g.name = name
+    if body.announcement is not None:
+        ann = body.announcement.strip()
+        if len(ann) > 300:
+            raise HTTPException(400, "公告最长 300 字")
+        g.announcement = ann
+    db.commit()
+    return {"id": g.id, "name": g.name, "announcement": g.announcement or ""}
+
+
+@router.patch("/{gid}/me")
+def patch_group_me(gid: int, body: GroupMeIn, user: User = Depends(get_current_user),
+                   db: Session = Depends(get_db), _rl: None = Depends(rate_limit("default"))):
+    """设置我在本群的群名片（T04，D5）：仅成员本人；空串 = 清除回退全局昵称。"""
+    require_group(db, gid)
+    me = require_member(db, gid, user.id)
+    if body.groupNickname is not None:
+        nick = body.groupNickname.strip()
+        if len(nick) > 20:
+            raise HTTPException(400, "群昵称最长 20 字")
+        me.group_nickname = nick
+        db.commit()
+    return {"groupNickname": me.group_nickname or ""}
 
 
 @router.get("/{gid}/messages")
@@ -164,10 +232,11 @@ async def group_messages(gid: int, before_id: int = 0, limit: int = 30, mark_rea
             db.commit()
     sender_ids = {m.sender_id for m, _ in rows}
     senders = {u.id: u for u in db.query(User).filter(User.id.in_(sender_ids)).all()} if sender_ids else {}
+    nick_map = _group_nick_map(db, gid)
     return {
         "id": g.id,
         "name": g.name,
-        "items": [group_msg_dict(m, senders.get(m.sender_id), gid) for m, _ in rows],
+        "items": [group_msg_dict(m, senders.get(m.sender_id), gid, nick_map) for m, _ in rows],
         "hasMore": has_more,
         "nextBefore": rows[0][0].id if has_more and rows else 0,
     }
@@ -191,10 +260,11 @@ async def send_group_message(gid: int, body: GroupMsgIn,
     # 推送自身游标之外的成员（自己不需要回显，前端发送成功即本地渲染）
     others = db.query(ChatGroupMember.user_id).filter(
         ChatGroupMember.group_id == gid, ChatGroupMember.user_id != user.id).all()
-    payload = {"type": "groupMsg", "groupId": gid, "message": group_msg_dict(m, user, gid)}
+    nick_map = _group_nick_map(db, gid)
+    payload = {"type": "groupMsg", "groupId": gid, "message": group_msg_dict(m, user, gid, nick_map)}
     for (uid,) in others:
         await send_to(uid, payload)
-    return group_msg_dict(m, user, gid)
+    return group_msg_dict(m, user, gid, nick_map)
 
 
 @router.post("/{gid}/read")

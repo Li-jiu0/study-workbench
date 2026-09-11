@@ -13,6 +13,9 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT    NOT NULL,                 -- PBKDF2-SHA256（盐 + 12万轮迭代）
   nickname      TEXT    NOT NULL,                 -- 昵称（对外展示）
   motto         TEXT    NOT NULL DEFAULT '',      -- 个性签名
+  moment_visibility TEXT NOT NULL DEFAULT 'friends',      -- 动态可见范围：public/friends/private（T03 增量）
+  friend_allow  TEXT    NOT NULL DEFAULT 'need_confirm',  -- 谁可加我：everyone/need_confirm/nobody（T03 增量）
+  searchable    INTEGER NOT NULL DEFAULT 1,        -- 能否被搜索：1=可 / 0=不可（T03 增量）
   avatar        TEXT,                             -- 头像 URL（/uploads/avatars/xxx，NULL=默认emoji）
   created_at    TEXT    NOT NULL                  -- 'YYYY-MM-DD HH:MM'
 );
@@ -94,6 +97,7 @@ CREATE TABLE IF NOT EXISTS chat_groups (
   name       TEXT    NOT NULL,                          -- 群名（≤20 字）
   owner_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   avatar     TEXT,                                      -- 群头像 URL（默认 NULL，前端九宫格拼图占位）
+  announcement TEXT  NOT NULL DEFAULT '',               -- 群公告（≤300 字，T03 增量）
   created_at TEXT    NOT NULL
 );
 
@@ -103,6 +107,7 @@ CREATE TABLE IF NOT EXISTS chat_group_members (
   group_id         INTEGER NOT NULL REFERENCES chat_groups(id) ON DELETE CASCADE,
   user_id          INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   role             TEXT    NOT NULL DEFAULT 'member',    -- owner / member
+  group_nickname   TEXT    NOT NULL DEFAULT '',          -- 群名片（空=用全局昵称，T03 增量）
   last_read_msg_id INTEGER NOT NULL DEFAULT 0,
   joined_at        TEXT    NOT NULL,
   UNIQUE (group_id, user_id)

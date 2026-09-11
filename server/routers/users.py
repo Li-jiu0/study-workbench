@@ -8,7 +8,8 @@ from sqlalchemy.orm import Session
 from config import AVATAR_DIR
 from database import User, get_db, is_friend, now_iso
 from filecheck import ext_for
-from schemas import ProfileIn, note_card, user_brief
+from rate_limit import rate_limit
+from schemas import PrivacyIn, ProfileIn, note_card, privacy_of, user_brief
 from security import get_current_user
 
 router = APIRouter(prefix="/api/users", tags=["users"])
@@ -16,6 +17,10 @@ router = APIRouter(prefix="/api/users", tags=["users"])
 _MAX_AVATAR = 8 * 1024 * 1024
 # 在线判定阈值：5 分钟内有任意鉴权请求即视为在线（决策见架构文档 §9-3）
 ONLINE_THRESHOLD_SECONDS = 5 * 60
+
+# 隐私三项合法枚举（T03）：非法值 → 400「设置值不合法」
+_MOMENT_VISIBILITY = ("public", "friends", "private")
+_FRIEND_ALLOW = ("everyone", "need_confirm", "nobody")
 
 
 def _presence_fields(target: User) -> dict:
@@ -60,6 +65,33 @@ def update_profile(body: ProfileIn, user: User = Depends(get_current_user), db: 
     return {"id": user.id, "nickname": user.nickname, "motto": user.motto, "bio": user.bio,
             "gender": user.gender, "birthday": user.birthday, "city": user.city,
             "phone": user.phone, "goal": user.goal, "tags": user.tags, "avatarUrl": user.avatar}
+
+
+@router.put("/me/privacy")
+def update_privacy(body: PrivacyIn, user: User = Depends(get_current_user),
+                   db: Session = Depends(get_db), _rl: None = Depends(rate_limit("default"))):
+    """隐私设置部分更新（T03 增量，C1/C2/C3）。
+
+    - 只更新显式传入的字段（未传入字段不动）；三字段全未传 → 400。
+    - 非法枚举（momentVisibility / friendAllow）→ 400「设置值不合法」。
+    - searchable：API 层 bool，落库 INTEGER 0/1。
+    - 返回全量 privacy 对象（含未改动字段），供前端局部刷新。
+    """
+    # 先整体校验再落库，避免半更新（校验失败即抛 400，不产生任何写入）
+    if body.momentVisibility is not None and body.momentVisibility not in _MOMENT_VISIBILITY:
+        raise HTTPException(400, "设置值不合法")
+    if body.friendAllow is not None and body.friendAllow not in _FRIEND_ALLOW:
+        raise HTTPException(400, "设置值不合法")
+    if body.momentVisibility is None and body.friendAllow is None and body.searchable is None:
+        raise HTTPException(400, "设置值不合法")
+    if body.momentVisibility is not None:
+        user.moment_visibility = body.momentVisibility
+    if body.friendAllow is not None:
+        user.friend_allow = body.friendAllow
+    if body.searchable is not None:
+        user.searchable = 1 if body.searchable else 0
+    db.commit()
+    return privacy_of(user)
 
 
 @router.post("/me/avatar")
