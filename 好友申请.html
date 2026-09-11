@@ -62,7 +62,7 @@
 <script>
 (function () {
   'use strict';
-  function apiBase() { return (location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000'; }
+  function apiBase() { return (location.protocol === 'http:' || location.protocol === 'https:') ? '' : '{API_BASE}'; }
   function tok() { return localStorage.getItem('study_workbench_token') || ''; }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function avatar(u) {
