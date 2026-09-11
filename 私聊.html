@@ -223,6 +223,7 @@
 </div>
 
 <script src="assets/app.js?v=20260911c"></script>
+<script src="assets/config.js?v=20260911d"></script>
 <script src="assets/api.js?v=20260911c"></script>
 <script src="assets/chat-local.js"></script>
 <style>
@@ -244,7 +245,7 @@
     if (isNaN(d)) return '';
     return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
   }
-  function apiBase() { return (location.protocol === 'http:' || location.protocol === 'https:') ? '' : '{API_BASE}'; }
+  function apiBase() { return (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000')); }
   function tok() { return localStorage.getItem('study_workbench_token') || ''; }
 
   function render(kw, hits) {

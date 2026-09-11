@@ -157,10 +157,11 @@
   <div class="login-notice" id="loginNotice">💡 正在检测运行模式……</div>
 </div>
 
+<script src="assets/config.js?v=20260911d"></script>
 <script>
 /* ==================== 登录页逻辑（独立于 app.js） =====================================
    双模式（自动检测，互不影响）：
-   - 在线模式：检测到 FastAPI 后端（默认 {API_BASE}）→ 注册/登录走服务器，
+   - 在线模式：检测到 FastAPI 后端（默认 http://110.42.134.62:8000）→ 注册/登录走服务器，
                返回 JWT（study_workbench_token），多人博客/评论/点赞/AI 全部可用。
    - 离线模式（手机 App / 后端未启动）：账号仅存本机 localStorage（study_workbench_users，
                密码 simpleHash 混淆，非加密），登录只写 study_workbench_auth 门禁标记，
@@ -169,7 +170,7 @@
    - study_workbench_token : JWT 令牌（仅在线模式；assets/api.js 请求带 Authorization: Bearer）
    - study_workbench_auth  : {account, loginAt} app.js 顶部“未登录跳转登录页”的门禁标记
    - study_workbench_last_account : 记住上次登录的账号（仅预填） */
-var API_BASE = (location.protocol === 'http:' || location.protocol === 'https:') ? '' : '{API_BASE}';
+var API_BASE = (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000'));
 var TOKEN_KEY = 'study_workbench_token';
 var REFRESH_KEY = 'study_workbench_refresh';
 var AUTH_KEY = 'study_workbench_auth';
