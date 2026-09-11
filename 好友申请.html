@@ -101,7 +101,8 @@
     if (!items.length) { box.innerHTML = '<div class="af-empty">没有找到用户，试试别的关键词</div>'; return; }
     box.innerHTML = items.map(function (u, i) {
       var act;
-      if (u.isFriend) act = '<button class="af-btn gray">已是好友</button>';
+      if (u.isFriend) act = '<button class="af-btn" onclick="afOpenChat(' + u.id + ')">💬 发消息</button>' +
+        '<button class="af-mini no" onclick="afRemoveFriend(' + u.id + ')">删除好友</button>';
       else if (u.blockedMe) act = '<button class="af-btn gray">不可添加</button>';
       else act = '<button class="af-btn" onclick="addFriend(' + u.id + ',' + i + ')" id="addBtn' + i + '">➕ 加好友</button>';
       return '<div class="af-row"><div class="af-av">' + avatar(u) + '</div>' +
@@ -139,6 +140,17 @@
   window.actRequest = function (rid, accept, btn) {
     req('/api/friends/requests/' + rid + '/' + (accept ? 'accept' : 'decline'), { method: 'POST' })
       .then(function () { toast(accept ? '✅ 已同意，现在可以私聊了' : '已拒绝'); loadRequests(); })
+      .catch(function (e) { toast('⚠️ ' + e.message); });
+  };
+
+  /* ==================== A4/A5（2026-09-11）：已是好友 → 「发消息」+「删除好友」 ==================== */
+  window.afOpenChat = function (uid) {
+    location.href = '私聊.html?uid=' + uid;
+  };
+  window.afRemoveFriend = function (uid) {
+    if (!confirm('确定删除该好友吗？\n删除后双方互不可见，且无法继续私聊。')) return;
+    req('/api/friends/' + uid, { method: 'DELETE' })
+      .then(function () { toast('🗑 已删除好友，可重新添加'); doSearch(); })
       .catch(function (e) { toast('⚠️ ' + e.message); });
   };
 

@@ -215,6 +215,114 @@ async function renderUserHomeProbe(w, opts) {
     check('A9 无记录 → 不出现旧模拟数组[25/40/15/60]', chart.indexOf('60') === -1 && chart.indexOf('25') === -1);
   }
 
+  /* ========== [5] A3/A1/A2：私聊页加好友模态 + 加固 ========== */
+  sec('[5] A3/A1/A2：私聊页加好友模态与加固');
+  {
+    const { w, d } = load('私聊.html');
+    check('A3 #imAddFriendModal 存在', !!d.getElementById('imAddFriendModal'));
+    check('A3 #imAfInput / #imAfResults 存在', !!d.getElementById('imAfInput') && !!d.getElementById('imAfResults'));
+    check('A3 「加好友」入口改调 imOpenAddFriendModal()', /imOpenAddFriendModal\(\)/.test(d.documentElement.innerHTML));
+    ['imOpenAddFriendModal', 'imCloseAddFriendModal', 'imAfSearch', 'imAfSendRequest', 'imAfOpenChat', 'imRenderFriendRows']
+      .forEach(fn => check('A3 window.' + fn + ' 为函数', typeof w[fn] === 'function'));
+    check('A1 Esc 关闭监听函数已挂载（keydown 后弹层可关）', typeof w.imOpenGroupCreator === 'function' && typeof w.imCloseGroupCreator === 'function');
+    check('A2 window.imShowPeerHint 为函数', typeof w.imShowPeerHint === 'function');
+    check('A7 window.imToggleRecord / imTogglePlayVoice 为函数', typeof w.imToggleRecord === 'function' && typeof w.imTogglePlayVoice === 'function');
+    check('A5 window.imRemoveFriend 为函数', typeof w.imRemoveFriend === 'function');
+    check('A7 输入栏含 🎤 录音按钮', !!d.querySelector('.im-composer button[onclick="imToggleRecord()"]'));
+
+    // A3：imRenderFriendRows 状态规则
+    const rowFriend = d.createElement('div'); rowFriend.innerHTML = w.imRenderFriendRows([{ id: 1, nickname: 'A', username: 'a', isFriend: true }]);
+    const rowSend = d.createElement('div'); rowSend.innerHTML = w.imRenderFriendRows([{ id: 2, nickname: 'B', username: 'b', requested: true }]);
+    const rowBlock = d.createElement('div'); rowBlock.innerHTML = w.imRenderFriendRows([{ id: 3, nickname: 'C', username: 'c', blockedMe: true }]);
+    const rowAdd = d.createElement('div'); rowAdd.innerHTML = w.imRenderFriendRows([{ id: 4, nickname: 'D', username: 'd' }]);
+    check('A3 isFriend → 「发消息」', /发消息/.test(rowFriend.innerHTML), rowFriend.textContent.trim());
+    check('A3 已发送 → 禁灰「已发送」', /已发送/.test(rowSend.innerHTML));
+    check('A3 blockedMe → 「不可添加」', /不可添加/.test(rowBlock.innerHTML));
+    check('A3 非好友 → 「加好友」', /加好友/.test(rowAdd.innerHTML));
+
+    // A5：imRemoveFriend 生成二次确认弹层（含昵称与勾选项），Esc 可关闭
+    const before = d.querySelectorAll('.im-overlay').length;
+    w.imRemoveFriend(2);
+    const ovs = d.querySelectorAll('.im-overlay');
+    const lastOv = ovs[ovs.length - 1];
+    check('A5 删除好友弹层已生成', ovs.length === before + 1);
+    check('A5 二次确认含「同时清空本机聊天记录」勾选项', lastOv && /同时清空本机聊天记录/.test(lastOv.innerHTML));
+    // 触发 Esc 关闭
+    d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    check('A1 Esc 关闭删除好友弹层', d.querySelectorAll('.im-overlay').length === before);
+
+    // A1：Esc 关闭群聊弹层（真实打开→Esc→关闭）
+    w.localStorage.setItem('study_workbench_token', 't');
+    w.fetch = function () { return Promise.resolve({ json: function () { return Promise.resolve({ items: [] }); } }); };
+    w.imOpenGroupCreator();
+    const gm = d.getElementById('imGroupModal');
+    check('A1 群聊弹层已打开（display:flex）', gm && gm.style.display === 'flex');
+    d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    check('A1 Esc 关闭群聊弹层', gm && gm.style.display === 'none');
+  }
+
+  /* ========== [6] A1：弹层加固 CSS ========== */
+  sec('[6] A1：common.css 弹层加固');
+  {
+    const css = fs.readFileSync(path.join(ROOT, 'assets', 'common.css'), 'utf8');
+    check('A1 .im-overlay z-index>=10000', /\.im-overlay\{[^}]*z-index:10000/.test(css));
+    check('A1 .im-overlay 含 safe-area padding', /\.im-overlay\{[^}]*env\(safe-area-inset-top\)/.test(css));
+    check('A1 .im-modal margin:auto + dvh 高度约束', /\.im-modal\{[^}]*margin:auto/.test(css) && /dvh - 40px/.test(css));
+    check('A7 .im-voice 语音条样式存在', /\.im-voice\{/.test(css));
+  }
+
+  /* ========== [7] A7：语音消息（源码 + 分支） ========== */
+  sec('[7] A7：语音消息实现');
+  {
+    const cl = fs.readFileSync(path.join(ROOT, 'assets', 'chat-local.js'), 'utf8');
+    check('A7 使用 MediaRecorder 录制', /MediaRecorder/.test(cl));
+    check('A7 renderMsgs 有 voice 分支', /m\.kind === 'voice'/.test(cl));
+    check('A7 上传接口 /api/uploads/voice', /\/api\/uploads\/voice/.test(cl));
+    check('A7 发送 kind:voice 消息', /kind: 'voice'/.test(cl));
+    check('A7 60s/2MB 上限校验', /MAX_VOICE_MS/.test(cl) && /MAX_VOICE_BYTES/.test(cl));
+    check('A7 群会话预览 [语音]（previewText）', /previewText/.test(cl));
+    check('A7 不支持时降级提示', /不支持录音/.test(cl));
+  }
+
+  /* ========== [8] A6：设置页改密表单（前端校验 + 接后端） ========== */
+  sec('[8] A6：设置页修改密码（在线）');
+  {
+    const { w, d } = load('设置.html');
+    check('A6 #stPwdModal 表单存在', !!d.getElementById('stPwdModal'));
+    check('A6 三个密码输入框存在', ['stPwdOld', 'stPwdNew', 'stPwdNew2'].every(id => !!d.getElementById(id)));
+    check('A6 stOpenPwdModal / stClosePwdModal / stSubmitPwd 为函数',
+      typeof w.stOpenPwdModal === 'function' && typeof w.stClosePwdModal === 'function' && typeof w.stSubmitPwd === 'function');
+
+    // 预置在线 token → 打开模态
+    w.localStorage.setItem('study_workbench_token', 'test-token');
+    let calls = [];
+    w.api = function (p, o) { calls.push({ p: p, o: o }); return Promise.resolve({ ok: true }); };
+    w.stOpenPwdModal();
+    const modal = d.getElementById('stPwdModal');
+    check('A6 在线账号可打开改密模态', modal && modal.classList.contains('active'));
+
+    // 前端拦截：新密码 < 6 位
+    d.getElementById('stPwdOld').value = 'oldpass';
+    d.getElementById('stPwdNew').value = '123';
+    d.getElementById('stPwdNew2').value = '123';
+    await w.stSubmitPwd();
+    check('A6 新密码<6位 → 前端拦截（不发请求）', calls.length === 0, 'calls=' + calls.length);
+
+    // 前端拦截：两次不一致
+    d.getElementById('stPwdNew').value = 'newpass1';
+    d.getElementById('stPwdNew2').value = 'newpass2';
+    await w.stSubmitPwd();
+    check('A6 两次不一致 → 前端拦截', calls.length === 0, 'calls=' + calls.length);
+
+    // 合法提交 → 调接口并关闭模态
+    d.getElementById('stPwdNew').value = 'newpass1';
+    d.getElementById('stPwdNew2').value = 'newpass1';
+    await w.stSubmitPwd();
+    check('A6 合法提交 → 调用 /api/auth/change-password', calls.length === 1 && /\/api\/auth\/change-password/.test(calls[0].p), JSON.stringify(calls[0] || {}));
+    check('A6 提交体含旧/新密码', calls[0] && calls[0].o && calls[0].o.body && calls[0].o.body.oldPassword === 'oldpass' && calls[0].o.body.newPassword === 'newpass1');
+    check('A6 成功后关闭模态', !modal.classList.contains('active'));
+  }
+
   console.log('\n========== 汇总 ==========');
   console.log('通过 ' + pass + ' 项，失败 ' + fail + ' 项。');
   process.exit(fail ? 1 : 0);

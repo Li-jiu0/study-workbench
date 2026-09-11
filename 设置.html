@@ -630,6 +630,29 @@
           </div>
         </div>
 
+        <!-- 修改密码弹窗（A6，2026-09-11）：仅在线账号使用，调用 POST /api/auth/change-password -->
+        <div class="modal-overlay" id="stPwdModal" onclick="if(event.target===this)stClosePwdModal()">
+          <div class="modal">
+            <div class="modal-title">🔑 修改密码</div>
+            <div class="form-group">
+              <div class="form-label">当前密码</div>
+              <input type="password" class="form-input" id="stPwdOld" autocomplete="current-password" placeholder="请输入当前密码">
+            </div>
+            <div class="form-group">
+              <div class="form-label">新密码（至少 6 位）</div>
+              <input type="password" class="form-input" id="stPwdNew" autocomplete="new-password" placeholder="请输入新密码">
+            </div>
+            <div class="form-group">
+              <div class="form-label">确认新密码</div>
+              <input type="password" class="form-input" id="stPwdNew2" autocomplete="new-password" placeholder="请再次输入新密码">
+            </div>
+            <div class="modal-actions">
+              <button class="btn btn-outline" onclick="stClosePwdModal()">取消</button>
+              <button class="btn btn-primary" id="stPwdSubmitBtn" onclick="stSubmitPwd()">确认修改</button>
+            </div>
+          </div>
+        </div>
+
         <!-- 关于 -->
         <div class="card" data-page-node-id="ZIF3KldaDVWLKSv2KTWq2y">
           <div class="card-header" data-page-node-id="qMOHPsO1cOqhxasJsruUAl">
@@ -1031,7 +1054,7 @@ function stSimpleHash(s) {
   return 'h' + h.toString(36);
 }
 function stChangePassword() {
-  if (stIsOnline()) { showToast('ℹ️ 在线账号修改密码需后端接口支持（【后续扩展点】）'); return; }
+  if (stIsOnline()) { stOpenPwdModal(); return; }
   var acct = stCurAccount();
   if (!acct) { showToast('⚠️ 未获取到当前账号'); return; }
   var users = {};
@@ -1049,6 +1072,43 @@ function stChangePassword() {
   users[acct].pass = stSimpleHash(np);
   try { localStorage.setItem('study_workbench_users', JSON.stringify(users)); } catch (e) { showToast('⚠️ 保存失败'); return; }
   showToast('✅ 密码已修改，请牢记新密码');
+}
+
+/* ---------- A6：在线账号修改密码（前端表单 → POST /api/auth/change-password） ---------- */
+function stOpenPwdModal() {
+  if (!stIsOnline()) { showToast('⚠️ 当前未登录在线账号'); return; }
+  var ids = ['stPwdOld', 'stPwdNew', 'stPwdNew2'];
+  ids.forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
+  var m = document.getElementById('stPwdModal');
+  if (m) m.classList.add('active');
+  var first = document.getElementById('stPwdOld');
+  if (first) setTimeout(function () { first.focus(); }, 80);
+}
+function stClosePwdModal() {
+  var m = document.getElementById('stPwdModal');
+  if (m) m.classList.remove('active');
+}
+function stSubmitPwd() {
+  var oldP = (document.getElementById('stPwdOld') || {}).value || '';
+  var np = (document.getElementById('stPwdNew') || {}).value || '';
+  var np2 = (document.getElementById('stPwdNew2') || {}).value || '';
+  if (!oldP) { showToast('⚠️ 请输入当前密码'); return; }
+  if (!np || np.length < 6) { showToast('⚠️ 新密码至少 6 位'); return; }
+  if (np !== np2) { showToast('⚠️ 两次输入的新密码不一致'); return; }
+  if (np === oldP) { showToast('⚠️ 新密码不能与当前密码相同'); return; }
+  var btn = document.getElementById('stPwdSubmitBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '提交中…'; }
+  var doReq = (typeof api === 'function')
+    ? api('/api/auth/change-password', { method: 'POST', body: { oldPassword: oldP, newPassword: np } })
+    : Promise.reject(new Error('接口不可用（assets/api.js 未加载）'));
+  doReq.then(function () {
+    stClosePwdModal();
+    showToast('✅ 密码已修改，其他设备需重新登录');
+  }).catch(function (e) {
+    showToast('❌ ' + ((e && e.message) || '修改失败，请稍后重试'));
+  }).finally(function () {
+    if (btn) { btn.disabled = false; btn.textContent = '确认修改'; }
+  });
 }
 function stDeleteAccount() {
   if (stIsOnline()) { showToast('ℹ️ 在线账号注销需后端接口支持（【后续扩展点】）'); return; }
