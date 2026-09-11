@@ -337,6 +337,12 @@ async function renderUserHomeProbe(w, opts) {
       ['the quick brown fox', false],
       ['i like red apples', false], ['Hi what can I get for you today', false],
       ['Hello, world', false], ['', false], [null, false],
+      // 中文边界（D1 回归，QA 抓出 '你好世界' 曾误判 true）：
+      // 实测 ≥4 字全 500 → 当句子(false)；≤3 字属"看词典里有没有"→ 命中启发式(true)，
+      // 其中计算机/天安门 实测 500，由 speakFallback 兜底保证出声（保障靠回退非启发式）。
+      ['你好', true], ['你好吗', true], ['图书馆', true],
+      ['计算机', true], ['天安门', true],
+      ['你好世界', false], ['今天天气', false], ['学习工作台', false],
     ];
     cases.forEach(([t, exp]) => check('T06 shouldUseDictTts(' + JSON.stringify(t) + ') === ' + exp, w.shouldUseDictTts(t) === exp));
 

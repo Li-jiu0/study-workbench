@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
-"""批次一 T05（2026-09-11）：统一缓存版本号 bump → ?v=20260911e
+"""批次一 T05（2026-09-11）起：统一缓存版本号 bump（默认 → ?v=20260911g，见下方 V）
 
 安全策略（照 tools/bump_versions_safe.py 的教训，避免"正则吞注释"事故重演）：
   1. 先按「行」过滤：只处理 lstrip 后以 <script / <link 开头，且该行含真实
      src="assets/…" / href="assets/…" 的行；
-  2. 再对该行做正则替换：把已有的 ?v=xxx 统一为 ?v=20260911e；
-     原缺失 ?v= 的真实资源（如 <script src="assets/chat-local.js">）补上 ?v=20260911e；
+  2. 再对该行做正则替换：把已有的 ?v=xxx 统一为 ?v=<V>；
+     原缺失 ?v= 的真实资源（如 <script src="assets/chat-local.js">）补上 ?v=<V>；
   3. 绝不触碰 HTML 注释、内联脚本正文、文本节点。
 
 改完自动校验每个改动文件：<!-- / --> 配对、<div / </div 配对、<script / </script 配对。
 用法：python tools/bump_versions_0911e.py [--check] [版本号]
-  版本号可选，默认 20260911e；例：python tools/bump_versions_0911e.py 20260911f
+  版本号可选，默认 20260911g（当前全站统一版本；每次 bump 后请同步更新此默认值，
+  避免"不带参数直接跑"时把全站反向降级到更旧版本）。
+  例：python tools/bump_versions_0911e.py 20260911h
 """
 from __future__ import annotations
 
@@ -20,7 +22,7 @@ import os
 import re
 import sys
 
-V = "20260911e"
+V = "20260911g"
 
 # 历史副本 / 非 live 页（不参与统一版本号，避免污染存档页）：
 #   settings*.html / profile*.html 为标准命名历史副本；设置_旧版 / blog_wechat 为旧存档。
@@ -28,8 +30,10 @@ EXCLUDE_PREFIXES = ("settings", "profile")
 EXCLUDE_FILES = {"设置_旧版.html", "blog_wechat.html"}
 
 # 真实资源引用行：<script ... src="assets/xxx.js[?v=..]" ...>  /  <link ... href="assets/xxx.css[?v=..]" ...>
-RE_SC = re.compile(r'(<script\b[^>]*\bsrc="assets/[^"]*\.js)(\?v=[0-9a-zA-Z]+)?(")')
-RE_LK = re.compile(r'(<link\b[^>]*\bhref="assets/[^"]*\.css)(\?v=[0-9a-zA-Z]+)?(")')
+# 注意：版本号字符类必须含点号 `[0-9A-Za-z._]`——否则历史遗留值如 `?v=v2.3` 匹配不上会被
+# 静默跳过（T09/D2 真实回归：个人中心.html / 动态.html 的 common.css?v=v2.3 就是这样漏掉的）。
+RE_SC = re.compile(r'(<script\b[^>]*\bsrc="assets/[^"]*\.js)(\?v=[0-9A-Za-z._]+)?(")')
+RE_LK = re.compile(r'(<link\b[^>]*\bhref="assets/[^"]*\.css)(\?v=[0-9A-Za-z._]+)?(")')
 
 
 def bump_line(line: str) -> str:
@@ -42,9 +46,9 @@ def bump_line(line: str) -> str:
 
 
 def _cli_version(default: str) -> str:
-    """可选：命令行首个非 - 开头的 [A-Za-z0-9]+ 参数覆盖版本号（例：... 20260911f）。"""
+    """可选：命令行首个非 - 开头的 [0-9A-Za-z._]+ 参数覆盖版本号（例：... 20260911g）。"""
     for a in sys.argv[1:]:
-        if not a.startswith("-") and re.fullmatch(r"[0-9A-Za-z]+", a):
+        if not a.startswith("-") and re.fullmatch(r"[0-9A-Za-z._]+", a):
             return a
     return default
 
