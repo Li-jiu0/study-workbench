@@ -180,7 +180,7 @@
   var SERVER_FRIENDS = [];
 
   function apiBase() {
-    return (location.protocol === 'http:' || location.protocol === 'https:') ? '' : '{API_BASE}';
+    return (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000'));
   }
   function getToken() { return localStorage.getItem('study_workbench_token'); }
 
@@ -311,7 +311,7 @@
 
   function renderRequests(box) {
     var token = localStorage.getItem('study_workbench_token');
-    var API_BASE = (location.protocol === 'http:' || location.protocol === 'https:') ? '' : '{API_BASE}';
+    var API_BASE = (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000'));
     if (!token) {
       box.innerHTML = '<div class="im-empty2">暂无好友申请<br><span style="font-size:12px;color:#999">登录后可添加注册用户为好友</span></div>';
       return;
@@ -374,7 +374,7 @@
   // 删除好友申请记录
   window.imDeleteRequest = function (rid) {
     var token = localStorage.getItem('study_workbench_token');
-    var API_BASE = (location.protocol === 'http:' || location.protocol === 'https:') ? '' : '{API_BASE}';
+    var API_BASE = (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000'));
     if (!confirm('确定删除这条申请记录吗？')) return;
     fetch(API_BASE + '/api/friends/requests/' + rid, {
       method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token }
@@ -387,7 +387,7 @@
   // 同意/拒绝好友申请
   window.imAcceptRequest = function (rid) {
     var token = localStorage.getItem('study_workbench_token');
-    var API_BASE = (location.protocol === 'http:' || location.protocol === 'https:') ? '' : '{API_BASE}';
+    var API_BASE = (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000'));
     fetch(API_BASE + '/api/friends/requests/' + rid + '/accept', {
       method: 'POST', headers: { 'Authorization': 'Bearer ' + token }
     })
@@ -397,7 +397,7 @@
   };
   window.imDeclineRequest = function (rid) {
     var token = localStorage.getItem('study_workbench_token');
-    var API_BASE = (location.protocol === 'http:' || location.protocol === 'https:') ? '' : '{API_BASE}';
+    var API_BASE = (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000'));
     fetch(API_BASE + '/api/friends/requests/' + rid + '/decline', {
       method: 'POST', headers: { 'Authorization': 'Bearer ' + token }
     })
@@ -679,7 +679,7 @@
 
     // 2. 同时搜服务器注册用户（如果已登录）
     var token = localStorage.getItem('study_workbench_token');
-    var API_BASE = (location.protocol === 'http:' || location.protocol === 'https:') ? '' : '{API_BASE}';
+    var API_BASE = (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000'));
 
     if (!token) {
       // 未登录，只显示预设好友
@@ -742,7 +742,7 @@
   // 加服务器用户为好友
   window.imAddServerFriend = function (uid) {
     var token = localStorage.getItem('study_workbench_token');
-    var API_BASE = (location.protocol === 'http:' || location.protocol === 'https:') ? '' : '{API_BASE}';
+    var API_BASE = (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000'));
     if (!token) { toast('请先登录'); return; }
     fetch(API_BASE + '/api/friends/requests', {
       method: 'POST',
