@@ -39,6 +39,10 @@ class User(Base):
     phone = Column(String(20), nullable=False, default="")         # 手机号（私密，仅自己可见）
     goal = Column(String(120), nullable=False, default="")         # 学习目标（公开主页展示）
     tags = Column(String(300), nullable=False, default="")         # 备考方向标签，逗号分隔（公开主页展示）
+    # 隐私三字段（T03 增量 2026-09-11）：账户级默认，默认值 = 现状行为（老用户零感知升级）
+    moment_visibility = Column(String(16), nullable=False, default="friends")  # public/friends/private（动态可见范围）
+    friend_allow = Column(String(16), nullable=False, default="need_confirm")  # everyone/need_confirm/nobody（谁可加我）
+    searchable = Column(Integer, nullable=False, default=1)                    # 1=可被搜索 / 0=不可被搜索
     avatar = Column(String(256), nullable=True)
     last_seen_at = Column(String(19), nullable=True)  # 最近一次鉴权请求时间（在线状态展示）
     # 最近一次「查看好友申请列表」时间（互动页申请角标 unreadCount 的已读水位线）。
@@ -190,6 +194,7 @@ class ChatGroup(Base):
     name = Column(String(64), nullable=False)
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     avatar = Column(String(256), nullable=True)  # 群头像 URL，P0 默认 NULL（前端九宫格拼图占位）
+    announcement = Column(Text, nullable=False, default="")  # 群公告（T03 增量 2026-09-11，≤300 字）
     created_at = Column(String(19), nullable=False)
 
     owner = relationship("User", foreign_keys=[owner_id])
@@ -203,6 +208,7 @@ class ChatGroupMember(Base):
     group_id = Column(Integer, ForeignKey("chat_groups.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     role = Column(String(16), nullable=False, default="member")
+    group_nickname = Column(Text, nullable=False, default="")  # 群名片（T03 增量 2026-09-11，空=用全局昵称）
     last_read_msg_id = Column(Integer, nullable=False, default=0)
     joined_at = Column(String(19), nullable=False)
 
@@ -395,6 +401,23 @@ def _upgrade_legacy_schema() -> None:
     if "users" in names and "token_version" not in _table_columns("users"):
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 0"))
+    # T03 增量（2026-09-11）：隐私三字段 + 群公告 + 群名片（5 列守卫式 ALTER，幂等、无损）。
+    # 默认值 = 现状行为（仅好友可见 / 需验证 / 可被搜索 / 无公告 / 无群名片），老用户零感知。
+    if "users" in names:
+        cols = _table_columns("users")
+        with engine.begin() as conn:
+            if "moment_visibility" not in cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN moment_visibility TEXT NOT NULL DEFAULT 'friends'"))
+            if "friend_allow" not in cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN friend_allow TEXT NOT NULL DEFAULT 'need_confirm'"))
+            if "searchable" not in cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN searchable INTEGER NOT NULL DEFAULT 1"))
+    if "chat_groups" in names and "announcement" not in _table_columns("chat_groups"):
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE chat_groups ADD COLUMN announcement TEXT NOT NULL DEFAULT ''"))
+    if "chat_group_members" in names and "group_nickname" not in _table_columns("chat_group_members"):
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE chat_group_members ADD COLUMN group_nickname TEXT NOT NULL DEFAULT ''"))
 
 
 def init_db() -> None:

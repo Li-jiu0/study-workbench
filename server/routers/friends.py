@@ -62,6 +62,17 @@ def send_request(body: ReqIn, user: User = Depends(get_current_user), db: Sessio
         existing.status = "accepted"
         db.commit()
         return {"ok": True, "autoAccepted": True, "user": _peer_brief(to)}
+    # friend_allow 三档（T03 增量，C2）：优先级＝黑名单 > 已是好友 > 互申请 autoAccept > 三档 > pending 重复。
+    # 默认（含存量 NULL/空值）回退 need_confirm，老用户行为零变化。
+    allow = to.friend_allow or "need_confirm"
+    if allow == "nobody":
+        raise HTTPException(400, "对方暂不接受好友申请")
+    if allow == "everyone":
+        # 免验证直接成为好友：复用上方 autoAccept 的 friend_pair 写法，响应结构同构，前端零适配。
+        a, b = friend_pair(user.id, to.id)
+        db.add(Friend(user_a=a, user_b=b, created_at=now_iso()))
+        db.commit()
+        return {"ok": True, "autoAccepted": True, "user": _peer_brief(to)}
     mine = db.query(FriendRequest).filter(
         FriendRequest.from_user_id == user.id, FriendRequest.to_user_id == to.id,
         FriendRequest.status == "pending",
@@ -198,6 +209,9 @@ def search_users(q: str = "", user: User = Depends(get_current_user), db: Sessio
         db.query(User)
         .filter(User.id != user.id)
         .filter(or_(User.username.like(like), User.nickname.like(like)))
+        # searchable 过滤（T03 增量，C3）：只收窄搜索路径。
+        # 双保险写法：or_(is_(None), !=0) —— 存量历史 NULL 行视为可搜（兼容老库）。
+        .filter(or_(User.searchable.is_(None), User.searchable != 0))
         .order_by(User.id.desc())
         .limit(10)
         .all()

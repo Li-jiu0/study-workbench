@@ -1,6 +1,8 @@
 """个人动态路由（P0-4，2026-09-11 增量）。
 
-可见性：仅好友可见（feed = user_id IN (me ∪ 我的好友集合)，一次 IN 查询避免 N+1）。
+可见性（T03 三档 + 双向拉黑）：按作者 users.moment_visibility 判定 ——
+public 任何登录用户可见 / friends 仅好友与本人 / private 仅本人；双向拉黑优先拒绝。
+feed 可见集 = 好友 ∪ 自己 ∪ {moment_visibility='public' 的作者}，再剔除双向拉黑。
 隐私红线：所有响应的作者信息只含 user_brief 白名单（id/nickname/avatarUrl），
 绝不返回 phone/gender/birthday。
 通知：复用 notifications 表，type 扩展 moment_like / moment_comment，note_id 置 NULL。
@@ -8,10 +10,11 @@
 import json
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from database import (Moment, MomentComment, MomentLike, Notification, User,
-                      friend_ids_of, get_db, is_friend, now_str)
+                      UserBlock, friend_ids_of, get_db, is_friend, now_str)
 from schemas import MomentCommentIn, MomentIn, user_brief
 from security import get_current_user
 
@@ -28,8 +31,48 @@ def _parse_images(raw: str) -> list[str]:
         return []
 
 
+def _is_blocked_either(db: Session, a: int, b: int) -> bool:
+    """双向拉黑判定：任一方拉黑另一方即 True（T03 增量，C1）。"""
+    return db.query(UserBlock).filter(
+        or_(and_(UserBlock.blocker_id == a, UserBlock.blocked_id == b),
+            and_(UserBlock.blocker_id == b, UserBlock.blocked_id == a))
+    ).first() is not None
+
+
+def _blocked_ids_either(db: Session, me_id: int) -> set[int]:
+    """与我双向拉黑的全部用户 id（我拉黑的人 ∪ 拉黑我的人），feed 剔除用。"""
+    rows = db.query(UserBlock.blocker_id, UserBlock.blocked_id).filter(
+        or_(UserBlock.blocker_id == me_id, UserBlock.blocked_id == me_id)).all()
+    out: set[int] = set()
+    for blocker, blocked in rows:
+        out.add(blocked if blocker == me_id else blocker)
+    return out
+
+
+def _public_author_ids(db: Session) -> set[int]:
+    """moment_visibility='public' 的作者 id 集合（feed 可见集扩展用）。"""
+    return {r[0] for r in db.query(User.id).filter(User.moment_visibility == "public").all()}
+
+
 def _can_view(db: Session, viewer_id: int, author_id: int) -> bool:
-    return viewer_id == author_id or is_friend(db, viewer_id, author_id)
+    """动态可见性判定（T03 三档 + 双向拉黑优先拒绝）。
+
+    - 本人恒可见；
+    - 双向拉黑任一成立 → 不可见（优先于三档）；
+    - 作者 moment_visibility：public 任何登录用户可见 / friends 好友或本人 / private 仅本人。
+    存量 NULL/空值回退 friends（与老库默认一致）。
+    """
+    if viewer_id == author_id:
+        return True
+    if _is_blocked_either(db, viewer_id, author_id):
+        return False
+    author = db.get(User, author_id)
+    vis = (author.moment_visibility if author else None) or "friends"
+    if vis == "public":
+        return True
+    if vis == "private":
+        return False
+    return is_friend(db, viewer_id, author_id)
 
 
 def moment_dict(m: Moment, author: User, me_id: int, db: Session) -> dict:
@@ -73,7 +116,7 @@ def moment_dict(m: Moment, author: User, me_id: int, db: Session) -> dict:
 
 
 def _visible_moment(db: Session, mid: int, me_id: int) -> Moment:
-    """仅作者本人或其好友可见，否则 404/403。"""
+    """按作者可见性三档 + 双向拉黑判定，不可见则 404/403。"""
     m = db.get(Moment, mid)
     if not m:
         raise HTTPException(404, "动态不存在或已删除")
@@ -109,9 +152,11 @@ def publish(body: MomentIn, user: User = Depends(get_current_user), db: Session 
 @router.get("/feed")
 def feed(before_id: int = 0, limit: int = 20,
          user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """好友动态流（含自己的）：id 游标向前翻页，时间倒序。"""
+    """动态流：可见集 = 好友 ∪ 自己 ∪ {momentVisibility='public' 作者}，剔除双向拉黑。
+    id 游标向前翻页，时间倒序（分页语义 hasMore/nextBefore 与现状一致）。"""
     limit = min(max(limit, 1), 50)
-    ids = friend_ids_of(db, user.id) | {user.id}
+    ids = friend_ids_of(db, user.id) | {user.id} | _public_author_ids(db)
+    ids -= _blocked_ids_either(db, user.id)  # 本批修复：现状 feed 未剔除黑名单
     cond = Moment.user_id.in_(ids)
     if before_id:
         cond = cond & (Moment.id < before_id)
@@ -129,7 +174,7 @@ def feed(before_id: int = 0, limit: int = 20,
 @router.get("/user/{uid}")
 def user_moments(uid: int, before_id: int = 0, limit: int = 20,
                  user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """某人动态列表（个人中心「我的动态」用）：本人或其好友可见。"""
+    """某人动态列表（个人中心「我的动态」用）：按作者三档可见性判定 + 双向拉黑。"""
     target = db.get(User, uid)
     if not target:
         raise HTTPException(404, "用户不存在")

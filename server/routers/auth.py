@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from database import User, get_db, now_str
 from rate_limit import rate_limit
-from schemas import ChangePasswordIn, LoginIn, RefreshIn, RegisterIn
+from schemas import ChangePasswordIn, LoginIn, RefreshIn, RegisterIn, privacy_of
 from security import (TYPE_ACCESS, TYPE_REFRESH, create_token,
                       get_current_user, hash_password, verify_password,
                       verify_refresh_token)
@@ -93,6 +93,8 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         "phone": user.phone or "",
         "goal": user.goal or "",
         "tags": user.tags or "",
+        # T03：隐私三项仅本人接口返回（公开主页 GET /api/users/{id} 绝不返回）
+        "privacy": privacy_of(user),
         "avatarUrl": user.avatar,
         "createdAt": user.created_at,
         "stats": {
