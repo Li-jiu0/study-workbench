@@ -41,6 +41,9 @@ class User(Base):
     tags = Column(String(300), nullable=False, default="")         # 备考方向标签，逗号分隔（公开主页展示）
     avatar = Column(String(256), nullable=True)
     last_seen_at = Column(String(19), nullable=True)  # 最近一次鉴权请求时间（在线状态展示）
+    # 令牌版本号（A6/B3）：本批只加列不启用鉴权校验（避免全站鉴权风险），
+    # 「退出所有设备」的签发/校验留到批次二 B3 落地。
+    token_version = Column(Integer, nullable=False, default=0)
     created_at = Column(String(16), nullable=False)
 
     notes = relationship("Note", back_populates="author", cascade="all, delete-orphan")
@@ -375,6 +378,11 @@ def _upgrade_legacy_schema() -> None:
     if "comments" in names and "parent_id" not in _table_columns("comments"):
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE comments ADD COLUMN parent_id INTEGER"))
+    # A6 增量（2026-09-11）：users 补 token_version（守卫式、幂等、无损）。
+    # 本批只加列不启用校验；批次二 B3「退出所有设备」再落地签发/校验。
+    if "users" in names and "token_version" not in _table_columns("users"):
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 0"))
 
 
 def init_db() -> None:

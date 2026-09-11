@@ -4,14 +4,16 @@ import time
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
-from config import IMAGE_DIR
+from config import IMAGE_DIR, VOICE_DIR
 from database import User, get_db
-from filecheck import ext_for
+from filecheck import ext_for, ext_for_audio
 from security import get_current_user
 
 router = APIRouter(prefix="/api/uploads", tags=["uploads"])
 
 _MAX = 8 * 1024 * 1024
+# 语音消息上限 2MB（A7）：前端 MediaRecorder ≤60s 的 opus/webm 通常远小于此
+_MAX_VOICE = 2 * 1024 * 1024
 
 
 @router.post("")
@@ -28,3 +30,23 @@ def upload_image(file: UploadFile = File(...), user: User = Depends(get_current_
     name = f"u{user.id}_{int(time.time() * 1000)}{ext}"
     (IMAGE_DIR / name).write_bytes(data)
     return {"url": f"/uploads/images/{name}"}
+
+
+@router.post("/voice")
+def upload_voice(file: UploadFile = File(...), user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """语音消息上传（A7）：≤2MB，魔数白名单 webm/ogg/mp4(m4a)/wav；存 server/uploads/voice/。
+
+    返回 {url}，前端再以 kind='voice' 发消息（content 存该 URL）。
+    """
+    data = file.file.read(_MAX_VOICE + 1)
+    if len(data) > _MAX_VOICE:
+        raise HTTPException(400, "语音超过 2MB")
+    if not data:
+        raise HTTPException(400, "空文件")
+    ext = ext_for_audio(data)
+    if not ext:
+        raise HTTPException(400, "仅支持 webm / ogg / mp4 / wav 音频")
+    VOICE_DIR.mkdir(parents=True, exist_ok=True)
+    name = f"u{user.id}_{int(time.time() * 1000)}{ext}"
+    (VOICE_DIR / name).write_bytes(data)
+    return {"url": f"/uploads/voice/{name}"}

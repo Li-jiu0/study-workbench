@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from database import User, get_db, now_str
 from rate_limit import rate_limit
-from schemas import LoginIn, RefreshIn, RegisterIn
+from schemas import ChangePasswordIn, LoginIn, RefreshIn, RegisterIn
 from security import (TYPE_ACCESS, TYPE_REFRESH, create_token,
                       get_current_user, hash_password, verify_password,
                       verify_refresh_token)
@@ -115,3 +115,21 @@ def _unread_count(db: Session, user_id: int) -> int:
     return db.query(Notification).filter(
         Notification.user_id == user_id, Notification.is_read.is_(False)
     ).count()
+
+
+@router.post("/change-password")
+def change_password(body: ChangePasswordIn, user: User = Depends(get_current_user),
+                    db: Session = Depends(get_db), _rl: None = Depends(rate_limit("auth"))):
+    """修改密码（A6）：登录态校验旧密码 → 强度校验 → PBKDF2 更新落库。
+
+    - 旧密码错 → 400「当前密码不正确」
+    - 新密码与旧密码相同 → 400
+    - token_version 本批只加列不启用（B3「退出所有设备」再落地），此处不递增。
+    """
+    if not verify_password(body.oldPassword, user.password_hash):
+        raise HTTPException(400, "当前密码不正确")
+    if body.newPassword == body.oldPassword:
+        raise HTTPException(400, "新密码不能与当前密码相同")
+    user.password_hash = hash_password(body.newPassword)
+    db.commit()
+    return {"ok": True}

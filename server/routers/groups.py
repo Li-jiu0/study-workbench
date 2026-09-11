@@ -182,7 +182,7 @@ async def send_group_message(gid: int, body: GroupMsgIn,
     content = body.content.strip()
     if not content:
         raise HTTPException(400, "消息不能为空")
-    kind = body.kind if body.kind in ("text", "image") else "text"
+    kind = body.kind if body.kind in ("text", "image", "voice") else "text"
     m = Message(sender_id=user.id, receiver_id=0, group_id=gid, kind=kind,
                 content=content, read_at=None, created_at=now_iso())
     db.add(m)

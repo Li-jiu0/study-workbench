@@ -30,6 +30,8 @@ DB_URL = f"sqlite:///{(BASE_DIR / DATABASE_PATH).as_posix()}"
 UPLOAD_DIR = BASE_DIR / "uploads"
 AVATAR_DIR = UPLOAD_DIR / "avatars"
 IMAGE_DIR = UPLOAD_DIR / "images"
+# 语音消息上传目录（A7）：/uploads 已静态挂载 UPLOAD_DIR，故 voice 作为其子目录无需再改 main 挂载，仅需 mkdir
+VOICE_DIR = UPLOAD_DIR / "voice"
 
 # 大模型服务商注册表：默认接口与模型，密钥从 .env 注入
 # 前端只会拿到“已配置密钥”的服务商列表（名称+模型），拿不到任何密钥。
