@@ -10,6 +10,12 @@
   5) GET /api/tts（空 400 / 纯标点 400 / hello 200 或联网不可达时 SKIP /
      带标点整句必须 502 不是 500 / 假上游必须 502 + {"error":"tts_unavailable"}）
   6) GET /api/users/{id} 响应体不含 phone/gender/birthday（隐私红线）
+  7) 好友申请已读角标（2026-09-12）：
+     - POST /api/friends/requests/seen 未登录 → 401
+     - 全新账号（从未查看）GET /api/friends/requests → 含 unreadCount 且 == pending incoming 条数
+     - POST seen 之后 GET → unreadCount == 0 且 incoming 数组内容不变（只加字段不改语义）
+     - seen 后新到一条申请 → unreadCount == 1
+     - 无任何申请的新账号 → unreadCount == 0 且 incoming == []
 
 依赖：纯 stdlib + httpx（假上游用例额外用 fastapi.testclient，仅在后端依赖齐全时启用）。
 
@@ -25,6 +31,7 @@
 """
 import os
 import sys
+import time
 import uuid
 
 try:
@@ -78,6 +85,13 @@ def auth(token: str) -> dict:
     return {"Authorization": "Bearer " + token}
 
 
+def register(c: "httpx.Client", suffix: str, tag: str, nick: str, pw: str) -> str:
+    """注册一个冒烟账号并返回其 token（注册即发 token，无需再登录）。"""
+    r = c.post("/api/auth/register",
+               json={"username": tag + suffix, "password": pw, "nickname": nick + suffix})
+    return (r.json().get("token") if r.status_code == 200 else "") or ""
+
+
 def main() -> int:
     # ---------- 0. 服务可达性 ----------
     section("[0] 服务可达性")
@@ -99,6 +113,7 @@ def main() -> int:
     new_pw = "newpass99"
     tok1 = ""
     tok2 = ""
+    uid1 = 0
     uid2 = 0
 
     with _local_client() as c:
@@ -109,6 +124,8 @@ def main() -> int:
         body = r.json() if r.status_code == 200 else {}
         ck("注册返回 access token", bool(body.get("token")), (body.get("token") or "")[:16] + "...")
         ck("注册返回 user.id", isinstance(body.get("user", {}).get("id"), int), body.get("user"))
+        uid1 = (body.get("user") or {}).get("id", 0)
+        ck("u1.id 为正整数", isinstance(uid1, int) and uid1 > 0, uid1)
 
         r = c.post("/api/auth/register", json={"username": u2, "password": old_pw, "nickname": "冒烟二号" + suffix})
         ck("注册 u2 → 200", r.status_code == 200, r.status_code)
@@ -254,6 +271,64 @@ def main() -> int:
         ck("响应体不含 phone/gender/birthday", not leaked, ("泄露字段=%s" % leaked) if leaked else "clean")
         ck("仍含公开字段 nickname/isFriend", "nickname" in prof and "isFriend" in prof,
            sorted(prof.keys()))
+
+    # ---------- 7. 好友申请已读角标 ----------
+    section("[7] 好友申请已读：GET /requests 的 unreadCount + POST /requests/seen")
+    with _local_client() as c:
+        # ① 未登录调 seen → 401
+        r = c.post("/api/friends/requests/seen")
+        ck("①未登录 POST /requests/seen → 401", r.status_code == 401, r.status_code)
+
+        # ② 注册 u3/u4/u5（注册即发 token）；u3 给 u1 发一条申请
+        tok3 = register(c, suffix, "smr", "冒烟三号", old_pw)
+        tok4 = register(c, suffix, "sms", "冒烟四号", old_pw)
+        tok5 = register(c, suffix, "smt", "冒烟五号", old_pw)
+        ck("②u3/u4/u5 注册均取得 token", bool(tok3) and bool(tok4) and bool(tok5),
+           "tok3=%s tok4=%s tok5=%s" % (bool(tok3), bool(tok4), bool(tok5)))
+        r = c.post("/api/friends/requests", json={"toUserId": uid1}, headers=auth(tok3))
+        ck("②u3 向 u1 发申请 → 200", r.status_code == 200, r.text[:80])
+
+        # ③ 全新视角（u1 从未查看过，last_request_seen_at=NULL）
+        r = c.get("/api/friends/requests", headers=auth(tok1))
+        ck("③u1 GET /requests → 200", r.status_code == 200, r.status_code)
+        body = r.json() if r.status_code == 200 else {}
+        n_in = len(body.get("incoming", []))
+        ck("③响应含新增字段 unreadCount（且 incoming/outgoing 仍在）",
+           "unreadCount" in body and "incoming" in body and "outgoing" in body,
+           sorted(body.keys()))
+        ck("③未查看时 unreadCount == pending incoming 条数",
+           body.get("unreadCount") == n_in and n_in >= 1,
+           "unreadCount=%s incoming=%d" % (body.get("unreadCount"), n_in))
+        incoming_before = body.get("incoming")
+
+        # ④ 标记已读 → unreadCount 清零，且 incoming 内容逐字节不变
+        r = c.post("/api/friends/requests/seen", headers=auth(tok1))
+        ck("④u1 POST /requests/seen → 200", r.status_code == 200, r.status_code)
+        ck("④返回 {ok:true, unreadCount:0}",
+           r.json().get("ok") is True and r.json().get("unreadCount") == 0, r.text[:120])
+        r = c.get("/api/friends/requests", headers=auth(tok1))
+        body = r.json() if r.status_code == 200 else {}
+        ck("④seen 后 unreadCount == 0", body.get("unreadCount") == 0, body.get("unreadCount"))
+        ck("④incoming 数组内容未变（证明只加字段没改语义）",
+           body.get("incoming") == incoming_before,
+           "before=%s after=%d" % (len(incoming_before or []), len(body.get("incoming", []))))
+
+        # ⑤ seen 之后新到一条申请 → unreadCount == 1
+        # created_at 与 last_request_seen_at 均为秒级精度（'YYYY-MM-DD HH:MM:SS'），
+        # 比较用 >（严格大于），同一秒内新到的申请不计入未读；为让本用例确定性通过，先等 1.2s。
+        time.sleep(1.2)
+        r = c.post("/api/friends/requests", json={"toUserId": uid1}, headers=auth(tok4))
+        ck("⑤u4 向 u1 发新申请 → 200", r.status_code == 200, r.text[:80])
+        r = c.get("/api/friends/requests", headers=auth(tok1))
+        body = r.json() if r.status_code == 200 else {}
+        ck("⑤新到的申请计入未读：unreadCount == 1",
+           body.get("unreadCount") == 1, body.get("unreadCount"))
+
+        # ⑥ 无任何申请的新账号 → unreadCount == 0
+        r = c.get("/api/friends/requests", headers=auth(tok5))
+        body = r.json() if r.status_code == 200 else {}
+        ck("⑥无申请账号 unreadCount == 0", body.get("unreadCount") == 0, body.get("unreadCount"))
+        ck("⑥无申请账号 incoming == []", body.get("incoming") == [], body.get("incoming"))
 
     # ---------- 汇总 ----------
     total = PASS + FAIL

@@ -41,6 +41,10 @@ class User(Base):
     tags = Column(String(300), nullable=False, default="")         # 备考方向标签，逗号分隔（公开主页展示）
     avatar = Column(String(256), nullable=True)
     last_seen_at = Column(String(19), nullable=True)  # 最近一次鉴权请求时间（在线状态展示）
+    # 最近一次「查看好友申请列表」时间（互动页申请角标 unreadCount 的已读水位线）。
+    # 写入用 now_iso()（19 字符 'YYYY-MM-DD HH:MM:SS'），与 friend_requests.created_at
+    # 同格式同长度，可做定长字符串比较；NULL = 从未查看过。
+    last_request_seen_at = Column(String(19), nullable=True)
     # 令牌版本号（A6/B3）：本批只加列不启用鉴权校验（避免全站鉴权风险），
     # 「退出所有设备」的签发/校验留到批次二 B3 落地。
     token_version = Column(Integer, nullable=False, default=0)
@@ -362,6 +366,8 @@ def _upgrade_legacy_schema() -> None:
                 conn.execute(text("ALTER TABLE users ADD COLUMN tags TEXT DEFAULT ''"))
             if "last_seen_at" not in cols:
                 conn.execute(text("ALTER TABLE users ADD COLUMN last_seen_at TEXT"))
+            if "last_request_seen_at" not in cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN last_request_seen_at TEXT"))
     # 留言板旧表补列（无损）
     if "board_messages" in names:
         bcols = _table_columns("board_messages")
