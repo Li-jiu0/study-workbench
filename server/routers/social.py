@@ -302,28 +302,71 @@ def delete_board_reply(reply_id: int, user: User = Depends(get_current_user), db
 
 
 # ========== TTS 代理（避免浏览器 CORS） ==========
+import re as _re
 import httpx
-from fastapi import Response
+from urllib.parse import quote as _quote
+from fastapi import Response, JSONResponse
+
+# 送上游前保留的字符：中文（含扩展A）、字母、数字、空格、连字符、ASCII 撇号；
+# 其余标点/符号一律折叠为空格再合并，规避有道 dictvoice 对带标点整句的上游 500。
+_TTS_KEEP_RE = _re.compile(r"[^0-9A-Za-z\u4e00-\u9fff\u3400-\u4dbf \-']")
+_TTS_SPACE_RE = _re.compile(r"\s+")
+
+
+def sanitize_tts_text(text: str) -> str:
+    """清洗 TTS 文本，返回可供上游 dictvoice 安全消费的字符串。
+
+    规则：标点/符号（? , . ! ; : " ` ( ) [ ] { } # $ % & * + = ~ ^ | < > / \\ 等）
+    统一折叠为空格；仅保留中文/字母/数字/空格/连字符/撇号；最后折叠多空格并 strip。
+    返回空字符串表示清洗后无有效内容（调用方应返回 400）。
+    """
+    if not text:
+        return ""
+    cleaned = text.replace("\u3000", " ")  # 全角空格
+    cleaned = _TTS_KEEP_RE.sub(" ", cleaned)
+    cleaned = _TTS_SPACE_RE.sub(" ", cleaned).strip()
+    return cleaned
+
+
+async def _fetch_youdao_voice(piece: str, tts_type: str) -> bytes | None:
+    """请求有道 dictvoice，成功返回音频字节，失败返回 None（不抛异常）。"""
+    url = ("https://dict.youdao.com/dictvoice?audio=" + _quote(piece, safe="")
+           + "&type=" + tts_type)
+    async with httpx.AsyncClient(timeout=10) as client:
+        r = await client.get(url)
+        if r.status_code == 200 and r.content:
+            return r.content
+    return None
+
 
 @router.get("/api/tts")
 async def tts_proxy(text: str = "", lang: str = "en"):
-    """代理有道词典 TTS，避免浏览器跨域问题。"""
+    """代理有道词典 TTS，避免浏览器跨域问题。
+
+    - 送上游前用 sanitize_tts_text 清洗标点，规避 dictvoice 对带标点文本的上游 500；
+    - 首选音色失败时改用另一音色重试一次；
+    - 两次均失败返回 502 + {"error":"tts_unavailable"}，绝不向上游 500 透传。
+    """
     if not text:
         return Response(status_code=400, content="text required")
-    piece = text[:150]
+    piece = sanitize_tts_text(text[:150])
+    if not piece:
+        return Response(status_code=400, content="text required")
+
     is_zh = "zh" in lang.lower() or "cn" in lang.lower()
-    # 有道 dictvoice：type=2 为英音、type=1 为美音。此前两分支都写 "2"，导致英文固定英音、lang 参数无效。
-    # 修正（A7 顺手项）：中文用英音音色无意义，英文改走美音（type=1）。
-    url = "https://dict.youdao.com/dictvoice?audio=" + piece + "&type=" + ("2" if is_zh else "1")
-    try:
-        async with httpx.AsyncClient(timeout=10) as client:
-            r = await client.get(url)
-            if r.status_code == 200 and r.content:
-                return Response(
-                    content=r.content,
-                    media_type="audio/mpeg",
-                    headers={"Cache-Control": "public, max-age=86400"}
-                )
-    except Exception as e:
-        pass
-    return Response(status_code=500, content="TTS failed")
+    # 有道 dictvoice：type=2 为英音、type=1 为美音。中文用英音无意义；英文走美音（type=1）。
+    primary = "2" if is_zh else "1"
+    fallback = "1" if primary == "2" else "2"
+
+    for tts_type in (primary, fallback):
+        try:
+            content = await _fetch_youdao_voice(piece, tts_type)
+        except Exception:
+            content = None
+        if content:
+            return Response(
+                content=content,
+                media_type="audio/mpeg",
+                headers={"Cache-Control": "public, max-age=86400"}
+            )
+    return JSONResponse(status_code=502, content={"error": "tts_unavailable"})
