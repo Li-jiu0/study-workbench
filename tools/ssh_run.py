@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """远程执行 SSH 命令（用 SSH_ASKPASS 自动输入密码）"""
+import os
 import subprocess, os, sys
 
-HOST = "root@110.42.134.62"
+HOST = os.environ.get("SW_HOST", "")  # 从环境变量读取，勿硬编码
 ASKPASS = r"D:\下载的文件\学习工作台\tools\askpass.bat"
 
 def run(cmd, timeout=120):

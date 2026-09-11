@@ -1,2 +1,1 @@
-@echo off
-echo REDACTED_USE_ENV
+@echo %SW_PASS%

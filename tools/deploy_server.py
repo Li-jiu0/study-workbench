@@ -6,8 +6,12 @@ SERVER_DIR = r"D:\下载的文件\学习工作台\server"
 TAR_PATH = r"D:\下载的文件\学习工作台\tools\server.tar.gz"
 PLINK = r"D:\下载的文件\学习工作台\tools\plink.exe"
 PSCP = r"D:\下载的文件\学习工作台\tools\pscp.exe"
-HOST = "root@110.42.134.62"
-PASS = "REDACTED_USE_ENV"
+# 凭据从环境变量读取，切勿把真实密码写进代码（历史泄漏事故：2026-09-11）
+# 用法：set SW_HOST=root@1.2.3.4 && set SW_PASS=xxx && python tools/deploy_xxx.py
+HOST = os.environ.get("SW_HOST", "")
+PASS = os.environ.get("SW_PASS", "")
+if not HOST or not PASS:
+    raise SystemExit("请先设置环境变量 SW_HOST 与 SW_PASS（服务器地址与密码）")
 HOSTKEY = "SHA256:i2DNTi3iEPauuTxvJEPlZ4jLf8K0LdDsaijQxArUU1M"
 
 EXCLUDE_DIRS = {'__pycache__', '.venv', 'venv', 'node_modules', '.git'}

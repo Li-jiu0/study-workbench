@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """把前端 API 地址从 localhost:8000 改成服务器公网 IP"""
+import os
 import io
 
-SERVER_IP = "110.42.134.62"
+SERVER_IP = os.environ.get("SW_HOST_IP", "")  # 从环境变量读取，勿硬编码
 OLD = "http://localhost:8000"
 NEW = f"http://{SERVER_IP}:8000"
 

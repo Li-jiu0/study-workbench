@@ -26,6 +26,31 @@ Thumbs.db
 # 含服务器密码的部署脚本（切勿推送到公开仓库！）
 upload_v23.ps1
 
+# 后端真实配置（含 JWT 密钥与各家大模型 API Key，只留 .env.example 模板入库）
+server/.env
+.env
+.env.local
+
+# 数据库与备份（含用户真实数据：账号/密码哈希/私信，绝不入库！）
+# 历史事故：2026-09-11 发现 server/data.db 与 server/backups/ 曾被推上公开仓库，
+# 已用 git-filter-repo 从全部提交中清除，并在此永久忽略，防止复发。
+server/data.db
+server/data.db.backup-*
+*.db-journal
+*.db-wal
+server/backups/
+
+# 后端真实配置（含 JWT 密钥与各家大模型 API Key，只留 .env.example 模板入库）
+server/.env
+.env
+.env.local
+
+# 数据库文件（含用户真实数据，绝不入库）
+server/data.db
+server/data.db.backup-*
+*.db-journal
+*.db-wal
+
 # 助手/工具本地数据
 .workbuddy/
 .codebuddy/
