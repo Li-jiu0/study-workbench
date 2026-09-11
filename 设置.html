@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" data-page-node-id="ppAOS1DYQGgIIySlO2fdxi">
 <meta name="theme-color" content="#5B8DEF" data-page-node-id="EXvc7QppIKtHC8PUM71nFK">
 <title>设置 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260911h" data-page-node-id="oNplQZjsSu34O6b7wLTk3t">
-<link rel="stylesheet" href="assets/polish.css?v=20260911h" data-page-node-id="gZ2lwtNBjEq5CgqQTlbjFi">
+<link rel="stylesheet" href="assets/common.css?v=20260911i" data-page-node-id="oNplQZjsSu34O6b7wLTk3t">
+<link rel="stylesheet" href="assets/polish.css?v=20260911i" data-page-node-id="gZ2lwtNBjEq5CgqQTlbjFi">
 </head>
 <body class="theme-home" data-page-node-id="wneJ1qXxVLXB9kpk29RxqH">
 
@@ -630,6 +630,69 @@
           </div>
         </div>
 
+        <!-- 隐私与安全（T01 增量 2026-09-11）：① 黑名单管理（走 /api/friends/block* 接口）
+             ② 隐私说明文案 ③「动态可见范围 / 谁可加我好友 / 能否被搜索到」三项可见性控件（本轮禁用占位，
+             待后端 T03 接口就绪后接线，见脚本 stSetMomentScope / stSetFriendPolicy / stSetSearchable）。 -->
+        <div class="card privacy-card" id="privacyCard">
+          <div class="card-header">
+            <div class="card-title"><span class="title-icon">🔒</span>隐私与安全</div>
+            <div class="card-action">仅你可见</div>
+          </div>
+
+          <!-- ① 黑名单管理 -->
+          <div class="privacy-sec-title">🚫 黑名单</div>
+          <div class="privacy-desc">被拉黑的用户无法向你发送好友申请或私信；移出后恢复正常。</div>
+          <div class="privacy-list" id="stBlockedList">
+            <div class="privacy-empty">加载中…</div>
+          </div>
+
+          <!-- ② 隐私说明 -->
+          <div class="privacy-sec-title">🛡 隐私说明</div>
+          <div class="privacy-note">性别、生日、手机号仅自己可见（公开主页不展示）；城市、简介、标签、学习目标会展示。关闭「可被搜索」只影响搜索，不影响已是好友和同群成员看到你。</div>
+
+          <!-- ③ 可见性控件（T05 接线 2026-09-11：读取 GET /api/auth/me、保存 PUT /api/users/me/privacy） -->
+          <div class="privacy-sec-title">👁 可见性</div>
+          <div class="privacy-hint" id="privacyOnlineHint" style="display:none;margin:0 18px 8px;font-size:12px;color:var(--text-secondary);line-height:1.6"></div>
+          <div class="privacy-row" id="privacyMomentRow">
+            <div class="privacy-row-main">
+              <div class="privacy-row-name">动态可见范围</div>
+              <div class="privacy-row-sub">谁可以看到你发布的动态（发布时按此范围收敛）</div>
+            </div>
+            <div class="privacy-row-ctrl">
+              <select class="form-input privacy-select" id="stMomentScope" disabled onchange="stSetMomentScope(this.value)">
+                <option value="public">🌍 公开</option>
+                <option value="friends">👥 仅好友</option>
+                <option value="private">🔒 仅自己</option>
+              </select>
+            </div>
+          </div>
+          <div class="privacy-row" id="privacyFriendPolicyRow">
+            <div class="privacy-row-main">
+              <div class="privacy-row-name">谁可以加我好友</div>
+              <div class="privacy-row-sub">控制他人向你发起好友申请的权限</div>
+            </div>
+            <div class="privacy-row-ctrl">
+              <select class="form-input privacy-select" id="stFriendPolicy" disabled onchange="stSetFriendPolicy(this.value)">
+                <option value="everyone">所有人可直接加（无需我同意）</option>
+                <option value="need_confirm">需要我验证</option>
+                <option value="nobody">不允许任何人</option>
+              </select>
+            </div>
+          </div>
+          <div class="privacy-row" id="privacySearchableRow">
+            <div class="privacy-row-main">
+              <div class="privacy-row-name">能否被搜索到</div>
+              <div class="privacy-row-sub">关闭后其他用户无法通过昵称搜索到你（不影响已是好友和同群成员看到你）</div>
+            </div>
+            <div class="privacy-row-ctrl">
+              <div class="privacy-seg" id="stSearchableSeg">
+                <button class="theme-option" data-val="1" onclick="stSetSearchable(true)">✅ 允许</button>
+                <button class="theme-option" data-val="0" onclick="stSetSearchable(false)">🚫 不允许</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 修改密码弹窗（A6，2026-09-11）：仅在线账号使用，调用 POST /api/auth/change-password -->
         <div class="modal-overlay" id="stPwdModal" onclick="if(event.target===this)stClosePwdModal()">
           <div class="modal">
@@ -783,11 +846,11 @@
 
 </div>
 
-<script src="assets/app.js?v=20260911h"></script>
-<script src="assets/config.js?v=20260911h"></script>
-<script src="assets/api.js?v=20260911h"></script>
-<script src="assets/qbank.js?v=20260911h"></script>
-<script src="assets/importer.js?v=20260911h"></script>
+<script src="assets/app.js?v=20260911i"></script>
+<script src="assets/config.js?v=20260911i"></script>
+<script src="assets/api.js?v=20260911i"></script>
+<script src="assets/qbank.js?v=20260911i"></script>
+<script src="assets/importer.js?v=20260911i"></script>
 <script>
 /* 单机离线版（如安卓 APK，未打包 assets/api.js）适配：
    ① 隐藏依赖后端的「本地发贴迁移」卡片；
@@ -1128,6 +1191,178 @@ function stDeleteAccount() {
   }, 1200);
 }
 
+/* ---------- 隐私与安全 · 黑名单（T01 增量 2026-09-11） ----------
+   列表：GET /api/friends/blocked（字段 id/nickname/avatarUrl/motto/since，接口 _peer_brief 不含 username）；
+   移出：DELETE /api/friends/block/{uid}。地址统一走 assets/config.js。 */
+function stPrivacyBase() {
+  return (typeof window.getApiBase === 'function') ? window.getApiBase()
+    : (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : '');
+}
+function stPrivacyToken() {
+  try { if (typeof apiGetToken === 'function') return apiGetToken() || ''; } catch (e) { }
+  return localStorage.getItem('study_workbench_token') || '';
+}
+function stAvatarFallback(name) {
+  var s = String(name == null ? '' : name).trim();
+  return s ? s.slice(0, 1) : '？';
+}
+function stLoadBlocked() {
+  var box = document.getElementById('stBlockedList');
+  if (!box) return;
+  var token = stPrivacyToken();
+  if (!token) { box.innerHTML = '<div class="privacy-empty">登录后可管理黑名单</div>'; return; }
+  box.innerHTML = '<div class="privacy-empty">加载中…</div>';
+  fetch(stPrivacyBase() + '/api/friends/blocked', { headers: { 'Authorization': 'Bearer ' + token } })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      var items = (d && d.items) || [];
+      if (!items.length) { box.innerHTML = '<div class="privacy-empty">黑名单为空，暂时没有拉黑的用户</div>'; return; }
+      // 接口 _peer_brief 不返回 username，行内只展示头像 + 昵称，避免出现空白 @账号
+      box.innerHTML = items.map(function (u) {
+        var name = u.nickname || ('用户 ' + u.id);
+        var av = u.avatarUrl
+          ? '<img class="privacy-av" src="' + stEsc(u.avatarUrl) + '" alt="">'
+          : '<div class="privacy-av privacy-av-text">' + stEsc(stAvatarFallback(name)) + '</div>';
+        return '<div class="privacy-row privacy-item">' + av +
+          '<div class="privacy-row-main"><div class="privacy-row-name">' + stEsc(name) + '</div>' +
+          '<div class="privacy-row-sub">已拉黑</div></div>' +
+          '<button class="btn btn-outline privacy-row-btn" onclick="stUnblock(' + u.id + ')">移出</button>' +
+          '</div>';
+      }).join('');
+    })
+    .catch(function () { box.innerHTML = '<div class="privacy-empty">黑名单需联网查看（后端暂不可用）</div>'; });
+}
+function stUnblock(uid) {
+  if (!uid) return;
+  var token = stPrivacyToken();
+  if (!token) { if (typeof showToast === 'function') showToast('请先登录'); return; }
+  fetch(stPrivacyBase() + '/api/friends/block/' + uid, {
+    method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token }
+  })
+    .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error((d && d.detail) || '移出失败'); return d; }); })
+    .then(function () {
+      if (typeof showToast === 'function') showToast('✅ 已移出黑名单');
+      stLoadBlocked();
+    })
+    .catch(function (e) {
+      if (typeof showToast === 'function') showToast('移出失败：' + (e.message || ''));
+      else alert('移出失败');
+    });
+}
+/* ---------- 隐私与安全 · 可见性三控件（T05 接线 2026-09-11） ----------
+   读取：GET /api/auth/me 的 privacy；保存：PUT /api/users/me/privacy（部分更新，只传变更字段）。
+   契约：momentVisibility ∈ public/friends/private；friendAllow ∈ everyone/need_confirm/nobody；searchable 为 bool。
+   保存失败 → 回滚 UI 到保存前的值 + toast，避免「UI 已改、后端没存」不一致。 */
+var privacyState = { loaded: false, enabled: false, current: { momentVisibility: 'public', friendAllow: 'need_confirm', searchable: true } };
+var MOMENT_SCOPE_LABEL = { public: '公开', friends: '仅好友', private: '仅自己' };
+var FRIEND_POLICY_LABEL = { everyone: '所有人可直接加', need_confirm: '需要我验证', nobody: '不允许任何人' };
+
+function stRenderSearchable(on) {
+  var wrap = document.getElementById('stSearchableSeg');
+  if (!wrap) return;
+  wrap.querySelectorAll('button').forEach(function (b) {
+    b.classList.toggle('active', (b.getAttribute('data-val') === '1') === !!on);
+  });
+}
+function stRenderPrivacy(p) {
+  p = p || {};
+  var ms = document.getElementById('stMomentScope');
+  if (ms && MOMENT_SCOPE_LABEL[p.momentVisibility]) ms.value = p.momentVisibility;
+  var fp = document.getElementById('stFriendPolicy');
+  if (fp && FRIEND_POLICY_LABEL[p.friendAllow]) fp.value = p.friendAllow;
+  stRenderSearchable(p.searchable !== false);
+}
+function stPrivacySetEnabled(on) {
+  privacyState.enabled = !!on;
+  ['stMomentScope', 'stFriendPolicy'].forEach(function (id) {
+    var el = document.getElementById(id); if (el) el.disabled = !on;
+  });
+  var wrap = document.getElementById('stSearchableSeg');
+  if (wrap) wrap.querySelectorAll('button').forEach(function (b) { b.disabled = !on; });
+}
+function stLoadPrivacy() {
+  var hint = document.getElementById('privacyOnlineHint');
+  var token = stPrivacyToken();
+  if (!token) {
+    stPrivacySetEnabled(false);
+    if (hint) { hint.textContent = '🔌 需登录后在线使用；当前为单机模式'; hint.style.display = 'block'; }
+    return;
+  }
+  stPrivacySetEnabled(false); // 加载中先禁用，避免用未加载的默认值覆盖服务端设置
+  fetch(stPrivacyBase() + '/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } })
+    .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error((d && d.detail) || '读取失败'); return d; }); })
+    .then(function (me) {
+      var p = me && me.privacy;
+      if (!p) { if (hint) { hint.textContent = '暂无法读取隐私设置（后端未就绪）'; hint.style.display = 'block'; } return; }
+      privacyState.current = {
+        momentVisibility: MOMENT_SCOPE_LABEL[p.momentVisibility] ? p.momentVisibility : 'public',
+        friendAllow: FRIEND_POLICY_LABEL[p.friendAllow] ? p.friendAllow : 'need_confirm',
+        searchable: p.searchable !== false
+      };
+      privacyState.loaded = true;
+      if (hint) hint.style.display = 'none';
+      stRenderPrivacy(privacyState.current);
+      stPrivacySetEnabled(true);
+    })
+    .catch(function (e) {
+      if (hint) { hint.textContent = '🔌 隐私设置需登录后在线使用'; hint.style.display = 'block'; }
+      if (typeof showToast === 'function') showToast('隐私设置读取失败：' + ((e && e.message) || '网络错误'));
+    });
+}
+function stSavePrivacy(patch) {
+  var token = stPrivacyToken();
+  var before = Object.assign({}, privacyState.current);
+  if (!token) {
+    stRenderPrivacy(before);
+    if (typeof showToast === 'function') showToast('请先登录后使用');
+    return;
+  }
+  fetch(stPrivacyBase() + '/api/users/me/privacy', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: JSON.stringify(patch) // 部分更新：只传变更字段
+  })
+    .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error((d && d.detail) || '保存失败'); return d; }); })
+    .then(function (d) {
+      // 契约：响应返回全量 privacy → 以服务端为准回填
+      var next = {
+        momentVisibility: MOMENT_SCOPE_LABEL[d.momentVisibility] ? d.momentVisibility : before.momentVisibility,
+        friendAllow: FRIEND_POLICY_LABEL[d.friendAllow] ? d.friendAllow : before.friendAllow,
+        searchable: d.searchable !== false
+      };
+      privacyState.current = next;
+      stRenderPrivacy(next);
+      if (typeof showToast === 'function') showToast('✅ 已保存');
+    })
+    .catch(function (e) {
+      privacyState.current = before; // 回滚
+      stRenderPrivacy(before);
+      if (typeof showToast === 'function') showToast('⚠️ 保存失败：' + ((e && e.message) || '网络错误'));
+    });
+}
+function stSetMomentScope(v) {
+  if (!MOMENT_SCOPE_LABEL[v] || v === privacyState.current.momentVisibility) { stRenderPrivacy(privacyState.current); return; }
+  stSavePrivacy({ momentVisibility: v });
+}
+function stSetFriendPolicy(v) {
+  if (!FRIEND_POLICY_LABEL[v] || v === privacyState.current.friendAllow) { stRenderPrivacy(privacyState.current); return; }
+  stSavePrivacy({ friendAllow: v });
+}
+function stSetSearchable(on) {
+  on = !!on;
+  stRenderSearchable(on); // 立即反映点击态，保存失败将回滚
+  if (privacyState.loaded && on === privacyState.current.searchable) return;
+  stSavePrivacy({ searchable: on });
+}
+if (typeof window !== 'undefined') {
+  window.stLoadBlocked = stLoadBlocked;
+  window.stUnblock = stUnblock;
+  window.stLoadPrivacy = stLoadPrivacy;
+  window.stSetMomentScope = stSetMomentScope;
+  window.stSetFriendPolicy = stSetFriendPolicy;
+  window.stSetSearchable = stSetSearchable;
+}
+
 /* ---------- 初始化 ---------- */
 (function stInit() {
   stFillBlogCat();
@@ -1145,6 +1380,8 @@ function stDeleteAccount() {
   stRefreshOverview();
   stInitAccount();
   applyStudyReminder();
+  stLoadBlocked();
+  stLoadPrivacy();
 })();
 </script>
 

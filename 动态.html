@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>动态 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260911h">
-<link rel="stylesheet" href="assets/polish.css?v=20260911h">
+<link rel="stylesheet" href="assets/common.css?v=20260911i">
+<link rel="stylesheet" href="assets/polish.css?v=20260911i">
 <style>
   /* ===== 动态页（朋友圈式，2026-09-11 增量）===== */
   .mo-wrap{max-width:640px;margin:0 auto;padding:16px 14px 80px;width:100%}
@@ -48,6 +48,8 @@
   .mo-cmt-input button{border:none;background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff;border-radius:10px;padding:0 14px;cursor:pointer;font-size:13px}
   .mo-empty{text-align:center;padding:48px 16px;color:var(--text-secondary);font-size:13px}
   .mo-offline{background:#fff7ed;border:1px solid #fdba74;color:#c2410c;font-size:12px;border-radius:10px;padding:8px 12px;margin-top:10px}
+  .mo-scope{font-size:12px;color:var(--primary);background:var(--primary-light);border-radius:20px;padding:3px 10px;cursor:pointer;white-space:nowrap;user-select:none}
+  .mo-scope:hover{filter:brightness(.97)}
   @media (max-width:760px){ .mo-wrap{padding:12px 10px 80px} }
 </style>
 </head>
@@ -83,6 +85,8 @@
             <div style="display:flex;gap:10px;align-items:center">
               <button class="im-icon" title="添加图片（最多9张）" onclick="document.getElementById('moImgFile').click()">🖼</button>
               <input type="file" id="moImgFile" accept="image/*" multiple style="display:none" onchange="moPickImages(this)">
+              <!-- T05 增量 2026-09-11：账户级动态可见范围标签（点击前往设置页修改） -->
+              <span class="mo-scope" id="moScopeTag" style="display:none" onclick="location.href='设置.html'" title="点击前往设置修改动态可见范围"></span>
             </div>
             <button class="btn btn-primary" id="moPubBtn" onclick="moPublish()">发布</button>
           </div>
@@ -179,9 +183,9 @@
 
 </div>
 
-<script src="assets/app.js?v=20260911h"></script>
-<script src="assets/config.js?v=20260911h"></script>
-<script src="assets/api.js?v=20260911h"></script>
+<script src="assets/app.js?v=20260911i"></script>
+<script src="assets/config.js?v=20260911i"></script>
+<script src="assets/api.js?v=20260911i"></script>
 <script>
 /* ==================== 动态页逻辑（T5 增量 2026-09-11） ====================
    好友动态流：发布（文字+≤9图，canvas 压缩后走 /api/uploads）→ /api/moments。
@@ -454,12 +458,25 @@
 
   window.moOpenUser = function (uid) { if (uid) location.href = '个人中心.html?user=' + uid; };
 
+  /* ---------- 动态可见范围标签（T05 接线 2026-09-11）：读账户级 momentVisibility 展示；仅展示与跳转，不改发布逻辑 ---------- */
+  var MOMENT_SCOPE_TEXT = { public: '当前：公开可见', friends: '当前：仅好友可见', private: '当前：仅自己可见' };
+  function renderMomentScopeLabel(scope) {
+    var el = $id('moScopeTag');
+    if (!el) return;
+    var txt = MOMENT_SCOPE_TEXT[scope];
+    if (!txt) { el.style.display = 'none'; el.textContent = ''; return; } // 未知/缺失 → 隐藏，绝不显示错误范围
+    el.textContent = '👁 ' + txt;
+    el.style.display = '';
+  }
+  window.moRenderScopeLabel = renderMomentScopeLabel;
+
   /* ---------- 启动 ---------- */
   function boot() {
     // 我的头像
     fetch(apiBase() + '/api/auth/me', { headers: { 'Authorization': 'Bearer ' + tok() } })
       .then(function (r) { return r.json(); })
       .then(function (me) {
+        renderMomentScopeLabel(me && me.privacy && me.privacy.momentVisibility);
         if (me && me.id) {
           try { localStorage.setItem('study_workbench_uid', String(me.id)); } catch (e) { }
           var av = $id('moMyAv');
