@@ -305,7 +305,12 @@ def delete_board_reply(reply_id: int, user: User = Depends(get_current_user), db
 import re as _re
 import httpx
 from urllib.parse import quote as _quote
-from fastapi import Response, JSONResponse
+from fastapi import Response
+# 修复（T07 隔离实跑暴露）：JSONResponse 应来自 fastapi.responses 这一稳定公开路径；
+# 新版 FastAPI（0.141.x）已不再从顶层 re-export，`from fastapi import JSONResponse`
+# 会直接 ImportError，导致整个应用无法启动（requirements 为 fastapi>=0.110 未锁版本，
+# 全新安装即触发）。改用 fastapi.responses 后新旧版本通吃。
+from fastapi.responses import JSONResponse
 
 # 送上游前保留的字符：中文（含扩展A）、字母、数字、空格、连字符、ASCII 撇号；
 # 其余标点/符号一律折叠为空格再合并，规避有道 dictvoice 对带标点整句的上游 500。
