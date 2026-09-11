@@ -3039,10 +3039,18 @@ function splitTextForTTS(text) {
 
 /* ---------- 词/句判定（纯函数，便于断言） ----------
  * 有道 dictvoice 本质是「词典发音」接口，只能可靠朗读它认识的词/短语；任意句子会确定性 500
- * （生产实测：'hello world ok'、'hello worlds'、'你好世界'、'Hi what can I get for you today'
+ * （生产实测：'hello world ok'、'你好世界'、'Hi what can I get for you today'
  *  同一串连打 6 次均 500，非限流/非长度/非标点）。因此：词/短语才走有道（发音质量更好），
  * 句子直接跳过有道、走 Web Speech / 原生 TTS，避免白等一次注定失败的请求。
- * 规则：去空白后非空、≤20 字符、≤3 个 token、且不含句末/分隔标点。 */
+ * 规则：去空白后非空、≤20 字符、≤3 个 token、且不含句末/分隔标点；纯中文另按字数判定。
+ *
+ * 中文边界实测（type=2 中文音色，确定性、非限流，2026-09-11 生产补测）：
+ *   你(1) 500 | 你好(2) 200 | 你好吗(3) 200 | 图书馆(3) 200
+ *   计算机(3) 500 | 天安门(3) 500 | 今天天气(4) 500 | 你好世界(4) 500
+ *   半途而废(4) 500 | 胸有成竹(4) 500 | 实事求是(4) 500 | 一鸣惊人(4) 500 | 学习工作台(5) 500
+ * 结论：中文 ≥4 字样本全部 500；≤3 字属"看词典里有没有"（图书馆 200、计算机/天安门 500）。
+ * 故纯中文分支：字数 > 3 一律当句子直接走系统合成，不再打一次注定失败的有道请求。
+ * 注意：启发式不完美（受词典覆盖影响），真正保证"读得出"的是 speakFallback 兜底，而非本函数。 */
 function shouldUseDictTts(text) {
   const t = String(text == null ? '' : text).trim();
   if (!t) return false;
@@ -3050,8 +3058,8 @@ function shouldUseDictTts(text) {
   if (/[.!?;:,。！？；：，、…]/.test(t)) return false;
   const tokens = t.split(/\s+/).filter(function (x) { return x.length > 0; });
   if (tokens.length === 0 || tokens.length > 3) return false;
-  // 纯中文无空格：以字符数作 token 兜底（≤8 字视为词/短语）
-  if (tokens.length === 1 && /^[\u4e00-\u9fff\u3400-\u4dbf]+$/.test(t) && t.length > 8) return false;
+  // 纯中文（含扩展A）无空格：按字数判定——≥4 字实测必 500，直接当句子走回退（≤3 字才可能走有道）
+  if (tokens.length === 1 && /^[\u4e00-\u9fff\u3400-\u4dbf]+$/.test(t) && t.length > 3) return false;
   return true;
 }
 
