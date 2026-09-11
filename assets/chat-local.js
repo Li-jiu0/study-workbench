@@ -457,6 +457,8 @@
         var chat = S.chats.find(function (c) { return c.id === S.peer.id; });
         if (chat) { chat.unread = 0; }
         renderList();
+        // 立即刷新顶栏 💬 角标（不用等 30s 轮询）
+        if (typeof window.loadChatUnread === 'function') window.loadChatUnread();
       })
       .catch(function () {});
     }
@@ -801,17 +803,17 @@
         items.forEach(function (item) {
           var cnt = item.count || 0;
           totalUnread += cnt;
-          // 找到对应的会话
-          var chat = S.chats.find(function (c) { return c.isServer && c.serverId === item.senderId; });
+          // 找到对应的会话（后端字段：peerId / last / lastId）
+          var chat = S.chats.find(function (c) { return c.isServer && c.serverId === item.peerId; });
           if (chat) {
             // 如果当前正在和对方聊天，把新消息追加进去
-            if (S.peer && S.peer.isServer && S.peer.serverId === item.senderId) {
-              var exists = S.msgs.some(function (m) { return m.id === item.lastMessageId; });
-              if (!exists && item.lastMessage) {
+            if (S.peer && S.peer.isServer && S.peer.serverId === item.peerId) {
+              var exists = S.msgs.some(function (m) { return m.id === item.lastId; });
+              if (!exists && item.last) {
                 S.msgs.push({
-                  id: item.lastMessageId,
-                  senderId: item.senderId,
-                  content: item.lastMessage,
+                  id: item.lastId,
+                  senderId: item.peerId,
+                  content: item.last,
                   kind: 'text',
                   time: Date.now()
                 });
@@ -819,31 +821,25 @@
               }
               // 正在聊天，标记已读
               chat.unread = 0;
-              fetch(apiBase() + '/api/chat/' + item.senderId + '/read', {
+              fetch(apiBase() + '/api/chat/' + item.peerId + '/read', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ upToId: item.lastMessageId })
+                body: JSON.stringify({ upToId: item.lastId })
               }).catch(function () {});
             } else {
               chat.unread = cnt;
-              chat.last = item.lastMessage || chat.last;
+              chat.last = item.last || chat.last;
               chat.time = Date.now();
             }
           }
         });
-        // 重新渲染会话列表
-        renderList();
-        // 更新右上角全局未读角标
-        var globalBadge = document.querySelector('.im-badge-global, #globalMsgBadge');
-        // 顶部导航栏的消息图标角标
-        var msgIcon = document.querySelector('.nav-msg, .msg-icon, [class*="msg"]');
-        // 简单方式：找所有带红色角标的元素
-        document.querySelectorAll('.badge, .im-badge').forEach(function (b) {
-          if (b.textContent === '5' || b.textContent === '3' || b.textContent === '2' || b.textContent === '1') {
-            if (totalUnread === 0) b.style.display = 'none';
-            else { b.style.display = 'flex'; b.textContent = totalUnread > 99 ? '99+' : totalUnread; }
-          }
+        // 没有任何未读的会话要清零红点（已读就不再显示）
+        S.chats.forEach(function (c) {
+          if (c.isServer && !items.some(function (x) { return x.peerId === c.serverId; })) c.unread = 0;
         });
+        // 重新渲染会话列表（红点：未读显示、已读消失）
+        renderList();
+        // 顶栏 💬 角标由 assets/api.js 的 loadChatUnread() 轮询维护，这里不再越权改写
       })
       .catch(function () {});
     }, 5000);

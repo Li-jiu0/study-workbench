@@ -5382,7 +5382,7 @@ const MODULE_INDEX = [
   { page: 'comm',           icon: '💬', title: '高情商表达',           desc: '场景话术 · 金句库 · 角色扮演', kw: '高情商 表达 话术 沟通 金句 情商' },
   { page: 'interview',      icon: '🤝', title: '商务礼仪面试',         desc: '商务礼仪 · 模拟面试', kw: '面试 礼仪 自我介绍 简历 offer' },
   { page: 'ppt',            icon: '🎨', title: 'PPT训练',             desc: '版式训练 · 案例拆解', kw: 'PPT 汇报 课件 幻灯片 版式 演示' },
-  { page: 'blog',           icon: '🗒️', title: '分享广场',             desc: '笔记广场 · 写笔记 · 统计', kw: '博客 笔记 写作 草稿 日记' },
+  { page: 'blog',           icon: '🗒️', title: '广场',             desc: '笔记广场 · 写笔记 · 统计', kw: '博客 笔记 写作 草稿 日记' },
   { page: 'exam-center',    icon: '🧮', title: '行测刷题',             desc: '分题型专项刷题中心', kw: '行测 刷题 专项 刷题中心' },
   { page: 'wrong-book',     icon: '📒', title: '错题本',               desc: '错题收录与复盘', kw: '错题 错题本 复盘 收录' },
   { page: 'cet-vocab',      icon: '📖', title: '四级词汇',             desc: '间隔重复背单词', kw: '四级 词汇 单词 背单词 间隔重复' },
