@@ -2126,3 +2126,58 @@ body.dark .ed-actions-bar{background:var(--card);border-top-color:var(--border);
 .presence-dot.on{display:inline-block}
 .presence-line{font-size:12px;color:var(--text-secondary);align-items:center}
 .presence-line.on{color:#22a35a}
+
+/* ==================== 设置页 · 隐私与安全卡（T01 增量 2026-09-11，全部以 .privacy- 前缀，不影响既有样式） ==================== */
+.privacy-card .card-action{color:var(--text-secondary);font-size:12px}
+.privacy-sec-title{padding:12px 18px 4px;font-size:13px;font-weight:700;color:var(--text)}
+.privacy-desc{padding:0 18px 8px;font-size:12px;color:var(--text-muted);line-height:1.6}
+.privacy-note{margin:4px 18px 12px;padding:10px 12px;border-radius:8px;background:var(--primary-light);color:var(--text-secondary);font-size:12px;line-height:1.7}
+.privacy-list{padding:0 0 6px}
+.privacy-empty{padding:14px 18px;font-size:13px;color:var(--text-muted);text-align:center}
+.privacy-row{display:flex;align-items:center;gap:12px;padding:10px 18px;border-top:1px solid var(--border)}
+.privacy-list .privacy-row:first-child{border-top:none}
+.privacy-row-main{flex:1;min-width:0}
+.privacy-row-name{font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.privacy-row-sub{font-size:12px;color:var(--text-muted);margin-top:2px;line-height:1.5}
+.privacy-av{width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--primary-light)}
+.privacy-av-text{display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--primary)}
+.privacy-row-btn{flex-shrink:0;padding:5px 14px;font-size:12px}
+.privacy-row-ctrl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.privacy-select{min-width:130px}
+.privacy-seg{display:flex;gap:6px}
+.privacy-soon{font-size:11px;color:var(--text-muted);border:1px dashed var(--border);border-radius:20px;padding:2px 8px;white-space:nowrap}
+.privacy-select:disabled,.privacy-seg button:disabled{opacity:.55;cursor:not-allowed}
+body.dark .privacy-note{background:rgba(91,141,239,.14)}
+@media (max-width:768px){
+  .privacy-row{flex-wrap:wrap}
+  .privacy-row-ctrl{width:100%;justify-content:flex-start}
+}
+
+/* ==================== 群设置面板（T02 增量 2026-09-11，统一 .im-gs- 前缀；外壳复用 .im-overlay/.im-modal，明暗双适配） ==================== */
+.im-gs-modal{width:min(92%,420px)}
+.im-gs-body{padding:8px 16px 18px;overflow-y:auto;flex:1}
+.im-gs-sec{padding:12px 0;border-top:1px solid var(--border)}
+.im-gs-sec:first-child{border-top:none;padding-top:4px}
+.im-gs-sec-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px}
+.im-gs-field{margin-bottom:10px}
+.im-gs-label{font-size:12px;color:var(--text-secondary);margin-bottom:4px}
+.im-gs-input{width:100%}
+.im-gs-input:disabled{opacity:.7;cursor:not-allowed}
+.im-gs-soon-row{display:flex;align-items:center;gap:8px;margin-top:4px}
+.im-gs-soon{font-size:11px;color:var(--text-muted);border:1px dashed var(--border);border-radius:20px;padding:2px 8px;white-space:nowrap}
+.im-gs-hint{font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.5}
+.im-gs-members{display:flex;flex-direction:column;gap:2px}
+.im-gs-mem{display:flex;align-items:center;gap:10px;padding:7px 0}
+.im-gs-mem-av{width:38px;height:38px;flex-shrink:0;cursor:pointer}
+.im-gs-mem-main{flex:1;min-width:0;display:flex;align-items:center;gap:6px}
+.im-gs-mem-name{font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.im-gs-role-tag{font-size:11px;color:var(--text-secondary);background:var(--border);border-radius:4px;padding:1px 6px;flex-shrink:0}
+.im-gs-role-tag.owner{color:#fff;background:var(--primary)}
+.im-gs-role-tag.admin{color:#fff;background:var(--accent)}
+.im-gs-kick{flex-shrink:0;padding:4px 12px;font-size:12px}
+.im-gs-row{display:flex;align-items:center;gap:10px}
+.im-gs-row-main{flex:1;min-width:0}
+.im-gs-danger-sec .im-gs-hint{margin-bottom:8px}
+.im-gs-danger{width:100%;background:#e05040;color:#fff;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:600;cursor:pointer}
+.im-gs-danger:active{filter:brightness(.92)}
+body.dark .im-gs-role-tag{background:rgba(255,255,255,.12)}

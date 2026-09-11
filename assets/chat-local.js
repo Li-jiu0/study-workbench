@@ -778,6 +778,9 @@
       if (avEl) avEl.innerHTML = '<span>👥</span>';
       if (nameEl) nameEl.innerHTML = esc(S.group.name) +
         '<span style="font-size:10px;color:#667eea;background:#EEF1FF;padding:1px 6px;border-radius:4px;margin-left:6px;font-weight:400">' + esc(String(S.group.memberCount || '')) + '人群</span>';
+      // T02 增量：群会话显示「⋯」群设置入口
+      var gsBtnG = $id('imGSBtn');
+      if (gsBtnG) gsBtnG.style.display = 'block';
       var backBtn = $id('imBack');
       if (backBtn) backBtn.style.display = window.innerWidth <= 760 ? 'block' : 'none';
       return;
@@ -791,6 +794,9 @@
         : '<span style="font-size:10px;color:#ff9800;background:#FFF3E0;padding:1px 6px;border-radius:4px;margin-left:6px;font-weight:400">演示模式</span>';
       nameEl.innerHTML = esc(S.peer.nickname) + tag;
     }
+    // T02 增量：私聊会话隐藏「⋯」群设置入口
+    var gsBtnP = $id('imGSBtn');
+    if (gsBtnP) gsBtnP.style.display = 'none';
     // 手机端显示返回按钮
     var backBtn = $id('imBack');
     if (backBtn) backBtn.style.display = window.innerWidth <= 760 ? 'block' : 'none';
@@ -1447,6 +1453,8 @@
     if (e.key !== 'Escape') return;
     var gm = $id('imGroupModal');
     if (gm && gm.style.display !== 'none') { window.imCloseGroupCreator(); return; }
+    var gsm = $id('imGroupSettingsModal');
+    if (gsm && gsm.style.display !== 'none') { window.imCloseGroupSettings(); return; }
     var am = $id('imAddFriendModal');
     if (am && am.style.display !== 'none') { window.imCloseAddFriendModal(); return; }
     var ovs = document.querySelectorAll('.im-overlay');
@@ -1459,8 +1467,9 @@
     document.addEventListener('keydown', imEscClose);
   }
   function unbindModalEscIfIdle() {
-    var gm = $id('imGroupModal'), am = $id('imAddFriendModal');
+    var gm = $id('imGroupModal'), am = $id('imAddFriendModal'), gsm = $id('imGroupSettingsModal');
     var anyOpen = (gm && gm.style.display !== 'none') || (am && am.style.display !== 'none') ||
+      (gsm && gsm.style.display !== 'none') ||
       document.querySelector('.im-overlay[style*="flex"]');
     if (!anyOpen) document.removeEventListener('keydown', imEscClose);
   }
@@ -1584,6 +1593,253 @@
     var modal = $id('imGroupModal');
     if (modal) modal.style.display = 'none';
     unbindModalEscIfIdle();
+  };
+
+  /* ==================== T02 增量 2026-09-11：群设置面板（D0 骨架 / D2 成员管理·踢人 / D3 免打扰 / D4 退群·解散） ====================
+     数据来源：GET /api/groups/{gid}（members[].role 已存在；announcement/myRole/myGroupNickname/groupNickname 由 T04 补齐）。
+     缺失兜底：myRole 缺失按 member 处理；昵称取 groupNickname || nickname || 「已注销用户」。
+     踢人：DELETE /api/groups/{gid}/members/{uid}（仅群主）；退群/解散：POST /api/groups/{gid}/quit。
+     免打扰：零后端，复用本地 study_workbench_chat_prefs（threadKey 'g<gid>'），与左滑免打扰同源。 */
+  var GS = { gid: null, detail: null }; // 面板状态（模块级，不落 localStorage）
+
+  function imGsThreadKey(gid) { return 'g' + gid; }
+  /* 纯函数：解析「我在本群的权限」。myRole 存在时以其为准；缺失时用 ownerId 推导兜底
+     （T02 补：批次1 的 GET /api/groups/{gid} 尚无 myRole，仅返回 ownerId）；都缺 → member。
+     D6：权限判定统一 role in ('owner','admin')；【后续扩展点：设置管理员】 */
+  function imResolveMyRole(g, myId) {
+    var r = (g && g.myRole) || '';
+    if (!r && g && g.ownerId != null && myId != null && myId !== '') {
+      r = (String(g.ownerId) === String(myId)) ? 'owner' : 'member';
+    }
+    r = r || 'member';
+    return (r === 'owner' || r === 'admin') ? r : 'member';
+  }
+  function imGsMyRole(d) { return imResolveMyRole(d, S.myId); }
+  function imGsRoleTag(role) {
+    if (role === 'owner') return '<span class="im-gs-role-tag owner">群主</span>';
+    if (role === 'admin') return '<span class="im-gs-role-tag admin">管理员</span>'; // 【后续扩展点：设置管理员】
+    return '<span class="im-gs-role-tag">成员</span>';
+  }
+
+  window.imOpenGroupSettings = function () {
+    if (!getToken()) { toast('群设置需要联网'); return; }
+    if (!S.group || !S.group.id) { toast('请先打开一个群聊'); return; }
+    var modal = $id('imGroupSettingsModal');
+    if (!modal) { toast('弹层未加载'); return; }
+    GS.gid = S.group.id;
+    GS.detail = null;
+    modal.style.display = 'flex';
+    bindModalEsc();
+    var body = $id('imGsBody');
+    if (body) body.innerHTML = '<div class="im-empty2" style="padding:20px 0;text-align:center;color:#999;font-size:13px">加载中…</div>';
+    fetch(apiBase() + '/api/groups/' + GS.gid, { headers: { 'Authorization': 'Bearer ' + getToken() } })
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error((d && d.detail) || '加载失败'); return d; }); })
+      .then(function (d) { GS.detail = d; imRenderGroupSettings(d); })
+      .catch(function (e) {
+        toast('加载失败：' + ((e && e.message) || '网络错误'));
+        window.imCloseGroupSettings();
+        loadGroups();
+      });
+  };
+
+  window.imCloseGroupSettings = function () {
+    var modal = $id('imGroupSettingsModal');
+    if (modal) modal.style.display = 'none';
+    unbindModalEscIfIdle();
+  };
+
+  function imReloadGroupDetail() {
+    if (!GS.gid) return;
+    fetch(apiBase() + '/api/groups/' + GS.gid, { headers: { 'Authorization': 'Bearer ' + getToken() } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d || !d.id) return;
+        GS.detail = d;
+        imRenderGroupSettings(d);
+        if (S.group && S.group.id === GS.gid) {
+          S.group.memberCount = (d.members || []).length;
+          renderChatHeader();
+        }
+      })
+      .catch(function () { });
+  }
+
+  function imRenderGroupSettings(d) {
+    var body = $id('imGsBody');
+    if (!body) return;
+    if (!d || typeof d !== 'object') {
+      body.innerHTML = '<div class="im-empty2" style="padding:20px 0;text-align:center;color:#999">群信息不可用</div>';
+      return;
+    }
+    var gid = d.id || GS.gid;
+    var myRole = imGsMyRole(d);
+    var isOwner = (myRole === 'owner');
+    var members = d.members || [];
+    var gname = d.name || (S.group && S.group.name) || '群聊';
+    var muted = !!(imLoadPrefs()[imGsThreadKey(gid)] || {}).muted;
+    var myNick = d.myGroupNickname || '';
+
+    // 段1：群信息（D1 接线 2026-09-11：PATCH /api/groups/{gid}，仅群主/管理员可改）
+    var canEdit = (myRole === 'owner' || myRole === 'admin'); // D6：权限判定；【后续扩展点：设置管理员】
+    var sec1 = '<div class="im-gs-sec">' +
+        '<div class="im-gs-sec-title">群信息</div>' +
+        '<div class="im-gs-field"><div class="im-gs-label">群名称</div>' +
+          '<input class="form-input im-gs-input" id="imGsName" maxlength="20" value="' + esc(gname) + '"' + (canEdit ? '' : ' disabled') + ' placeholder="群名称"></div>' +
+        '<div class="im-gs-field"><div class="im-gs-label">群公告</div>' +
+          '<textarea class="form-input im-gs-input" id="imGsAnn" maxlength="300" rows="2"' + (canEdit ? '' : ' disabled') + ' placeholder="群主还没有发布公告">' + esc(d.announcement || '') + '</textarea></div>' +
+        (canEdit
+          ? '<div class="im-gs-soon-row"><button class="btn btn-primary" id="imGsSaveInfo" onclick="imSaveGroupInfo()">保存</button></div>'
+          : '<div class="im-gs-hint">仅群主/管理员可以修改群名与公告</div>') +
+      '</div>';
+
+    // 段2：成员管理（D2）
+    var memRows = members.map(function (m) {
+      var nm = m.groupNickname || m.nickname || '已注销用户';
+      var canKick = isOwner && String(m.id) !== String(S.myId);
+      return '<div class="im-gs-mem">' +
+          '<div class="im-av im-gs-mem-av" onclick="event.stopPropagation();openUserHome(' + Number(m.id || 0) + ')" title="查看主页">' + renderAvatar(m.avatarUrl, nm) + '</div>' +
+          '<div class="im-gs-mem-main"><div class="im-gs-mem-name">' + esc(nm) + '</div>' + imGsRoleTag(m.role) + '</div>' +
+          (canKick ? '<button class="btn btn-outline im-gs-kick" onclick="imKickMember(' + Number(m.id || 0) + ')">移出</button>' : '') +
+        '</div>';
+    }).join('');
+    var sec2 = '<div class="im-gs-sec">' +
+        '<div class="im-gs-sec-title">群成员（' + members.length + '）</div>' +
+        '<div class="im-gs-members">' + (memRows || '<div class="im-empty2" style="padding:10px 0;color:#999">暂无成员</div>') + '</div>' +
+        (isOwner ? '' : '<div class="im-gs-hint">仅群主可以移除成员</div>') +
+      '</div>';
+
+    // 段3：消息免打扰（D3，零后端）
+    var sec3 = '<div class="im-gs-sec">' +
+        '<div class="im-gs-sec-title">消息免打扰</div>' +
+        '<div class="im-gs-row">' +
+          '<div class="im-gs-row-main"><div class="im-gs-mem-name">免打扰</div>' +
+            '<div class="im-gs-hint" style="margin-top:2px">开启后新消息不计入未读角标（仅本机生效）</div></div>' +
+          '<label class="st-switch" title="消息免打扰"><input type="checkbox" id="imGsMute"' + (muted ? ' checked' : '') + ' onchange="imToggleGroupMute(this.checked)"><span class="st-switch-slider"></span></label>' +
+        '</div>' +
+      '</div>';
+
+    // 段4：群内昵称（D5 接线 2026-09-11：PATCH /api/groups/{gid}/me，空串=清除群名片）
+    var sec4 = '<div class="im-gs-sec">' +
+        '<div class="im-gs-sec-title">我在本群的昵称</div>' +
+        '<div class="im-gs-field"><input class="form-input im-gs-input" id="imGsMyNick" maxlength="20" value="' + esc(myNick) + '" placeholder="留空则使用全局昵称"></div>' +
+        '<div class="im-gs-soon-row"><button class="btn btn-primary" id="imGsSaveNick" onclick="imSaveGroupNickname()">保存</button></div>' +
+        '<div class="im-gs-hint">留空保存 = 清除群名片，回退使用全局昵称</div>' +
+      '</div>';
+
+    // 段5：危险操作（D4）
+    var sec5 = '<div class="im-gs-sec im-gs-danger-sec">' +
+        '<div class="im-gs-sec-title">危险操作</div>' +
+        '<div class="im-gs-hint">' + (isOwner ? '解散后群与全部群消息将被清除，不可恢复' : '退出后将不再接收该群消息') + '</div>' +
+        '<button class="btn im-gs-danger" onclick="imQuitGroup()">' + (isOwner ? '🗑️ 解散群聊' : '🚪 退出群聊') + '</button>' +
+      '</div>';
+
+    body.innerHTML = sec1 + sec2 + sec3 + sec4 + sec5;
+  }
+  window.imRenderGroupSettings = imRenderGroupSettings;
+
+  window.imKickMember = async function (uid) {
+    uid = Number(uid || 0);
+    if (!uid) return;
+    var nm = '';
+    try {
+      var mm = ((GS.detail && GS.detail.members) || []).find(function (x) { return Number(x.id) === uid; });
+      if (mm) nm = mm.groupNickname || mm.nickname || '';
+    } catch (e) { }
+    var msg = '确定把「' + (nm || '该成员') + '」移出群聊吗？';
+    var ok = (typeof uiConfirm === 'function') ? await uiConfirm(msg, '移出') : confirm(msg);
+    if (!ok) return;
+    fetch(apiBase() + '/api/groups/' + GS.gid + '/members/' + uid, {
+      method: 'DELETE', headers: { 'Authorization': 'Bearer ' + getToken() }
+    })
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error((d && d.detail) || '移除失败'); return d; }); })
+      .then(function () { toast('✅ 已移出该成员'); imReloadGroupDetail(); })
+      .catch(function (e) { toast('移除失败：' + ((e && e.message) || '网络错误')); });
+  };
+
+  window.imToggleGroupMute = function (checked) {
+    var gid = GS.gid || (S.group && S.group.id);
+    if (!gid) return;
+    window.imChatPrefs.set(imGsThreadKey(gid), { muted: !!checked });
+    toast(checked ? '🔕 已开启免打扰（不计入未读角标）' : '已关闭免打扰');
+    if (S.tab === 'chats') renderChats($id('imList'));
+    updateTabBadge('chats', imCountUnread(S.chats, imLoadPrefs()));
+  };
+
+  window.imQuitGroup = async function () {
+    var gid = GS.gid || (S.group && S.group.id);
+    if (!gid) return;
+    var isOwner = imGsMyRole(GS.detail) === 'owner';
+    var msg = isOwner
+      ? '确定解散该群聊吗？解散后群与全部群消息将被清除，不可恢复。'
+      : '确定退出该群聊吗？退出后将不再接收该群消息。';
+    var ok = (typeof uiConfirm === 'function') ? await uiConfirm(msg, isOwner ? '解散' : '退出') : confirm(msg);
+    if (!ok) return;
+    fetch(apiBase() + '/api/groups/' + gid + '/quit', {
+      method: 'POST', headers: { 'Authorization': 'Bearer ' + getToken() }
+    })
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error((d && d.detail) || '操作失败'); return d; }); })
+      .then(function (d) {
+        window.imCloseGroupSettings();
+        backToList();
+        loadGroups();
+        toast((d && d.dissolved) ? '✅ 群聊已解散' : '✅ 已退出群聊');
+      })
+      .catch(function (e) { toast('操作失败：' + ((e && e.message) || '网络错误')); });
+  };
+
+  /* D1 接线：保存群名 + 群公告（PATCH /api/groups/{gid}；仅群主/管理员可改） */
+  window.imSaveGroupInfo = function () {
+    var gid = GS.gid || (S.group && S.group.id);
+    if (!gid) return;
+    if (imGsMyRole(GS.detail) === 'member') { toast('仅群主/管理员可以修改'); return; }
+    var nameEl = $id('imGsName'), annEl = $id('imGsAnn');
+    var name = nameEl ? String(nameEl.value || '').trim() : '';
+    var ann = annEl ? String(annEl.value || '') : '';
+    if (!name) { toast('群名称不能为空'); if (nameEl) nameEl.focus(); return; }
+    if (name.length > 20) { toast('群名称最长 20 字'); return; }
+    if (ann.length > 300) { toast('公告最长 300 字'); return; }
+    var btn = $id('imGsSaveInfo');
+    if (btn) { btn.disabled = true; btn.textContent = '保存中…'; }
+    fetch(apiBase() + '/api/groups/' + gid, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+      body: JSON.stringify({ name: name, announcement: ann }) // 部分更新
+    })
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error((d && d.detail) || '保存失败'); return d; }); })
+      .then(function (d) {
+        toast('✅ 群名与公告已更新');
+        // 本地同步群名 + 头部 + 会话列表行内群名
+        if (S.group && S.group.id === gid && d && d.name) { S.group.name = d.name; renderChatHeader(); }
+        loadGroups();
+        imReloadGroupDetail();
+      })
+      .catch(function (e) { toast('保存失败：' + ((e && e.message) || '网络错误')); })
+      .finally(function () { if (btn) { btn.disabled = false; btn.textContent = '保存'; } });
+  };
+
+  /* D5 接线：保存群内昵称（PATCH /api/groups/{gid}/me；空串=清除群名片） */
+  window.imSaveGroupNickname = function () {
+    var gid = GS.gid || (S.group && S.group.id);
+    if (!gid) return;
+    var inp = $id('imGsMyNick');
+    var nick = inp ? String(inp.value || '').trim() : '';
+    if (nick.length > 20) { toast('群昵称最长 20 字'); return; }
+    var btn = $id('imGsSaveNick');
+    if (btn) { btn.disabled = true; btn.textContent = '保存中…'; }
+    fetch(apiBase() + '/api/groups/' + gid + '/me', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+      body: JSON.stringify({ groupNickname: nick }) // 空串 = 清除
+    })
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error((d && d.detail) || '保存失败'); return d; }); })
+      .then(function (d) {
+        var saved = (d && typeof d.groupNickname === 'string') ? d.groupNickname : nick;
+        if (GS.detail) GS.detail.myGroupNickname = saved;
+        toast(saved ? '✅ 群昵称已更新' : '✅ 已清除群名片');
+        imReloadGroupDetail(); // 重拉详情 → 成员列表群名片即时刷新
+      })
+      .catch(function (e) { toast('保存失败：' + ((e && e.message) || '网络错误')); })
+      .finally(function () { if (btn) { btn.disabled = false; btn.textContent = '保存'; } });
   };
 
   // —— 表情面板（[emoji:xx] 文本语法，Unicode 渲染，离线可用） ——
@@ -1863,7 +2119,8 @@
     renderRequests: renderRequests,
     presenceText: presenceText,
     loadChats: loadChats,
-    SWIPE_PX: SWIPE_PX
+    SWIPE_PX: SWIPE_PX,
+    imResolveMyRole: imResolveMyRole
   };
 
   $ready(boot);

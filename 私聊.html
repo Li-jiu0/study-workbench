@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>私信 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260911h">
-<link rel="stylesheet" href="assets/polish.css?v=20260911h">
+<link rel="stylesheet" href="assets/common.css?v=20260911i">
+<link rel="stylesheet" href="assets/polish.css?v=20260911i">
 <style>
 
   /* ===== 私信页（嵌在应用外壳内）===== */
@@ -101,6 +101,8 @@
             <button class="im-icon" id="imBack" onclick="imBackList()" style="display:none" title="返回会话列表">←</button>
             <div class="im-av" id="imCAv"></div>
             <div style="flex:1;font-weight:700" id="imCName"></div>
+            <!-- T02 增量 2026-09-11：群会话「⋯」群设置入口（仅群会话由 renderChatHeader() 显示，私聊会话用 display 隐藏而非删 DOM） -->
+            <button class="im-icon" id="imGSBtn" onclick="imOpenGroupSettings()" title="群设置" style="display:none">⋯</button>
           </div>
           <div class="im-msgs" id="imMsgs"></div>
           <div class="im-composer">
@@ -206,6 +208,18 @@
     </div>
   </div>
 
+  <!-- ==================== 群设置面板（T02 增量 2026-09-11）：D0 骨架 + D2 成员管理/踢人 + D3 免打扰 + D4 退群/解散 ====================
+       复用 .im-overlay/.im-modal 外壳；内容由 chat-local.js 的 imRenderGroupSettings() 动态渲染。
+       D1 改群名/群公告、D5 群内昵称：本轮为禁用占位（【后续扩展点：T04 接口就绪后接线】）。 -->
+  <div class="im-overlay" id="imGroupSettingsModal" style="display:none" onclick="if(event.target===this)imCloseGroupSettings()">
+    <div class="im-modal im-gs-modal">
+      <div class="im-modal-head"><div style="font-size:16px;font-weight:700">群设置</div><div style="cursor:pointer;color:#999;font-size:18px" onclick="imCloseGroupSettings()">✕</div></div>
+      <div class="im-gs-body" id="imGsBody">
+        <div class="im-empty2" style="padding:20px 0;text-align:center;color:#999;font-size:13px">加载中…</div>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== 加好友模态（A3，2026-09-11；批次二 2026-09-11h 移除弹窗内「旧页回退」入口） ====================
        搜索（300ms 防抖）→ imRenderFriendRows 统一渲染。
        注：好友申请.html 文件本身保留（直连 URL 仍可访问作为后门），但弹窗内不再提供跳转入口。 -->
@@ -255,11 +269,11 @@
 
 </div>
 
-<script src="assets/app.js?v=20260911h"></script>
-<script src="assets/config.js?v=20260911h"></script>
-<script src="assets/emoji/manifest.js?v=20260911h"></script>
-<script src="assets/api.js?v=20260911h"></script>
-<script src="assets/chat-local.js?v=20260911h"></script>
+<script src="assets/app.js?v=20260911i"></script>
+<script src="assets/config.js?v=20260911i"></script>
+<script src="assets/emoji/manifest.js?v=20260911i"></script>
+<script src="assets/api.js?v=20260911i"></script>
+<script src="assets/chat-local.js?v=20260911i"></script>
 <style>
   .im-tab-add{background:#fff7ed;border-color:#fdba74;color:#c2410c;font-weight:600}
   .im-tab-add:hover{background:#ffedd5}

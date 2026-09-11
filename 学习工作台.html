@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" data-page-node-id="OlgAXTFaD9mAg3AFsfpeiy">
 <meta name="theme-color" content="#5B8DEF" data-page-node-id="XIP3tSfjex43vTn5HPKTvm">
 <title>首页 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260911h" data-page-node-id="cG8803QAoDbKSd7v8tsEs9">
-<link rel="stylesheet" href="assets/polish.css?v=20260911h" data-page-node-id="lkxFYcwbHH3N6LYB00qIeL">
+<link rel="stylesheet" href="assets/common.css?v=20260911i" data-page-node-id="cG8803QAoDbKSd7v8tsEs9">
+<link rel="stylesheet" href="assets/polish.css?v=20260911i" data-page-node-id="lkxFYcwbHH3N6LYB00qIeL">
 </head>
 <body class="theme-home" data-page-node-id="BTU8kiFHiuvsPFdnqvbOiF">
 
@@ -185,6 +185,37 @@
               </div>
               <div class="recent-list" id="recentList"></div>
             </div>
+
+            <!-- 卡片6：更多工具（T01 增量 2026-09-11：由轮播外整卡移入，成为第 6 张轮播卡；内部 DOM / class / onclick 原样保留） -->
+            <div class="card home-carousel-card" id="moreToolsCard" style="min-width:100%;scroll-snap-align:start;flex-shrink:0;">
+              <div class="card-header" data-page-node-id="B4XEyPEOTcfTfXfvnEJp0m">
+                <div class="card-title" data-page-node-id="J0YyX9546YYgTNdRj2J9Fg"><span class="title-icon" data-page-node-id="oOE8WH0OSA8AVgRS7Kg3gE">🧰</span>更多工具</div>
+                <div class="card-action" onclick="showToast('点击卡片下方的 + 可新增工具入口')" data-page-node-id="ZJUXhtyVRfEviQKIrzGU23">+ 新增</div>
+              </div>
+              <div class="tools-grid" id="moreToolsGrid" data-page-node-id="kiw99ZUrOnT8lXWHOucY6G">
+                <div class="tool-placeholder-card" onclick="location.href='AI模拟面试.html'" data-page-node-id="MuVHmry6EmVMQnEFEfFpR3">
+                  <div class="tp-icon" data-page-node-id="eSCDUhjygqlNwE6doboG4W">🎙️</div>
+                  <div class="tp-title" data-page-node-id="mjqUDIdvxO1thfOts85k3z">AI模拟面试</div>
+                  <div class="tp-desc" data-page-node-id="s67qPMF3V9DJTyLYKkvRT8">AI面试官提问+追问，结束给总评报告</div>
+                </div>
+                <div class="tool-placeholder-card" onclick="location.href='PPT素材库.html'" data-page-node-id="olc3rH1bQ57G7xYKkCaqDA">
+                  <div class="tp-icon" data-page-node-id="EAy0D5VI1Cpw0AiwSAsGPN">📊</div>
+                  <div class="tp-title" data-page-node-id="orPRpPzqOJnZEd5Gj0anIQ">PPT素材库</div>
+                  <div class="tp-desc" data-page-node-id="9C4FhRBeLELYvvxsuVRgJf">6套完整模板，每套5页预览，直接参考套用</div>
+                </div>
+                <div class="tool-placeholder-card" onclick="location.href='四级经验分享.html'" data-page-node-id="YDgpBMzwQ8tEx22Q3ZikDz">
+                  <div class="tp-icon" data-page-node-id="hBxVEpNCTsx7k3sHal5dhI">📖</div>
+                  <div class="tp-title" data-page-node-id="NArTkGPAcV3QZXfbXPWRvr">四级经验分享</div>
+                  <div class="tp-desc" data-page-node-id="xBA1r5jHiVSQRi9pnmSOYp">学霸备考方法+30天计划+听力4遍法</div>
+                </div>
+                <div class="tool-placeholder-card" onclick="openQuest()">
+                  <div class="tp-icon">⚡</div>
+                  <div class="tp-title">穿越英语学习</div>
+                  <div class="tp-desc">闯关式剧情学英语，6关场景+语音评分</div>
+                </div>
+              </div>
+              <!-- 【后续扩展点：更多工具自定义排序开关】默认顺序保留在 StudyStats，本轮按最近使用降序 -->
+            </div>
           </div>
         </div>
         <!-- 轮播指示器 -->
@@ -194,18 +225,15 @@
           <span style="width:6px;height:6px;border-radius:50%;background:var(--border);cursor:pointer;" onclick="scrollToCard(2)"></span>
           <span style="width:6px;height:6px;border-radius:50%;background:var(--border);cursor:pointer;" onclick="scrollToCard(3)"></span>
           <span style="width:6px;height:6px;border-radius:50%;background:var(--border);cursor:pointer;" onclick="scrollToCard(4)"></span>
+          <span style="width:6px;height:6px;border-radius:50%;background:var(--border);cursor:pointer;" onclick="scrollToCard(5)"></span>
         </div>
         <style>
           .home-cards-carousel::-webkit-scrollbar { display: none; }
         </style>
         <script>
-          function scrollToCard(index) {
-            const carousel = document.getElementById('homeCardsCarousel');
-            if (!carousel) return;
-            const cards = carousel.querySelectorAll('.home-carousel-card');
-            if (cards[index]) {
-              carousel.scrollTo({ left: cards[index].offsetLeft - carousel.offsetLeft, behavior: 'smooth' });
-            }
+          /* 圆点样式统一管理（幂等）：当前项高亮为长条，其余为小圆点。
+             供 scrollToCard 与 scroll 监听复用，避免两处重复逻辑；共 6 个点。 */
+          function syncCarouselDots(index) {
             const dots = document.querySelectorAll('#carouselDots span');
             dots.forEach((dot, i) => {
               if (i === index) {
@@ -219,6 +247,15 @@
               }
             });
           }
+          function scrollToCard(index) {
+            const carousel = document.getElementById('homeCardsCarousel');
+            if (!carousel) return;
+            const cards = carousel.querySelectorAll('.home-carousel-card');
+            if (cards[index]) {
+              carousel.scrollTo({ left: cards[index].offsetLeft - carousel.offsetLeft, behavior: 'smooth' });
+            }
+            syncCarouselDots(index);
+          }
           document.addEventListener('DOMContentLoaded', function() {
             const carousel = document.getElementById('homeCardsCarousel');
             if (!carousel) return;
@@ -231,56 +268,15 @@
                   currentIndex = i;
                 }
               });
-              const dots = document.querySelectorAll('#carouselDots span');
-              dots.forEach((dot, i) => {
-                if (i === currentIndex) {
-                  dot.style.width = '20px';
-                  dot.style.borderRadius = '3px';
-                  dot.style.background = 'var(--primary)';
-                } else {
-                  dot.style.width = '6px';
-                  dot.style.borderRadius = '50%';
-                  dot.style.background = 'var(--border)';
-                }
-              });
+              syncCarouselDots(currentIndex);
             });
           });
         </script>
 
-        <!-- 【后续扩展点】更多工具卡片区（2026-09-11 应用户要求整卡隐藏，DOM 保留，去掉 display:none 即可恢复）
-             说明：DOM 容器与 CSS 样式已预先搭好，共 3 个占位卡片。
-             后续新增工具时：复制一份 .tool-placeholder-card 结构，
-             把 onclick 指向你自己的函数即可，无需再调布局。 -->
-        <!-- 更多工具（P0-14 增量 2026-09-11：恢复展示；四卡显示「x 天前用过 · 共 n 次」并按最近使用排序，逻辑见本文件底部脚本） -->
-        <div class="card" id="moreToolsCard">
-          <div class="card-header" data-page-node-id="B4XEyPEOTcfTfXfvnEJp0m">
-            <div class="card-title" data-page-node-id="J0YyX9546YYgTNdRj2J9Fg"><span class="title-icon" data-page-node-id="oOE8WH0OSA8AVgRS7Kg3gE">🧰</span>更多工具</div>
-            <div class="card-action" onclick="showToast('点击卡片下方的 + 可新增工具入口')" data-page-node-id="ZJUXhtyVRfEviQKIrzGU23">+ 新增</div>
-          </div>
-          <div class="tools-grid" id="moreToolsGrid" data-page-node-id="kiw99ZUrOnT8lXWHOucY6G">
-            <div class="tool-placeholder-card" onclick="location.href='AI模拟面试.html'" data-page-node-id="MuVHmry6EmVMQnEFEfFpR3">
-              <div class="tp-icon" data-page-node-id="eSCDUhjygqlNwE6doboG4W">🎙️</div>
-              <div class="tp-title" data-page-node-id="mjqUDIdvxO1thfOts85k3z">AI模拟面试</div>
-              <div class="tp-desc" data-page-node-id="s67qPMF3V9DJTyLYKkvRT8">AI面试官提问+追问，结束给总评报告</div>
-            </div>
-            <div class="tool-placeholder-card" onclick="location.href='PPT素材库.html'" data-page-node-id="olc3rH1bQ57G7xYKkCaqDA">
-              <div class="tp-icon" data-page-node-id="EAy0D5VI1Cpw0AiwSAsGPN">📊</div>
-              <div class="tp-title" data-page-node-id="orPRpPzqOJnZEd5Gj0anIQ">PPT素材库</div>
-              <div class="tp-desc" data-page-node-id="9C4FhRBeLELYvvxsuVRgJf">6套完整模板，每套5页预览，直接参考套用</div>
-            </div>
-            <div class="tool-placeholder-card" onclick="location.href='四级经验分享.html'" data-page-node-id="YDgpBMzwQ8tEx22Q3ZikDz">
-              <div class="tp-icon" data-page-node-id="hBxVEpNCTsx7k3sHal5dhI">📖</div>
-              <div class="tp-title" data-page-node-id="NArTkGPAcV3QZXfbXPWRvr">四级经验分享</div>
-              <div class="tp-desc" data-page-node-id="xBA1r5jHiVSQRi9pnmSOYp">学霸备考方法+30天计划+听力4遍法</div>
-            </div>
-            <div class="tool-placeholder-card" onclick="openQuest()">
-              <div class="tp-icon">⚡</div>
-              <div class="tp-title">穿越英语学习</div>
-              <div class="tp-desc">闯关式剧情学英语，6关场景+语音评分</div>
-            </div>
-          </div>
-          <!-- 【后续扩展点：更多工具自定义排序开关】默认顺序保留在 StudyStats，本轮按最近使用降序 -->
-        </div>
+        <!-- 【锚点】原「更多工具」卡（#moreToolsCard）已于 T01（2026-09-11）整卡移入上方轮播容器 #homeCardsCarousel，
+             成为第 6 张 .home-carousel-card（内部 DOM / id="moreToolsGrid" 及底部「按最近使用排序」脚本均不受影响）。
+             恢复方式：把上方轮播内 id="moreToolsCard" 的那张卡整段移回本锚点处，并将 class 中的 home-carousel-card 去掉、
+             去掉内联 min-width/scroll-snap-align/flex-shrink 样式即可。 -->
 
         <!-- 学习留言板（纯前端版：数据保存在本地 localStorage，仅本机可见）
              【后续扩展点】如需多人互动留言，需新增后端接口，见 ai-server 文件夹方案 -->
@@ -409,11 +405,11 @@
 
 </div>
 
-<script src="assets/app.js?v=20260911h"></script>
-<script src="assets/quest.js?v=20260911h"></script>
-<script src="assets/config.js?v=20260911h"></script>
-<script src="assets/api.js?v=20260911h"></script>
-<script src="assets/study-stats.js?v=20260911h"></script>
+<script src="assets/app.js?v=20260911i"></script>
+<script src="assets/quest.js?v=20260911i"></script>
+<script src="assets/config.js?v=20260911i"></script>
+<script src="assets/api.js?v=20260911i"></script>
+<script src="assets/study-stats.js?v=20260911i"></script>
 <script>
 /* ==================== T7 增量（P0-14）：更多工具使用痕迹 + 按最近使用排序 ==================== */
 (function () {
