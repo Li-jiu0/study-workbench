@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from database import (Friend, FriendRequest, User, UserBlock, friend_pair,
                       get_db, is_friend, now_iso)
+from rate_limit import rate_limit
 from schemas import user_brief
 from security import get_current_user
 
@@ -89,7 +90,37 @@ def list_requests(user: User = Depends(get_current_user), db: Session = Depends(
     return {
         "incoming": [_row(r, user.id) for r in pending_in],
         "outgoing": [_row(r, user.id) for r in pending_out],
+        # 2026-09-12 新增（仅新增字段，incoming/outgoing 原语义不变）：
+        # 未读申请数 = pending incoming 中 created_at 晚于本人已读水位线的条数。
+        # 格式已确认：FriendRequest.created_at 由 now_iso() 写入（见上方 send_request），
+        # 为 19 字符 'YYYY-MM-DD HH:MM:SS'；last_request_seen_at 亦由 now_iso() 写入，
+        # 两者同格式同长度，定长字符串的字典序与时间序一致，故直接比较字符串。
+        # last_request_seen_at 为 NULL（从未查看过）时视为全部未读。
+        "unreadCount": _unread_count(pending_in, user.last_request_seen_at),
     }
+
+
+def _unread_count(pending_in: list[FriendRequest], seen_at: str | None) -> int:
+    """计算未读申请数。seen_at 为 NULL → 全部 pending incoming 都算未读。"""
+    if seen_at is None:
+        return len(pending_in)
+    return sum(1 for r in pending_in if (r.created_at or "") > seen_at)
+
+
+@router.post("/requests/seen")
+def mark_requests_seen(user: User = Depends(get_current_user),
+                       db: Session = Depends(get_db),
+                       _rl: None = Depends(rate_limit("default"))):
+    """标记「已查看全部好友申请」：把当前用户的 last_request_seen_at 写为当前时间。
+
+    配合 GET /api/friends/requests 的 unreadCount 做互动页申请角标：
+    前端用户打开申请列表后调本接口，角标即清零；之后新到的申请重新计数。
+    时间统一用 now_iso()（19 字符 'YYYY-MM-DD HH:MM:SS'），与
+    friend_requests.created_at 同格式，保证字符串比较正确。
+    """
+    user.last_request_seen_at = now_iso()
+    db.commit()
+    return {"ok": True, "unreadCount": 0}
 
 
 def _own_request(db: Session, rid: int, user: User, *, to_me: bool) -> FriendRequest:
