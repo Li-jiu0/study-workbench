@@ -80,16 +80,22 @@ def list_requests(user: User = Depends(get_current_user), db: Session = Depends(
     def _row(r: FriendRequest, me_id: int) -> dict:
         peer = r.from_user if r.to_user_id == me_id else r.to_user
         return {"id": r.id, "fromMe": r.from_user_id == me_id,
+                "status": r.status,
                 "user": _peer_brief(peer), "createdAt": r.created_at}
-    pending_in = db.query(FriendRequest).filter(
-        FriendRequest.to_user_id == user.id, FriendRequest.status == "pending"
+    # 2026-09-11h 差异预检修复：恢复与线上完全一致的返回语义。
+    # 收件箱返回【全部状态】(pending/accepted/declined) 并带 status 字段 ——
+    # 前端申请列表展示与 DELETE /requests/{rid}（删除申请记录）都依赖它；
+    # 未读数 unreadCount 仍只按 pending 子集统计（见 _unread_count）。
+    all_in = db.query(FriendRequest).filter(
+        FriendRequest.to_user_id == user.id
     ).order_by(FriendRequest.id.desc()).all()
-    pending_out = db.query(FriendRequest).filter(
-        FriendRequest.from_user_id == user.id, FriendRequest.status == "pending"
+    all_out = db.query(FriendRequest).filter(
+        FriendRequest.from_user_id == user.id
     ).order_by(FriendRequest.id.desc()).all()
+    pending_in = [r for r in all_in if r.status == "pending"]
     return {
-        "incoming": [_row(r, user.id) for r in pending_in],
-        "outgoing": [_row(r, user.id) for r in pending_out],
+        "incoming": [_row(r, user.id) for r in all_in],
+        "outgoing": [_row(r, user.id) for r in all_out],
         # 2026-09-12 新增（仅新增字段，incoming/outgoing 原语义不变）：
         # 未读申请数走双水位线（BUG-2 同秒边界修复，详见 _unread_count docstring）：
         # 主路径按 last_seen_request_id（id 单调递增）计数；存量用户回退
@@ -165,6 +171,18 @@ def accept_request(rid: int, user: User = Depends(get_current_user), db: Session
 def decline_request(rid: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     r = _own_request(db, rid, user, to_me=True)
     r.status = "declined"
+    db.commit()
+    return {"ok": True}
+
+
+# 2026-09-11h 差异预检补回：该接口线上一直存在（本地副本缺失，直接覆盖会删功能）
+@router.delete("/requests/{rid}")
+def delete_request(rid: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """删除申请记录（无论是什么状态）"""
+    r = db.get(FriendRequest, rid)
+    if not r or (r.from_user_id != user.id and r.to_user_id != user.id):
+        raise HTTPException(404, "申请不存在")
+    db.delete(r)
     db.commit()
     return {"ok": True}
 
