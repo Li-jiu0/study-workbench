@@ -48,7 +48,35 @@
   // ===== 数据源：逐个尝试，第一个成功的用 =====
   // 每个源返回 {ok, items, source}，items = [{title, hot, url}]
   var SOURCES = [
-    // 唯一数据源：60秒读懂世界（每天 60 条新闻，稳定可用，支持 CORS）
+    // 主源：星途后端聚合 —— 后端代理中新网 RSS（无 CORS 头，浏览器不能直连），
+    // 逐条带真实原文 URL；后端不可用/报错时抛错，自然落入下方降级循环退到 60s 直连
+    {
+      name: '星途后端聚合',
+      fetch: async function () {
+        var api = (window.STUDY_API_BASE != null) ? window.STUDY_API_BASE : '';
+        var res = await nativeFetch(api + '/api/news/daily');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        var text = await res.text();
+        var data;
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          throw new Error('JSON解析失败，原始返回前200字: ' + text.substring(0, 200));
+        }
+        if (!data || data.ok !== true || !Array.isArray(data.items) || !data.items.length) {
+          throw new Error('后端聚合源不可用或无数据');
+        }
+        var items = data.items.map(function (it) {
+          // url 可能为 null（降级到 60s 的后端响应），统一归一为 '' 以兼容旧渲染/旧缓存
+          return { title: (it && it.title) || '', hot: (it && it.hot) || '', url: (it && it.url) || '' };
+        }).filter(function (it) { return it.title; });
+        if (!items.length) throw new Error('后端聚合源条目为空');
+        var out = { ok: true, items: items.slice(0, 60), source: data.source || '星途后端聚合' };
+        if (data.dailyLink) out.dailyLink = data.dailyLink;
+        return out;
+      }
+    },
+    // 降级源：60秒读懂世界（每天 60 条新闻，稳定可用，支持 CORS；逐条无链接）
     {
       name: '60秒读懂世界',
       fetch: async function () {
@@ -119,7 +147,10 @@
         if (result.ok && result.items.length) {
           setCache(result.items, result.source);
           fetching = false;
-          return { ok: true, items: result.items, source: result.source, cached: false };
+          var ret = { ok: true, items: result.items, source: result.source, cached: false };
+          // dailyLink（微信早报整期链接）只随本次新鲜抓取透传，不写入缓存（缓存形状保持不变）
+          if (result.dailyLink) ret.dailyLink = result.dailyLink;
+          return ret;
         }
       } catch (e) {
         errors.push(SOURCES[i].name + ': ' + e.message);
@@ -142,13 +173,13 @@
   // ===== UI =====
   function ensureCss() {
     if (document.getElementById('hnStyle')) return;
-    var css = '.hn-mask{position:fixed;inset:0;background:rgba(15,18,30,.5);backdrop-filter:blur(3px);z-index:2400;display:flex;align-items:center;justify-content:center;padding:16px}.hn-box{background:var(--card);color:var(--text);width:min(720px,100%);max-height:90vh;border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px -18px rgba(0,0,0,.4)}.hn-head{display:flex;align-items:center;gap:8px;padding:12px 16px;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff}.hn-head b{flex:1;font-size:16px}.hn-refresh{background:rgba(255,255,255,.18);border:none;color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px}.hn-x{background:rgba(255,255,255,.18);border:none;color:#fff;width:28px;height:28px;border-radius:8px;cursor:pointer}.hn-body{overflow-y:auto;padding:12px 16px;flex:1}.hn-item{display:flex;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;align-items:flex-start}.hn-item:hover{background:var(--primary-light)}.hn-rank{width:24px;height:24px;border-radius:6px;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}.hn-rank.top1{background:#FF4D4F;color:#fff}.hn-rank.top2{background:#FA8C16;color:#fff}.hn-rank.top3{background:#FADB14;color:#333}.hn-title{flex:1;font-size:14px;line-height:1.5;min-width:0}.hn-hot{font-size:11px;color:var(--text-secondary);flex-shrink:0;white-space:nowrap}.hn-empty{text-align:center;padding:40px 16px;color:var(--text-secondary);font-size:14px}.hn-loading{text-align:center;padding:40px 16px;color:var(--text-secondary)}.hn-spinner{display:inline-block;width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:hn-spin .8s linear infinite;margin-bottom:12px}@keyframes hn-spin{to{transform:rotate(360deg)}}.hn-foot{padding:8px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--text-secondary);display:flex;justify-content:space-between;align-items:center}.hn-switch{background:none;border:1px solid var(--border);color:var(--text-secondary);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px}';
+    var css = '.hn-mask{position:fixed;inset:0;background:rgba(15,18,30,.5);backdrop-filter:blur(3px);z-index:2400;display:flex;align-items:center;justify-content:center;padding:16px}.hn-box{background:var(--card);color:var(--text);width:min(720px,100%);max-height:90vh;border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px -18px rgba(0,0,0,.4)}.hn-head{display:flex;align-items:center;gap:8px;padding:12px 16px;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff}.hn-head b{flex:1;font-size:16px}.hn-refresh{background:rgba(255,255,255,.18);border:none;color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px}.hn-x{background:rgba(255,255,255,.18);border:none;color:#fff;width:28px;height:28px;border-radius:8px;cursor:pointer}.hn-body{overflow-y:auto;padding:12px 16px;flex:1}.hn-item{display:flex;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;align-items:flex-start}.hn-item:hover{background:var(--primary-light)}.hn-rank{width:24px;height:24px;border-radius:6px;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}.hn-rank.top1{background:#FF4D4F;color:#fff}.hn-rank.top2{background:#FA8C16;color:#fff}.hn-rank.top3{background:#FADB14;color:#333}.hn-title{flex:1;font-size:14px;line-height:1.5;min-width:0}.hn-hot{font-size:11px;color:var(--text-secondary);flex-shrink:0;white-space:nowrap}.hn-empty{text-align:center;padding:40px 16px;color:var(--text-secondary);font-size:14px}.hn-loading{text-align:center;padding:40px 16px;color:var(--text-secondary)}.hn-spinner{display:inline-block;width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:hn-spin .8s linear infinite;margin-bottom:12px}@keyframes hn-spin{to{transform:rotate(360deg)}}.hn-foot{padding:8px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--text-secondary);display:flex;justify-content:space-between;align-items:center}.hn-switch{background:none;border:1px solid var(--border);color:var(--text-secondary);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px}.hn-daily{color:var(--primary);text-decoration:none;margin-right:auto;margin-left:10px}';
     var st = document.createElement('style'); st.id = 'hnStyle'; st.textContent = css; (document.head || document.documentElement).appendChild(st);
   }
 
   function closeHN() { var m = document.getElementById('hnMask'); if (m) m.remove(); }
 
-  function renderList(items, source, stale) {
+  function renderList(items, source, stale, dailyLink) {
     var box = document.getElementById('hnBody');
     if (!box) return;
     if (!items || !items.length) {
@@ -176,12 +207,16 @@
         }
       });
     });
-    // 底部信息
+    // 底部信息（dailyLink 存在时追加「今日早报全文」链接；无则与原样完全一致）
     var foot = document.getElementById('hnFoot');
     if (foot) {
       var timeStr = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-      foot.innerHTML = '<span>来源：' + esc(source) + (stale ? '（过期缓存）' : '') + ' · 更新于 ' + timeStr + '</span>' +
-        '<button class="hn-switch" onclick="closeHN();if(typeof openMiniQuiz===\'function\')openMiniQuiz(\'exam-politics\')">切换到题库模式</button>';
+      var footHtml = '<span>来源：' + esc(source) + (stale ? '（过期缓存）' : '') + ' · 更新于 ' + timeStr + '</span>';
+      if (dailyLink) {
+        footHtml += '<a class="hn-daily" href="' + esc(dailyLink) + '" target="_blank" rel="noopener">📰 今日早报全文</a>';
+      }
+      footHtml += '<button class="hn-switch" onclick="closeHN();if(typeof openMiniQuiz===\'function\')openMiniQuiz(\'exam-politics\')">切换到题库模式</button>';
+      foot.innerHTML = footHtml;
     }
   }
 
@@ -190,7 +225,7 @@
     if (box) box.innerHTML = '<div class="hn-loading"><div class="hn-spinner"></div><div>正在获取最新热点...</div></div>';
     var result = await fetchHotNews(forceRefresh);
     if (result.ok) {
-      renderList(result.items, result.source, result.stale);
+      renderList(result.items, result.source, result.stale, result.dailyLink);
     } else {
       if (box) box.innerHTML = '<div class="hn-empty">⚠️ ' + esc(result.msg || '获取失败') + '</div>';
     }

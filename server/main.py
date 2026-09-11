@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from config import AVATAR_DIR, IMAGE_DIR, UPLOAD_DIR
 from database import init_db
 from routers import (ai, auth, chat, feedback, friends, groups, migrate, moments,
-                     notes, social, study, uploads, users)
+                     news, notes, social, study, uploads, users)
 import ws
 
 app = FastAPI(title="学习工作台 · 多人博客后端", version="2.0")
@@ -39,6 +39,7 @@ app.include_router(groups.router)
 app.include_router(moments.router)
 app.include_router(feedback.router)
 app.include_router(study.router)
+app.include_router(news.router)   # 需求10：时政新闻聚合（免登录公开接口）
 app.include_router(ai.router)
 app.include_router(uploads.router)
 app.include_router(migrate.router)
