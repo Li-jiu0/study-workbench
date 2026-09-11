@@ -1999,3 +1999,23 @@ body.dark .bottom-nav { background: rgba(30,34,40,0.92); }
 
 /* —— 更多工具卡：使用痕迹小字 —— */
 .tp-usage{font-size:10px;color:#a0a6b0;margin-top:4px;text-align:right}
+
+/* =====================================================================
+   A8 增量（2026-09-11）：更多.html / 工具.html 独立页卡片样式
+   （底部「更多/工具」由弹层改为独立整页；旧弹层 DOM 保留可回退）
+   ===================================================================== */
+.morepage-head{display:flex;align-items:center;gap:10px;margin:0 0 14px}
+.morepage-back{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:16px;cursor:pointer;flex-shrink:0;transition:border-color .15s,color .15s}
+.morepage-back:hover{border-color:var(--primary);color:var(--primary)}
+.morepage-title{font-size:18px;font-weight:800;color:var(--text)}
+.morepage-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.morepage-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 14px;cursor:pointer;text-align:center;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}
+.morepage-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.08);border-color:var(--primary)}
+.morepage-card:active{transform:translateY(0)}
+.mpc-icon{font-size:28px;line-height:1;margin-bottom:10px}
+.mpc-title{font-size:15px;font-weight:700;color:var(--text)}
+.mpc-desc{font-size:12px;color:var(--text-secondary);margin-top:4px;line-height:1.5}
+@media (max-width:760px){
+  .morepage-grid{grid-template-columns:repeat(2,1fr);gap:12px}
+  .morepage-card{padding:14px 10px}
+}
