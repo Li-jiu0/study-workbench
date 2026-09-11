@@ -50,9 +50,14 @@ async def store_and_deliver(db: Session, sender: User, receiver_id: int,
 
 
 @router.get("/{peer_id}/messages")
-def list_messages(peer_id: int, before_id: int = 0, limit: int = 30,
-                  user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """单向会话历史：id 游标向前翻页，返回时间正序，带 hasMore。"""
+async def list_messages(peer_id: int, before_id: int = 0, limit: int = 30, mark_read: int = 1,
+                        user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """单向会话历史：id 游标向前翻页，返回时间正序，带 hasMore。
+
+    mark_read=1（默认）时实现「拉取即已读」：把对方发给我、id<=会话最新一条
+    的未读消息批量置已读，并向对方回推 readReceipt（前端无需再显式调 read 接口；
+    POST /{peer_id}/read 保留兼容）。
+    """
     if not is_friend(db, user.id, peer_id):
         raise HTTPException(403, "仅好友之间可以查看聊天记录")
     limit = min(max(limit, 1), 100)
@@ -67,6 +72,15 @@ def list_messages(peer_id: int, before_id: int = 0, limit: int = 30,
     has_more = len(rows) > limit
     rows = rows[:limit]
     rows.reverse()  # 时间正序返回
+    # 拉取即已读：以会话内最新消息 id 为上界推进已读标记
+    if mark_read and rows:
+        latest_id = max(m.id for m in rows)
+        marked = do_mark_read(db, peer_id, user.id, latest_id)
+        if marked:
+            await send_to(peer_id, {"type": "readReceipt", "peerId": user.id, "upToId": latest_id})
+        for m in rows:  # 本地同步已读状态，让本次返回的 read 字段准确
+            if m.sender_id == peer_id and not m.read_at:
+                m.read_at = now_iso()
     return {"items": [msg_dict(m) for m in rows], "hasMore": has_more,
             "nextBefore": rows[0].id if has_more and rows else 0}
 
@@ -89,22 +103,25 @@ async def send_message(peer_id: int, body: SendMsgIn, user: User = Depends(get_c
 
 @router.get("/unread")
 def unread(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """我的未读私信：按好友汇总。"""
+    """我的未读私信：按好友汇总（补昵称头像，供会话列表免二次请求渲染角标）。"""
     rows = (
-        db.query(Message.receiver_id, Message.sender_id, Message.id,
-                Message.kind, Message.content, Message.created_at)
+        db.query(Message, User.nickname, User.avatar)
+        .join(User, Message.sender_id == User.id)
         .filter(Message.receiver_id == user.id, Message.read_at.is_(None))
         .order_by(Message.id.desc())
         .all()
     )
     by_peer: dict[int, dict] = {}
     total = 0
-    for recv, sid, mid, kind, content, created in rows:
-        p = by_peer.setdefault(sid, {"peerId": sid, "count": 0, "lastId": 0, "last": ""})
+    for m, nickname, avatar in rows:
+        p = by_peer.setdefault(m.sender_id, {
+            "peerId": m.sender_id, "count": 0, "lastId": 0, "last": "",
+            "nickname": nickname, "avatar": avatar,
+        })
         p["count"] += 1
-        if mid > p["lastId"]:
-            p["lastId"] = mid
-            p["last"] = f"[图片]" if kind == "image" else content[:80]
+        if m.id > p["lastId"]:
+            p["lastId"] = m.id
+            p["last"] = f"[图片]" if m.kind == "image" else m.content[:80]
         total += 1
     return {"total": total, "items": sorted(by_peer.values(), key=lambda x: -x["lastId"])}
 
