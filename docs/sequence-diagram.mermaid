@@ -1,0 +1,30 @@
+sequenceDiagram
+    participant A as 甲(发送者前端)
+    participant R as groups.py(FastAPI)
+    participant DB as SQLite
+    participant W as wsmanager
+    participant B as 乙(在线成员前端)
+    participant C as 丙(离线成员)
+
+    Note over A: 打开群会话
+    A->>R: GET /api/groups/{id}/messages?markRead=1
+    R->>DB: SELECT messages WHERE group_id=? (游标分页)
+    R->>DB: UPDATE chat_group_members SET last_read_msg_id=max(可见id)
+    R-->>A: items[](含发送者昵称头像) + hasMore
+
+    Note over A: 发送群消息
+    A->>R: POST /api/groups/{id}/messages {content}
+    R->>DB: INSERT messages(group_id, sender_id=甲, read_at=NULL)
+    R->>DB: SELECT 成员列表(排除甲)
+    loop 每个在线成员
+        R->>W: send_to(uid, {type:"groupMsg", groupId, message})
+        W-->>B: ws 推送 groupMsg
+    end
+    R-->>A: msg_dict(message)
+    B-->>B: ws 消息按 id 去重后渲染气泡(昵称+头像)
+
+    Note over C: 丙离线，ws 推送失败静默
+    C->>R: (上线后) GET /api/groups → unreadCount = id>last_read_msg_id 计数
+    C->>R: GET /api/groups/{id}/messages
+    R->>DB: 推进丙的 last_read_msg_id
+    R-->>C: 消息列表
