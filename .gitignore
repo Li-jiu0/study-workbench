@@ -85,3 +85,7 @@ profile_v*.html
 
 # 部署打包产物
 tools/frontend_update_*.tar.gz
+
+# 结果预览截图
+广场编辑页-改版效果.png
+设置页-新功能.png
