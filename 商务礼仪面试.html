@@ -114,6 +114,38 @@
             </div>
           </div>
         </div>
+
+        <!-- 【后续扩展点】T7 增量（2026-09-11）：学习概况统计卡（study-stats.js 渲染） -->
+        <div id="ivStatsCard" class="study-stats-card"></div>
+
+        <!-- 【后续扩展点】T7 增量（P0-12）：面试题库四分类 + AI 模拟面试官（多轮追问，走 /api/ai/chat 中转）
+             （独立题卡，不改原页面逻辑；断网时题库可用、AI 降级提示） -->
+        <div class="qtab-card" id="ivQuizCard">
+          <div class="sprint-head"><span>🎤 面试题库 · 四分类</span>
+            <div class="qtab-tabs" style="margin:0" id="ivQuizTabs"></div>
+          </div>
+          <div class="qtab-q" id="ivQuizQ">加载中…</div>
+          <div class="qtab-btns">
+            <button class="btn btn-outline" onclick="ivQuizNext()">换一题</button>
+            <button class="btn btn-outline" onclick="ivQuizShowTip()">查看答题要点</button>
+            <button class="btn btn-primary" id="ivAiBtn" onclick="ivStartInterview()">🎬 开始模拟面试</button>
+          </div>
+          <div class="qtab-verdict" id="ivQuizTip"></div>
+          <!-- 右下角 AI 面板（面试官人设多轮对话，结束后给总评） -->
+          <div class="qtab-ai" id="ivAiPanel">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <b style="font-size:13px">🤖 模拟面试官</b>
+              <span style="font-size:11px;color:var(--text-secondary);cursor:pointer" onclick="ivEndInterview()">结束并总评</span>
+            </div>
+            <pre id="ivAiText">面试官待命…点击「开始模拟面试」后我将针对上方题目进行追问。</pre>
+            <div style="display:flex;gap:8px">
+              <input id="ivAiInput" class="fb-input" placeholder="输入你的回答…" style="flex:1"
+                     onkeydown="if(event.key==='Enter'){event.preventDefault();ivAiSend()}">
+              <button class="btn btn-primary" onclick="ivAiSend()">发送</button>
+            </div>
+          </div>
+        </div>
+
         <div class="feature-grid">
           <div class="feature-card" onclick="navigateTo('etiquette')">
             <div class="feature-icon">👔</div>
@@ -389,5 +421,152 @@
 <script src="assets/mini-interview.js"></script>
 <script src="assets/mini.js"></script>
 <script src="assets/group-discussion.js"></script>
+<script src="assets/study-stats.js?v=20260911a"></script>
+<script>
+/* ==================== T7 增量（P0-8/P0-12）：统计卡 + 四分类题库 + AI 模拟面试官 ==================== */
+(function () {
+  'use strict';
+  function $id(x) { return document.getElementById(x); }
+  function apiBase() { return (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000')); }
+  function tok() { return localStorage.getItem('study_workbench_token') || ''; }
+
+  // 面试题库（四分类，独立于页面既有题库）
+  var IV_BANK = [
+    { cat: '自我介绍', q: '请用一分钟做一个自我介绍，突出你与岗位的匹配度。', tip: '结构：基本信息一句话 → 与岗位最相关的 1-2 段经历（带数据） → 为什么是这个岗位。控制在 250 字内，别背简历。' },
+    { cat: '自我介绍', q: '说说你的核心竞争力，为什么公司要录用你而不是别人？', tip: '用「能力 + 证据 + 与岗位需求对应」三段式。避免空话，至少给出一个可验证的成果或案例。' },
+    { cat: '简历深挖', q: '简历里你写了一段项目经历，请讲讲你在其中承担的具体角色和贡献。', tip: '用 STAR 法：情境-任务-行动-结果。重点讲"行动"里你个人的决策与推动，量化结果（如效率提升 30%）。' },
+    { cat: '简历深挖', q: '你简历中有一段较长的空窗期（或转专业经历），请解释一下。', tip: '不回避、不辩解：说明原因（学习/探索/家庭），强调期间获得的能力或思考，以及为何更适合现在这个目标。' },
+    { cat: '压力面', q: '如果你和直属领导在工作方案上有严重分歧，你会怎么办？', tip: '先理解领导视角并摆事实给数据；私下沟通、就事论事；保留意见但执行决定，事后复盘。避免"坚持到底"或"完全顺从"两个极端。' },
+    { cat: '压力面', q: '你的期望薪资是多少？（压价追问：我们要不起这个数）', tip: '先给区间不给定值，区间基于市场行情+自身价值；被压价时问清薪酬结构和成长空间，表现弹性但不无限让步。' },
+    { cat: '压力面', q: '你同时拿到了另一家公司的 offer，如果我们想留你，你怎么考虑？', tip: '表达对当前公司的具体兴趣点（业务/团队/成长），说明决策标准而非拿 offer 互相抬价，展现稳定意愿。' },
+    { cat: '礼仪细节', q: '商务宴请中，座次安排有什么讲究？你作为主宾该坐哪里？', tip: '面门为上、以右为尊。主宾坐在主人右侧；若你陪同，坐在与职级对应的位置，不要抢坐主位或背门位。' },
+    { cat: '礼仪细节', q: '面试时接递名片/资料的正确做法是什么？', tip: '双手递接、字面朝向对方；接过认真看几秒再收好，不要随手塞兜或压在东西下面；手机调静音、坐姿挺拔、眼神交流。' },
+    { cat: '礼仪细节', q: '视频面试前需要做哪些设备与环境准备？', tip: '提前测试摄像头/麦克风/网络；背景整洁、光线正面打脸；dress code 比现场轻一档但保持职业；提前 10 分钟候场。' },
+    { cat: '自我介绍', q: '介绍一下你的大学生活/过往经历中最有成就感的一件事。', tip: '选与岗位能力相关的事，讲清挑战-行动-结果-收获四步，把成就感落在成长上而不是奖状本身。' },
+    { cat: '简历深挖', q: '你提到掌握某项技能，请举一个实际运用的例子并说明效果。', tip: '技能要落到场景：什么问题、你用了这项技能的哪个方面、结果如何、学到了什么。避免"只是会用"。' }
+  ];
+  var IV_CATS = ['自我介绍', '简历深挖', '压力面', '礼仪细节'];
+  var IV = { cat: '全部', idx: 0, order: [] };
+
+  function renderTabs() {
+    var tabs = ['全部'].concat(IV_CATS);
+    $id('ivQuizTabs').innerHTML = tabs.map(function (c) {
+      return '<span class="qtab-tab' + (IV.cat === c ? ' on' : '') + '" onclick="window.ivQuizCat(\'' + c + '\')">' + c + '</span>';
+    }).join('');
+  }
+
+  function pickQuestion() {
+    var pool = IV_BANK.map(function (_, i) { return i; })
+      .filter(function (i) { return IV.cat === '全部' || IV_BANK[i].cat === IV.cat; })
+      .filter(function (i) { return IV.order.indexOf(i) === -1; });
+    if (!pool.length) { IV.order = []; pool = IV_BANK.map(function (_, i) { return i; }).filter(function (i) { return IV.cat === '全部' || IV_BANK[i].cat === IV.cat; }); }
+    var pick = pool[Math.floor(Math.random() * pool.length)];
+    IV.order.push(pick);
+    IV.idx = pick;
+    $id('ivQuizQ').textContent = IV_BANK[pick].cat + ' ｜ ' + IV_BANK[pick].q;
+    var tip = $id('ivQuizTip');
+    tip.className = 'qtab-verdict'; tip.textContent = '';
+  }
+
+  window.ivQuizCat = function (c) { IV.cat = c; IV.order = []; renderTabs(); pickQuestion(); };
+  window.ivQuizNext = function () { pickQuestion(); };
+  window.ivQuizShowTip = function () {
+    var tip = $id('ivQuizTip');
+    tip.className = 'qtab-verdict ok';
+    tip.textContent = '💡 ' + IV_BANK[IV.idx].tip;
+  };
+
+  /* ---------- AI 模拟面试官（多轮追问，结束后总评） ---------- */
+  var IV_AI = { history: [], provider: null };
+
+  window.ivStartInterview = function () {
+    if (!tok()) { if (typeof showToast === 'function') showToast('模拟面试需联网后登录使用'); else alert('模拟面试需联网后登录使用'); return; }
+    var panel = $id('ivAiPanel');
+    panel.style.display = 'block';
+    $id('ivAiText').textContent = '面试官：请开始回答下面这道题：\n' + IV_BANK[IV.idx].q + '\n\n（直接在下方输入你的回答，我会逐条追问；回答完 3-4 轮后点「结束并总评」。）';
+    IV_AI.history = [
+      { role: 'system', content: '你是一位专业、友善但要求严格的「商务礼仪与结构化面试官」。规则：1)针对候选人的回答逐步追问，每次追问 1-2 个点，不要一次问完；2)回答空泛时要求举例或量化；3)全程用面试官口吻，简短（100字内），不要给标准答案；4)只有当用户说「结束面试」或明确请求总评时，才输出 200 字内的总评（亮点/不足/改进建议各 2 条）。' },
+      { role: 'assistant', content: '请回答这道题：' + IV_BANK[IV.idx].q }
+    ];
+    if (window.StudyStats) StudyStats.track('etiquette', 'task', { type: 'mock_interview' });
+  };
+
+  window.ivAiSend = function () {
+    var inp = $id('ivAiInput');
+    var text = (inp.value || '').trim();
+    if (!text || !IV_AI.history.length) return;
+    inp.value = '';
+    IV_AI.history.push({ role: 'user', content: text });
+    var out = $id('ivAiText');
+    out.textContent += '\n\n我：' + text + '\n\n面试官：…';
+    callIvAi(function (reply) {
+      IV_AI.history.push({ role: 'assistant', content: reply });
+      out.textContent = out.textContent.replace(/面试官：…$/, '面试官：' + reply);
+    });
+  };
+
+  window.ivEndInterview = function () {
+    if (!IV_AI.history.length) return;
+    IV_AI.history.push({ role: 'user', content: '结束面试，请给出总评。' });
+    var out = $id('ivAiText');
+    out.textContent += '\n\n（面试结束，生成总评中…）';
+    callIvAi(function (reply) {
+      IV_AI.history.push({ role: 'assistant', content: reply });
+      out.textContent += '\n\n—— 总评 ——\n' + reply;
+    });
+    if (window.StudyStats) StudyStats.track('etiquette', 'finish', { type: 'mock_interview_summary' });
+  };
+
+  function callIvAi(cb) {
+    // 先确定可用模型，再流式对话（密钥在服务端）
+    if (IV_AI.provider) return postIvChat(cb);
+    fetch(apiBase() + '/api/ai/models', { headers: { 'Authorization': 'Bearer ' + tok() } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var providers = d.providers || d.items || d.models || [];
+        IV_AI.provider = providers[0] && (providers[0].id || providers[0].provider);
+        if (!IV_AI.provider) throw new Error('服务端未配置模型');
+        postIvChat(cb);
+      })
+      .catch(function () {
+        if (typeof showToast === 'function') showToast('AI 面试官需联网且服务端已配置模型；题库与要点不受影响');
+        $id('ivAiText').textContent = $id('ivAiText').textContent.replace(/面试官：…$/, '（AI 暂不可用，题库与答题要点仍可离线使用）');
+      });
+  }
+
+  function postIvChat(cb) {
+    fetch(apiBase() + '/api/ai/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() },
+      body: JSON.stringify({ provider: IV_AI.provider, messages: IV_AI.history.slice(-16) })
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        var acc = '';
+        var reader = r.body.getReader();
+        var dec = new TextDecoder();
+        function step() {
+          return reader.read().then(function (x) {
+            if (x.done) return cb(acc || '（AI 未返回内容）');
+            acc += dec.decode(x.value, { stream: true });
+            return step();
+          });
+        }
+        return step();
+      })
+      .catch(function () {
+        if (typeof showToast === 'function') showToast('AI 连接失败，题库功能不受影响');
+      });
+  }
+
+  if (document.readyState !== 'loading') boot();
+  else document.addEventListener('DOMContentLoaded', boot);
+  function boot() {
+    if (window.StudyStats) StudyStats.render('ivStatsCard', 'etiquette');
+    renderTabs();
+    pickQuestion();
+  }
+})();
+</script>
 </body>
 </html>

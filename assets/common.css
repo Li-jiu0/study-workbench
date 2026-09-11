@@ -1918,3 +1918,84 @@ body.dark .bottom-nav { background: rgba(30,34,40,0.92); }
 .im-gcheck{width:20px;height:20px;border:2px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;flex-shrink:0}
 .im-gcheck.on{background:#07c160;border-color:#07c160}
 .im-gname-tip{font-size:12px;color:var(--text-secondary);margin-bottom:10px}
+
+/* ==========================================
+   T7 增量（2026-09-11）：学习统计底座 + 六模块增强
+   ========================================== */
+
+/* —— 📊 学习概况卡（study-stats.js 渲染） —— */
+.study-stats-card{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--shadow);margin-bottom:14px}
+.study-stats-head{display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:700;margin-bottom:10px}
+.study-stats-week{font-size:11px;color:var(--text-secondary);cursor:pointer;font-weight:400}
+.study-stats-week-body{font-size:12px;color:var(--text-secondary);background:var(--bg);border-radius:10px;padding:8px 10px;margin-bottom:10px}
+.study-stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr 2.2fr;gap:8px;align-items:end}
+.study-stats-cell{text-align:center}
+.study-stats-cell b{display:block;font-size:22px;color:var(--primary);line-height:1.2}
+.study-stats-cell span{font-size:11px;color:var(--text-secondary)}
+.study-stats-chart{display:flex;gap:4px;align-items:flex-end;justify-content:space-around;height:80px}
+.study-stats-bar{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}
+.study-stats-bar i{display:block;width:10px;background:linear-gradient(180deg,var(--primary),var(--accent));border-radius:4px 4px 0 0;min-height:4px}
+.study-stats-bar b{font-size:9px;color:var(--text-secondary);font-weight:400}
+
+/* —— 四级备考：考试冲刺卡 —— */
+.sprint-card{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--shadow);margin-bottom:14px}
+.sprint-head{font-size:14px;font-weight:700;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.sprint-main{display:flex;gap:14px;align-items:center}
+.sprint-count{text-align:center;flex-shrink:0}
+.sprint-count b{display:block;font-size:40px;color:var(--primary);line-height:1.1}
+.sprint-count span{font-size:11px;color:var(--text-secondary)}
+.sprint-ring{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative}
+.sprint-ring i{position:absolute;inset:8px;background:var(--card);border-radius:50%;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:13px;font-weight:700}
+.sprint-tasks{flex:1;min-width:0}
+.sprint-task{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px;cursor:pointer;user-select:none}
+.sprint-task input{accent-color:var(--primary)}
+.sprint-date{font-size:12px;color:var(--text-secondary);margin-top:10px;display:flex;align-items:center;gap:8px}
+.sprint-date input{border:1px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;background:var(--bg);color:var(--text)}
+
+/* —— 央国企笔试：题型正确率条形组 + 弱项提示 —— */
+.typeacc-card{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--shadow);margin-bottom:14px}
+.typeacc-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.typeacc-row .name{width:56px;font-size:12px;color:var(--text);flex-shrink:0}
+.typeacc-row .track{flex:1;height:10px;background:var(--bg);border-radius:5px;overflow:hidden}
+.typeacc-row .track i{display:block;height:100%;border-radius:5px;transition:width .4s}
+.typeacc-row .pct{width:44px;font-size:12px;text-align:right;flex-shrink:0}
+.typeacc-weak{margin-top:10px;background:#fff7ed;border:1px solid #fdba74;color:#c2410c;font-size:12.5px;border-radius:10px;padding:8px 12px;display:flex;align-items:center;gap:10px}
+.typeacc-good{background:#f0fdf4;border-color:#86efac;color:#15803d}
+
+/* —— 高情商表达 / 商务礼仪面试：分类 tab + 情景卡 + AI 点评 —— */
+.qtab-card{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--shadow);margin-bottom:14px}
+.qtab-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.qtab-tab{font-size:12px;padding:5px 12px;border:1px solid var(--border);border-radius:14px;cursor:pointer;color:var(--text-secondary)}
+.qtab-tab.on{background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff;border-color:transparent;font-weight:600}
+.qtab-q{font-size:13.5px;line-height:1.7;margin-bottom:10px}
+.qtab-opts{display:flex;flex-direction:column;gap:6px}
+.qtab-opt{font-size:13px;text-align:left;border:1px solid var(--border);background:var(--bg);border-radius:10px;padding:8px 12px;cursor:pointer;color:var(--text);transition:border-color .15s}
+.qtab-opt:hover{border-color:var(--primary)}
+.qtab-opt.right{border-color:#22c55e;background:#f0fdf4}
+.qtab-opt.wrong{border-color:#ef4444;background:#fef2f2}
+.qtab-verdict{margin-top:8px;font-size:12.5px;padding:8px 10px;border-radius:10px;display:none}
+.qtab-verdict.ok{display:block;background:#f0fdf4;color:#15803d}
+.qtab-verdict.no{display:block;background:#fef2f2;color:#b91c1c}
+.qtab-ai{margin-top:10px;display:none}
+.qtab-ai pre{white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:12.5px;background:var(--bg);border-radius:10px;padding:10px;line-height:1.7;margin:8px 0 0;color:var(--text)}
+.qtab-btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.qtab-btns .btn{font-size:12px;padding:6px 14px}
+
+/* —— PPT训练：学习路径 + 作品集 —— */
+.pptpath-card{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--shadow);margin-bottom:14px}
+.pptpath-steps{display:flex;align-items:center;gap:0;margin:12px 0 4px}
+.pptpath-step{flex:1;text-align:center;position:relative;cursor:pointer;user-select:none}
+.pptpath-step .dot{width:34px;height:34px;line-height:32px;border-radius:50%;border:2px solid var(--border);background:var(--card);display:inline-flex;align-items:center;justify-content:center;font-size:15px;transition:all .2s}
+.pptpath-step.done .dot{background:#22c55e;border-color:#22c55e;color:#fff}
+.pptpath-step span{display:block;font-size:11px;color:var(--text-secondary);margin-top:4px}
+.pptpath-step:not(:last-child)::after{content:'';position:absolute;top:17px;left:calc(50% + 22px);width:calc(100% - 44px);height:2px;background:var(--border)}
+.pptpath-step.done:not(:last-child)::after{background:#22c55e}
+.pptfolio-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:10px}
+.pptfolio-item{background:var(--bg);border-radius:12px;padding:10px;font-size:12px}
+.pptfolio-item b{display:block;font-size:13px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pptfolio-item .meta{color:var(--text-secondary);font-size:11px}
+.pptfolio-item .view{margin-top:6px;color:var(--primary);cursor:pointer;font-size:12px}
+.pptfolio-empty{font-size:12px;color:var(--text-secondary);padding:8px 0}
+
+/* —— 更多工具卡：使用痕迹小字 —— */
+.tp-usage{font-size:10px;color:#a0a6b0;margin-top:4px;text-align:right}

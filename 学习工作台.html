@@ -250,7 +250,8 @@
              说明：DOM 容器与 CSS 样式已预先搭好，共 3 个占位卡片。
              后续新增工具时：复制一份 .tool-placeholder-card 结构，
              把 onclick 指向你自己的函数即可，无需再调布局。 -->
-        <div class="card" style="display:none" data-page-node-id="s465Vz9Sr29Qmknx6OkMbw">
+        <!-- 更多工具（P0-14 增量 2026-09-11：恢复展示；四卡显示「x 天前用过 · 共 n 次」并按最近使用排序，逻辑见本文件底部脚本） -->
+        <div class="card" id="moreToolsCard">
           <div class="card-header" data-page-node-id="B4XEyPEOTcfTfXfvnEJp0m">
             <div class="card-title" data-page-node-id="J0YyX9546YYgTNdRj2J9Fg"><span class="title-icon" data-page-node-id="oOE8WH0OSA8AVgRS7Kg3gE">🧰</span>更多工具</div>
             <div class="card-action" onclick="showToast('点击卡片下方的 + 可新增工具入口')" data-page-node-id="ZJUXhtyVRfEviQKIrzGU23">+ 新增</div>
@@ -277,6 +278,7 @@
               <div class="tp-desc">闯关式剧情学英语，6关场景+语音评分</div>
             </div>
           </div>
+          <!-- 【后续扩展点：更多工具自定义排序开关】默认顺序保留在 StudyStats，本轮按最近使用降序 -->
         </div>
 
         <!-- 学习留言板（纯前端版：数据保存在本地 localStorage，仅本机可见）
@@ -410,5 +412,61 @@
 <script src="assets/quest.js"></script>
 <script src="assets/config.js?v=20260911d"></script>
 <script src="assets/api.js?v=20260911c"></script>
+<script src="assets/study-stats.js?v=20260911a"></script>
+<script>
+/* ==================== T7 增量（P0-14）：更多工具使用痕迹 + 按最近使用排序 ==================== */
+(function () {
+  'use strict';
+  function $id(x) { return document.getElementById(x); }
+
+  var TOOL_MAP = [
+    { key: 'ai_interview', kw: 'AI模拟面试.html' },
+    { key: 'ppt_assets', kw: 'PPT素材库.html' },
+    { key: 'cet4_share', kw: '四级经验分享.html' },
+    { key: 'xuetu', kw: 'openQuest' }
+  ];
+
+  function daysAgoText(ts) {
+    if (!ts) return '未使用过';
+    var days = Math.floor((Date.now() - ts) / 86400000);
+    if (days <= 0) return '今天用过';
+    return days + ' 天前用过';
+  }
+
+  function renderToolTraces() {
+    var grid = $id('moreToolsGrid');
+    if (!grid || !window.StudyStats) return;
+    var cards = Array.prototype.slice.call(grid.querySelectorAll('.tool-placeholder-card'));
+    var order = [];
+    cards.forEach(function (card) {
+      var oc = card.getAttribute('onclick') || '';
+      var t = TOOL_MAP.find(function (x) { return oc.indexOf(x.kw) !== -1; });
+      if (!t) return;
+      card.setAttribute('data-tool', t.key);
+      // 使用痕迹小字
+      var usage = StudyStats.getToolUsage(t.key);
+      var tip = card.querySelector('.tp-usage');
+      if (!tip) {
+        tip = document.createElement('div');
+        tip.className = 'tp-usage';
+        card.appendChild(tip);
+      }
+      tip.textContent = daysAgoText(usage.lastTs) + ' · 共 ' + usage.count + ' 次';
+      // 点击标记使用（capture：先记录再跳转）
+      if (!card.__usageBound) {
+        card.__usageBound = true;
+        card.addEventListener('click', function () { StudyStats.markToolUse(t.key); }, true);
+      }
+      order.push({ card: card, lastTs: usage.lastTs, title: (card.querySelector('.tp-title') || {}).textContent || '' });
+    });
+    // 按最近使用降序重排（未使用的按默认顺序排在后面）
+    order.sort(function (a, b) { return (b.lastTs || 0) - (a.lastTs || 0); });
+    order.forEach(function (x) { grid.appendChild(x.card); });
+  }
+
+  if (document.readyState !== 'loading') renderToolTraces();
+  else document.addEventListener('DOMContentLoaded', renderToolTraces);
+})();
+</script>
 </body>
 </html>

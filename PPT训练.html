@@ -60,6 +60,29 @@
             </div>
           </div>
         </div>
+
+        <!-- 【后续扩展点】T7 增量（2026-09-11）：学习概况统计卡（study-stats.js 渲染） -->
+        <div id="pptStatsCard" class="study-stats-card"></div>
+
+        <!-- 【后续扩展点】T7 增量（P0-13）：🗺 学习路径三关（案例拆解→版式仿写→限时命题，进度持久化） -->
+        <div class="pptpath-card">
+          <div class="sprint-head"><span>🗺 学习路径</span><span style="font-size:11px;color:var(--text-secondary);font-weight:400">点击关卡标记完成</span></div>
+          <div class="pptpath-steps">
+            <div class="pptpath-step" id="pptStep1" onclick="window.pptToggleStep(1)"><span class="dot">1</span><span>案例拆解<br>拆解 3 个优秀 PPT</span></div>
+            <div class="pptpath-step" id="pptStep2" onclick="window.pptToggleStep(2)"><span class="dot">2</span><span>版式仿写<br>完成 2 页仿写练习</span></div>
+            <div class="pptpath-step" id="pptStep3" onclick="window.pptToggleStep(3)"><span class="dot">3</span><span>限时命题<br>30 分钟完成命题作品</span></div>
+          </div>
+        </div>
+
+        <!-- 【后续扩展点】T7 增量（P0-13）：📁 我的作品集（本地保存，标题+笔记+日期；容量受限时提示只存文本） -->
+        <div class="pptpath-card">
+          <div class="sprint-head"><span>📁 我的作品集</span>
+            <button class="btn btn-primary" style="font-size:12px;padding:5px 14px" onclick="window.pptAddWork()">+ 添加作品</button>
+          </div>
+          <div class="pptfolio-grid" id="pptFolioGrid"></div>
+          <!-- 【后续扩展点：作品缩略图 dataURL 上传与图片九宫格预览】当前仅存文本笔记 -->
+        </div>
+
         <div class="feature-grid">
           <div class="feature-card" onclick="openMiniQuiz('ppt-design')">
             <div class="feature-icon">🎯</div>
@@ -224,5 +247,95 @@
 
 <script src="assets/mini-ppt.js"></script>
 <script src="assets/mini.js"></script>
+<script src="assets/study-stats.js?v=20260911a"></script>
+<script>
+/* ==================== T7 增量（P0-8/P0-13）：统计卡 + 学习路径闯关 + 作品集 ==================== */
+(function () {
+  'use strict';
+  function $id(x) { return document.getElementById(x); }
+  var PATH_KEY = 'study_workbench_ppt_path';      // {step1:1, step2:0, step3:0}
+  var FOLIO_KEY = 'study_workbench_ppt_portfolio'; // [{title, note, date, thumb?}]
+
+  function loadPath() { try { return JSON.parse(localStorage.getItem(PATH_KEY) || '{}') || {}; } catch (e) { return {}; } }
+  function loadFolio() { try { return JSON.parse(localStorage.getItem(FOLIO_KEY) || '[]') || []; } catch (e) { return []; } }
+
+  function renderPath() {
+    var p = loadPath();
+    for (var i = 1; i <= 3; i++) {
+      var el = $id('pptStep' + i);
+      if (el) el.classList.toggle('done', !!p['step' + i]);
+    }
+  }
+
+  window.pptToggleStep = function (n) {
+    var p = loadPath();
+    p['step' + n] = !p['step' + n] ? 1 : 0;
+    try { localStorage.setItem(PATH_KEY, JSON.stringify(p)); } catch (e) { }
+    if (p['step' + n] && window.StudyStats) StudyStats.track('ppt', 'task', { step: n });
+    renderPath();
+  };
+
+  function renderFolio() {
+    var grid = $id('pptFolioGrid');
+    if (!grid) return;
+    var items = loadFolio();
+    if (!items.length) {
+      grid.innerHTML = '<div class="pptfolio-empty" style="grid-column:1/-1">还没有作品，点「+ 添加作品」记录你的仿写练习</div>';
+      return;
+    }
+    grid.innerHTML = items.slice().reverse().map(function (w, ri) {
+      var idx = items.length - 1 - ri;
+      return '<div class="pptfolio-item">' +
+        (w.thumb ? '<img src="' + w.thumb + '" style="width:100%;border-radius:8px;margin-bottom:6px">' : '') +
+        '<b>' + w.title + '</b>' +
+        '<div class="meta">' + w.date + (w.note ? ' · ' + w.note : '') + '</div>' +
+        '<span class="view" onclick="window.pptViewWork(' + idx + ')">查看</span>' +
+        '<span class="view" style="color:var(--danger);margin-left:8px" onclick="window.pptDelWork(' + idx + ')">删除</span>' +
+        '</div>';
+    }).join('');
+  }
+
+  window.pptAddWork = function () {
+    var title = prompt('作品标题（如：科技风封面仿写）：');
+    if (!title || !title.trim()) return;
+    var note = prompt('一句话笔记（可选，如：学会了左字右图版式）：') || '';
+    var item = { title: title.trim().slice(0, 30), note: note.trim().slice(0, 60), date: new Date().toLocaleDateString('zh-CN') };
+    var items = loadFolio();
+    items.push(item);
+    try {
+      localStorage.setItem(FOLIO_KEY, JSON.stringify(items));
+    } catch (e) {
+      // 容量受限：提示只存文本笔记【后续扩展点：缩略图压缩存储】
+      if (typeof showToast === 'function') showToast('本地空间不足，已只保留文本笔记');
+      item.thumb = undefined;
+      items[items.length - 1] = item;
+      try { localStorage.setItem(FOLIO_KEY, JSON.stringify(items)); } catch (e2) { }
+    }
+    if (window.StudyStats) StudyStats.track('ppt', 'task', { type: 'portfolio_add' });
+    renderFolio();
+  };
+
+  window.pptViewWork = function (idx) {
+    var w = loadFolio()[idx];
+    if (w) alert(w.title + '\n' + w.date + '\n\n' + (w.note || '（无笔记）'));
+  };
+
+  window.pptDelWork = function (idx) {
+    if (!confirm('删除这份作品记录？')) return;
+    var items = loadFolio();
+    items.splice(idx, 1);
+    try { localStorage.setItem(FOLIO_KEY, JSON.stringify(items)); } catch (e) { }
+    renderFolio();
+  };
+
+  if (document.readyState !== 'loading') boot();
+  else document.addEventListener('DOMContentLoaded', boot);
+  function boot() {
+    if (window.StudyStats) StudyStats.render('pptStatsCard', 'ppt');
+    renderPath();
+    renderFolio();
+  }
+})();
+</script>
 </body>
 </html>
