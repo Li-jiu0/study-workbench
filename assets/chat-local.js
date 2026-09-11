@@ -573,6 +573,30 @@
     renderFriends($id('imList'));
   };
 
+  /* 需求1（2026-09-11h）：申请 tab 角标值计算与应用（抽出为全局函数，jsdom 可直接断言）。
+     新后端优先消费 unreadCount 水位线；旧后端无该字段 → 回退为 incoming.length（旧行为）。 */
+  window.imApplyRequestBadge = function (rd) {
+    var n = (rd && typeof rd.unreadCount === 'number') ? rd.unreadCount : ((rd && rd.incoming) ? rd.incoming.length : 0);
+    updateTabBadge('requests', n);
+    return n;
+  };
+
+  /* 需求1（2026-09-11h）：申请列表成功渲染（用户已真正看到列表）后，把「已读水位线」推到服务端。
+     - 只在打开/渲染申请列表时触发（renderRequests 内），绝不在 5s 轮询里调，避免高频打接口；
+     - POST /api/friends/requests/seen 幂等，可安全重复调用；
+     - 失败静默降级：不弹错误 toast、不影响列表渲染，下一次轮询会拿到旧值，行为退化为现状。 */
+  function markRequestsSeen(token, apiBase) {
+    fetch(apiBase + '/api/friends/requests/seen', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        updateTabBadge('requests', (d && typeof d.unreadCount === 'number') ? d.unreadCount : 0);
+      })
+      .catch(function () { /* 静默降级：不打扰用户 */ });
+  }
+
   function renderRequests(box) {
     var token = localStorage.getItem('study_workbench_token');
     var API_BASE = (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000'));
@@ -588,6 +612,8 @@
     .then(function (d) {
       var inc = d.incoming || [];
       var out = d.outgoing || [];
+      // 需求1：列表数据已成功取回并即将渲染（含空列表，用户都算看到了）→ 推已读水位线
+      markRequestsSeen(token, API_BASE);
       var all = inc.concat(out);
       if (all.length === 0) {
         box.innerHTML = '<div class="im-empty2">暂无好友申请<br><span style="font-size:12px;color:#999">在上方搜索框输入用户名找人加好友</span></div>';
@@ -1789,10 +1815,12 @@
         renderList();
         // tab 按钮角标：会话=未读消息总数（批次二 需求2：免打扰 / 已隐藏会话不计入）
         updateTabBadge('chats', imCountUnread(S.chats, imLoadPrefs()));
-        // 待处理好友申请数 → 申请 tab 角标
+        // 待处理好友申请数 → 申请 tab 角标（需求1，2026-09-11h）：
+        // 优先消费后端未读水位线字段 unreadCount（created_at > last_request_seen_at 的 pending 条数），
+        // 修复旧逻辑「角标 = incoming.length，查看后刷新必复发」的 Bug；旧后端无该字段时回退为旧行为。
         fetch(apiBase() + '/api/friends/requests', { headers: { 'Authorization': 'Bearer ' + token } })
           .then(function (r) { return r.json(); })
-          .then(function (rd) { updateTabBadge('requests', (rd.incoming || []).length); })
+          .then(function (rd) { window.imApplyRequestBadge(rd); })
           .catch(function () { });
         // 顶栏 💬 角标由 assets/api.js 的 loadChatUnread() 轮询维护，这里不再越权改写
       })
@@ -1822,6 +1850,7 @@
     renderChats: renderChats,
     renderMsgs: renderMsgs,
     renderFriends: renderFriends,
+    renderRequests: renderRequests,
     presenceText: presenceText,
     loadChats: loadChats,
     SWIPE_PX: SWIPE_PX
