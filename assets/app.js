@@ -3037,6 +3037,49 @@ function splitTextForTTS(text) {
   return out;
 }
 
+/* ---------- 词/句判定（纯函数，便于断言） ----------
+ * 有道 dictvoice 本质是「词典发音」接口，只能可靠朗读它认识的词/短语；任意句子会确定性 500
+ * （生产实测：'hello world ok'、'hello worlds'、'你好世界'、'Hi what can I get for you today'
+ *  同一串连打 6 次均 500，非限流/非长度/非标点）。因此：词/短语才走有道（发音质量更好），
+ * 句子直接跳过有道、走 Web Speech / 原生 TTS，避免白等一次注定失败的请求。
+ * 规则：去空白后非空、≤20 字符、≤3 个 token、且不含句末/分隔标点。 */
+function shouldUseDictTts(text) {
+  const t = String(text == null ? '' : text).trim();
+  if (!t) return false;
+  if (t.length > 20) return false;
+  if (/[.!?;:,。！？；：，、…]/.test(t)) return false;
+  const tokens = t.split(/\s+/).filter(function (x) { return x.length > 0; });
+  if (tokens.length === 0 || tokens.length > 3) return false;
+  // 纯中文无空格：以字符数作 token 兜底（≤8 字视为词/短语）
+  if (tokens.length === 1 && /^[\u4e00-\u9fff\u3400-\u4dbf]+$/.test(t) && t.length > 8) return false;
+  return true;
+}
+
+/* ---------- 统一语音回退（保证回退链可达） ----------
+ * 有道/网络 TTS 不可用时的兜底：App → 原生系统 TTS（attemptSpeak）；浏览器 → Web Speech API。
+ * 被 speakText / speakUtterance / netSpeak 失败路径共用，避免三者各写一份、出现"回退永恒走不到"。
+ * 返回 true 表示已受理朗读（异步），false 表示当前环境也无可用引擎。 */
+function speakFallback(text, lang, rate, onEnd) {
+  const _lang = lang || 'en-US';
+  const _rate = Number(rate) > 0 ? Number(rate) : 0.9;
+  // 1) App：原生系统 TTS（非 App 环境 attemptSpeak 直接返回 false）
+  if (typeof attemptSpeak === 'function' && attemptSpeak(text, _lang, _rate, onEnd ? function () { onEnd(); } : null)) return true;
+  // 2) 浏览器：Web Speech API
+  if ('speechSynthesis' in window && typeof SpeechSynthesisUtterance === 'function') {
+    try {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = _lang;
+      u.rate = _rate;
+      u.pitch = 1;
+      if (onEnd) u.onend = function () { onEnd(); };
+      window.speechSynthesis.speak(u);
+      return true;
+    } catch (e) { /* 落空：返回 false，由调用方提示 */ }
+  }
+  return false;
+}
+
 // 播放单个短句
 function playOnePiece(piece, lang, rate, onDone) {
   const isZh = /zh|cn/i.test(String(lang || ''));
@@ -3065,7 +3108,14 @@ function playOnePiece(piece, lang, rate, onDone) {
 function netSpeak(text, lang, rate, onEnd) {
   try {
     const t = String(text == null ? '' : text).trim();
-    if (!t) { if (onEnd) onEnd(); return false; }
+    if (!t) { if (onEnd) onEnd(false); return false; }
+    // 策略：只有词/短语才走有道（句子会被上游确定性 500，不白等一次失败请求）。
+    // 句子直接交给统一回退（Web Speech / 原生 TTS），仍返回 true 表示"已受理"，兼容既有直调方。
+    if (typeof shouldUseDictTts === 'function' && !shouldUseDictTts(t)) {
+      const handled0 = speakFallback(t, lang, rate, onEnd ? function () { onEnd(true); } : null);
+      if (!handled0) { if (onEnd) onEnd(false); else showToast('朗读服务暂不可用，请稍后重试'); }
+      return handled0;
+    }
     // App 内：优先原生网络 TTS（MainActivity 用 MediaPlayer 播放，绕开 WebView Audio 的限制）
     if (isNativeApp() && window.AndroidTTS && typeof window.AndroidTTS.netTts === 'function') {
       const _lang0 = lang || 'en-US';
@@ -3079,19 +3129,18 @@ function netSpeak(text, lang, rate, onEnd) {
     }
     // 长文本拆分播放：有道 TTS 对长文本支持不好，拆成短句依次播放
     var pieces = splitTextForTTS(t);
-    if (pieces.length === 0) { if (onEnd) onEnd(); return false; }
+    if (pieces.length === 0) { if (onEnd) onEnd(false); return false; }
     var idx = 0;
     var totalOk = true;
     function nextPiece() {
       if (idx >= pieces.length) {
-        if (!totalOk) {
-          // 网络失败：尝试一次原生 TTS（引擎可用时兜底）
-          if (typeof nativeSpeak === 'function' && isNativeApp()) {
-            if (nativeSpeak(text, lang || 'en-US', Number(rate) > 0 ? Number(rate) : 0.9, onEnd)) return;
-          }
-          showToast('语音不可用：请检查网络连接');
+        if (totalOk) { if (onEnd) onEnd(true); return; }
+        // 网络 TTS 失败：交给统一回退（App→原生 TTS；浏览器→Web Speech），保证回退链可达
+        var handled = speakFallback(t, lang, rate, onEnd ? function () { onEnd(true); } : null);
+        if (!handled) {
+          if (onEnd) onEnd(false);
+          else showToast('朗读服务暂不可用，请稍后重试');
         }
-        if (onEnd) onEnd();
         return;
       }
       playOnePiece(pieces[idx], lang, rate, function (ok) {
@@ -3101,28 +3150,27 @@ function netSpeak(text, lang, rate, onEnd) {
       });
     }
     nextPiece();
-    return true; // 已受理（异步播放，成败走 onEnd）
-  } catch (e) { if (onEnd) onEnd(); return false; }
+    return true; // 已受理（异步播放，成败走 onEnd(ok)）
+  } catch (e) { if (onEnd) onEnd(false); return false; }
 }
 
-/* 原生网络 TTS 回调（MainActivity netTts 桥触发） */
+/* 原生网络 TTS 回调（MainActivity netTts 桥触发）：成败均以 onEnd(ok) 回传 */
 let _netTtsCbs = {};
 window.__netTtsDone = function (id) {
   const rec = _netTtsCbs[id];
   if (!rec) return;
   delete _netTtsCbs[id];
-  if (rec.onEnd) rec.onEnd();
+  if (rec.onEnd) rec.onEnd(true);
 };
 window.__netTtsError = function (id, msg) {
   const rec = _netTtsCbs[id];
   if (!rec) return;
   delete _netTtsCbs[id];
-  // 网络 TTS 失败：回退一次原生 TTS，仍失败则明确提示
-  if (typeof nativeSpeak === 'function' && isNativeApp()) {
-    if (nativeSpeak(rec.text, rec.lang, rec.rate, rec.onEnd)) return;
-  }
-  showToast('语音不可用：' + (msg || '请检查网络连接'));
-  if (rec.onEnd) rec.onEnd();
+  // 网络 TTS 失败：统一回退原生 TTS；仍失败才明确提示（文案不再误导为"网络问题"）
+  var handled = speakFallback(rec.text, rec.lang, rec.rate, rec.onEnd ? function () { rec.onEnd(true); } : null);
+  if (handled) return;
+  showToast('朗读服务暂不可用，请稍后重试');
+  if (rec.onEnd) rec.onEnd(false);
 };
 /* 触发一次发音（自动处理原生就绪等待重试）：返回 true 表示已受理朗读 */
 function attemptSpeak(text, lang, rate, onEnd) {
@@ -3154,33 +3202,24 @@ function attemptSpeak(text, lang, rate, onEnd) {
 
 // 语音合成（说话）。语速/语言/总开关读取「设置 → 语音」，调用方可显式覆盖。
 function speakText(text, lang, rate, onEnd) {
+  const _t = String(text == null ? '' : text).trim();
   if (getSetting('autoSpeak') === false) { if (onEnd) onEnd(); return; }  // 朗读被关闭：静默但不中断流程
+  if (!_t) { if (onEnd) onEnd(); return; }
   const _lang = lang || getSetting('voiceLang') || 'en-US';
   const _rate = rate || Number(getSetting('voiceRate')) || 0.9;
-  // 所有环境：网络 TTS 代理优先（后端代理有道TTS，避免浏览器CORS）
-  if (netSpeak(text, _lang, _rate, onEnd)) return;
-  // Native App：网络TTS失败后回退原生TTS
-  if (isNativeApp()) {
-    if (attemptSpeak(text, _lang, _rate, onEnd)) return;
-    showToast('语音不可用：请检查网络，或到系统"文字转语音"设置启用引擎');
-    if (onEnd) onEnd();
-    return;
-  }
-  // 浏览器环境：网络TTS失败后尝试Web Speech API
-  if (!('speechSynthesis' in window)) {
-    showToast('语音不可用：请检查网络连接');
-    if (onEnd) onEnd();
-    return;
-  }
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = _lang;
-  utterance.rate = _rate;
-  utterance.pitch = 1;
-  if (onEnd) {
-    utterance.onend = onEnd;
-  }
-  window.speechSynthesis.speak(utterance);
+  const _done = function () { if (onEnd) onEnd(); };
+  // 网络 TTS 代理优先（词/短语走有道，句子由 netSpeak 内部直接转回退引擎）。
+  // 关键：netSpeak 的 onEnd 携带成败，失败时异步走 Web Speech / 原生 TTS（不再"已受理"短路回退）。
+  if (netSpeak(_t, _lang, _rate, function (ok) {
+    if (ok === true) { _done(); return; }
+    if (speakFallback(_t, _lang, _rate, _done)) return;
+    showToast('朗读服务暂不可用，请稍后重试');
+    _done();
+  })) return;
+  // netSpeak 未受理（内部异常等）：直接走统一回退
+  if (speakFallback(_t, _lang, _rate, _done)) return;
+  showToast('朗读服务暂不可用，请稍后重试');
+  _done();
 }
 
 // 专注学习计时器（时长默认取「设置 → 学习目标 → 专注时长」，也可由调用方指定）
@@ -4345,33 +4384,19 @@ function speakWord() {
   speakUtterance(v.word);
 }
 function speakUtterance(text, lang) {
-  // 所有环境：网络 TTS 代理优先（后端代理有道TTS，避免浏览器CORS）
-  if (netSpeak(text, lang || 'en-US', Number(getSetting('voiceRate')) || 0.9, null)) return;
-  // 网络失败：回退原生TTS（App）或Web Speech API（浏览器）
-  if (isNativeApp()) {
-    if (attemptSpeak(text, lang || 'en-US', Number(getSetting('voiceRate')) || 0.9)) return;
-    showToast('语音不可用：请检查网络，或到系统“文字转语音”设置启用引擎');
-    return;
-  }
-  if (attemptSpeak(text, lang || 'en-US', Number(getSetting('voiceRate')) || 0.9)) return;  // 非 App：原生 Web Speech
-  if (isAndroidEnv() && !isNativeApp()) {
-    showToast('语音引擎未连接，请重启 App；如仍无效请检查系统“文字转语音”设置');
-    return;
-  }
-  if (!('speechSynthesis' in window)) {
-    showToast(isNativeApp() ? '语音引擎不可用，请检查系统“文字转语音”设置' : '当前浏览器不支持语音发音');
-    return;
-  }
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = lang || 'en-US';
-  utterance.rate = getSetting('voiceRate') || 0.9;
-  try {
-    const vs = window.speechSynthesis.getVoices();
-    const voice = vs.find(function (x) { return /^en(-|_)(US|GB)/i.test(x.lang); }) || vs.find(function (x) { return /^en/i.test(x.lang); });
-    if (voice) utterance.voice = voice;
-  } catch (e) { /* 忽略 */ }
-  window.speechSynthesis.speak(utterance);
+  const _t = String(text == null ? '' : text).trim();
+  if (!_t) return;
+  const _lang = lang || 'en-US';
+  const _rate = Number(getSetting('voiceRate')) || 0.9;
+  // 网络 TTS 代理优先（词/短语走有道，句子由 netSpeak 内部直接转回退引擎）；
+  // 失败（ok===false）时异步回退：App→原生 TTS，浏览器→Web Speech API。
+  if (netSpeak(_t, _lang, _rate, function (ok) {
+    if (ok === true) return;
+    if (speakFallback(_t, _lang, _rate, null)) return;
+    showToast('朗读服务暂不可用，请稍后重试');
+  })) return;
+  if (speakFallback(_t, _lang, _rate, null)) return;
+  showToast('朗读服务暂不可用，请稍后重试');
 }
 window.speakWordNow = function (t) { speakUtterance(t); };
 
