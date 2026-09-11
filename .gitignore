@@ -21,3 +21,64 @@ Thumbs.db
 .idea/
 .vscode/
 *.iml
+
+# ===== 以下为 2026-09-11 整理：不入库的本地调试产物与敏感文件 =====
+# 含服务器密码的部署脚本（切勿推送到公开仓库！）
+upload_v23.ps1
+
+# 助手/工具本地数据
+.workbuddy/
+.codebuddy/
+
+# 一次性调试脚本（历史排查产物）
+add_*.py
+check_*.py
+cleanup_*.py
+do_*.py
+do_rename_*.py
+enhance_*.py
+enrich_*.py
+expand_*.py
+fix_*.py
+make_*.py
+merge_*.py
+modify_*.py
+remove_*.py
+rename_*.py
+restore_*.py
+rewrite_*.py
+rollback_*.py
+test_*.py
+unify_*.py
+update_version*.py
+
+# 调试截图
+ai_settings_full.png
+bug*.png
+error_screenshot.png
+home_broken.png
+more_menu_5.png
+old_settings_*.png
+page_broken.png
+profile_layout_broken.png
+profile_two_learn.png
+screenshot_*.png
+settings_broken.png
+settings_problem.png
+settings_target.png
+settings_v3_screenshot.png
+sidebar_broken*.png
+two_learn.png
+wx1.png
+wx2.png
+wx3.png
+
+# 废弃的设置页/个人中心历史变体
+settings.html
+settings_*.html
+profile.html
+profile_v*.html
+设置_旧版.html
+
+# 整站副本
+学习工作台(2)/

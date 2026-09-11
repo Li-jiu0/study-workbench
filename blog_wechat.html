@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
-<title>学习博客 · 学习工作台</title>
+<title>互动广场 · 学习工作台</title>
 <link rel="stylesheet" href="assets/common.css">
 <link rel="stylesheet" href="assets/polish.css">
 </head>
@@ -24,44 +24,27 @@
         <span class="nav-icon">🏠</span><span>首页</span>
       </div>
       <div class="nav-section">学习模块</div>
-      <div class="nav-item" data-page="cet">
-        <span class="nav-icon">📖</span><span>四级备考</span>
+      <div class="nav-item" data-page="cet"><span class="nav-icon">📖</span><span>四级备考</span></div>
+      <div class="nav-item" data-page="exam"><span class="nav-icon">📝</span><span>央国企笔试</span></div>
+      <div class="nav-item" data-page="comm"><span class="nav-icon">💬</span><span>高情商表达</span></div>
+      <div class="nav-item" data-page="interview"><span class="nav-icon">🤝</span><span>商务礼仪面试</span></div>
+      <div class="nav-item" data-page="ppt"><span class="nav-icon">🎨</span><span>PPT训练</span></div>
+
+      <div class="nav-section">学习模块</div>
+      <div class="nav-item" data-page="cet"><span class="nav-icon">📖</span><span>四级备考</span></div>
+      <div class="nav-item" data-page="exam"><span class="nav-icon">📝</span><span>央国企笔试</span></div>
+      <div class="nav-item" data-page="comm"><span class="nav-icon">💬</span><span>高情商表达</span></div>
+      <div class="nav-item" data-page="interview"><span class="nav-icon">🤝</span><span>商务礼仪面试</span></div>
+      <div class="nav-item" data-page="ppt"><span class="nav-icon">🎨</span><span>PPT训练</span></div>
+    <div class="nav-section">互动</div>
+      <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友 · 好友申请（需在线模式）">
+        <span class="nav-icon">💬</span><span>好友</span>
       </div>
-      <div class="nav-item" data-page="exam">
-        <span class="nav-icon">📝</span><span>央国企笔试</span>
-      </div>
-      <div class="nav-item" data-page="comm">
-        <span class="nav-icon">💬</span><span>高情商表达</span>
-      </div>
-      <div class="nav-item" data-page="interview">
-        <span class="nav-icon">🤝</span><span>商务礼仪面试</span>
-      </div>
-      <div class="nav-item" data-page="ppt">
-        <span class="nav-icon">🎨</span><span>PPT训练</span>
-      </div>
-      <div class="nav-section">创作</div>
-      <div class="nav-item active" data-page="blog">
-        <span class="nav-icon">📝</span><span>学习博客</span>
-      </div>
-      <div class="nav-section">互动</div>
-      <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
-        <span class="nav-icon">💬</span><span>私信 · 好友</span>
-      </div>
-      <div class="nav-item" data-external="1" onclick="gotoBlogMine()" title="我的笔记 · 回收站">
-        <span class="nav-icon">🗂️</span><span>我的笔记</span>
+      <div class="nav-item" data-external="1" onclick="gotoBlogMine()" title="互动广场 · 我的笔记">
+        <span class="nav-icon">🗂️</span><span>互动广场</span>
       </div>
       <div class="nav-section">中心</div>
-      <div class="nav-item" data-page="wrong-book">
-        <span class="nav-icon">📒</span><span>错题本</span>
-      </div>
-            <div class="nav-item" data-page="profile">
-        <span class="nav-icon">👤</span><span>个人中心</span>
-      </div>
-<div class="nav-section">系统</div>
-      <div class="nav-item" data-page="settings">
-        <span class="nav-icon">⚙️</span><span>设置</span>
-      </div>
-    </div>
+      <div class="nav-item" data-page="blog"><span class="nav-icon">📝</span><span>笔记广场</span></div>
     <div class="sidebar-footer">
       <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心">
         <div class="user-avatar">学</div>
@@ -75,7 +58,7 @@
 
   <div class="main">
 <header class="topbar">
-      <div class="topbar-title" id="topbarTitle">学习博客</div>
+      <div class="topbar-title" id="topbarTitle">互动广场</div>
       <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
       <div class="gs-wrap" id="gsWrap">
         <input type="text" class="gs-input" id="gsInput" placeholder="🔍 搜索笔记 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
@@ -93,7 +76,7 @@
 <div class="page active" id="page-blog">
         <div class="module-hero">
           <div class="module-hero-left">
-            <div class="module-hero-title">📝 学习博客</div>
+            <div class="module-hero-title">📝 互动广场</div>
             <div class="module-hero-desc">写学习笔记 · 分类标签 · 草稿归档 · 数据本地保存</div>
           </div>
         </div>
@@ -219,7 +202,7 @@
 
 
   <!-- 底部导航（手机端） -->
-    <nav class="bottom-nav">
+  <nav class="bottom-nav">
     <div class="bottom-nav-list">
       <div class="bottom-nav-item" data-page="home">
         <div class="bn-icon">🏠</div><div class="bn-label">首页</div>
@@ -234,27 +217,35 @@
   </nav>
 
   <!-- 更多面板遮罩 -->
-    <div class="more-overlay" onclick="toggleMorePanel()"></div>
+  <div class="more-overlay" onclick="toggleMorePanel()"></div>
 
   <!-- 更多面板 -->
   <div class="bottom-more-panel" id="morePanel">
     <div class="bottom-more-title">更多功能</div>
     <div class="bottom-more-grid">
+      
+      
       <div class="bottom-more-item" onclick="openBlogStats()">
         <div class="bm-icon">📊</div><div class="bm-label">学习统计</div>
       </div>
+      
+      
       <div class="bottom-more-item" onclick="gotoBlogMine()">
-        <div class="bm-icon">📁</div><div class="bm-label">互动广场</div>
+        <div class="bm-icon">🗂️</div><div class="bm-label">互动广场</div>
       </div>
       <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
         <div class="bm-icon">📒</div><div class="bm-label">错题本</div>
       </div>
-      <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
+      
+      
+      
+      <div class="bottom-more-item" onclick="location.href='设置.html'">
         <div class="bm-icon">⚙️</div><div class="bm-label">设置</div>
       </div>
       <div class="bottom-more-item" onclick="showAbout()">
         <div class="bm-icon">ℹ️</div><div class="bm-label">关于</div>
       </div>
+      
     </div>
   </div>
 
@@ -328,5 +319,27 @@
 
 <script src="assets/app.js?v=20260913s"></script>
 <script src="assets/api.js?v=20260909e"></script>
+
+  <!-- 工具面板遮罩 -->
+  <div class="more-overlay" onclick="toggleToolsPanel()" id="toolsOverlay"></div>
+
+  <!-- 工具面板 -->
+  <div class="bottom-more-panel" id="toolsPanel">
+    <div class="bottom-more-title">🧰 更多工具</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="location.href='AI模拟面试.html';toggleToolsPanel()">
+        <div class="bm-icon">🎙️</div><div class="bm-label">AI面试</div>
+      </div>
+      <div class="bottom-more-item" onclick="location.href='PPT素材库.html';toggleToolsPanel()">
+        <div class="bm-icon">📊</div><div class="bm-label">PPT素材</div>
+      </div>
+      <div class="bottom-more-item" onclick="location.href='四级经验分享.html';toggleToolsPanel()">
+        <div class="bm-icon">📖</div><div class="bm-label">四级经验</div>
+      </div>
+      <div class="bottom-more-item" onclick="openQuest();toggleToolsPanel()">
+        <div class="bm-icon">⚡</div><div class="bm-label">穿越英语</div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

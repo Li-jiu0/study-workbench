@@ -185,20 +185,71 @@ async function renderUserHome(userId, box) {
   try { u = await api('/api/users/' + userId); }
   catch (e) { box.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:var(--text-secondary)">⚠️ ' + esc(e.message) + '</div>'; return; }
   if (u.isMe) { location.replace('个人中心.html'); return; }
+  // 检查好友关系
+  var isFriend = false;
+  try {
+    var friends = await api('/api/friends');
+    isFriend = friends.some(function(f) { return f.user && f.user.id === userId; });
+  } catch(e) {}
   var cards = u.notes.map(function (n) { return noteCardHtml(n); }).join('') ||
     '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-secondary);font-size:13px">TA 还没有公开笔记</div>';
-  box.innerHTML = `
-    <div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">👤</span>TA 的主页</div><div class="card-action">公开笔记 ${u.notes.length} 篇</div></div>
-      <div style="display:flex;align-items:center;gap:16px;padding:6px 0;flex-wrap:wrap">
-        <div class="profile-avatar-lg">${u.avatarUrl ? '<img src="' + apiFileUrl(u.avatarUrl) + '" alt="头像">' : esc((u.nickname || '学').slice(0, 1))}</div>
-        <div style="flex:1;min-width:180px"><div style="font-size:18px;font-weight:800;color:var(--text)">${esc(u.nickname)}</div><div style="font-size:13px;color:var(--text-secondary);margin-top:4px">${esc(u.motto || '这个人很懒，什么都没写~')}</div></div>
-        <button class="btn btn-outline" onclick="location.href='个人中心.html'">← 回我的个人中心</button>
-      </div>
-      <div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">🔒 出于隐私保护：这里只能看到 TA 的公开笔记，草稿 / 私密 / 归档内容不对外展示。</div>
-    </div>
-    <div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">🗒️</span>公开笔记</div></div>
-      <div class="blog-grid">${cards}</div>
-    </div>`;
+  var actionBtns = '<button class="btn btn-outline" onclick="location.href=' + "'个人中心.html'" + '">← 回我的主页</button>';
+  if (isFriend) {
+    actionBtns += ' <button class="btn btn-outline" onclick="chatWithUser(' + userId + ',\'' + esc(u.nickname) + '\')">💬 发私信</button>';
+    actionBtns += ' <button class="btn btn-danger" onclick="removeFriend(' + userId + ',\'' + esc(u.nickname) + '\')">🗑 删除好友</button>';
+  } else {
+    actionBtns += ' <button class="btn btn-primary" onclick="addFriend(' + userId + ')">👤 加为好友</button>';
+  }
+  var s = u.stats || {};
+  
+  box.innerHTML =
+    '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">👤</span>TA 的主页</div><div class="card-action">公开笔记 ' + u.notes.length + ' 篇</div></div>' +
+      '<div style="display:flex;align-items:center;gap:16px;padding:6px 0;flex-wrap:wrap">' +
+        '<div class="profile-avatar-lg">' + (u.avatarUrl ? '<img src="' + apiFileUrl(u.avatarUrl) + '" alt="头像">' : esc((u.nickname || '学').slice(0, 1))) + '</div>' +
+        '<div style="flex:1;min-width:180px"><div style="font-size:18px;font-weight:800;color:var(--text)">' + esc(u.nickname) + '</div><div style="font-size:13px;color:var(--text-secondary);margin-top:4px">' + esc(u.motto || '这个人很懒，什么都没写~') + '</div></div>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' + actionBtns + '</div>' +
+      '</div>' +
+      '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">🔒 出于隐私保护：这里只能看到 TA 的公开笔记，草稿 / 私密 / 归档内容不对外展示。</div>' +
+    '</div>' +
+    
+    // ===== 学习数据 =====
+    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>学习数据</div></div>' +
+    '<div class="profile-grid">' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🔥 ' + (s.streakDays || 0) + '</div><div class="ps-label">连续打卡</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">⏱ ' + (s.totalHours || 0) + 'h</div><div class="ps-label">总学习时长</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🧮 ' + (s.totalQuestions || 0) + '</div><div class="ps-label">做题总数</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🎯 ' + (s.accuracy || 0) + '%</div><div class="ps-label">正确率</div></div>' +
+    '</div></div>' +
+    
+    // ===== 成就徽章墙 =====
+    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">🏅</span>TA 的成就</div></div>' +
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">' +
+    '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🌱</div><div style="font-size:12px;margin-top:4px">初学者</div></div>' +
+    ((s.streakDays || 0) >= 7 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🔥</div><div style="font-size:12px;margin-top:4px">坚持一周</div></div>' : '') +
+    ((s.totalQuestions || 0) >= 100 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🧮</div><div style="font-size:12px;margin-top:4px">百题斩</div></div>' : '') +
+    ((s.totalQuestions || 0) >= 500 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">💪</div><div style="font-size:12px;margin-top:4px">刷题达人</div></div>' : '') +
+    '</div></div>' +
+    
+    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">🗒️</span>公开笔记</div></div>' +
+      '<div class="blog-grid">' + cards + '</div>' +
+    '</div>';
+}
+async function addFriend(userId) {
+  try {
+    await api('/api/friends/requests', { method: 'POST', body: { toUserId: userId } });
+    showToast('📨 好友请求已发送');
+  } catch(e) { showToast('⚠️ ' + e.message); }
+}
+async function removeFriend(userId, name) {
+  if (!await uiConfirm('确定要删除好友「' + name + '」吗？')) return;
+  try {
+    await api('/api/friends/' + userId, { method: 'DELETE' });
+    showToast('🗑 已删除好友');
+    renderUserHome(userId, document.getElementById('profileBox'));
+  } catch(e) { showToast('⚠️ ' + e.message); }
+}
+function chatWithUser(userId, name) {
+  location.href = '私聊.html?uid=' + userId + '&name=' + encodeURIComponent(name);
 }
 function openUserHome(uid) {
   if (document.getElementById('page-profile')) { location.href = '个人中心.html?user=' + uid; }
@@ -279,7 +330,11 @@ function noteCardHtml(n, opts) {
   var stats = '<span>👁 ' + (n.views || 0) + '</span><span>👍 ' + (n.likes || 0) + '</span><span>💬 ' + cmt + '</span>';
   var author = '';
   if (n.author && (!CURRENT_USER || n.author.id !== CURRENT_USER.id)) {
-    author = '<span onclick="event.stopPropagation();openUserHome(' + n.author.id + ')" style="cursor:pointer">👤 ' + esc(n.author.nickname) + '</span>';
+    var avUrl = n.author.avatarUrl ? apiFileUrl(n.author.avatarUrl) : '';
+    var avHtml = avUrl
+      ? '<img src="' + avUrl + '" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;cursor:pointer" onclick="event.stopPropagation();openUserHome(' + n.author.id + ')">'
+      : '<span style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + n.author.id + ')">👤 </span>';
+    author = '<span onclick="event.stopPropagation();openUserHome(' + n.author.id + ')" style="cursor:pointer">' + avHtml + esc(n.author.nickname) + '</span>';
   }
   var acts = '';
   if (opts.mine) {
@@ -402,6 +457,7 @@ async function purgeTrashNote(id) {
 
 /* ---------- 笔记详情 / 点赞 / 收藏 / 评论 ---------- */
 var NOTE_DETAIL = null;
+var REPLY_TO_COMMENT = null; // 当前回复的评论ID和昵称
 async function openBlogDetail(id) {
   try {
     NOTE_DETAIL = await api('/api/notes/' + id);
@@ -422,11 +478,14 @@ function renderBlogDetail() {
   }).join('');
   var comments = (n.comments || []).map(function (c) {
     var canDel = CURRENT_USER && (c.userId === CURRENT_USER.id || isMine);
-    return '<div class="bc-item"><div class="bc-avatar">' + esc((c.nickname || ' ').slice(0, 1)) + '</div>' +
-      '<div class="bc-body"><div class="bc-head"><span>' + esc(c.nickname) + (c.userId ? ' <a href="javascript:void(0)" onclick="openUserHome(' + c.userId + ')" style="color:var(--primary);font-size:11px">主页</a>' : '') + '</span><span>' + fmtTime(c.time) + '</span></div>' +
+    var replyMark = c.replyTo ? '<span style="font-size:11px;color:var(--text-muted);margin:0 4px">回复 @' + esc(c.replyTo) + '</span>' : '';
+    return '<div class="bc-item"><div class="bc-avatar" style="cursor:pointer" onclick="openUserHome(' + c.userId + ')">' + esc((c.nickname || ' ').slice(0, 1)) + '</div>' +
+      '<div class="bc-body"><div class="bc-head"><span style="cursor:pointer" onclick="openUserHome(' + c.userId + ')">' + esc(c.nickname) + '</span>' + replyMark + '<span>' + fmtTime(c.time) + '</span></div>' +
       '<div class="bc-text">' + esc(c.text) + '</div></div>' +
-      (canDel ? '<button style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:11px" onclick="deleteBlogComment(' + c.id + ')">删除</button>' : '') +
-      '</div>';
+      '<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">' +
+      '<button style="background:none;border:none;color:var(--primary);cursor:pointer;font-size:11px;padding:0" onclick="setReplyTo(' + c.id + ',\'' + esc(c.nickname) + '\')">回复</button>' +
+      (canDel ? '<button style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:11px;padding:0" onclick="deleteBlogComment(' + c.id + ')">删除</button>' : '') +
+      '</div></div>';
   }).join('') || '<div style="color:var(--text-secondary);font-size:12px;padding:6px 0">暂无评论，来抢沙发～</div>';
   var pg = function (nd, dir) {
     return '<button ' + (nd ? '' : 'disabled') + ' onclick="' + (nd ? 'openBlogDetail(' + nd.id + ')' : '') + '">' +
@@ -457,6 +516,7 @@ function renderBlogDetail() {
     <div class="blog-comments">
       <div class="bc-title">💬 评论区（${(n.comments || []).length}）</div>
       <div class="bc-input-row">
+        <div id="replyHint" style="display:none;font-size:12px;color:var(--primary);margin-bottom:4px">回复 @<span id="replyToName"></span> <a href="javascript:void(0)" onclick="cancelReply()" style="color:var(--text-muted);margin-left:8px">取消</a></div>
         <input type="text" id="bcInput" placeholder="留言讨论知识点，共同学得更牢…">
         <button class="btn btn-primary" onclick="addBlogComment()">发送</button>
       </div>
@@ -482,13 +542,31 @@ async function toggleNoteFavorite() {
     openBlogDetail(currentNoteId);
   } catch (e) { showToast('⚠️ ' + e.message); }
 }
+function setReplyTo(cid, name) {
+  REPLY_TO_COMMENT = { id: cid, name: name };
+  var hint = document.getElementById('replyHint');
+  var toName = document.getElementById('replyToName');
+  if (hint && toName) { hint.style.display = 'block'; toName.textContent = name; }
+  var inp = document.getElementById('bcInput');
+  if (inp) { inp.placeholder = '回复 ' + name + '…'; inp.focus(); }
+}
+function cancelReply() {
+  REPLY_TO_COMMENT = null;
+  var hint = document.getElementById('replyHint');
+  if (hint) hint.style.display = 'none';
+  var inp = document.getElementById('bcInput');
+  if (inp) inp.placeholder = '留言讨论知识点，共同学得更牢…';
+}
 async function addBlogComment() {
   var inp = document.getElementById('bcInput');
   var text = inp.value.trim();
   if (!text || !currentNoteId) return;
+  var body = { content: text };
+  if (REPLY_TO_COMMENT) body.parent_id = REPLY_TO_COMMENT.id;
   try {
-    await api('/api/notes/' + currentNoteId + '/comments', { method: 'POST', body: { content: text } });
+    await api('/api/notes/' + currentNoteId + '/comments', { method: 'POST', body: body });
     showToast('💬 评论已发布');
+    cancelReply();
     openBlogDetail(currentNoteId);
   } catch (e) { showToast('⚠️ ' + e.message); }
 }
@@ -760,29 +838,44 @@ async function editorAiAssist() {
 }
 
 /* 设置页：AI 卡片 = 模型下拉框（无密钥输入，密钥在后端 .env） */
-async function renderAiProviderForm() {
-  var box = document.getElementById('aiProviderForm'); if (!box) return;
-  var models = [];
-  try { models = (await api('/api/ai/models')).models || []; } catch (e) { }
-  var cur = getAiModelId();
-  if (!models.length) {
-    box.innerHTML = '<div class="ai-cfg-tip">⚠️ 服务端尚未配置任何大模型密钥。<br>请编辑 <b>server/.env</b>，填写 DEEPSEEK_API_KEY / QWEN_API_KEY / KIMI_API_KEY / ZHIPU_API_KEY / OPENAI_API_KEY 任意一项后重启后端。<br>密钥<b>只存在后端配置文件</b>，前端永远接触不到。</div>';
-    return;
+// 快速选择常用模型
+function quickSelectModel(modelId) {
+  if (!modelId) return;
+  
+  // 根据模型ID自动填充服务商和接口地址
+  var providers = (typeof AI_PROVIDERS !== 'undefined') ? AI_PROVIDERS : [];
+  var matchedProvider = null;
+  
+  for (var i = 0; i < providers.length; i++) {
+    if (modelId.indexOf(providers[i].model) !== -1 || modelId.indexOf(providers[i].id) !== -1) {
+      matchedProvider = providers[i];
+      break;
+    }
   }
-  box.innerHTML = `
-    <div class="ai-cfg-grid">
-      <div class="form-group">
-        <div class="form-label">对话模型（密钥在后端，这里只选模型）</div>
-        <select class="form-input" id="aiModelSelect">
-          ${models.map(function (m) { return '<option value="' + esc(m.id) + '"' + (m.id === cur ? ' selected' : '') + '>' + esc(m.name) + '</option>'; }).join('')}
-        </select>
-      </div>
-    </div>
-    <div class="ai-cfg-tip">🔒 安全模式：API 密钥保存在服务器 <b>server/.env</b>，前端不保存、不传输任何密钥；本页仅选择要使用的模型（选择结果存在本机浏览器，仅是偏好）。</div>
-    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
-      <button class="btn btn-primary" onclick="saveAiProviderForm()">💾 保存选择</button>
-      <button class="btn btn-outline" onclick="testAiConnection()">🔌 测试连接</button>
-    </div>`;
+  
+  if (matchedProvider) {
+    document.getElementById('aipSelect').value = matchedProvider.id;
+    document.getElementById('aipModel').value = modelId;
+    document.getElementById('aipBaseUrl').value = matchedProvider.baseUrl;
+    if (typeof onAiProviderChange === 'function') onAiProviderChange();
+    showToast('✅ 已选择 ' + modelId + '，请填写API Key');
+  } else {
+    document.getElementById('aipModel').value = modelId;
+    showToast('✅ 已选择 ' + modelId + '，请填写接口地址和API Key');
+  }
+}
+
+// 保存前端直连配置
+function saveAiProviderFormLocal() {
+  var provider = document.getElementById('aipSelect').value;
+  var model = document.getElementById('aipModel').value;
+  var baseUrl = document.getElementById('aipBaseUrl').value;
+  var apiKey = document.getElementById('aipKey').value;
+  
+  if (typeof saveAiProviderConfig === 'function') {
+    saveAiProviderConfig({ provider: provider, model: model, baseUrl: baseUrl, apiKey: apiKey });
+    showToast('✅ 直连配置已保存');
+  }
 }
 async function saveAiProviderForm() {
   var sel = document.getElementById('aiModelSelect');
@@ -993,6 +1086,10 @@ function _peSource() {
 function renderProfilePage() {
   var box = document.getElementById('profileBox');
   if (!box) return;
+  // 处理?user=参数：查看他人主页
+  var params = new URLSearchParams(location.search);
+  var otherId = params.get('user');
+  if (otherId && CURRENT_USER && Number(otherId) !== CURRENT_USER.id) { renderUserHome(Number(otherId), box); return; }
   var src = _peSource();
   if (src.online) { _renderProfileOnline(box, src.u); return; }
   _renderProfileLocal(box, src.p);
@@ -1029,7 +1126,33 @@ function _localNotesCard() {
     }).join('') + '</div>' +
     '<div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">' +
     '<button class="btn btn-outline" onclick="exportAllNotesMd()">📄 导出全部 Markdown</button>' +
-    '<button class="btn btn-outline" onclick="location.href=' + "'学习博客.html'" + '">📝 去写笔记</button></div></div>';
+    '<button class="btn btn-outline" onclick="location.href=' + "'学习博客.html'" + '">📝 去写笔记</button></div></div>' +
+
+    // ===== 新增：学习数据概览 =====
+    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>学习数据</div></div>' +
+    '<div class="profile-grid">' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🔥 ' + (s.streakDays || 0) + '</div><div class="ps-label">连续打卡</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">⏱ ' + (s.totalHours || 0) + 'h</div><div class="ps-label">总学习时长</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🧮 ' + (s.totalQuestions || 0) + '</div><div class="ps-label">做题总数</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🎯 ' + (s.accuracy || 0) + '%</div><div class="ps-label">正确率</div></div>' +
+    '</div></div>' +
+
+    // ===== 新增：成就徽章墙 =====
+    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">🏅</span>我的成就</div></div>' +
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">' +
+    '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🌱</div><div style="font-size:12px;margin-top:4px">初学者</div></div>' +
+    ((s.streakDays || 0) >= 7 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🔥</div><div style="font-size:12px;margin-top:4px">坚持一周</div></div>' : '') +
+    ((s.totalQuestions || 0) >= 100 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🧮</div><div style="font-size:12px;margin-top:4px">百题斩</div></div>' : '') +
+    ((s.totalQuestions || 0) >= 500 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">💪</div><div style="font-size:12px;margin-top:4px">刷题达人</div></div>' : '') +
+    '</div></div>' +
+
+    // ===== 新增：学习模块快捷入口 =====
+    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">📚</span>学习模块</div></div>' +
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">' +
+    '<div onclick="location.href=' + "'错题本.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px">📒</div><div style="font-size:12px;margin-top:4px">错题本</div></div>' +
+    '<div onclick="location.href=' + "'四级词汇.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px">📖</div><div style="font-size:12px;margin-top:4px">四级词汇</div></div>' +
+    '<div onclick="location.href=' + "'央国企笔试.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px">📝</div><div style="font-size:12px;margin-top:4px">行测刷题</div></div>' +
+    '</div></div>';
 }
 
 function _renderProfileOnline(box, u) {
@@ -1063,7 +1186,33 @@ function _renderProfileOnline(box, u) {
     '<div style="margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📚 笔记分类分布</div>' + catBars + '</div>' +
     '<div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">' +
     '<button class="btn btn-outline" onclick="exportAllNotesMd()">📄 导出全部 Markdown</button>' +
-    '<button class="btn btn-outline" onclick="location.href=' + "'学习博客.html'" + '">📝 去写笔记</button></div></div>';
+    '<button class="btn btn-outline" onclick="location.href=' + "'学习博客.html'" + '">📝 去写笔记</button></div></div>' +
+
+    // ===== 新增：学习数据概览 =====
+    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>学习数据</div></div>' +
+    '<div class="profile-grid">' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🔥 ' + (s.streakDays || 0) + '</div><div class="ps-label">连续打卡</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">⏱ ' + (s.totalHours || 0) + 'h</div><div class="ps-label">总学习时长</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🧮 ' + (s.totalQuestions || 0) + '</div><div class="ps-label">做题总数</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🎯 ' + (s.accuracy || 0) + '%</div><div class="ps-label">正确率</div></div>' +
+    '</div></div>' +
+
+    // ===== 新增：成就徽章墙 =====
+    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">🏅</span>我的成就</div></div>' +
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">' +
+    '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🌱</div><div style="font-size:12px;margin-top:4px">初学者</div></div>' +
+    ((s.streakDays || 0) >= 7 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🔥</div><div style="font-size:12px;margin-top:4px">坚持一周</div></div>' : '') +
+    ((s.totalQuestions || 0) >= 100 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🧮</div><div style="font-size:12px;margin-top:4px">百题斩</div></div>' : '') +
+    ((s.totalQuestions || 0) >= 500 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">💪</div><div style="font-size:12px;margin-top:4px">刷题达人</div></div>' : '') +
+    '</div></div>' +
+
+    // ===== 新增：学习模块快捷入口 =====
+    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">📚</span>学习模块</div></div>' +
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">' +
+    '<div onclick="location.href=' + "'错题本.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px">📒</div><div style="font-size:12px;margin-top:4px">错题本</div></div>' +
+    '<div onclick="location.href=' + "'四级词汇.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px">📖</div><div style="font-size:12px;margin-top:4px">四级词汇</div></div>' +
+    '<div onclick="location.href=' + "'央国企笔试.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px">📝</div><div style="font-size:12px;margin-top:4px">行测刷题</div></div>' +
+    '</div></div>';
 }
 
 function editProfile() {
