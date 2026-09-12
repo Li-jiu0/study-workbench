@@ -607,6 +607,7 @@ window.normalizeBirthdayText = function (raw) {
   var m = s.match(/^(\d{4})(\d{2})(\d{2})$/);
   if (m) s = m[1] + '-' + m[2] + '-' + m[3];
   s = s.replace(/年|月|日/g, '-');
+  s = s.replace(/[-./\s]+$/, ''); // trim trailing separators (e.g. "1990-1-2-" after 年月日 replace)
   m = s.match(/^(\d{4})[-./\s](\d{1,2})[-./\s](\d{1,2})$/);
   if (!m) return null;
   var y = parseInt(m[1], 10), mo = parseInt(m[2], 10), d = parseInt(m[3], 10);
