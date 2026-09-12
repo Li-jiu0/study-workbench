@@ -5,8 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>PPT版式库 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260912a">
-<link rel="stylesheet" href="assets/polish.css?v=20260912a">
+<link rel="stylesheet" href="assets/common.css?v=20260912c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260912c">
+<link rel="stylesheet" href="assets/states.css?v=20260912c">
+<link rel="stylesheet" href="assets/polish.css?v=20260912c">
 </head>
 <body class="theme-home">
 
@@ -85,7 +87,7 @@
       </div>
       <div class="topbar-date" id="topbarDate"></div>
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
-      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式">🌙</div>
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0">🌙</div>
     </header>
 <div class="page active" id="page-ppt-layouts">
       <div class="card">
@@ -168,7 +170,7 @@
         </div>
       </div>
       <div class="form-group">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary)">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--xt-font-base);color:var(--text-secondary)">
           <input type="checkbox" id="cdPinned"> 置顶显示
         </label>
       </div>
@@ -213,11 +215,13 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260912a"></script>
-<script src="assets/app.js?v=20260912a"></script>
-<script src="assets/config.js?v=20260912a"></script>
-<script src="assets/api.js?v=20260912a"></script>
+<script src="assets/icon-map.js?v=20260912c" defer></script>
+<script src="assets/xt-toast.js?v=20260912c" defer></script>
+<script src="assets/error-boundary.js?v=20260912c" defer></script>
+<script src="assets/app.js?v=20260912c" defer></script>
+<script src="assets/config.js?v=20260912c" defer></script>
+<script src="assets/api.js?v=20260912c" defer></script>
 
-<script src="assets/qbank.js?v=20260912a"></script>
+<script src="assets/qbank.js?v=20260912c" defer></script>
 </body>
 </html>

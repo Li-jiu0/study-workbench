@@ -5,8 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>私信 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260912a">
-<link rel="stylesheet" href="assets/polish.css?v=20260912a">
+<link rel="stylesheet" href="assets/common.css?v=20260912c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260912c">
+<link rel="stylesheet" href="assets/states.css?v=20260912c">
+<link rel="stylesheet" href="assets/polish.css?v=20260912c">
 <style>
 
   /* ===== 私信页（嵌在应用外壳内）===== */
@@ -73,7 +75,7 @@
       </div>
       <div class="topbar-date" id="topbarDate"></div>
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
-      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式">🌙</div>
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0">🌙</div>
     </header>
 <div class="page active" id="page-im" style="display:flex;overflow:hidden">
       <aside class="im-side">
@@ -187,7 +189,7 @@
         </div>
       </div>
       <div class="form-group">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary)">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--xt-font-base);color:var(--text-secondary)">
           <input type="checkbox" id="cdPinned"> 置顶显示
         </label>
       </div>
@@ -203,7 +205,7 @@
        内容由 chat-local.js 的 imOpenGroupCreator() 动态填充。 -->
   <div class="im-overlay" id="imGroupModal" style="display:none" onclick="if(event.target===this)imCloseGroupCreator()">
     <div class="im-modal">
-      <div class="im-modal-head"><div style="font-size:16px;font-weight:700">发起群聊</div><div style="cursor:pointer;color:#999;font-size:18px" onclick="imCloseGroupCreator()">✕</div></div>
+      <div class="im-modal-head"><div style="font-size:var(--xt-font-md);font-weight:700">发起群聊</div><div style="cursor:pointer;color:#999;font-size:var(--xt-font-2xl)" onclick="imCloseGroupCreator()">✕</div></div>
       <div class="im-group-body"></div>
       <div class="im-group-foot"></div>
     </div>
@@ -214,9 +216,9 @@
        D1 改群名/群公告、D5 群内昵称：本轮为禁用占位（【后续扩展点：T04 接口就绪后接线】）。 -->
   <div class="im-overlay" id="imGroupSettingsModal" style="display:none" onclick="if(event.target===this)imCloseGroupSettings()">
     <div class="im-modal im-gs-modal">
-      <div class="im-modal-head"><div style="font-size:16px;font-weight:700">群设置</div><div style="cursor:pointer;color:#999;font-size:18px" onclick="imCloseGroupSettings()">✕</div></div>
+      <div class="im-modal-head"><div style="font-size:var(--xt-font-md);font-weight:700">群设置</div><div style="cursor:pointer;color:#999;font-size:var(--xt-font-2xl)" onclick="imCloseGroupSettings()">✕</div></div>
       <div class="im-gs-body" id="imGsBody">
-        <div class="im-empty2" style="padding:20px 0;text-align:center;color:#999;font-size:13px">加载中…</div>
+        <div class="im-empty2" style="padding:20px 0;text-align:center;color:#999;font-size:var(--xt-font-base)">加载中…</div>
       </div>
     </div>
   </div>
@@ -226,7 +228,7 @@
        注：好友申请.html 文件本身保留（直连 URL 仍可访问作为后门），但弹窗内不再提供跳转入口。 -->
   <div class="im-overlay" id="imAddFriendModal" style="display:none" onclick="if(event.target===this)imCloseAddFriendModal()">
     <div class="im-modal">
-      <div class="im-modal-head"><div style="font-size:16px;font-weight:700">添加好友</div><div style="cursor:pointer;color:#999;font-size:18px" onclick="imCloseAddFriendModal()">✕</div></div>
+      <div class="im-modal-head"><div style="font-size:var(--xt-font-md);font-weight:700">添加好友</div><div style="cursor:pointer;color:#999;font-size:var(--xt-font-2xl)" onclick="imCloseAddFriendModal()">✕</div></div>
       <div class="im-group-body">
         <div class="im-af-search">
           <input id="imAfInput" placeholder="输入昵称或 @账号" maxlength="30" oninput="imAfSearch(this.value)" onkeydown="if(event.key==='Enter')imAfSearch(this.value)">
@@ -270,12 +272,14 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260912a"></script>
-<script src="assets/app.js?v=20260912a"></script>
-<script src="assets/config.js?v=20260912a"></script>
-<script src="assets/emoji/manifest.js?v=20260912a"></script>
-<script src="assets/api.js?v=20260912a"></script>
-<script src="assets/chat-local.js?v=20260912a"></script>
+<script src="assets/icon-map.js?v=20260912c" defer></script>
+<script src="assets/xt-toast.js?v=20260912c" defer></script>
+<script src="assets/error-boundary.js?v=20260912c" defer></script>
+<script src="assets/app.js?v=20260912c" defer></script>
+<script src="assets/config.js?v=20260912c" defer></script>
+<script src="assets/emoji/manifest.js?v=20260912c" defer></script>
+<script src="assets/api.js?v=20260912c" defer></script>
+<script src="assets/chat-local.js?v=20260912c" defer></script>
 <style>
   .im-tab-add{background:#fff7ed;border-color:#fdba74;color:#c2410c;font-weight:600}
   .im-tab-add:hover{background:#ffedd5}

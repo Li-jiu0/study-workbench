@@ -5,8 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>PPT训练 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260912a">
-<link rel="stylesheet" href="assets/polish.css?v=20260912a">
+<link rel="stylesheet" href="assets/common.css?v=20260912c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260912c">
+<link rel="stylesheet" href="assets/states.css?v=20260912c">
+<link rel="stylesheet" href="assets/polish.css?v=20260912c">
 </head>
 <body class="theme-ppt">
 
@@ -28,7 +30,7 @@
       </div>
       <div class="topbar-date" id="topbarDate"></div>
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
-      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式">🌙</div>
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0">🌙</div>
     </header>
     <div class="content">
 <div class="page active" id="page-ppt">
@@ -77,7 +79,7 @@
         <!-- 【后续扩展点】T7 增量（P0-13）：📁 我的作品集（本地保存，标题+笔记+日期；容量受限时提示只存文本） -->
         <div class="pptpath-card">
           <div class="sprint-head"><span>📁 我的作品集</span>
-            <button class="btn btn-primary" style="font-size:12px;padding:5px 14px" onclick="window.pptAddWork()">+ 添加作品</button>
+            <button class="btn btn-primary" style="font-size:var(--xt-font-sm);padding:5px 14px" onclick="window.pptAddWork()">+ 添加作品</button>
           </div>
           <div class="pptfolio-grid" id="pptFolioGrid"></div>
           <!-- 【后续扩展点：作品缩略图 dataURL 上传与图片九宫格预览】当前仅存文本笔记 -->
@@ -241,14 +243,16 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260912a"></script>
-<script src="assets/app.js?v=20260912a"></script>
-<script src="assets/config.js?v=20260912a"></script>
-<script src="assets/api.js?v=20260912a"></script>
+<script src="assets/icon-map.js?v=20260912c" defer></script>
+<script src="assets/xt-toast.js?v=20260912c" defer></script>
+<script src="assets/error-boundary.js?v=20260912c" defer></script>
+<script src="assets/app.js?v=20260912c" defer></script>
+<script src="assets/config.js?v=20260912c" defer></script>
+<script src="assets/api.js?v=20260912c" defer></script>
 
-<script src="assets/mini-ppt.js?v=20260912a"></script>
-<script src="assets/mini.js?v=20260912a"></script>
-<script src="assets/study-stats.js?v=20260912a"></script>
+<script src="assets/mini-ppt.js?v=20260912c" defer></script>
+<script src="assets/mini.js?v=20260912c" defer></script>
+<script src="assets/study-stats.js?v=20260912c" defer></script>
 <script>
 /* ==================== T7 增量（P0-8/P0-13）：统计卡 + 学习路径闯关 + 作品集 ==================== */
 (function () {

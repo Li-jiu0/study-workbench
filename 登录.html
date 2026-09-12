@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0b1026">
 <title>登录 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260912c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260912c">
+<link rel="stylesheet" href="assets/states.css?v=20260912c">
 <style>
   :root{
     --primary:#5b8def; --accent:#9b6bd9;
@@ -136,7 +139,7 @@
     <div class="form-label">密码</div>
     <div class="field">
       <input type="password" class="form-input" id="loginPass" placeholder="至少 6 位" autocomplete="current-password" maxlength="64">
-      <button type="button" class="eye" id="eyePass" onclick="togglePw('loginPass',this)" title="显示/隐藏密码">👁</button>
+      <button type="button" class="eye" id="eyePass" onclick="togglePw('loginPass',this)" title="显示/隐藏密码" aria-label="显示或隐藏密码">👁</button>
     </div>
     <div class="strength" id="pwStrength" style="display:none">
       <i id="s1"></i><i id="s2"></i><i id="s3"></i><em id="sTxt"></em>
@@ -147,18 +150,20 @@
     <div class="form-label">确认密码</div>
     <div class="field">
       <input type="password" class="form-input" id="loginConfirm" placeholder="再输入一次密码" autocomplete="new-password" maxlength="64" oninput="checkMatch()">
-      <button type="button" class="eye" onclick="togglePw('loginConfirm',this)">👁</button>
+      <button type="button" class="eye" onclick="togglePw('loginConfirm',this)" aria-label="显示或隐藏密码">👁</button>
     </div>
     <div id="matchTip"></div>
   </div>
 
-  <button class="btn-primary" id="loginSubmitBtn" onclick="submitLogin()">🚀 登 录</button>
+  <button class="btn-primary" id="loginSubmitBtn" onclick="submitLogin()" aria-label="登录或注册按钮">🚀 登 录</button>
 
   <div class="login-notice" id="loginNotice">💡 正在检测运行模式……</div>
 </div>
 
-<script src="assets/icon-map.js?v=20260912a"></script>
-<script src="assets/config.js?v=20260912a"></script>
+<script src="assets/icon-map.js?v=20260912c" defer></script>
+<script src="assets/xt-toast.js?v=20260912c" defer></script>
+<script src="assets/error-boundary.js?v=20260912c" defer></script>
+<script src="assets/config.js?v=20260912c" defer></script>
 <script>
 /* ==================== 登录页逻辑（独立于 app.js） =====================================
    双模式（自动检测，互不影响）：

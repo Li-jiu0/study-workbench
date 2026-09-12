@@ -5,8 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>动态 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260912a">
-<link rel="stylesheet" href="assets/polish.css?v=20260912a">
+<link rel="stylesheet" href="assets/common.css?v=20260912c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260912c">
+<link rel="stylesheet" href="assets/states.css?v=20260912c">
+<link rel="stylesheet" href="assets/polish.css?v=20260912c">
 <style>
   /* ===== 动态页（朋友圈式，2026-09-11 增量）===== */
   .mo-wrap{max-width:640px;margin:0 auto;padding:16px 14px 80px;width:100%}
@@ -68,7 +70,7 @@
         <div class="stat-item"><span class="stat-icon">✅</span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
       </div>
       <div class="topbar-date" id="topbarDate"></div>
-      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式">🌙</div>
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0">🌙</div>
     </header>
 <div class="page active" id="page-moments" style="display:flex;overflow-y:auto">
   <div class="mo-wrap">
@@ -167,7 +169,7 @@
         </div>
       </div>
       <div class="form-group">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary)">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--xt-font-base);color:var(--text-secondary)">
           <input type="checkbox" id="cdPinned"> 置顶显示
         </label>
       </div>
@@ -183,10 +185,12 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260912a"></script>
-<script src="assets/app.js?v=20260912a"></script>
-<script src="assets/config.js?v=20260912a"></script>
-<script src="assets/api.js?v=20260912a"></script>
+<script src="assets/icon-map.js?v=20260912c" defer></script>
+<script src="assets/xt-toast.js?v=20260912c" defer></script>
+<script src="assets/error-boundary.js?v=20260912c" defer></script>
+<script src="assets/app.js?v=20260912c" defer></script>
+<script src="assets/config.js?v=20260912c" defer></script>
+<script src="assets/api.js?v=20260912c" defer></script>
 <script>
 /* ==================== 动态页逻辑（T5 增量 2026-09-11） ====================
    好友动态流：发布（文字+≤9图，canvas 压缩后走 /api/uploads）→ /api/moments。
@@ -363,7 +367,7 @@
 
   function loadFeed(append) {
     if (!MO.online) {
-      $id('moFeed').innerHTML = '<div class="mo-empty">动态需联网查看<br><span style="font-size:12px">后端不可用，本地草稿已暂存</span></div>';
+      $id('moFeed').innerHTML = '<div class="mo-empty">动态需联网查看<br><span style="font-size:var(--xt-font-sm)">后端不可用，本地草稿已暂存</span></div>';
       $id('moOffline').style.display = 'block';
       return;
     }

@@ -5,8 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>央国企笔试备考 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260912a">
-<link rel="stylesheet" href="assets/polish.css?v=20260912a">
+<link rel="stylesheet" href="assets/common.css?v=20260912c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260912c">
+<link rel="stylesheet" href="assets/states.css?v=20260912c">
+<link rel="stylesheet" href="assets/polish.css?v=20260912c">
 </head>
 <body class="theme-exam">
 
@@ -85,7 +87,7 @@
       </div>
       <div class="topbar-date" id="topbarDate"></div>
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
-      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式">🌙</div>
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0">🌙</div>
     </header>
     <div class="content">
 <div class="page active" id="page-exam">
@@ -122,7 +124,7 @@
 
         <!-- 【后续扩展点】T7 增量（P0-10）：题型正确率条形组 + 弱项提示（只读行测本地做题记录，不改原逻辑） -->
         <div class="typeacc-card" id="typeAccCard">
-          <div class="sprint-head"><span>📝 题型正确率</span><span style="font-size:11px;color:var(--text-secondary);font-weight:400">数据来自本机做题记录</span></div>
+          <div class="sprint-head"><span>📝 题型正确率</span><span style="font-size:var(--xt-font-xs);color:var(--text-secondary);font-weight:400">数据来自本机做题记录</span></div>
           <div id="typeAccRows"></div>
           <div class="typeacc-weak" id="typeAccWeak" style="display:none"></div>
         </div>
@@ -164,10 +166,17 @@
             <div class="feature-title">时政热点</div>
             <div class="feature-desc">自动获取最新网络热点议题，实时更新（可切换题库模式）</div>
           </div>
-          <div class="feature-card" onclick="openMiniQuiz('exam-mock')">
+          <div class="feature-card" onclick="window.location.href='mock_exam.html?cat=exam-mock'">
             <div class="feature-icon">📋</div>
             <div class="feature-title">真题模考</div>
-            <div class="feature-desc">历年真题套卷，计时模考，各题型正确率分析</div>
+            <!-- 【P0-B T03-06】改跳独立页 mock_exam.html（三独立页 + 9 题型 + 计时 + 答题卡 + 成绩页） -->
+            <div class="feature-desc">套卷模考 + 计时判分 + 成绩归档</div>
+          </div>
+          <!-- 【P0-B T04】新增：原攻略面板迁到 exam-guide -->
+          <div class="feature-card" onclick="openMiniQuiz('exam-guide')">
+            <div class="feature-icon">📖</div>
+            <div class="feature-title">考试指南</div>
+            <div class="feature-desc">题型结构、时间分配、复盘方法</div>
           </div>
           <div class="feature-card" onclick="TopicExpress.open()">
             <div class="feature-icon">🎤</div>
@@ -323,7 +332,7 @@
         </div>
       </div>
       <div class="form-group">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary)">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--xt-font-base);color:var(--text-secondary)">
           <input type="checkbox" id="cdPinned"> 置顶显示
         </label>
       </div>
@@ -368,18 +377,21 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260912a"></script>
-<script src="assets/app.js?v=20260912a"></script>
-<script src="assets/config.js?v=20260912a"></script>
-<script src="assets/api.js?v=20260912a"></script>
+<script src="assets/icon-map.js?v=20260912c" defer></script>
+<script src="assets/xt-toast.js?v=20260912c" defer></script>
+<script src="assets/error-boundary.js?v=20260912c" defer></script>
+<script src="assets/app.js?v=20260912c" defer></script>
+<script src="assets/config.js?v=20260912c" defer></script>
+<script src="assets/api.js?v=20260912c" defer></script>
 
-<script src="assets/mini-exam.js?v=20260912a"></script>
-<script src="assets/mini.js?v=20260912a"></script>
-<script src="assets/topic-express.js?v=20260912a"></script>
+<script src="assets/mini-exam.js?v=20260912c" defer></script>
+<!-- 【P0-B T03-06】删除弹窗版 mock-exam.js 引入（mock 已迁到 mock_exam.html 三独立页） -->
+<script src="assets/mini.js?v=20260912c" defer></script>
+<script src="assets/topic-express.js?v=20260912c" defer></script>
 
-<script src="assets/qbank.js?v=20260912a"></script>
-<script src="assets/hotnews.js?v=20260912a"></script>
-<script src="assets/study-stats.js?v=20260912a"></script>
+<script src="assets/qbank.js?v=20260912c" defer></script>
+<script src="assets/hotnews.js?v=20260912c" defer></script>
+<script src="assets/study-stats.js?v=20260912c" defer></script>
 <script>
 /* ==================== T7 增量（P0-8/P0-10）：统计卡 + 题型正确率 ==================== */
 (function () {
@@ -391,7 +403,7 @@
     if (!rows) return;
     var acc = {}; // type -> {done, correct}
     try {
-      var data = JSON.parse(localStorage.getItem('study_workbench_data') || '{}');
+      var data = JSON.parse(localStorage.getItem(window.lsKey ? window.lsKey('study_workbench_data') : 'study_workbench_data') || '{}');
       var records = (data && data.examRecords) || {};
       var bank = (typeof EXAM_BANK !== 'undefined') ? EXAM_BANK : [];
       Object.keys(records).forEach(function (qid) {

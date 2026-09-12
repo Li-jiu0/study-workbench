@@ -5,8 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>四级备考 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260912a">
-<link rel="stylesheet" href="assets/polish.css?v=20260912a">
+<link rel="stylesheet" href="assets/common.css?v=20260912c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260912c">
+<link rel="stylesheet" href="assets/states.css?v=20260912c">
+<link rel="stylesheet" href="assets/polish.css?v=20260912c">
 </head>
 <body class="theme-cet">
 
@@ -121,7 +123,7 @@
 
         <!-- 【后续扩展点】T7 增量（P0-9）：🎯 考试冲刺卡——倒计时 + 每日任务三勾选 + 完成率环形 -->
         <div class="sprint-card" id="cetSprintCard">
-          <div class="sprint-head"><span>🎯 考试冲刺</span><span id="sprintGoalLabel" style="font-size:12px;color:var(--text-secondary);font-weight:400">未设置目标日期</span></div>
+          <div class="sprint-head"><span>🎯 考试冲刺</span><span id="sprintGoalLabel" style="font-size:var(--xt-font-sm);color:var(--text-secondary);font-weight:400">未设置目标日期</span></div>
           <div class="sprint-main">
             <div class="sprint-count"><b id="sprintDays">--</b><span>距目标考试（天）</span></div>
             <div class="sprint-ring" id="sprintRing"><i id="sprintPct">0%</i></div>
@@ -161,10 +163,17 @@
             <div class="feature-title">翻译专项</div>
             <div class="feature-desc">中国文化/历史/经济话题，常用表达积累</div>
           </div>
-          <div class="feature-card" onclick="openMiniQuiz('cet-mock')">
+          <div class="feature-card" onclick="window.location.href='mock_exam.html?cat=cet-mock'">
             <div class="feature-icon">📋</div>
             <div class="feature-title">真题模考</div>
-            <div class="feature-desc">历年真题套卷，计时模考，错题本复盘</div>
+            <!-- 【P0-B T03-06】改跳独立页 mock_exam.html（三独立页 + 9 题型 + 计时 + 答题卡 + 成绩页） -->
+            <div class="feature-desc">套卷模考 + 计时判分 + 成绩归档</div>
+          </div>
+          <!-- 【P0-B T04】新增：原攻略面板迁到 cet-guide，作为平级入口 -->
+          <div class="feature-card" onclick="openMiniQuiz('cet-guide')">
+            <div class="feature-icon">📖</div>
+            <div class="feature-title">考试指南</div>
+            <div class="feature-desc">试卷结构、时间分配、临场策略</div>
           </div>
           <div class="feature-card" onclick="openVoiceTrain('speak')">
             <div class="feature-icon">🎬</div>
@@ -419,8 +428,8 @@
         <div class="ai-title">AI学习助手</div>
         <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
       </div>
-      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录">🧹</div>
-      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板">✕</div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录" aria-label="清空聊天记录" role="button" tabindex="0">🧹</div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板" aria-label="收起AI面板" role="button" tabindex="0">✕</div>
     </div>
     <div class="ai-messages" id="aiMessages"></div>
     <div class="ai-input-row">
@@ -433,22 +442,25 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260912a"></script>
-<script src="assets/app.js?v=20260912a"></script>
-<script src="assets/voiceplayer.js?v=20260912a"></script>
-<script src="assets/config.js?v=20260912a"></script>
-<script src="assets/api.js?v=20260912a"></script>
+<script src="assets/icon-map.js?v=20260912c" defer></script>
+<script src="assets/xt-toast.js?v=20260912c" defer></script>
+<script src="assets/error-boundary.js?v=20260912c" defer></script>
+<script src="assets/app.js?v=20260912c" defer></script>
+<script src="assets/voiceplayer.js?v=20260912c" defer></script>
+<script src="assets/config.js?v=20260912c" defer></script>
+<script src="assets/api.js?v=20260912c" defer></script>
 
-<script src="assets/mini-cet.js?v=20260912a"></script>
-<script src="assets/mini.js?v=20260912a"></script>
-<script src="assets/study-stats.js?v=20260912a"></script>
+<script src="assets/mini-cet.js?v=20260912c" defer></script>
+<!-- 【P0-B T03-06】删除弹窗版 mock-exam.js 引入（mock 已迁到 mock_exam.html 三独立页） -->
+<script src="assets/mini.js?v=20260912c" defer></script>
+<script src="assets/study-stats.js?v=20260912c" defer></script>
 <script>
 /* ==================== T7 增量（P0-8/P0-9）：统计卡 + 考试冲刺 ==================== */
 (function () {
   'use strict';
   function $id(x) { return document.getElementById(x); }
-  var GOAL_KEY = 'study_workbench_cet4_goal_date';
-  var TASK_KEY = 'study_workbench_cet4_daily_tasks'; // { 'YYYY-MM-DD': {words:1,read:1,listen:1} }
+  var GOAL_KEY = window.lsKey ? window.lsKey('study_workbench_cet4_goal_date') : 'study_workbench_cet4_goal_date';
+  var TASK_KEY = window.lsKey ? window.lsKey('study_workbench_cet4_daily_tasks') : 'study_workbench_cet4_daily_tasks'; // { 'YYYY-MM-DD': {words:1,read:1,listen:1} }
 
   function todayKey() {
     var d = new Date();

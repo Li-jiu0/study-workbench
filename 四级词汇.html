@@ -5,8 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>四级词汇 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260912a">
-<link rel="stylesheet" href="assets/polish.css?v=20260912a">
+<link rel="stylesheet" href="assets/common.css?v=20260912c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260912c">
+<link rel="stylesheet" href="assets/states.css?v=20260912c">
+<link rel="stylesheet" href="assets/polish.css?v=20260912c">
 </head>
 <body class="theme-home">
 
@@ -85,7 +87,7 @@
       </div>
       <div class="topbar-date" id="topbarDate"></div>
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
-      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式">🌙</div>
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0">🌙</div>
     </header>
 <div class="page active" id="page-cet-vocab">
       <div class="card">
@@ -104,34 +106,34 @@
         </div>
         <div id="vocabCard" style="background:linear-gradient(135deg,var(--primary-light),#fff);border-radius:16px;padding:28px 24px;text-align:center;margin-bottom:16px;min-height:160px;display:flex;flex-direction:column;justify-content:center;cursor:pointer" onclick="toggleVocabMeaning()">
           <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:8px">
-            <div id="vocabWord" style="font-size:32px;font-weight:800;color:var(--text)"></div>
-            <button onclick="event.stopPropagation();speakWord()" style="background:none;border:none;font-size:24px;cursor:pointer;padding:4px" title="听发音">🔊</button>
+            <div id="vocabWord" style="font-size:var(--xt-font-display);font-weight:800;color:var(--text)"></div>
+            <button onclick="event.stopPropagation();speakWord()" style="background:none;border:none;font-size:var(--xt-font-xl);cursor:pointer;padding:4px" title="听发音">🔊</button>
           </div>
-          <div id="vocabPhonetic" style="font-size:16px;color:var(--text-secondary);margin-bottom:12px;font-family:monospace"></div>
-          <div id="vocabMeaning" style="font-size:18px;color:var(--primary);font-weight:600;display:none;margin-bottom:8px"></div>
-          <div id="vocabHint" style="font-size:12px;color:var(--text-muted);margin-top:8px">👆 点击卡片显示释义和详解</div>
+          <div id="vocabPhonetic" style="font-size:var(--xt-font-md);color:var(--text-secondary);margin-bottom:12px;font-family:monospace"></div>
+          <div id="vocabMeaning" style="font-size:var(--xt-font-lg);color:var(--primary);font-weight:600;display:none;margin-bottom:8px"></div>
+          <div id="vocabHint" style="font-size:var(--xt-font-sm);color:var(--text-muted);margin-top:8px">👆 点击卡片显示释义和详解</div>
         </div>
         <!-- 多维度详解区域 -->
         <div id="vocabDetail" style="display:none;margin-bottom:16px;flex-direction:column;gap:10px">
-          <div id="vocabRoot" style="padding:12px 14px;background:#F0F4FF;border-radius:10px;font-size:13px;display:none">
+          <div id="vocabRoot" style="padding:12px 14px;background:#F0F4FF;border-radius:10px;font-size:var(--xt-font-base);display:none">
             <span style="font-weight:700;color:var(--primary)">🌱 词根词缀：</span><span id="vocabRootText"></span>
           </div>
-          <div id="vocabCollocation" style="padding:12px 14px;background:#E8F8E8;border-radius:10px;font-size:13px;display:none">
+          <div id="vocabCollocation" style="padding:12px 14px;background:#E8F8E8;border-radius:10px;font-size:var(--xt-font-base);display:none">
             <div style="font-weight:700;color:var(--success);margin-bottom:4px">📌 常用搭配</div>
             <div id="vocabCollocationText" style="line-height:1.8"></div>
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <div id="vocabSynonym" style="flex:1;min-width:180px;padding:12px 14px;background:#FFF8E6;border-radius:10px;font-size:13px;display:none">
+            <div id="vocabSynonym" style="flex:1;min-width:180px;padding:12px 14px;background:#FFF8E6;border-radius:10px;font-size:var(--xt-font-base);display:none">
               <div style="font-weight:700;color:var(--warning);margin-bottom:4px">🔄 近义词</div>
               <div id="vocabSynonymText"></div>
             </div>
-            <div id="vocabAntonym" style="flex:1;min-width:180px;padding:12px 14px;background:#FFECEC;border-radius:10px;font-size:13px;display:none">
+            <div id="vocabAntonym" style="flex:1;min-width:180px;padding:12px 14px;background:#FFECEC;border-radius:10px;font-size:var(--xt-font-base);display:none">
               <div style="font-weight:700;color:var(--danger);margin-bottom:4px">↔️ 反义词</div>
               <div id="vocabAntonymText"></div>
             </div>
           </div>
-          <div id="vocabExample1" style="padding:12px 14px;background:var(--bg);border-radius:10px;font-size:13px;font-style:italic;color:var(--text-secondary);line-height:1.6"></div>
-          <div id="vocabExample2" style="padding:12px 14px;background:var(--bg);border-radius:10px;font-size:13px;font-style:italic;color:var(--text-secondary);line-height:1.6;display:none"></div>
+          <div id="vocabExample1" style="padding:12px 14px;background:var(--bg);border-radius:10px;font-size:var(--xt-font-base);font-style:italic;color:var(--text-secondary);line-height:1.6"></div>
+          <div id="vocabExample2" style="padding:12px 14px;background:var(--bg);border-radius:10px;font-size:var(--xt-font-base);font-style:italic;color:var(--text-secondary);line-height:1.6;display:none"></div>
         </div>
         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
           <button class="btn btn-outline" onclick="prevVocab()">← 上一个</button>
@@ -140,7 +142,7 @@
           <button class="btn btn-outline" onclick="navigateTo('cet')">返回四级</button>
         </div>
         <div style="margin-top:20px">
-          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:6px">
+          <div style="display:flex;justify-content:space-between;font-size:var(--xt-font-sm);color:var(--text-muted);margin-bottom:6px">
             <span>学习进度</span>
             <span id="vocabPercent">0%</span>
           </div>
@@ -215,7 +217,7 @@
         </div>
       </div>
       <div class="form-group">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary)">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--xt-font-base);color:var(--text-secondary)">
           <input type="checkbox" id="cdPinned"> 置顶显示
         </label>
       </div>
@@ -260,11 +262,13 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260912a"></script>
-<script src="assets/app.js?v=20260912a"></script>
-<script src="assets/config.js?v=20260912a"></script>
-<script src="assets/api.js?v=20260912a"></script>
+<script src="assets/icon-map.js?v=20260912c" defer></script>
+<script src="assets/xt-toast.js?v=20260912c" defer></script>
+<script src="assets/error-boundary.js?v=20260912c" defer></script>
+<script src="assets/app.js?v=20260912c" defer></script>
+<script src="assets/config.js?v=20260912c" defer></script>
+<script src="assets/api.js?v=20260912c" defer></script>
 
-<script src="assets/qbank.js?v=20260912a"></script>
+<script src="assets/qbank.js?v=20260912c" defer></script>
 </body>
 </html>
