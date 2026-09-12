@@ -54,6 +54,11 @@ def _public_author_ids(db: Session) -> set[int]:
     return {r[0] for r in db.query(User.id).filter(User.moment_visibility == "public").all()}
 
 
+def _private_author_ids(db: Session) -> set[int]:
+    """moment_visibility='private' 的作者 id 集合（feed 剔除用：好友关系不覆盖 privacy 承诺）。"""
+    return {r[0] for r in db.query(User.id).filter(User.moment_visibility == "private").all()}
+
+
 def _can_view(db: Session, viewer_id: int, author_id: int) -> bool:
     """动态可见性判定（T03 三档 + 双向拉黑优先拒绝）。
 
@@ -156,7 +161,9 @@ def feed(before_id: int = 0, limit: int = 20,
     id 游标向前翻页，时间倒序（分页语义 hasMore/nextBefore 与现状一致）。"""
     limit = min(max(limit, 1), 50)
     ids = friend_ids_of(db, user.id) | {user.id} | _public_author_ids(db)
-    ids -= _blocked_ids_either(db, user.id)  # 本批修复：现状 feed 未剔除黑名单
+    # BUG-1 修复：好友关系不覆盖 privacy 承诺 —— 剔除「仅自己可见」的作者（本人除外）。
+    ids -= _private_author_ids(db) - {user.id}
+    ids -= _blocked_ids_either(db, user.id)  # 现状 feed 未剔除黑名单
     cond = Moment.user_id.in_(ids)
     if before_id:
         cond = cond & (Moment.id < before_id)

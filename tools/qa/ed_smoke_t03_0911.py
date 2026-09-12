@@ -381,6 +381,19 @@ def part_b(work: str, env: dict, db_path: str) -> None:
            r.status_code == 200 and "requestId" in r.json(), r.text[:120])
         ck("need_confirm 非 autoAccepted", r.json().get("autoAccepted") is not True, r.json())
 
+        # BUG-2 回归：同向先有 pending → 对方切 everyone → 再次申请应消除遗留 pending
+        tokZ, uidZ = reg("edz", "遗留子")
+        r = c.post("/api/friends/requests", json={"toUserId": uidZ}, headers=hdr(tok2))
+        ck("BUG-2 前置：同向 pending 建立", r.status_code == 200 and "requestId" in r.json(), r.text[:120])
+        put_priv(tokZ, {"friendAllow": "everyone"})
+        r = c.post("/api/friends/requests", json={"toUserId": uidZ}, headers=hdr(tok2))
+        ck("BUG-2：everyone 档再次申请 → 免验证成好友",
+           r.status_code == 200 and r.json().get("autoAccepted") is True, r.json())
+        out = c.get("/api/friends/requests", headers=hdr(tok2)).json().get("outgoing", [])
+        stale = [o for o in out
+                 if (o.get("user") or {}).get("id") == uidZ and o.get("status") == "pending"]
+        ck("BUG-2：同向无残留 pending（幽灵申请已清）", not stale, "pending=%d" % len(stale))
+
         tokB, uidB = reg("edg", "拉黑庚")
         put_priv(tokB, {"friendAllow": "everyone"})
         c.post("/api/friends/block", json={"userId": uidB}, headers=hdr(tok2))  # 我拉黑对方
@@ -435,6 +448,16 @@ def part_b(work: str, env: dict, db_path: str) -> None:
         feed = c.get("/api/moments/feed", headers=hdr(tokA)).json()
         ck("friends：成为好友后 feed 可见",
            any(it["author"]["id"] == uidP for it in feed.get("items", [])), "ok")
+
+        # BUG-1 回归：好友把动态设为 private 后，不得再出现在我的 feed
+        put_priv(tokP, {"momentVisibility": "private"})
+        feed = c.get("/api/moments/feed", headers=hdr(tokA)).json()
+        ck("BUG-1：好友的 private 作者不进我的 feed",
+           all(it["author"]["id"] != uidP for it in feed.get("items", [])),
+           [it["author"]["id"] for it in feed.get("items", [])])
+        ck("BUG-1：好友 private 下 GET user/{uid} → 403",
+           c.get("/api/moments/user/%d" % uidP, headers=hdr(tokA)).status_code == 403)
+        put_priv(tokP, {"momentVisibility": "friends"})  # 复位，供后续拉黑用例
 
         # 双向拉黑剔除（我拉黑对方）
         c.post("/api/friends/block", json={"userId": uidP}, headers=hdr(tokA))

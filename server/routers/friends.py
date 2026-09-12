@@ -71,6 +71,11 @@ def send_request(body: ReqIn, user: User = Depends(get_current_user), db: Sessio
         # 免验证直接成为好友：复用上方 autoAccept 的 friend_pair 写法，响应结构同构，前端零适配。
         a, b = friend_pair(user.id, to.id)
         db.add(Friend(user_a=a, user_b=b, created_at=now_iso()))
+        # BUG-2 修复：清理同向遗留 pending，避免 everyone 档成好友后仍残留幽灵申请。
+        db.query(FriendRequest).filter(
+            FriendRequest.from_user_id == user.id, FriendRequest.to_user_id == to.id,
+            FriendRequest.status == "pending",
+        ).update({"status": "accepted"}, synchronize_session=False)
         db.commit()
         return {"ok": True, "autoAccepted": True, "user": _peer_brief(to)}
     mine = db.query(FriendRequest).filter(
