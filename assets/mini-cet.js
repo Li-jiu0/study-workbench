@@ -64,7 +64,9 @@ CET['cet-translate'] = {
   ]
 };
 
-CET['cet-mock'] = {
+// 【P0-B T03-06】cet-mock key 已废弃（数据走 data/mock-papers.js + 三独立页）；
+// 保留 cet-guide 作为考试指南（info 卡片）
+CET['cet-guide'] = {
   t: '四级 · 试卷结构与时间分配', mode: 'info',
   items: [
     { icon: '🎧', title: '写作与听力(约55分钟)', body: '先写作30分钟(120-180词)，随后立即播放听力约25分钟。听力边听边做，不设单独涂卡时间，抓紧段落间隙。' },

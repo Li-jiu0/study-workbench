@@ -12,9 +12,11 @@
   window.__MINI_LOADED__ = 1;
 
   var BANK = window.MINI_BANK = window.MINI_BANK || {};
+  /* T15：mini_stats 按账号前缀化（app.js 先于本文件加载；防御性回退原键名） */
+  function LK(k) { return (typeof window.lsKey === 'function') ? window.lsKey(k) : k; }
   var ST = 'mini_stats';
-  function loadStat() { try { return JSON.parse(localStorage.getItem(ST)) || {}; } catch (e) { return {}; } }
-  function saveStat(o) { localStorage.setItem(ST, JSON.stringify(o)); }
+  function loadStat() { try { return JSON.parse(localStorage.getItem(LK(ST))) || {}; } catch (e) { return {}; } }
+  function saveStat(o) { localStorage.setItem(LK(ST), JSON.stringify(o)); }
 
   if (!document.getElementById('miniStyle')) {
     var css = '' +
@@ -60,6 +62,16 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
   function begin(id) {
+    // 【P0-B T03-06】真题模考类目（cet-mock / exam-mock）改跳独立页
+    // （不再转发到已被删除的 assets/mock-exam.js）；其他类目保持原逻辑
+    if (id === 'cet-mock' || id === 'exam-mock') {
+      try {
+        window.location.href = 'mock_exam.html?cat=' + encodeURIComponent(id);
+      } catch (e) {
+        if (window.showToast) window.showToast('页面跳转失败，请手动进入');
+      }
+      return;
+    }
     var cat = BANK[id];
     if (!cat) { if (window.showToast) window.showToast('内容加载中，请稍后再试'); else alert('内容加载中'); return; }
     var qs = cat.mode === 'info' ? null : rand(cat.q || []);
@@ -84,7 +96,7 @@
     var q = S.qs[S.i];
     var n = S.qs.length;
     body.innerHTML = '<div class="mz-prog"><span class="mz-pill">第 ' + (S.i + 1) + ' / ' + n + ' 题</span>' +
-      '<span class="mz-pill" style="margin-left:auto">已对 ' + S.right + '</span></div>' +
+      '<span class="mz-pill" id="mzRightPill" style="margin-left:auto">已对 ' + S.right + '</span></div>' +
       '<div class="mz-quest">' + esc(q.q) + '</div>' +
       q.o.map(function (op, i) { return '<button class="mz-op" data-i="' + i + '" onclick="openMiniQuiz.__pick(' + i + ')"><b>' + 'ABCD'[i] + '.</b> ' + esc(op) + '</button>'; }).join('');
     acts.style.display = 'none';
@@ -94,7 +106,13 @@
     var q = S.qs[S.i];
     var opts = document.querySelectorAll('#mzBody .mz-op');
     opts.forEach(function (b) { b.disabled = true; });
-    if (i === q.a) { S.right++; opts[i].classList.add('ok'); }
+    if (i === q.a) {
+      S.right++;
+      opts[i].classList.add('ok');
+      // T18①：答对即时刷新「已对 X」胶囊（原实现只在下一题 renderQ 时才更新）
+      var rp = document.getElementById('mzRightPill');
+      if (rp) rp.textContent = '已对 ' + S.right;
+    }
     else { opts[i].classList.add('bad'); if (q.a < opts.length) opts[q.a].classList.add('ok'); }
     var body = document.getElementById('mzBody');
     var xp = document.createElement('div'); xp.className = 'mz-xp';
@@ -106,6 +124,8 @@
     acts.innerHTML = last ? '<button class="mz-btn ghost" onclick="openMiniQuiz.__again()">↺ 再来一组</button><button class="mz-btn primary" onclick="openMiniQuiz.__finish()">查看成绩</button>'
       : '<button class="mz-btn primary" onclick="openMiniQuiz.__next()">下一题 →</button>';
     acts.scrollIntoView({ block: 'nearest' });
+    // T18②：小题库答题也算一次「学习动作」，推进全局连续打卡
+    try { window.Streak && window.Streak.bump(); } catch (e) { /* 静默 */ }
   }
 
   function next() { S.i++; renderQ(); var b = document.getElementById('mzBody'); if (b) b.scrollTop = 0; }

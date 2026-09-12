@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#5B8DEF">
+<title>真题模考 · 成绩单</title>
+<link rel="stylesheet" href="assets/common.css?v=20260912c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260912c">
+<link rel="stylesheet" href="assets/states.css?v=20260912c">
+<script src="assets/icon-map.js?v=20260912c" defer></script>
+<script src="assets/xt-toast.js?v=20260912c" defer></script>
+<script src="assets/error-boundary.js?v=20260912c" defer></script>
+<script src="assets/app.js?v=20260912c" defer></script>
+<script src="data/mock-papers.js?v=20260912c" defer></script>
+<script src="assets/mock-engine.js?v=20260912c" defer></script>
+<script src="assets/mock-result.js?v=20260912c" defer></script>
+<style>
+body { background: var(--xt-bg); margin: 0; color: var(--xt-text); }
+
+.result-shell {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: var(--xt-space-4);
+}
+
+/* 总分 banner */
+.rb-score {
+  background: var(--xt-bg-card);
+  border: 1px solid var(--xt-border);
+  border-radius: var(--xt-radius-lg);
+  padding: var(--xt-space-6);
+  text-align: center;
+  box-shadow: var(--xt-shadow-sm);
+  margin-bottom: var(--xt-space-4);
+}
+.rb-score .rb-num {
+  font-size: 64px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--xt-text);
+}
+.rb-score .rb-unit { font-size: var(--xt-font-lg); color: var(--xt-text-dim); margin-left: 4px; }
+.rb-score.rb-high .rb-num { color: var(--xt-success); }
+.rb-score.rb-mid .rb-num { color: var(--xt-primary); }
+.rb-score.rb-low .rb-num { color: var(--xt-error); }
+.rb-score .rb-sub {
+  margin-top: var(--xt-space-3);
+  font-size: var(--xt-font-md);
+  color: var(--xt-text-dim);
+}
+.rb-score .rb-sub b { color: var(--xt-text); font-weight: 500; }
+.rb-score .rb-tip {
+  margin-top: var(--xt-space-2);
+  font-size: var(--xt-font-sm);
+  color: var(--xt-text-dim);
+}
+
+/* 历史最佳对比 */
+.rb-best {
+  background: var(--xt-bg-card);
+  border: 1px solid var(--xt-border);
+  border-radius: var(--xt-radius-md);
+  padding: var(--xt-space-3) var(--xt-space-4);
+  margin-bottom: var(--xt-space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--xt-space-4);
+  flex-wrap: wrap;
+}
+.rb-best-head {
+  font-size: var(--xt-font-sm);
+  color: var(--xt-text-dim);
+  font-weight: 500;
+}
+.rb-best-body { display: flex; gap: var(--xt-space-4); flex: 1; flex-wrap: wrap; }
+.rb-best-cur b, .rb-best-prev b { font-size: var(--xt-font-lg); color: var(--xt-text); margin-right: 4px; }
+.rb-best-delta { margin-left: auto; font-size: var(--xt-font-base); }
+.rb-best.rb-up .rb-best-delta { color: var(--xt-success); }
+.rb-best.rb-down .rb-best-delta { color: var(--xt-error); }
+.rb-best.rb-same .rb-best-delta { color: var(--xt-text-dim); }
+.rb-best.rb-best-none { color: var(--xt-text-dim); font-size: var(--xt-font-sm); justify-content: center; }
+
+/* 阶段表现卡 */
+.rb-stages {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--xt-space-3);
+  margin-bottom: var(--xt-space-4);
+}
+@media (min-width: 720px) {
+  .rb-stages { grid-template-columns: repeat(4, 1fr); }
+}
+.rb-stage-card {
+  background: var(--xt-bg-card);
+  border: 1px solid var(--xt-border);
+  border-radius: var(--xt-radius-md);
+  padding: var(--xt-space-3);
+}
+.rb-stage-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--xt-font-base);
+  color: var(--xt-text);
+  font-weight: 500;
+  margin-bottom: var(--xt-space-2);
+}
+.rb-stage-pct { color: var(--xt-primary); font-size: var(--xt-font-sm); }
+.rb-bar { background: var(--xt-bg-muted); border-radius: 99px; height: 6px; overflow: hidden; }
+.rb-bar-fill { background: var(--xt-primary); height: 100%; transition: width var(--xt-transition-slow); }
+.rb-stage-card.rb-good .rb-bar-fill { background: var(--xt-success); }
+.rb-stage-card.rb-mid .rb-bar-fill { background: var(--xt-primary); }
+.rb-stage-card.rb-low .rb-bar-fill { background: var(--xt-error); }
+.rb-stage-count {
+  font-size: var(--xt-font-sm);
+  color: var(--xt-text-dim);
+  margin-top: var(--xt-space-2);
+}
+.rb-stage-advice {
+  margin-top: var(--xt-space-2);
+  font-size: var(--xt-font-xs);
+  color: var(--xt-text-dim);
+  line-height: 1.5;
+}
+.rb-stage-card.rb-skip { opacity: 0.5; }
+
+/* 题目回顾 */
+.rb-review { margin-top: var(--xt-space-4); }
+.rb-q-row {
+  background: var(--xt-bg-card);
+  border: 1px solid var(--xt-border);
+  border-radius: var(--xt-radius-md);
+  padding: var(--xt-space-4);
+  margin-bottom: var(--xt-space-3);
+}
+.rb-q-head {
+  display: flex;
+  gap: var(--xt-space-2);
+  align-items: center;
+  margin-bottom: var(--xt-space-2);
+  font-size: var(--xt-font-sm);
+  color: var(--xt-text-dim);
+  flex-wrap: wrap;
+}
+.rb-q-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: var(--xt-font-xs);
+  border-radius: var(--xt-radius-sm);
+  background: var(--xt-bg-muted);
+}
+.rb-q-tag.rb-tag-obj { background: var(--xt-primary-soft); color: var(--xt-primary); }
+.rb-q-tag.rb-tag-subj { background: rgba(245, 158, 11, 0.15); color: var(--xt-warning); }
+.rb-q-no { font-weight: 500; color: var(--xt-text); }
+.rb-q-type, .rb-q-stage {
+  font-size: var(--xt-font-xs);
+  padding: 1px 6px;
+  background: var(--xt-bg-muted);
+  border-radius: var(--xt-radius-sm);
+}
+.rb-q-stem {
+  font-size: var(--xt-font-base);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin-bottom: var(--xt-space-2);
+}
+.rb-q-comp {
+  margin-top: var(--xt-space-2);
+  padding: var(--xt-space-3);
+  background: var(--xt-bg-muted);
+  border-radius: var(--xt-radius-sm);
+  font-size: var(--xt-font-sm);
+  line-height: 1.7;
+}
+.rb-q-comp b { color: var(--xt-text); font-weight: 500; }
+.rb-q-mark { margin-left: 8px; padding: 1px 6px; border-radius: var(--xt-radius-sm); font-size: var(--xt-font-xs); }
+.rb-q-mark.rb-mark-ok { background: rgba(34, 197, 94, 0.15); color: var(--xt-success); }
+.rb-q-mark.rb-mark-bad { background: rgba(239, 68, 68, 0.15); color: var(--xt-error); }
+.rb-q-x { margin-top: 6px; color: var(--xt-text-dim); }
+.rb-q-user-body, .rb-q-ref-body {
+  margin-top: 4px;
+  padding: var(--xt-space-2);
+  background: var(--xt-bg-card);
+  border-radius: var(--xt-radius-sm);
+  white-space: pre-wrap;
+}
+.rb-empty { color: var(--xt-text-hint); font-style: italic; }
+
+/* 操作栏 */
+.rb-actions {
+  display: flex;
+  gap: var(--xt-space-3);
+  margin-top: var(--xt-space-6);
+  justify-content: center;
+}
+.rb-actions .xt-btn { min-width: 140px; min-height: 44px; }
+</style>
+</head>
+<body>
+
+<header class="xt-page-head">
+  <a href="javascript:history.back()" class="xt-page-back" aria-label="返回">
+    <span class="nav-icon" data-icon="chevron-left" data-icon-size="20"></span>
+  </a>
+  <div style="flex:1;min-width:0">
+    <h1 class="xt-page-title">真题模考 · 成绩单</h1>
+    <p class="xt-page-subtitle">客观题判分 + 主观题参考答案 + 历史最佳</p>
+  </div>
+</header>
+
+<div class="result-shell">
+
+  <!-- 加载骨架 -->
+  <div id="skeletonState">
+    <div class="xt-skeleton xl" style="height:120px;margin-bottom:var(--xt-space-3)"></div>
+    <div class="xt-skeleton" style="width:60%;margin-bottom:var(--xt-space-4)"></div>
+    <div class="xt-skeleton lg"></div>
+    <div class="xt-skeleton lg"></div>
+    <div class="xt-skeleton lg"></div>
+  </div>
+
+  <!-- 主体（数据到达后展示） -->
+  <div id="mainContent" style="display:none">
+
+    <!-- 总分 banner -->
+    <div id="scoreBanner"></div>
+
+    <!-- 历史最佳 -->
+    <div id="bestCompare"></div>
+
+    <!-- 阶段表现 -->
+    <h2 style="font-size:var(--xt-font-md);margin:var(--xt-space-3) 0 var(--xt-space-2);font-weight:500">各阶段表现</h2>
+    <div id="stageBreakdown"></div>
+
+    <!-- 题目回顾 -->
+    <h2 style="font-size:var(--xt-font-md);margin:var(--xt-space-5) 0 var(--xt-space-2);font-weight:500">题目回顾</h2>
+    <div id="questionReview"></div>
+
+    <!-- 操作按钮 -->
+    <div id="actionBar"></div>
+  </div>
+
+  <!-- 错误占位 -->
+  <div id="errorState" class="xt-error" style="display:none;margin-top:var(--xt-space-4)">
+    <div class="xt-error-msg">未找到本次成绩数据。请确认链接是否有效。</div>
+    <a class="xt-error-retry" href="mock_exam.html">返回选卷</a>
+  </div>
+
+  <!-- 空数据占位 -->
+  <div id="emptyState" class="xt-empty" style="display:none">
+    <div class="xt-empty-icon">📋</div>
+    <div class="xt-empty-title">暂无成绩</div>
+    <div class="xt-empty-desc">本次考试未记录到成绩，请重新挑战一次。</div>
+    <a class="xt-btn xt-btn-primary" href="mock_exam.html">返回选卷</a>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  function $(id) { return document.getElementById(id); }
+
+  function getPaperIdAndRunId() {
+    var params = new URLSearchParams(window.location.search);
+    return {
+      paperId: params.get('paper') || '',
+      runId: params.get('run') || ''
+    };
+  }
+
+  function boot() {
+    if (!window.MOCK_PAPERS_DATA || !window.MockEngine || !window.MockResult) {
+      setTimeout(boot, 80);
+      return;
+    }
+    var info = getPaperIdAndRunId();
+    if (!info.paperId) {
+      $('errorState').style.display = 'block';
+      $('skeletonState').style.display = 'none';
+      return;
+    }
+    try {
+      window.MockResult.render(info.paperId, info.runId);
+    } catch (e) {
+      console.error('MockResult.render failed', e);
+      $('errorState').style.display = 'block';
+      $('errorState').querySelector('.xt-error-msg').textContent = '成绩渲染失败：' + (e.message || e);
+      $('skeletonState').style.display = 'none';
+    }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+</script>
+
+</body>
+</html>
