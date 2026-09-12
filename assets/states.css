@@ -1,0 +1,88 @@
+/* assets/states.css — P0-B T04-00 公共基础 · 四状态组件
+ * --------------------------------------------------------------------
+ * 1. Skeleton 骨架：150-300ms 过渡；列表区数据到达前的占位
+ * 2. Empty 空数据：图标 + 标题 + 描述 + CTA；不白屏、不崩溃
+ * 3. Error 错误：红色左边 + 重试按钮；接口失败时使用
+ * 4. Toast 样式在 common.css 内（xt-btn-*/xt-toast 系列），不在此文件
+ * --------------------------------------------------------------------
+ * 全部颜色/圆角/阴影走 --xt-* 设计令牌，不硬编码魔法值
+ */
+
+/* === Skeleton 骨架 === */
+.xt-skeleton {
+  background: linear-gradient(90deg, var(--xt-bg-muted) 0%, var(--xt-border) 50%, var(--xt-bg-muted) 100%);
+  background-size: 200% 100%;
+  animation: xt-skeleton 1.5s ease-in-out infinite;
+  border-radius: var(--xt-radius-sm);
+  height: 16px;
+  margin: var(--xt-space-2) 0;
+}
+.xt-skeleton.lg {
+  height: 32px;
+}
+.xt-skeleton.xl {
+  height: 48px;
+}
+@keyframes xt-skeleton {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* === Empty 空数据 === */
+.xt-empty {
+  text-align: center;
+  padding: var(--xt-space-8) var(--xt-space-4);
+  color: var(--xt-text-dim);
+}
+.xt-empty .xt-empty-icon {
+  font-size: 48px;
+  margin-bottom: var(--xt-space-3);
+  opacity: 0.5;
+}
+.xt-empty .xt-empty-title {
+  font-size: var(--xt-font-md);
+  color: var(--xt-text);
+  margin-bottom: var(--xt-space-2);
+  font-weight: 500;
+}
+.xt-empty .xt-empty-desc {
+  font-size: var(--xt-font-sm);
+  margin-bottom: var(--xt-space-4);
+  line-height: 1.5;
+}
+
+/* === Error 错误 === */
+.xt-error {
+  padding: var(--xt-space-4);
+  background: rgba(239, 68, 68, 0.08);
+  border-left: 3px solid var(--xt-error);
+  border-radius: var(--xt-radius-sm);
+  color: var(--xt-text);
+  display: flex;
+  align-items: center;
+  gap: var(--xt-space-3);
+}
+.xt-error .xt-error-msg {
+  flex: 1;
+  font-size: var(--xt-font-sm);
+  line-height: 1.5;
+}
+.xt-error .xt-error-retry {
+  background: var(--xt-bg-card);
+  color: var(--xt-error);
+  border: 1px solid var(--xt-error);
+  padding: var(--xt-space-1) var(--xt-space-3);
+  border-radius: var(--xt-radius-sm);
+  font-size: var(--xt-font-sm);
+  cursor: pointer;
+  transition: all var(--xt-transition);
+  flex-shrink: 0;
+}
+.xt-error .xt-error-retry:hover {
+  background: var(--xt-error);
+  color: var(--xt-text-on-primary);
+}
+.xt-error .xt-error-retry:focus-visible {
+  outline: 2px solid var(--xt-primary);
+  outline-offset: 2px;
+}

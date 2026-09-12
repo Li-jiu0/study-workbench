@@ -2237,3 +2237,393 @@ body.dark .subpage-group-card:active{background:rgba(255,255,255,.06)}
 
 /* T02 生日手输红字提示 */
 .pe-bd-err{color:#E05040;font-size:12px;margin-top:4px;line-height:1.4}
+
+/* =====================================================================
+   T04-00 公共基础（2026-09-12）· 设计令牌 + 按钮四级 + xt-toast 样式
+   —— 末尾追加；xt- 命名空间不破坏既有 --primary / .mpc-icon 等
+   ===================================================================== */
+
+/* —— 设计令牌（30+ 个变量）—— */
+:root {
+  /* 主色 + 强调色 */
+  --xt-primary: #3a7afe;
+  --xt-primary-soft: #e7efff;
+  --xt-accent: #ff8c42;
+
+  /* 背景 */
+  --xt-bg: #f5f6f8;
+  --xt-bg-card: #ffffff;
+  --xt-bg-muted: #f0f1f4;
+
+  /* 文字 */
+  --xt-text: #1f2329;
+  --xt-text-dim: #6b7280;
+  --xt-text-hint: #9ca3af;
+  --xt-text-on-primary: #ffffff;
+
+  /* 边框 */
+  --xt-border: #e5e7eb;
+  --xt-border-strong: #d1d5db;
+  --xt-divider: #f0f0f0;
+
+  /* 状态色 */
+  --xt-success: #22c55e;
+  --xt-warning: #f59e0b;
+  --xt-error: #ef4444;
+  --xt-info: #3b82f6;
+
+  /* 圆角 */
+  --xt-radius-sm: 4px;
+  --xt-radius-md: 8px;
+  --xt-radius-lg: 12px;
+  --xt-radius-xl: 16px;
+
+  /* 阴影 */
+  --xt-shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --xt-shadow-md: 0 2px 8px rgba(0,0,0,0.08);
+  --xt-shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+
+  /* 间距（4px 基准） */
+  --xt-space-1: 4px;
+  --xt-space-2: 8px;
+  --xt-space-3: 12px;
+  --xt-space-4: 16px;
+  --xt-space-5: 20px;
+  --xt-space-6: 24px;
+  --xt-space-8: 32px;
+
+  /* 字体层级 */
+  --xt-font-xs: 11px;
+  --xt-font-sm: 12px;
+  --xt-font-base: 14px;
+  --xt-font-md: 16px;
+  --xt-font-lg: 18px;
+  --xt-font-xl: 22px;
+  --xt-font-xxl: 28px;
+  --xt-font-display: 36px;
+
+  /* 动效 */
+  --xt-transition: 150ms ease;
+  --xt-transition-slow: 300ms ease;
+}
+
+/* —— 按钮四级语义（PRD §5.4）—— */
+.xt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--xt-space-2) var(--xt-space-4);
+  border-radius: var(--xt-radius-md);
+  font-size: var(--xt-font-base);
+  line-height: 1.2;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all var(--xt-transition);
+  min-height: 36px;
+  min-width: 64px;
+  font-family: inherit;
+}
+.xt-btn:focus-visible {
+  outline: 2px solid var(--xt-primary);
+  outline-offset: 2px;
+}
+.xt-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.xt-btn-primary {
+  background: var(--xt-primary);
+  color: var(--xt-text-on-primary);
+}
+.xt-btn-primary:hover {
+  background: #2c66e0;
+}
+.xt-btn-primary:disabled {
+  background: var(--xt-primary);
+}
+.xt-btn-secondary {
+  background: var(--xt-bg-card);
+  color: var(--xt-text);
+  border-color: var(--xt-border-strong);
+}
+.xt-btn-secondary:hover {
+  background: var(--xt-bg-muted);
+}
+.xt-btn-text {
+  background: transparent;
+  color: var(--xt-primary);
+}
+.xt-btn-text:hover {
+  background: var(--xt-primary-soft);
+}
+.xt-btn-danger {
+  background: var(--xt-error);
+  color: var(--xt-text-on-primary);
+}
+.xt-btn-danger:hover {
+  background: #d83a3a;
+}
+
+/* —— Toast 轻量反馈（PRD §5.4）—— */
+.xt-toast {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--xt-space-3) var(--xt-space-5);
+  background: var(--xt-text);
+  color: var(--xt-text-on-primary);
+  border-radius: var(--xt-radius-md);
+  font-size: var(--xt-font-base);
+  box-shadow: var(--xt-shadow-lg);
+  z-index: 9999;
+  animation: xt-toast-in var(--xt-transition-slow);
+  max-width: 80vw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.xt-toast-success {
+  background: var(--xt-success);
+}
+.xt-toast-error {
+  background: var(--xt-error);
+}
+.xt-toast-warning {
+  background: var(--xt-warning);
+}
+.xt-toast-info {
+  background: var(--xt-info);
+}
+@keyframes xt-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* ============================================================
+ * T03-06 · mock_exam 共享组件样式（PRD §4.3 + 架构 §1.3）
+ * - mock-engine.js / mock-result.js 输出的 DOM class 全部走这里
+ * - 布局 / 定位等页面专属样式留在各 mock_exam*.html 内嵌样式
+ * - 颜色 / 圆角 / 字号 / 阴影全部走 --xt-* 设计令牌
+ * ============================================================ */
+
+/* === mock 题型 meta pill === */
+.mock-meta { display: flex; gap: var(--xt-space-2); flex-wrap: wrap; }
+.mock-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  font-size: var(--xt-font-xs);
+  border-radius: var(--xt-radius-sm);
+  background: var(--xt-bg-muted);
+  color: var(--xt-text-dim);
+}
+.mock-pill-stage { background: var(--xt-primary-soft); color: var(--xt-primary); }
+.mock-pill-type { background: rgba(34, 197, 94, 0.12); color: var(--xt-success); }
+.mock-pill-subjective { background: rgba(245, 158, 11, 0.15); color: var(--xt-warning); }
+.mock-stem {
+  font-size: var(--xt-font-md);
+  line-height: 1.7;
+  color: var(--xt-text);
+  white-space: pre-wrap;
+}
+
+/* === mock 选项按钮（单选 / 多选 / 判断 / 听力 共享） === */
+.sc-options, .mc-options, .tf-options { display: flex; flex-direction: column; gap: var(--xt-space-2); }
+.sc-op, .mc-op, .tf-op {
+  display: flex;
+  align-items: center;
+  gap: var(--xt-space-2);
+  padding: var(--xt-space-3) var(--xt-space-4);
+  border: 1px solid var(--xt-border);
+  border-radius: var(--xt-radius-md);
+  background: var(--xt-bg-card);
+  color: var(--xt-text);
+  font-size: var(--xt-font-base);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--xt-transition);
+  min-height: 44px;
+}
+.sc-op:hover, .mc-op:hover, .tf-op:hover:not(:disabled) {
+  border-color: var(--xt-primary);
+  background: var(--xt-primary-soft);
+}
+.sc-op:focus-visible, .mc-op:focus-visible, .tf-op:focus-visible {
+  outline: 2px solid var(--xt-primary);
+  outline-offset: 2px;
+}
+.sc-letter, .mc-letter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--xt-bg-muted);
+  color: var(--xt-text-dim);
+  font-weight: 500;
+  font-size: var(--xt-font-sm);
+  flex-shrink: 0;
+}
+.sc-op.sc-picked .sc-letter, .mc-op.mc-picked .mc-letter {
+  background: var(--xt-primary);
+  color: var(--xt-text-on-primary);
+}
+.sc-text, .mc-text { flex: 1; }
+.mc-mark { color: var(--xt-success); font-weight: 500; }
+.sc-op:disabled, .mc-op:disabled, .tf-op:disabled { cursor: default; opacity: 0.92; }
+.sc-op.sc-ok, .mc-op.mc-ok, .tf-op.tf-ok {
+  border-color: var(--xt-success);
+  background: rgba(34, 197, 94, 0.08);
+  color: var(--xt-success);
+}
+.sc-op.sc-ok .sc-letter, .mc-op.mc-ok .mc-letter, .tf-op.tf-ok { background: var(--xt-success); color: var(--xt-text-on-primary); }
+.sc-op.sc-bad, .mc-op.mc-bad, .tf-op.tf-bad {
+  border-color: var(--xt-error);
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--xt-error);
+}
+.sc-op.sc-bad .sc-letter, .mc-op.mc-bad .mc-letter, .tf-op.tf-bad { background: var(--xt-error); color: var(--xt-text-on-primary); }
+.tf-op { justify-content: center; font-size: var(--xt-font-md); min-height: 56px; }
+
+/* === mock 反馈区 === */
+.mock-feedback {
+  margin-top: var(--xt-space-3);
+  padding: var(--xt-space-3);
+  background: var(--xt-bg-muted);
+  border-radius: var(--xt-radius-md);
+  font-size: var(--xt-font-sm);
+  line-height: 1.6;
+}
+.mock-feedback .mf-ok { color: var(--xt-success); margin-right: var(--xt-space-2); }
+.mock-feedback .mf-bad { color: var(--xt-error); margin-right: var(--xt-space-2); }
+.mock-feedback .mf-x { margin-top: var(--xt-space-1); color: var(--xt-text-dim); }
+
+/* === 答题卡 .answer-card（PRD §4.3.2 AC-3.2.4） === */
+.ac-pane {
+  background: var(--xt-bg-card);
+  border: 1px solid var(--xt-border);
+  border-radius: var(--xt-radius-lg);
+  padding: var(--xt-space-3);
+  box-shadow: var(--xt-shadow-sm);
+}
+.ac-head {
+  font-size: var(--xt-font-md);
+  font-weight: 500;
+  padding-bottom: var(--xt-space-2);
+  border-bottom: 1px solid var(--xt-border);
+  margin-bottom: var(--xt-space-2);
+  color: var(--xt-text);
+}
+.ac-group { margin-top: var(--xt-space-3); }
+.ac-group-head {
+  font-size: var(--xt-font-sm);
+  color: var(--xt-text-dim);
+  margin-bottom: var(--xt-space-2);
+  display: flex;
+  justify-content: space-between;
+}
+.ac-group-count { color: var(--xt-text-hint); font-size: var(--xt-font-xs); }
+.ac-group-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--xt-space-1);
+}
+.ac-item {
+  min-width: 36px; min-height: 36px;
+  border-radius: var(--xt-radius-sm);
+  border: 1px solid var(--xt-border);
+  background: var(--xt-bg-muted);
+  color: var(--xt-text-dim);
+  font-size: var(--xt-font-sm);
+  cursor: pointer;
+  transition: all var(--xt-transition);
+  font-family: inherit;
+}
+.ac-item:hover { border-color: var(--xt-primary); }
+.ac-item:focus-visible { outline: 2px solid var(--xt-primary); outline-offset: 2px; }
+.ac-item.ac-unanswered { background: var(--xt-bg-muted); color: var(--xt-text-dim); }
+.ac-item.ac-answered {
+  background: rgba(34, 197, 94, 0.12);
+  color: var(--xt-success);
+  border-color: var(--xt-success);
+}
+.ac-item.ac-current {
+  border: 2px solid var(--xt-primary);
+  color: var(--xt-primary);
+  font-weight: 500;
+}
+.ac-summary {
+  margin-top: var(--xt-space-3);
+  padding-top: var(--xt-space-2);
+  border-top: 1px solid var(--xt-border);
+  font-size: var(--xt-font-sm);
+  color: var(--xt-text-dim);
+  text-align: center;
+}
+.ac-summary b { color: var(--xt-primary); font-weight: 500; }
+
+/* === 阶段进度 .stage-pill（PRD §4.3.2 AC-3.2.5） === */
+.sp-pane { display: flex; gap: var(--xt-space-2); flex-wrap: wrap; }
+.sp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--xt-space-1);
+  padding: var(--xt-space-1) var(--xt-space-3);
+  border-radius: 99px;
+  font-size: var(--xt-font-sm);
+  background: var(--xt-bg-muted);
+  color: var(--xt-text-dim);
+}
+.sp-pill .sp-i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--xt-bg-card);
+  color: var(--xt-text-dim);
+  font-size: var(--xt-font-xs);
+  border: 1px solid var(--xt-border);
+}
+.sp-pill.sp-active { background: var(--xt-primary-soft); color: var(--xt-primary); font-weight: 500; }
+.sp-pill.sp-active .sp-i { background: var(--xt-primary); color: var(--xt-text-on-primary); border-color: var(--xt-primary); }
+.sp-pill.sp-done { background: rgba(34, 197, 94, 0.12); color: var(--xt-success); }
+.sp-pill.sp-done .sp-i { background: var(--xt-success); color: var(--xt-text-on-primary); border-color: var(--xt-success); }
+
+/* === 轻量确认条 .confirm-mask（PRD §4.3.2 AC-3.2.14）
+ * 禁 alert()/confirm()（PRD §7.12）；不用 .me-mask / .dialog / .modal
+ * 遮罩 + 居中卡片 + 按钮组；Esc 关闭；点遮罩取消 */
+.confirm-mask {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(15, 18, 28, 0.4);
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--xt-space-4);
+  animation: confirm-mask-in var(--xt-transition);
+}
+@keyframes confirm-mask-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.confirm-box {
+  background: var(--xt-bg-card);
+  border-radius: var(--xt-radius-lg);
+  padding: var(--xt-space-5);
+  max-width: 360px;
+  width: 100%;
+  box-shadow: var(--xt-shadow-lg);
+}
+.confirm-msg {
+  font-size: var(--xt-font-base);
+  color: var(--xt-text);
+  line-height: 1.6;
+  margin-bottom: var(--xt-space-4);
+}
+.confirm-actions { display: flex; gap: var(--xt-space-2); justify-content: flex-end; }
+.confirm-actions .xt-btn { min-width: 80px; min-height: 36px; }
