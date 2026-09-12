@@ -19,7 +19,7 @@ const fs = require('fs');
 const path = require('path');
 const ROOT = path.resolve(__dirname, '..', '..');
 const PAGE = path.join(ROOT, '学习工作台.html');
-const EXT_REL = 'assets/data/vocab-cet4-ext.json';
+const INDEX_REL = 'assets/data/vocab-cet4-ext-index.json';
 
 let JSDOM, VirtualConsole;
 try { ({ JSDOM, VirtualConsole } = require('jsdom')); }
@@ -34,18 +34,27 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 // =========================================================================
 // V1 静态检查
 // =========================================================================
-const extRaw = fs.readFileSync(path.join(ROOT, EXT_REL), 'utf8');
-let ext;
-try { ext = JSON.parse(extRaw); } catch (e) {
-  assert('V1-0 JSON 合法（紧凑格式可解析）', false, e.message);
+// 批次五：单文件已拆分为「索引 + 8 个按首字母区间分片」，此处读索引 + 遍历所有分片。
+let idxObj = null;
+let shards = [];
+let words = [];
+try {
+  idxObj = JSON.parse(fs.readFileSync(path.join(ROOT, INDEX_REL), 'utf8'));
+  shards = Array.isArray(idxObj.shards) ? idxObj.shards : [];
+  shards.forEach(function (s) {
+    const rel = String(s.file).split('?')[0];
+    const j = JSON.parse(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
+    (j.words || []).forEach(function (w) { words.push(w); });
+  });
+} catch (e) {
+  assert('V1-0 分片索引与分片 JSON 合法（紧凑格式可解析）', false, e.message);
   console.log('JSON 解析失败，后续检查中止');
   process.exit(1);
 }
-assert('V1-0 JSON 合法（紧凑格式可解析）', true, '');
-assert('V1-0b 顶层 version = 20260913b', ext.version === '20260913b', String(ext.version));
-
-const words = Array.isArray(ext.words) ? ext.words : [];
-assert('V1-1 词库共 2236 条', words.length === 2236, '实际 ' + words.length);
+assert('V1-0 分片索引与分片 JSON 合法（紧凑格式可解析）', true, '');
+assert('V1-0b 索引 version = 20260913c', idxObj.version === '20260913c', String(idxObj.version));
+assert('V1-0c 分片数 = 8', shards.length === 8, '实际 ' + shards.length);
+assert('V1-1 词库共 2236 条（8 片合计）', words.length === 2236, '实际 ' + words.length);
 
 const seen = {};
 const dups = [];

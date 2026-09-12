@@ -111,7 +111,7 @@
   // + news/longconv/passage 三个题型）；ext JSON 按 key 合并，已存在 key 不覆盖（与 T06/T08 同策略）。
   function loadListeningExt() {
     try {
-      fetch('assets/data/listening-ext.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      fetch('assets/data/listening-ext.json?v=20260913e').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
         if (!j || !j.scenes || typeof SCENES === 'undefined' || !SCENES) return;
         var added = 0;
         Object.keys(j.scenes).forEach(function (k) {

@@ -47,7 +47,7 @@ assert('A3 索引 count 之和 = 240', sumCount === 240, '实际 ' + sumCount);
 const missingFiles = [], mismatched = [], nonAscii = [], typeMismatch = [], idUnder101 = [], badCount = [];
 const shardData = {};
 idx.shards.forEach(function (s) {
-  const rel = String(s.file || '');
+  const rel = String(s.file || '').split('?')[0];   // 批次五：file 字段带 ?v= 缓存破坏参数，读盘前需去查询串
   if (/[^\x00-\x7F]/.test(rel)) nonAscii.push(rel);                 // 中文文件名 = 上一批 bug
   const fp = path.join(ROOT, rel);
   if (!fs.existsSync(fp)) { missingFiles.push(rel); return; }

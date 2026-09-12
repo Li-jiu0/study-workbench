@@ -13,7 +13,8 @@
 const fs = require('fs');
 const path = require('path');
 const ROOT = path.resolve(__dirname, '..', '..');
-const EXT = path.join(ROOT, 'assets', 'data', 'vocab-cet4-ext.json');
+const INDEX = path.join(ROOT, 'assets', 'data', 'vocab-cet4-ext-index.json');
+const BAK = path.join(ROOT, 'assets', 'data', 'vocab-cet4-ext.json.bak-shard');
 const APP = path.join(ROOT, 'assets', 'app.js');
 const OUT_TXT = path.join(__dirname, 'out_vocab_batch4_static.txt');
 
@@ -25,17 +26,30 @@ function assert(name, cond, detail) {
   log((cond ? '  [PASS] ' : '  [FAIL] ') + name + (cond ? '' : '   ->   ' + detail));
 }
 
-// --------------------------- 读取增量文件 ---------------------------
-const extRaw = fs.readFileSync(EXT, 'utf8');
-const extBytes = Buffer.byteLength(extRaw, 'utf8');
-let ext;
-try { ext = JSON.parse(extRaw); } catch (e) {
-  log('JSON 解析失败：' + e.message); fs.writeFileSync(OUT_TXT, L.join('\n')); process.exit(1);
+// --------------------------- 读取分片索引 + 8 片（批次五） ---------------------------
+let idxObj = null, shards = [];
+try {
+  idxObj = JSON.parse(fs.readFileSync(INDEX, 'utf8'));
+  shards = Array.isArray(idxObj.shards) ? idxObj.shards : [];
+} catch (e) {
+  log('索引解析失败：' + e.message); fs.writeFileSync(OUT_TXT, L.join('\n')); process.exit(1);
 }
-const words = Array.isArray(ext.words) ? ext.words : [];
+const shardFiles = shards.map(function (s) { return String(s.file).split('?')[0]; });
+let words = [];
+shardFiles.forEach(function (rel) {
+  const j = JSON.parse(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
+  (j.words || []).forEach(function (w) { words.push(w); });
+});
+const shardBytes = shardFiles.reduce(function (s, rel) { return s + fs.statSync(path.join(ROOT, rel)).size; }, 0);
 
-// word -> 行号（紧凑格式一行一词，用于给出词条级证据）
-const rawLines = extRaw.split(/\r?\n/);
+// 顺序保持：备份单文件（拆分前原始顺序，用于批次归属 / 新增定位等顺序敏感检查）
+const bakRaw = fs.readFileSync(BAK, 'utf8');
+const extBytes = Buffer.byteLength(bakRaw, 'utf8');
+let orderedWords = [];
+try { orderedWords = JSON.parse(bakRaw).words || []; } catch (e) { orderedWords = words.slice(); }
+
+// word -> 行号（备份单文件紧凑格式一行一词，用于给出词条级证据）
+const rawLines = bakRaw.split(/\r?\n/);
 const wordLine = {};
 rawLines.forEach(function (ln, i) {
   const m = /"word"\s*:\s*"([^"]*)"/.exec(ln);
@@ -72,17 +86,49 @@ const builtinKeys = new Set((builtin || []).map(function (w) { return norm(w.wor
 
 log('====================================================================');
 log('词库批次四静态独立验证 · 项目根：' + ROOT);
-log('增量文件字节数：' + extBytes + ' (' + (extBytes / 1024).toFixed(1) + ' KB)');
+log('备份单文件字节数：' + extBytes + ' (' + (extBytes / 1024).toFixed(1) + ' KB)');
+log('8 片合计字节数：' + shardBytes + ' (' + (shardBytes / 1024).toFixed(1) + ' KB)');
 log('内置 CET_VOCAB 条数：' + (builtin ? builtin.length : 'null'));
 log('增量 words 条数：' + words.length);
 log('====================================================================');
 
 // =====================================================================
+// A0 分片结构 + 拆分等价性（批次五）
+// =====================================================================
+log('\n【A0 分片结构 / 拆分等价性】');
+assert('索引 version = 20260913c', idxObj.version === '20260913c', String(idxObj.version));
+assert('分片数 = 8', shards.length === 8, '实际 ' + shards.length);
+const RANGE_RE = /^([a-z])-([a-z])$/;
+const shardStructBad = [];
+shards.forEach(function (s) {
+  const rel = String(s.file).split('?')[0];
+  const m = RANGE_RE.exec(String(s.range || ''));
+  if (!m) { shardStructBad.push(rel + ' range 非法:' + s.range); return; }
+  const j = JSON.parse(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
+  const arr = j.words || [];
+  if (typeof s.count !== 'number' || arr.length !== s.count) shardStructBad.push(rel + ' count=' + s.count + ' 实际=' + arr.length);
+  const outside = arr.filter(function (w) {
+    const c = String(w.word || '').charAt(0).toLowerCase();
+    return c < m[1] || c > m[2];
+  });
+  if (outside.length) shardStructBad.push(rel + ' 有 ' + outside.length + ' 条不在 range 内：' + outside.slice(0, 3).map(function (w) { return w.word; }).join(','));
+  if (String(s.file).indexOf('?v=') < 0) shardStructBad.push(rel + ' file 缺 ?v= 缓存参数');
+});
+assert('每片 word[0] 落在声明 range 内、count 与索引一致、file 带 ?v=', shardStructBad.length === 0, shardStructBad.slice(0, 5).join(' | '));
+
+const serBak = orderedWords.map(function (w) { return JSON.stringify(w); }).sort();
+const serShard = words.map(function (w) { return JSON.stringify(w); }).sort();
+let eqDiff = 0;
+const eqN = Math.max(serBak.length, serShard.length);
+for (let i = 0; i < eqN; i++) { if (serBak[i] !== serShard[i]) eqDiff++; }
+assert('拆分等价性：合并 8 片 vs .bak-shard 单文件逐条 JSON.stringify 0 差异', eqDiff === 0,
+  '词条 ' + serBak.length + ' vs ' + serShard.length + '，差异 ' + eqDiff);
+
+// =====================================================================
 // A1 条数 / 去重 / 与内置冲突
 // =====================================================================
 log('\n【A1 条数 / 去重 / 冲突】');
-assert('version = 20260913b', ext.version === '20260913b', String(ext.version));
-assert('增量条数 = 2236', words.length === 2236, '实际 ' + words.length);
+assert('增量条数 = 2236（8 片合计）', words.length === 2236, '实际 ' + words.length);
 
 // 规范化（lowercase+trim）去重
 const normDupMap = {};
@@ -233,8 +279,8 @@ log('实际分布对象：' + JSON.stringify(dist));
 // =====================================================================
 log('\n【A5 批次归属 / 新增 663 词定位】');
 const BATCH3_DIST = { a: 30, b: 30, c: 55, d: 32, e: 28, f: 24, g: 70, h: 69, i: 94, j: 22, k: 21, l: 67, m: 88, n: 53, o: 71, p: 161, q: 22, r: 143, s: 189, t: 114, u: 44, v: 58, w: 68, y: 12, z: 8 };
-const first1573 = words.slice(0, 1573);
-const last663 = words.slice(1573);
+const first1573 = orderedWords.slice(0, 1573);
+const last663 = orderedWords.slice(1573);
 function distOf(arr) {
   const d = {};
   arr.forEach(function (w) { const c = norm(w.word).charAt(0); d[c] = (d[c] || 0) + 1; });
@@ -325,12 +371,12 @@ const SAMPLE_LETTERS = ['c', 'b', 'd', 'e', 'f', 'i', 'm', 'o', 't'];
 const perLetter = 3; // 9 * 3 = 27 + 3 随机 example2 = 30
 const sampleWords = [];
 SAMPLE_LETTERS.forEach(function (letter) {
-  const pool = words.filter(function (w) { return norm(w.word).charAt(0) === letter; });
+  const pool = orderedWords.filter(function (w) { return norm(w.word).charAt(0) === letter; });
   const step = Math.max(1, Math.floor(pool.length / perLetter));
   for (let i = 0; i < perLetter && i * step < pool.length; i++) sampleWords.push(pool[i * step]);
 });
 // 追加 3 条随机（用确定性步长避免随机性）
-for (let i = 0; i < 3; i++) sampleWords.push(words[(i * 137 + 55) % words.length]);
+for (let i = 0; i < 3; i++) sampleWords.push(orderedWords[(i * 137 + 55) % orderedWords.length]);
 let useFail = [];
 sampleWords.forEach(function (w, i) {
   const ex1 = usedIn(w.example, norm(w.word));
@@ -351,9 +397,11 @@ assert('抽样 ' + sampleWords.length + ' 条的 example/example2 均命中该�
 // =====================================================================
 log('\n【F 性能余量】');
 const merged = (builtin ? builtin.length : 0) + words.length;
+const maxShardBytes = shardFiles.reduce(function (mx, rel) { return Math.max(mx, fs.statSync(path.join(ROOT, rel)).size); }, 0);
 log('  合并总词数：' + merged + '（阈值 2500）');
-log('  原始文件：' + (extBytes / 1024).toFixed(1) + ' KB（阈值 600KB）');
-log('  词数余量：' + (2500 - merged) + ' 词；体积余量：' + ((600 * 1024 - extBytes) / 1024).toFixed(1) + ' KB');
+log('  分片数：' + shardFiles.length + '；单文件最大：' + (maxShardBytes / 1024).toFixed(1) + ' KB（阈值 600KB/片）');
+log('  备份单文件原体积：' + (extBytes / 1024).toFixed(1) + ' KB（拆分前对照）');
+log('  词数余量：' + (2500 - merged) + ' 词；单片体积余量：' + ((600 * 1024 - maxShardBytes) / 1024).toFixed(1) + ' KB');
 
 // =====================================================================
 // 收尾
