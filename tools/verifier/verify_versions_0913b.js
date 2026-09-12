@@ -1,9 +1,9 @@
 /**
- * 版本 bump 20260913a → 20260913f 全站扫描验证
+ * 版本 bump 20260913a → 20260913g 全站扫描验证
  * ---------------------------------------------------------------------------
  * 覆盖：
  *   V1 32 个页面全部被扫描
- *   V2 27 页取值为 20260913f、5 页（不加载 app.js）保持 20260913a
+ *   V2 27 页取值为 20260913g、5 页（不加载 app.js）保持 20260913a
  *   V3 无「混合版本页」（同一页出现两种及以上版本）
  *   V4 无「降级页」（出现比 20260913a 更旧的版本号）
  *   V5 无损坏签名：?v= 后的版本 token 必须完整且紧跟闭合引号
@@ -19,7 +19,7 @@ const fs = require('fs');
 const path = require('path');
 const ROOT = path.resolve(__dirname, '..', '..');
 
-const CUR = '20260913f';
+const CUR = '20260913g';
 const PREV = '20260913a';
 // 不加载 assets/app.js 的 5 个页面：保持 20260913a
 const KEEP_OLD = ['AI模拟面试.html', 'PPT素材库.html', '四级经验分享.html', '好友申请.html', '登录.html'];
@@ -128,7 +128,7 @@ const pass = results.filter(function (r) { return r.ok; }).length;
 const failed = results.filter(function (r) { return !r.ok; });
 console.log('');
 console.log('============================================================');
-console.log('版本 bump 20260913a → 20260913f 全站扫描');
+console.log('版本 bump 20260913a → 20260913g 全站扫描');
 console.log('项目根：' + ROOT);
 console.log('============================================================');
 results.forEach(function (r, i) {

@@ -374,8 +374,8 @@ const EXAM_BANK = [
 // 其路径在本文件以 EXAM_BANK_LEGACY 显式声明：索引文件本身按 exam-bank-ext* 命名，
 // file:// / 离线 / 未部署场景会被整体跳过，而覆盖层对「离线兜底也要与线上一致」至关重要，
 // 故覆盖层由入口直连加载，索引可用时再据此做一次幂等校验加载。
-const EXAM_BANK_LEGACY = 'assets/data/exam-bank.json?v=20260913f';
-const EXAM_BANK_EXT_INDEX = 'assets/data/exam-bank-ext-index.json?v=20260913f';
+const EXAM_BANK_LEGACY = 'assets/data/exam-bank.json?v=20260913g';
+const EXAM_BANK_EXT_INDEX = 'assets/data/exam-bank-ext-index.json?v=20260913g';
 
 // 统一合并：同 id → allowOverride ? 覆盖内置 : 跳过；新 id → 一律 push。
 // 返回实际变更条数。allowOverride=true 即覆盖层语义（可覆盖 id<101 的内置题）；
@@ -441,7 +441,7 @@ function loadExamBankExt() {
 // 入口 loadVocabExt() 读索引 → Promise.all 并发拉取所有分片 → 同一套 mergeVocabWords() 合并。
 // 加词只改「对应分片 + 该片 count」，代码零改动。
 // 键=word；已存在词条不覆盖（vocabLearned 按 word 匹配，学习标记不丢失）。全程绝不调用 saveData()。
-const VOCAB_EXT_INDEX = 'assets/data/vocab-cet4-ext-index.json?v=20260913f';
+const VOCAB_EXT_INDEX = 'assets/data/vocab-cet4-ext-index.json?v=20260913g';
 
 // 统一合并：把一批增量词条并入内置 CET_VOCAB；已存在词条（含内置 466）不覆盖。
 // 返回实际追加条数。绝不落盘（不调 saveData）。
