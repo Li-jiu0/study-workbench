@@ -5,8 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" data-page-node-id="scAqzajn3bTDCBBENuGZj0">
 <meta name="theme-color" content="#5B8DEF" data-page-node-id="xcIilqbK544vSHAWBPyO4w">
 <title>个人中心 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260912a" data-page-node-id="tBLcp6JxdB6dWCmMCCx7F8">
-<link rel="stylesheet" href="assets/polish.css?v=20260912a" data-page-node-id="uqByqsnHV08jClPBpI9G16">
+<link rel="stylesheet" href="assets/common.css?v=20260912c" data-page-node-id="tBLcp6JxdB6dWCmMCCx7F8">
+<link rel="stylesheet" href="assets/page-head.css?v=20260912c">
+<link rel="stylesheet" href="assets/states.css?v=20260912c">
+<link rel="stylesheet" href="assets/polish.css?v=20260912c" data-page-node-id="uqByqsnHV08jClPBpI9G16">
 </head>
 <body class="theme-home" data-page-node-id="YOxnETeT4z4J4WFn6FB0qJ">
 
@@ -28,7 +30,7 @@
       </div>
       <div class="topbar-date" id="topbarDate" data-page-node-id="J19QYgTGLZpeMfWncLKl7f"></div>
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
-      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" data-page-node-id="ykzjsCUHFazDObE5rQ7EaI">🌙</div>
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0" data-page-node-id="ykzjsCUHFazDObE5rQ7EaI">🌙</div>
     </header>
 <div class="page active" id="page-profile" data-page-node-id="aUD7wEjtCGd0SXKaPVQMgo">
         <!-- T02 批次五 hash 路由：面包屑（router 维护）+ 第一层分组卡列表（默认显示） -->
@@ -83,7 +85,7 @@
             <div class="card-title"><span class="title-icon">🌏</span>我的动态</div>
             <div class="card-action" onclick="location.href='动态.html'">去发布 →</div>
           </div>
-          <div id="myMomentsBody" style="font-size:13px;padding:12px 16px;color:var(--text-secondary)">加载中…</div>
+          <div id="myMomentsBody" style="font-size:var(--xt-font-base);padding:12px 16px;color:var(--text-secondary)">加载中…</div>
         </div>
         </section>
 
@@ -94,7 +96,7 @@
             <div class="card-title" data-page-node-id="p5GlIKE0zlSVR3I6zL7z43"><span class="title-icon" data-page-node-id="uVI9hxKN9DYqyHKSr2rtLn">🧭</span>我的学习偏好</div>
             <div class="card-action" onclick="location.href='设置.html'" data-page-node-id="sx2SGC8PGTYECiRyAKZ7xC">去调整 →</div>
           </div>
-          <div id="prefBody" style="font-size:13px;color:var(--text-secondary);line-height:2" data-page-node-id="ImpNtv8ClqRtEER9p2aF2q">加载中…</div>
+          <div id="prefBody" style="font-size:var(--xt-font-base);color:var(--text-secondary);line-height:2" data-page-node-id="ImpNtv8ClqRtEER9p2aF2q">加载中…</div>
         </div>
         </section>
 
@@ -104,7 +106,7 @@
           <div class="card-header" data-page-node-id="dde97TsGWeuPbfbZt37USs">
             <div class="card-title" data-page-node-id="ByEMXihAHb97fvD4xnIY40"><span class="title-icon" data-page-node-id="YojGDlEFwBR15cf2Q1gwU3">📊</span>本机学习数据</div>
           </div>
-          <div id="localStats" style="font-size:13px" data-page-node-id="HfPDqxUDwtSE8sjLTEG9Mq">加载中…</div>
+          <div id="localStats" style="font-size:var(--xt-font-base)" data-page-node-id="HfPDqxUDwtSE8sjLTEG9Mq">加载中…</div>
         </div>
         </section>
 
@@ -258,7 +260,7 @@
   <div class="modal-overlay" id="logoutConfirmModal" data-page-node-id="w58HcoBkx3b7KH7ncV2jow">
     <div class="modal" data-page-node-id="T8iuHo4jkOGZmyV5mZLZkm">
       <div class="modal-title" data-page-node-id="pAbVHilpWNWZ0ALHCcPVYl">🚪 退出登录</div>
-      <div style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:6px 0 4px" data-page-node-id="ijNz0Qv1kyYXj2PAUWb78d">确定要退出登录吗？</div>
+      <div style="font-size:var(--xt-font-base);color:var(--text-secondary);line-height:1.8;margin:6px 0 4px" data-page-node-id="ijNz0Qv1kyYXj2PAUWb78d">确定要退出登录吗？</div>
       <div class="modal-actions" data-page-node-id="Bt6oNmEF4rV2196rRLErh8">
         <button class="btn btn-outline" onclick="closeLogoutConfirm()" data-page-node-id="K2bLWlmXR6O8lQ7vvO1piG">取消</button>
         <button class="btn btn-danger" onclick="confirmLogout()" data-page-node-id="uWfdHQHROGYLwCPnnFpJjG">确定退出</button>
@@ -289,7 +291,7 @@
         </div>
       </div>
       <div class="form-group" data-page-node-id="1L6oElG1XXS1siy2v3VChi">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary)" data-page-node-id="mIWHPpdKIK6bGMoTJGcduW">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--xt-font-base);color:var(--text-secondary)" data-page-node-id="mIWHPpdKIK6bGMoTJGcduW">
           <input type="checkbox" id="cdPinned" data-page-node-id="w3watZAXjoRp4X60kZ1Pen"> 置顶显示
         </label>
       </div>
@@ -334,11 +336,13 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260912a"></script>
-<script src="assets/app.js?v=20260912a"></script>
-<script src="assets/config.js?v=20260912a"></script>
-<script src="assets/api.js?v=20260912a"></script>
-<script src="assets/subpage-router.js?v=20260912a"></script>
+<script src="assets/icon-map.js?v=20260912c" defer></script>
+<script src="assets/xt-toast.js?v=20260912c" defer></script>
+<script src="assets/error-boundary.js?v=20260912c" defer></script>
+<script src="assets/app.js?v=20260912c" defer></script>
+<script src="assets/config.js?v=20260912c" defer></script>
+<script src="assets/api.js?v=20260912c" defer></script>
+<script src="assets/subpage-router.js?v=20260912c" defer></script>
 
 <script>
 function overviewGo(key) {
@@ -366,7 +370,7 @@ function renderProfileOverview() {
       var chips = [
         ['wrong', '📒 错题本'], ['vocab', '📖 四级词汇'], ['settings', '⚙️ 偏好设置']
       ].map(function (x) {
-        return '<button class="btn btn-outline" style="font-size:12px;padding:6px 12px" onclick="overviewGo(' + "'" + x[0] + "'" + ')">' + x[1] + '</button>';
+        return '<button class="btn btn-outline" style="font-size:var(--xt-font-sm);padding:6px 12px" onclick="overviewGo(' + "'" + x[0] + "'" + ')">' + x[1] + '</button>';
       }).join('');
       ls.innerHTML = '<div class="profile-grid">' +
         [['⏱', d.totalHours || 0, '总学习(h)'], ['🧮', d.totalQuestions || 0, '做题数'],
@@ -579,8 +583,8 @@ window.addEventListener('load', function() {
           var imgCount = (m.images || []).length;
           return '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">' +
             '<div style="flex:1;min-width:0"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)">' + esc(m.content || '[图片]') + '</div>' +
-            '<div style="font-size:11px;color:var(--text-secondary);margin-top:2px">❤ ' + (m.likes || []).length + ' · 💬 ' + (m.comments || []).length + (imgCount ? ' · 🖼 ' + imgCount : '') + ' · ' + esc(m.createdAt || '') + '</div></div>' +
-            '<span style="color:var(--danger);font-size:12px;cursor:pointer;flex-shrink:0" onclick="window.mmDelete(' + m.id + ')">删除</span>' +
+            '<div style="font-size:var(--xt-font-xs);color:var(--text-secondary);margin-top:2px">❤ ' + (m.likes || []).length + ' · 💬 ' + (m.comments || []).length + (imgCount ? ' · 🖼 ' + imgCount : '') + ' · ' + esc(m.createdAt || '') + '</div></div>' +
+            '<span style="color:var(--danger);font-size:var(--xt-font-sm);cursor:pointer;flex-shrink:0" onclick="window.mmDelete(' + m.id + ')">删除</span>' +
             '</div>';
         }).join('');
       })

@@ -5,8 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" data-page-node-id="OlgAXTFaD9mAg3AFsfpeiy">
 <meta name="theme-color" content="#5B8DEF" data-page-node-id="XIP3tSfjex43vTn5HPKTvm">
 <title>首页 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260912a" data-page-node-id="cG8803QAoDbKSd7v8tsEs9">
-<link rel="stylesheet" href="assets/polish.css?v=20260912a" data-page-node-id="lkxFYcwbHH3N6LYB00qIeL">
+<link rel="stylesheet" href="assets/common.css?v=20260912c" data-page-node-id="cG8803QAoDbKSd7v8tsEs9">
+<link rel="stylesheet" href="assets/page-head.css?v=20260912c" data-page-node-id="">
+<link rel="stylesheet" href="assets/states.css?v=20260912c" data-page-node-id="">
+<link rel="stylesheet" href="assets/polish.css?v=20260912c" data-page-node-id="lkxFYcwbHH3N6LYB00qIeL">
 </head>
 <body class="theme-home" data-page-node-id="BTU8kiFHiuvsPFdnqvbOiF">
 
@@ -85,7 +87,7 @@
       </div>
       <div class="topbar-date" id="topbarDate" data-page-node-id="17lrDsjIoaPiL6fYsSefC8"></div>
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
-      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" data-page-node-id="uHcuV1Qzg4DOzE5YGc1KzM">🌙</div>
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0" data-page-node-id="uHcuV1Qzg4DOzE5YGc1KzM">🌙</div>
     </header>
     <div class="content" data-page-node-id="5fOW16DlNwYgJhwfeKqEpX">
 <div class="page active" id="page-home" data-page-node-id="dG03grZB6LMU4OxjTrRv0B">
@@ -119,8 +121,8 @@
               <div id="statsEmptyHint" class="stats-empty-hint" style="display:none">还没有学习记录，去学一章吧</div>
               <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-                  <span style="font-size:13px;font-weight:600;color:var(--text-secondary)">📈 本周学习时长</span>
-                  <span style="font-size:11px;color:var(--text-muted)">单位：分钟</span>
+                  <span style="font-size:var(--xt-font-base);font-weight:600;color:var(--text-secondary)">📈 本周学习时长</span>
+                  <span style="font-size:var(--xt-font-xs);color:var(--text-muted)">单位：分钟</span>
                 </div>
                 <div class="week-chart" id="weekChart"></div>
               </div>
@@ -137,12 +139,12 @@
                     </defs>
                   </svg>
                   <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center">
-                    <div id="goalPercent" style="font-size:16px;font-weight:800;color:var(--primary)">0%</div>
+                    <div id="goalPercent" style="font-size:var(--xt-font-md);font-weight:800;color:var(--primary)">0%</div>
                   </div>
                 </div>
                 <div style="flex:1;min-width:0">
-                  <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">今日目标完成率</div>
-                  <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px" id="goalText">已完成 0/5 个任务</div>
+                  <div style="font-size:var(--xt-font-base);font-weight:600;color:var(--text);margin-bottom:4px">今日目标完成率</div>
+                  <div style="font-size:var(--xt-font-xs);color:var(--text-muted);margin-bottom:8px" id="goalText">已完成 0/5 个任务</div>
                   <div style="display:flex;gap:6px;flex-wrap:wrap">
                     <span class="achievement-badge" id="badge1" title="首次登录">🌟 新手</span>
                     <span class="achievement-badge locked" id="badge2" title="连续打卡3天">🔥 3连击</span>
@@ -325,7 +327,7 @@
         </div>
       </div>
       <div class="form-group" data-page-node-id="JV8TjCjcOrMojQFvDIhaVE">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary)" data-page-node-id="hGw4FSEzRjkR0kdJJzNH18">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--xt-font-base);color:var(--text-secondary)" data-page-node-id="hGw4FSEzRjkR0kdJJzNH18">
           <input type="checkbox" id="cdPinned" data-page-node-id="p6fUEcvh6jqexVWLKrrP7a"> 置顶显示
         </label>
       </div>
@@ -356,8 +358,8 @@
         <div class="ai-title" data-page-node-id="q2FZdF0s6k5jmViRWoSs83">AI学习助手</div>
         <div class="ai-subtitle" id="aiSubtitle" data-page-node-id="av4uiNTGE2DApRtM7RD21N">本地演示模式 · 历史已保存</div>
       </div>
-      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录" data-page-node-id="ttUuYay5JAKZrrh82qNduc">🧹</div>
-      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板" data-page-node-id="L6WVcdBYqOMKAXURMqEZik">✕</div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录" aria-label="清空聊天记录" role="button" tabindex="0" data-page-node-id="ttUuYay5JAKZrrh82qNduc">🧹</div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板" aria-label="收起AI面板" role="button" tabindex="0" data-page-node-id="L6WVcdBYqOMKAXURMqEZik">✕</div>
     </div>
     <div class="ai-messages" id="aiMessages" data-page-node-id="fO414zmuggRBBGZjU9lcSz"></div>
     <div class="ai-input-row" data-page-node-id="fHuOHmP6l1a4GKTsxaEwXO">
@@ -370,12 +372,14 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260912a"></script>
-<script src="assets/app.js?v=20260912a"></script>
-<script src="assets/quest.js?v=20260912a"></script>
-<script src="assets/config.js?v=20260912a"></script>
-<script src="assets/api.js?v=20260912a"></script>
-<script src="assets/study-stats.js?v=20260912a"></script>
+<script src="assets/icon-map.js?v=20260912c" defer></script>
+<script src="assets/xt-toast.js?v=20260912c" defer></script>
+<script src="assets/error-boundary.js?v=20260912c" defer></script>
+<script src="assets/app.js?v=20260912c" defer></script>
+<script src="assets/quest.js?v=20260912c" defer></script>
+<script src="assets/config.js?v=20260912c" defer></script>
+<script src="assets/api.js?v=20260912c" defer></script>
+<script src="assets/study-stats.js?v=20260912c" defer></script>
 <script>
 /* ==================== T7 增量（P0-14）：更多工具使用痕迹 + 按最近使用排序 ==================== */
 (function () {
