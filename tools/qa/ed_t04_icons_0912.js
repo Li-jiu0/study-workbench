@@ -168,9 +168,20 @@ function loadIconMapStandalone() {
     allErrors.push(...r.vcErrors);
   }
 
-  /* ============ E/F/G. 7 个 HTML 文件加载：nav-icon SVG 注入与无残留 ============ */
-  const HTML_FILES = ['设置.html', '个人中心.html', '私聊.html', '工具.html', '更多.html', '登录.html'];
-  sec('[E-G] 6 个 HTML 文件（学习工作台.html 由 T01 串行后再做）');
+  /* ============ E/F/G. HTML 文件加载：nav-icon SVG 注入与无残留 ============ */
+  /* 批次五 T04 收尾（2026-09-12）：图标已铺到全部带侧栏正式页，
+     故此处从 6 页扩到全部 23 页（登录.html 无侧栏，走「无 nav-icon」分支）。   */
+  const HTML_FILES = [
+    '设置.html', '个人中心.html', '私聊.html', '工具.html', '更多.html', '登录.html',
+    '学习工作台.html', '动态.html', 'blog_wechat.html', '错题本.html', '面试题库.html',
+    'PPT案例拆解.html', 'PPT版式库.html', 'PPT训练.html', '万能金句库.html',
+    '商务礼仪.html', '商务礼仪面试.html', '四级备考.html', '四级词汇.html',
+    '场景话术库.html', '央国企笔试.html', '学习博客.html', '行测刷题.html',
+    '高情商表达.html'
+  ];
+  /** 侧栏图标数（blog_wechat 14 项 / 动态 12 项，其余统一 11 项） */
+  const NAV_ICON_COUNT = { 'blog_wechat.html': 14, '动态.html': 12 };
+  sec('[E-G] ' + HTML_FILES.length + ' 个 HTML 文件（T04 收尾后全量铺开）');
   for (const htmlFile of HTML_FILES) {
     const r = await loadPage(htmlFile, { wait: 4500 });
     const { w, d } = r;
@@ -185,10 +196,11 @@ function loadIconMapStandalone() {
       check('[' + htmlFile + '] window.LUCIDE_ICONS 已加载（icon-map.js 跑过）',
         typeof w.LUCIDE_ICONS === 'object' && Object.keys(w.LUCIDE_ICONS).length >= 14);
     } else {
-      check('[' + htmlFile + '] .nav-icon 数量 == 11', navIcons.length === 11,
+      const expect = NAV_ICON_COUNT[htmlFile] || 11;
+      check('[' + htmlFile + '] .nav-icon 数量 == ' + expect, navIcons.length === expect,
         '实际=' + navIcons.length);
-      check('[' + htmlFile + '] .nav-icon 内 svg 总数 == 11（全部渲染）',
-        svgCount === 11, '实际=' + svgCount);
+      check('[' + htmlFile + '] .nav-icon 内 svg 总数 == ' + expect + '（全部渲染）',
+        svgCount === expect, '实际=' + svgCount);
       /* F. nav-icon textContent 为空（emoji 已被 SVG 替换） */
       const nonEmpty = navIcons.filter(n => (n.textContent || '').trim().length > 0);
       check('[' + htmlFile + '] 所有 .nav-icon textContent 为空（emoji 已替换）',

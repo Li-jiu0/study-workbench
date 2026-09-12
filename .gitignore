@@ -129,3 +129,17 @@ tools/server_fix_*.tar.gz
 
 # QA 过程产物（截图 / 探针脚本 / 线上资源快照，仅供人工排查，不入库）
 .qa/
+
+# ===== 2026-09-12 批次五（寇豆码）：打包与校验过程产物 =====
+# 本地临时工作目录（打包日志、旧版 APK 回滚备份等）
+.tmp_eng/
+# APK 校验器生成的报告（每次跑都会重写，属过程产物，不入库）
+tools/qa/_apk_assets_check.txt
+tools/qa/_apk_layout_check.txt
+tools/qa/_apk_preflight.txt
+tools/qa/_apk_tracked.txt
+
+# ===== 2026-09-12 批次五（主理人）：QA 一次性输出统归不入库 =====
+# tools/qa/ 下所有下划线开头的 .txt 都是探针/自检的过程产物，每次跑都会重写，
+# 跟着进公开仓库只会污染历史。后续新增校验脚本也请沿用 _ 前缀命名输出。
+tools/qa/_*.txt
