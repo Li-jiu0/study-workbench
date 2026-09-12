@@ -95,40 +95,40 @@
           <div class="morepage-title">🧰 工具</div>
         </div>
 
-        <!-- 【A8】工具卡片网格：与旧底部弹层「工具」同项同行为；卡片可后续扩展 -->
-        <div class="morepage-grid">
-          <div class="morepage-card" onclick="if(window.openImporter){openImporter()}else{location.href='设置.html'}">
+        <!-- 【A8】工具卡片纵向列表：与旧底部弹层「工具」同项同行为；卡片可后续扩展。T01 批次五（2026-09-12）#1.0：由 .morepage-grid 改为 .morepage-list 纵向排列（右侧 › 箭头为 CSS ::after） -->
+        <div class="morepage-list">
+          <div class="morepage-card morepage-list-item" onclick="if(window.openImporter){openImporter()}else{location.href='设置.html'}">
             <div class="mpc-icon">📥</div>
             <div class="mpc-title">导入题库</div>
             <div class="mpc-desc">Excel/CSV 一键导入</div>
           </div>
-          <div class="morepage-card" onclick="location.href='万能金句库.html'">
+          <div class="morepage-card morepage-list-item" onclick="location.href='万能金句库.html'">
             <div class="mpc-icon">📚</div>
             <div class="mpc-title">万能金句</div>
             <div class="mpc-desc">写作/表达金句库</div>
           </div>
-          <div class="morepage-card" onclick="location.href='场景话术库.html'">
+          <div class="morepage-card morepage-list-item" onclick="location.href='场景话术库.html'">
             <div class="mpc-icon">💬</div>
             <div class="mpc-title">场景话术</div>
             <div class="mpc-desc">高情商沟通话术</div>
           </div>
-          <div class="morepage-card" onclick="location.href='PPT版式库.html'">
+          <div class="morepage-card morepage-list-item" onclick="location.href='PPT版式库.html'">
             <div class="mpc-icon">📊</div>
             <div class="mpc-title">PPT版式</div>
             <div class="mpc-desc">版式与案例素材</div>
           </div>
-          <div class="morepage-card" onclick="location.href='AI模拟面试.html'">
+          <div class="morepage-card morepage-list-item" onclick="location.href='AI模拟面试.html'">
             <div class="mpc-icon">🎙️</div>
             <div class="mpc-title">AI面试</div>
             <div class="mpc-desc">多轮追问模拟面试</div>
           </div>
-          <div class="morepage-card" onclick="location.href='四级经验分享.html'">
+          <div class="morepage-card morepage-list-item" onclick="location.href='四级经验分享.html'">
             <div class="mpc-icon">📖</div>
             <div class="mpc-title">四级经验</div>
             <div class="mpc-desc">学霸备考方法</div>
           </div>
           <!-- 【铁律】「穿越英语」入口必须保留可见：指向现有 quest.js 的 openQuest()（不可用时回退到首页的穿越英语卡）。内容升级属批次三。 -->
-          <div class="morepage-card" onclick="if(window.openQuest){openQuest()}else{location.href='学习工作台.html'}">
+          <div class="morepage-card morepage-list-item" onclick="if(window.openQuest){openQuest()}else{location.href='学习工作台.html'}">
             <div class="mpc-icon">⚡</div>
             <div class="mpc-title">穿越英语</div>
             <div class="mpc-desc">闯关式剧情学英语</div>
@@ -190,8 +190,8 @@
       <div class="bottom-more-item" onclick="location.href='AI模拟面试.html';toggleToolsPanel()">
         <div class="bm-icon">🎙️</div><div class="bm-label">AI面试</div>
       </div>
-      <div class="bottom-more-item" onclick="location.href='PPT素材库.html';toggleToolsPanel()">
-        <div class="bm-icon">📊</div><div class="bm-label">PPT素材</div>
+      <div class="bottom-more-item" onclick="location.href='PPT版式库.html';toggleToolsPanel()">
+        <div class="bm-icon">📊</div><div class="bm-label">PPT版式</div>
       </div>
       <div class="bottom-more-item" onclick="location.href='四级经验分享.html';toggleToolsPanel()">
         <div class="bm-icon">📖</div><div class="bm-label">四级经验</div>
