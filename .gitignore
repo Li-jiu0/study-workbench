@@ -143,3 +143,13 @@ tools/qa/_apk_tracked.txt
 # tools/qa/ 下所有下划线开头的 .txt 都是探针/自检的过程产物，每次跑都会重写，
 # 跟着进公开仓库只会污染历史。后续新增校验脚本也请沿用 _ 前缀命名输出。
 tools/qa/_*.txt
+
+# ===== 2026-09-12 P0-B T05：HTTPS 文档暂不做，工作区保留不入 git =====
+# 用户拍板：需求 17 HTTPS 暂不做；文档不入库。详见 docs/WITHDRAWN.md。
+# 恢复条件：Q 线（跨端专项）启动 + 用户确认做 HTTPS + 有可用域名。
+docs/HTTPS+APP跨端改造方案-2026-09-12.md
+
+# ===== 2026-09-12 P0-B 紧急事故：.git 损坏的保命备份，保留学查但不入库 =====
+# 事件：工程师误用 GIT_SEQUENCE_EDITOR=true git rebase -i 触发 filter-repo
+# 导致 .git/objects/pack + refs/heads/main 全空；恢复后保留备份以防排查需要
+.git-corrupted-backup-20260912-emergency/
