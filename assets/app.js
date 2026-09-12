@@ -1,4 +1,4 @@
-﻿
+
 // ========== 登录门禁（本地演示版） ==========
 // 说明：账号信息仅存 localStorage（本机浏览器），刷新不丢失，但无法真正多用户。
 // 登录页 登录.html 不引用本文件，其余所有页面加载本文件时都会先做登录校验。
@@ -374,8 +374,8 @@ const EXAM_BANK = [
 // 其路径在本文件以 EXAM_BANK_LEGACY 显式声明：索引文件本身按 exam-bank-ext* 命名，
 // file:// / 离线 / 未部署场景会被整体跳过，而覆盖层对「离线兜底也要与线上一致」至关重要，
 // 故覆盖层由入口直连加载，索引可用时再据此做一次幂等校验加载。
-const EXAM_BANK_LEGACY = 'assets/data/exam-bank.json';
-const EXAM_BANK_EXT_INDEX = 'assets/data/exam-bank-ext-index.json';
+const EXAM_BANK_LEGACY = 'assets/data/exam-bank.json?v=20260913e';
+const EXAM_BANK_EXT_INDEX = 'assets/data/exam-bank-ext-index.json?v=20260913e';
 
 // 统一合并：同 id → allowOverride ? 覆盖内置 : 跳过；新 id → 一律 push。
 // 返回实际变更条数。allowOverride=true 即覆盖层语义（可覆盖 id<101 的内置题）；
@@ -424,33 +424,80 @@ function loadExamBankExt() {
         });
       }
       // 索引若另行声明 legacy（与 EXAM_BANK_LEGACY 相同则跳过，避免重复覆盖）
+      // 比较时剥掉查询串（?v=），否则单边带版本号会导致字符串不等、legacy 被加载两遍。
       if (idx.legacy) {
         var lg = (typeof idx.legacy === 'object') ? idx.legacy.file : idx.legacy;
-        if (typeof lg === 'string' && lg && lg !== EXAM_BANK_LEGACY) files.push(lg);
+        var lgPath = String(lg).split('?')[0];
+        var legacyPath = String(EXAM_BANK_LEGACY).split('?')[0];
+        if (typeof lg === 'string' && lg && lgPath !== legacyPath) files.push(lg);
       }
       files.forEach(function (f) { loadExamBankShard(f); });
     }).catch(function () { /* 索引不可用：静默回退内置 + 覆盖层 */ });
   } catch (e) { /* fetch 不可用：回退 */ }
 }
 
-// ========== T06（批次三 R3-1）：词库增量加载合并 ==========
-// 键=word；已存在词条不覆盖（vocabLearned 按 word 匹配，学习标记不丢失）。数据由他人并行产出。
+// ========== T06（批次三 R3-1）+ 批次五：词库增量分片加载合并 ==========
+// 分片体系：assets/data/vocab-cet4-ext-index.json 声明各分片（按首字母区间 a-c … v-z）。
+// 入口 loadVocabExt() 读索引 → Promise.all 并发拉取所有分片 → 同一套 mergeVocabWords() 合并。
+// 加词只改「对应分片 + 该片 count」，代码零改动。
+// 键=word；已存在词条不覆盖（vocabLearned 按 word 匹配，学习标记不丢失）。全程绝不调用 saveData()。
+const VOCAB_EXT_INDEX = 'assets/data/vocab-cet4-ext-index.json?v=20260913e';
+
+// 统一合并：把一批增量词条并入内置 CET_VOCAB；已存在词条（含内置 466）不覆盖。
+// 返回实际追加条数。绝不落盘（不调 saveData）。
+function mergeVocabWords(words) {
+  if (!Array.isArray(words) || typeof CET_VOCAB === 'undefined' || !CET_VOCAB) return 0;
+  var seen = {};
+  CET_VOCAB.forEach(function (w) { if (w && w.word) seen[w.word] = 1; });
+  var added = 0;
+  words.forEach(function (nw) {
+    if (!nw || !nw.word || seen[nw.word]) return; // 已存在词条不覆盖
+    seen[nw.word] = 1; CET_VOCAB.push(nw); added++;
+  });
+  return added;
+}
+
+// 合并后若确有新增，触发词表重渲染（词库侧若存在重渲染入口；不存在则跳过）。
+function afterVocabMerge(added) {
+  if (added > 0) {
+    if (typeof renderVocabList === 'function') { try { renderVocabList(); } catch (e) {} }
+    else if (typeof renderCetVocab === 'function') { try { renderCetVocab(); } catch (e) {} }
+  }
+}
+
+// 增量分片加载：读索引 → 并发拉取所有分片 → 合并。
+// 容错：单片失败 → 跳过该片、console.warn，其余片照常合并（不整体失败）；
+//       索引本身失败（file:// / 离线 / 404）→ 静默回退内置 466 词。
 function loadVocabExt() {
   try {
-    fetch('assets/data/vocab-cet4-ext.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
-      if (!j || !Array.isArray(j.words) || typeof CET_VOCAB === 'undefined' || !CET_VOCAB) return;
-      var seen = {};
-      CET_VOCAB.forEach(function (w) { if (w && w.word) seen[w.word] = 1; });
-      var added = 0;
-      j.words.forEach(function (nw) {
-        if (!nw || !nw.word || seen[nw.word]) return; // 已存在词条不覆盖
-        seen[nw.word] = 1; CET_VOCAB.push(nw); added++;
+    fetch(VOCAB_EXT_INDEX).then(function (r) { return r.ok ? r.json() : null; }).then(function (idx) {
+      if (!idx || !Array.isArray(idx.shards)) return; // 索引不可用：静默回退内置 466
+      var files = [];
+      idx.shards.forEach(function (s) {
+        var f = (s && typeof s === 'object') ? s.file : s; // 兼容 shards 项直接写成文件名的旧格式
+        if (typeof f === 'string' && f) files.push(f);
       });
-      if (added > 0) {
-        if (typeof renderVocabList === 'function') { try { renderVocabList(); } catch (e) {} }
-        else if (typeof renderCetVocab === 'function') { try { renderCetVocab(); } catch (e) {} }
-      }
-    }).catch(function () { /* file:// / 离线：回退内置 466 */ });
+      if (!files.length) return;
+      return Promise.all(files.map(function (f) {
+        return fetch(f)
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .catch(function () { return null; })                              // 单片网络失败 → 视为空
+          .then(function (j) {
+            return (j && Array.isArray(j.words)) ? { file: f, words: j.words } : { file: f, failed: true };
+          });
+      })).then(function (parts) {
+        var merged = [];
+        var failed = [];
+        parts.forEach(function (p) {
+          if (p && !p.failed && Array.isArray(p.words)) merged = merged.concat(p.words);
+          else failed.push(p ? p.file : '?');
+        });
+        if (failed.length) {
+          try { console.warn('[vocab] 分片加载失败，已跳过：' + failed.join(', ')); } catch (e) {}
+        }
+        afterVocabMerge(mergeVocabWords(merged));
+      });
+    }).catch(function () { /* 索引不可用 / file:// 离线：静默回退内置 466 */ });
   } catch (e) { /* fetch 不可用：回退 */ }
 }
 

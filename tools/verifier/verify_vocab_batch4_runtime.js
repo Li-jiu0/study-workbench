@@ -60,10 +60,12 @@ function makeRes(obj) {
 }
 function boot(mode) {
   const uncaught = [];
+  const fetchLog = [];
   const vc = new VirtualConsole();
   vc.on('jsdomError', function (e) { uncaught.push('[jsdomError] ' + (e && e.message ? e.message : String(e))); });
   function fetchStub(u) {
     const url = String(u === undefined || u === null ? '' : u);
+    fetchLog.push(url);
     return Promise.resolve().then(function () {
       if (mode === 'offline' && /vocab-cet4-ext/.test(url)) {
         return { ok: false, status: 404, json: function () { return Promise.reject(new Error('404 ' + url)); } };
@@ -85,7 +87,7 @@ function boot(mode) {
       window.addEventListener('unhandledrejection', function (e) { uncaught.push('[unhandledrejection] ' + String(e && e.reason)); });
     }
   });
-  return { dom: dom, win: dom.window, uncaught: uncaught };
+  return { dom: dom, win: dom.window, uncaught: uncaught, fetchLog: fetchLog };
 }
 
 log('====================================================================');
@@ -127,8 +129,14 @@ log('====================================================================');
   });
   assert('D4 内置 ' + Object.keys(base).length + ' 词未被增量覆盖（离线基线 A/B 对照）', changed.length === 0, changed.slice(0, 8).join(' | '));
 
-  // 增量是否全进入
-  const ext = JSON.parse(fs.readFileSync(path.join(ROOT, 'assets/data/vocab-cet4-ext.json'), 'utf8'));
+  // 增量是否全进入（批次五：读索引 + 遍历 8 片）
+  const extIdx = JSON.parse(fs.readFileSync(path.join(ROOT, 'assets/data/vocab-cet4-ext-index.json'), 'utf8'));
+  const ext = { words: [] };
+  (extIdx.shards || []).forEach(function (s) {
+    const rel = String(s.file).split('?')[0];
+    const sj = JSON.parse(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
+    (sj.words || []).forEach(function (w) { ext.words.push(w); });
+  });
   const extKeys = ext.words.map(function (w) { return String(w.word).toLowerCase().trim(); });
   const missing = extKeys.filter(function (k) { return keys.indexOf(k) < 0; });
   assert('D5 增量 2236 词全部进入 CET_VOCAB（0 条丢失）', missing.length === 0, '缺 ' + missing.length + '：' + missing.slice(0, 8).join(','));
@@ -139,6 +147,20 @@ log('====================================================================');
   await sleep(600);
   assert('D6 合并路径 saveData 调用 0 次', Q.saveCalls() === 0, '调用 ' + Q.saveCalls() + ' 次');
   assert('D7 再次调用 loadVocabExt 幂等（总数仍 2702）', Q.len() === 2702, '实际 ' + Q.len());
+
+  // ---- 批次五任务B：并发加载 + 缓存版本注入 ----
+  const flog = on.fetchLog || [];
+  const shardReqs = flog.filter(function (u) { return /vocab-cet4-ext-[a-z]-[a-z]\.json/.test(u); });
+  const uniqShards = Array.from(new Set(shardReqs.map(function (u) { return u.split('?')[0]; })));
+  assert('E1 8 个词库分片均被真实请求（Promise.all 并发加载）', uniqShards.length === 8,
+    '实际请求 ' + uniqShards.length + '：' + uniqShards.join(', '));
+  assert('E2 所有分片请求均带缓存版本 ?v=20260913e', shardReqs.length > 0 && shardReqs.every(function (u) { return u.indexOf('?v=20260913e') >= 0; }),
+    '样例 ' + shardReqs.slice(0, 2).join(' | '));
+  assert('E3 词库索引请求带 ?v=20260913e', flog.some(function (u) { return u.indexOf('vocab-cet4-ext-index.json?v=20260913e') >= 0; }), '');
+  const legacyReqs = flog.filter(function (u) { return /exam-bank\.json(\?|$)/.test(u) && !/exam-bank-ext/.test(u); });
+  assert('E4 题库覆盖层 legacy(exam-bank.json) 仅被加载 1 次（去重比较已剥离 ?v=）', legacyReqs.length === 1,
+    '实际 ' + legacyReqs.length + '：' + legacyReqs.join(', '));
+  assert('E5 题库 legacy 请求带 ?v=20260913e', legacyReqs.length === 1 && legacyReqs[0].indexOf('?v=20260913e') >= 0, legacyReqs.join(', '));
 
   finish(on.uncaught);
 })().catch(function (e) { log('verifier 异常：' + (e && e.stack ? e.stack : e)); finish([]); });
