@@ -727,6 +727,24 @@ input, textarea { font-family: inherit; outline: none; }
   text-align: center;
 }
 
+/* 批次三 T02（R1-4）：统一空态组件（三件套之 CSS） */
+/* 与 .stats-empty-hint / .week-chart-empty 同区，禁止各写各的空态 */
+.empty-hint {
+  padding: 20px 12px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--xt-font-sm, 13px);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: .2s;
+}
+.empty-hint:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+/* 【后续扩展点】可升级为骨架屏或带插画的引导卡 */
+
 /* 成就徽章 */
 .achievement-badge {
   display: inline-block;
@@ -2627,3 +2645,47 @@ body.dark .subpage-group-card:active{background:rgba(255,255,255,.06)}
 }
 .confirm-actions { display: flex; gap: var(--xt-space-2); justify-content: flex-end; }
 .confirm-actions .xt-btn { min-width: 80px; min-height: 36px; }
+
+/* 批次三 T19（R6-2/3）：统一弹窗 .app-modal 基础设施（三件套之 CSS） */
+/* 约定：遮罩 .app-modal-mask（加 .active 显示）+ 卡片 .app-modal + 关闭钮 .app-modal-close；
+   打开锁 body 滚动（.modal-lock）；明暗主题随 var(--bg)/var(--text) 自动变色。
+   禁 mask / filter / symbol use（老 WebView 不支持）。【后续扩展点：焦点陷阱 / 过渡动画】 */
+.app-modal-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 2300;
+  background: rgba(0, 0, 0, .45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.app-modal-mask.active { display: flex; }
+.app-modal {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  max-height: 88vh;
+  overflow: auto;
+  background: var(--bg, #fff);
+  color: var(--text, #232536);
+  border-radius: 16px;
+  box-shadow: 0 20px 50px -16px rgba(0, 0, 0, .4);
+}
+.app-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: var(--border, #eee);
+  color: var(--text, #232536);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+body.modal-lock { overflow: hidden; }
+/* 主体滚动锁定时兼容老 WebView：禁用 touch 滚动 */
+html.modal-lock, body.modal-lock { touch-action: none; }

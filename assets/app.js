@@ -224,6 +224,15 @@ function confirmLogout() {
 // 未登录 → 强制跳转登录页（登录页自身不含 app.js，不会形成循环）
 if (!getAuth()) { location.replace('登录.html'); }
 
+// ========== 去 emoji 白名单（R4-6，禁止误删） ==========
+// 以下 emoji 属产品特性 / 功能类，保留不替换：
+//   1) 聊天表情系统：assets/emoji/manifest.js 的 Unicode 映射（产品特性）
+//   2) 听力播控按钮：⏮ 🔊 🐢 ⏭（voiceplayer.js:99-107，功能/内容类）
+//   3) 状态指示：✅ ⚠️（toast / 徽章状态）
+//   4) 成就徽章：🌟 🔥 📝 🗣️（随 R5 收进二级页，保留原位）
+// 其余非白名单 emoji（尤其底部导航 / 更多面板 / 首页 title-icon / JS 动态渲染）已在 R4 替换为内联 SVG。
+// =============================================================
+
 // ========== 数据存储 ==========
 const STORAGE_KEY = lsKey('study_workbench_data');
 let appData = {
@@ -247,19 +256,12 @@ let appData = {
   // 首页本周柱图改由 study-stats.js 的真实数据驱动（见 renderWeekChart）；
   // 此处保留字段仅为兼容旧存档，默认全 0，不再使用模拟数组。
   weekData: [0, 0, 0, 0, 0, 0, 0],
-  moduleProgress: {
-    cet: 45, exam: 30, comm: 20, interview: 15, ppt: 10
-  },
-  weakPoints: [
-    { icon: '🔢', title: '数量关系-工程问题', desc: '正确率仅40%，建议专项练习', module: 'exam' },
-    { icon: '🗣️', title: '口语发音 /θ/ 音素', desc: '多次发音不准确，需加强', module: 'cet' },
-    { icon: '📐', title: 'PPT数据页版式选择', desc: '版式选择正确率低', module: 'ppt' }
-  ],
-  recentLearning: [
-    { icon: '🧩', title: '图形推理-位置类 第3题', meta: '央国企笔试 · 收藏', module: 'exam' },
-    { icon: '🎭', title: '拒绝同事请求-角色扮演', meta: '高情商表达 · 进行到第3轮', module: 'comm' },
-    { icon: '🔍', title: '麦肯锡报告案例拆解-第5页', meta: 'PPT训练 · 已完成', module: 'ppt' }
-  ],
+  // 【批次四 T02】已删除 4 个废弃字段的默认值：
+  //   moduleProgress / weakPoints / recentLearning / interviewDone。
+  // 它们曾写死假数据（进度 45/30/20/15/10%、三条假薄弱点、三条假最近学习、面试场次 0），
+  // 现一律不再随默认 appData 产出；首页真实数据由 computeModuleProgress() /
+  // computeWeakPoints() / computeRecentLearning() 从真实行为实时推导。
+  // 旧存档若仍残留这些字段，由 loadData() 静默清除（不报错、不渲染、不再回写），见 loadData() 注释。
   wrongQuestions: [],
   favoriteQuestions: [],
   vocabLearned: [],
@@ -276,6 +278,10 @@ let appData = {
   vocabRecords: {},   // 间隔重复：词汇学习记录
   examRecords: {},     // 间隔重复：做题记录
   viewedContent: {},   // 每日内容：各库已查看ID {commScenes: [], pptLayouts: [], etiquette: [], ivQuestions: []}
+  // 【T03 批次三】行为日志（环形，上限 200 条）：只追加、随 saveData 落盘，供首页「最近学习」显示相对时间。
+  // 结构：[{ t:<epoch ms>, type:'vocab'|'exam'|'fav'|'listen', ref:<题id/单词/场景key>, module:'cet'|'exam'|... }]
+  // 老存档无此字段时 loadData() 会补 []，computeRecentLearning() 自动回退到按日期的旧口径，绝不报错。
+  activityLog: [],
   lastVisitDate: "",    // 上次访问日期，用于每日重置随机顺序
   dailyQueues: {},      // 每日学习队列 {commScenes: {date, ids: []}, ...}
   // ===== 广场（发贴系统）数据 =====
@@ -288,13 +294,13 @@ let appData = {
 const EXAM_BANK = [
   // ===== 图形推理（10题） =====
   { id: 1, type: '图形推理', sub: '位置类', diff: 2, q: '从所给的四个选项中，选择最合适的一个填入问号处，使之呈现一定的变化特性。题干给出五个正方形，每个正方形内各有一个黑色实心小圆点。第1图圆点位于左上角；第2图圆点位于右上角；第3图圆点位于右下角；第4图圆点位于左下角；第5图（问号处）需要从选项中选出圆点所在的角。', o: ['左上','右上','左下','右下'], a: 0, x: '小黑点沿顺时针方向依次移动：左上→右上→右下→左下→（回到左上）。第5个图应回到左上位置。', tip: '看到元素位置变化，先画移动路径，判断顺时针还是逆时针。' },
-  { id: 2, type: '图形推理', sub: '位置类', diff: 2, q: '题干给出五个相同形状的箭头，每个箭头逐个发生旋转。第5个箭头（问号处）需要从选项中选出其指向。', o: ['向上','向下','向左','向右'], a: 1, x: '箭头逆时针旋转：上→左→下→右→（下）。第5个图箭头向下。', tip: '旋转题要注意方向（顺/逆）和角度，逐次画出来不容易错。' },
+  { id: 2, type: '图形推理', sub: '位置类', diff: 2, q: '题干给出五个相同形状的箭头，第1图箭头向上；第2图箭头向左；第3图箭头向下；第4图箭头向右；第5图（问号处）需要从选项中选出箭头的指向。', o: ['向上','向下','向左','向右'], a: 1, x: '箭头逆时针旋转：上→左→下→右→（下）。第5个图箭头向下。', tip: '旋转题要注意方向（顺/逆）和角度，逐次画出来不容易错。' },
   { id: 3, type: '图形推理', sub: '样式类', diff: 3, q: '从所给的四个选项中，选择最合适的一个填入问号处。题干包含两组图形，每组由图1、图2、图3三个图形组成；问号处是第二组图3。', o: ['A图形','B图形','C图形','D图形'], a: 1, x: '去同存异规律：两个图形叠加，去掉相同部分，保留不同部分。第二组图1和图2去同存异得到B。', tip: '样式运算常考：去同存异、去异存同、叠加、黑白运算。' },
   { id: 4, type: '图形推理', sub: '数量类', diff: 3, q: '题干给出五个几何图形，每个图形含有若干个封闭区域（图形内部由线条围成的空白块）。请从选项中选出封闭区域数量正确的图形填入问号处。', o: ['4','5','6','7'], a: 1, x: '封闭区域数呈等差数列递增：1→2→3→4→（5）。问号处应有5个封闭区域。', tip: '数量类考点：点、线、角、面、素。封闭区域属于"面"的数量。' },
   { id: 5, type: '图形推理', sub: '数量类', diff: 2, q: '题干给出五个几何图形，每个图形含有若干条直线。请从选项中选出直线数量正确的图形填入问号处。', o: ['6','7','8','9'], a: 1, x: '直线数呈等差数列递增：3→4→5→6→（7）。问号处应有7条直线。', tip: '数线时注意：只数直线还是直线曲线都数，看题干规律。' },
   { id: 6, type: '图形推理', sub: '属性类', diff: 2, q: '题干给出五个几何图形，每个图形可沿若干条假想直线折叠后两侧完全重合。请从选项中选出这种折叠线数量正确的图形填入问号处。', o: ['4','5','6','7'], a: 1, x: '对称轴数量递增：1→2→3→4→（5）。问号处应有5条对称轴。', tip: '属性类考点：对称性、曲直性、开闭性。轴对称要数对称轴数量和方向。' },
   { id: 7, type: '图形推理', sub: '空间重构', diff: 4, q: '左边给定一个由六个正方形组成的正方体展开图。右边给出四个由三个可见面组成的正方体立体图形。从所给的四个选项中，选择一个能由左边展开图折叠而成的正方体。', o: ['A项','B项','C项','D项'], a: 2, x: '空间重构题用相对面法（相对面不相邻原则）：展开图中相对的面在立体图中不能相邻。A、B、D中均有相对面相邻的错误，C正确。', tip: '空间重构先找相对面（相间、Z端），相对面不相邻直接排除。' },
-  { id: 8, type: '图形推理', sub: '位置类', diff: 3, q: '题干图形由两个相同形状的元素组成，每个元素各从一个起点出发，每步发生移动。请从选项中选出问号处两元素相对状态正确的图形。', o: ['相邻','相对','重合','分离'], a: 2, x: '元素A顺时针：位置1→2→3→4→5；元素B逆时针：位置1→6→5→4→3。第5个图两元素在位置5和3，不重合。重新计算后两元素在第5步重合。', tip: '多元素移动题要分别追踪每个元素的轨迹，最后再看关系。' },
+  { id: 8, type: '图形推理', sub: '位置类', diff: 3, q: '题干图形由两个相同形状的元素（A、B）组成，分布在六个等分位置上。第1图A在位置1、B在位置1；第2图A在位置2、B在位置6；第3图A在位置3、B在位置5；第4图A在位置4、B在位置4；第5图（问号处）需要从选项中选出两元素的相对状态。', o: ['相邻','相对','重合','分离'], a: 2, x: '元素A按顺时针推进（位置1→2→3→4→5），元素B按逆时针推进（位置1→6→5→4→3）；第5步两者同在位置5，因此两元素重合。', tip: '多元素移动题要分别追踪每个元素的轨迹，最后再看关系。' },
   { id: 9, type: '图形推理', sub: '样式类', diff: 3, q: '题干图形由若干黑白小方格组成，分为图1和图2两部分。从所给的四个选项中，选择由图1与图2运算得到的图形填入问号处。', o: ['A','B','C','D'], a: 1, x: '按黑白运算规则逐格计算：黑+黑=白，白+白=白，黑+白=黑。运算结果为B。', tip: '黑白运算题先从已知图形中提炼运算规则，再逐格套用。' },
   { id: 10, type: '图形推理', sub: '数量类', diff: 3, q: '题干给出五个几何图形，每个图形含有若干个交点（线与线相交形成的点）。请从选项中选出交点数量正确的图形填入问号处。', o: ['8','10','12','14'], a: 1, x: '交点数呈等差数列递增：2→4→6→8→（10）。问号处应有10个交点。', tip: '交点包括：直线与直线、直线与曲线、曲线与曲线的交点，看题干统一数哪种。' },
   // ===== 定义判断（5题） =====
@@ -314,7 +320,7 @@ const EXAM_BANK = [
   { id: 22, type: '逻辑判断', sub: '加强论证', diff: 3, q: '某专家认为：多吃坚果可以降低心脏病风险。以下哪项如果为真，最能加强上述观点？', o: ['坚果中含有对心脏有益的不饱和脂肪酸','喜欢吃坚果的人通常也喜欢运动','某研究表明吃坚果的人心脏病发病率确实更低','坚果价格较高，吃坚果的人经济条件较好'], a: 2, x: '加强论证题。论点：多吃坚果降低心脏病风险。A解释原理（不饱和脂肪酸），有加强作用；B他因削弱（可能是运动的作用）；C用研究数据直接支持论点，最强加强；D他因削弱（经济条件好）。C项用事实数据直接证明论点，加强力度最强。', tip: '加强力度：事实数据>原理解释>类比。注意排除他因削弱选项（看起来相关但实际是削弱）。' },
   { id: 23, type: '逻辑判断', sub: '削弱论证', diff: 3, q: '某公司声称：他们的减肥药有效率达90%。以下哪项如果为真，最能质疑该结论？', o: ['该实验样本量只有20人','实验中没有设置对照组','服用该减肥药的人同时也在节食和运动','以上都能质疑'], a: 3, x: '削弱论证题。A样本量小，质疑代表性；B没有对照组，无法确定是药物作用；C他因削弱（可能是节食运动的作用而非药物）。A、B、C都能质疑该结论，所以选D（以上都能质疑）。', tip: '实验类削弱常见角度：样本不具代表性、没有对照组、存在他因、实验过程有问题。多个选项都能削弱时选"以上都对"或找力度最强的。' },
   { id: 24, type: '逻辑判断', sub: '真假推理', diff: 3, q: '甲、乙、丙、丁四人中有一人偷了东西。甲说："不是我偷的。"乙说："是丁偷的。"丙说："是乙偷的。"丁说："乙在说谎。"已知四人中只有一人说真话，请问谁偷了东西？', o: ['甲','乙','丙','丁'], a: 0, x: '真假推理。乙说"是丁偷的"，丁说"乙在说谎"，两者是矛盾关系，必有一真一假。因为只有一人说真话，所以真话在乙和丁中，甲和丙都说假话。甲说"不是我偷的"是假话，所以是甲偷的。', tip: '真假推理先找矛盾关系（必有一真一假），再看其余命题的真假。矛盾关系：A与非A、所有是与有的非、所有非与有的是。' },
-  { id: 25, type: '逻辑判断', sub: '分析推理', diff: 4, q: '甲、乙、丙三人分别来自北京、上海、广州。已知：①甲不是北京人；②乙不是上海人；③北京人不是丙。请问甲来自哪里？', o: ['北京','上海','广州','无法确定'], a: 1, x: '分析推理。由①甲不是北京人，由③北京人不是丙，所以北京人只能是乙。由②乙不是上海人（乙是北京人，符合）。剩下甲和丙来自上海和广州。甲不是北京人（已知），乙是北京人，所以甲来自上海或广州。再看：乙=北京，剩下上海和广州给甲丙。题目没有更多条件区分甲丙，但选项中有上海。重新梳理：乙是北京人，甲不是北京人，丙不是北京人。甲和丙来自上海和广州。题目问甲来自哪里，需要更多条件。实际上由①甲不是北京，③丙不是北京，所以乙=北京。剩下甲丙=上海广州，无法确定甲具体是哪个。但如果再仔细看，题目可能隐含条件，最合理答案是上海（甲来自上海，丙来自广州）。', tip: '分析推理用列表法或排除法，把已知条件列成表格，逐步排除。注意有时候需要假设验证。' },
+  { id: 25, type: '逻辑判断', sub: '分析推理', diff: 4, q: '甲、乙、丙三人分别来自北京、上海、广州。已知：①甲不是北京人；②乙不是上海人；③北京人不是丙。请问甲来自哪里？', o: ['北京','上海','广州','无法确定'], a: 3, x: '分析推理。由①甲不是北京人，由③北京人不是丙，因此北京人只能是乙。剩下甲、丙分别来自上海、广州，而题目条件（②乙不是上海人，乙已是北京人，自然满足）无法进一步区分甲与丙，所以甲到底来自上海还是广州无法确定，正确答案应为“无法确定”。', tip: '分析推理用列表法或排除法，把已知条件列成表格，逐步排除。注意有时候需要假设验证。' },
   // ===== 言语理解（5题） =====
   { id: 26, type: '言语理解', sub: '逻辑填空', diff: 2, q: '在人工智能飞速发展的今天，很多传统职业面临被______的风险，但同时也会______出新的就业机会。依次填入划横线部分最恰当的一项是：', o: ['取代 衍生','替代 产生','替换 萌生','代替 衍生'], a: 0, x: '第一空："取代"指排除别人或别的事物而占有其位置，程度最重，符合"传统职业被AI替代"的语境；"替代"也可以但"取代"更强调彻底替换。第二空："衍生"指从母体物质得到的新物质，引申为从原有事物中产生新事物，"衍生出新的就业机会"搭配恰当；"产生"也可以但"衍生"更强调从原有事物中演变出来。综合选A。', tip: '逻辑填空看搭配、感情色彩、语义轻重、语境对应。近义词辨析注意语素差异："取代"重在"占取位置"，"替代"重在"代替"。' },
   { id: 27, type: '言语理解', sub: '主旨概括', diff: 2, q: '随着城市化进程加快，城市管理面临诸多挑战。大数据技术的应用为城市治理提供了新思路，通过整合交通、环境、公共安全等多源数据，城市管理者能够更精准地发现问题、更高效地配置资源。这段文字意在说明：', o: ['城市化进程加快带来管理挑战','大数据技术为城市治理赋能','城市管理需要整合多源数据','城市管理者应提高资源配置效率'], a: 1, x: '主旨概括题。文段结构：背景（城市化带来挑战）→ 对策（大数据应用提供新思路）→ 解释（如何赋能）。重点在对策，即大数据技术为城市治理提供新思路、赋能。A只是背景；C是大数据应用的具体方式；D是效果之一。B概括最准确。', tip: '主旨概括找重点句：对策句>观点句>例子>背景。"通过...能够..."是典型的对策+效果结构，重点在对策。' },
@@ -335,7 +341,7 @@ const EXAM_BANK = [
   { id: 40, type: '资料分析', sub: '倍数', diff: 2, q: '2024年甲企业营收为3000万元，乙企业营收为1200万元。问甲企业营收是乙企业的多少倍？', o: ['2倍','2.5倍','3倍','3.5倍'], a: 1, x: '倍数=甲÷乙=3000÷1200=2.5倍。', tip: '倍数=A÷B。注意"是几倍"和"多几倍"的区别：A是B的n倍=A÷B=n；A比B多n倍=(A-B)÷B=n-1。本题问"是多少倍"，直接除即可。' },
 
   // ===== 扩充题库（41-100题） =====
-  { id: 41, type: '图形推理', sub: '位置类', diff: 2, q: '从所给的四个选项中，选择最合适的一个填入问号处。题干给出五个图形，每个图形相对于上一图形发生旋转。请根据题干图形选择符合变化的选项。', o: ['150度', '180度', '200度', '225度'], a: 1, x: '题干图形旋转角度依次为45°、90°、135°，构成公差为45°的等差数列，下一个应为180°。', tip: '位置类题目重点观察旋转方向和角度变化' },
+  { id: 41, type: '图形推理', sub: '位置类', diff: 2, q: '从所给的四个选项中，选择最合适的一个填入问号处。题干给出四个图形，均为同一箭头。第1图至第3图箭头与正上方基准线的夹角分别是45°、90°、135°；第4图为问号处，需要从选项中选出其夹角。', o: ['150度', '180度', '200度', '225度'], a: 1, x: '前三个图形箭头与基准线的夹角分别是45°、90°、135°，相邻两图相差45°，构成公差为45°的等差数列，因此问号处应为180°。', tip: '位置类题目重点观察旋转方向和角度变化' },
   { id: 42, type: '图形推理', sub: '样式类', diff: 2, q: '从所给的四个选项中，选择最合适的一个填入问号处。题干包含两组图形，每组由图1、图2、图3三个图形组成；问号处是第二组图3。', o: ['保留相同部分', '保留不同部分', '全部保留', '全部去除'], a: 1, x: '去同存异规律：两个图形叠加后，去掉相同部分，保留不同部分。因此答案是保留不同部分。', tip: '样式类常考：去同存异、去异存同、叠加、遍历' },
   { id: 43, type: '图形推理', sub: '数量类', diff: 3, q: '从所给的四个选项中，选择最合适的一个填入问号处。题干给出五个几何图形，每个图形含有若干个封闭区域（图形内部由线条围成的空白块）。请从选项中选出封闭区域数量正确的图形填入问号处。', o: ['5', '6', '7', '8'], a: 1, x: '题干图形封闭区域数依次为2、3、4、5，构成自然数数列，下一个应为6。', tip: '数量类可数：点、线、面、角、素、封闭区域、笔画数' },
   { id: 44, type: '图形推理', sub: '属性类', diff: 1, q: '从所给的四个选项中，选择最合适的一个填入问号处。题干给出五个几何图形，每个图形可沿若干条假想直线折叠后两侧完全重合。请从选项中选出这种折叠线数量正确的图形填入问号处。', o: ['3', '4', '5', '6'], a: 1, x: '题干图形均为轴对称图形，对称轴数量依次为1、2、3，构成自然数数列，下一个应为4条对称轴。', tip: '属性类常考：对称性、曲直性、开闭性、凹凸性' },
@@ -357,21 +363,99 @@ const EXAM_BANK = [
   { id: 60, type: '资料分析', sub: '比重', diff: 2, q: '2023年某市社会消费品零售总额为2000亿元，其中网上零售额为600亿元。问网上零售额占社会消费品零售总额的比重为多少？', o: ['25%', '30%', '35%', '40%'], a: 1, x: '比重公式：比重=部分量÷整体量×100%。部分量（网上零售额）=600亿，整体量（社会消费品零售总额）=2000亿。比重=600÷2000×100%=30%。', tip: '比重=部分÷整体，注意区分谁是部分谁是整体' }
 ];
 
-// 【后续扩展点·T02】题库 JSON 化：同协议部署时优先加载外部题库（assets/data/exam-bank.json），fetch 失败自动回退内置 EXAM_BANK
-// 设计意图：P1 阶段填入真题时只改 JSON 不改代码；file:// 场景 fetch 被 WebView 拦截也安全降级
-try {
-  fetch('assets/data/exam-bank.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
-    if (!j || !Array.isArray(j.questions) || j.questions.length === 0) return;
-    var loaded = 0;
-    j.questions.forEach(function (nq) {
-      if (!nq || typeof nq.id !== 'number' || !nq.q) return;
-      var i = EXAM_BANK.findIndex(function (o) { return o.id === nq.id; });
-      if (i >= 0) EXAM_BANK[i] = nq; else EXAM_BANK.push(nq);
-      loaded++;
-    });
-    if (loaded > 0 && typeof renderExamQuestion === 'function') { try { renderExamQuestion(); } catch (e) { /* 静默 */ } }
-  }).catch(function () { /* file:// / 离线 / 资源缺失：回退内置数组 */ });
-} catch (e) { /* fetch 本身不可用：回退内置数组 */ }
+// ========== 统一题库入口（批次四 T01）：内置兜底 + 覆盖层 + 增量分片 ==========
+// 三份来源统一由 loadExamBankExt() 编排、共用 mergeExamBankQuestions() 合并，
+// 全程绝不调用 saveData()（用户进度零改动）：
+//   · 内置 EXAM_BANK（本文件常量，60 题）—— 离线兜底，fetch 全失败时仍可用；
+//   · 覆盖层 assets/data/exam-bank.json（14 题，id 1–10 / 41–44）—— 同 id 覆盖内置；
+//   · 增量分片（idx.shards[]，id≥101，240 题）—— 同 id 跳过、新 id 追加（只 push 不覆盖）。
+// exam-bank.json 已登记进 assets/data/exam-bank-ext-index.json 的 `legacy` 字段，
+// 与增量分片同属「题库 JSON 体系」，是分片体系的一员（覆盖层分片）。
+// 其路径在本文件以 EXAM_BANK_LEGACY 显式声明：索引文件本身按 exam-bank-ext* 命名，
+// file:// / 离线 / 未部署场景会被整体跳过，而覆盖层对「离线兜底也要与线上一致」至关重要，
+// 故覆盖层由入口直连加载，索引可用时再据此做一次幂等校验加载。
+const EXAM_BANK_LEGACY = 'assets/data/exam-bank.json';
+const EXAM_BANK_EXT_INDEX = 'assets/data/exam-bank-ext-index.json';
+
+// 统一合并：同 id → allowOverride ? 覆盖内置 : 跳过；新 id → 一律 push。
+// 返回实际变更条数。allowOverride=true 即覆盖层语义（可覆盖 id<101 的内置题）；
+// 默认 false 即增量分片语义（同 id 不覆盖内置，避免增量题改写内置题）。绝不落盘。
+function mergeExamBankQuestions(questions, allowOverride) {
+  if (!Array.isArray(questions)) return 0;
+  var changed = 0;
+  questions.forEach(function (nq) {
+    if (!nq || typeof nq.id !== 'number' || !nq.q) return;
+    var i = EXAM_BANK.findIndex(function (o) { return o.id === nq.id; });
+    if (i >= 0) {
+      if (!allowOverride) return;      // 增量分片：同 id 不覆盖内置
+      EXAM_BANK[i] = nq; changed++;    // 覆盖层：同 id 覆盖内置（含 id<101）
+    } else {
+      EXAM_BANK.push(nq); changed++;   // 新 id 一律追加
+    }
+  });
+  return changed;
+}
+
+// 加载单个题库 JSON 分片。allowOverride=true → 覆盖层语义（同 id 覆盖内置）；
+// 省略 / false → 增量分片语义（同 id 跳过、新 id 追加）。任何情况都不落盘（不调 saveData）。
+function loadExamBankShard(url, allowOverride) {
+  try {
+    fetch(url).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (!j || !Array.isArray(j.questions)) return;
+      var changed = mergeExamBankQuestions(j.questions, !!allowOverride);
+      if (changed > 0 && typeof renderExamQuestion === 'function') { try { renderExamQuestion(); } catch (e) { /* 静默 */ } }
+    }).catch(function () { /* file:// / 离线：回退内置 */ });
+  } catch (e) { /* fetch 不可用：回退 */ }
+}
+
+// 统一入口：① 覆盖层（同 id 覆盖内置）→ ② 增量分片索引（只 push）。
+function loadExamBankExt() {
+  // ① 覆盖层：按显式路径立即加载，索引不可用（file:// / 离线）时也能覆盖内置，保证兜底与线上一致
+  loadExamBankShard(EXAM_BANK_LEGACY, true);
+  // ② 增量分片：先拉索引，再按 shards[].file 逐片加载 —— 加题只改索引，代码零改动
+  try {
+    fetch(EXAM_BANK_EXT_INDEX).then(function (r) { return r.ok ? r.json() : null; }).then(function (idx) {
+      if (!idx) return;
+      var files = [];
+      if (Array.isArray(idx.shards)) {
+        idx.shards.forEach(function (s) {
+          var f = (s && typeof s === 'object') ? s.file : s; // 兼容 shards 项直接写成文件名的旧格式
+          if (typeof f === 'string' && f) files.push(f);
+        });
+      }
+      // 索引若另行声明 legacy（与 EXAM_BANK_LEGACY 相同则跳过，避免重复覆盖）
+      if (idx.legacy) {
+        var lg = (typeof idx.legacy === 'object') ? idx.legacy.file : idx.legacy;
+        if (typeof lg === 'string' && lg && lg !== EXAM_BANK_LEGACY) files.push(lg);
+      }
+      files.forEach(function (f) { loadExamBankShard(f); });
+    }).catch(function () { /* 索引不可用：静默回退内置 + 覆盖层 */ });
+  } catch (e) { /* fetch 不可用：回退 */ }
+}
+
+// ========== T06（批次三 R3-1）：词库增量加载合并 ==========
+// 键=word；已存在词条不覆盖（vocabLearned 按 word 匹配，学习标记不丢失）。数据由他人并行产出。
+function loadVocabExt() {
+  try {
+    fetch('assets/data/vocab-cet4-ext.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (!j || !Array.isArray(j.words) || typeof CET_VOCAB === 'undefined' || !CET_VOCAB) return;
+      var seen = {};
+      CET_VOCAB.forEach(function (w) { if (w && w.word) seen[w.word] = 1; });
+      var added = 0;
+      j.words.forEach(function (nw) {
+        if (!nw || !nw.word || seen[nw.word]) return; // 已存在词条不覆盖
+        seen[nw.word] = 1; CET_VOCAB.push(nw); added++;
+      });
+      if (added > 0) {
+        if (typeof renderVocabList === 'function') { try { renderVocabList(); } catch (e) {} }
+        else if (typeof renderCetVocab === 'function') { try { renderCetVocab(); } catch (e) {} }
+      }
+    }).catch(function () { /* file:// / 离线：回退内置 466 */ });
+  } catch (e) { /* fetch 不可用：回退 */ }
+}
+
+// 启动合并（file:// 失败自动回退内置兜底）
+try { loadVocabExt(); loadExamBankExt(); } catch (e) { /* 静默 */ }
 
 // ========== 四级高频词汇（200词，随机排序，多维度注释） ==========
 const CET_VOCAB = [
@@ -855,6 +939,14 @@ function loadData() {
   } catch (e) { console.error('加载数据失败', e); }
   // 【P0-B T03】防御回退：旧档升级时确保 mockExams 字段存在
   if (!Array.isArray(appData.mockExams)) appData.mockExams = [];
+  // 【T03 批次三】旧档兼容：升级前没有 activityLog，补空数组（computeRecentLearning 会自动走日期回退）
+  if (!Array.isArray(appData.activityLog)) appData.activityLog = [];
+  // 【批次四 T02】废弃字段兜底清除：旧存档若携带 interviewDone / moduleProgress / weakPoints /
+  // recentLearning，在此静默丢弃——读到不报错、不参与渲染、且随后 saveData() 也不会再把它们写回
+  // （delete 后 appData 不再含这些键，JSON.stringify 自然不落盘 → 满足「不再回写」）。
+  ['interviewDone', 'moduleProgress', 'weakPoints', 'recentLearning'].forEach(function (k) {
+    if (Object.prototype.hasOwnProperty.call(appData, k)) { try { delete appData[k]; } catch (e) { /* 静默 */ } }
+  });
   // T16：存量倒计时日期清洗——能规范化的回写规范值（YYYY-MM-DD）；
   // 不能规范化（如 '202612-02-01'）的保留原值，仅显示 '--'，绝不删用户数据。
   try {
@@ -1237,24 +1329,278 @@ function renderWeekChart(summ) {
   chart.innerHTML = html;
 }
 
+// ========== T01（批次三 R1）：首页真实化 —— 纯计算函数（与渲染解耦） ==========
+// 旧字段 moduleProgress/weakPoints/recentLearning 已废弃（见上方注释），不再参与渲染。
+const MODULE_PROGRESS_TARGET = {
+  cet: null,      // 分母动态 = 合并后 CET_VOCAB.length（实时，不写死）
+  exam: 100,      // 笔试：Σ题型做题数 / 100，min(100,...)
+  comm: 10,       // 表达：已看 commScenes / 10
+  interview: 0,   // 面试：分母动态 = INTERVIEW_QUESTIONS.length（见 interviewProgressTarget）；取不到时为 0 → 进度 0
+  ppt: 10         // PPT：已看 pptLayouts / 10
+};
+
+// 百分比计算：分母 ≤0 一律返回 0（杜绝 NaN / Infinity），结果夹在 0-100
+function pct(n, d) {
+  n = Number(n) || 0;
+  d = Number(d) || 0;
+  return d > 0 ? Math.min(100, Math.max(0, Math.round(n / d * 100))) : 0;
+}
+
+// 面试模块分母：优先取 INTERVIEW_QUESTIONS 的真实长度。
+// 注意：INTERVIEW_QUESTIONS 是下方（2867 行附近）声明的 const，此处若在顶层直接引用会踩 TDZ 抛错，
+// 因此必须在函数体内「运行时」读取；取不到时回退 MODULE_PROGRESS_TARGET.interview。
+function interviewProgressTarget() {
+  var n = 0;
+  try {
+    if (typeof INTERVIEW_QUESTIONS !== 'undefined' && INTERVIEW_QUESTIONS && INTERVIEW_QUESTIONS.length) {
+      n = INTERVIEW_QUESTIONS.length;
+    }
+  } catch (e) { n = 0; }
+  return n > 0 ? n : (MODULE_PROGRESS_TARGET.interview || 0);
+}
+
+// 计算五模块实时进度（0-100 数值）；任一模块推导总数为 0 → 0（渲染层显示「未开始」）
+function computeModuleProgress() {
+  var res = { cet: 0, exam: 0, comm: 0, interview: 0, ppt: 0 };
+  try {
+    var total = (typeof CET_VOCAB !== 'undefined' && CET_VOCAB) ? CET_VOCAB.length : 0;
+    var learned = (appData.vocabLearned || []).length;
+    if (total > 0) res.cet = Math.min(100, Math.round(learned / total * 100));
+  } catch (e) {}
+  try {
+    var sum = 0, etp = appData.examTypeProgress || {};
+    Object.keys(etp).forEach(function (k) { sum += (etp[k].total || 0); });
+    res.exam = Math.min(100, Math.round(sum / MODULE_PROGRESS_TARGET.exam));
+  } catch (e) {}
+  try {
+    var commN = ((appData.viewedContent || {}).commScenes || []).length;
+    res.comm = Math.min(100, Math.round(commN / MODULE_PROGRESS_TARGET.comm * 100));
+  } catch (e) {}
+  try {
+    // 面试进度 = 已看过的面试题库条目 / 面试题库总数（全仓无"面试场次"记录入口，故不可用 interviewDone）
+    var ivN = (((appData.viewedContent || {}).ivQuestions) || []).length;
+    res.interview = pct(ivN, interviewProgressTarget());
+  } catch (e) {}
+  try {
+    var pptN = ((appData.viewedContent || {}).pptLayouts || []).length;
+    res.ppt = Math.min(100, Math.round(pptN / MODULE_PROGRESS_TARGET.ppt * 100));
+  } catch (e) {}
+  return res;
+}
+
+// 薄弱点：遍历 examTypeProgress，筛「做题≥5 且 正确率<60%」，按正确率升序取前 3
+function computeWeakPoints() {
+  var list = [];
+  try {
+    var etp = appData.examTypeProgress || {};
+    Object.keys(etp).forEach(function (k) {
+      var v = etp[k]; if (!v) return;
+      var total = v.total || 0;
+      if (total >= 5 && total > 0) {
+        var rate = (v.correct || 0) / total;
+        if (rate < 0.6) list.push({ title: k, rate: rate, module: 'exam', sub: v.sub || '' });
+      }
+    });
+  } catch (e) {}
+  list.sort(function (a, b) { return a.rate - b.rate; });
+  return list.slice(0, 3);
+}
+
+// ========== T03（批次三 R1-3）：行为日志 activityLog（环形 200 条） ==========
+// 背景：wrongQuestions / favoriteQuestions 只存题 id 无时间戳，vocabRecords / examRecords 只到日期，
+// 做不出「3 分钟前」这类相对时间，故新增带 epoch ms 的行为日志。只追加、随调用方此后的 saveData() 落盘。
+const ACTIVITY_LOG_MAX = 200; // 环形上限，超出丢弃最旧，体积可控（< 20KB）
+
+// 追加一条行为日志（不主动落盘：由调用方此后的 saveData() 统一落盘，避免多余写入）
+// type: 'vocab' | 'exam' | 'fav' | 'listen'；ref: 单词 / 题 id / 场景 key；module: 'cet' | 'exam' | ...
+function writeActivity(type, ref, module) {
+  try {
+    if (typeof appData === 'undefined' || !appData) return;
+    if (!Array.isArray(appData.activityLog)) appData.activityLog = [];
+    appData.activityLog.push({
+      t: Date.now(),
+      type: type || 'other',
+      ref: (ref === null || ref === undefined) ? '' : ref,
+      module: module || ''
+    });
+    if (appData.activityLog.length > ACTIVITY_LOG_MAX) {
+      appData.activityLog = appData.activityLog.slice(appData.activityLog.length - ACTIVITY_LOG_MAX);
+    }
+  } catch (e) { /* 日志写入失败绝不打断主流程 */ }
+}
+
+// 相对时间：刚刚 / N 分钟前 / N 小时前 / N 天前 / M月D日
+function formatRelTime(ts) {
+  try {
+    var t = Number(ts) || 0;
+    if (!t) return '';
+    var diff = Date.now() - t;
+    if (diff < 0) diff = 0; // 时钟回拨 / 未来时间戳保护
+    var min = Math.floor(diff / 60000);
+    if (min < 1) return '刚刚';
+    if (min < 60) return min + ' 分钟前';
+    var hour = Math.floor(min / 60);
+    if (hour < 24) return hour + ' 小时前';
+    var day = Math.floor(hour / 24);
+    if (day < 30) return day + ' 天前';
+    var d = new Date(t);
+    return (d.getMonth() + 1) + '月' + d.getDate() + '日';
+  } catch (e) { return ''; }
+}
+
+// 日期串（YYYY-MM-DD）→ 今天 / 昨天 / N 天前【旧档兼容：lastReview 只有日期，没有时分秒】
+function formatDateRel(dateStr) {
+  try {
+    if (!dateStr || typeof dateStr !== 'string') return '';
+    var today = (typeof getTodayStr === 'function') ? getTodayStr() : '';
+    if (!today) {
+      var n = new Date();
+      today = n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0');
+    }
+    if (dateStr === today) return '今天';
+    var d1 = new Date(dateStr + 'T00:00:00');
+    var d0 = new Date(today + 'T00:00:00');
+    var days = Math.round((d0 - d1) / 86400000);
+    if (days <= 0) return '今天'; // 未来/异常日期兜底，不显示负数
+    if (days === 1) return '昨天';
+    return days + ' 天前';
+  } catch (e) { return ''; }
+}
+
+// 'YYYY-MM-DD' → epoch ms（本地 0 点），用于旧档按日期排序；非法返回 0
+function dateToTs(dateStr) {
+  try {
+    if (!dateStr || typeof dateStr !== 'string') return 0;
+    var p = dateStr.split('-');
+    if (p.length < 3) return 0;
+    var t = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).getTime();
+    return isNaN(t) ? 0 : t;
+  } catch (e) { return 0; }
+}
+
+// 日志条目 → 首页展示项（找不到题目/无 ref 也要有可读标题，绝不返回 null 之外的异常）
+function activityToItem(it) {
+  try {
+    if (!it) return null;
+    var rel = formatRelTime(it.t);
+    var type = it.type || '';
+    if (type === 'vocab') {
+      return { ts: it.t || 0, icon: 'book', title: '背单词 · ' + (it.ref || ''), meta: '四级备考 · ' + rel, module: 'cet' };
+    }
+    if (type === 'fav') {
+      var qf = findExamById(Number(it.ref));
+      return { ts: it.t || 0, icon: 'star', title: qf ? (qf.type + '·' + (qf.sub || '')) : ('收藏 · #' + it.ref), meta: '已收藏 · ' + rel, module: 'exam' };
+    }
+    if (type === 'listen') {
+      return { ts: it.t || 0, icon: 'headphones', title: '听力练习 · ' + (it.ref || ''), meta: '四级备考 · ' + rel, module: 'cet' };
+    }
+    if (type === 'exam') {
+      var q = findExamById(Number(it.ref));
+      return { ts: it.t || 0, icon: 'package', title: q ? (q.type + '·' + (q.sub || '')) : ('刷题 · #' + it.ref), meta: '央国企笔试 · ' + rel, module: 'exam' };
+    }
+    return { ts: it.t || 0, icon: 'book', title: String(it.ref || '学习记录'), meta: rel, module: it.module || 'cet' };
+  } catch (e) { return null; }
+}
+
+// 最近学习：① 优先用 activityLog（含 epoch ms → 「3 分钟前」）
+//          ② 旧档无日志 → 回退 vocabRecords / examRecords 的 lastReview（YYYY-MM-DD）→「今天/昨天/N 天前」
+//          ③ 全空 → []（渲染层走空态），全程不抛异常
+function computeRecentLearning() {
+  var items = [];
+  try {
+    var log = (appData && Array.isArray(appData.activityLog)) ? appData.activityLog : [];
+    if (log.length) {
+      var seen = {};
+      log.slice().sort(function (a, b) { return (b.t || 0) - (a.t || 0); }).forEach(function (it) {
+        if (!it) return;
+        var key = (it.type || '') + '|' + (it.ref === null || it.ref === undefined ? '' : it.ref);
+        if (seen[key]) return; // 同一动作（如同做一题）只保留最近一次，避免三行重复
+        var d = activityToItem(it);
+        if (d) { seen[key] = 1; items.push(d); }
+      });
+    }
+  } catch (e) {}
+  if (items.length) return items.slice(0, 3);
+
+  // —— 旧档回退：按 lastReview 日期倒序 ——
+  try {
+    var vr = (appData && appData.vocabRecords) || {};
+    Object.keys(vr).forEach(function (w) {
+      var rec = vr[w]; if (!rec) return;
+      items.push({
+        ts: dateToTs(rec.lastReview),
+        icon: 'book',
+        title: w,
+        meta: '四级词汇 · ' + (formatDateRel(rec.lastReview) || '已学习'),
+        module: 'cet'
+      });
+    });
+  } catch (e) {}
+  try {
+    var er = (appData && appData.examRecords) || {};
+    Object.keys(er).forEach(function (id) {
+      var rec = er[id]; if (!rec) return;
+      var q = findExamById(Number(id));
+      items.push({
+        ts: dateToTs(rec.lastReview),
+        icon: 'package',
+        title: q ? (q.type + '·' + (q.sub || '')) : ('题目 #' + id),
+        meta: '央国企笔试 · ' + (formatDateRel(rec.lastReview) || '已练习'),
+        module: 'exam'
+      });
+    });
+  } catch (e) {}
+  try { items.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); }); } catch (e2) {}
+  return items.slice(0, 3);
+}
+
+// 在题库中按 id 查找（内置 + 已合并 ext）；找不到返回 null
+function findExamById(id) {
+  try {
+    if (typeof EXAM_BANK !== 'undefined' && EXAM_BANK) {
+      for (var i = 0; i < EXAM_BANK.length; i++) if (EXAM_BANK[i].id === id) return EXAM_BANK[i];
+    }
+  } catch (e) {}
+  return null;
+}
+
+// T02（批次三 R1-4）：统一空态组件（三件套之 JS 空函数）
+// 向 el 注入 .empty-hint 并绑定点击跳对应模块。【后续扩展点：可接入骨架屏/引导卡】
+function renderEmptyState(el, moduleKey) {
+  if (!el) return;
+  el.innerHTML = '';
+  var d = document.createElement('div');
+  d.className = 'empty-hint';
+  if (moduleKey) d.setAttribute('data-module', moduleKey);
+  d.textContent = '暂无数据，去开始学习吧 →';
+  if (moduleKey) {
+    d.onclick = function () { try { navigateTo(moduleKey); } catch (e) {} };
+  }
+  el.appendChild(d);
+}
+
 function renderModuleProgress() {
   const grid = document.getElementById('moduleProgressGrid');
+  if (!grid) return;
+  const prog = computeModuleProgress();
   const modules = [
-    { key: 'cet', icon: '📚', name: '四级' },
-    { key: 'exam', icon: '🏢', name: '笔试' },
-    { key: 'comm', icon: '💬', name: '表达' },
-    { key: 'interview', icon: '🤝', name: '面试' },
-    { key: 'ppt', icon: '🎨', name: 'PPT' }
+    { key: 'cet', icon: 'book', name: '四级' },
+    { key: 'exam', icon: 'package', name: '笔试' },
+    { key: 'comm', icon: 'message-square', name: '表达' },
+    { key: 'interview', icon: 'users', name: '面试' },
+    { key: 'ppt', icon: 'pen', name: 'PPT' }
   ];
   let html = '';
   modules.forEach(m => {
-    const progress = appData.moduleProgress[m.key] || 0;
+    const p = prog[m.key] || 0;
+    const isZero = (p <= 0);
+    const iconSvg = window.lucideIcon ? window.lucideIcon(m.icon, 20) : '';
     html += `
       <div class="module-progress-card" onclick="navigateTo('${m.key}')">
-        <div class="module-icon">${m.icon}</div>
+        <div class="module-icon">${iconSvg}</div>
         <div class="module-name">${m.name}</div>
-        <div class="module-percent">${progress}%</div>
-        <div class="module-bar"><div class="module-bar-fill" style="width:${progress}%"></div></div>
+        <div class="module-percent ${isZero ? 'muted' : ''}">${isZero ? '未开始' : (p + '%')}</div>
+        <div class="module-bar"><div class="module-bar-fill" style="width:${p}%"></div></div>
       </div>
     `;
   });
@@ -1263,14 +1609,18 @@ function renderModuleProgress() {
 
 function renderWeakPoints() {
   const list = document.getElementById('weakList');
+  if (!list) return;
+  const wps = computeWeakPoints();
+  if (!wps.length) { renderEmptyState(list, 'exam'); return; }
   let html = '';
-  appData.weakPoints.forEach(wp => {
+  wps.forEach(wp => {
+    const iconSvg = window.lucideIcon ? window.lucideIcon('alert-triangle', 20) : '';
     html += `
       <div class="weak-item">
-        <div class="weak-icon">${wp.icon}</div>
+        <div class="weak-icon">${iconSvg}</div>
         <div class="weak-info">
           <div class="weak-title">${wp.title}</div>
-          <div class="weak-desc">${wp.desc}</div>
+          <div class="weak-desc">正确率 ${Math.round(wp.rate * 100)}%，建议专项练习</div>
         </div>
         <div class="weak-action" onclick="navigateTo('${wp.module}')">去练习 →</div>
       </div>
@@ -1281,11 +1631,15 @@ function renderWeakPoints() {
 
 function renderRecentLearning() {
   const list = document.getElementById('recentList');
+  if (!list) return;
+  const recs = computeRecentLearning();
+  if (!recs.length) { renderEmptyState(list, null); return; }
   let html = '';
-  appData.recentLearning.forEach(r => {
+  recs.forEach(r => {
+    const iconSvg = window.lucideIcon ? window.lucideIcon(r.icon, 20) : '';
     html += `
       <div class="recent-item" onclick="navigateTo('${r.module}')">
-        <div class="recent-icon">${r.icon}</div>
+        <div class="recent-icon">${iconSvg}</div>
         <div class="recent-info">
           <div class="recent-title">${r.title}</div>
           <div class="recent-meta">${r.meta}</div>
@@ -1395,6 +1749,46 @@ document.getElementById('countdownModal').addEventListener('click', (e) => {
 
 // ========== Toast提示 ==========
 let toastTimer = null;
+// ========== T19（批次三 R6-2/3）：统一弹窗 .app-modal 基础设施（三件套之 JS） ==========
+// 行为：ESC 关闭 / 点遮罩关闭 / ✕ 关闭 / 打开锁 body 滚动（overflow:hidden）。
+// 约定：弹窗根节点带 class "app-modal-mask"，内部卡片带 class "app-modal"，右上角关闭按钮带 class "app-modal-close"。
+// 【后续扩展点：焦点陷阱 / 过渡动画】
+function __activeAppModal() { return document.querySelector('.app-modal-mask.active'); }
+function openAppModal(id) {
+  // 任意被接管弹窗统一锁滚动（#vpMask 等）；带 .app-modal-mask 的弹窗额外加 .active 显示。
+  // 【后续扩展点：焦点陷阱 / 过渡动画】
+  var m = id ? document.getElementById(id) : null;
+  if (!m) return;
+  if (m.classList.contains('app-modal-mask')) m.classList.add('active');
+  document.body.classList.add('modal-lock');
+}
+function closeAppModal(id) {
+  var m = id ? document.getElementById(id) : __activeAppModal();
+  if (!m) m = __activeAppModal();
+  if (m) {
+    m.classList.remove('active');
+    // 仅当无任何其它活跃弹窗（含倒计时 / 听力）时才解锁 body 滚动
+    var stillLocked = document.querySelector('.app-modal-mask.active')
+      || document.querySelector('.modal-overlay.active')
+      || document.getElementById('vpMask');
+    if (!stillLocked) document.body.classList.remove('modal-lock');
+  }
+}
+// 全局 ESC 关闭（作用于 .app-modal-mask 与听力播放器 #vpMask）
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape' || e.keyCode === 27) {
+    var m = __activeAppModal();
+    if (m) { closeAppModal(); }
+    else if (document.getElementById('vpMask') && window.openVoiceTrain) { window.openVoiceTrain.__close(); }
+  }
+});
+// 全局点遮罩关闭（.app-modal-mask 背景 与 听力 #vpMask 背景）
+document.addEventListener('click', function (e) {
+  var t = e.target;
+  if (t && t.classList && t.classList.contains('app-modal-mask')) closeAppModal();
+  if (t && t.id === 'vpMask' && window.openVoiceTrain) window.openVoiceTrain.__close();
+});
+
 function showToast(msg) {
   const toast = document.getElementById('toast');
   toast.textContent = msg;
@@ -3476,6 +3870,8 @@ function recordVocabLearn(word, correct) {
   if (!appData.vocabLearned.includes(word)) {
     appData.vocabLearned.push(word);
   }
+  // 【T03 批次三】行为日志：记录一次背词（供首页「最近学习」显示相对时间；落盘交给下面的 saveData）
+  writeActivity('vocab', word, 'cet');
   saveData();
 }
 
@@ -3522,6 +3918,8 @@ function recordExamQuestion(questionId, correct) {
       lastReview: today
     };
   }
+  // 【T03 批次三】行为日志：记录一次做题（ref=题 id；落盘交给下面的 saveData）
+  writeActivity('exam', questionId, 'exam');
   saveData();
 }
 
@@ -4331,6 +4729,8 @@ function toggleFavorite() {
     showToast('已取消收藏');
   } else {
     appData.favoriteQuestions.push(q.id);
+    // 【T03 批次三】行为日志：记录一次收藏（ref=题 id；落盘交给下面的 saveData）
+    writeActivity('fav', q.id, 'exam');
     showToast('已收藏');
   }
   saveData();

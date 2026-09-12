@@ -70,8 +70,59 @@
         { en: 'Great, thank you so much.', zh: '太好了，非常感谢。' },
         { en: 'You are welcome. Have a nice day!', zh: '不客气，祝您愉快！' }
       ]
+    },
+    // —— 批次三 T11（R3-7）：听力三类题型（内置兜底，ext JSON 增量合并）——
+    news: {
+      t: '新闻听力', lines: [
+        { en: "Good evening, and welcome to today's campus news roundup.", zh: '晚上好，欢迎收看今天的校园新闻速览。' },
+        { en: 'The library will extend its opening hours during the final exam week.', zh: '期末考试周期间，图书馆将延长开放时间。' },
+        { en: 'It will now stay open until midnight from next Monday.', zh: '从下周一起，它将开放到午夜。' },
+        { en: 'A new language exchange program starts this Friday in the student center.', zh: '本周五，学生活动中心将启动一个新的语言互助项目。' },
+        { en: 'Students can practice English with native speakers for free.', zh: '学生可以免费与母语者练习英语。' },
+        { en: 'The weather forecast says it will be sunny and warm this weekend.', zh: '天气预报显示本周末晴朗温暖。' },
+        { en: 'Remember to bring your student card to all campus events.', zh: '参加校园活动时记得携带学生证。' }
+      ]
+    },
+    longconv: {
+      t: '长对话', lines: [
+        { en: 'Hi Lin, do you have a minute to talk about our group project?', zh: '嗨林，你有空聊一下我们的小组项目吗？' },
+        { en: 'Sure, I was just thinking about how to divide the work.', zh: '当然，我正想着怎么分工呢。' },
+        { en: 'How about you do the research and I write the report?', zh: '你负责调研、我写报告，怎么样？' },
+        { en: 'That works. Should we also prepare a short presentation?', zh: '可以。我们要不要也准备一个简短的展示？' },
+        { en: 'Yes, and maybe we can practice it together before class.', zh: '要的，我们可以课前一起演练一下。' },
+        { en: 'Let’s meet at the study room on Thursday afternoon.', zh: '我们周四下午在自习室碰面吧。' },
+        { en: 'Great, I’ll book the room and send you the slides later.', zh: '好的，我来订房间，稍后把幻灯片发你。' }
+      ]
+    },
+    passage: {
+      t: '短文朗读', lines: [
+        { en: 'Today I want to share three simple tips for better memory.', zh: '今天我想分享三个提升记忆力的简单技巧。' },
+        { en: 'First, review new words within twenty-four hours of learning them.', zh: '第一，在学习新单词后 24 小时内复习。' },
+        { en: 'Second, try to use the word in a real sentence, not just read it.', zh: '第二，尝试在真实句子中使用该词，而不只是阅读。' },
+        { en: 'Third, teach the idea to a friend; teaching helps you remember.', zh: '第三，把知识点讲给朋友听，教别人有助于记忆。' },
+        { en: 'Also, a good night’s sleep makes a big difference.', zh: '此外，睡个好觉效果差别很大。' },
+        { en: 'Finally, be patient; building habits takes a few weeks.', zh: '最后，要有耐心，养成习惯需要几周时间。' }
+      ]
     }
   };
+
+  // 批次三 T11（R3-7）：听力三类题型增量合并（news / longconv / passage）
+  // 内置 9 个场景为离线兜底（coffee/airport/restaurant/hotel/shopping/street 六个情景
+  // + news/longconv/passage 三个题型）；ext JSON 按 key 合并，已存在 key 不覆盖（与 T06/T08 同策略）。
+  function loadListeningExt() {
+    try {
+      fetch('assets/data/listening-ext.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+        if (!j || !j.scenes || typeof SCENES === 'undefined' || !SCENES) return;
+        var added = 0;
+        Object.keys(j.scenes).forEach(function (k) {
+          if (!j.scenes[k] || !j.scenes[k].lines || SCENES[k]) return; // 已存在 key 不覆盖
+          SCENES[k] = { t: j.scenes[k].t || k, lines: j.scenes[k].lines };
+          added++;
+        });
+        if (added > 0 && typeof window.lucideAutoRender === 'function') { try { window.lucideAutoRender(); } catch (e) {} }
+      }).catch(function () { /* file:// / 离线：回退内置 9 个场景 */ });
+    } catch (e) { /* fetch 不可用：回退 */ }
+  }
 
   var S = null;
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -126,6 +177,7 @@
       '<div class="vp-scene">' + sceneHtml + '</div>' +
       '<div class="vp-stage" id="vpBody"></div>';
     document.body.appendChild(m);
+    if (window.openAppModal) window.openAppModal('vpMask'); // 批次三 T20：收编到统一弹窗（锁滚动 / ESC / 点遮罩，.vp-x DOM 保留）
     render();
   }
   function play() {
@@ -133,7 +185,7 @@
     if (typeof speakUtterance === 'function') speakUtterance(it.en, 'en-US');
   }
   window.openVoiceTrain = function (mode) { openVoice(mode); };
-  window.openVoiceTrain.__close = function () { var m = document.getElementById('vpMask'); if (m) m.remove(); S = null; };
+  window.openVoiceTrain.__close = function () { var m = document.getElementById('vpMask'); if (m) m.remove(); S = null; if (window.closeAppModal) window.closeAppModal('vpMask'); };
   window.openVoiceTrain.__mode = function (mo) { if (!S) return; S.mode = mo; S.showEn = (mo === 'speak'); S.i = 0; render(); };
   window.openVoiceTrain.__scene = function (k) { if (!S || !SCENES[k]) return; S.scene = k; S.i = 0; S.showEn = S.mode === 'speak'; S.showZh = true; render(); };
   window.openVoiceTrain.__prev = function () { if (!S) return; if (S.i > 0) { S.i--; } else { toast('已是第一句'); } render(); };
@@ -176,4 +228,6 @@
       if (ev.tips && ev.tips.length) el.innerHTML += '<div style="margin-top:6px;font-size:12px;color:#666">' + ev.tips.map(function (t) { return '• ' + t; }).join('<br>') + '</div>';
     }, function () { });
   };
+  // 启动听力三类题型增量合并（失败静默回退内置 3 场景）
+  try { loadListeningExt(); } catch (e) {}
 })();
