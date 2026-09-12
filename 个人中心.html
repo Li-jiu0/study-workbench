@@ -31,6 +31,35 @@
       <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" data-page-node-id="ykzjsCUHFazDObE5rQ7EaI">🌙</div>
     </header>
 <div class="page active" id="page-profile" data-page-node-id="aUD7wEjtCGd0SXKaPVQMgo">
+        <!-- T02 批次五 hash 路由：面包屑（router 维护）+ 第一层分组卡列表（默认显示） -->
+        <div class="subpage-header"></div>
+        <div class="subpage-list">
+          <div class="subpage-group-card" onclick="SubpageRouter.navigate('profile')">
+            <div class="sgc-icon">👤</div>
+            <div class="sgc-main"><div class="sgc-title">个人资料</div><div class="sgc-desc">头像、昵称、签名、城市、生日等</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
+          <div class="subpage-group-card" onclick="SubpageRouter.navigate('posts')">
+            <div class="sgc-icon">📊</div>
+            <div class="sgc-main"><div class="sgc-title">发贴统计</div><div class="sgc-desc">发贴数、点赞、评论等数据</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
+          <div class="subpage-group-card" onclick="SubpageRouter.navigate('moments')">
+            <div class="sgc-icon">🌏</div>
+            <div class="sgc-main"><div class="sgc-title">我的动态</div><div class="sgc-desc">本人发布的动态列表（含删除）</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
+          <div class="subpage-group-card" onclick="SubpageRouter.navigate('prefs')">
+            <div class="sgc-icon">🧭</div>
+            <div class="sgc-main"><div class="sgc-title">学习偏好</div><div class="sgc-desc">每日新增、专注时长、朗读、提醒</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
+          <div class="subpage-group-card" onclick="SubpageRouter.navigate('local-data')">
+            <div class="sgc-icon">📊</div>
+            <div class="sgc-main"><div class="sgc-title">本机数据</div><div class="sgc-desc">总学习时、刷题、错题、连续打卡</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
+        </div>
         <div class="module-hero" style="display:none" data-page-node-id="WZ2Br25aKXQMUO9oVEEFI0"><!-- v1.14 豆包风格：隐藏旧横幅，DOM 保留 -->
           <div class="module-hero-left" data-page-node-id="1U0Aepc037F7p7xu138z3J">
             <div class="module-hero-title" data-page-node-id="0ce0n9DDRPzLOjxItNjvkQ">👤 个人中心</div>
@@ -39,9 +68,16 @@
         </div>
 
         <!-- 个人中心内容（由 assets/app.js 的 renderProfilePage() 渲染，v1.14 豆包风格） -->
+        <!-- T02 批次五：profile / posts 共享 #profileBox（api.js 单函数渲染整盒，不破坏） -->
+        <section data-subpage="profile">
         <div id="profileBox" data-page-node-id="pai821WhCBnDvGkFiQ3xiQ"></div>
+        </section>
+        <section data-subpage="posts">
+          <div id="profileBoxPostsHost" style="min-height:120px"></div>
+        </section>
 
         <!-- 【后续扩展点】我的动态卡（T5 增量 2026-09-11）：本人动态列表（含删除），渲染逻辑见本文件底部脚本 -->
+        <section data-subpage="moments">
         <div class="card" id="myMomentsCard">
           <div class="card-header">
             <div class="card-title"><span class="title-icon">🌏</span>我的动态</div>
@@ -49,8 +85,10 @@
           </div>
           <div id="myMomentsBody" style="font-size:13px;padding:12px 16px;color:var(--text-secondary)">加载中…</div>
         </div>
+        </section>
 
         <!-- 学习偏好（与设置联动）：v1.14 起由 renderProfilePage 的列表项呈现，DOM 保留 -->
+        <section data-subpage="prefs">
         <div class="card" style="display:none" data-page-node-id="sGYAklXD8EhseTlHlPE0D1">
           <div class="card-header" data-page-node-id="tqhZHZtOh4Yd61ojVl1DWG">
             <div class="card-title" data-page-node-id="p5GlIKE0zlSVR3I6zL7z43"><span class="title-icon" data-page-node-id="uVI9hxKN9DYqyHKSr2rtLn">🧭</span>我的学习偏好</div>
@@ -58,14 +96,17 @@
           </div>
           <div id="prefBody" style="font-size:13px;color:var(--text-secondary);line-height:2" data-page-node-id="ImpNtv8ClqRtEER9p2aF2q">加载中…</div>
         </div>
+        </section>
 
         <!-- 本机学习数据一览：v1.14 起由 renderProfilePage 的列表项呈现，DOM 保留 -->
+        <section data-subpage="local-data">
         <div class="card" style="display:none" data-page-node-id="dds9xQfNYeivaK5Gv00VeE">
           <div class="card-header" data-page-node-id="dde97TsGWeuPbfbZt37USs">
             <div class="card-title" data-page-node-id="ByEMXihAHb97fvD4xnIY40"><span class="title-icon" data-page-node-id="YojGDlEFwBR15cf2Q1gwU3">📊</span>本机学习数据</div>
           </div>
           <div id="localStats" style="font-size:13px" data-page-node-id="HfPDqxUDwtSE8sjLTEG9Mq">加载中…</div>
         </div>
+        </section>
 
       </div>
   </div>
@@ -162,7 +203,8 @@
         </div>
         <div class="form-group" data-page-node-id="s48JYaLLym0HO04XTYONp2">
           <div class="form-label" data-page-node-id="Dg2QLOf6IIhDeLWIFKTlGV">出生年月</div>
-          <input type="date" class="form-input" id="peBirthday" min="1950-01-01" max="2015-12-31" data-page-node-id="wmMbTNz3lwuG9Y0DIZuBu6">
+          <input type="date" class="form-input" id="peBirthday" min="1950-01-01" max="2015-12-31" data-page-node-id="wmMbTNz3lwuG9Y0DIZuBu6"><br>
+          <input type="text" class="form-input" id="peBirthdayText" placeholder="或手动输入：19900102 / 1990-01-02 / 1990年1月2日" style="margin-top:6px" onblur="peBirthdayOnBlur()">
         </div>
       </div>
       <div class="pe-grid2">
@@ -295,6 +337,7 @@
 <script src="assets/app.js?v=20260911i"></script>
 <script src="assets/config.js?v=20260911i"></script>
 <script src="assets/api.js?v=20260911i"></script>
+<script src="assets/subpage-router.js?v=20260912a"></script>
 
 <script>
 function overviewGo(key) {
@@ -347,8 +390,8 @@ else setTimeout(renderProfileOverview, 300);
       <div class="bottom-more-item" onclick="location.href='AI模拟面试.html';toggleToolsPanel()">
         <div class="bm-icon">🎙️</div><div class="bm-label">AI面试</div>
       </div>
-      <div class="bottom-more-item" onclick="location.href='PPT素材库.html';toggleToolsPanel()">
-        <div class="bm-icon">📊</div><div class="bm-label">PPT素材</div>
+      <div class="bottom-more-item" onclick="location.href='PPT版式库.html';toggleToolsPanel()">
+        <div class="bm-icon">📊</div><div class="bm-label">PPT版式</div>
       </div>
       <div class="bottom-more-item" onclick="location.href='四级经验分享.html';toggleToolsPanel()">
         <div class="bm-icon">📖</div><div class="bm-label">四级经验</div>
@@ -552,6 +595,87 @@ window.addEventListener('load', function() {
 
   if (document.readyState !== 'loading') loadMyMoments();
   else document.addEventListener('DOMContentLoaded', loadMyMoments);
+})();
+</script>
+</script>
+<script>
+/* T02 批次五（寇豆码 2026-09-12）：生日 normalize + onBlur + hash 路由初始化 */
+window.normalizeBirthdayText = function (raw) {
+  if (raw == null) return null;
+  var s = String(raw).trim();
+  if (!s) return null;
+  var m = s.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (m) s = m[1] + '-' + m[2] + '-' + m[3];
+  s = s.replace(/年|月|日/g, '-');
+  m = s.match(/^(\d{4})[-./\s](\d{1,2})[-./\s](\d{1,2})$/);
+  if (!m) return null;
+  var y = parseInt(m[1], 10), mo = parseInt(m[2], 10), d = parseInt(m[3], 10);
+  if (!(y >= 1950 && y <= 2015)) return null;
+  if (!(mo >= 1 && mo <= 12)) return null;
+  if (!(d >= 1 && d <= 31)) return null;
+  var dt = new Date(y, mo - 1, d);
+  if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null;
+  var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+  return y + '-' + pad(mo) + '-' + pad(d);
+};
+window.peBirthdayOnBlur = function () {
+  var txt = document.getElementById('peBirthdayText');
+  var dt = document.getElementById('peBirthday');
+  if (!txt || !dt) return;
+  var v = txt.value;
+  if (!v) {
+    var err = document.getElementById('peBirthdayTextErr');
+    if (err && err.parentNode) err.parentNode.removeChild(err);
+    return;
+  }
+  var norm = window.normalizeBirthdayText(v);
+  if (norm) {
+    dt.value = norm;
+    txt.value = '';
+    var err2 = document.getElementById('peBirthdayTextErr');
+    if (err2 && err2.parentNode) err2.parentNode.removeChild(err2);
+  } else {
+    var existing = document.getElementById('peBirthdayTextErr');
+    if (!existing) {
+      var div = document.createElement('div');
+      div.id = 'peBirthdayTextErr';
+      div.className = 'pe-bd-err';
+      div.textContent = '日期格式不对，参考：1990-01-02（需在 1950-01-01 到 2015-12-31 之间）';
+      txt.parentNode.insertBefore(div, txt.nextSibling);
+    }
+  }
+};
+(function () {
+  function boot() {
+    if (typeof SubpageRouter === 'undefined' || !SubpageRouter || typeof SubpageRouter.init !== 'function') return;
+    SubpageRouter.init({
+      rootSelector: '#page-profile',
+      defaultSubpage: 'list',
+      sectionsSelector: '[data-subpage]',
+      breadcrumbSelector: '.subpage-header',
+      pageTitle: '个人中心',
+      rootHref: '个人中心.html'
+    });
+    var pb = document.getElementById('profileBox');
+    var profSec = document.querySelector('#page-profile [data-subpage="profile"]');
+    var postsSec = document.querySelector('#page-profile [data-subpage="posts"]');
+    var postsHost = document.getElementById('profileBoxPostsHost');
+    SubpageRouter.onSubpageChange(function (key) {
+      if (key === 'profile') {
+        if (pb && profSec && pb.parentNode !== profSec) profSec.appendChild(pb);
+        try { if (typeof renderProfilePage === 'function') renderProfilePage(); } catch (e) { if (window.console) console.warn('renderProfilePage error', e); }
+      } else if (key === 'posts') {
+        if (pb && postsHost && pb.parentNode !== postsHost) postsHost.appendChild(pb);
+        try { if (typeof renderProfilePage === 'function') renderProfilePage(); } catch (e) { if (window.console) console.warn('renderProfilePage error', e); }
+      } else if (key === 'moments') {
+        try { if (typeof window.loadMyMoments === 'function') window.loadMyMoments(); } catch (e) {}
+      } else if (key === 'prefs' || key === 'local-data') {
+        try { if (typeof renderProfileOverview === 'function') renderProfileOverview(); } catch (e) {}
+      }
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
 })();
 </script>
 </body>

@@ -2127,6 +2127,20 @@ body.dark .ed-actions-bar{background:var(--card);border-top-color:var(--border);
 .presence-line{font-size:12px;color:var(--text-secondary);align-items:center}
 .presence-line.on{color:#22a35a}
 
+/* =====================================================================
+   批次五 T01（2026-09-12）：#1.0/#1.1 工具/更多页纵向列表（.morepage-list）
+   —— 末尾追加，只做「增强」，不动既有 .morepage-grid（保留兼容旧引用）。
+   外壳 .morepage-list 用纵向 flex；卡片沿用 .morepage-card DOM + 追加 .morepage-list-item 类；
+   右侧 › 箭头用 ::after 伪元素（不改 DOM）。明暗主题均适配。 */
+.morepage-list{display:flex;flex-direction:column;gap:8px;padding:0 2px}
+.morepage-list .morepage-card{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:12px;text-align:left;padding:12px 14px;cursor:pointer}
+.morepage-list .morepage-card .mpc-icon{flex-shrink:0;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--primary-light);color:var(--primary);border-radius:10px;margin:0}
+.morepage-list .morepage-card .mpc-title{margin:0 0 2px}
+.morepage-list .morepage-card .mpc-desc{margin:0}
+.morepage-list .morepage-list-item{position:relative;padding-right:36px}
+.morepage-list .morepage-list-item::after{content:"›";position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:24px;font-weight:300;color:var(--text-muted);line-height:1;pointer-events:none}
+body.dark .morepage-list .morepage-card .mpc-icon{background:rgba(91,141,239,.18)}
+
 /* ==================== 设置页 · 隐私与安全卡（T01 增量 2026-09-11，全部以 .privacy- 前缀，不影响既有样式） ==================== */
 .privacy-card .card-action{color:var(--text-secondary);font-size:12px}
 .privacy-sec-title{padding:12px 18px 4px;font-size:13px;font-weight:700;color:var(--text)}
@@ -2181,3 +2195,45 @@ body.dark .privacy-note{background:rgba(91,141,239,.14)}
 .im-gs-danger{width:100%;background:#e05040;color:#fff;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:600;cursor:pointer}
 .im-gs-danger:active{filter:brightness(.92)}
 body.dark .im-gs-role-tag{background:rgba(255,255,255,.12)}
+
+/* =====================================================================
+   批次五 T04（2026-09-12）：lucide SVG 适配（侧栏 / 标题 / 卡片 icon）
+   —— 末尾追加，仅做「增强」；明暗主题随 var(--text) 自动变色
+   ===================================================================== */
+.nav-icon svg, .title-icon svg, .mpc-icon svg, .bm-icon svg, .tp-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--text);
+  vertical-align: middle;
+  display: inline-block;
+}
+/* .nav-icon 在 24px 容器中居中：span 内的 SVG 块级化更稳 */
+.nav-item .nav-icon svg {
+  display: block;
+  margin: 0 auto;
+}
+
+/* T03 增量（2026-09-12）：好友 tab 分组标题样式（§3.4 + §5.1）
+   复用样式：「我的群聊」与「注册好友」共用，与 chat-local.js:461 原内联 style 完全一致；
+   暗色主题下用 var(--text) 跟随主题。 */
+.im-group-title{font-size:13px;font-weight:600;color:var(--text);padding:12px 0 4px;display:flex;align-items:center;gap:6px}
+.im-group-title .im-group-count{font-size:11px;color:var(--text-secondary);font-weight:500}
+
+/* T02 批次五（寇豆码 2026-09-12）：hash 路由两层结构 - 面包屑 + 分组卡 + section 兜底隐藏 */
+.subpage-header{display:none;padding:8px 12px;font-size:13px;color:var(--text-secondary);border-bottom:1px solid var(--border);background:transparent}
+.subpage-header .subpage-crumb{color:var(--text-secondary);text-decoration:none;cursor:pointer}
+.subpage-header .subpage-crumb.current{color:var(--text);font-weight:600}
+.subpage-header .subpage-sep{margin:0 6px;color:var(--text-secondary);opacity:.6}
+.subpage-section{display:none}
+.subpage-list{display:flex;flex-direction:column;gap:10px;padding:8px 4px}
+.subpage-group-card{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px;background:var(--card);border:1px solid var(--border);cursor:pointer;transition:background .15s ease,transform .1s ease}
+.subpage-group-card:active{transform:scale(.99);background:rgba(0,0,0,.04)}
+body.dark .subpage-group-card:active{background:rgba(255,255,255,.06)}
+.subpage-group-card .sgc-icon{width:36px;height:36px;border-radius:10px;background:rgba(91,141,239,.12);display:flex;align-items:center;justify-content:center;font-size:18px;color:#5B8DEF;flex-shrink:0}
+.subpage-group-card .sgc-main{flex:1;min-width:0}
+.subpage-group-card .sgc-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:2px}
+.subpage-group-card .sgc-desc{font-size:12px;color:var(--text-secondary);line-height:1.4}
+.subpage-group-card .sgc-arrow{color:var(--text-secondary);font-size:18px;flex-shrink:0}
+
+/* T02 生日手输红字提示 */
+.pe-bd-err{color:#E05040;font-size:12px;margin-top:4px;line-height:1.4}
