@@ -840,9 +840,11 @@
     var nameEl = $id('imCName');
     if (nameEl) {
       var aiCfg = getAiConfig();
+      // 需求24：私聊是真实好友会话，不再挂「演示模式」误导标签；
+      // 仅在已配置 AI 服务商时才显示绿色的「AI在线」，未配置则不显示任何标签。
       var tag = aiCfg && aiCfg.apiKey
         ? '<span style="font-size:10px;color:#4caf50;background:#E8F5E9;padding:1px 6px;border-radius:4px;margin-left:6px;font-weight:400">AI在线</span>'
-        : '<span style="font-size:10px;color:#ff9800;background:#FFF3E0;padding:1px 6px;border-radius:4px;margin-left:6px;font-weight:400">演示模式</span>';
+        : '';
       nameEl.innerHTML = esc(S.peer.nickname) + tag;
     }
     // T02 增量：私聊会话隐藏「⋯」群设置入口

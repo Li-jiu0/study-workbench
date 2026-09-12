@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>真题模考 · 考试中</title>
-<link rel="stylesheet" href="assets/common.css?v=20260912d">
-<link rel="stylesheet" href="assets/page-head.css?v=20260912d">
-<link rel="stylesheet" href="assets/states.css?v=20260912d">
-<script src="assets/icon-map.js?v=20260912d" defer></script>
-<script src="assets/xt-toast.js?v=20260912d" defer></script>
-<script src="assets/error-boundary.js?v=20260912d" defer></script>
-<script src="assets/app.js?v=20260912d" defer></script>
-<script src="data/mock-papers.js?v=20260912d" defer></script>
-<script src="assets/mock-engine.js?v=20260912d" defer></script>
+<link rel="stylesheet" href="assets/common.css?v=20260913g">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913g">
+<link rel="stylesheet" href="assets/states.css?v=20260913g">
+<script src="assets/icon-map.js?v=20260913g" defer></script>
+<script src="assets/xt-toast.js?v=20260913g" defer></script>
+<script src="assets/error-boundary.js?v=20260913g" defer></script>
+<script src="assets/app.js?v=20260913g" defer></script>
+<script src="data/mock-papers.js?v=20260913g" defer></script>
+<script src="assets/mock-engine.js?v=20260913g" defer></script>
 <style>
 /* mock_exam_run.html 考试页专属样式（不走弹窗 mask；用 .confirm-mask 轻量确认条） */
 body { background: var(--xt-bg); margin: 0; color: var(--xt-text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif; }
@@ -701,7 +701,7 @@ body { background: var(--xt-bg); margin: 0; color: var(--xt-text); font-family: 
       var runId = window.MockEngine.submit(auto);
       if (runId) {
         // 跳转成绩页
-        window.location.href = 'mock_exam_result.html?paper=' + encodeURIComponent(paper.id) + '&run=' + encodeURIComponent(runId);
+        window.location.replace('mock_exam_result.html?paper=' + encodeURIComponent(paper.id) + '&run=' + encodeURIComponent(runId));
       }
     } catch (e) {
       console.error('submit failed', e);
