@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" data-page-node-id="OlgAXTFaD9mAg3AFsfpeiy">
 <meta name="theme-color" content="#5B8DEF" data-page-node-id="XIP3tSfjex43vTn5HPKTvm">
 <title>首页 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260912c" data-page-node-id="cG8803QAoDbKSd7v8tsEs9">
-<link rel="stylesheet" href="assets/page-head.css?v=20260912c" data-page-node-id="">
-<link rel="stylesheet" href="assets/states.css?v=20260912c" data-page-node-id="">
-<link rel="stylesheet" href="assets/polish.css?v=20260912c" data-page-node-id="lkxFYcwbHH3N6LYB00qIeL">
+<link rel="stylesheet" href="assets/common.css?v=20260913c" data-page-node-id="cG8803QAoDbKSd7v8tsEs9">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913c" data-page-node-id="">
+<link rel="stylesheet" href="assets/states.css?v=20260913c" data-page-node-id="">
+<link rel="stylesheet" href="assets/polish.css?v=20260913c" data-page-node-id="lkxFYcwbHH3N6LYB00qIeL">
 </head>
 <body class="theme-home" data-page-node-id="BTU8kiFHiuvsPFdnqvbOiF">
 
@@ -98,7 +98,7 @@
         <!-- 自定义倒计时 -->
         <div class="card" data-page-node-id="8z5mNZKMK8lbOhT9PwPZqI">
           <div class="card-header" data-page-node-id="4IqFHwCua6GwsJBAcSkifm">
-            <div class="card-title" data-page-node-id="VTEVYUiffnPcNDgwAXLDIv"><span class="title-icon" data-page-node-id="bkkwCB6Tin8HR4blylBXP2">⏳</span>重要倒计时</div>
+            <div class="card-title" data-page-node-id="VTEVYUiffnPcNDgwAXLDIv"><span class="title-icon" data-page-node-id="bkkwCB6Tin8HR4blylBXP2" data-icon="clock"></span>重要倒计时</div>
             <div class="card-action" onclick="openCountdownModal()" data-page-node-id="kFl4iJO94vjBC0roGi3ug2">+ 添加</div>
           </div>
           <div class="countdown-row" id="countdownRow" data-page-node-id="G2CE80WjcXJBMfYa8RC1tR"></div>
@@ -110,7 +110,7 @@
             <!-- 卡片1：学习数据 -->
             <div class="card home-carousel-card" style="min-width:100%;scroll-snap-align:start;flex-shrink:0;">
               <div class="card-header">
-                <div class="card-title"><span class="title-icon">📊</span>学习数据</div>
+                <div class="card-title"><span class="title-icon" data-icon="chart-bar"></span>学习数据</div>
               </div>
               <div class="stats-grid">
                 <div class="stat-card"><div class="stat-num" id="totalHours">0</div><div class="stat-label">总学习(h)</div></div>
@@ -121,7 +121,7 @@
               <div id="statsEmptyHint" class="stats-empty-hint" style="display:none">还没有学习记录，去学一章吧</div>
               <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-                  <span style="font-size:var(--xt-font-base);font-weight:600;color:var(--text-secondary)">📈 本周学习时长</span>
+                  <span style="font-size:var(--xt-font-base);font-weight:600;color:var(--text-secondary)"><span class="title-icon" data-icon="chart-bar"></span>本周学习时长</span>
                   <span style="font-size:var(--xt-font-xs);color:var(--text-muted)">单位：分钟</span>
                 </div>
                 <div class="week-chart" id="weekChart"></div>
@@ -158,7 +158,7 @@
             <!-- 卡片2：今日任务 -->
             <div class="card home-carousel-card" style="min-width:100%;scroll-snap-align:start;flex-shrink:0;">
               <div class="card-header">
-                <div class="card-title"><span class="title-icon">📋</span>今日任务</div>
+                <div class="card-title"><span class="title-icon" data-icon="clipboard"></span>今日任务</div>
                 <div class="card-action" onclick="resetTasks()">重置</div>
               </div>
               <div class="task-list" id="taskList"></div>
@@ -167,7 +167,7 @@
             <!-- 卡片3：各模块进度 -->
             <div class="card home-carousel-card" style="min-width:100%;scroll-snap-align:start;flex-shrink:0;">
               <div class="card-header">
-                <div class="card-title"><span class="title-icon">📦</span>各模块进度</div>
+                <div class="card-title"><span class="title-icon" data-icon="package"></span>各模块进度</div>
               </div>
               <div class="module-progress-grid" id="moduleProgressGrid"></div>
             </div>
@@ -175,7 +175,7 @@
             <!-- 卡片4：薄弱点提醒 -->
             <div class="card home-carousel-card" style="min-width:100%;scroll-snap-align:start;flex-shrink:0;">
               <div class="card-header">
-                <div class="card-title"><span class="title-icon">⚠️</span>薄弱点提醒</div>
+                <div class="card-title"><span class="title-icon" data-icon="alert-triangle"></span>薄弱点提醒</div>
               </div>
               <div class="weak-list" id="weakList"></div>
             </div>
@@ -183,7 +183,7 @@
             <!-- 卡片5：最近学习 -->
             <div class="card home-carousel-card" style="min-width:100%;scroll-snap-align:start;flex-shrink:0;">
               <div class="card-header">
-                <div class="card-title"><span class="title-icon">🔖</span>最近学习</div>
+                <div class="card-title"><span class="title-icon" data-icon="bookmark"></span>最近学习</div>
               </div>
               <div class="recent-list" id="recentList"></div>
             </div>
@@ -249,7 +249,7 @@
              【后续扩展点】如需多人互动留言，需新增后端接口，见 ai-server 文件夹方案 -->
         <div class="card" data-page-node-id="HIxDyzCAabTdOPxhoR5MHl">
           <div class="card-header" data-page-node-id="l2j4FmWyjFhS27cWOn1fyU">
-            <div class="card-title" data-page-node-id="8yUNperBbMQnNPZRZ2w0fl"><span class="title-icon" data-page-node-id="6ktEpziULnKmKxpyyEYpiy">📝</span>留言板</div>
+            <div class="card-title" data-page-node-id="8yUNperBbMQnNPZRZ2w0fl"><span class="title-icon" data-page-node-id="6ktEpziULnKmKxpyyEYpiy" data-icon="pen"></span>留言板</div>
             <div class="card-action" onclick="clearBoard()" data-page-node-id="QJPztaltYO7oVpL2TZS8Iv">清空</div>
           </div>
           <div class="board-input-row" data-page-node-id="L10CRl5pDh270Q96MmwD7N">
@@ -268,13 +268,13 @@
   <nav class="bottom-nav">
     <div class="bottom-nav-list">
       <div class="bottom-nav-item" data-page="home">
-        <div class="bn-icon">🏠</div><div class="bn-label">首页</div>
+        <div class="bn-icon" data-icon="home"></div><div class="bn-label">首页</div>
       </div>
-      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon">💬</div><div class="bn-label">互动</div></div>
-      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon">👤</div><div class="bn-label">我的</div></div>
-      <div class="bottom-nav-item" onclick="location.href='工具.html'"><div class="bn-icon">🧰</div><div class="bn-label">工具</div></div>
+      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon" data-icon="message-circle"></div><div class="bn-label">互动</div></div>
+      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon" data-icon="user"></div><div class="bn-label">我的</div></div>
+      <div class="bottom-nav-item" onclick="location.href='工具.html'"><div class="bn-icon" data-icon="wrench"></div><div class="bn-label">工具</div></div>
       <div class="bottom-nav-item" onclick="location.href='更多.html'">
-        <div class="bn-icon">☰</div><div class="bn-label">更多</div>
+        <div class="bn-icon" data-icon="menu"></div><div class="bn-label">更多</div>
       </div>
     </div>
   </nav>
@@ -287,19 +287,19 @@
     <div class="bottom-more-title" data-page-node-id="X5qMIU32T7iLb9toN78JHY">更多功能</div>
     <div class="bottom-more-grid" data-page-node-id="EDSeD2xfP8NbP4nXoOJQXE">
       <div class="bottom-more-item" onclick="openBlogStats()" data-page-node-id="zl3NMu4HgAVAtbOuzFoucR">
-        <div class="bm-icon" data-page-node-id="ZAhBRyFaL137V4VJLAgQy9">📊</div><div class="bm-label" data-page-node-id="saAb9IkJyZG06IJmgbULJS">学习统计</div>
+        <div class="bm-icon" data-page-node-id="ZAhBRyFaL137V4VJLAgQy9" data-icon="chart-bar"></div><div class="bm-label" data-page-node-id="saAb9IkJyZG06IJmgbULJS">学习统计</div>
       </div>
       <div class="bottom-more-item" onclick="gotoBlogMine()" data-page-node-id="7lki5zNjV5jajNzboJiSIw">
-        <div class="bm-icon" data-page-node-id="fUPOvWbHEDKbkNl5T9n8We">📁</div><div class="bm-label" data-page-node-id="UxVn4MGyuyuLDaXcSFdEQ0">互动广场</div>
+        <div class="bm-icon" data-page-node-id="fUPOvWbHEDKbkNl5T9n8We" data-icon="inbox"></div><div class="bm-label" data-page-node-id="UxVn4MGyuyuLDaXcSFdEQ0">互动广场</div>
       </div>
       <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()" data-page-node-id="v7QBNi8tP975AbpI3vEwwc">
-        <div class="bm-icon" data-page-node-id="DHf5bqSxElZW3JxV7AaP0r">📒</div><div class="bm-label" data-page-node-id="gUQGGc82CgoGTIDuGbk7ni">错题本</div>
+        <div class="bm-icon" data-page-node-id="DHf5bqSxElZW3JxV7AaP0r" data-icon="clipboard"></div><div class="bm-label" data-page-node-id="gUQGGc82CgoGTIDuGbk7ni">错题本</div>
       </div>
       <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()" data-page-node-id="hRgtiYYKonTUEdEdczQh7E">
-        <div class="bm-icon" data-page-node-id="dC8IsCLEu5UCEjrS1B7E94">⚙️</div><div class="bm-label" data-page-node-id="qx0lbYuDDyRIpFH196cblE">设置</div>
+        <div class="bm-icon" data-page-node-id="dC8IsCLEu5UCEjrS1B7E94" data-icon="settings"></div><div class="bm-label" data-page-node-id="qx0lbYuDDyRIpFH196cblE">设置</div>
       </div>
       <div class="bottom-more-item" onclick="showAbout()" data-page-node-id="GErGCEiz615rfp2ZFWlHQv">
-        <div class="bm-icon" data-page-node-id="M9CGzC34HmbfolESnssniv">ℹ️</div><div class="bm-label" data-page-node-id="ummXVspnJSbDqHWy5M5GGJ">关于</div>
+        <div class="bm-icon" data-page-node-id="M9CGzC34HmbfolESnssniv" data-icon="info"></div><div class="bm-label" data-page-node-id="ummXVspnJSbDqHWy5M5GGJ">关于</div>
       </div>
     </div>
   </div>
@@ -372,14 +372,14 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260912c" defer></script>
-<script src="assets/xt-toast.js?v=20260912c" defer></script>
-<script src="assets/error-boundary.js?v=20260912c" defer></script>
-<script src="assets/app.js?v=20260912c" defer></script>
-<script src="assets/quest.js?v=20260912c" defer></script>
-<script src="assets/config.js?v=20260912c" defer></script>
-<script src="assets/api.js?v=20260912c" defer></script>
-<script src="assets/study-stats.js?v=20260912c" defer></script>
+<script src="assets/icon-map.js?v=20260913c" defer></script>
+<script src="assets/xt-toast.js?v=20260913c" defer></script>
+<script src="assets/error-boundary.js?v=20260913c" defer></script>
+<script src="assets/app.js?v=20260913c" defer></script>
+<script src="assets/quest.js?v=20260913c" defer></script>
+<script src="assets/config.js?v=20260913c" defer></script>
+<script src="assets/api.js?v=20260913c" defer></script>
+<script src="assets/study-stats.js?v=20260913c" defer></script>
 <script>
 /* ==================== T7 增量（P0-14）：更多工具使用痕迹 + 按最近使用排序 ==================== */
 (function () {
