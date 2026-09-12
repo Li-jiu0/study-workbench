@@ -768,7 +768,7 @@
               <input type="password" class="form-input" id="stPwdOld" autocomplete="current-password" placeholder="请输入当前密码">
             </div>
             <div class="form-group">
-              <div class="form-label">新密码（至少 6 位）</div>
+              <div class="form-label">新密码（至少 8 位，且同时包含字母和数字）</div>
               <input type="password" class="form-input" id="stPwdNew" autocomplete="new-password" placeholder="请输入新密码">
             </div>
             <div class="form-group">
@@ -1188,6 +1188,43 @@ function stSimpleHash(s) {
   for (var i = 0; i < s.length; i++) { h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; }
   return 'h' + h.toString(36);
 }
+/* ---------- 密码强度（P0-B 需求22：前端规则与后端 server/schemas.py 对齐） ----------
+   后端唯一规则：正则 ^(?=.*[A-Za-z])(?=.*\d).{8,64}$（≥8 位且同时含字母与数字，最长 64 位）
+                 + 弱密码黑名单（大小写精确匹配）。
+   前端必须在提交前用同一套规则拦截，否则用户只能在后端 422 之后才知道密码不合规。 */
+var PW_STRONG_RE = /^(?=.*[A-Za-z])(?=.*\d).{8,64}$/;
+var PW_WEAK_DENYLIST = ['test123456', 'password', 'qwerty', 'qwerty123', '12345678',
+  '11111111', 'abc12345', 'admin123', 'iloveyou', '123456789'];
+
+/**
+ * 判断密码是否满足后端强度规则（≥8 位且同时含字母与数字，≤64 位）。
+ * @param {string} v 密码明文。
+ * @returns {boolean} 满足返回 true，否则 false。
+ */
+function pwStrongEnough(v) {
+  return PW_STRONG_RE.test(v || '');
+}
+
+/**
+ * 判断密码是否命中后端弱密码黑名单（精确匹配，与后端实现一致）。
+ * @param {string} v 密码明文。
+ * @returns {boolean} 命中返回 true，否则 false。
+ */
+function pwTooCommon(v) {
+  return PW_WEAK_DENYLIST.indexOf(v || '') >= 0;
+}
+
+/**
+ * 新密码统一前置校验：不合规时直接用页面已有 showToast 轻提示，不改变任何交互形态。
+ * @param {string} np 新密码明文。
+ * @returns {boolean} 校验通过返回 true；失败时已提示并返回 false。
+ */
+function stCheckNewPassword(np) {
+  if (!pwStrongEnough(np)) { showToast('⚠️ 密码强度不足：需至少 8 位，且同时包含字母和数字'); return false; }
+  if (pwTooCommon(np)) { showToast('⚠️ 该密码过于常见，请更换为更复杂的密码'); return false; }
+  return true;
+}
+
 function stChangePassword() {
   if (stIsOnline()) { stOpenPwdModal(); return; }
   var acct = stCurAccount();
@@ -1198,9 +1235,9 @@ function stChangePassword() {
   var oldP = prompt('修改密码 · 请输入当前密码：');
   if (oldP === null) return;
   if (users[acct].pass !== stSimpleHash(oldP)) { showToast('❌ 当前密码不正确'); return; }
-  var np = prompt('请输入新密码（至少 6 位）：');
+  var np = prompt('请输入新密码（至少 8 位，且同时包含字母和数字）：');
   if (np === null) return;
-  if (!np || np.length < 6) { showToast('⚠️ 新密码至少 6 位'); return; }
+  if (!stCheckNewPassword(np)) return;
   var np2 = prompt('请再次输入新密码：');
   if (np2 === null) return;
   if (np !== np2) { showToast('⚠️ 两次输入不一致'); return; }
@@ -1228,7 +1265,7 @@ function stSubmitPwd() {
   var np = (document.getElementById('stPwdNew') || {}).value || '';
   var np2 = (document.getElementById('stPwdNew2') || {}).value || '';
   if (!oldP) { showToast('⚠️ 请输入当前密码'); return; }
-  if (!np || np.length < 6) { showToast('⚠️ 新密码至少 6 位'); return; }
+  if (!stCheckNewPassword(np)) return;
   if (np !== np2) { showToast('⚠️ 两次输入的新密码不一致'); return; }
   if (np === oldP) { showToast('⚠️ 新密码不能与当前密码相同'); return; }
   var btn = document.getElementById('stPwdSubmitBtn');

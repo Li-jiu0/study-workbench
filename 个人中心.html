@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" data-page-node-id="scAqzajn3bTDCBBENuGZj0">
 <meta name="theme-color" content="#5B8DEF" data-page-node-id="xcIilqbK544vSHAWBPyO4w">
 <title>个人中心 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260912c" data-page-node-id="tBLcp6JxdB6dWCmMCCx7F8">
-<link rel="stylesheet" href="assets/page-head.css?v=20260912c">
-<link rel="stylesheet" href="assets/states.css?v=20260912c">
-<link rel="stylesheet" href="assets/polish.css?v=20260912c" data-page-node-id="uqByqsnHV08jClPBpI9G16">
+<link rel="stylesheet" href="assets/common.css?v=20260912d" data-page-node-id="tBLcp6JxdB6dWCmMCCx7F8">
+<link rel="stylesheet" href="assets/page-head.css?v=20260912d">
+<link rel="stylesheet" href="assets/states.css?v=20260912d">
+<link rel="stylesheet" href="assets/polish.css?v=20260912d" data-page-node-id="uqByqsnHV08jClPBpI9G16">
 </head>
 <body class="theme-home" data-page-node-id="YOxnETeT4z4J4WFn6FB0qJ">
 
@@ -89,9 +89,11 @@
         </div>
         </section>
 
-        <!-- 学习偏好（与设置联动）：v1.14 起由 renderProfilePage 的列表项呈现，DOM 保留 -->
+        <!-- 学习偏好（与设置联动）：v1.14 起由 renderProfilePage 的列表项呈现，DOM 保留；
+             T06 修复（2026-09-12）：去掉 .card 硬编码 display:none——subpage-router 显形 section 后
+             内部若仍 display:none 会呈现空白页。内容由本文件底部 renderProfileOverview() 填充。 -->
         <section data-subpage="prefs">
-        <div class="card" style="display:none" data-page-node-id="sGYAklXD8EhseTlHlPE0D1">
+        <div class="card" data-page-node-id="sGYAklXD8EhseTlHlPE0D1">
           <div class="card-header" data-page-node-id="tqhZHZtOh4Yd61ojVl1DWG">
             <div class="card-title" data-page-node-id="p5GlIKE0zlSVR3I6zL7z43"><span class="title-icon" data-page-node-id="uVI9hxKN9DYqyHKSr2rtLn">🧭</span>我的学习偏好</div>
             <div class="card-action" onclick="location.href='设置.html'" data-page-node-id="sx2SGC8PGTYECiRyAKZ7xC">去调整 →</div>
@@ -100,9 +102,11 @@
         </div>
         </section>
 
-        <!-- 本机学习数据一览：v1.14 起由 renderProfilePage 的列表项呈现，DOM 保留 -->
+        <!-- 本机学习数据一览：v1.14 起由 renderProfilePage 的列表项呈现，DOM 保留；
+             T06 修复（2026-09-12）：同 prefs，去掉 .card 硬编码 display:none（否则显形后仍空白）。
+             内容由本文件底部 renderProfileOverview() 填充 #localStats。 -->
         <section data-subpage="local-data">
-        <div class="card" style="display:none" data-page-node-id="dds9xQfNYeivaK5Gv00VeE">
+        <div class="card" data-page-node-id="dds9xQfNYeivaK5Gv00VeE">
           <div class="card-header" data-page-node-id="dde97TsGWeuPbfbZt37USs">
             <div class="card-title" data-page-node-id="ByEMXihAHb97fvD4xnIY40"><span class="title-icon" data-page-node-id="YojGDlEFwBR15cf2Q1gwU3">📊</span>本机学习数据</div>
           </div>
@@ -336,13 +340,13 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260912c" defer></script>
-<script src="assets/xt-toast.js?v=20260912c" defer></script>
-<script src="assets/error-boundary.js?v=20260912c" defer></script>
-<script src="assets/app.js?v=20260912c" defer></script>
-<script src="assets/config.js?v=20260912c" defer></script>
-<script src="assets/api.js?v=20260912c" defer></script>
-<script src="assets/subpage-router.js?v=20260912c" defer></script>
+<script src="assets/icon-map.js?v=20260912d" defer></script>
+<script src="assets/xt-toast.js?v=20260912d" defer></script>
+<script src="assets/error-boundary.js?v=20260912d" defer></script>
+<script src="assets/app.js?v=20260912d" defer></script>
+<script src="assets/config.js?v=20260912d" defer></script>
+<script src="assets/api.js?v=20260912d" defer></script>
+<script src="assets/subpage-router.js?v=20260912d" defer></script>
 
 <script>
 function overviewGo(key) {

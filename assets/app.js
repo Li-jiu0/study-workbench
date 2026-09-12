@@ -1389,7 +1389,8 @@ document.querySelectorAll('.color-dot').forEach(dot => {
 });
 
 // 点击遮罩关闭弹窗
-document.getElementById('countdownModal').addEventListener('click', (e) => {
+var cdmEl = document.getElementById('countdownModal');
+if (cdmEl) cdmEl.addEventListener('click', (e) => {
   if (e.target.id === 'countdownModal') closeCountdownModal();
 });
 
@@ -4134,7 +4135,9 @@ function updateDate() {
   const now = new Date();
   const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
   const dateStr = `${now.getMonth() + 1}月${now.getDate()}日 ${weekdays[now.getDay()]}`;
-  document.getElementById('topbarDate').textContent = dateStr;
+  // 三级模考页等独立页没有顶栏外壳，取不到节点时静默跳过，避免整段脚本在此中断
+  const dateEl = document.getElementById('topbarDate');
+  if (dateEl) dateEl.textContent = dateStr;
 }
 
 // ========== 行测刷题中心 ==========

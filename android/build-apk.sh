@@ -33,7 +33,7 @@ FINAL_APK="$ROOT/学习工作台-安卓App.apk"
 SIGNED="$OUT/app-signed.apk"   # 先在 ASCII 目录签名，最后 cp 回去
 
 echo "工作目录: $OUT"
-mkdir -p "$STAGE/assets" "$RES" "$JAVA_OUT" "$CLASSES" "$DEX_OUT"
+mkdir -p "$STAGE/assets" "$STAGE/data" "$RES" "$JAVA_OUT" "$CLASSES" "$DEX_OUT"
 
 # ---- 1) 整理站点文件（剔除 server/tools/备份/参考图/API覆盖层等） ----
 cd "$ROOT"
@@ -51,6 +51,14 @@ done
 #     静默跳过（omitting directory 被 2>/dev/null 吞掉），导致 私聊.html 的表情面板失效。
 cp -rf "$ROOT"/assets/. "$STAGE/assets/"
 echo "✓ 站点文件已就绪（${n} 个 html + assets/，递归复制）"
+
+# ---- 1a) 一级资源目录 data/（2026-09-12 新增）：同样必须递归复制 ----
+# 真题模考三级独立页（mock_exam.html / mock_exam_run.html / mock_exam_result.html）
+# 依赖 data/mock-papers.js（window.MOCK_PAPERS_DATA）。缺失时页面不报错、只显示空题库，
+# 与 assets/emoji/ 漏拷属同一类「构建期静默失效」，因此必须递归复制 + 打包期硬断言。
+cp -rf "$ROOT"/data/. "$STAGE/data/"
+DATA_COUNT="$(find "$STAGE/data" -type f | wc -l | tr -d ' ')"
+echo "✓ 一级资源目录 data/ 已递归复制（${DATA_COUNT} 个文件）"
 
 REQUIRED_ASSETS="
 icon-map.js
@@ -88,6 +96,25 @@ if [ -n "$MISSING" ]; then
   exit 1
 fi
 echo "✓ APK 资源白名单校验通过（${REQ_COUNT} 项，含批次五 icon-map.js / subpage-router.js）"
+
+# ---- 1b) APK 数据资源白名单（stage/data/）：真题模考数据契约，缺失即中止打包 ----
+# data/mock-papers.js 缺失 → 模考三页静默空题库（用户只看到「暂无试卷」），
+# 在真机里才会暴露，因此必须与 assets 白名单一样在打包期硬断言。
+REQUIRED_DATA="
+mock-papers.js
+"
+REQ_DATA_COUNT=0
+DATA_MISSING=""
+for a in $REQUIRED_DATA; do
+  REQ_DATA_COUNT=$((REQ_DATA_COUNT+1))
+  [ -f "$STAGE/data/$a" ] || DATA_MISSING="$DATA_MISSING data/$a"
+done
+if [ -n "$DATA_MISSING" ]; then
+  echo "✖ APK 数据资源白名单缺失（stage/data/）：$DATA_MISSING"
+  echo "  → 真题模考三页会静默空题库；请确认 data/ 已随包递归复制"
+  exit 1
+fi
+echo "✓ APK 数据资源白名单校验通过（${REQ_DATA_COUNT} 项：data/mock-papers.js）"
 
 # ---- 2) 把安卓工程文件复制到 ASCII 目录 ----
 cp -rf "$ROOT/android/res/." "$RES/"
@@ -129,7 +156,7 @@ echo "✓ d8 完成"
 PY="/c/Users/ATM/.workbuddy/binaries/python/versions/3.13.12/python"
 [ -x "$PY" ] || PY=python
 "$PY" "$(W "$ROOT/android/merge_apk.py")" "$(W "$OUT/base.apk")" "$(W "$DEX_OUT/classes.dex")" "$(W "$STAGE")" "$(W "$OUT/merged.apk")"
-echo "✓ 合并 assets/dex 完成"
+echo "✓ 合并 assets/dex 完成（含 assets/data/ 一级目录）"
 
 # ---- 8) 对齐 ----
 "$BT/zipalign.exe" -f 4 "$(W "$OUT/merged.apk")" "$(W "$OUT/aligned.apk")"
