@@ -154,13 +154,13 @@ log('====================================================================');
   const uniqShards = Array.from(new Set(shardReqs.map(function (u) { return u.split('?')[0]; })));
   assert('E1 8 个词库分片均被真实请求（Promise.all 并发加载）', uniqShards.length === 8,
     '实际请求 ' + uniqShards.length + '：' + uniqShards.join(', '));
-  assert('E2 所有分片请求均带缓存版本 ?v=20260913e', shardReqs.length > 0 && shardReqs.every(function (u) { return u.indexOf('?v=20260913e') >= 0; }),
+  assert('E2 所有分片请求均带缓存版本 ?v=20260913f', shardReqs.length > 0 && shardReqs.every(function (u) { return u.indexOf('?v=20260913f') >= 0; }),
     '样例 ' + shardReqs.slice(0, 2).join(' | '));
-  assert('E3 词库索引请求带 ?v=20260913e', flog.some(function (u) { return u.indexOf('vocab-cet4-ext-index.json?v=20260913e') >= 0; }), '');
+  assert('E3 词库索引请求带 ?v=20260913f', flog.some(function (u) { return u.indexOf('vocab-cet4-ext-index.json?v=20260913f') >= 0; }), '');
   const legacyReqs = flog.filter(function (u) { return /exam-bank\.json(\?|$)/.test(u) && !/exam-bank-ext/.test(u); });
   assert('E4 题库覆盖层 legacy(exam-bank.json) 仅被加载 1 次（去重比较已剥离 ?v=）', legacyReqs.length === 1,
     '实际 ' + legacyReqs.length + '：' + legacyReqs.join(', '));
-  assert('E5 题库 legacy 请求带 ?v=20260913e', legacyReqs.length === 1 && legacyReqs[0].indexOf('?v=20260913e') >= 0, legacyReqs.join(', '));
+  assert('E5 题库 legacy 请求带 ?v=20260913f', legacyReqs.length === 1 && legacyReqs[0].indexOf('?v=20260913f') >= 0, legacyReqs.join(', '));
 
   finish(on.uncaught);
 })().catch(function (e) { log('verifier 异常：' + (e && e.stack ? e.stack : e)); finish([]); });

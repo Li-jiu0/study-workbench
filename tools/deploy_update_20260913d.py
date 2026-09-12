@@ -48,7 +48,7 @@ import io
 
 ROOT = r"C:\Users\ATM\WorkBuddy\Worktrees\学习工作台\main-8d0a1649"
 CRED = r"D:\下载的文件\学习工作台\upload_v23.ps1"
-STAMP = "20260913e"
+STAMP = "20260913f"
 TAR_PATH = os.path.join(ROOT, "tools", f"deploy_{STAMP}.tar.gz")
 PLINK = os.path.join(ROOT, "tools", "plink.exe")
 PSCP = os.path.join(ROOT, "tools", "pscp.exe")
