@@ -219,14 +219,16 @@
     else renderRequests(box);
   }
 
-  function renderChats(box) {
-    var prefs = imLoadPrefs();
-    // 需求2：被「删除」的群会话同样仅本机隐藏
-    var groups = (S.groups || []).filter(function (g) { return !((prefs['g' + g.id] || {}).hidden); });
-    var chatList = imApplyChatPrefs(S.chats, prefs);
-    if (chatList.length === 0 && groups.length === 0) { box.innerHTML = '<div class="im-empty2">还没有会话，去好友列表找个朋友聊聊吧</div>'; return; }
-    // T4 增量：群聊会话置顶展示（带未读角标）；批次二：包一层 .im-swipe 支持左滑操作
-    var groupHtml = groups.map(function (g) {
+  /* T03 增量（2026-09-12）：群行共用渲染函数
+     - 会话 tab（renderChats）与好友 tab（renderFriends）共用同一份 HTML，避免双份维护漂移
+     - 入参：groups = S.groups 全量；prefs = imLoadPrefs() 全量
+     - 出参：完整 HTML 字符串（已含 .im-swipe 外壳 + 左滑操作）
+     - 复用 previewText() 渲染最后一条消息预览（image→[图片] / voice→[语音]） */
+  function imRenderGroupRows(groups, prefs) {
+    groups = groups || [];
+    prefs = prefs || {};
+    if (groups.length === 0) return '';
+    return groups.map(function (g) {
       var gk = 'g' + g.id;
       var gp = prefs[gk] || {};
       var active = S.group && S.group.id === g.id;
@@ -240,6 +242,16 @@
         (g.unreadCount > 0 ? '<div class="im-badge">' + (g.unreadCount > 99 ? '99+' : g.unreadCount) + '</div>' : '') +
         '</div>' + imSwipeActionsHtml(gk, gp, true) + '</div>';
     }).join('');
+  }
+
+  function renderChats(box) {
+    var prefs = imLoadPrefs();
+    // 需求2：被「删除」的群会话同样仅本机隐藏
+    var groups = (S.groups || []).filter(function (g) { return !((prefs['g' + g.id] || {}).hidden); });
+    var chatList = imApplyChatPrefs(S.chats, prefs);
+    if (chatList.length === 0 && groups.length === 0) { box.innerHTML = '<div class="im-empty2">还没有会话，去好友列表找个朋友聊聊吧</div>'; return; }
+    // T4 增量：群聊会话置顶展示（带未读角标）；批次二：包一层 .im-swipe 支持左滑操作
+    var groupHtml = imRenderGroupRows(groups, prefs);
     var chatHtml = chatList.map(function (c) {
       var ck = threadKeyOfChat(c);
       var active = S.peer && S.peer.id === c.id;
@@ -448,17 +460,56 @@
         '</div>';
     }
 
+    // —— T03 增量（2026-09-12）：「我的群聊」分组（仅登录时显示）——
+    //   与「注册好友」共用 .im-group-title 样式（common.css 末尾追加）；
+    //   复用 imRenderGroupRows() 渲染群行（与 renderChats 同源）；
+    //   加载失败时显示「加载失败，点此重试」；进入好友 tab 时若 S.groups 为空，主动 loadGroups()。
+    var prefs = imLoadPrefs();
+    var groupsHtml = '';
+    if (token) {
+      var groups = (S.groups || []).filter(function (g) { return !((prefs['g' + g.id] || {}).hidden); });
+      var groupRows = imRenderGroupRows(groups, prefs);
+      var groupHeader = '<div class="im-group-title">👥 我的群聊 (' + groups.length + ')</div>';
+      if (groupRows) {
+        groupsHtml = groupHeader + groupRows;
+      } else {
+        // 0 个群：要么还在加载、要么失败（首次进入本 tab 主动拉一次）
+        var stateHtml = S.groupsLoadFailed
+          ? '<span style="color:#e05040">加载失败</span>，<a style="color:var(--primary);cursor:pointer" onclick="loadGroups()">点此重试</a>'
+          : '加载中…';
+        groupsHtml = groupHeader + '<div class="im-empty2" style="padding:6px 0 6px 14px">' + stateHtml + '</div>';
+        if (!S._groupsFetched) {
+          S._groupsFetched = true;
+          loadGroups();
+        }
+      }
+    }
+
     var token = getToken();
     if (!token) {
-      box.innerHTML = aiHtml + '<div style="font-size:13px;font-weight:600;color:#333;padding:12px 0 4px">👥 注册好友</div><div class="im-empty2">登录后可添加注册用户为好友</div>';
+      box.innerHTML = aiHtml + '<div class="im-group-title">👥 注册好友</div><div class="im-empty2">登录后可添加注册用户为好友</div>';
       return;
     }
 
-    box.innerHTML = aiHtml + '<div style="font-size:13px;font-weight:600;color:#333;padding:12px 0 4px">👥 注册好友</div><div class="im-empty2">加载中…</div>';
+    box.innerHTML = aiHtml + groupsHtml + '<div class="im-group-title">👥 注册好友</div><div class="im-empty2">加载中…</div>';
 
     loadServerFriends(function (friends) {
+      // 重新计算群行（loadGroups 可能已异步回填）
+      // T03：失败时也展示「点此重试」链接（loadServerFriends 也可能掩盖 retry）
+      var groups2 = (S.groups || []).filter(function (g) { return !((prefs['g' + g.id] || {}).hidden); });
+      var rows2 = imRenderGroupRows(groups2, prefs);
+      var groupsHtml2;
+      if (rows2) {
+        groupsHtml2 = '<div class="im-group-title">👥 我的群聊 (' + groups2.length + ')</div>' + rows2;
+      } else {
+        var stateHtml2 = S.groupsLoadFailed
+          ? '<span style="color:#e05040">加载失败</span>，<a style="color:var(--primary);cursor:pointer" onclick="loadGroups()">点此重试</a>'
+          : '加载中…';
+        groupsHtml2 = '<div class="im-group-title">👥 我的群聊 (' + groups2.length + ')</div>' +
+          '<div class="im-empty2" style="padding:6px 0 6px 14px">' + stateHtml2 + '</div>';
+      }
       if (friends.length === 0) {
-        box.innerHTML = aiHtml + '<div style="font-size:13px;font-weight:600;color:#333;padding:12px 0 4px">👥 注册好友</div><div class="im-empty2">还没有注册好友<br>在上方搜索框输入用户名找人加好友</div>';
+        box.innerHTML = aiHtml + groupsHtml2 + '<div class="im-group-title">👥 注册好友</div><div class="im-empty2">还没有注册好友<br>在上方搜索框输入用户名找人加好友</div>';
         return;
       }
       var srvHtml = friends.map(function (f) {
@@ -476,7 +527,7 @@
           '</div>' +
           '</div>';
       }).join('');
-      box.innerHTML = aiHtml + '<div style="font-size:13px;font-weight:600;color:#333;padding:12px 0 4px">👥 注册好友</div>' + srvHtml;
+      box.innerHTML = aiHtml + groupsHtml2 + '<div class="im-group-title">👥 注册好友</div>' + srvHtml;
     });
   }
 
@@ -899,6 +950,23 @@
       triggerAiReply('发了一张图片');
     };
     reader.readAsDataURL(file);
+  };
+
+  /* T03 增量（2026-09-12）：拦截粘贴板里的图片（铁律 10 / R-4 缓解）
+     - 只拦 type 以 'image' 开头的项；HTML/纯文本/表情 [emoji:xx] 一律放行
+     - 拦截成功 = preventDefault + toast；任何 clipboardData 缺失、items 为空都安全 no-op
+     - 暴露到 window，便于 jsdom / 其他页面复用 */
+  window.imOnPaste = function (e) {
+    if (!e || !e.clipboardData || !e.clipboardData.items) return;
+    var items = e.clipboardData.items;
+    for (var i = 0; i < items.length; i++) {
+      var t = (items[i] && items[i].type) || '';
+      if (t.indexOf('image') === 0) {
+        try { e.preventDefault(); } catch (_e) { /* 老 WebView 无 preventDefault 也不致命 */ }
+        toast('⚠️ 暂不支持图片消息');
+        return;
+      }
+    }
   };
 
   /* ==================== A7（2026-09-11）：语音消息（录制 / 上传 / 播放 / 降级） ====================
@@ -1395,11 +1463,24 @@
   // —— 群列表（会话 tab 置顶展示，含未读角标） ——
   function loadGroups() {
     var token = getToken();
-    if (!token) { S.groups = []; return; }
+    if (!token) { S.groups = []; S.groupsLoadFailed = false; return; }
     fetch(apiBase() + '/api/groups', { headers: { 'Authorization': 'Bearer ' + token } })
     .then(function (r) { return r.json(); })
-    .then(function (d) { S.groups = d.items || []; if (S.tab === 'chats') renderChats($id('imList')); })
-    .catch(function () { S.groups = S.groups || []; });
+    .then(function (d) {
+      S.groups = d.items || [];
+      S.groupsLoadFailed = false;          // T03：成功时清失败标志
+      var list = $id('imList');
+      if (!list) return;
+      // T03：好友 tab 也要看到群行（与原 renderChats 同源重渲染）
+      if (S.tab === 'chats') renderChats(list);
+      else if (S.tab === 'friends') renderFriends(list);
+    })
+    .catch(function () {
+      S.groupsLoadFailed = true;           // T03：失败时让 renderFriends 显示「加载失败，点此重试」
+      S.groups = S.groups || [];
+      var list = $id('imList');
+      if (list && S.tab === 'friends') renderFriends(list);
+    });
   }
 
   // 打开群会话
@@ -2003,6 +2084,8 @@
       inp.addEventListener('keydown', function (e) {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); window.imSendText(); }
       });
+      // T03 增量（2026-09-12）：拦截粘贴图片（铁律 10），文字/HTML/表情 paste 放行
+      inp.addEventListener('paste', window.imOnPaste || function () {});
     }
 
     // 批次二 需求2：会话列表左滑 / 右键操作（事件委托，只绑一次）
