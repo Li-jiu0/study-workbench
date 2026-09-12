@@ -36,6 +36,31 @@ foreach ($f in $htmlFiles) {
 Copy-Item -Path "$ROOT\assets\*" -Destination "$STAGE\assets\" -Recurse -Force
 Write-Host "站点文件已就绪（$($htmlFiles.Count) 个 html + assets/）"
 
+# ---- 1a) APK 资源白名单（项目铁律「代码修好 ≠ 包里有」）：缺失即中止打包 ----
+# 批次五（2026-09-12）新增 icon-map.js / subpage-router.js：
+#   · icon-map.js 缺失       → 全站侧栏图标渲染空白（data-icon 找不到字典）
+#   · subpage-router.js 缺失 → 设置/个人中心所有 [data-subpage] 默认隐藏，分组卡全程不可点
+# 二者都是「静默失效」，只有在 APK 内才暴露，因此必须在打包期硬断言。
+$REQUIRED_ASSETS = @(
+    'icon-map.js',            # 批次五新增
+    'subpage-router.js',      # 批次五新增
+    'common.css', 'polish.css', 'app.js', 'config.js', 'chat-local.js',
+    'qbank.js', 'study-stats.js', 'voiceplayer.js', 'mini.js', 'importer.js',
+    'quest.js', 'hotnews.js', 'group-discussion.js', 'i-partner.js',
+    'topic-express.js', 'mini-cet.js', 'mini-comm.js', 'mini-exam.js',
+    'mini-interview.js', 'mini-ppt.js',
+    'emoji/manifest.js'       # 子目录资源，早期 cp 不带 -r 会静默漏掉
+)
+$missingAssets = @()
+foreach ($a in $REQUIRED_ASSETS) {
+    $p = Join-Path "$STAGE\assets" ($a -replace '/', '\')
+    if (-not (Test-Path $p -PathType Leaf)) { $missingAssets += $a }
+}
+if ($missingAssets.Count -gt 0) {
+    throw "APK 资源白名单缺失（stage/assets/）：$($missingAssets -join ', ')"
+}
+Write-Host "APK 资源白名单校验通过（$($REQUIRED_ASSETS.Count) 项，含批次五 icon-map.js / subpage-router.js）"
+
 # ---- 2) 复制工程文件到 ASCII 目录 ----
 Copy-Item -Path "$ROOT\android\res\*" -Destination $RES -Recurse -Force
 Copy-Item -Path "$ROOT\android\AndroidManifest.xml" -Destination $MANIFEST -Force
