@@ -6,7 +6,7 @@
  *   A2  app.js 真跑 → fetch 收到 EXAM_BANK_LEGACY / EXAM_BANK_EXT_INDEX / VOCAB_EXT_INDEX 三处均带 ?v=
  *   A3  vocab 索引 JSON 每个 shards[].file 都带 ?v=
  *   A4  exam  索引 JSON 的 legacy.file 与每个 shards[].file 都带 ?v=
- *   B1  HTML ?v= 取值 ⊆ {20260913e, 20260913a}（5 个不加载 app.js 的页面保留 a）
+ *   B1  HTML ?v= 取值 ⊆ {20260913f, 20260913a}（5 个不加载 app.js 的页面保留 a）
  *   B2  无损坏签名（?v= 到闭合引号之间恰好是版本号）
  *   C1  注释/正文里的提及（第①步 COMMENTED/prose）未被误加 ?v=（按行比对 5 条）
  *   C2  全站资源外链仍为 0
@@ -21,7 +21,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const VER = '20260913e';
+const VER = '20260913f';
 const PREV = '20260913a';
 const KEEP_OLD = ['AI模拟面试.html', 'PPT素材库.html', '四级经验分享.html', '好友申请.html', '登录.html'];
 
