@@ -153,3 +153,12 @@ docs/HTTPS+APP跨端改造方案-2026-09-12.md
 # 事件：工程师误用 GIT_SEQUENCE_EDITOR=true git rebase -i 触发 filter-repo
 # 导致 .git/objects/pack + refs/heads/main 全空；恢复后保留备份以防排查需要
 .git-corrupted-backup-20260912-emergency/
+tools/_artifacts/
+*.bak-*
+
+# ===== 2026-09-13 批次三：verifier 过程产物不入库 =====
+# 沿用 tools/qa/_*.txt 的既有口径：verifier 目录下下划线开头的 .txt 与 out_*.txt
+# 都是探针/自检的运行时输出，每次跑都会重写，入库只会污染历史。
+# 注意：tools/verifier/_backup_0913b/ 是 14 个分片的最初原始版本备份，**必须入库**，勿套用本规则。
+tools/verifier/_*.txt
+tools/verifier/out_*.txt
