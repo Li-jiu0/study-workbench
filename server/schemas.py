@@ -1,14 +1,52 @@
 """Pydantic 请求/响应模型与笔记序列化。"""
 import json
+import re
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+
+# ---------- 密码强度（P0-B T01） ----------
+# 规则唯一表述：至少 8 位，且同时包含字母和数字。
+# 与前端 登录.html / 设置.html 的 pwStrongEnough 正则保持一致。
+_PASSWORD_STRONG_RE = re.compile(r"^(?=.*[A-Za-z])(?=.*\d).{8,64}$")
+
+# 弱密码黑名单（P0-B T01 denylist，case-insensitive）。
+# 即使满足长度 + 字母数字混合，仍必须排除这 10 个被业内公认为弱密码的组合。
+_WEAK_PASSWORD_DENYLIST = frozenset({
+    "test123456", "password", "qwerty", "qwerty123",
+    "12345678", "11111111", "abc12345", "admin123",
+    "iloveyou", "123456789",
+})
+
+
+def check_password_strength(pw: str) -> str:
+    """校验密码强度，不匹配抛 ValueError（供 pydantic field_validator 使用）。
+
+    校验顺序：
+      1) 正则：≥8 位且同时含字母与数字（提示消息含「密码强度不足」字样，匹配 PRD §2.3 AC-1.5）
+      2) 黑名单：大小写精确匹配（提示消息含「过于常见」字样，匹配 PRD §2.3 AC-1.6）
+         不再做 .lower() 转换，避免误伤形如 'Abc12345' 这类变形密码（P0-B T01 修复）。
+    仅用于注册 / 修改密码两个入口；登录不走此校验，
+    存量弱密码用户登录不受影响（守卫式，不动表结构）。
+    """
+    if not _PASSWORD_STRONG_RE.match(pw or ""):
+        raise ValueError("密码强度不足：需至少 8 位，且同时包含字母和数字")
+    if (pw or "") in _WEAK_PASSWORD_DENYLIST:
+        raise ValueError("该密码过于常见，请更换为更复杂的密码")
+    return pw
 
 
 # ---------- 请求 ----------
 class RegisterIn(BaseModel):
     username: str = Field(min_length=3, max_length=20)
-    password: str = Field(min_length=6, max_length=64)
+    password: str = Field(min_length=8, max_length=64)
     nickname: str = Field(default="", max_length=20)
+
+    # 注册入口校验密码强度（P0-B T01）
+    @field_validator("password")
+    @classmethod
+    def _check_password(cls, v: str) -> str:
+        return check_password_strength(v)
 
 
 class LoginIn(BaseModel):
@@ -21,9 +59,15 @@ class RefreshIn(BaseModel):
 
 
 class ChangePasswordIn(BaseModel):
-    """修改密码（A6）：旧密码校验 + 新密码强度（≥6 位）。"""
+    """修改密码（A6）：旧密码校验 + 新密码强度（≥8 位且含字母和数字）。"""
     oldPassword: str = Field(min_length=1, max_length=64)
-    newPassword: str = Field(min_length=6, max_length=64)
+    newPassword: str = Field(min_length=8, max_length=64)
+
+    # 修改密码入口校验新密码强度（P0-B T01）
+    @field_validator("newPassword")
+    @classmethod
+    def _check_new_password(cls, v: str) -> str:
+        return check_password_strength(v)
 
 
 class ProfileIn(BaseModel):
