@@ -7,7 +7,8 @@
       stroke-linecap="round" stroke-linejoin="round"，viewBox="0 0 24 24"
    2. 禁 mask / filter / symbol use（老 WebView 不支持）
    3. lucideIcon(name, size=20) 返回完整 <svg> 字符串；找不到 name 返回 ''
-   4. 字典 ≥14 个 key；本批 17 个（侧栏 11 项 + 列表项右箭头 + 搜索/加号/倒计时）
+   4. 字典 ≥14 个 key；本批 19 个（侧栏 11 项 + 列表项右箭头 + 搜索/加号/倒计时
+      + 侧栏扩展项 rss「动态」/ messages-square「互动广场」）
    5. 自动扫描含 data-icon 属性的元素（.nav-icon / .title-icon / .mpc-icon 等
       可选）并在 DOMContentLoaded 时把内层替换为对应 SVG —— 静态 HTML 写
       `data-icon="book-open"`，渲染层零 emoji、零 hardcoded SVG
@@ -98,6 +99,16 @@
     "book": svg(
       '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>' +
       '<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>'
+    ),
+    // ---- 侧栏扩展项（动态 / 互动广场）：仅 path+circle 基础图元，老 WebView 可渲染 ----
+    "rss": svg(
+      '<path d="M4 11a9 9 0 0 1 9 9"/>' +
+      '<path d="M4 4a16 16 0 0 1 16 16"/>' +
+      '<circle cx="5" cy="19" r="1"/>'
+    ),
+    "messages-square": svg(
+      '<path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v5Z"/>' +
+      '<path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/>'
     )
   };
 
