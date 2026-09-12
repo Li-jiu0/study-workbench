@@ -42,8 +42,52 @@ for f in *.html; do
   sed '/<script src="assets\/api\.js/d' "$f" > "$STAGE/$f"
   n=$((n+1))
 done
-cp -f "$ROOT"/assets/* "$STAGE/assets/" 2>/dev/null || true
-echo "✓ 站点文件已就绪（${n} 个 html + assets/）"
+
+# ---- APK 资源白名单（项目铁律「代码修好 ≠ 包里有」）：缺失即中止打包 ----
+# 批次五（2026-09-12）新增 icon-map.js / subpage-router.js：
+#   · icon-map.js 缺失     → 全站侧栏图标渲染空白（data-icon 找不到字典）
+#   · subpage-router.js 缺失 → 设置/个人中心所有 [data-subpage] 默认隐藏，分组卡全程不可点
+# 注：assets/ 必须「递归」复制——早期版本用 `cp -f assets/*` 会把 assets/emoji/ 等子目录
+#     静默跳过（omitting directory 被 2>/dev/null 吞掉），导致 私聊.html 的表情面板失效。
+cp -rf "$ROOT"/assets/. "$STAGE/assets/"
+echo "✓ 站点文件已就绪（${n} 个 html + assets/，递归复制）"
+
+REQUIRED_ASSETS="
+icon-map.js
+subpage-router.js
+common.css
+polish.css
+app.js
+config.js
+chat-local.js
+qbank.js
+study-stats.js
+voiceplayer.js
+mini.js
+importer.js
+quest.js
+hotnews.js
+group-discussion.js
+i-partner.js
+topic-express.js
+mini-cet.js
+mini-comm.js
+mini-exam.js
+mini-interview.js
+mini-ppt.js
+emoji/manifest.js
+"
+REQ_COUNT=0
+MISSING=""
+for a in $REQUIRED_ASSETS; do
+  REQ_COUNT=$((REQ_COUNT+1))
+  [ -f "$STAGE/assets/$a" ] || MISSING="$MISSING $a"
+done
+if [ -n "$MISSING" ]; then
+  echo "✖ APK 资源白名单缺失（stage/assets/）：$MISSING"
+  exit 1
+fi
+echo "✓ APK 资源白名单校验通过（${REQ_COUNT} 项，含批次五 icon-map.js / subpage-router.js）"
 
 # ---- 2) 把安卓工程文件复制到 ASCII 目录 ----
 cp -rf "$ROOT/android/res/." "$RES/"

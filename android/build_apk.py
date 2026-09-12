@@ -51,6 +51,46 @@ for f in glob.glob(os.path.join(ROOT, "*.html")):
     with open(out_path, "w", encoding="utf-8") as fh:
         fh.write(content)
     html_count += 1
+
+# ---- 1a) APK 资源白名单（项目铁律「代码修好 ≠ 包里有」）：缺失即中止打包 ----
+# 批次五（2026-09-12）新增 icon-map.js / subpage-router.js：
+#   · icon-map.js 缺失 → 全站侧栏图标渲染空白（data-icon 无字典）
+#   · subpage-router.js 缺失 → 设置/个人中心所有 [data-subpage] 默认隐藏，分组卡全程不可点
+#   二者都是「静默失效」，只有在真机/APK 里才暴露，因此必须在打包期硬断言。
+REQUIRED_ASSETS = [
+    # --- 批次五新增（本批必打包） ---
+    "icon-map.js",
+    "subpage-router.js",
+    # --- 运行时核心（缺一即白屏 / 静默失效） ---
+    "common.css",
+    "polish.css",
+    "app.js",
+    "config.js",
+    "chat-local.js",
+    "qbank.js",
+    "study-stats.js",
+    "voiceplayer.js",
+    "mini.js",
+    "importer.js",
+    "quest.js",
+    "hotnews.js",
+    "group-discussion.js",
+    "i-partner.js",
+    "topic-express.js",
+    "mini-cet.js",
+    "mini-comm.js",
+    "mini-exam.js",
+    "mini-interview.js",
+    "mini-ppt.js",
+    # --- 子目录资源（build-apk.sh 早期版本用 cp 不带 -r 会静默漏掉） ---
+    "emoji/manifest.js",
+]
+
+_missing_src = [a for a in REQUIRED_ASSETS
+                if not os.path.exists(os.path.join(ROOT, "assets", a.replace("/", os.sep)))]
+if _missing_src:
+    raise SystemExit("✖ APK 资源白名单缺失（源目录 assets/）：" + ", ".join(_missing_src))
+
 # 复制 assets
 for item in os.listdir(os.path.join(ROOT, "assets")):
     src = os.path.join(ROOT, "assets", item)
@@ -59,7 +99,13 @@ for item in os.listdir(os.path.join(ROOT, "assets")):
         shutil.copytree(src, dst, dirs_exist_ok=True)
     else:
         shutil.copy2(src, dst)
+
+_missing_stage = [a for a in REQUIRED_ASSETS
+                  if not os.path.exists(os.path.join(STAGE, "assets", a.replace("/", os.sep)))]
+if _missing_stage:
+    raise SystemExit("✖ APK 资源白名单缺失（打包暂存区 stage/assets/）：" + ", ".join(_missing_stage))
 print(f"站点文件已就绪（{html_count} 个 html + assets/）")
+print(f"✓ APK 资源白名单校验通过（{len(REQUIRED_ASSETS)} 项，含批次五 icon-map.js / subpage-router.js）")
 
 # ---- 2) 复制工程文件到 ASCII 目录 ----
 shutil.copytree(os.path.join(ROOT, "android", "res"), RES, dirs_exist_ok=True)
