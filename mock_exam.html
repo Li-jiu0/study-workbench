@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>真题模考 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260912c">
-<link rel="stylesheet" href="assets/page-head.css?v=20260912c">
-<link rel="stylesheet" href="assets/states.css?v=20260912c">
-<script src="assets/icon-map.js?v=20260912c" defer></script>
-<script src="assets/xt-toast.js?v=20260912c" defer></script>
-<script src="assets/error-boundary.js?v=20260912c" defer></script>
-<script src="assets/app.js?v=20260912c" defer></script>
-<script src="data/mock-papers.js?v=20260912c" defer></script>
-<script src="assets/mock-engine.js?v=20260912c" defer></script>
+<link rel="stylesheet" href="assets/common.css?v=20260912d">
+<link rel="stylesheet" href="assets/page-head.css?v=20260912d">
+<link rel="stylesheet" href="assets/states.css?v=20260912d">
+<script src="assets/icon-map.js?v=20260912d" defer></script>
+<script src="assets/xt-toast.js?v=20260912d" defer></script>
+<script src="assets/error-boundary.js?v=20260912d" defer></script>
+<script src="assets/app.js?v=20260912d" defer></script>
+<script src="data/mock-papers.js?v=20260912d" defer></script>
+<script src="assets/mock-engine.js?v=20260912d" defer></script>
 <style>
 /* mock_exam.html 页面专属样式（不走弹窗/不弹窗 mask） */
 body { background: var(--xt-bg); margin: 0; color: var(--xt-text); }
@@ -128,7 +128,7 @@ body { background: var(--xt-bg); margin: 0; color: var(--xt-text); }
 <body>
 
 <header class="xt-page-head">
-  <a href="javascript:history.back()" class="xt-page-back" aria-label="返回">
+  <a href="javascript:void(0)" onclick="goBack();return false" class="xt-page-back" aria-label="返回">
     <span class="nav-icon" data-icon="chevron-left" data-icon-size="20"></span>
   </a>
   <div style="flex:1;min-width:0">
@@ -366,6 +366,24 @@ body { background: var(--xt-bg); margin: 0; color: var(--xt-text); }
     boot();
   }
 })();
+</script>
+
+<script>
+/* ==================== 返回按钮 · 显式上级页跳转（T06 修复 2026-09-12 寇豆码） ====================
+   问题：返回按钮原为 href="javascript:history.back()"，语义是「回上一步」而非「回上一级」。
+         用户在 exam↔run 间来回跳后历史栈变成 …→exam→run→exam→run，返回只在这两页乒乓球，
+         永远回不到来源备考页。
+   方案：不再依赖历史栈，改为按 URL 的 cat 参数显式跳转到来源备考页：
+         cat=cet-mock  → 四级备考.html
+         cat=exam-mock → 央国企笔试.html
+         无 cat / 未知  → 兜底 四级备考.html（四级为默认模考入口）
+   注意：本页可被「四级备考.html」或「央国企笔试.html」进入（带 ?cat=），也可被成绩页返回。 */
+function goBack() {
+  var cat = '';
+  try { cat = (new URLSearchParams(window.location.search)).get('cat') || ''; } catch (e) { cat = ''; }
+  var target = cat === 'exam-mock' ? '央国企笔试.html' : '四级备考.html';
+  window.location.href = target;
+}
 </script>
 
 </body>

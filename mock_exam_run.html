@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>真题模考 · 考试中</title>
-<link rel="stylesheet" href="assets/common.css?v=20260912c">
-<link rel="stylesheet" href="assets/page-head.css?v=20260912c">
-<link rel="stylesheet" href="assets/states.css?v=20260912c">
-<script src="assets/icon-map.js?v=20260912c" defer></script>
-<script src="assets/xt-toast.js?v=20260912c" defer></script>
-<script src="assets/error-boundary.js?v=20260912c" defer></script>
-<script src="assets/app.js?v=20260912c" defer></script>
-<script src="data/mock-papers.js?v=20260912c" defer></script>
-<script src="assets/mock-engine.js?v=20260912c" defer></script>
+<link rel="stylesheet" href="assets/common.css?v=20260912d">
+<link rel="stylesheet" href="assets/page-head.css?v=20260912d">
+<link rel="stylesheet" href="assets/states.css?v=20260912d">
+<script src="assets/icon-map.js?v=20260912d" defer></script>
+<script src="assets/xt-toast.js?v=20260912d" defer></script>
+<script src="assets/error-boundary.js?v=20260912d" defer></script>
+<script src="assets/app.js?v=20260912d" defer></script>
+<script src="data/mock-papers.js?v=20260912d" defer></script>
+<script src="assets/mock-engine.js?v=20260912d" defer></script>
 <style>
 /* mock_exam_run.html 考试页专属样式（不走弹窗 mask；用 .confirm-mask 轻量确认条） */
 body { background: var(--xt-bg); margin: 0; color: var(--xt-text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif; }
@@ -476,7 +476,7 @@ body { background: var(--xt-bg); margin: 0; color: var(--xt-text); font-family: 
 
 <!-- 顶部固定栏 -->
 <div class="mock-topbar" role="banner">
-  <a href="mock_exam.html" class="xt-btn xt-btn-text" style="min-width:auto;min-height:32px;padding:4px 8px" aria-label="返回选卷">
+  <a href="javascript:void(0)" onclick="goBack();return false" class="xt-btn xt-btn-text" style="min-width:auto;min-height:32px;padding:4px 8px" aria-label="返回选卷">
     <span class="nav-icon" data-icon="chevron-left" data-icon-size="18"></span>
   </a>
   <div class="mt-title" id="mtTitle">真题模考 · 加载中</div>
@@ -831,6 +831,32 @@ body { background: var(--xt-bg); margin: 0; color: var(--xt-text); font-family: 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 })();
+</script>
+
+<script>
+/* ==================== 返回按钮 · 显式上级页跳转（T06 修复 2026-09-12 寇豆码） ====================
+   问题：返回按钮原为 href="mock_exam.html"（无 cat），且历史上曾用 history.back()，
+         语义是「回上一步」而非「回上一级」；在 exam↔run 来回跳后只在这两页乒乓。
+   方案：本页为答题页，返回目标 = 选卷页 mock_exam.html，且必须带上当前卷的分类 cat，
+         否则选卷页加载后拿不到 cat 会回落到默认 cet-mock，导致央国企卷显示成四级卷。
+   分类来源（不猜、不写死）：
+         MockEngine.findPaperCategory(paperId) 返回 'cet4' / 'exam'（见 assets/mock-engine.js）
+         → 映射为 URL 的 cat：'cet4' → 'cet-mock'，'exam' → 'exam-mock'
+         取不到时兜底 'cet-mock'。
+   答题中途返回保留草稿：仅改导航，不动 beforeunload 与草稿持久化逻辑（MockEngine 负责）。 */
+function goBack() {
+  var paperId = '';
+  try { paperId = (new URLSearchParams(window.location.search)).get('paper') || ''; } catch (e) { paperId = ''; }
+  var cat = 'cet-mock';
+  try {
+    if (paperId && window.MockEngine && typeof window.MockEngine.findPaperCategory === 'function') {
+      var cls = window.MockEngine.findPaperCategory(paperId);
+      if (cls === 'exam') cat = 'exam-mock';
+      else if (cls === 'cet4') cat = 'cet-mock';
+    }
+  } catch (e) { /* 静默，兜底 cet-mock */ }
+  window.location.href = 'mock_exam.html?cat=' + encodeURIComponent(cat);
+}
 </script>
 
 </body>

@@ -23,7 +23,7 @@ $FINAL_APK = "$ROOT\学习工作台-安卓App.apk"
 $SIGNED = "$OUT\app-signed.apk"
 
 Write-Host "工作目录: $OUT"
-New-Item -ItemType Directory -Force -Path "$STAGE\assets", $RES, $JAVA_OUT, $CLASSES, $DEX_OUT | Out-Null
+New-Item -ItemType Directory -Force -Path "$STAGE\assets", "$STAGE\data", $RES, $JAVA_OUT, $CLASSES, $DEX_OUT | Out-Null
 
 # ---- 1) 整理站点文件（剔除 api.js 引用） ----
 Set-Location $ROOT
@@ -36,7 +36,15 @@ foreach ($f in $htmlFiles) {
 Copy-Item -Path "$ROOT\assets\*" -Destination "$STAGE\assets\" -Recurse -Force
 Write-Host "站点文件已就绪（$($htmlFiles.Count) 个 html + assets/）"
 
-# ---- 1a) APK 资源白名单（项目铁律「代码修好 ≠ 包里有」）：缺失即中止打包 ----
+# ---- 1a) 一级资源目录 data/（2026-09-12 新增）：同样必须递归复制 ----
+# 真题模考三级独立页（mock_exam.html / mock_exam_run.html / mock_exam_result.html）
+# 依赖 data/mock-papers.js（window.MOCK_PAPERS_DATA）。缺失时页面不报错、只显示空题库，
+# 与 assets/emoji/ 漏拷属同一类构建期静默失效，必须递归复制 + 打包期硬断言。
+Copy-Item -Path "$ROOT\data\*" -Destination "$STAGE\data\" -Recurse -Force
+$dataCount = @(Get-ChildItem -Path "$STAGE\data" -Recurse -File).Count
+Write-Host "✓ 一级资源目录 data/ 已递归复制（$dataCount 个文件）"
+
+# ---- 1b) APK 资源白名单（项目铁律「代码修好 ≠ 包里有」）：缺失即中止打包 ----
 # 批次五（2026-09-12）新增 icon-map.js / subpage-router.js：
 #   · icon-map.js 缺失       → 全站侧栏图标渲染空白（data-icon 找不到字典）
 #   · subpage-router.js 缺失 → 设置/个人中心所有 [data-subpage] 默认隐藏，分组卡全程不可点
@@ -60,6 +68,20 @@ if ($missingAssets.Count -gt 0) {
     throw "APK 资源白名单缺失（stage/assets/）：$($missingAssets -join ', ')"
 }
 Write-Host "APK 资源白名单校验通过（$($REQUIRED_ASSETS.Count) 项，含批次五 icon-map.js / subpage-router.js）"
+
+# ---- 1c) APK 数据资源白名单（stage/data/）：真题模考数据契约，缺失即中止打包 ----
+$REQUIRED_DATA_ASSETS = @(
+    'mock-papers.js'          # window.MOCK_PAPERS_DATA；缺失 → 模考三页静默空题库
+)
+$missingDataAssets = @()
+foreach ($a in $REQUIRED_DATA_ASSETS) {
+    $p = Join-Path "$STAGE\data" ($a -replace '/', '\')
+    if (-not (Test-Path $p -PathType Leaf)) { $missingDataAssets += "data/$a" }
+}
+if ($missingDataAssets.Count -gt 0) {
+    throw "APK 数据资源白名单缺失（stage/data/）：$($missingDataAssets -join ', ') —— 真题模考三页会静默空题库"
+}
+Write-Host "APK 数据资源白名单校验通过（$($REQUIRED_DATA_ASSETS.Count) 项：data/mock-papers.js）"
 
 # ---- 2) 复制工程文件到 ASCII 目录 ----
 Copy-Item -Path "$ROOT\android\res\*" -Destination $RES -Recurse -Force
@@ -104,7 +126,7 @@ $PY = "C:\Users\ATM\.workbuddy\binaries\python\versions\3.13.12\python.exe"
 if (-not (Test-Path $PY)) { $PY = "python" }
 & $PY "$ROOT\android\merge_apk.py" "$OUT\base.apk" "$DEX_OUT\classes.dex" $STAGE "$OUT\merged.apk"
 if ($LASTEXITCODE -ne 0) { throw "merge_apk failed" }
-Write-Host "合并 assets/dex 完成"
+Write-Host "合并 assets/dex 完成（含 assets/data/ 一级目录）"
 
 # ---- 8) zipalign 对齐 ----
 & "$BT\zipalign.exe" -f 4 "$OUT\merged.apk" "$OUT\aligned.apk"

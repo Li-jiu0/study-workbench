@@ -138,7 +138,7 @@
   <div class="form-group">
     <div class="form-label">密码</div>
     <div class="field">
-      <input type="password" class="form-input" id="loginPass" placeholder="至少 6 位" autocomplete="current-password" maxlength="64">
+      <input type="password" class="form-input" id="loginPass" placeholder="至少 8 位，含字母和数字" autocomplete="current-password" maxlength="64">
       <button type="button" class="eye" id="eyePass" onclick="togglePw('loginPass',this)" title="显示/隐藏密码" aria-label="显示或隐藏密码">👁</button>
     </div>
     <div class="strength" id="pwStrength" style="display:none">
@@ -279,6 +279,33 @@ function togglePw(id, btn) {
   inp.type = show ? 'text' : 'password';
   btn.textContent = show ? '🙈' : '👁';
 }
+/* ---------- 密码强度（与后端 server/schemas.py 对齐，P0-B 需求22） ----------
+   后端唯一规则：正则 ^(?=.*[A-Za-z])(?=.*\d).{8,64}$（≥8 位且同时含字母与数字，最长 64 位）
+                 + 弱密码黑名单（精确匹配）。
+   本页独立持有一份副本：设置.html 的 PW_STRONG_RE 跨页不可见，不能复用。
+   注意：本规则只作用于「注册」分支；登录分支不校验强度，否则会锁死存量 6~7 位老用户。 */
+var PW_STRONG_RE_LOGIN = /^(?=.*[A-Za-z])(?=.*\d).{8,64}$/;
+var PW_WEAK_DENYLIST_LOGIN = ['test123456', 'password', 'qwerty', 'qwerty123', '12345678',
+  '11111111', 'abc12345', 'admin123', 'iloveyou', '123456789'];
+
+/**
+ * 判断密码是否满足后端强度规则（≥8 位且同时含字母与数字，≤64 位）。
+ * @param {string} v 密码明文。
+ * @returns {boolean} 满足返回 true，否则 false。
+ */
+function pwStrongEnough(v) {
+  return PW_STRONG_RE_LOGIN.test(v || '');
+}
+
+/**
+ * 判断密码是否命中后端弱密码黑名单（精确匹配，与后端实现一致）。
+ * @param {string} v 密码明文。
+ * @returns {boolean} 命中返回 true，否则 false。
+ */
+function pwTooCommon(v) {
+  return PW_WEAK_DENYLIST_LOGIN.indexOf(v || '') >= 0;
+}
+
 function pwScore(v) {
   if (!v) return 0;
   var s = 0;
@@ -388,9 +415,13 @@ function validate(account, pass) {
   if (!account) { showErr('请输入账号'); markInput('loginAccount', true); return false; }
   if (!USERNAME_RE.test(account)) { showErr('账号需为 3-20 位字母 / 数字 / 中文 / 下划线'); markInput('loginAccount', true); return false; }
   if (!pass) { showErr('请输入密码'); markInput('loginPass', true); return false; }
-  if (pass.length < 6) { showErr('密码至少 6 位'); markInput('loginPass', true); return false; }
   if (pass.length > 64) { showErr('密码最多 64 位'); markInput('loginPass', true); return false; }
   if (loginMode === 'register') {
+    /* 仅注册分支加严：登录分支到此为止只要求非空。
+       存量 6~7 位老用户必须仍能登录，后端登录接口本身也不校验强度，
+       把 ≥8 位或字母数字混合套到登录路径会直接锁死这批账号。 */
+    if (!pwStrongEnough(pass)) { showErr('密码强度不足：需至少 8 位，且同时包含字母和数字'); markInput('loginPass', true); return false; }
+    if (pwTooCommon(pass)) { showErr('该密码过于常见，请更换为更复杂的密码'); markInput('loginPass', true); return false; }
     var c = document.getElementById('loginConfirm').value;
     if (!c) { showErr('请再次输入确认密码'); markInput('loginConfirm', true); return false; }
     if (c !== pass) { showErr('两次输入的密码不一致'); markInput('loginConfirm', true); return false; }

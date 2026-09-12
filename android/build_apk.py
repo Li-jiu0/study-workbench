@@ -26,6 +26,7 @@ FINAL_APK = os.path.join(ROOT, "学习工作台-安卓App.apk")
 SIGNED = os.path.join(OUT, "app-signed.apk")
 
 os.makedirs(os.path.join(STAGE, "assets"), exist_ok=True)
+os.makedirs(os.path.join(STAGE, "data"), exist_ok=True)
 for d in (RES, JAVA_OUT, CLASSES, DEX_OUT):
     os.makedirs(d, exist_ok=True)
 
@@ -86,10 +87,25 @@ REQUIRED_ASSETS = [
     "emoji/manifest.js",
 ]
 
+# --- 一级资源目录 data/（2026-09-12 新增）：真题模考数据契约 ---
+# mock_exam.html / mock_exam_run.html / mock_exam_result.html 依赖
+# data/mock-papers.js（window.MOCK_PAPERS_DATA）。缺失时页面不报错、只显示空题库
+# —— 与 assets/emoji/ 漏拷同一类构建期静默失效，必须递归复制 + 硬断言。
+REQUIRED_DATA_ASSETS = [
+    "mock-papers.js",
+]
+
+_data_dir = os.path.join(ROOT, "data")
+
 _missing_src = [a for a in REQUIRED_ASSETS
                 if not os.path.exists(os.path.join(ROOT, "assets", a.replace("/", os.sep)))]
 if _missing_src:
     raise SystemExit("✖ APK 资源白名单缺失（源目录 assets/）：" + ", ".join(_missing_src))
+
+_missing_data_src = [a for a in REQUIRED_DATA_ASSETS
+                     if not os.path.exists(os.path.join(_data_dir, a.replace("/", os.sep)))]
+if _missing_data_src:
+    raise SystemExit("✖ APK 数据资源白名单缺失（源目录 data/）：" + ", ".join(_missing_data_src))
 
 # 复制 assets
 for item in os.listdir(os.path.join(ROOT, "assets")):
@@ -100,12 +116,24 @@ for item in os.listdir(os.path.join(ROOT, "assets")):
     else:
         shutil.copy2(src, dst)
 
+# 复制一级资源目录 data/（递归，含 data/mock-papers.js 及将来新增文件）
+shutil.copytree(_data_dir, os.path.join(STAGE, "data"), dirs_exist_ok=True)
+_data_count = sum(len(files) for _, _, files in os.walk(os.path.join(STAGE, "data")))
+print(f"✓ 一级资源目录 data/ 已递归复制（{_data_count} 个文件）")
+
 _missing_stage = [a for a in REQUIRED_ASSETS
                   if not os.path.exists(os.path.join(STAGE, "assets", a.replace("/", os.sep)))]
 if _missing_stage:
     raise SystemExit("✖ APK 资源白名单缺失（打包暂存区 stage/assets/）：" + ", ".join(_missing_stage))
-print(f"站点文件已就绪（{html_count} 个 html + assets/）")
+
+_missing_data_stage = [a for a in REQUIRED_DATA_ASSETS
+                       if not os.path.exists(os.path.join(STAGE, "data", a.replace("/", os.sep)))]
+if _missing_data_stage:
+    raise SystemExit("✖ APK 数据资源白名单缺失（打包暂存区 stage/data/）：" + ", ".join(_missing_data_stage))
+
+print(f"站点文件已就绪（{html_count} 个 html + assets/ + data/）")
 print(f"✓ APK 资源白名单校验通过（{len(REQUIRED_ASSETS)} 项，含批次五 icon-map.js / subpage-router.js）")
+print(f"✓ APK 数据资源白名单校验通过（{len(REQUIRED_DATA_ASSETS)} 项：data/mock-papers.js）")
 
 # ---- 2) 复制工程文件到 ASCII 目录 ----
 shutil.copytree(os.path.join(ROOT, "android", "res"), RES, dirs_exist_ok=True)
@@ -163,7 +191,7 @@ run([PY, os.path.join(ROOT, "android", "merge_apk.py"),
      os.path.join(DEX_OUT, "classes.dex"),
      STAGE,
      os.path.join(OUT, "merged.apk")])
-print("合并 assets/dex 完成")
+print("合并 assets/dex 完成（含 assets/data/ 一级目录）")
 
 # ---- 8) zipalign 对齐 ----
 run([os.path.join(BT, "zipalign.exe"), "-f", "4",
