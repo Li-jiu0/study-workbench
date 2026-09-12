@@ -88,7 +88,9 @@ EXAM['exam-politics'] = {
   ]
 };
 
-EXAM['exam-mock'] = {
+// 【P0-B T03-06】exam-mock key 已废弃（数据走 data/mock-papers.js + 三独立页）；
+// 保留 exam-guide 作为真题模考导引（info 卡片）
+EXAM['exam-guide'] = {
   t: '央国企 · 真题模考导引', mode: 'info',
   items: [
     { icon: '⏱️', title: '题型结构', body: '行测+综合+英语+性格测试的组合卷，各地差异大。先做近年真题摸清自己报考企业的组成与题量。' },

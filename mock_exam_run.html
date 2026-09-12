@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#5B8DEF">
+<title>真题模考 · 考试中</title>
+<link rel="stylesheet" href="assets/common.css?v=20260912c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260912c">
+<link rel="stylesheet" href="assets/states.css?v=20260912c">
+<script src="assets/icon-map.js?v=20260912c" defer></script>
+<script src="assets/xt-toast.js?v=20260912c" defer></script>
+<script src="assets/error-boundary.js?v=20260912c" defer></script>
+<script src="assets/app.js?v=20260912c" defer></script>
+<script src="data/mock-papers.js?v=20260912c" defer></script>
+<script src="assets/mock-engine.js?v=20260912c" defer></script>
+<style>
+/* mock_exam_run.html 考试页专属样式（不走弹窗 mask；用 .confirm-mask 轻量确认条） */
+body { background: var(--xt-bg); margin: 0; color: var(--xt-text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif; }
+
+/* 顶部固定栏 */
+.mock-topbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  background: var(--xt-bg-card);
+  border-bottom: 1px solid var(--xt-border);
+  box-shadow: var(--xt-shadow-sm);
+  padding: var(--xt-space-3) var(--xt-space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--xt-space-3);
+}
+.mock-topbar .mt-title {
+  font-size: var(--xt-font-md);
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mock-topbar .mt-progress {
+  font-size: var(--xt-font-sm);
+  color: var(--xt-text-dim);
+  flex-shrink: 0;
+}
+.mock-topbar .mt-timer {
+  font-size: var(--xt-font-md);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--xt-primary);
+  padding: 4px 10px;
+  background: var(--xt-primary-soft);
+  border-radius: var(--xt-radius-sm);
+  flex-shrink: 0;
+  min-width: 70px;
+  text-align: center;
+}
+.mock-topbar .mt-timer.is-warn { color: var(--xt-error); background: rgba(239, 68, 68, 0.1); }
+.mock-topbar .mt-submit {
+  flex-shrink: 0;
+}
+
+/* 阶段进度条 */
+.mock-stages {
+  margin-top: calc(var(--xt-space-9) + 12px);
+  padding: var(--xt-space-3) var(--xt-space-4);
+  background: var(--xt-bg-card);
+  border-bottom: 1px solid var(--xt-border);
+}
+.sp-pane { display: flex; gap: var(--xt-space-2); flex-wrap: wrap; }
+.sp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: var(--xt-font-sm);
+  background: var(--xt-bg-muted);
+  color: var(--xt-text-dim);
+}
+.sp-pill .sp-i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--xt-bg-card);
+  color: var(--xt-text-dim);
+  font-size: var(--xt-font-xs);
+  border: 1px solid var(--xt-border);
+}
+.sp-pill.sp-active { background: var(--xt-primary-soft); color: var(--xt-primary); font-weight: 500; }
+.sp-pill.sp-active .sp-i { background: var(--xt-primary); color: var(--xt-text-on-primary); border-color: var(--xt-primary); }
+.sp-pill.sp-done { background: rgba(34, 197, 94, 0.12); color: var(--xt-success); }
+.sp-pill.sp-done .sp-i { background: var(--xt-success); color: var(--xt-text-on-primary); border-color: var(--xt-success); }
+
+/* 主体布局：左 70% 题目 + 右 30% 答题卡 */
+.mock-main {
+  display: flex;
+  gap: var(--xt-space-3);
+  padding: var(--xt-space-3) var(--xt-space-3) var(--xt-space-8);
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.mock-q-area {
+  flex: 1 1 70%;
+  min-width: 0;
+  background: var(--xt-bg-card);
+  border-radius: var(--xt-radius-lg);
+  border: 1px solid var(--xt-border);
+  padding: var(--xt-space-5);
+  box-shadow: var(--xt-shadow-sm);
+}
+.mock-q-area .mock-q-nav {
+  display: flex;
+  gap: var(--xt-space-2);
+  justify-content: space-between;
+  margin-top: var(--xt-space-5);
+  padding-top: var(--xt-space-4);
+  border-top: 1px solid var(--xt-border);
+}
+.mock-q-area .mock-q-nav .xt-btn { min-width: 100px; min-height: 36px; }
+
+/* 答题卡：右 30% */
+.mock-ac-pane {
+  flex: 0 0 28%;
+  position: sticky;
+  top: calc(var(--xt-space-9) + 80px);
+  max-height: calc(100vh - var(--xt-space-9) - 100px);
+  overflow: auto;
+}
+.ac-pane {
+  background: var(--xt-bg-card);
+  border: 1px solid var(--xt-border);
+  border-radius: var(--xt-radius-lg);
+  padding: var(--xt-space-3);
+  box-shadow: var(--xt-shadow-sm);
+}
+.ac-head {
+  font-size: var(--xt-font-md);
+  font-weight: 500;
+  padding-bottom: var(--xt-space-2);
+  border-bottom: 1px solid var(--xt-border);
+  margin-bottom: var(--xt-space-2);
+}
+.ac-group { margin-top: var(--xt-space-3); }
+.ac-group-head {
+  font-size: var(--xt-font-sm);
+  color: var(--xt-text-dim);
+  margin-bottom: var(--xt-space-2);
+  display: flex;
+  justify-content: space-between;
+}
+.ac-group-count { color: var(--xt-text-hint); font-size: var(--xt-font-xs); }
+.ac-group-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+.ac-item {
+  min-width: 36px; min-height: 36px;
+  border-radius: var(--xt-radius-sm);
+  border: 1px solid var(--xt-border);
+  background: var(--xt-bg-muted);
+  color: var(--xt-text-dim);
+  font-size: var(--xt-font-sm);
+  cursor: pointer;
+  transition: all var(--xt-transition);
+  font-family: inherit;
+}
+.ac-item:hover { border-color: var(--xt-primary); }
+.ac-item:focus-visible { outline: 2px solid var(--xt-primary); outline-offset: 2px; }
+.ac-item.ac-unanswered { background: var(--xt-bg-muted); color: var(--xt-text-dim); }
+.ac-item.ac-answered { background: rgba(34, 197, 94, 0.12); color: var(--xt-success); border-color: var(--xt-success); }
+.ac-item.ac-current { border: 2px solid var(--xt-primary); color: var(--xt-primary); font-weight: 500; }
+.ac-summary {
+  margin-top: var(--xt-space-3);
+  padding-top: var(--xt-space-2);
+  border-top: 1px solid var(--xt-border);
+  font-size: var(--xt-font-sm);
+  color: var(--xt-text-dim);
+  text-align: center;
+}
+.ac-summary b { color: var(--xt-primary); font-weight: 500; }
+
+/* 移动端抽屉式答题卡（≤768px） */
+.mock-ac-toggle { display: none; }
+@media (max-width: 768px) {
+  .mock-main {
+    flex-direction: column;
+    padding-bottom: 70px;
+  }
+  .mock-ac-pane {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    background: var(--xt-bg-card);
+    border-top: 1px solid var(--xt-border);
+    border-radius: var(--xt-radius-lg) var(--xt-radius-lg) 0 0;
+    padding: var(--xt-space-2) var(--xt-space-3);
+    transform: translateY(calc(100% - 56px));
+    transition: transform var(--xt-transition-slow);
+    box-shadow: var(--xt-shadow-lg);
+    max-height: 70vh;
+    overflow-y: auto;
+    flex: none;
+  }
+  .mock-ac-pane.is-open { transform: translateY(0); }
+  .mock-ac-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--xt-space-2) var(--xt-space-3);
+    background: var(--xt-primary);
+    color: var(--xt-text-on-primary);
+    border-radius: var(--xt-radius-md);
+    font-size: var(--xt-font-base);
+    cursor: pointer;
+    border: none;
+    width: 100%;
+    margin-bottom: var(--xt-space-2);
+    min-height: 44px;
+  }
+  .mock-q-area { padding: var(--xt-space-3); }
+  .ac-group-grid { grid-template-columns: repeat(6, 1fr); }
+  .ac-item { min-width: 44px; min-height: 44px; font-size: var(--xt-font-base); }
+  .mock-stages { margin-top: calc(var(--xt-space-9) + 8px); padding: var(--xt-space-2) var(--xt-space-3); }
+}
+
+/* 题目区（9 题型共用样式） */
+.mock-q { display: flex; flex-direction: column; gap: var(--xt-space-3); }
+.mock-meta { display: flex; gap: 6px; flex-wrap: wrap; }
+.mock-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  font-size: var(--xt-font-xs);
+  border-radius: 99px;
+  background: var(--xt-bg-muted);
+  color: var(--xt-text-dim);
+}
+.mock-pill-stage { background: var(--xt-primary-soft); color: var(--xt-primary); }
+.mock-pill-type { background: rgba(82, 196, 26, 0.12); color: var(--xt-success); }
+.mock-pill-subjective { background: rgba(245, 158, 11, 0.15); color: var(--xt-warning); }
+.mock-stem {
+  font-size: var(--xt-font-md);
+  line-height: 1.7;
+  color: var(--xt-text);
+  white-space: pre-wrap;
+}
+
+/* 单选 / 听力选项 */
+.sc-options, .mc-options, .tf-options { display: flex; flex-direction: column; gap: var(--xt-space-2); }
+.sc-op, .mc-op, .tf-op {
+  display: flex;
+  align-items: center;
+  gap: var(--xt-space-2);
+  padding: var(--xt-space-3) var(--xt-space-4);
+  border: 1px solid var(--xt-border);
+  border-radius: var(--xt-radius-md);
+  background: var(--xt-bg-card);
+  color: var(--xt-text);
+  font-size: var(--xt-font-base);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--xt-transition);
+  min-height: 44px;
+}
+.sc-op:hover, .mc-op:hover, .tf-op:hover:not(:disabled) {
+  border-color: var(--xt-primary);
+  background: var(--xt-primary-soft);
+}
+.sc-op:focus-visible, .mc-op:focus-visible, .tf-op:focus-visible {
+  outline: 2px solid var(--xt-primary);
+  outline-offset: 2px;
+}
+.sc-letter, .mc-letter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--xt-bg-muted);
+  color: var(--xt-text-dim);
+  font-weight: 500;
+  font-size: var(--xt-font-sm);
+  flex-shrink: 0;
+}
+.sc-op.sc-picked .sc-letter, .mc-op.mc-picked .mc-letter {
+  background: var(--xt-primary);
+  color: var(--xt-text-on-primary);
+}
+.sc-text, .mc-text { flex: 1; }
+.mc-mark { color: var(--xt-success); font-weight: 500; }
+.sc-op:disabled, .mc-op:disabled, .tf-op:disabled { cursor: default; opacity: 0.92; }
+.sc-op.sc-ok, .mc-op.mc-ok, .tf-op.tf-ok {
+  border-color: var(--xt-success);
+  background: rgba(34, 197, 94, 0.08);
+  color: var(--xt-success);
+}
+.sc-op.sc-ok .sc-letter, .mc-op.mc-ok .mc-letter, .tf-op.tf-ok { background: var(--xt-success); color: var(--xt-text-on-primary); }
+.sc-op.sc-bad, .mc-op.mc-bad, .tf-op.tf-bad {
+  border-color: var(--xt-error);
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--xt-error);
+}
+.sc-op.sc-bad .sc-letter, .mc-op.mc-bad .mc-letter, .tf-op.tf-bad { background: var(--xt-error); color: var(--xt-text-on-primary); }
+
+.tf-op { justify-content: center; font-size: var(--xt-font-md); min-height: 56px; }
+
+/* 多选提交按钮 */
+.mock-mc-submit { margin-top: var(--xt-space-2); min-height: 36px; }
+
+/* 反馈区 */
+.mock-feedback {
+  margin-top: var(--xt-space-3);
+  padding: var(--xt-space-3);
+  background: var(--xt-bg-muted);
+  border-radius: var(--xt-radius-md);
+  font-size: var(--xt-font-sm);
+  line-height: 1.6;
+}
+.mock-feedback .mf-ok { color: var(--xt-success); margin-right: 6px; }
+.mock-feedback .mf-bad { color: var(--xt-error); margin-right: 6px; }
+.mock-feedback .mf-x { margin-top: 4px; color: var(--xt-text-dim); }
+.cl-fb-row, .fb-fb-row { padding: 2px 0; }
+
+/* 阅读（左文章 + 右子题） */
+.rd-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--xt-space-3);
+}
+@media (min-width: 768px) {
+  .rd-layout { grid-template-columns: 1fr 1fr; }
+}
+.rd-passage {
+  background: var(--xt-bg-muted);
+  padding: var(--xt-space-3);
+  border-radius: var(--xt-radius-md);
+  font-size: var(--xt-font-sm);
+  line-height: 1.7;
+  white-space: pre-wrap;
+  max-height: 50vh;
+  overflow: auto;
+}
+.rd-subs { display: flex; flex-direction: column; gap: var(--xt-space-3); }
+.rd-sub-item {
+  background: var(--xt-bg-muted);
+  border-radius: var(--xt-radius-md);
+  padding: var(--xt-space-3);
+}
+
+/* 完形填空 / 填空：passage + inline select/input */
+.cl-passage, .fb-passage {
+  background: var(--xt-bg-muted);
+  padding: var(--xt-space-3);
+  border-radius: var(--xt-radius-md);
+  line-height: 2.4;
+  font-size: var(--xt-font-base);
+  white-space: pre-wrap;
+}
+.cloze-sel, .fb-sel {
+  display: inline-block;
+  padding: 2px 8px;
+  margin: 0 4px;
+  border-radius: var(--xt-radius-sm);
+  border: 1px solid var(--xt-primary);
+  background: var(--xt-bg-card);
+  font-family: inherit;
+  min-height: 28px;
+  min-width: 120px;
+}
+.cloze-inp, .fb-inp {
+  display: inline-block;
+  padding: 2px 8px;
+  margin: 0 4px;
+  border-radius: var(--xt-radius-sm);
+  border: 1px solid var(--xt-primary);
+  background: var(--xt-bg-card);
+  font-family: inherit;
+  min-width: 120px;
+  min-height: 28px;
+  font-size: var(--xt-font-base);
+}
+
+/* 作文 / 翻译：textarea */
+.es-wrap, .tr-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--xt-space-2);
+}
+.es-textarea, .tr-textarea {
+  width: 100%;
+  min-height: 200px;
+  padding: var(--xt-space-3);
+  border-radius: var(--xt-radius-md);
+  border: 1px solid var(--xt-border);
+  font-family: inherit;
+  font-size: var(--xt-font-base);
+  line-height: 1.7;
+  resize: vertical;
+  background: var(--xt-bg-card);
+  color: var(--xt-text);
+}
+.es-textarea:focus, .tr-textarea:focus {
+  outline: 2px solid var(--xt-primary);
+  outline-offset: -2px;
+  border-color: var(--xt-primary);
+}
+.es-meta, .tr-meta {
+  display: flex;
+  gap: var(--xt-space-3);
+  font-size: var(--xt-font-sm);
+  color: var(--xt-text-dim);
+  flex-wrap: wrap;
+}
+.es-meta b, .tr-meta b { color: var(--xt-primary); }
+
+/* 翻译原文 */
+.tr-cn {
+  background: var(--xt-bg-muted);
+  padding: var(--xt-space-3);
+  border-radius: var(--xt-radius-md);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+.tr-cn b { color: var(--xt-text); margin-right: 6px; }
+
+/* 听力占位 */
+.ls-audio-placeholder {
+  background: var(--xt-bg-muted);
+  padding: var(--xt-space-3);
+  border-radius: var(--xt-radius-md);
+  font-size: var(--xt-font-sm);
+  color: var(--xt-text-dim);
+  text-align: center;
+}
+.ls-audio { width: 100%; margin-bottom: var(--xt-space-2); }
+
+/* 确认条（轻量，不阻断学习流） */
+.confirm-mask {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(15, 18, 28, 0.4);
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--xt-space-4);
+  animation: cmIn .2s ease;
+}
+@keyframes cmIn { from { opacity: 0; } to { opacity: 1; } }
+.confirm-box {
+  background: var(--xt-bg-card);
+  border-radius: var(--xt-radius-lg);
+  padding: var(--xt-space-5);
+  max-width: 360px;
+  width: 100%;
+  box-shadow: var(--xt-shadow-lg);
+}
+.confirm-msg {
+  font-size: var(--xt-font-base);
+  color: var(--xt-text);
+  line-height: 1.6;
+  margin-bottom: var(--xt-space-4);
+}
+.confirm-actions { display: flex; gap: var(--xt-space-2); justify-content: flex-end; }
+.confirm-actions .xt-btn { min-width: 80px; min-height: 36px; }
+
+/* 加载失败 / 错误占位 */
+.mock-load-failed {
+  max-width: 600px;
+  margin: calc(var(--xt-space-9) + 32px) auto var(--xt-space-8);
+  padding: var(--xt-space-6);
+  text-align: center;
+}
+</style>
+</head>
+<body>
+
+<!-- 顶部固定栏 -->
+<div class="mock-topbar" role="banner">
+  <a href="mock_exam.html" class="xt-btn xt-btn-text" style="min-width:auto;min-height:32px;padding:4px 8px" aria-label="返回选卷">
+    <span class="nav-icon" data-icon="chevron-left" data-icon-size="18"></span>
+  </a>
+  <div class="mt-title" id="mtTitle">真题模考 · 加载中</div>
+  <div class="mt-progress" id="mtProgress">-- / --</div>
+  <div class="mt-timer" id="mtTimer">--:--</div>
+  <button type="button" class="xt-btn xt-btn-danger mt-submit" id="mtSubmit">交卷</button>
+</div>
+
+<!-- 阶段进度 pill -->
+<div class="mock-stages" id="stagesPane"></div>
+
+<!-- 主体 -->
+<div class="mock-main">
+  <div class="mock-q-area" id="qArea" aria-label="题目区">
+    <div class="xt-skeleton lg"></div>
+    <div class="xt-skeleton" style="width:80%"></div>
+    <div class="xt-skeleton" style="width:60%"></div>
+  </div>
+
+  <!-- 移动端抽屉按钮（>768px 隐藏） -->
+  <div class="mock-ac-pane" id="acPane">
+    <button type="button" class="mock-ac-toggle" id="acToggle" aria-controls="acContent" aria-expanded="false">
+      <span>答题卡</span>
+      <span id="acToggleBadge">0/0</span>
+    </button>
+    <div id="acContent"></div>
+  </div>
+</div>
+
+<!-- 加载失败 fallback -->
+<div class="mock-load-failed xt-empty" id="loadFailed" style="display:none">
+  <div class="xt-empty-icon">⚠</div>
+  <div class="xt-empty-title">考试页加载失败</div>
+  <div class="xt-empty-desc" id="loadFailedMsg">题库或引擎未就绪</div>
+  <a class="xt-btn xt-btn-secondary" href="mock_exam.html">返回选卷</a>
+</div>
+
+<!-- 确认条（轻量，按需动态插入） -->
+<div id="confirmHost"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  function $(id) { return document.getElementById(id); }
+  function escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  // —— 全局：当前 paper / 当前 qid / timer handle ——
+  var paper = null;
+  var allQuestions = [];   // 含子题铺平（含 reading 的 subQ 视为独立 qid）
+  var qIndex = -1;         // 当前题在 allQuestions 中的索引
+  var timerHandle = null;
+  var acOpen = false;
+
+  function flattenQuestions(p) {
+    var arr = [];
+    (p.questions || []).forEach(function (q) {
+      if (q.type === 'reading' && Array.isArray(q.subQ) && q.subQ.length) {
+        // reading 用 subQ 列表作为可见题；点击上一题/下一题按 subQ 步进
+        q.subQ.forEach(function (sq) { arr.push({ q: sq, parent: q }); });
+      } else {
+        arr.push({ q: q, parent: null });
+      }
+    });
+    return arr;
+  }
+
+  function getAnsweredCount() {
+    var st = window.MockEngine.state();
+    if (!st || !st.answers) return 0;
+    var n = 0;
+    Object.keys(st.answers).forEach(function (k) {
+      var v = st.answers[k];
+      if (v !== '' && v != null) {
+        if (Array.isArray(v) && v.length === 0) return;
+        n++;
+      }
+    });
+    return n;
+  }
+
+  // —— 渲染阶段进度 ——
+  function renderStages() {
+    var stages = ['writing', 'listening', 'reading', 'translation'];
+    var labels = { writing: '写作', listening: '听力', reading: '阅读', translation: '翻译' };
+    var curQ = currentQuestion();
+    var curStage = curQ ? curQ.stage : 'reading';
+    var orderIdx = stages.indexOf(curStage);
+    var html = '<div class="sp-pane">';
+    stages.forEach(function (stg, i) {
+      var cls = 'sp-pill';
+      if (i < orderIdx) cls += ' sp-done';
+      else if (i === orderIdx) cls += ' sp-active';
+      else cls += ' sp-pending';
+      html += '<span class="' + cls + '"><span class="sp-i">' + (i + 1) + '</span><span class="sp-label">' + labels[stg] + '</span></span>';
+    });
+    html += '</div>';
+    $('stagesPane').innerHTML = html;
+  }
+
+  function currentQuestion() {
+    if (qIndex < 0 || qIndex >= allQuestions.length) return null;
+    return allQuestions[qIndex].q;
+  }
+
+  // —— 渲染顶部固定栏文字 + 倒计时 ——
+  function renderTopbar() {
+    $('mtTitle').textContent = paper.title || paper.id;
+    $('mtProgress').textContent = '第 ' + (qIndex + 1) + ' / ' + allQuestions.length + ' 题';
+    var rem = window.MockEngine.remaining();
+    var timerEl = $('mtTimer');
+    timerEl.textContent = window.MockEngine.fmtMMSS(rem);
+    if (rem <= 60 && rem > 0) timerEl.classList.add('is-warn');
+    else timerEl.classList.remove('is-warn');
+  }
+
+  // —— 渲染答题卡 ——
+  function renderAnswerCard() {
+    var acContent = $('acContent');
+    window.MockEngine.renderAnswerCard(acContent, paper, {
+      onJump: function (qid) {
+        // 找 qid 对应的 allQuestions 索引
+        var idx = -1;
+        for (var i = 0; i < allQuestions.length; i++) {
+          if (allQuestions[i].q.id === qid) { idx = i; break; }
+        }
+        if (idx < 0) return;
+        qIndex = idx;
+        renderCurrent();
+        if (window.innerWidth <= 768) closeAcDrawer();
+      }
+    });
+    // 移动端：在 acContent 顶部已经由 toggle 按钮；刷新徽章
+    var st = window.MockEngine.state();
+    var answered = getAnsweredCount();
+    var badge = $('acToggleBadge');
+    if (badge) badge.textContent = '已答 + ' + answered + '/' + allQuestions.length;
+  }
+
+  // —— 渲染当前题 ——
+  function renderCurrent() {
+    var q = currentQuestion();
+    if (!q) { showLoadFailed('题目数据缺失'); return; }
+    renderStages();
+    renderTopbar();
+    var area = $('qArea');
+    area.innerHTML = '';
+    var st = window.MockEngine.buildRenderState(q.id);
+    var cb = {
+      onAnswer: function (qid, val) {
+        window.MockEngine.recordAnswer(qid, val);
+        // 重新渲染（含判分反馈）
+        var newQ = currentQuestion();
+        var newSt = window.MockEngine.buildRenderState(newQ.id);
+        var newNode = window.MockEngine.renderQuestion(newQ, newSt, cb);
+        area.innerHTML = '';
+        area.appendChild(newNode);
+        // 渲染底部 nav + 答题卡
+        renderQNav();
+        renderAnswerCard();
+        if (typeof window.lucideAutoRender === 'function') window.lucideAutoRender();
+      },
+      onDraft: function (qid, val) {
+        window.MockEngine.saveDraft(qid, val);
+        // 草稿不刷新 UI（避免打断输入）
+      }
+    };
+    var node = window.MockEngine.renderQuestion(q, st, cb);
+    area.appendChild(node);
+    renderQNav();
+    renderAnswerCard();
+    if (typeof window.lucideAutoRender === 'function') window.lucideAutoRender();
+  }
+
+  function renderQNav() {
+    var area = $('qArea');
+    var nav = document.createElement('div');
+    nav.className = 'mock-q-nav';
+    var prevDisabled = qIndex <= 0 ? 'disabled' : '';
+    var isLast = qIndex >= allQuestions.length - 1;
+    nav.innerHTML = '' +
+      '<button type="button" class="xt-btn xt-btn-secondary" data-act="prev" ' + prevDisabled + '>上一题</button>' +
+      '<button type="button" class="xt-btn xt-btn-text" data-act="drawer">答题卡</button>' +
+      (isLast
+        ? '<button type="button" class="xt-btn xt-btn-primary" data-act="submit">交卷</button>'
+        : '<button type="button" class="xt-btn xt-btn-primary" data-act="next">下一题</button>');
+    area.appendChild(nav);
+    nav.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-act]');
+      if (!btn || btn.disabled) return;
+      var act = btn.getAttribute('data-act');
+      if (act === 'prev') goPrev();
+      else if (act === 'next') goNext();
+      else if (act === 'submit') doSubmit();
+      else if (act === 'drawer') toggleAcDrawer();
+    });
+  }
+
+  function goPrev() {
+    if (qIndex > 0) { qIndex--; renderCurrent(); }
+  }
+  function goNext() {
+    if (qIndex < allQuestions.length - 1) { qIndex++; renderCurrent(); }
+    else doSubmit();
+  }
+
+  // —— 交卷 + 轻量确认条 ——
+  function doSubmit() {
+    var answered = getAnsweredCount();
+    var total = allQuestions.length;
+    if (answered < total) {
+      showConfirm('还有 ' + (total - answered) + ' 题未答，确定交卷吗？', function (yes) {
+        if (yes) actuallySubmit(false);
+      });
+      return;
+    }
+    actuallySubmit(false);
+  }
+
+  function actuallySubmit(auto) {
+    try {
+      var runId = window.MockEngine.submit(auto);
+      if (runId) {
+        // 跳转成绩页
+        window.location.href = 'mock_exam_result.html?paper=' + encodeURIComponent(paper.id) + '&run=' + encodeURIComponent(runId);
+      }
+    } catch (e) {
+      console.error('submit failed', e);
+      if (window.xtToast) window.xtToast('error', '交卷失败，请重试');
+    }
+  }
+
+  function showConfirm(msg, cb) {
+    var host = $('confirmHost');
+    host.innerHTML = '' +
+      '<div class="confirm-mask" role="dialog" aria-modal="true" aria-label="确认">' +
+        '<div class="confirm-box">' +
+          '<div class="confirm-msg">' + escHtml(msg) + '</div>' +
+          '<div class="confirm-actions">' +
+            '<button type="button" class="xt-btn xt-btn-secondary" data-act="cancel">取消</button>' +
+            '<button type="button" class="xt-btn xt-btn-primary" data-act="ok">确定交卷</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    host.style.display = 'block';
+    function close(result) {
+      host.innerHTML = '';
+      host.style.display = 'none';
+      cb(result);
+    }
+    host.querySelector('.confirm-mask').addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-act]');
+      if (!btn) {
+        // 点遮罩取消
+        close(false);
+        return;
+      }
+      var act = btn.getAttribute('data-act');
+      close(act === 'ok');
+    });
+    // Esc 取消
+    function escListener(e) {
+      if (e.key === 'Escape') {
+        document.removeEventListener('keydown', escListener);
+        close(false);
+      }
+    }
+    document.addEventListener('keydown', escListener);
+  }
+
+  // —— 移动端答题卡抽屉 ——
+  function toggleAcDrawer() {
+    acOpen = !acOpen;
+    if (acOpen) openAcDrawer(); else closeAcDrawer();
+  }
+  function openAcDrawer() {
+    acOpen = true;
+    var pane = $('acPane');
+    if (window.innerWidth <= 768) {
+      pane.classList.add('is-open');
+      var btn = $('acToggle');
+      if (btn) btn.setAttribute('aria-expanded', 'true');
+    }
+  }
+  function closeAcDrawer() {
+    acOpen = false;
+    var pane = $('acPane');
+    pane.classList.remove('is-open');
+    var btn = $('acToggle');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    var btn = $('acToggle');
+    if (btn) btn.addEventListener('click', toggleAcDrawer);
+  });
+
+  function showLoadFailed(msg) {
+    $('qArea').style.display = 'none';
+    $('stagesPane').style.display = 'none';
+    $('loadFailed').style.display = 'block';
+    if (msg) $('loadFailedMsg').textContent = msg;
+  }
+
+  // —— 主流程 ——
+  function start() {
+    var paperId = (new URLSearchParams(window.location.search)).get('paper') || '';
+    if (!paperId) { showLoadFailed('缺少 paper 参数'); return; }
+    paper = window.MockEngine.findPaper(paperId);
+    if (!paper) { showLoadFailed('未找到套卷：' + paperId); return; }
+    try { window.MockEngine.start(paperId); }
+    catch (e) { showLoadFailed('初始化失败：' + (e.message || e)); return; }
+
+    allQuestions = flattenQuestions(paper);
+    if (!allQuestions.length) { showLoadFailed('套卷无题目'); return; }
+    var st = window.MockEngine.state();
+    var curQid = st.currentQid;
+    // 找 currentQid 对应索引
+    qIndex = 0;
+    for (var i = 0; i < allQuestions.length; i++) {
+      if (allQuestions[i].q.id === curQid) { qIndex = i; break; }
+    }
+    renderCurrent();
+
+    // 顶栏交卷按钮
+    $('mtSubmit').addEventListener('click', doSubmit);
+
+    // tick 每秒
+    if (timerHandle) clearInterval(timerHandle);
+    timerHandle = setInterval(function () {
+      var r = window.MockEngine.tick();
+      if (r.expired) {
+        // 倒计时归零自动交卷
+        if (timerHandle) { clearInterval(timerHandle); timerHandle = null; }
+        actuallySubmit(true);
+        return;
+      }
+      renderTopbar();
+      // 答题卡也要刷新（answered 标记会变）
+      window.MockEngine.refreshAnswerCard($('acContent'));
+      // 移动端徽章
+      var answered = getAnsweredCount();
+      var badge = $('acToggleBadge');
+      if (badge) badge.textContent = '已答 + ' + answered + '/' + allQuestions.length;
+    }, 1000);
+  }
+
+  function boot() {
+    if (!window.MOCK_PAPERS_DATA || !window.MockEngine) { setTimeout(boot, 80); return; }
+    try { start(); }
+    catch (e) { console.error('start failed', e); showLoadFailed('初始化失败：' + (e.message || e)); }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+</script>
+
+</body>
+</html>
