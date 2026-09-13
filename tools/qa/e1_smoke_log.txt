@@ -49,7 +49,7 @@
   [OK] countdownModal 全套完整
   [OK] [data-icon] 元素≥5 且 SVG 已渲染
 
---- 商务礼仪面试.html : PASS ---  [data-icon]=68 svgRendered=68
+--- 商务礼仪面试.html : PASS ---  [data-icon]=67 svgRendered=67
   [OK] 静态: 无v=g残留/无损伤/已映射emoji清零/data-icon>0
   [OK] jsdom: 0 scriptErrors/0 uncaught/0 issues
   [OK] boundaryHit=0
