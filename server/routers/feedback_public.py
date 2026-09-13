@@ -23,10 +23,13 @@ import threading
 from datetime import datetime
 from typing import Literal
 
-from fastapi import APIRouter, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
 import config  # noqa: F401  导入即完成 server/.env 的加载
+from database import Feedback, SessionLocal, User, get_db
+from security import TYPE_ACCESS, decode_token, get_current_user
 
 router = APIRouter(prefix="/api/feedback", tags=["feedback-public"])
 
@@ -68,10 +71,40 @@ def _save_all(items: list[dict]) -> None:
     os.replace(tmp, DATA_FILE)
 
 
+def _current_user_optional(request: Request) -> User | None:
+    """需求01：免登录表单若携带合法 access token，则顺带关联账号。
+
+    拿不到（无 token / token 失效 / 非 access 令牌）一律返回 None，
+    **绝不阻断提交** —— 免登录提交必须始终可用。
+    """
+    auth = request.headers.get("Authorization", "")
+    if not auth.lower().startswith("bearer "):
+        return None
+    payload = decode_token(auth[7:].strip())
+    if not payload or payload.get("typ", TYPE_ACCESS) != TYPE_ACCESS:
+        return None
+    try:
+        uid = int(payload.get("sub") or 0)
+    except (TypeError, ValueError):
+        return None
+    if not uid:
+        return None
+    db = SessionLocal()
+    try:
+        return db.get(User, uid)
+    finally:
+        db.close()
+
+
 @router.post("")
-def submit_feedback(body: FeedbackIn, request: Request):
-    """免登录提交一条创作者反馈，追加写入 data/feedback.json。"""
+def submit_feedback(body: FeedbackIn, request: Request, db: Session = Depends(get_db)):
+    """免登录提交一条创作者反馈，追加写入 data/feedback.json。
+
+    需求01：若本次请求携带登录 token，额外记录 userId / username 便于后续在
+    「我的反馈」里回显；未登录时这两个字段不写入，行为与旧版完全一致。
+    """
     client_ip = request.client.host if request.client else "unknown"
+    u = _current_user_optional(request)
     with _write_lock:
         items = _load_all()
         record = {
@@ -81,7 +114,11 @@ def submit_feedback(body: FeedbackIn, request: Request):
             "type": body.type,
             "content": body.content.strip(),
             "ip": client_ip,
+            "status": "pending",
         }
+        if u is not None:
+            record["userId"] = u.id
+            record["username"] = u.username
         items.append(record)
         _save_all(items)
     return {"ok": True}
@@ -100,3 +137,56 @@ def list_feedback(x_admin_key: str = Header(default="")):
         raise HTTPException(401, "X-Admin-Key 校验失败")
     items = _load_all()
     return {"count": len(items), "items": sorted(items, key=lambda it: it.get("id", 0), reverse=True)}
+
+
+@router.get("/mine")
+def my_feedback(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """需求01：我的反馈（合并两源，含管理员回复 reply）。
+
+    - public 源：data/feedback.json 里携带本账号 userId（或早期仅 username）的记录；
+    - account 源：feedbacks 表 user_id == 我的记录。
+    字段与 /api/admin/feedback 完全同构（source/key/id/createdAt/type/content/
+    status/reply/repliedAt），前端可直接复用同一套渲染。
+    """
+    items: list[dict] = []
+    for it in _load_all():
+        owner_ok = (
+            (it.get("userId") is not None and it.get("userId") == user.id)
+            or (it.get("userId") is None and it.get("username") == user.username)
+        )
+        if not owner_ok:
+            continue
+        fid = int(it.get("id", 0) or 0)
+        replied_at = it.get("repliedAt") or it.get("replied_at") or ""
+        reply = it.get("reply") or ""
+        items.append({
+            "source": "public",
+            "key": f"public-{fid}",
+            "id": fid,
+            "createdAt": it.get("createdAt") or "",
+            "type": it.get("type") or "",
+            "content": it.get("content") or "",
+            "status": it.get("status") or ("replied" if reply else "pending"),
+            "reply": reply,
+            "repliedAt": replied_at,
+        })
+    rows = (
+        db.query(Feedback)
+        .filter(Feedback.user_id == user.id)
+        .order_by(Feedback.id.desc())
+        .all()
+    )
+    for f in rows:
+        items.append({
+            "source": "account",
+            "key": f"account-{f.id}",
+            "id": f.id,
+            "createdAt": f.created_at or "",
+            "type": f.type or "",
+            "content": f.content or "",
+            "status": f.status or "pending",
+            "reply": f.reply or "",
+            "repliedAt": f.replied_at or "",
+        })
+    items.sort(key=lambda x: (x.get("createdAt") or ""), reverse=True)
+    return {"items": items, "total": len(items)}

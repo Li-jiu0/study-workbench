@@ -82,6 +82,9 @@ def my_feedbacks(user: User = Depends(get_current_user), db: Session = Depends(g
             "screenshot": f.screenshot,
             "status": f.status,  # pending / replied
             "createdAt": f.created_at,
+            # 需求01：管理员回复（未回复时为空串 / NULL）
+            "reply": f.reply or "",
+            "repliedAt": f.replied_at or "",
         }
         for f in rows
     ]}

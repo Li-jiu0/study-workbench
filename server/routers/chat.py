@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
-from database import Message, User, get_db, is_friend, now_iso
+from database import Message, User, can_message, get_db, is_friend, now_iso
 from routers.friends import is_blocked
 from security import get_current_user
 from wsmanager import send_to
@@ -58,7 +58,8 @@ async def list_messages(peer_id: int, before_id: int = 0, limit: int = 30, mark_
     的未读消息批量置已读，并向对方回推 readReceipt（前端无需再显式调 read 接口；
     POST /{peer_id}/read 保留兼容）。
     """
-    if not is_friend(db, user.id, peer_id):
+    # 需求01：好友照旧；任一方是管理员也放行（普通用户可主动给管理员发私信）
+    if not can_message(db, user.id, peer_id):
         raise HTTPException(403, "仅好友之间可以查看聊天记录")
     limit = min(max(limit, 1), 100)
     cond = and_(
@@ -88,7 +89,8 @@ async def list_messages(peer_id: int, before_id: int = 0, limit: int = 30, mark_
 @router.post("/{peer_id}/messages")
 async def send_message(peer_id: int, body: SendMsgIn, user: User = Depends(get_current_user),
                        db: Session = Depends(get_db)):
-    if not is_friend(db, user.id, peer_id):
+    # 需求01：好友照旧；任一方是管理员也放行（普通用户可主动给管理员发私信）
+    if not can_message(db, user.id, peer_id):
         raise HTTPException(403, "仅好友之间可以私聊")
     if is_blocked(db, user.id, peer_id) or is_blocked(db, peer_id, user.id):
         raise HTTPException(403, "无法发送消息（已被限制）")

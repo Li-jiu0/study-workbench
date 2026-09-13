@@ -1,5 +1,6 @@
 """互动：点赞 / 收藏 / 评论 / 消息通知（点赞评论提醒笔记作者）。"""
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from database import (BoardLike, BoardMessage, BoardReply, Comment, Favorite, Like, Note, Notification, User,
@@ -151,12 +152,20 @@ def list_board(offset: int = 0, limit: int = 50,
                user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     rows = (
         db.query(BoardMessage)
+        # 需求01：管理员单向可见——其留言不出现在公开留言板（LEFT JOIN 兼容无作者脏数据）
+        .outerjoin(User, BoardMessage.user_id == User.id)
+        .filter(or_(User.id.is_(None), User.is_admin.is_(None), User.is_admin.is_(False)))
         .order_by(BoardMessage.id.desc())
         .offset(offset)
         .limit(min(max(limit, 1), 100))
         .all()
     )
-    total = db.query(BoardMessage).count()
+    total = (
+        db.query(BoardMessage)
+        .outerjoin(User, BoardMessage.user_id == User.id)
+        .filter(or_(User.id.is_(None), User.is_admin.is_(None), User.is_admin.is_(False)))
+        .count()
+    )
     liked_ids = set()
     if rows:
         liked_rows = db.query(BoardLike.message_id).filter(

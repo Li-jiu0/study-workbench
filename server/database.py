@@ -56,6 +56,13 @@ class User(Base):
     # 令牌版本号（A6/B3）：本批只加列不启用鉴权校验（避免全站鉴权风险），
     # 「退出所有设备」的签发/校验留到批次二 B3 落地。
     token_version = Column(Integer, nullable=False, default=0)
+    # 需求01（2026-09-13）：管理员超级账号标记。1=管理员。
+    # 单向可见：不出现在普通用户的好友列表 / 用户搜索 / 在线状态里；
+    # 但私信通道对其放行（普通用户可主动给管理员发私信，管理员可回复）。
+    # 默认 0，存量用户行为零变化。
+    # 注：用户活跃时间复用同表 last_seen_at（security._touch_last_seen 已在每次
+    # 鉴权请求节流刷新，60s 粒度），不另建 last_active 列，避免双份数据不一致。
+    is_admin = Column(Boolean, nullable=False, default=False)
     created_at = Column(String(16), nullable=False)
 
     notes = relationship("Note", back_populates="author", cascade="all, delete-orphan")
@@ -254,6 +261,9 @@ class Feedback(Base):
     screenshot = Column(String(256), nullable=True)
     status = Column(String(16), nullable=False, default="pending")
     created_at = Column(String(19), nullable=False)
+    # 需求01（2026-09-13）：管理员回复。reply 空串 = 未回复；replied_at NULL = 未回复。
+    reply = Column(Text, nullable=False, default="")
+    replied_at = Column(String(19), nullable=True)
 
 
 class StudyLog(Base):
@@ -338,6 +348,29 @@ def friend_ids_of(db: Session, uid: int) -> set[int]:
     return {b if a == uid else a for a, b in rows}
 
 
+def is_admin_user(user) -> bool:
+    """需求01：是否管理员账号。
+
+    用 getattr 兜底，兼容 is_admin 列缺失的老会话对象 / None 用户（一律视为非管理员），
+    避免管理员判断把请求打挂。
+    """
+    return bool(getattr(user, "is_admin", False))
+
+
+def can_message(db: Session, a: int, b: int) -> bool:
+    """需求01：a 与 b 是否允许互发私信。
+
+    好友之间照旧放行；此外任一方是管理员时额外放行 —— 管理员不在任何人的好友表里
+    （单向可见，普通用户的列表里看不到他），但需求要求「普通用户可主动发起私信给
+    管理员、管理员可回复」。只用于私信通道，不放大任何其它权限。
+    """
+    if not a or not b or a == b:
+        return False
+    if is_friend(db, a, b):
+        return True
+    return is_admin_user(db.get(User, a)) or is_admin_user(db.get(User, b))
+
+
 def _table_names() -> set[str]:
     with engine.connect() as conn:
         rows = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table'")).fetchall()
@@ -401,6 +434,19 @@ def _upgrade_legacy_schema() -> None:
     if "users" in names and "token_version" not in _table_columns("users"):
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 0"))
+    # 需求01（2026-09-13）：users 补 is_admin（守卫式、幂等、无损）。
+    # 先 PRAGMA 判断列是否存在，已有库重复启动不会报 duplicate column name。
+    if "users" in names and "is_admin" not in _table_columns("users"):
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE users ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT 0"))
+    # 需求01（2026-09-13）：feedbacks 补 reply / replied_at（守卫式、幂等、无损）。
+    if "feedbacks" in names:
+        fcols = _table_columns("feedbacks")
+        with engine.begin() as conn:
+            if "reply" not in fcols:
+                conn.execute(text("ALTER TABLE feedbacks ADD COLUMN reply TEXT NOT NULL DEFAULT ''"))
+            if "replied_at" not in fcols:
+                conn.execute(text("ALTER TABLE feedbacks ADD COLUMN replied_at TEXT"))
     # T03 增量（2026-09-11）：隐私三字段 + 群公告 + 群名片（5 列守卫式 ALTER，幂等、无损）。
     # 默认值 = 现状行为（仅好友可见 / 需验证 / 可被搜索 / 无公告 / 无群名片），老用户零感知。
     if "users" in names:

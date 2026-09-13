@@ -4,7 +4,7 @@ import re
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from database import User, get_db, now_str
+from database import User, get_db, is_admin_user, now_str
 from rate_limit import rate_limit
 from schemas import ChangePasswordIn, LoginIn, RefreshIn, RegisterIn, privacy_of
 from security import (TYPE_ACCESS, TYPE_REFRESH, create_token,
@@ -18,13 +18,19 @@ _USERNAME_RE = re.compile(r"^[一-龥A-Za-z0-9_]{3,20}$")
 
 def _auth_payload(user: User) -> dict:
     """登录 / 注册 / 刷新共用的返回结构：access + refresh 双令牌。"""
+    admin = is_admin_user(user)
     return {
         "token": create_token(user.id, TYPE_ACCESS),
         "refreshToken": create_token(user.id, TYPE_REFRESH),
+        # 需求01：管理员标记（camelCase 与 snake_case 双写，前端与验收脚本各自取用）
+        "isAdmin": admin,
+        "is_admin": admin,
         "user": {
             "id": user.id,
             "username": user.username,
             "nickname": user.nickname,
+            "isAdmin": admin,
+            "is_admin": admin,
         },
     }
 
@@ -85,6 +91,9 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         "id": user.id,
         "username": user.username,
         "nickname": user.nickname,
+        # 需求01：管理员标记（camelCase 与 snake_case 双写）
+        "isAdmin": is_admin_user(user),
+        "is_admin": is_admin_user(user),
         "motto": user.motto,
         "bio": user.bio or "",
         "gender": user.gender or "secret",
