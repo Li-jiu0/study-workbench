@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>四级词汇 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913j">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913j">
-<link rel="stylesheet" href="assets/states.css?v=20260913j">
-<link rel="stylesheet" href="assets/polish.css?v=20260913j">
+<link rel="stylesheet" href="assets/common.css?v=20260913k">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913k">
+<link rel="stylesheet" href="assets/states.css?v=20260913k">
+<link rel="stylesheet" href="assets/polish.css?v=20260913k">
 </head>
 <body class="theme-home">
 
@@ -66,7 +66,7 @@
         <div class="user-avatar">学</div>
         <div class="user-info">
           <div class="user-name">同学</div>
-          <div class="user-streak">🔥 连续打卡 0 天</div>
+          <div class="user-streak"><span class="nav-icon" data-icon="fire" data-icon-size="14"></span> 连续打卡 0 天</div>
         </div>
       </div>
     </div>
@@ -77,7 +77,7 @@
       <div class="topbar-title" id="topbarTitle">四级词汇</div>
       <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
       <div class="gs-wrap" id="gsWrap">
-        <input type="text" class="gs-input" id="gsInput" placeholder="🔍 搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <input type="text" class="gs-input" id="gsInput" placeholder="搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
         <div class="gs-dropdown" id="gsDropdown"></div>
       </div>
       <div class="topbar-stats">
@@ -87,7 +87,7 @@
       </div>
       <div class="topbar-date" id="topbarDate"></div>
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
-      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0">🌙</div>
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="18"></span></div>
     </header>
 <div class="page active" id="page-cet-vocab">
       <div class="card">
@@ -98,36 +98,36 @@
           </div>
         </div>
         <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-          <button class="btn btn-primary btn-sm" id="vocabModeNew" onclick="switchVocabMode('new')">📚 学习新词</button>
-          <button class="btn btn-outline btn-sm" id="vocabModeReview" onclick="switchVocabMode('review')">🔄 复习单词</button>
-          <button class="btn btn-outline btn-sm" id="vocabShuffleBtn" onclick="shuffleVocab()">🔀 随机</button>
+          <button class="btn btn-primary btn-sm" id="vocabModeNew" onclick="switchVocabMode('new')"><span class="nav-icon" data-icon="book-open" data-icon-size="16"></span> 学习新词</button>
+          <button class="btn btn-outline btn-sm" id="vocabModeReview" onclick="switchVocabMode('review')"><span class="nav-icon" data-icon="rotate-ccw" data-icon-size="16"></span> 复习单词</button>
+          <button class="btn btn-outline btn-sm" id="vocabShuffleBtn" onclick="shuffleVocab()"><span class="nav-icon" data-icon="shuffle" data-icon-size="16"></span> 随机</button>
           <span class="tag" id="vocabModeInfo" style="margin-left:auto;align-self:center">新词模式</span>
         </div>
         <div id="vocabCard" style="background:linear-gradient(135deg,var(--primary-light),#fff);border-radius:16px;padding:28px 24px;text-align:center;margin-bottom:16px;min-height:160px;display:flex;flex-direction:column;justify-content:center;cursor:pointer" onclick="toggleVocabMeaning()">
           <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:8px">
             <div id="vocabWord" style="font-size:var(--xt-font-display);font-weight:800;color:var(--text)"></div>
-            <button onclick="event.stopPropagation();speakWord()" style="background:none;border:none;font-size:var(--xt-font-xl);cursor:pointer;padding:4px" title="听发音">🔊</button>
+            <button onclick="event.stopPropagation();speakWord()" style="background:none;border:none;font-size:var(--xt-font-xl);cursor:pointer;padding:4px" title="听发音"><span class="nav-icon" data-icon="volume-2" data-icon-size="18"></span></button>
           </div>
           <div id="vocabPhonetic" style="font-size:var(--xt-font-md);color:var(--text-secondary);margin-bottom:12px;font-family:monospace"></div>
           <div id="vocabMeaning" style="font-size:var(--xt-font-lg);color:var(--primary);font-weight:600;display:none;margin-bottom:8px"></div>
-          <div id="vocabHint" style="font-size:var(--xt-font-sm);color:var(--text-muted);margin-top:8px">👆 点击卡片显示释义和详解</div>
+          <div id="vocabHint" style="font-size:var(--xt-font-sm);color:var(--text-muted);margin-top:8px"><span class="nav-icon" data-icon="pointer" data-icon-size="14"></span> 点击卡片显示释义和详解</div>
         </div>
         <!-- 多维度详解区域 -->
         <div id="vocabDetail" style="display:none;margin-bottom:16px;flex-direction:column;gap:10px">
           <div id="vocabRoot" style="padding:12px 14px;background:#F0F4FF;border-radius:10px;font-size:var(--xt-font-base);display:none">
-            <span style="font-weight:700;color:var(--primary)">🌱 词根词缀：</span><span id="vocabRootText"></span>
+            <span style="font-weight:700;color:var(--primary)"><span class="nav-icon" data-icon="sprout" data-icon-size="14"></span> 词根词缀：</span><span id="vocabRootText"></span>
           </div>
           <div id="vocabCollocation" style="padding:12px 14px;background:#E8F8E8;border-radius:10px;font-size:var(--xt-font-base);display:none">
-            <div style="font-weight:700;color:var(--success);margin-bottom:4px">📌 常用搭配</div>
+            <div style="font-weight:700;color:var(--success);margin-bottom:4px"><span class="nav-icon" data-icon="pin" data-icon-size="14"></span> 常用搭配</div>
             <div id="vocabCollocationText" style="line-height:1.8"></div>
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <div id="vocabSynonym" style="flex:1;min-width:180px;padding:12px 14px;background:#FFF8E6;border-radius:10px;font-size:var(--xt-font-base);display:none">
-              <div style="font-weight:700;color:var(--warning);margin-bottom:4px">🔄 近义词</div>
+              <div style="font-weight:700;color:var(--warning);margin-bottom:4px"><span class="nav-icon" data-icon="rotate-ccw" data-icon-size="14"></span> 近义词</div>
               <div id="vocabSynonymText"></div>
             </div>
             <div id="vocabAntonym" style="flex:1;min-width:180px;padding:12px 14px;background:#FFECEC;border-radius:10px;font-size:var(--xt-font-base);display:none">
-              <div style="font-weight:700;color:var(--danger);margin-bottom:4px">↔️ 反义词</div>
+              <div style="font-weight:700;color:var(--danger);margin-bottom:4px"><span class="nav-icon" data-icon="arrow-left-right" data-icon-size="14"></span> 反义词</div>
               <div id="vocabAntonymText"></div>
             </div>
           </div>
@@ -136,7 +136,7 @@
         </div>
         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
           <button class="btn btn-outline" onclick="prevVocab()">← 上一个</button>
-          <button class="btn btn-secondary" onclick="markVocabKnown()">✅ 认识</button>
+          <button class="btn btn-secondary" onclick="markVocabKnown()"><span class="nav-icon" data-icon="check" data-icon-size="16"></span> 认识</button>
           <button class="btn btn-primary" onclick="nextVocab()">下一个 →</button>
           <button class="btn btn-outline" onclick="navigateTo('cet')">返回四级</button>
         </div>
@@ -247,7 +247,7 @@
         <div class="ai-title">AI学习助手</div>
         <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
       </div>
-      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录">🧹</div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录"><span class="nav-icon" data-icon="eraser" data-icon-size="16"></span></div>
       <div class="ai-close" onclick="toggleAiPanel()" title="收起面板">✕</div>
     </div>
     <div class="ai-messages" id="aiMessages"></div>
@@ -261,14 +261,14 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913j" defer></script>
-<script src="assets/xt-toast.js?v=20260913j" defer></script>
-<script src="assets/error-boundary.js?v=20260913j" defer></script>
-<script src="assets/app.js?v=20260913j" defer></script>
-<script src="assets/config.js?v=20260913j" defer></script>
-<script src="assets/api.js?v=20260913j" defer></script>
+<script src="assets/icon-map.js?v=20260913k" defer></script>
+<script src="assets/xt-toast.js?v=20260913k" defer></script>
+<script src="assets/error-boundary.js?v=20260913k" defer></script>
+<script src="assets/app.js?v=20260913k" defer></script>
+<script src="assets/config.js?v=20260913k" defer></script>
+<script src="assets/api.js?v=20260913k" defer></script>
 
-<script src="assets/qbank.js?v=20260913j" defer></script>
+<script src="assets/qbank.js?v=20260913k" defer></script>
 <script>
 // P1 修复（0913i）：词库增量分片合并完成（app.js 派发 'vocab-merged'）后，
 // 按当前模式重建 vocabModeList（新词/复习过滤基于合并后的 CET_VOCAB）并重渲染，

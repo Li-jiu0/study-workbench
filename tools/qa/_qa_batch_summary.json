@@ -1,5 +1,5 @@
 {
-  "at": "2026-09-13T09:20:22.780Z",
+  "at": "2026-09-13T10:49:39.917Z",
   "withC1": true,
   "results": [
     {
@@ -106,7 +106,7 @@
       "id": "A-①",
       "name": "assets/api.js 含 window.lsKey('study_workbench_ai_chat')（同步 AI 历史走前缀键）",
       "pass": true,
-      "detail": "line 1063"
+      "detail": "line 1143"
     },
     {
       "id": "A-②",
@@ -118,7 +118,7 @@
       "id": "A-③",
       "name": "个人中心.html「穿越英语」守卫写法（if(window.openQuest)…）且无裸调残留",
       "pass": true,
-      "detail": "line 408"
+      "detail": "line 491"
     }
   ],
   "c1Menu": [

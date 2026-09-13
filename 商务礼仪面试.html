@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>商务礼仪及面试 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913j">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913j">
-<link rel="stylesheet" href="assets/states.css?v=20260913j">
-<link rel="stylesheet" href="assets/polish.css?v=20260913j">
+<link rel="stylesheet" href="assets/common.css?v=20260913k">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913k">
+<link rel="stylesheet" href="assets/states.css?v=20260913k">
+<link rel="stylesheet" href="assets/polish.css?v=20260913k">
 </head>
 <body class="theme-interview">
 
@@ -77,7 +77,7 @@
       <div class="topbar-title" id="topbarTitle">商务礼仪及面试</div>
       <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
       <div class="gs-wrap" id="gsWrap">
-        <input type="text" class="gs-input" id="gsInput" placeholder="🔍 搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <input type="text" class="gs-input" id="gsInput" placeholder="搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
         <div class="gs-dropdown" id="gsDropdown"></div>
       </div>
       <div class="topbar-stats">
@@ -87,11 +87,11 @@
       </div>
       <div class="topbar-date" id="topbarDate"></div>
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
-      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0">🌙</div>
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="18"></span></div>
     </header>
     <div class="content">
 <div class="page active" id="page-interview">
-        <!-- 【批次 20260913j】原页首英雄卡已删除；模块统计由下方 study-stats 卡（#ivStatsCard）承担 -->
+        <!-- 【批次 20260913k】原页首英雄卡已删除；模块统计由下方 study-stats 卡（#ivStatsCard）承担 -->
 
         <!-- 【后续扩展点】T7 增量（2026-09-11）：学习概况统计卡（study-stats.js 渲染） -->
         <div id="ivStatsCard" class="study-stats-card"></div>
@@ -132,7 +132,7 @@
             <span class="feature-badge tag-primary">已上线</span>
             <span class="feature-badge" id="etiquetteTodayBadge" style="background:#E3F2FD;color:#1565C0;margin-left:4px">今日待学 0</span>
           </div>
-          <div class="feature-card" onclick="openMiniQuiz('iv-prep')">
+          <div class="feature-card" onclick="ivPrepAfterEnter('prep')">
             <div class="feature-icon"><span data-icon="clipboard" data-icon-size="24"></span></div>
             <div class="feature-title">面试准备</div>
             <div class="feature-desc">简历优化、自我介绍、公司调研、着装材料清单</div>
@@ -161,7 +161,7 @@
             <div class="feature-desc">AI面试官语音提问+追问，即时评定，结束给总评报告</div>
             <span class="feature-badge tag-primary">体验版</span>
           </div>
-          <div class="feature-card" onclick="openMiniQuiz('iv-after')">
+          <div class="feature-card" onclick="ivPrepAfterEnter('after')">
             <div class="feature-icon"><span data-icon="inbox" data-icon-size="24"></span></div>
             <div class="feature-title">面试后</div>
             <div class="feature-desc">感谢信模板、复盘清单、offer对比与谈判、入职准备</div>
@@ -280,8 +280,8 @@
         </div>
       </div>
 
-      <!-- 【批次 20260913j】无领导小组讨论 · 合并页（原两个入口均指向本页）
-           tab1 = 无领导小组讨论（准备）：iv-group 小题库，mini.js 内联渲染进 #gdPrepPane；
+      <!-- 【批次 20260913k】无领导小组讨论 · 合并页（原两个入口均指向本页）
+           tab1 = 无领导小组讨论（准备）：iv-group 小题库，K 批改由本页 ivQuizMount 内联渲染进 #gdPrepPane；
            tab2 = AI 无领导小组讨论（实战）：group-discussion.js 检测到 #gdAiPane 时渲染为页面内面板（不再弹浮层）。
            功能逻辑（角色选择/话术渲染/对话训练/结束评定）不变，仅更换呈现载体。 -->
       <div class="page" id="page-iv-group">
@@ -302,6 +302,58 @@
         </div>
         <div class="gd-pane" id="gdPrepPane"></div>
         <div class="gd-pane" id="gdAiPane" style="display:none"></div>
+      </div>
+
+      <!-- 【批次 20260913K】面试准备 / 面试后 · 页面内全屏面板（原小题库浮层改造）
+           数据仍取 assets/mini-interview.js 的 window.MINI_BANK['iv-prep'/'iv-after']，
+           渲染由本页 ivQuizMount（见页尾脚本）承担，进度/得分仍写 mini_stats；
+           版式对齐「高频问题库」（面试题库.html）的 card + card-header + tag 呈现。 -->
+      <style>
+        .ivp-bar{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+        .ivp-bar-title{font-size:15px;font-weight:700;color:var(--text)}
+        .ivq-root{display:flex;flex-direction:column;gap:12px}
+        .ivq-prog{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+        .ivq-pill{font-size:12px;padding:3px 10px;border-radius:20px;background:var(--primary-light);color:var(--primary);font-weight:600}
+        .ivq-quest{font-size:15px;font-weight:600;line-height:1.6;white-space:pre-wrap}
+        .ivq-op{display:block;width:100%;text-align:left;padding:11px 14px;margin-bottom:8px;border:1.5px solid var(--border);border-radius:12px;background:var(--card);color:var(--text);font-size:14px;line-height:1.5;cursor:pointer;transition:.15s}
+        .ivq-op:hover{border-color:var(--primary)}
+        .ivq-op.ok{background:rgba(82,196,26,.12);border-color:var(--success)}
+        .ivq-op.bad{background:rgba(255,107,107,.12);border-color:var(--danger)}
+        .ivq-op:disabled{cursor:default;opacity:.9}
+        .ivq-xp{background:var(--primary-light);border-left:3px solid var(--primary);border-radius:0 10px 10px 0;padding:10px 12px;font-size:13px;line-height:1.6;white-space:pre-wrap}
+        .ivq-acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+        .ivq-score{text-align:center;padding:14px 0}
+        .ivq-score .n{font-size:40px;font-weight:800;background:linear-gradient(135deg,var(--primary),var(--primary-dark));-webkit-background-clip:text;background-clip:text;color:transparent}
+        .ivq-score .s{color:var(--text-secondary);margin-top:4px;font-size:13px}
+        .ivq-tip{font-size:12px;color:var(--text-muted);text-align:center;padding:2px 0 10px}
+      </style>
+
+      <div class="page" id="page-iv-prep">
+        <div class="ivp-bar">
+          <button class="btn btn-outline btn-sm" onclick="navigateTo('interview')">← 返回</button>
+          <div class="ivp-bar-title"><span data-icon="clipboard" data-icon-size="16" style="vertical-align:-3px"></span> 面试准备</div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="title-icon" data-icon="clipboard"></span>面试准备 · 自测题库</div>
+            <span class="tag tag-primary" id="ivPrepCount">精选题</span>
+          </div>
+          <div class="ivq-root" id="ivPrepBody"></div>
+        </div>
+      </div>
+
+      <div class="page" id="page-iv-after">
+        <div class="ivp-bar">
+          <button class="btn btn-outline btn-sm" onclick="navigateTo('interview')">← 返回</button>
+          <div class="ivp-bar-title"><span data-icon="inbox" data-icon-size="16" style="vertical-align:-3px"></span> 面试后</div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="title-icon" data-icon="inbox"></span>面试后 · 自测题库</div>
+            <span class="tag tag-primary" id="ivAfterCount">精选题</span>
+          </div>
+          <div class="ivq-root" id="ivAfterBody"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -393,11 +445,11 @@
        3. 安全约束：大模型密钥只放在后端 .env 里，前端代码永远不出现密钥。 -->
   <!-- 悬浮头像：可按住拖拽到任意位置（见下方 JS.initAiFabDrag），点击打开/收起面板，双击复位 -->
   <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">
-    🤖<span class="ai-mode-badge" id="aiModeBadge">演示</span>
+    <span class="nav-icon" data-icon="bot" data-icon-size="22"></span><span class="ai-mode-badge" id="aiModeBadge">演示</span>
   </div>
   <div class="ai-panel" id="aiPanel">
     <div class="ai-panel-header">
-      <div class="ai-avatar">🤖</div>
+      <div class="ai-avatar"><span class="nav-icon" data-icon="bot" data-icon-size="20"></span></div>
       <div style="flex:1">
         <div class="ai-title">AI学习助手</div>
         <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
@@ -416,17 +468,17 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913j" defer></script>
-<script src="assets/xt-toast.js?v=20260913j" defer></script>
-<script src="assets/error-boundary.js?v=20260913j" defer></script>
-<script src="assets/app.js?v=20260913j" defer></script>
-<script src="assets/config.js?v=20260913j" defer></script>
-<script src="assets/api.js?v=20260913j" defer></script>
+<script src="assets/icon-map.js?v=20260913k" defer></script>
+<script src="assets/xt-toast.js?v=20260913k" defer></script>
+<script src="assets/error-boundary.js?v=20260913k" defer></script>
+<script src="assets/app.js?v=20260913k" defer></script>
+<script src="assets/config.js?v=20260913k" defer></script>
+<script src="assets/api.js?v=20260913k" defer></script>
 
-<script src="assets/mini-interview.js?v=20260913j" defer></script>
-<script src="assets/mini.js?v=20260913j" defer></script>
-<script src="assets/group-discussion.js?v=20260913j" defer></script>
-<script src="assets/study-stats.js?v=20260913j" defer></script>
+<script src="assets/mini-interview.js?v=20260913k" defer></script>
+<script src="assets/mini.js?v=20260913k" defer></script>
+<script src="assets/group-discussion.js?v=20260913k" defer></script>
+<script src="assets/study-stats.js?v=20260913k" defer></script>
 <script>
 /* ==================== T7 增量（P0-8/P0-12）：统计卡 + 四分类题库 + AI 模拟面试官 ==================== */
 (function () {
@@ -435,9 +487,9 @@
   function apiBase() { return (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000')); }
   function tok() { return localStorage.getItem('study_workbench_token') || ''; }
 
-  /* ---------- 批次 20260913j：无领导小组讨论合并页（准备 + AI 实战 双 tab） ----------
+  /* ---------- 批次 20260913k：无领导小组讨论合并页（准备 + AI 实战 双 tab） ----------
      两个入口（无领导小组讨论 / AI无领导小组讨论）均通过 ivGroupEnter 进入 #page-iv-group；
-     各 tab 首次进入时才渲染，保留另一 tab 的进行中状态；功能逻辑不改，仅换呈现载体。 */
+     各 tab 首次进入时才渲染（K 批：准备 tab 由本页 ivQuizMount 渲染），保留另一 tab 的进行中状态。 */
   window.ivGroupTab = function (t) {
     var prep = $id('gdPrepPane'), ai = $id('gdAiPane');
     if (!prep || !ai) return;
@@ -449,8 +501,8 @@
     if (!onPrep && !ai.querySelector('#gdContent') && window.GroupDiscussion) {
       window.GroupDiscussion.open(); // 渲染为页面内面板（见 group-discussion.js 的 #gdAiPane 分支）
     }
-    if (onPrep && !prep.querySelector('.mz-mask') && typeof window.openMiniQuiz === 'function') {
-      window.openMiniQuiz('iv-group', 'gdPrepPane'); // 第二参数=内联容器（见 mini.js 的 mz-inline 支持）
+    if (onPrep && prep.dataset.ivqMounted !== '1' && typeof window.ivQuizMount === 'function') {
+      window.ivQuizMount('iv-group', 'gdPrepPane'); // K 批：本页自渲染器（mini.js 的 mz-inline 分支未实装，直接调用会退化为浮层）
     }
   };
 
@@ -462,6 +514,125 @@
     var tt = $id('topbarTitle');
     if (tt) tt.textContent = '无领导小组讨论';
     window.ivGroupTab(tab === 'ai' ? 'ai' : 'prep');
+  };
+
+  /* ---------- 批次 20260913K：页面内自测面板渲染器（面试准备 / 面试后 / 无领导准备） ----------
+     背景：原入口走 assets/mini.js 的小题库浮层；其 mz-inline 分支实际未实装
+     （renderShell 始终往 body 挂遮罩层），本页改为自渲染为页面内全屏面板。
+     数据仍读 window.MINI_BANK（assets/mini-interview.js），进度/得分仍写 mini_stats
+     （按账号前缀键，与 mini.js 同构），答题行为（乱序、即时判分、解析、成绩）保持一致。 */
+  function ivqLsKey(k) { return (typeof window.lsKey === 'function') ? window.lsKey(k) : k; }
+  function ivqEsc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  var IVQ = { id: '', bodyId: '', qs: [], i: 0, right: 0 };
+
+  /**
+   * 把 MINI_BANK[catId] 渲染为页面内自测面板（容器 innerHTML 直写）
+   * @param {string} catId 题库类目 id（iv-prep / iv-after / iv-group）
+   * @param {string} bodyId 宿主容器 id（ivPrepBody / ivAfterBody / gdPrepPane）
+   */
+  window.ivQuizMount = function (catId, bodyId) {
+    var body = $id(bodyId);
+    if (!body) return;
+    var bank = window.MINI_BANK || {};
+    var cat = bank[catId];
+    if (!cat || !cat.q || !cat.q.length) {
+      body.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted)">题库加载中，请稍后重试</div>';
+      return; // 不置 mounted 标记，便于数据就绪后重试
+    }
+    var qs = cat.q.slice(); // Fisher-Yates 乱序（与 mini.js rand 同构）
+    for (var i = qs.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = qs[i]; qs[i] = qs[j]; qs[j] = t;
+    }
+    IVQ = { id: catId, bodyId: bodyId, qs: qs, i: 0, right: 0 };
+    body.dataset.ivqMounted = '1';
+    var cnt = $id(bodyId === 'ivPrepBody' ? 'ivPrepCount' : (bodyId === 'ivAfterBody' ? 'ivAfterCount' : ''));
+    if (cnt) cnt.textContent = qs.length + ' 道精选题';
+    renderIvqQ();
+  };
+
+  function renderIvqQ() {
+    var body = $id(IVQ.bodyId);
+    if (!body) return;
+    var q = IVQ.qs[IVQ.i];
+    var h = '<div class="ivq-prog"><span class="ivq-pill">第 ' + (IVQ.i + 1) + ' / ' + IVQ.qs.length + ' 题</span>' +
+      '<span class="ivq-pill" id="ivqRightPill" style="margin-left:auto">已对 ' + IVQ.right + '</span></div>' +
+      '<div class="ivq-quest">' + ivqEsc(q.q) + '</div>' +
+      q.o.map(function (op, i) {
+        return '<button class="ivq-op" data-i="' + i + '" onclick="window.ivqPick(' + i + ')"><b>' + 'ABCD'[i] + '.</b> ' + ivqEsc(op) + '</button>';
+      }).join('');
+    body.innerHTML = h;
+  }
+
+  window.ivqPick = function (i) {
+    var body = $id(IVQ.bodyId);
+    if (!body) return;
+    var q = IVQ.qs[IVQ.i];
+    var opts = body.querySelectorAll('.ivq-op');
+    opts.forEach(function (b) { b.disabled = true; });
+    if (i === q.a) {
+      IVQ.right++;
+      opts[i].classList.add('ok');
+      var rp = $id('ivqRightPill');
+      if (rp) rp.textContent = '已对 ' + IVQ.right;
+    } else {
+      opts[i].classList.add('bad');
+      if (q.a < opts.length) opts[q.a].classList.add('ok');
+    }
+    var xp = document.createElement('div');
+    xp.className = 'ivq-xp';
+    xp.innerHTML = '<b>' + (i === q.a ? '回答正确' : '回答错误，正确答案是 ' + 'ABCD'[q.a]) + '</b><br>' + ivqEsc(q.x || '');
+    body.appendChild(xp);
+    var acts = document.createElement('div');
+    acts.className = 'ivq-acts';
+    var last = IVQ.i === IVQ.qs.length - 1;
+    acts.innerHTML = last
+      ? '<button class="btn btn-outline btn-sm" onclick="window.ivqAgain()">再来一组</button><button class="btn btn-primary" onclick="window.ivqFinish()">查看成绩</button>'
+      : '<button class="btn btn-primary" onclick="window.ivqNext()">下一题 →</button>';
+    body.appendChild(acts);
+    acts.scrollIntoView({ block: 'nearest' });
+    // 与 mini.js 口径一致：答题算一次「学习动作」，推进全局连续打卡
+    try { window.Streak && window.Streak.bump(); } catch (e) { /* 静默 */ }
+  };
+
+  window.ivqNext = function () {
+    IVQ.i++;
+    renderIvqQ();
+    var b = $id(IVQ.bodyId);
+    if (b) b.scrollTop = 0;
+  };
+
+  window.ivqAgain = function () { window.ivQuizMount(IVQ.id, IVQ.bodyId); };
+
+  window.ivqFinish = function () {
+    // 成绩写回 mini_stats（键结构与 mini.js 完全一致，历史进度可沿用）
+    try {
+      var stat = JSON.parse(localStorage.getItem(ivqLsKey('mini_stats'))) || {};
+      stat[IVQ.id] = { done: IVQ.qs.length, correct: IVQ.right, n: IVQ.qs.length };
+      localStorage.setItem(ivqLsKey('mini_stats'), JSON.stringify(stat));
+    } catch (e) { /* 静默 */ }
+    var body = $id(IVQ.bodyId);
+    if (!body) return;
+    var pct = Math.round(IVQ.right / IVQ.qs.length * 100);
+    body.innerHTML = '<div class="ivq-score"><div class="n">' + pct + '%</div><div class="s">答对 ' + IVQ.right + ' / ' + IVQ.qs.length + ' 题</div></div>' +
+      (pct >= 80 ? '<div class="ivq-tip">掌握得不错！</div>' : pct >= 60 ? '<div class="ivq-tip">还可以，把错题解析再看一遍~</div>' : '<div class="ivq-tip">建议把解析都看一遍再练一次</div>') +
+      '<div class="ivq-acts"><button class="btn btn-outline btn-sm" onclick="window.ivqAgain()">再来一组</button><button class="btn btn-primary" onclick="navigateTo(\'interview\')">完成</button></div>';
+  };
+
+  /** 面试准备 / 面试后 入口：切页 + 恢复模块主题标题 + 挂载题库面板 */
+  window.ivPrepAfterEnter = function (kind) {
+    var isAfter = (kind === 'after');
+    if (typeof navigateTo === 'function') navigateTo(isAfter ? 'iv-after' : 'iv-prep');
+    // navigateTo 对未登记页面会回退 theme-home 标题，这里恢复本模块主题与标题
+    var dark = document.body.classList.contains('dark');
+    document.body.className = 'theme-interview' + (dark ? ' dark' : '');
+    var tt = $id('topbarTitle');
+    if (tt) tt.textContent = isAfter ? '面试后' : '面试准备';
+    window.ivQuizMount(isAfter ? 'iv-after' : 'iv-prep', isAfter ? 'ivAfterBody' : 'ivPrepBody');
   };
 
   // 面试题库（四分类，独立于页面既有题库）
@@ -507,7 +678,9 @@
   window.ivQuizShowTip = function () {
     var tip = $id('ivQuizTip');
     tip.className = 'qtab-verdict ok';
-    tip.textContent = '💡 ' + IV_BANK[IV.idx].tip;
+    /* K 批：要点提示 emoji 前缀 → lucide lightbulb 图标（要点正文保持纯文本节点） */
+    tip.innerHTML = '<span data-icon="lightbulb" data-icon-size="14" style="vertical-align:-2px"></span> ';
+    tip.appendChild(document.createTextNode(IV_BANK[IV.idx].tip));
   };
 
   /* ---------- AI 模拟面试官（多轮追问，结束后总评） ---------- */

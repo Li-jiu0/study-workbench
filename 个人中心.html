@@ -5,11 +5,37 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" data-page-node-id="scAqzajn3bTDCBBENuGZj0">
 <meta name="theme-color" content="#5B8DEF" data-page-node-id="xcIilqbK544vSHAWBPyO4w">
 <title>个人中心 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913j" data-page-node-id="tBLcp6JxdB6dWCmMCCx7F8">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913j">
-<link rel="stylesheet" href="assets/states.css?v=20260913j">
-<link rel="stylesheet" href="assets/polish.css?v=20260913j" data-page-node-id="uqByqsnHV08jClPBpI9G16">
-</head>
+<link rel="stylesheet" href="assets/common.css?v=20260913k" data-page-node-id="tBLcp6JxdB6dWCmMCCx7F8">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913k">
+<link rel="stylesheet" href="assets/states.css?v=20260913k">
+<link rel="stylesheet" href="assets/polish.css?v=20260913k" data-page-node-id="uqByqsnHV08jClPBpI9G16">
+<style>
+/* ==================== 个人中心页内补充样式（K14 / K15，批次 20260913K） ==================== */
+/* K15-html：posts 子页与 profile 共享 #profileBox——进入 posts 时给 profileBox 加 .posts-mode，
+   隐藏其余资料卡、只保留「发贴统计」卡（id="ppStatsCard" 由 assets/app.js renderProfilePage 添加，
+   见批次 20260913K 任务 1-⑧ 契约）。 */
+.posts-mode .pp-card { display: none; }
+.posts-mode #ppStatsCard { display: block; }
+
+/* K14：学习偏好直设控件——复用设置页令牌（.setting-row / .form-input / .theme-option 已在
+   assets/common.css 全局定义），此处仅补齐本页行布局所需的命名类，避免依赖设置页内联样式。 */
+.pf-pref-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; padding: 13px 0; border-bottom: 1px solid var(--border);
+}
+.pf-pref-row:last-child { border-bottom: none; }
+.pf-pref-info { flex: 1; min-width: 0; }
+.pf-pref-name { font-size: var(--xt-font-base); font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 6px; }
+.pf-pref-desc { font-size: var(--xt-font-xs); color: var(--text-muted); margin-top: 2px; }
+.pf-pref-row .form-input { min-width: 150px; flex-shrink: 0; }
+.pf-pref-actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; align-items: center; }
+.pf-pref-actions .theme-option.active { background: var(--primary); border-color: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(91,141,239,0.3); }
+.pf-pref-actions .theme-option:disabled { opacity: 0.45; cursor: not-allowed; }
+@media (max-width: 560px) {
+  .pf-pref-row { flex-wrap: wrap; row-gap: 10px; }
+  .pf-pref-info { flex: 1 1 100%; }
+}
+</style>
 <body class="theme-home" data-page-node-id="YOxnETeT4z4J4WFn6FB0qJ">
 
 <div class="app" data-page-node-id="rC7PFhhDSQoJOtAFwVAjO6">
@@ -20,7 +46,7 @@
       <div class="topbar-title" id="topbarTitle" data-page-node-id="wfikiVd1hSc2VfTug0Yur4">个人中心</div>
       <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
         <div class="gs-wrap" id="gsWrap" data-page-node-id="6gYY6LavKSwCiI5qXGPGNC">
-        <input type="text" class="gs-input" id="gsInput" placeholder="🔍 搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)" data-page-node-id="MbjNEcHyCNBsNjdCnacKgd">
+        <input type="text" class="gs-input" id="gsInput" placeholder="搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)" data-page-node-id="MbjNEcHyCNBsNjdCnacKgd">
         <div class="gs-dropdown" id="gsDropdown" data-page-node-id="jCloUUasEijzjtk6yFVVQ3"></div>
       </div>
       <div class="topbar-stats" data-page-node-id="Q9uH1NL9k6fH6hnvuBq3lU">
@@ -30,7 +56,7 @@
       </div>
       <div class="topbar-date" id="topbarDate" data-page-node-id="J19QYgTGLZpeMfWncLKl7f"></div>
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
-      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0" data-page-node-id="ykzjsCUHFazDObE5rQ7EaI">🌙</div>
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0" data-page-node-id="ykzjsCUHFazDObE5rQ7EaI"><span class="nav-icon" data-icon="moon" data-icon-size="18"></span></div>
     </header>
 <div class="page active" id="page-profile" data-page-node-id="aUD7wEjtCGd0SXKaPVQMgo">
         <!-- T02 批次五 hash 路由：面包屑（router 维护）+ 第一层分组卡列表（默认显示） -->
@@ -64,7 +90,7 @@
         </div>
         <div class="module-hero" style="display:none" data-page-node-id="WZ2Br25aKXQMUO9oVEEFI0"><!-- v1.14 豆包风格：隐藏旧横幅，DOM 保留 -->
           <div class="module-hero-left" data-page-node-id="1U0Aepc037F7p7xu138z3J">
-            <div class="module-hero-title" data-page-node-id="0ce0n9DDRPzLOjxItNjvkQ">👤 个人中心</div>
+            <div class="module-hero-title" data-page-node-id="0ce0n9DDRPzLOjxItNjvkQ"><span class="nav-icon" data-icon="user" data-icon-size="18"></span> 个人中心</div>
             <div class="module-hero-desc" data-page-node-id="hcTWuEhLCGrmJdWA8L8V32">个人资料 · 发贴统计 · 数据导出 · 退出登录</div>
           </div>
         </div>
@@ -164,10 +190,10 @@
        页面级交互（标签 chips / 字数统计 / 资料完成度 / 迷你实时预览）见本文件底部 peModal 脚本。 -->
   <div class="modal-overlay" id="profileEditModal" data-page-node-id="aN1QPjOJNhtQKAk7XF4hqn">
     <div class="modal" data-page-node-id="haDi0aFDMHYXN8T3YHG7j5">
-      <div class="modal-title" data-page-node-id="MPmDoVnYVvApdyg8GjqPFs">✏️ 编辑资料</div>
+      <div class="modal-title" data-page-node-id="MPmDoVnYVvApdyg8GjqPFs"><span class="nav-icon" data-icon="pencil" data-icon-size="18"></span> 编辑资料</div>
 
       <div class="pe-complete-wrap">
-        <div class="pe-complete-head"><span>📊 资料完成度</span><b id="pePct">0%</b></div>
+        <div class="pe-complete-head"><span style="display:inline-flex;align-items:center;gap:5px"><span class="nav-icon" data-icon="chart-bar" data-icon-size="14"></span>资料完成度</span><b id="pePct">0%</b></div>
         <div class="pe-complete-bar"><i id="pePctBar" style="width:0%"></i></div>
         <div class="pe-complete-tip" id="pePctTip">完善资料，让其他同学更了解你～</div>
       </div>
@@ -181,14 +207,14 @@
         </div>
       </div>
 
-      <div class="pe-sec">🪪 基本资料</div>
+      <div class="pe-sec"><span class="nav-icon" data-icon="user" data-icon-size="16"></span> 基本资料</div>
       <div class="form-group" data-page-node-id="XtKQK1EFwIknYNME6rOGVI">
         <div class="form-label" data-page-node-id="RGAAfTZM54BJvxg3gbHOJy">头像</div>
         <div class="pe-avatar-row" data-page-node-id="R1kfewVf9cI32WUpsUUvJt">
           <div class="pe-avatar-preview" id="peAvatarPreview" data-page-node-id="sODU0FII3pE5MBXh7UeF3m"></div>
           <div class="pe-avatar-btns" data-page-node-id="vzRdxSCoOzm6C0n6sFmV7c">
-            <button class="btn btn-outline" onclick="document.getElementById('peAvatarFile').click()" data-page-node-id="bI5jpSBktzc53vaTPDDY8G">📷 选择本地图片</button>
-            <button class="btn btn-outline" onclick="resetProfileAvatar()" data-page-node-id="g5CDpMjwQ6TAO6gLYapgT8">↩️ 恢复默认头像</button>
+            <button class="btn btn-outline" onclick="document.getElementById('peAvatarFile').click()" data-page-node-id="bI5jpSBktzc53vaTPDDY8G"><span class="nav-icon" data-icon="image" data-icon-size="14"></span> 选择本地图片</button>
+            <button class="btn btn-outline" onclick="resetProfileAvatar()" data-page-node-id="g5CDpMjwQ6TAO6gLYapgT8"><span class="nav-icon" data-icon="rotate-ccw" data-icon-size="14"></span> 恢复默认头像</button>
           </div>
           <input type="file" id="peAvatarFile" accept="image/*" style="display:none" onchange="onProfileAvatarFile(this)" data-page-node-id="Eua3wJxtXVi3gejFJjWjNO">
         </div>
@@ -202,9 +228,9 @@
         <div class="form-group" data-page-node-id="t1LtDotadopge7TNYB8lTT">
           <div class="form-label" data-page-node-id="IF9jSLt5nFZ6ZdUg4kPWGF">性别</div>
           <select class="form-input" id="peGender" data-page-node-id="gdpytyluAUEB9sApFXqlJp">
-            <option value="secret" data-page-node-id="nzVLniXoGWsVU2ndNnAc6m">🔒 保密</option>
-            <option value="female" data-page-node-id="RdyEClmsgeBVxcULTmA211">👩 女</option>
-            <option value="male" data-page-node-id="Gm3JKDRJeHFrrrRbxHNTuM">👨 男</option>
+            <option value="secret" data-page-node-id="nzVLniXoGWsVU2ndNnAc6m">保密</option>
+            <option value="female" data-page-node-id="RdyEClmsgeBVxcULTmA211">女</option>
+            <option value="male" data-page-node-id="Gm3JKDRJeHFrrrRbxHNTuM">男</option>
           </select>
         </div>
         <div class="form-group" data-page-node-id="s48JYaLLym0HO04XTYONp2">
@@ -225,7 +251,7 @@
       </div>
       <div class="pe-tip" style="margin-top:-2px" data-page-node-id="nR7oubbZ2Y1uJYQXtnB1Qp">🔒 隐私说明：性别、生日、手机号仅自己可见（公开主页不展示）；城市、简介、标签、学习目标会展示。</div>
 
-      <div class="pe-sec">💬 个性展示</div>
+      <div class="pe-sec"><span class="nav-icon" data-icon="message-square" data-icon-size="16"></span> 个性展示</div>
       <div class="form-group" data-page-node-id="54KFGO7GdtfTWGda5GSuMp">
         <div class="form-label" data-page-node-id="Gbf3TbE4OjxWvsoKK4Rzkn">个性签名 <span class="pe-counter" id="peCntMotto">0/60</span></div>
         <input type="text" class="form-input" id="peMotto" maxlength="60" placeholder="一句话展示自己，如：每天背 50 个单词" data-page-node-id="LgqM083GYkBOvTdfFJRxrS">
@@ -236,7 +262,7 @@
         <div class="pe-tip" data-page-node-id="DJF1jdTRO0mqeRioZy34E0">最多 300 字；在线模式下会同步到服务器数据库，离线模式下保存在本机。</div>
       </div>
 
-      <div class="pe-sec">🎯 备考计划</div>
+      <div class="pe-sec"><span class="nav-icon" data-icon="target" data-icon-size="16"></span> 备考计划</div>
       <div class="form-group">
         <div class="form-label">备考方向标签 <span class="pe-counter" id="peCntTags">0/8</span></div>
         <div class="pe-chips" id="peChips"></div>
@@ -263,7 +289,7 @@
   <!-- 退出登录确认弹窗（防止误触，逻辑见 assets/app.js 的 doLogout()/confirmLogout()） -->
   <div class="modal-overlay" id="logoutConfirmModal" data-page-node-id="w58HcoBkx3b7KH7ncV2jow">
     <div class="modal" data-page-node-id="T8iuHo4jkOGZmyV5mZLZkm">
-      <div class="modal-title" data-page-node-id="pAbVHilpWNWZ0ALHCcPVYl">🚪 退出登录</div>
+      <div class="modal-title" data-page-node-id="pAbVHilpWNWZ0ALHCcPVYl"><span class="nav-icon" data-icon="logout" data-icon-size="18"></span> 退出登录</div>
       <div style="font-size:var(--xt-font-base);color:var(--text-secondary);line-height:1.8;margin:6px 0 4px" data-page-node-id="ijNz0Qv1kyYXj2PAUWb78d">确定要退出登录吗？</div>
       <div class="modal-actions" data-page-node-id="Bt6oNmEF4rV2196rRLErh8">
         <button class="btn btn-outline" onclick="closeLogoutConfirm()" data-page-node-id="K2bLWlmXR6O8lQ7vvO1piG">取消</button>
@@ -340,30 +366,84 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913j" defer></script>
-<script src="assets/xt-toast.js?v=20260913j" defer></script>
-<script src="assets/error-boundary.js?v=20260913j" defer></script>
-<script src="assets/app.js?v=20260913j" defer></script>
-<script src="assets/config.js?v=20260913j" defer></script>
-<script src="assets/api.js?v=20260913j" defer></script>
-<script src="assets/subpage-router.js?v=20260913j" defer></script>
+<script src="assets/icon-map.js?v=20260913k" defer></script>
+<script src="assets/xt-toast.js?v=20260913k" defer></script>
+<script src="assets/error-boundary.js?v=20260913k" defer></script>
+<script src="assets/app.js?v=20260913k" defer></script>
+<script src="assets/config.js?v=20260913k" defer></script>
+<script src="assets/api.js?v=20260913k" defer></script>
+<script src="assets/subpage-router.js?v=20260913k" defer></script>
 
 <script>
 function overviewGo(key) {
   var m = { wrong: '错题本.html', vocab: '四级词汇.html', settings: '设置.html' };
   location.href = m[key] || '学习工作台.html';
 }
+/* ==================== K14（批次 20260913K）：学习偏好页内直设 ====================
+   读写走 assets/app.js 既有全局函数 setSetting()/loadAllSettings()（本文件不改动 app.js）。
+   控件样式对齐设置页 setting-row / form-input / theme-option 令牌（行布局类见页首 <style>）。
+   改动即存 + toast「已保存」；「去调整」链接（card-action）保留在卡片头。 */
+function pfPrefOptions(list, cur) {
+  // list: [value, label] 数组；cur: 当前值（转字符串比较）
+  var c = String(cur);
+  return list.map(function (x) {
+    return '<option value="' + x[0] + '"' + (String(x[0]) === c ? ' selected' : '') + '>' + x[1] + '</option>';
+  }).join('');
+}
+function pfPrefToast() {
+  if (typeof showToast === 'function') showToast('已保存');
+}
+function pfSetPref(key, val) {
+  // 统一保存入口：写全局设置 → toast → 重渲染偏好卡同步开关态
+  try { setSetting(key, val); } catch (e) { return; }
+  pfPrefToast();
+  renderProfileOverview();
+}
+function pfPrefIcon(name) {
+  return '<span class="nav-icon" data-icon="' + name + '" data-icon-size="15"></span>';
+}
 function renderProfileOverview() {
   var pref = document.getElementById('prefBody');
   if (pref) {
     try {
       var st = loadAllSettings();
+      var speakOn = st.autoSpeak !== false; // 与设置页口径一致：false 才算关闭
+      var rate = (st.voiceRate == null ? 0.9 : st.voiceRate);
       pref.innerHTML = [
-        '📖 每日新增学习内容：<b>' + st.dailyNew + '</b> 条',
-        '🧘 专注默认时长：<b>' + st.focusMinutes + '</b> 分钟',
-        '🔊 朗读：<b>' + (st.autoSpeak === false ? '关闭' : '开启 · 语速 ' + st.voiceRate) + '</b>',
-        '🔔 新私信提醒：<b>' + (st.chatNotify === false ? '关闭' : '开启') + '</b>'
-      ].join('<br>');
+        '<div class="pf-pref-row">' +
+          '<div class="pf-pref-info"><div class="pf-pref-name">' + pfPrefIcon('book-open') + '每日新增学习内容</div>' +
+          '<div class="pf-pref-desc">内容库（商务礼仪 / 面试题库 / PPT 版式 / 场景话术 / 金句）每天安排的新条目数</div></div>' +
+          '<select class="form-input" id="pfDailyNew" onchange="pfSetPref(\'dailyNew\', +this.value)">' +
+            pfPrefOptions([[1, '1 条/天'], [2, '2 条/天'], [3, '3 条/天'], [4, '4 条/天'], [5, '5 条/天'], [6, '6 条/天'], [8, '8 条/天'], [10, '10 条/天']], st.dailyNew == null ? 50 : st.dailyNew) +
+          '</select>' +
+        '</div>',
+        '<div class="pf-pref-row">' +
+          '<div class="pf-pref-info"><div class="pf-pref-name">' + pfPrefIcon('brain') + '专注默认时长</div>' +
+          '<div class="pf-pref-desc">番茄钟专注的默认分钟数，可在任意页面快速开始</div></div>' +
+          '<select class="form-input" id="pfFocus" onchange="pfSetPref(\'focusMinutes\', +this.value)">' +
+            pfPrefOptions([[15, '15 分钟'], [25, '25 分钟'], [45, '45 分钟'], [60, '60 分钟']], st.focusMinutes == null ? 25 : st.focusMinutes) +
+          '</select>' +
+        '</div>',
+        '<div class="pf-pref-row">' +
+          '<div class="pf-pref-info"><div class="pf-pref-name">' + pfPrefIcon('volume-2') + '朗读</div>' +
+          '<div class="pf-pref-desc">词汇 / 口语 / 面试练习里的语音朗读与默认语速</div></div>' +
+          '<div class="pf-pref-actions">' +
+            '<button type="button" class="theme-option' + (speakOn ? ' active' : '') + '" onclick="pfSetPref(\'autoSpeak\', true)">开启</button>' +
+            '<button type="button" class="theme-option' + (speakOn ? '' : ' active') + '" onclick="pfSetPref(\'autoSpeak\', false)">关闭</button>' +
+            '<select class="form-input" id="pfVoiceRate" style="min-width:92px"' + (speakOn ? '' : ' disabled') + ' onchange="pfSetPref(\'voiceRate\', +this.value)" title="' + (speakOn ? '朗读语速' : '朗读关闭时不可调') + '">' +
+              pfPrefOptions([[0.7, '慢速'], [0.9, '标准'], [1.15, '较快'], [1.4, '快速']], rate) +
+            '</select>' +
+          '</div>' +
+        '</div>',
+        '<div class="pf-pref-row">' +
+          '<div class="pf-pref-info"><div class="pf-pref-name">' + pfPrefIcon('bell') + '新私信提醒</div>' +
+          '<div class="pf-pref-desc">在线登录后，收到好友新私信时给出网页提示（需允许通知权限）</div></div>' +
+          '<div class="pf-pref-actions">' +
+            '<button type="button" class="theme-option' + (st.chatNotify !== false ? ' active' : '') + '" onclick="pfSetPref(\'chatNotify\', true)">开启</button>' +
+            '<button type="button" class="theme-option' + (st.chatNotify !== false ? '' : ' active') + '" onclick="pfSetPref(\'chatNotify\', false)">关闭</button>' +
+          '</div>' +
+        '</div>'
+      ].join('');
     } catch (e) { pref.innerHTML = '偏好设置读取失败'; }
   }
   var ls = document.getElementById('localStats');
@@ -372,18 +452,21 @@ function renderProfileOverview() {
       var d = (appData && appData.stats) || {};
       var acc = d.totalQuestions > 0 ? Math.round(d.correctQuestions / d.totalQuestions * 100) : 0;
       var chips = [
-        ['wrong', '📒 错题本'], ['vocab', '📖 四级词汇'], ['settings', '⚙️ 偏好设置']
+        ['wrong', 'book', '错题本'], ['vocab', 'book-open', '四级词汇'], ['settings', 'settings', '偏好设置']
       ].map(function (x) {
-        return '<button class="btn btn-outline" style="font-size:var(--xt-font-sm);padding:6px 12px" onclick="overviewGo(' + "'" + x[0] + "'" + ')">' + x[1] + '</button>';
+        return '<button class="btn btn-outline" style="font-size:var(--xt-font-sm);padding:6px 12px;display:inline-flex;align-items:center;gap:6px" onclick="overviewGo(' + "'" + x[0] + "'" + ')">' +
+          '<span class="nav-icon" data-icon="' + x[1] + '" data-icon-size="14"></span>' + x[2] + '</button>';
       }).join('');
       ls.innerHTML = '<div class="profile-grid">' +
-        [['⏱', d.totalHours || 0, '总学习(h)'], ['🧮', d.totalQuestions || 0, '做题数'],
-         ['🎯', acc + '%', '正确率'], ['🔥', d.streakDays || 0, '连续打卡']].map(function (x) {
-          return '<div class="profile-stat"><div class="ps-num">' + x[0] + ' ' + x[1] + '</div><div class="ps-label">' + x[2] + '</div></div>';
+        [['clock', d.totalHours || 0, '总学习(h)'], ['clipboard', d.totalQuestions || 0, '做题数'],
+         ['target', acc + '%', '正确率'], ['fire', d.streakDays || 0, '连续打卡']].map(function (x) {
+          return '<div class="profile-stat"><div class="ps-num" style="display:inline-flex;align-items:center;gap:6px"><span class="nav-icon" data-icon="' + x[0] + '" data-icon-size="16"></span>' + x[1] + '</div><div class="ps-label">' + x[2] + '</div></div>';
         }).join('') + '</div>' +
         '<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">' + chips + '</div>';
     } catch (e) { ls.innerHTML = '数据读取失败'; }
   }
+  // K11：动态插入的 data-icon 元素需要手动触发 icon-map.js 的扫描渲染
+  if (typeof window.lucideAutoRender === 'function') window.lucideAutoRender();
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(renderProfileOverview, 300); });
 else setTimeout(renderProfileOverview, 300);
@@ -394,7 +477,7 @@ else setTimeout(renderProfileOverview, 300);
 
   <!-- 工具面板 -->
   <div class="bottom-more-panel" id="toolsPanel">
-    <div class="bottom-more-title">🧰 更多工具</div>
+    <div class="bottom-more-title"><span class="nav-icon" data-icon="wrench" data-icon-size="16"></span> 更多工具</div>
     <div class="bottom-more-grid">
       <div class="bottom-more-item" onclick="location.href='AI模拟面试.html';toggleToolsPanel()">
         <div class="bm-icon"><span class="nav-icon" data-icon="mic" data-icon-size="20"></span></div><div class="bm-label">AI面试</div>
@@ -670,6 +753,14 @@ window.peBirthdayOnBlur = function () {
     var postsSec = document.querySelector('#page-profile [data-subpage="posts"]');
     var postsHost = document.getElementById('profileBoxPostsHost');
     SubpageRouter.onSubpageChange(function (key) {
+      /* K15-html（批次 20260913K）：posts 子页与 profile 共享 #profileBox——
+         进入 posts 时给 profileBox 加 .posts-mode（页首 <style> 据此只保留「发贴统计」卡
+         #ppStatsCard，隐藏其余 .pp-card）；离开 posts（含 profile / moments / prefs 等）移除。
+         返回与面包屑由 SubpageRouter 维护，此处不动其逻辑。 */
+      if (pb) {
+        if (key === 'posts') { if (pb.classList && !pb.classList.contains('posts-mode')) pb.classList.add('posts-mode'); }
+        else if (pb.classList && pb.classList.contains('posts-mode')) pb.classList.remove('posts-mode');
+      }
       if (key === 'profile') {
         if (pb && profSec && pb.parentNode !== profSec) profSec.appendChild(pb);
         try { if (typeof renderProfilePage === 'function') renderProfilePage(); } catch (e) { if (window.console) console.warn('renderProfilePage error', e); }

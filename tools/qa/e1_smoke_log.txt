@@ -1,104 +1,104 @@
 =========== QA 冒烟：E1 图标全站升级（15 页） ===========
 
---- blog_wechat.html : PASS ---  [data-icon]=34 svgRendered=34
+--- blog_wechat.html : PASS ---  [data-icon]=49 svgRendered=49
   [OK] 静态: 无v=g残留/无损伤/已映射emoji清零/data-icon>0
   [OK] jsdom: 0 scriptErrors/0 uncaught/0 issues
   [OK] boundaryHit=0
   [OK] countdownModal 全套完整
   [OK] [data-icon] 元素≥5 且 SVG 已渲染
 
---- PPT案例拆解.html : PASS ---  [data-icon]=26 svgRendered=26
+--- PPT案例拆解.html : PASS ---  [data-icon]=28 svgRendered=28
   [OK] 静态: 无v=g残留/无损伤/已映射emoji清零/data-icon>0
   [OK] jsdom: 0 scriptErrors/0 uncaught/0 issues
   [OK] boundaryHit=0
   [OK] countdownModal 全套完整
   [OK] [data-icon] 元素≥5 且 SVG 已渲染
 
---- PPT版式库.html : PASS ---  [data-icon]=26 svgRendered=26
+--- PPT版式库.html : PASS ---  [data-icon]=28 svgRendered=28
   [OK] 静态: 无v=g残留/无损伤/已映射emoji清零/data-icon>0
   [OK] jsdom: 0 scriptErrors/0 uncaught/0 issues
   [OK] boundaryHit=0
   [OK] countdownModal 全套完整
   [OK] [data-icon] 元素≥5 且 SVG 已渲染
 
---- PPT训练.html : PASS ---  [data-icon]=33 svgRendered=33
+--- PPT训练.html : PASS ---  [data-icon]=37 svgRendered=37
   [OK] 静态: 无v=g残留/无损伤/已映射emoji清零/data-icon>0
   [OK] jsdom: 0 scriptErrors/0 uncaught/0 issues
   [OK] boundaryHit=0
   [OK] countdownModal 全套完整
   [OK] [data-icon] 元素≥5 且 SVG 已渲染
 
---- 万能金句库.html : PASS ---  [data-icon]=26 svgRendered=26
+--- 万能金句库.html : PASS ---  [data-icon]=28 svgRendered=28
   [OK] 静态: 无v=g残留/无损伤/已映射emoji清零/data-icon>0
   [OK] jsdom: 0 scriptErrors/0 uncaught/0 issues
   [OK] boundaryHit=0
   [OK] countdownModal 全套完整
   [OK] [data-icon] 元素≥5 且 SVG 已渲染
 
---- 动态.html : PASS ---  [data-icon]=27 svgRendered=27
+--- 动态.html : PASS ---  [data-icon]=28 svgRendered=28
   [OK] 静态: 无v=g残留/无损伤/已映射emoji清零/data-icon>0
   [OK] jsdom: 0 scriptErrors/0 uncaught/0 issues
   [OK] boundaryHit=0
   [OK] countdownModal 全套完整
   [OK] [data-icon] 元素≥5 且 SVG 已渲染
 
---- 商务礼仪.html : PASS ---  [data-icon]=30 svgRendered=30
+--- 商务礼仪.html : PASS ---  [data-icon]=32 svgRendered=32
   [OK] 静态: 无v=g残留/无损伤/已映射emoji清零/data-icon>0
   [OK] jsdom: 0 scriptErrors/0 uncaught/0 issues
   [OK] boundaryHit=0
   [OK] countdownModal 全套完整
   [OK] [data-icon] 元素≥5 且 SVG 已渲染
 
---- 商务礼仪面试.html : PASS ---  [data-icon]=61 svgRendered=61
+--- 商务礼仪面试.html : PASS ---  [data-icon]=68 svgRendered=68
   [OK] 静态: 无v=g残留/无损伤/已映射emoji清零/data-icon>0
   [OK] jsdom: 0 scriptErrors/0 uncaught/0 issues
   [OK] boundaryHit=0
   [OK] countdownModal 全套完整
   [OK] [data-icon] 元素≥5 且 SVG 已渲染
 
---- 四级词汇.html : PASS ---  [data-icon]=26 svgRendered=26
+--- 四级词汇.html : PASS ---  [data-icon]=40 svgRendered=40
   [OK] 静态: 无v=g残留/无损伤/已映射emoji清零/data-icon>0
   [OK] jsdom: 0 scriptErrors/0 uncaught/0 issues
   [OK] boundaryHit=0
   [OK] countdownModal 全套完整
   [OK] [data-icon] 元素≥5 且 SVG 已渲染
 
---- 场景话术库.html : PASS ---  [data-icon]=26 svgRendered=26
+--- 场景话术库.html : PASS ---  [data-icon]=28 svgRendered=28
   [OK] 静态: 无v=g残留/无损伤/已映射emoji清零/data-icon>0
   [OK] jsdom: 0 scriptErrors/0 uncaught/0 issues
   [OK] boundaryHit=0
   [OK] countdownModal 全套完整
   [OK] [data-icon] 元素≥5 且 SVG 已渲染
 
---- 更多.html : PASS ---  [data-icon]=34 svgRendered=34
+--- 更多.html : PASS ---  [data-icon]=35 svgRendered=35
   [OK] 静态: 无v=g残留/无损伤/已映射emoji清零/data-icon>0
   [OK] jsdom: 0 scriptErrors/0 uncaught/0 issues
   [OK] boundaryHit=0
   [OK] countdownModal 全套完整
   [OK] [data-icon] 元素≥5 且 SVG 已渲染
 
---- 私聊.html : PASS ---  [data-icon]=28 svgRendered=28
+--- 私聊.html : PASS ---  [data-icon]=29 svgRendered=29
   [OK] 静态: 无v=g残留/无损伤/已映射emoji清零/data-icon>0
   [OK] jsdom: 0 scriptErrors/0 uncaught/0 issues
   [OK] boundaryHit=0
   [OK] countdownModal 全套完整
   [OK] [data-icon] 元素≥5 且 SVG 已渲染
 
---- 面试题库.html : PASS ---  [data-icon]=26 svgRendered=26
+--- 面试题库.html : PASS ---  [data-icon]=28 svgRendered=28
   [OK] 静态: 无v=g残留/无损伤/已映射emoji清零/data-icon>0
   [OK] jsdom: 0 scriptErrors/0 uncaught/0 issues
   [OK] boundaryHit=0
   [OK] countdownModal 全套完整
   [OK] [data-icon] 元素≥5 且 SVG 已渲染
 
---- 错题本.html : PASS ---  [data-icon]=27 svgRendered=27
+--- 错题本.html : PASS ---  [data-icon]=28 svgRendered=28
   [OK] 静态: 无v=g残留/无损伤/已映射emoji清零/data-icon>0
   [OK] jsdom: 0 scriptErrors/0 uncaught/0 issues
   [OK] boundaryHit=0
   [OK] countdownModal 全套完整
   [OK] [data-icon] 元素≥5 且 SVG 已渲染
 
---- 行测刷题.html : PASS ---  [data-icon]=26 svgRendered=26
+--- 行测刷题.html : PASS ---  [data-icon]=28 svgRendered=28
   [OK] 静态: 无v=g残留/无损伤/已映射emoji清零/data-icon>0
   [OK] jsdom: 0 scriptErrors/0 uncaught/0 issues
   [OK] boundaryHit=0

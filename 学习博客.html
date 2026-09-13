@@ -5,20 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>广场 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913j">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913j">
-<link rel="stylesheet" href="assets/states.css?v=20260913j">
-<link rel="stylesheet" href="assets/polish.css?v=20260913j">
+<link rel="stylesheet" href="assets/common.css?v=20260913k">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913k">
+<link rel="stylesheet" href="assets/states.css?v=20260913k">
+<link rel="stylesheet" href="assets/polish.css?v=20260913k">
 <style>
 /* =====================================================================
-   批次 20260913j（kou-blog）：写作台头部轻量化 + 按钮栏固定到预览卡下方
+   批次 20260913K（kou-k-blog）：按钮栏固定到预览卡下方 + 评论区嵌套/折叠样式
    —— 仅作用于本页；公共 CSS（common.css/polish.css）不动。
    ===================================================================== */
-/* ① 原渐变大卡 ed-hero 已从 DOM 删除，改为轻量标题行 */
-.ed-head-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 2px 4px; }
-.ed-head-title { display: inline-flex; align-items: center; gap: 7px; font-size: 16px; font-weight: 800; color: var(--text); }
-.ed-head-title .nav-icon { color: var(--primary); display: inline-flex; }
-.ed-head-sub { font-size: 11.5px; color: var(--text-secondary); }
 /* ② 编辑器工具条上的小型实时字数指示 + 未保存草稿轻提示（平时隐藏） */
 .ed-live-stats { margin-left: auto; font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
 .ed-live-stats b { font-weight: 800; color: var(--primary); }
@@ -39,6 +34,21 @@
 }
 /* 取消 common.css 为吸底栏预留的内容让位 padding */
 .blog-editor { padding-bottom: 20px; }
+/* ④ 评论区（K5 配合）：嵌套子楼层缩进 + 展开/收起按钮
+   —— markup 由 app.js 渲染：class="bc-item bc-reply" 与 class="bc-fold-btn" */
+.bc-item.bc-reply {
+  margin-top: 8px; margin-left: 34px; padding-left: 12px;
+  border-left: 2px solid var(--border);
+}
+.bc-fold-btn {
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  width: 100%; margin-top: 8px; padding: 6px 0;
+  font-size: 12px; font-weight: 600; color: var(--primary);
+  background: transparent; border: none; cursor: pointer;
+}
+.bc-fold-btn:hover {
+  color: color-mix(in srgb, var(--primary) 70%, var(--text));
+}
 </style>
 </head>
 <body class="theme-home">
@@ -97,7 +107,7 @@
         <div class="user-avatar">学</div>
         <div class="user-info">
           <div class="user-name">同学</div>
-          <div class="user-streak">🔥 连续打卡 0 天</div>
+          <div class="user-streak"><span class="nav-icon" data-icon="fire" data-icon-size="14"></span> 连续打卡 0 天</div>
         </div>
       </div>
     </div>
@@ -108,7 +118,7 @@
       <div class="topbar-title" id="topbarTitle">广场</div>
       <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
       <div class="gs-wrap" id="gsWrap">
-        <input type="text" class="gs-input" id="gsInput" placeholder="🔍 搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <input type="text" class="gs-input" id="gsInput" placeholder="搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
         <div class="gs-dropdown" id="gsDropdown"></div>
       </div>
       <div class="topbar-stats">
@@ -118,7 +128,7 @@
       </div>
       <div class="topbar-date" id="topbarDate"></div>
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
-      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0">🌙</div>
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="18"></span></div>
     </header>
 <div class="page active" id="page-blog">
         <!-- 需求10（C2 20260913h）：删除顶端说明性卡片；「广场/我的文章/写发贴/统计」提升为顶端主导航 -->
@@ -135,7 +145,7 @@
         <div class="blog-wrap" id="blogViewList">
           <div class="blog-toolbar">
             <div class="blog-search-row">
-              <input type="text" id="blogSearchInput" placeholder="🔍 搜索标题、内容、标签…" oninput="renderBlogList()">
+              <input type="text" id="blogSearchInput" placeholder="搜索标题、内容、标签…" oninput="renderBlogList()">
             </div>
             <div class="blog-filters" id="blogFilterChips"></div>
           </div>
@@ -156,28 +166,21 @@
         <!-- ===== 视图：编辑器（写作工作台） ===== -->
         <div class="blog-wrap blog-editor" id="blogViewEdit" style="display:none">
 
-          <!-- 写作台头部：轻量标题行（20260913j 原渐变大卡 ed-hero 已移除；
-               字数/阅读时长移至下方富文本工具条实时指示，草稿状态仅未保存时轻提示） -->
-          <div class="ed-head-bar">
-            <span class="ed-head-title"><span class="nav-icon" data-icon="pen" data-icon-size="18"></span>写发贴</span>
-            <span class="ed-head-sub">支持轻量 Markdown · 左写右预览 · 草稿自动存到本机</span>
-          </div>
-
           <!-- 未完成草稿恢复条（本机存在自动保存的草稿时才出现） -->
           <div class="ed-draft-bar" id="edDraftBar" style="display:none">
             <span class="ed-draft-tx" id="edDraftTx"></span>
-            <button class="btn btn-primary" onclick="edRestoreDraft()">↺ 恢复</button>
+            <button class="btn btn-primary" onclick="edRestoreDraft()"><span class="nav-icon" data-icon="rotate-ccw" data-icon-size="16"></span> 恢复</button>
             <button class="btn btn-outline" onclick="edDiscardDraft()">丢弃</button>
           </div>
 
           <!-- 快速模板：一键插入常用写作骨架 -->
           <div class="ed-tpl-row">
-            <span class="ed-tpl-label">🚀 快速模板</span>
-            <button class="ed-tpl" onclick="edInsertTemplate('review')">📝 复习提纲</button>
-            <button class="ed-tpl" onclick="edInsertTemplate('wrong')">❌ 错题总结</button>
-            <button class="ed-tpl" onclick="edInsertTemplate('note')">📚 课程/读书笔记</button>
-            <button class="ed-tpl" onclick="edInsertTemplate('mind')">🧠 知识点梳理</button>
-            <button class="ed-tpl" onclick="edInsertTemplate('plan')">🎯 今日计划</button>
+            <span class="ed-tpl-label"><span class="nav-icon" data-icon="zap" data-icon-size="14"></span> 快速模板</span>
+            <button class="ed-tpl" onclick="edInsertTemplate('review')"><span class="nav-icon" data-icon="pencil" data-icon-size="14"></span> 复习提纲</button>
+            <button class="ed-tpl" onclick="edInsertTemplate('wrong')"><span class="nav-icon" data-icon="close" data-icon-size="14"></span> 错题总结</button>
+            <button class="ed-tpl" onclick="edInsertTemplate('note')"><span class="nav-icon" data-icon="book-open" data-icon-size="14"></span> 课程/读书笔记</button>
+            <button class="ed-tpl" onclick="edInsertTemplate('mind')"><span class="nav-icon" data-icon="brain" data-icon-size="14"></span> 知识点梳理</button>
+            <button class="ed-tpl" onclick="edInsertTemplate('plan')"><span class="nav-icon" data-icon="target" data-icon-size="14"></span> 今日计划</button>
           </div>
 
           <!-- 步骤一：基本信息 -->
@@ -195,13 +198,13 @@
               <div class="editor-field">
                 <label>可见范围</label>
                 <select id="bePrivacy">
-                  <option value="public">🌍 公开（所有人可见）</option>
-                  <option value="private">🔒 私密（仅自己可见）</option>
+                  <option value="public">公开（所有人可见）</option>
+                  <option value="private">私密（仅自己可见）</option>
                 </select>
               </div>
               <div class="editor-field">
                 <label>封面（emoji 或图片URL）</label>
-                <input type="text" id="beCover" placeholder="📚 或 https://…">
+                <input type="text" id="beCover" placeholder="emoji 或 https://…">
               </div>
             </div>
             <div class="editor-row">
@@ -228,12 +231,12 @@
                 <div class="rt-sep"></div>
                 <div class="rt-tool" title="标题" onclick="editorTool('h2')">H₂</div>
                 <div class="rt-tool" title="无序列表" onclick="editorTool('ul')">•≡</div>
-                <div class="rt-tool" title="待办清单" onclick="editorTool('task')">☑</div>
+                <div class="rt-tool" title="待办清单" onclick="editorTool('task')"><span class="nav-icon" data-icon="check" data-icon-size="14"></span></div>
                 <div class="rt-tool" title="引用" onclick="editorTool('quote')">❝</div>
                 <div class="rt-sep"></div>
                 <div class="rt-tool" title="代码块" onclick="editorTool('code')">&lt;/&gt;</div>
                 <div class="rt-tool" title="公式" onclick="editorTool('formula')">∑</div>
-                <div class="rt-tool" title="图片链接" onclick="editorTool('image')">🖼</div>
+                <div class="rt-tool" title="图片链接" onclick="editorTool('image')"><span class="nav-icon" data-icon="image" data-icon-size="14"></span></div>
                 <div class="rt-tool" title="分割线" onclick="editorTool('hr')">—</div>
                 <!-- ② 小型实时指示：字数/阅读时长随输入更新；草稿状态仅未保存时轻提示 -->
                 <span class="ed-live-stats"><b id="edWordCount">0</b> 字 · 约 <b id="edReadTime">0</b> 分钟</span>
@@ -243,21 +246,21 @@
               <!-- 左写右预览 -->
               <div class="editor-panes">
                 <div class="editor-pane-box">
-                  <div class="pane-label"><span>✍️ 编辑</span><span class="pane-hint">支持 Markdown</span></div>
-                  <textarea id="blogEditorInput" placeholder="写下你的知识点总结、错题记录、复习提纲…&#10;&#10;支持语法：# 标题 · **加粗** · *斜体* · `行内代码` · 行首 ``` 代码块 · $公式$ · 行首 - 列表 / - [ ] 待办 / &gt; 引用&#10;&#10;也可以点上方「🚀 快速模板」一键插入骨架。"></textarea>
+                  <div class="pane-label"><span><span class="nav-icon" data-icon="pencil" data-icon-size="14"></span> 编辑</span><span class="pane-hint">支持 Markdown</span></div>
+                  <textarea id="blogEditorInput" placeholder="写下你的知识点总结、错题记录、复习提纲…&#10;&#10;支持语法：# 标题 · **加粗** · *斜体* · `行内代码` · 行首 ``` 代码块 · $公式$ · 行首 - 列表 / - [ ] 待办 / &gt; 引用&#10;&#10;也可以点上方「快速模板」一键插入骨架。"></textarea>
                 </div>
                 <div class="editor-pane-box">
-                  <div class="pane-label"><span>👁️ 实时预览</span><span class="pane-hint" id="edPreviewHint"></span></div>
+                  <div class="pane-label"><span><span class="nav-icon" data-icon="eye" data-icon-size="14"></span> 实时预览</span><span class="pane-hint" id="edPreviewHint"></span></div>
                   <div class="blog-preview" id="blogEditorPreview"></div>
                 </div>
               </div>
 
-              <!-- 操作区（20260913j：固定在实时预览卡片正下方，事件绑定不变） -->
+              <!-- 操作区（20260913k：固定在实时预览卡片正下方，事件绑定不变） -->
               <div class="editor-actions ed-actions-bar">
-                <button class="btn btn-primary" onclick="saveBlogNote('published')">📤 发布</button>
-                <button class="btn btn-outline" onclick="saveBlogNote('draft')">💾 存草稿</button>
-                <button class="btn btn-outline" onclick="editorAiAssist()">🤖 AI 辅助写发贴</button>
-                <button class="btn btn-outline" onclick="resetBlogEditor()">↺ 清空</button>
+                <button class="btn btn-primary" onclick="saveBlogNote('published')"><span class="nav-icon" data-icon="upload" data-icon-size="16"></span> 发布</button>
+                <button class="btn btn-outline" onclick="saveBlogNote('draft')"><span class="nav-icon" data-icon="save" data-icon-size="16"></span> 存草稿</button>
+                <button class="btn btn-outline" onclick="editorAiAssist()"><span class="nav-icon" data-icon="bot" data-icon-size="16"></span> AI 辅助写发贴</button>
+                <button class="btn btn-outline" onclick="resetBlogEditor()"><span class="nav-icon" data-icon="rotate-ccw" data-icon-size="16"></span> 清空</button>
                 <div class="spacer"></div>
                 <span id="blogEditStatus" style="font-size:var(--xt-font-sm);color:var(--text-secondary)"></span>
               </div>
@@ -369,18 +372,18 @@
   </div>
   <div class="ai-panel" id="aiPanel">
     <div class="ai-panel-header">
-      <div class="ai-avatar">🤖</div>
+      <div class="ai-avatar"><span class="nav-icon" data-icon="bot" data-icon-size="20"></span></div>
       <div style="flex:1">
         <div class="ai-title">AI学习助手</div>
         <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
       </div>
-      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录">🧹</div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录"><span class="nav-icon" data-icon="eraser" data-icon-size="16"></span></div>
       <div class="ai-close" onclick="toggleAiPanel()" title="收起面板">✕</div>
     </div>
     <div class="ai-messages" id="aiMessages"></div>
     <div class="ai-input-row">
       <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
-      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()">➤</div>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()"><span class="nav-icon" data-icon="send" data-icon-size="16"></span></div>
     </div>
   </div>
 
@@ -388,12 +391,12 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913j" defer></script>
-<script src="assets/xt-toast.js?v=20260913j" defer></script>
-<script src="assets/error-boundary.js?v=20260913j" defer></script>
-<script src="assets/app.js?v=20260913j" defer></script>
-<script src="assets/config.js?v=20260913j" defer></script>
-<script src="assets/api.js?v=20260913j" defer></script>
+<script src="assets/icon-map.js?v=20260913k" defer></script>
+<script src="assets/xt-toast.js?v=20260913k" defer></script>
+<script src="assets/error-boundary.js?v=20260913k" defer></script>
+<script src="assets/app.js?v=20260913k" defer></script>
+<script src="assets/config.js?v=20260913k" defer></script>
+<script src="assets/api.js?v=20260913k" defer></script>
 <script>
 /* ===================================================================
    广场（发贴）编辑页增强：【字数统计 / 阅读时长 / 草稿自动保存 / 快速模板】

@@ -227,7 +227,6 @@ function scanFile(absPath, relPath, isJs) {
           );
           return;
         }
-        if (m.emoji === "🌙") return;      // 白名单：🌙 主题按钮文案（app.js 管）
         if (info.container.length > 0) {
           findings.push(
             fmtFinding(
@@ -375,7 +374,7 @@ if (registeredCount < CFG.minRegistered) {
 var out = [];
 out.push("================================================================");
 out.push("icon_audit_0913j · 全站图标盘库扫描器 —— 首轮基线（批次进行中）");
-out.push("批次: 20260913j (kou-scanner)  时间: " + new Date().toISOString());
+out.push("批次: 20260913K（白名单收紧版，原 20260913j / kou-scanner）  时间: " + new Date().toISOString());
 out.push("模式: 残留断言 " + (CFG.allowResidue ? "宽松(--allow-residue)" : "严格(=0)"));
 out.push("================================================================");
 out.push("");
@@ -427,7 +426,7 @@ if (Object.keys(unregByName).length === 0) {
   });
 }
 out.push("");
-out.push("【白名单机制说明】以下位置不报：placeholder 属性文本；🌙 主题按钮文案；" +
+out.push("【白名单机制说明】批次 K 收紧后以下位置不再豁免：placeholder 属性文本；🌙 主题按钮文案。" +
   "select/option 原生控件选项文本（SVG 无法渲染，含 JS 拼接的 option 字符串，单独列类可追溯）；" +
   "聊天/AI 回复正文字符串（msg/chat/bubble/reply 类）；用户头像字段（avatar/face 类）；" +
   "achievement-badge 等内容型位置（badge 类）。");

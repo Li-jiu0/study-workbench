@@ -273,7 +273,7 @@
     });
 
     box.innerHTML =
-      '<div class="study-stats-head"><span>📊 学习概况</span>' +
+      '<div class="study-stats-head"><span><span class="nav-icon" data-icon="chart-bar" data-icon-size="16"></span> 学习概况</span>' +
       '<span class="study-stats-week" onclick="StudyStats.toggleWeek(this)">本周报告 ▾</span></div>' +
       '<div class="study-stats-week-body" style="display:none">近 7 天合计 ' +
       days.reduce(function (a, x) { return a + x.mins; }, 0) + ' 分钟 · 累计 ' + m.total + ' 次</div>' +
@@ -283,6 +283,11 @@
         '<div class="study-stats-cell"><b>' + (data.streak || 0) + '</b><span>连续打卡</span></div>' +
         '<div class="study-stats-cell study-stats-chart">' + bars + '</div>' +
       '</div>';
+
+    // K 批：动态插入 data-icon 后补渲染（页面 autoRender 已跑过时仍能填充图标）
+    if (typeof window !== 'undefined' && typeof window.lucideAutoRender === 'function') {
+      try { window.lucideAutoRender(); } catch (e) {}
+    }
 
     // 心跳计时长：进入页面 / 离开页面差值 = 分钟数
     heartbeat(module);
