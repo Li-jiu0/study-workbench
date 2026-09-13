@@ -132,21 +132,21 @@ body { margin: 0; background: var(--bg); }
 <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform .3s;pointer-events:none;"></div>
 
 <!-- AI 学习助手（复用 app.js：规则引擎演示模式，无密钥） -->
-<div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">🤖<span class="ai-mode-badge" id="aiModeBadge">演示</span></div>
+<div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）"><span class="nav-icon" data-icon="bot" data-icon-size="22"></span><span class="ai-mode-badge" id="aiModeBadge">演示</span></div>
 <div class="ai-panel" id="aiPanel">
   <div class="ai-panel-header">
-    <div class="ai-avatar">🤖</div>
+    <div class="ai-avatar"><span class="nav-icon" data-icon="bot" data-icon-size="20"></span></div>
     <div style="flex:1">
       <div class="ai-title">AI学习助手</div>
       <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
     </div>
-    <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录">🧹</div>
-    <div class="ai-close" onclick="toggleAiPanel()" title="收起面板">✕</div>
+    <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录"><span class="nav-icon" data-icon="delete" data-icon-size="16"></span></div>
+    <div class="ai-close" onclick="toggleAiPanel()" title="收起面板"><span class="nav-icon" data-icon="close" data-icon-size="16"></span></div>
   </div>
   <div class="ai-messages" id="aiMessages"></div>
   <div class="ai-input-row">
     <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：今天该学什么？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
-    <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()">➤</div>
+    <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()"><span data-icon="arrow-right" data-icon-size="18"></span></div>
   </div>
 </div>
 
@@ -160,11 +160,11 @@ body { margin: 0; background: var(--bg); }
 </div>
 
 <nav class="xt-tabbar">
-  <div class="xt-tab on" data-tab="home" onclick="xtSwitch('home')"><span class="ti">🏠</span>首页</div>
-  <div class="xt-tab" data-tab="study" onclick="xtSwitch('study')"><span class="ti">📚</span>学习</div>
-  <div class="xt-tab" data-tab="exam" onclick="xtSwitch('exam')"><span class="ti">🎯</span>刷题</div>
-  <div class="xt-tab" data-tab="notes" onclick="xtSwitch('notes')"><span class="ti">📝</span>笔记</div>
-  <div class="xt-tab" data-tab="me" onclick="xtSwitch('me')"><span class="ti">👤</span>我的</div>
+  <div class="xt-tab on" data-tab="home" onclick="xtSwitch('home')"><span class="ti" data-icon="home" data-icon-size="18"></span>首页</div>
+  <div class="xt-tab" data-tab="study" onclick="xtSwitch('study')"><span class="ti" data-icon="book-open" data-icon-size="18"></span>学习</div>
+  <div class="xt-tab" data-tab="exam" onclick="xtSwitch('exam')"><span class="ti" data-icon="target" data-icon-size="18"></span>刷题</div>
+  <div class="xt-tab" data-tab="notes" onclick="xtSwitch('notes')"><span class="ti" data-icon="file-text" data-icon-size="18"></span>笔记</div>
+  <div class="xt-tab" data-tab="me" onclick="xtSwitch('me')"><span class="ti" data-icon="user" data-icon-size="18"></span>我的</div>
 </nav>
 
 <script src="assets/app.js?v=20260913o"></script>

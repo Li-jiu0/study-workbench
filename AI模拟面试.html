@@ -498,7 +498,7 @@ body {
 
 <!-- 顶部栏 -->
 <div class="header">
-  <button class="header-back" onclick="goBack()">✕</button>
+  <button class="header-back" onclick="goBack()"><span data-icon="close" data-icon-size="18" style="vertical-align:-3px"></span></button>
   <div class="header-title">AI模拟面试</div>
   <div class="header-status"><div class="rec-dot"></div>面试进行中</div>
 </div>
@@ -589,18 +589,18 @@ body {
 
 <!-- 评定面板 -->
 <div class="eval-panel hidden" id="evalPanel">
-  <div class="eval-title">📊 面试评定报告</div>
+  <div class="eval-title"><span data-icon="chart-bar" data-icon-size="16" style="vertical-align:-3px"></span> 面试评定报告</div>
   <div class="eval-scores" id="evalScores"></div>
   <div class="eval-section">
-    <div class="eval-section-title">✅ 做得好的地方</div>
+    <div class="eval-section-title"><span data-icon="check" data-icon-size="16" style="vertical-align:-3px"></span> 做得好的地方</div>
     <div class="eval-section-content" id="evalGood"></div>
   </div>
   <div class="eval-section">
-    <div class="eval-section-title">💡 需要改进的地方</div>
+    <div class="eval-section-title"><span data-icon="lightbulb" data-icon-size="16" style="vertical-align:-3px"></span> 需要改进的地方</div>
     <div class="eval-section-content" id="evalImprove"></div>
   </div>
   <div class="eval-section">
-    <div class="eval-section-title">📝 总体评价</div>
+    <div class="eval-section-title"><span data-icon="file-text" data-icon-size="16" style="vertical-align:-3px"></span> 总体评价</div>
     <div class="eval-section-content" id="evalOverall"></div>
   </div>
   <button class="eval-btn" onclick="restartInterview()">重新面试</button>

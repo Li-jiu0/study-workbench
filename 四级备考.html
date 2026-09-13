@@ -82,7 +82,7 @@
         <div class="user-avatar">学</div>
         <div class="user-info">
           <div class="user-name">同学</div>
-          <div class="user-streak">🔥 连续打卡 0 天</div>
+          <div class="user-streak"><span data-icon="fire" data-icon-size="14" style="vertical-align:-2px"></span> 连续打卡 0 天</div>
         </div>
       </div>
     </div>
@@ -166,7 +166,7 @@
 <div class="page" id="page-speaking-demo">
         <div class="player-container">
           <div class="player-header">
-            <div class="player-title">☕ 咖啡店点单 · 中级</div>
+            <div class="player-title"><span data-icon="coffee" data-icon-size="16" style="vertical-align:-3px"></span> 咖啡店点单 · 中级</div>
             <div class="player-progress-text">第 <span id="speakingCurrent">1</span> / 6 句</div>
           </div>
           <div class="player-stage">
@@ -264,48 +264,48 @@
             </div>
           </div>
           <div class="player-controls">
-            <div class="player-btn" onclick="showToast('上一句')">⏮️</div>
-            <div class="player-btn play" id="speakingPlayBtn" onclick="toggleSpeakingPlay()">▶️</div>
-            <div class="player-btn" onclick="showToast('下一句')">⏭️</div>
+            <div class="player-btn" onclick="showToast('上一句')"><span data-icon="skip-back" data-icon-size="18"></span></div>
+            <div class="player-btn play" id="speakingPlayBtn" onclick="toggleSpeakingPlay()"><span data-icon="play" data-icon-size="18"></span></div>
+            <div class="player-btn" onclick="showToast('下一句')"><span data-icon="skip-forward" data-icon-size="18"></span></div>
             <div class="player-progress"><div class="player-progress-fill" id="speakingProgress" style="width:16%"></div></div>
             <div class="player-time">00:12 / 01:30</div>
-            <div class="player-btn" onclick="showToast('字幕开关')">📝</div>
+            <div class="player-btn" onclick="showToast('字幕开关')"><span data-icon="file-text" data-icon-size="18"></span></div>
           </div>
         </div>
         <div style="text-align:center;margin:20px 0">
           <button class="player-record-btn" id="speakingRecordBtn" onclick="toggleSpeakingRecord()">
-            🎤 点击说话回答
+            <span data-icon="mic" data-icon-size="16" style="vertical-align:-3px"></span> 点击说话回答
           </button>
         </div>
         <div id="speakingEval" style="display:none">
           <div class="eval-panel">
-            <div class="eval-title">📊 本句评定</div>
+            <div class="eval-title"><span data-icon="chart-bar" data-icon-size="16" style="vertical-align:-3px"></span> 本句评定</div>
             <div class="eval-scores">
-              <div class="eval-score-item"><div class="eval-score-label">语法</div><div class="eval-stars">⭐⭐⭐⭐</div></div>
-              <div class="eval-score-item"><div class="eval-score-label">用词</div><div class="eval-stars">⭐⭐⭐⭐⭐</div></div>
-              <div class="eval-score-item"><div class="eval-score-label">流利度</div><div class="eval-stars">⭐⭐⭐</div></div>
+              <div class="eval-score-item"><div class="eval-score-label">语法</div><div class="eval-stars"><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span></div></div>
+              <div class="eval-score-item"><div class="eval-score-label">用词</div><div class="eval-stars"><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span></div></div>
+              <div class="eval-score-item"><div class="eval-score-label">流利度</div><div class="eval-stars"><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span></div></div>
             </div>
             <div class="eval-feedback good">
-              <div class="eval-feedback-title">✅ 做得好</div>
+              <div class="eval-feedback-title"><span data-icon="check" data-icon-size="16" style="vertical-align:-3px"></span> 做得好</div>
               <div class="eval-feedback-content">latte发音准确，句末please升调礼貌，整体句式正确。</div>
             </div>
             <div class="eval-feedback tip">
-              <div class="eval-feedback-title">💡 改进建议</div>
+              <div class="eval-feedback-title"><span data-icon="lightbulb" data-icon-size="16" style="vertical-align:-3px"></span> 改进建议</div>
               <div class="eval-feedback-content">"I want" 不如 "I'd like" 礼貌地道，口语中建议用 I'd like a medium hot latte with less sugar, please.</div>
             </div>
             <div class="eval-reference">
-              <div class="eval-reference-title">🔊 参考发音</div>
+              <div class="eval-reference-title"><span data-icon="volume-2" data-icon-size="16" style="vertical-align:-3px"></span> 参考发音</div>
               <div class="eval-reference-text">I'd like a medium hot latte with less sugar, please.</div>
             </div>
             <div style="display:flex;gap:10px;margin-top:14px">
-              <button class="btn btn-secondary btn-sm" onclick="showToast('播放参考发音')">🔊 听参考</button>
-              <button class="btn btn-primary btn-sm" onclick="showToast('跟读功能')">🎤 跟读一遍</button>
-              <button class="btn btn-outline btn-sm" onclick="nextSpeakingSentence()">下一句 →</button>
+              <button class="btn btn-secondary btn-sm" onclick="showToast('播放参考发音')"><span data-icon="volume-2" data-icon-size="16" style="vertical-align:-3px"></span> 听参考</button>
+              <button class="btn btn-primary btn-sm" onclick="showToast('跟读功能')"><span data-icon="mic" data-icon-size="16" style="vertical-align:-3px"></span> 跟读一遍</button>
+              <button class="btn btn-outline btn-sm" onclick="nextSpeakingSentence()">下一句 <span data-icon="arrow-right" data-icon-size="16" style="vertical-align:-3px"></span></button>
             </div>
           </div>
         </div>
         <div style="text-align:center;margin-top:20px">
-          <button class="btn btn-outline" onclick="navigateTo('cet')">← 返回四级</button>
+          <button class="btn btn-outline" onclick="navigateTo('cet')"><span data-icon="arrow-left" data-icon-size="16" style="vertical-align:-3px"></span> 返回四级</button>
         </div>
       </div>
     </div>
@@ -358,7 +358,7 @@
        题目渲染/判分/解析复用 assets/mini.js 引擎，本页仅替换呈现载体 -->
   <div class="cet-quiz-view" id="cetQuizView">
     <div class="cet-quiz-top">
-      <button class="cet-quiz-back" onclick="closeCetQuizView()">← 返回</button>
+      <button class="cet-quiz-back" onclick="closeCetQuizView()"><span data-icon="arrow-left" data-icon-size="16" style="vertical-align:-3px"></span> 返回</button>
       <b id="cetQuizTitle">阅读理解</b>
     </div>
     <div class="cet-quiz-slot" id="cetQuizSlot"></div>
@@ -409,22 +409,22 @@
        3. 安全约束：大模型密钥只放在后端 .env 里，前端代码永远不出现密钥。 -->
   <!-- 悬浮头像：可按住拖拽到任意位置（见下方 JS.initAiFabDrag），点击打开/收起面板，双击复位 -->
   <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">
-    🤖<span class="ai-mode-badge" id="aiModeBadge">演示</span>
+    <span class="nav-icon" data-icon="bot" data-icon-size="22"></span><span class="ai-mode-badge" id="aiModeBadge">演示</span>
   </div>
   <div class="ai-panel" id="aiPanel">
     <div class="ai-panel-header">
-      <div class="ai-avatar">🤖</div>
+      <div class="ai-avatar"><span class="nav-icon" data-icon="bot" data-icon-size="20"></span></div>
       <div style="flex:1">
         <div class="ai-title">AI学习助手</div>
         <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
       </div>
-      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录" aria-label="清空聊天记录" role="button" tabindex="0">🧹</div>
-      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板" aria-label="收起AI面板" role="button" tabindex="0">✕</div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录" aria-label="清空聊天记录" role="button" tabindex="0"><span class="nav-icon" data-icon="delete" data-icon-size="16"></span></div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板" aria-label="收起AI面板" role="button" tabindex="0"><span class="nav-icon" data-icon="close" data-icon-size="16"></span></div>
     </div>
     <div class="ai-messages" id="aiMessages"></div>
     <div class="ai-input-row">
       <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
-      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()">➤</div>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()"><span data-icon="arrow-right" data-icon-size="18"></span></div>
     </div>
   </div>
 
