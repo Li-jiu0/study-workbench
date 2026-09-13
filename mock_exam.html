@@ -5,15 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>真题模考 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913l">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913l">
-<link rel="stylesheet" href="assets/states.css?v=20260913l">
-<script src="assets/icon-map.js?v=20260913l" defer></script>
-<script src="assets/xt-toast.js?v=20260913l" defer></script>
-<script src="assets/error-boundary.js?v=20260913l" defer></script>
-<script src="assets/app.js?v=20260913l" defer></script>
-<script src="data/mock-papers.js?v=20260913l" defer></script>
-<script src="assets/mock-engine.js?v=20260913l" defer></script>
+<link rel="stylesheet" href="assets/common.css?v=20260913m">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913m">
+<link rel="stylesheet" href="assets/states.css?v=20260913m">
+<script src="assets/icon-map.js?v=20260913m" defer></script>
+<script src="assets/xt-toast.js?v=20260913m" defer></script>
+<script src="assets/error-boundary.js?v=20260913m" defer></script>
+<script src="assets/app.js?v=20260913m" defer></script>
+<script src="data/mock-papers.js?v=20260913m" defer></script>
+<script src="assets/mock-engine.js?v=20260913m" defer></script>
+<!-- 【批次 20260913m】考试指南并入本页：guide 数据沿用 MINI_BANK（mini-cet.js 的 cet-guide / mini-exam.js 的 exam-guide） -->
+<script src="assets/mini-cet.js?v=20260913m" defer></script>
+<script src="assets/mini-exam.js?v=20260913m" defer></script>
 <style>
 /* mock_exam.html 页面专属样式（不走弹窗/不弹窗 mask） */
 body { background: var(--xt-bg); margin: 0; color: var(--xt-text); }
@@ -123,6 +126,73 @@ body { background: var(--xt-bg); margin: 0; color: var(--xt-text); }
   outline: 2px solid var(--xt-primary);
   outline-offset: 2px;
 }
+/* ==================== 【批次 20260913m】双 tab 合并页样式 ====================
+   参照 商务礼仪面试.html #page-iv-group 合并页范式：
+   tab 选中态 .on 同步 + 面板 display 切换，由 switchMockTab() 承担。 */
+.mock-merge-tabs {
+  display: flex;
+  gap: 6px;
+  background: var(--xt-bg-card);
+  border: 1px solid var(--xt-border);
+  border-radius: 12px;
+  padding: 4px;
+  margin-top: var(--xt-space-4);
+  width: fit-content;
+  max-width: 100%;
+}
+.mock-merge-tab {
+  border: none;
+  background: transparent;
+  padding: 8px 14px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--xt-text-dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.4;
+}
+.mock-merge-tab.on { background: var(--xt-primary); color: #fff; }
+.mock-merge-tab:focus-visible {
+  outline: 2px solid var(--xt-primary);
+  outline-offset: 2px;
+}
+.mock-merge-panel { display: none; }
+.mock-merge-panel.open { display: block; }
+.mock-guide-title {
+  margin: var(--xt-space-4) 0 0;
+  font-size: var(--xt-font-lg);
+  color: var(--xt-text);
+}
+.mock-guide-sub {
+  margin: var(--xt-space-2) 0 0;
+  font-size: var(--xt-font-sm);
+  color: var(--xt-text-dim);
+}
+.mock-guide-item {
+  background: var(--xt-bg-card);
+  border: 1px solid var(--xt-border);
+  border-radius: var(--xt-radius-md);
+  padding: var(--xt-space-3) var(--xt-space-4);
+  margin-top: var(--xt-space-3);
+}
+.mock-guide-item h4 {
+  margin: 0;
+  font-size: var(--xt-font-md);
+  font-weight: 500;
+  color: var(--xt-text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mock-guide-item p {
+  margin: 6px 0 0;
+  font-size: var(--xt-font-sm);
+  color: var(--xt-text-dim);
+  line-height: 1.7;
+}
 </style>
 </head>
 <body>
@@ -138,6 +208,21 @@ body { background: var(--xt-bg); margin: 0; color: var(--xt-text); }
 </header>
 
 <div class="mock-shell">
+  <!-- 【批次 20260913m】考试指南并入真题模考页（用户拍板）：双 tab 结构
+       tab1 = 真题模拟：原套卷列表/倒计时/状态区整体搬入本面板；
+       tab2 = 考试指南：渲染 MINI_BANK 的 cet-guide / exam-guide info 卡内容（内容零删减搬家）。
+       切换逻辑 switchMockTab() 与选中态 .on 同步，参照商务礼仪面试.html 合并页范式。 -->
+  <div class="mock-merge-tabs" role="tablist" aria-label="真题模考分区">
+    <button type="button" class="mock-merge-tab on" id="mockTabBtnMock" role="tab" aria-selected="true" aria-controls="mockTabMock" onclick="switchMockTab('mock')">
+      <span class="nav-icon" data-icon="clipboard" data-icon-size="16"></span>真题模拟
+    </button>
+    <button type="button" class="mock-merge-tab" id="mockTabBtnGuide" role="tab" aria-selected="false" aria-controls="mockTabGuide" onclick="switchMockTab('guide')">
+      <span class="nav-icon" data-icon="book-open" data-icon-size="16"></span>考试指南
+    </button>
+  </div>
+
+  <!-- tab1：真题模拟（原内容整体收纳） -->
+  <div id="mockTabMock" class="mock-merge-panel open" role="tabpanel">
   <!-- 倒计时条（仅四级显示；空值显示 --；央国企整行隐藏） -->
   <div class="mock-cd-row" id="cdRow" role="status" aria-label="="距目标考试天数">
     <span class="nav-icon" data-icon="clock" data-icon-size="18"></span>
@@ -167,9 +252,15 @@ body { background: var(--xt-bg); margin: 0; color: var(--xt-text); }
     <div class="xt-skeleton xl" style="grid-column:1/-1"></div>
   </div>
 
-  <!-- 考试指南 -->
+  <!-- 考试指南（【批次 20260913m】改为页内 tab 切换入口，替代原 openMiniQuiz 弹窗死链） -->
   <div class="mock-guide-row" id="guideRow">
     <a href="javascript:void(0)" id="guideLink">考试结构与时间分配 → 打开指南</a>
+  </div>
+  </div>
+
+  <!-- tab2：考试指南（MINI_BANK info 卡内容，renderGuideTab() 渲染） -->
+  <div id="mockTabGuide" class="mock-merge-panel" role="tabpanel">
+    <div id="mockGuideBody" aria-live="polite"></div>
   </div>
 </div>
 
@@ -270,10 +361,48 @@ body { background: var(--xt-bg); margin: 0; color: var(--xt-text); }
     hintEl.textContent = days >= 0 ? '加油 💪' : ('已过 ' + Math.abs(days) + ' 天');
   }
 
-  // —— 工具：考试指南链接 ——
-  function bindGuide(cat) {
+  // —— 【批次 20260913m】双 tab 切换（选中态 .on 同步，参照商务礼仪面试.html 合并页范式）——
+  window.switchMockTab = function (t) {
+    var isGuide = (t === 'guide');
+    var bM = $('mockTabBtnMock'), bG = $('mockTabBtnGuide');
+    var pM = $('mockTabMock'), pG = $('mockTabGuide');
+    if (!bM || !bG || !pM || !pG) return;
+    bM.classList[isGuide ? 'remove' : 'add']('on');
+    bG.classList[isGuide ? 'add' : 'remove']('on');
+    bM.setAttribute('aria-selected', isGuide ? 'false' : 'true');
+    bG.setAttribute('aria-selected', isGuide ? 'true' : 'false');
+    pM.classList[isGuide ? 'remove' : 'add']('open');
+    pG.classList[isGuide ? 'add' : 'remove']('open');
+  };
+
+  // —— 工具：考试指南链接（原 openMiniQuiz 弹窗入口已并入本页 tab，改为 tab 切换；
+  //        同时修复原链接在本页未加载 mini.js 的死链问题）——
+  function bindGuide() {
+    var link = $('guideLink');
+    if (link) link.setAttribute('onclick', "switchMockTab('guide')");
+  }
+
+  // —— 工具：渲染「考试指南」tab 内容（MINI_BANK info 卡，cet-guide / exam-guide，内容零删减搬家）——
+  function renderGuideTab(cat) {
+    var body = $('mockGuideBody');
+    if (!body) return;
     var guideId = (cat === 'exam-mock') ? 'exam-guide' : 'cet-guide';
-    $('guideLink').setAttribute('onclick', "openMiniQuiz('" + guideId + "')");
+    var bank = window.MINI_BANK || {};
+    var g = bank[guideId];
+    if (!g || g.mode !== 'info' || !g.items || !g.items.length) {
+      body.innerHTML = '<div class="xt-empty" style="display:block"><div class="xt-empty-title">指南内容加载中</div>' +
+        '<div class="xt-empty-desc">题库数据未就绪，请稍后刷新重试。</div></div>';
+      return;
+    }
+    body.innerHTML =
+      '<h3 class="mock-guide-title">' + escHtml(g.t) + '</h3>' +
+      '<p class="mock-guide-sub">考试要点与临场注意事项，考前过一遍心里更有底。</p>' +
+      g.items.map(function (it) {
+        return '<div class="mock-guide-item">' +
+          '<h4><span>' + escHtml(it.icon || '📌') + '</span>' + escHtml(it.title) + '</h4>' +
+          '<p>' + escHtml(it.body) + '</p>' +
+        '</div>';
+      }).join('');
   }
 
   // —— 主渲染 ——
@@ -285,6 +414,9 @@ body { background: var(--xt-bg); margin: 0; color: var(--xt-text); }
     if (skeleton) skeleton.style.display = 'none';
 
     var catInfo = getCategoryKey();
+    bindGuide();
+    renderGuideTab(catInfo.cat); // 【批次 20260913m】指南 tab 渲染不依赖卷库数据，题库异常时仍可用
+
     var data = window.MOCK_PAPERS_DATA;
     if (!data) {
       grid.style.display = 'none';
@@ -299,7 +431,6 @@ body { background: var(--xt-bg); margin: 0; color: var(--xt-text); }
       return;
     }
     renderCountdown(catInfo.cat);
-    bindGuide(catInfo.cat);
 
     var currentState = null;
     try {
@@ -348,8 +479,8 @@ body { background: var(--xt-bg); margin: 0; color: var(--xt-text); }
 
   // —— 入口 ——
   function boot() {
-    if (!window.MOCK_PAPERS_DATA || !window.MockEngine) {
-      // 资源还没加载完，等一会
+    if (!window.MOCK_PAPERS_DATA || !window.MockEngine || !window.MINI_BANK) {
+      // 资源还没加载完，等一会（MINI_BANK 由 mini-cet.js / mini-exam.js 注入，供指南 tab 使用）
       setTimeout(boot, 80);
       return;
     }

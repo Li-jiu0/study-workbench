@@ -55,7 +55,7 @@ for (const f of files) {
 
   // 6) 其余功能入口完好性（央国企）/ 页面结构（高情商）
   if (f === '央国企笔试.html') {
-    const need = ["navigateTo('exam-center')", "openMiniQuiz('exam-company')", "openHotNewsPanel()", "mock_exam.html?cat=exam-mock", "openMiniQuiz('exam-guide')", 'TopicExpress.open()'];
+    const need = ["navigateTo('exam-center')", "openMiniQuiz('exam-company')", "openHotNewsPanel()", "mock_exam.html?cat=exam-mock", "考试指南入口已并入真题模拟", 'TopicExpress.open()'];
     const miss = need.filter(s => !t.includes(s));
     lines.push('六模块入口完好=' + (need.length - miss.length) + '/' + need.length + (miss.length ? ' <- FAIL 缺:' + miss.join('|') : ' OK'));
   } else {

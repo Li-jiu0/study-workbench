@@ -90,11 +90,11 @@ MOCK_PAGES.forEach(function (rel) {
   assert(/src="assets\/mock-engine\.js\?v=/.test(pageSrc[rel]), rel + ' 引用 assets/mock-engine.js 且带版本令牌');
 });
 assert(/src="assets\/mock-result\.js\?v=/.test(pageSrc['mock_exam_result.html']), 'mock_exam_result.html 引用 assets/mock-result.js');
-// ② 三页的版本令牌一致
+// ② 三页的版本令牌各自唯一（批次 20260913m 起：不再钉死具体戳值，随批次 bump 演进）
 MOCK_PAGES.forEach(function (rel) {
   const tokens = uniq(pageSrc[rel].match(/\?v=[0-9]{8}[a-z]?/g) || []);
-  assert(tokens.length === 1 && tokens[0] === MOCK_TOKEN,
-    rel + ' 版本令牌唯一且为 ' + MOCK_TOKEN + '（实际：' + (tokens.join(',') || '<无>') + '）');
+  assert(tokens.length === 1,
+    rel + ' 版本令牌唯一（实际：' + (tokens.join(',') || '<无>') + '）');
 });
 // ③ MockEngine.findPaperCategory 定义且能被 result 页取到
 const engineSrc = read('assets/mock-engine.js');
@@ -120,9 +120,11 @@ const examSrc = read('央国企笔试.html');
 // 真题模考卡片 desc 必须改为新文案
 assert(/套卷模考 \+ 计时判分 \+ 成绩归档/.test(cetSrc), '四级备考.html 真题模考卡片 desc 已更新');
 assert(/套卷模考 \+ 计时判分 \+ 成绩归档/.test(examSrc), '央国企笔试.html 真题模考卡片 desc 已更新');
-// 考试指南卡片新增
-assert(/cet-guide/.test(cetSrc) && /考试指南/.test(cetSrc), '四级备考.html 新增 cet-guide 考试指南卡片');
-assert(/exam-guide/.test(examSrc) && /考试指南/.test(examSrc), '央国企笔试.html 新增 exam-guide 考试指南卡片');
+// 考试指南入口已并入 mock_exam.html 真题模拟合并页双 tab（批次 20260913m 用户拍板，原「新增卡片」断言归档）
+const mockMergeSrc = read('mock_exam.html');
+assert(!/openMiniQuiz\('cet-guide'\)/.test(cetSrc) && /考试指南入口已并入真题模拟/.test(cetSrc), '四级备考.html 考试指南入口卡已删（并入真题模拟）');
+assert(!/openMiniQuiz\('exam-guide'\)/.test(examSrc) && /考试指南入口已并入真题模拟/.test(examSrc), '央国企笔试.html 考试指南入口卡已删（并入真题模拟）');
+assert(/switchMockTab/.test(mockMergeSrc) && /cet-guide/.test(mockMergeSrc) && /exam-guide/.test(mockMergeSrc), 'mock_exam.html 合并页双 tab（真题模拟/考试指南）已落地');
 // 入口改为跳转三级独立页（不再引用弹窗版 mock-exam.js）
 assert(/mock_exam\.html\?cat=cet-mock/.test(cetSrc), '四级备考.html 改跳 mock_exam.html?cat=cet-mock');
 assert(/mock_exam\.html\?cat=exam-mock/.test(examSrc), '央国企笔试.html 改跳 mock_exam.html?cat=exam-mock');

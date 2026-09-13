@@ -310,7 +310,7 @@ const EXAM_BANK = [
   { id: 5, type: '图形推理', sub: '数量类', diff: 2, q: '题干给出五个几何图形，每个图形含有若干条直线。请从选项中选出直线数量正确的图形填入问号处。', o: ['6','7','8','9'], a: 1, x: '直线数呈等差数列递增：3→4→5→6→（7）。问号处应有7条直线。', tip: '数线时注意：只数直线还是直线曲线都数，看题干规律。' },
   { id: 6, type: '图形推理', sub: '属性类', diff: 2, q: '题干给出五个几何图形，每个图形可沿若干条假想直线折叠后两侧完全重合。请从选项中选出这种折叠线数量正确的图形填入问号处。', o: ['4','5','6','7'], a: 1, x: '对称轴数量递增：1→2→3→4→（5）。问号处应有5条对称轴。', tip: '属性类考点：对称性、曲直性、开闭性。轴对称要数对称轴数量和方向。' },
   { id: 7, type: '图形推理', sub: '空间重构', diff: 4, q: '左边给定一个由六个正方形组成的正方体展开图。右边给出四个由三个可见面组成的正方体立体图形。从所给的四个选项中，选择一个能由左边展开图折叠而成的正方体。', o: ['A项','B项','C项','D项'], a: 2, x: '空间重构题用相对面法（相对面不相邻原则）：展开图中相对的面在立体图中不能相邻。A、B、D中均有相对面相邻的错误，C正确。', tip: '空间重构先找相对面（相间、Z端），相对面不相邻直接排除。' },
-  { id: 8, type: '图形推理', sub: '位置类', diff: 3, q: '题干图形由两个相同形状的元素（A、B）组成，分布在六个等分位置上。第1图A在位置1、B在位置1；第2图A在位置2、B在位置6；第3图A在位置3、B在位置5；第4图A在位置4、B在位置4；第5图（问号处）需要从选项中选出两元素的相对状态。', o: ['相邻','相对','重合','分离'], a: 2, x: '元素A按顺时针推进（位置1→2→3→4→5），元素B按逆时针推进（位置1→6→5→4→3）；第5步两者同在位置5，因此两元素重合。', tip: '多元素移动题要分别追踪每个元素的轨迹，最后再看关系。' },
+  { id: 8, type: '图形推理', sub: '位置类', diff: 3, q: '题干图形由两个相同形状的元素（A、B）组成，分布在正六边形的六个角位上。第1图A在号位1、B在号位1；第2图A在号位2、B在号位6；第3图A在号位3、B在号位5；第4图A在号位4、B在号位4；第5图（问号处）需要从选项中选出两元素的相对状态。', o: ['相邻','相对','重合','分离'], a: 2, x: '元素A按顺时针推进（位置1→2→3→4→5），元素B按逆时针推进（位置1→6→5→4→3）；第5步两者同在位置5，因此两元素重合。', tip: '多元素移动题要分别追踪每个元素的轨迹，最后再看关系。' },
   { id: 9, type: '图形推理', sub: '样式类', diff: 3, q: '题干图形由若干黑白小方格组成，分为图1和图2两部分。从所给的四个选项中，选择由图1与图2运算得到的图形填入问号处。', o: ['A','B','C','D'], a: 1, x: '按黑白运算规则逐格计算：黑+黑=白，白+白=白，黑+白=黑。运算结果为B。', tip: '黑白运算题先从已知图形中提炼运算规则，再逐格套用。' },
   { id: 10, type: '图形推理', sub: '数量类', diff: 3, q: '题干给出五个几何图形，每个图形含有若干个交点（线与线相交形成的点）。请从选项中选出交点数量正确的图形填入问号处。', o: ['8','10','12','14'], a: 1, x: '交点数呈等差数列递增：2→4→6→8→（10）。问号处应有10个交点。', tip: '交点包括：直线与直线、直线与曲线、曲线与曲线的交点，看题干统一数哪种。' },
   // ===== 定义判断（5题） =====
@@ -3203,6 +3203,30 @@ const PPT_LAYOUTS = [
   }
 ];
 
+// PPT版式卡片标题 emoji → 已注册 SVG 图标名映射（图标升级批次 20260913l）
+// 原数据 icon 字段为 emoji，仅作映射键保留；页面渲染一律走 data-icon SVG。
+// 未命中映射时回退 image，避免出现空白标题图标。
+const PPT_LAYOUT_ICON_MAP = {
+  '📕': 'book-open',        // 封面页
+  '📋': 'clipboard',        // 目录页
+  '🔄': 'arrow-right',      // 过渡页
+  '📝': 'file-text',        // 左文右图
+  '🖼️': 'image',            // 上图下文
+  '🖼': 'image',
+  '📊': 'chart-bar',        // 三栏并列
+  '🔲': 'puzzle',           // 四宫格
+  '⏱️': 'clock',            // 时间轴
+  '⏱': 'clock',
+  '🔁': 'rotate-ccw',       // 循环图
+  '🔺': 'award',            // 金字塔
+  '⚖️': 'arrow-left-right', // 对比页
+  '⚖': 'arrow-left-right',
+  '📈': 'chart',            // 数据图表页
+  '💬': 'message-square',   // 引用页
+  '👥': 'users',            // 团队介绍
+  '🎯': 'target'            // 结尾页
+};
+
 // ========== PPT优秀案例拆解 ==========
 const PPT_CASES = [
   {
@@ -4194,17 +4218,17 @@ function renderLayouts() {
   const stats = getDailyQueueStats('pptLayouts', layoutFiltered);
   
   let headerHtml = `<div style="grid-column:1/-1;display:flex;align-items:center;gap:12px;margin-bottom:8px;padding:12px 16px;background:#E8F5E9;border-radius:10px;flex-wrap:wrap">
-    <span style="font-size:13px;color:#2E7D32"><strong>📅 今日待学：${queue.ids.length}种</strong> | 已学：${stats.totalViewed}/${stats.total} | 剩余：${stats.remaining}种</span>
-    <button class="btn btn-outline btn-sm" style="margin-left:auto;padding:4px 12px;font-size:12px" onclick="resetViewedProgress('pptLayouts');appData.dailyQueues.pptLayouts={date:'',ids:[]};saveData();renderLayouts()">🔄 重置进度</button>
+    <span style="font-size:13px;color:#2E7D32"><strong><span class="nav-icon" data-icon="calendar-days" data-icon-size="14"></span> 今日待学：${queue.ids.length}种</strong> | 已学：${stats.totalViewed}/${stats.total} | 剩余：${stats.remaining}种</span>
+    <button class="btn btn-outline btn-sm" style="margin-left:auto;padding:4px 12px;font-size:12px" onclick="resetViewedProgress('pptLayouts');appData.dailyQueues.pptLayouts={date:'',ids:[]};saveData();renderLayouts()"><span class="nav-icon" data-icon="rotate-ccw" data-icon-size="12"></span> 重置进度</button>
   </div>`;
   
   let itemsHtml = '';
   const todayItems = layoutFiltered.filter(l => queue.ids.includes(l.id));
   if (todayItems.length > 0) {
-    itemsHtml += `<div style="grid-column:1/-1;font-size:12px;color:#2E7D32;margin-bottom:4px;padding-left:8px;border-left:3px solid #4CAF50;font-weight:700">📅 今日学习（${todayItems.length}种）</div>`;
+    itemsHtml += `<div style="grid-column:1/-1;font-size:12px;color:#2E7D32;margin-bottom:4px;padding-left:8px;border-left:3px solid #4CAF50;font-weight:700"><span class="nav-icon" data-icon="calendar-days" data-icon-size="12"></span> 今日学习（${todayItems.length}种）</div>`;
     itemsHtml += todayItems.map(l => renderLayoutCard(l, false)).join('');
   } else {
-    itemsHtml += `<div style="grid-column:1/-1;padding:30px;text-align:center;color:var(--text-muted);background:var(--bg);border-radius:10px">🎉 今日版式已学完！明天再来学新的吧~</div>`;
+    itemsHtml += `<div style="grid-column:1/-1;padding:30px;text-align:center;color:var(--text-muted);background:var(--bg);border-radius:10px"><span class="nav-icon" data-icon="sparkles" data-icon-size="16"></span> 今日版式已学完！明天再来学新的吧~</div>`;
   }
   
   const otherUnviewed = layoutFiltered.filter(l => !queue.ids.includes(l.id) && !appData.viewedContent.pptLayouts?.includes(l.id));
@@ -4220,6 +4244,8 @@ function renderLayouts() {
   }
   
   list.innerHTML = headerHtml + itemsHtml;
+  // K6：版式列表为动态拼接插入，需补调全局渲染，让 data-icon SVG 图标生效
+  if (window.lucideAutoRender) window.lucideAutoRender();
 }
 
 function renderLayoutCard(l, viewed) {
@@ -4230,7 +4256,7 @@ function renderLayoutCard(l, viewed) {
   return `
     <div style="padding:16px;background:var(--bg);border-radius:14px;border:1px solid var(--border);${opacity}">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-        <span style="font-size:20px">${l.icon}</span>
+        <span class="nav-icon" data-icon="${PPT_LAYOUT_ICON_MAP[l.icon] || 'image'}" data-icon-size="20" style="color:var(--primary,#5B8DEF)"></span>
         <span style="font-size:15px;font-weight:700;color:var(--text)">${l.name}</span>
         ${viewedTag}
         ${markBtn}
@@ -4240,7 +4266,7 @@ function renderLayoutCard(l, viewed) {
       </div>
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;line-height:1.6"><span style="font-weight:700;color:var(--primary)">适用场景：</span>${l.scene}</div>
       <div>
-        <div style="font-size:12px;font-weight:700;color:var(--success);margin-bottom:4px">✅ 设计要点</div>
+        <div style="font-size:12px;font-weight:700;color:var(--success);margin-bottom:4px;display:flex;align-items:center;gap:4px"><span class="nav-icon" data-icon="check" data-icon-size="12"></span> 设计要点</div>
         ${l.points.map(p => '<div style="font-size:12px;color:var(--text-secondary);line-height:1.7;padding-left:14px;position:relative"><span style="position:absolute;left:0;color:var(--success)">•</span>' + p + '</div>').join('')}
       </div>
     </div>
