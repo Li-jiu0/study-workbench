@@ -149,7 +149,9 @@
       nickname: admStr(u.nickname || u.nick_name || u.username || ''),
       created_at: admStr(u.created_at || u.createdAt || u.created || ''),
       last_active: admStr(u.last_active || u.lastActive || u.last_seen_at || u.lastSeenAt || ''),
-      is_online: admBool(u.is_online !== undefined ? u.is_online : u.online)
+      // admin.py _user_row 对时间/布尔字段做了 camelCase + snake_case 双写，这里两套都收
+      is_online: admBool(u.is_online !== undefined ? u.is_online
+        : (u.isOnline !== undefined ? u.isOnline : u.online))
     };
   }
 
