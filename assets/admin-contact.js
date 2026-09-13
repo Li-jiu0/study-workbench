@@ -9,16 +9,14 @@
 
    链路：
      1) GET  /api/admin/contact            → 取管理员 userId（登录即可，结果缓存）
-        （管理员隐形 → /api/friends/search 已按 is_admin 过滤，不可用；
-          过渡期若该端点尚未部署，自动回退旧搜索路径）
+        （管理员隐形 → /api/friends/search 已按 is_admin 过滤；只用专用端点，无回退）
      2) GET  /api/chat/{id}/messages?limit=50&markRead=1  → 会话历史
      3) POST /api/chat/{id}/messages      body {content, kind:'text'} → 发消息
    ===================================================================== */
 (function () {
   'use strict';
 
-  var ADMIN_USERNAME = '管理员';                    // 与 server/config.py 的 ADMIN_USERNAME 一致
-  var ADMIN_ID_KEY = 'xt_admin_user_id';            // 解析结果缓存，避免每次点都搜一次
+  var ADMIN_ID_KEY = 'xt_admin_user_id';            // 解析结果缓存，避免每次点都查一次
 
   function $(id) { return document.getElementById(id); }
   function esc(s) {
@@ -45,9 +43,9 @@
     return id;
   }
 
-  /* 主路径：GET /api/admin/contact（登录即可访问，返回最小信息 {id, username, nickname}）。
-     管理员对普通用户隐形，/api/friends/search 已按 is_admin 过滤（0 命中），
-     因此绝不能再靠搜索拿 id。 */
+  /* 唯一路径：GET /api/admin/contact（登录即可访问，返回最小信息 {id, username, nickname}）。
+     管理员对普通用户隐形 → /api/friends/search 已按 is_admin 过滤（0 命中），
+     永不回退搜索；拿不到 id 一律按失败处理，由调用方给用户明确提示。 */
   function fetchAdminId() {
     return fetch(base() + '/api/admin/contact', {
       headers: { 'Authorization': 'Bearer ' + tok() }
@@ -61,31 +59,12 @@
     });
   }
 
-  /* 过渡期兜底：后端 /api/admin/contact 尚未部署时，退回旧搜索路径。
-     正常情况下 search 已被过滤 → 0 命中，最终仍返回 0（面板给出友好提示）。 */
-  function fetchAdminIdFallback() {
-    return fetch(base() + '/api/friends/search?q=' + encodeURIComponent(ADMIN_USERNAME), {
-      headers: { 'Authorization': 'Bearer ' + tok() }
-    }).then(function (r) { return r.ok ? r.json() : { items: [] }; }).then(function (d) {
-      var items = (d && d.items) || [];
-      var hit = null;
-      for (var i = 0; i < items.length; i++) {
-        if (items[i] && items[i].username === ADMIN_USERNAME) { hit = items[i]; break; }
-      }
-      if (!hit && items.length) hit = items[0];
-      return hit ? Number(hit.id) : 0;
-    }).catch(function () { return 0; });
-  }
-
   function resolveAdminId() {
     var cached = '';
     try { cached = localStorage.getItem(ADMIN_ID_KEY) || ''; } catch (e) { /* 忽略 */ }
     if (cached && /^\d+$/.test(cached)) return Promise.resolve(Number(cached));
     if (!tok()) return Promise.resolve(0);
-    return fetchAdminId()
-      .then(function (id) { return cacheAdminId(id); })
-      .catch(function () { return fetchAdminIdFallback().then(function (id) { return cacheAdminId(id); }); })
-      .catch(function () { return 0; });
+    return fetchAdminId().then(cacheAdminId).catch(function () { return 0; });
   }
 
   /* ---------------- 面板状态 ---------------- */
@@ -194,7 +173,8 @@
     resolveAdminId().then(function (id) {
       S.adminId = id || 0;
       if (!S.adminId) {
-        if (box) box.innerHTML = '<div class="ac-empty">暂时无法联系管理员，请稍后再试</div>';
+        if (box) box.innerHTML = '<div class="ac-empty">联系管理员失败，请稍后重试</div>';
+        toast('联系管理员失败，请稍后重试', 'error');
         return;
       }
       return loadMsgs();
