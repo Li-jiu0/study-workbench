@@ -648,6 +648,126 @@
     "check-circle": svg(
       '<circle cx="12" cy="12" r="10"/>' +
       '<path d="m9 12 2 2 4-4"/>'
+    ),
+    /* ===========================================================
+       需求02 遗留 + 需求06 弹药（20260913o）补齐：20 个语义图标
+       - shield：安全 / 管理后台（更多.html、管理员.html 已引用未注册）
+       - shield-check / badge-check：认证 / 审核 / 成就徽章
+       - utensils：餐饮礼仪 🍽；smartphone / phone / mail：通讯礼仪 📱📞✉
+       - graduation-cap：学历 / 毕业 🎓；id-card：名片 / 身份
+       - presentation：会议 / 汇报 📽；calendar-clock：日程 / 会议时间
+       - clipboard-list：面试 / 待办清单；shirt：着装礼仪 👔/👗
+       - skip-back / skip-forward / timer：播放控制与计时 ⏮⏭⏱
+       - coffee：情景 / 休闲 ☕；eye-off：隐私切换 / 隐藏
+       - building：公司 / 单位 🏢；quote：引用 ❝
+       复用既有 SVG_TPL（fill=none / stroke=currentColor / stroke-width=2 /
+       linecap=round / linejoin=round / viewBox 24x24），lucide 风格路径，
+       仅 path/rect/circle/line/polygon 基础图元，禁 mask/filter/symbol/use。
+       =========================================================== */
+    "shield": svg(
+      '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/>'
+    ),
+    "shield-check": svg(
+      '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/>' +
+      '<path d="m9 12 2 2 4-4"/>'
+    ),
+    "utensils": svg(
+      '<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>' +
+      '<path d="M7 2v20"/>' +
+      '<path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Z"/>' +
+      '<path d="M21 15v7"/>'
+    ),
+    "smartphone": svg(
+      '<rect width="14" height="20" x="5" y="2" rx="2"/>' +
+      '<path d="M12 18h.01"/>'
+    ),
+    "phone": svg(
+      '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>'
+    ),
+    "mail": svg(
+      '<rect width="20" height="16" x="2" y="4" rx="2"/>' +
+      '<path d="m22 7-10 6L2 7"/>'
+    ),
+    "graduation-cap": svg(
+      '<path d="M2 9.5 12 4l10 5.5-10 5.5L2 9.5Z"/>' +
+      '<path d="M6 11.5V16c0 1.3 2.7 2.5 6 2.5s6-1.2 6-2.5v-4.5"/>' +
+      '<path d="M22 9.5V17"/>'
+    ),
+    "id-card": svg(
+      '<rect width="20" height="14" x="2" y="5" rx="2"/>' +
+      '<circle cx="8" cy="12" r="2.5"/>' +
+      '<path d="M16 10h2"/>' +
+      '<path d="M16 14h2"/>'
+    ),
+    "presentation": svg(
+      '<path d="M2 3h20"/>' +
+      '<path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"/>' +
+      '<path d="m7 21 5-5 5 5"/>'
+    ),
+    "calendar-clock": svg(
+      '<path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"/>' +
+      '<path d="M16 2v4"/>' +
+      '<path d="M8 2v4"/>' +
+      '<path d="M3 10h12"/>' +
+      '<circle cx="18" cy="18" r="3"/>' +
+      '<path d="M18 16.5V18l1.5.9"/>'
+    ),
+    "clipboard-list": svg(
+      '<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>' +
+      '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>' +
+      '<path d="M12 11h4"/>' +
+      '<path d="M12 15h4"/>' +
+      '<path d="M9 11h.01"/>' +
+      '<path d="M9 15h.01"/>'
+    ),
+    "shirt": svg(
+      '<path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/>'
+    ),
+    "skip-back": svg(
+      '<polygon points="19 20 9 12 19 4 19 20"/>' +
+      '<line x1="5" x2="5" y1="19" y2="5"/>'
+    ),
+    "skip-forward": svg(
+      '<polygon points="5 4 15 12 5 20 5 4"/>' +
+      '<line x1="19" x2="19" y1="5" y2="19"/>'
+    ),
+    "timer": svg(
+      '<line x1="10" x2="14" y1="2" y2="2"/>' +
+      '<line x1="12" x2="15" y1="14" y2="11"/>' +
+      '<circle cx="12" cy="14" r="8"/>'
+    ),
+    "coffee": svg(
+      '<path d="M10 2v2"/>' +
+      '<path d="M14 2v2"/>' +
+      '<path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/>' +
+      '<path d="M6 2v2"/>'
+    ),
+    "eye-off": svg(
+      '<path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/>' +
+      '<path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/>' +
+      '<path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/>' +
+      '<path d="m2 2 20 20"/>'
+    ),
+    "building": svg(
+      '<rect width="16" height="20" x="4" y="2" rx="2" ry="2"/>' +
+      '<path d="M9 22v-4h6v4"/>' +
+      '<path d="M8 6h.01"/>' +
+      '<path d="M16 6h.01"/>' +
+      '<path d="M12 6h.01"/>' +
+      '<path d="M12 10h.01"/>' +
+      '<path d="M12 14h.01"/>' +
+      '<path d="M16 10h.01"/>' +
+      '<path d="M16 14h.01"/>' +
+      '<path d="M8 10h.01"/>' +
+      '<path d="M8 14h.01"/>'
+    ),
+    "badge-check": svg(
+      '<path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/>' +
+      '<path d="m9 12 2 2 4-4"/>'
+    ),
+    "quote": svg(
+      '<path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>' +
+      '<path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h1.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/>'
     )
   };
 
