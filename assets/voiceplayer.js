@@ -235,8 +235,8 @@
       '<button class="vp-x" onclick="openVoiceTrain.__close()" title="关闭"><span class="nav-icon" data-icon="close" data-icon-size="16"></span></button>' +
       '</div>' +
       '<div class="vp-mode">' +
-      '<div class="m' + (mode === 'listen' ? ' on' : '') + '" onclick="openVoiceTrain.__mode(\'listen\')"><span class="nav-icon" data-icon="headphones" data-icon-size="14"></span>听力精听</div>' +
-      '<div class="m' + (mode === 'speak' ? ' on' : '') + '" onclick="openVoiceTrain.__mode(\'speak\')"><span class="nav-icon" data-icon="mic" data-icon-size="14"></span>口语跟读</div></div>' +
+      '<div class="m' + (mode === 'listen' ? ' on' : '') + '" data-mo="listen" onclick="openVoiceTrain.__mode(\'listen\')"><span class="nav-icon" data-icon="headphones" data-icon-size="14"></span>听力精听</div>' +
+      '<div class="m' + (mode === 'speak' ? ' on' : '') + '" data-mo="speak" onclick="openVoiceTrain.__mode(\'speak\')"><span class="nav-icon" data-icon="mic" data-icon-size="14"></span>口语跟读</div></div>' +
       '<div class="vp-scene">' + sceneHtml + '</div>' +
       '<div class="vp-stage" id="vpBody"></div>';
     document.body.appendChild(m);
@@ -253,6 +253,9 @@
   window.openVoiceTrain.__mode = function (mo) {
     if (!S || !mo) return;
     S.mode = mo; S.showEn = (mo === 'speak'); S.i = 0;
+    // K19 修复：切换 tab 时同步更新选中态（此前 on 类写死于初次渲染，点击另一 tab 样式不变）
+    var tabs = document.querySelectorAll('#vpMask .vp-mode .m');
+    for (var ti = 0; ti < tabs.length; ti++) { tabs[ti].classList.toggle('on', tabs[ti].getAttribute('data-mo') === mo); }
     var tt = document.getElementById('vpTitle');
     if (tt) tt.innerHTML = '<span class="nav-icon" data-icon="' + (mo === 'listen' ? 'headphones' : 'mic') + '" data-icon-size="16"></span> 听说训练 · ' + (mo === 'listen' ? '听力精听' : '口语跟读');
     // 切 tab 后重绘顶部/场景区图标态（chips 是静态 DOM，仅需标题与句区刷新）
