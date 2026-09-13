@@ -103,6 +103,34 @@ def _require_admin(user: User = Depends(get_current_user)) -> User:
     return user
 
 
+# ---------------- 「联系管理员」地址簿（普通用户可用） ----------------
+@router.get("/contact")
+def admin_contact(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """普通登录用户获取「联系管理员」入口所需的管理员地址（2026-09-13 端到端修复）。
+
+    与 /api/admin/* 其它接口的关键区别：**只要求登录、不要求 is_admin** —— 它本就是
+    给普通用户拿管理员身份去发起私信用的（前端「联系管理员」入口靠它拿 id）。
+
+    安全约束（管理员对普通用户仍保持隐形）：
+      - 仅返回 id / username / nickname 三个最小字段；
+      - 绝不返回在线状态 / 注册时间 / 统计 / 个人资料等任何多余字段；
+      - 管理员不存在 → 404。
+    注意：不要因此放开 search_users 的 is_admin 过滤（隐形是硬要求）。
+    """
+    username = (config.ADMIN_USERNAME or "管理员").strip()
+    admin_user = db.query(User).filter(User.username == username).first()
+    if admin_user is None or not is_admin_user(admin_user):
+        # 兜底：配置里的用户名与库内不一致时，取第一个 is_admin 账号
+        admin_user = db.query(User).filter(User.is_admin.is_(True)).order_by(User.id.asc()).first()
+    if admin_user is None:
+        raise HTTPException(404, "管理员账号不存在")
+    return {
+        "id": admin_user.id,
+        "username": admin_user.username,
+        "nickname": admin_user.nickname,
+    }
+
+
 # ---------------- 公共小工具 ----------------
 def _parse_ts(value: Optional[str]) -> Optional[_dt.datetime]:
     """解析 last_seen_at（'YYYY-MM-DD HH:MM:SS'）；空/非法返回 None。"""
