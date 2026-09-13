@@ -1,14 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>动态 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913h">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913h">
-<link rel="stylesheet" href="assets/states.css?v=20260913h">
-<link rel="stylesheet" href="assets/polish.css?v=20260913h">
+<link rel="stylesheet" href="assets/common.css?v=20260913i">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913i">
+<link rel="stylesheet" href="assets/states.css?v=20260913i">
+<link rel="stylesheet" href="assets/polish.css?v=20260913i">
 <style>
   /* ===== 动态页（朋友圈式，2026-09-11 增量）===== */
   .mo-wrap{max-width:640px;margin:0 auto;padding:16px 14px 80px;width:100%}
@@ -134,7 +134,7 @@
         <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
       </div>
       <div class="bottom-more-item" onclick="gotoBlogMine()">
-        <div class="bm-icon">📁</div><div class="bm-label">互动广场</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div><div class="bm-label">互动广场</div>
       </div>
       <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
         <div class="bm-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div><div class="bm-label">设置</div>
@@ -185,12 +185,12 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913h" defer></script>
-<script src="assets/xt-toast.js?v=20260913h" defer></script>
-<script src="assets/error-boundary.js?v=20260913h" defer></script>
-<script src="assets/app.js?v=20260913h" defer></script>
-<script src="assets/config.js?v=20260913h" defer></script>
-<script src="assets/api.js?v=20260913h" defer></script>
+<script src="assets/icon-map.js?v=20260913i" defer></script>
+<script src="assets/xt-toast.js?v=20260913i" defer></script>
+<script src="assets/error-boundary.js?v=20260913i" defer></script>
+<script src="assets/app.js?v=20260913i" defer></script>
+<script src="assets/config.js?v=20260913i" defer></script>
+<script src="assets/api.js?v=20260913i" defer></script>
 <script>
 /* ==================== 动态页逻辑（T5 增量 2026-09-11） ====================
    好友动态流：发布（文字+≤9图，canvas 压缩后走 /api/uploads）→ /api/moments。

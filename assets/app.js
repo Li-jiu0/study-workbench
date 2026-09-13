@@ -457,9 +457,12 @@ function mergeVocabWords(words) {
   return added;
 }
 
-// 合并后若确有新增，触发词表重渲染（词库侧若存在重渲染入口；不存在则跳过）。
+// 合并后若确有新增，触发词表重渲染：
+// ① 派发 window 级 'vocab-merged' 事件（detail.added=新增条数），供四级词汇页等监听方重渲染；
+// ② 兼容旧入口（词库侧若存在 renderVocabList / renderCetVocab 则直接调用；不存在则跳过）。
 function afterVocabMerge(added) {
   if (added > 0) {
+    try { window.dispatchEvent(new CustomEvent('vocab-merged', { detail: { added: added } })); } catch (e) { /* 老环境无 CustomEvent：静默 */ }
     if (typeof renderVocabList === 'function') { try { renderVocabList(); } catch (e) {} }
     else if (typeof renderCetVocab === 'function') { try { renderCetVocab(); } catch (e) {} }
   }
@@ -4914,8 +4917,13 @@ function renderVocab() {
   }
   if (vocabModeList.length === 0) return;
   const v = vocabModeList[vocabCurrentIndex];
-  document.getElementById('vocabProgress').textContent = `第 ${vocabCurrentIndex + 1} / ${vocabModeList.length} 词`;
-  document.getElementById('vocabLearned').textContent = `已学 ${appData.vocabLearned.length} 词`;
+  // 文案统一：「第 x 词 · 共 N · 已学 M」。
+  // N = CET_VOCAB.length（词库实时总数，含增量分片合并后的词条，不再硬编码）；
+  // M = 已学词数。vocabProgress / vocabLearned 均做空值保护（多页面版仅四级词汇页有该 DOM）。
+  var vp = document.getElementById('vocabProgress');
+  if (vp) vp.textContent = `第 ${vocabCurrentIndex + 1} 词 · 共 ${CET_VOCAB.length} · 已学 ${appData.vocabLearned.length}`;
+  var vl = document.getElementById('vocabLearned');
+  if (vl) vl.textContent = `已学 ${appData.vocabLearned.length} 词`;
   document.getElementById('vocabWord').textContent = v.word;
   document.getElementById('vocabPhonetic').textContent = v.phonetic;
   document.getElementById('vocabMeaning').textContent = v.meaning;

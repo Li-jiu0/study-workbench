@@ -1,21 +1,21 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>商务礼仪及面试 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913h">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913h">
-<link rel="stylesheet" href="assets/states.css?v=20260913h">
-<link rel="stylesheet" href="assets/polish.css?v=20260913h">
+<link rel="stylesheet" href="assets/common.css?v=20260913i">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913i">
+<link rel="stylesheet" href="assets/states.css?v=20260913i">
+<link rel="stylesheet" href="assets/polish.css?v=20260913i">
 </head>
 <body class="theme-interview">
 
 <div class="app">
 <nav class="sidebar">
     <div class="logo">
-      <div class="logo-icon">📚</div>
+      <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div>
       <div>
         <div class="logo-text">星途</div>
         <div class="logo-sub">致追梦的人->修身</div>
@@ -66,7 +66,7 @@
         <div class="user-avatar">学</div>
         <div class="user-info">
           <div class="user-name">同学</div>
-          <div class="user-streak">🔥 连续打卡 0 天</div>
+          <div class="user-streak"><span data-icon="fire" data-icon-size="14" style="vertical-align:-2px"></span> 连续打卡 0 天</div>
         </div>
       </div>
     </div>
@@ -81,9 +81,9 @@
         <div class="gs-dropdown" id="gsDropdown"></div>
       </div>
       <div class="topbar-stats">
-        <div class="stat-item"><span class="stat-icon">🔥</span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
-        <div class="stat-item"><span class="stat-icon">⏱️</span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
-        <div class="stat-item"><span class="stat-icon">✅</span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="fire" data-icon-size="16"></span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="clock" data-icon-size="16"></span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="check" data-icon-size="16"></span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
       </div>
       <div class="topbar-date" id="topbarDate"></div>
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
@@ -93,8 +93,8 @@
 <div class="page active" id="page-interview">
         <div class="module-hero">
           <div class="module-hero-left">
-            <div class="module-hero-title">🤝 商务礼仪及面试</div>
-            <div class="module-hero-desc">商务礼仪视频+动画插画，模拟面试语音训练，无领导小组讨论全覆盖</div>
+            <div class="module-hero-title"><span data-icon="handshake" data-icon-size="20" style="vertical-align:-4px"></span> 商务礼仪及面试</div>
+            <div class="module-hero-desc">商务礼仪SVG图解+要点清单，模拟面试结构化问答演练，无领导小组讨论全覆盖</div>
             <div class="module-hero-stats">
               <div class="module-hero-stat"><div class="num" id="interviewTimes">0</div><div class="label">模拟面试</div></div>
               <div class="module-hero-stat"><div class="num" id="interviewQuestions">0</div><div class="label">练习题目</div></div>
@@ -123,14 +123,14 @@
         <!-- 【后续扩展点】T7 增量（P0-12）：面试题库四分类 + AI 模拟面试官（多轮追问，走 /api/ai/chat 中转）
              （独立题卡，不改原页面逻辑；断网时题库可用、AI 降级提示） -->
         <div class="qtab-card" id="ivQuizCard">
-          <div class="sprint-head"><span>🎤 面试题库 · 四分类</span>
+          <div class="sprint-head"><span><span data-icon="mic" data-icon-size="16" style="vertical-align:-3px"></span> 面试题库 · 四分类</span>
             <div class="qtab-tabs" style="margin:0" id="ivQuizTabs"></div>
           </div>
           <div class="qtab-q" id="ivQuizQ">加载中…</div>
           <div class="qtab-btns">
             <button class="btn btn-outline" onclick="ivQuizNext()">换一题</button>
             <button class="btn btn-outline" onclick="ivQuizShowTip()">查看答题要点</button>
-            <button class="btn btn-primary" id="ivAiBtn" onclick="ivStartInterview()">🎬 开始模拟面试</button>
+            <button class="btn btn-primary" id="ivAiBtn" onclick="ivStartInterview()"><span data-icon="play" data-icon-size="16" style="vertical-align:-3px"></span> 开始模拟面试</button>
           </div>
           <div class="qtab-verdict" id="ivQuizTip"></div>
           <!-- 右下角 AI 面板（面试官人设多轮对话，结束后给总评） -->
@@ -150,43 +150,43 @@
 
         <div class="feature-grid">
           <div class="feature-card" onclick="navigateTo('etiquette')">
-            <div class="feature-icon">👔</div>
+            <div class="feature-icon"><span data-icon="briefcase" data-icon-size="24"></span></div>
             <div class="feature-title">商务礼仪</div>
             <div class="feature-desc">8大核心场景，SVG插画+要点清单+错误警示，即学即用</div>
             <span class="feature-badge tag-primary">已上线</span>
             <span class="feature-badge" id="etiquetteTodayBadge" style="background:#E3F2FD;color:#1565C0;margin-left:4px">今日待学 0</span>
           </div>
           <div class="feature-card" onclick="openMiniQuiz('iv-prep')">
-            <div class="feature-icon">📋</div>
+            <div class="feature-icon"><span data-icon="clipboard" data-icon-size="24"></span></div>
             <div class="feature-title">面试准备</div>
             <div class="feature-desc">简历优化、自我介绍、公司调研、着装材料清单</div>
           </div>
           <div class="feature-card" onclick="navigateTo('iv-questions')">
-            <div class="feature-icon">❓</div>
+            <div class="feature-icon"><span data-icon="help-circle" data-icon-size="24"></span></div>
             <div class="feature-title">高频问题库</div>
             <div class="feature-desc">8类高频题型，STAR/PREP法则，答题框架+话术模板+参考回答</div>
             <span class="feature-badge tag-primary">已上线</span>
             <span class="feature-badge" id="ivQuestionsTodayBadge" style="background:#FFF3E0;color:#E65100;margin-left:4px">今日待学 0</span>
           </div>
           <div class="feature-card" onclick="openMiniQuiz('iv-group')">
-            <div class="feature-icon">👥</div>
+            <div class="feature-icon"><span data-icon="users" data-icon-size="24"></span></div>
             <div class="feature-title">无领导小组讨论</div>
             <div class="feature-desc">AI模拟多名组员，角色选择、发言策略、话术模板</div>
           </div>
           <div class="feature-card" onclick="GroupDiscussion.open()">
-            <div class="feature-icon">🗣️</div>
+            <div class="feature-icon"><span data-icon="message-circle" data-icon-size="24"></span></div>
             <div class="feature-title">AI无领导小组讨论</div>
             <div class="feature-desc">AI模拟4名组员真实对话，你随时参与发言，结束给评定</div>
             <span class="feature-badge tag-primary">新上线</span>
           </div>
           <div class="feature-card" onclick="openInterviewDemo()">
-            <div class="feature-icon">🎙️</div>
+            <div class="feature-icon"><span data-icon="mic" data-icon-size="24"></span></div>
             <div class="feature-title">模拟面试</div>
             <div class="feature-desc">AI面试官语音提问+追问，即时评定，结束给总评报告</div>
             <span class="feature-badge tag-primary">体验版</span>
           </div>
           <div class="feature-card" onclick="openMiniQuiz('iv-after')">
-            <div class="feature-icon">📧</div>
+            <div class="feature-icon"><span data-icon="inbox" data-icon-size="24"></span></div>
             <div class="feature-title">面试后</div>
             <div class="feature-desc">感谢信模板、复盘清单、offer对比与谈判、入职准备</div>
           </div>
@@ -196,7 +196,7 @@
 <div class="page" id="page-interview-demo">
         <div class="player-container">
           <div class="player-header">
-            <div class="player-title">🎙️ 模拟面试 · 结构化 · 运营岗</div>
+            <div class="player-title"><span data-icon="mic" data-icon-size="16" style="vertical-align:-3px"></span> 模拟面试 · 结构化 · 运营岗</div>
             <div class="player-progress-text">第 <span id="ivCurrent">1</span> / 5 题</div>
           </div>
           <div class="player-stage">
@@ -253,16 +253,16 @@
             </div>
           </div>
           <div class="player-controls">
-            <div class="player-btn" onclick="showToast('上一题')">⏮️</div>
-            <div class="player-btn play" onclick="showToast('重复问题')">🔊</div>
-            <div class="player-btn" onclick="showToast('下一题')">⏭️</div>
+            <div class="player-btn" onclick="showToast('上一题')"><span data-icon="chevron-left" data-icon-size="18"></span></div>
+            <div class="player-btn play" onclick="showToast('重复问题')"><span data-icon="headphones" data-icon-size="18"></span></div>
+            <div class="player-btn" onclick="showToast('下一题')"><span data-icon="chevron-right" data-icon-size="18"></span></div>
             <div class="player-progress"><div class="player-progress-fill" style="width:20%"></div></div>
             <div class="player-time">第1题</div>
           </div>
         </div>
         <div style="text-align:center;margin:20px 0">
           <button class="player-record-btn" onclick="showToast('语音输入功能开发中')">
-            🎤 开始回答（语音）
+            <span data-icon="mic" data-icon-size="16" style="vertical-align:-3px"></span> 开始回答（语音）
           </button>
         </div>
         <div class="card">
@@ -274,15 +274,15 @@
         </div>
         <div id="ivEval" style="display:none">
           <div class="eval-panel">
-            <div class="eval-title">📊 本题评定</div>
+            <div class="eval-title"><span data-icon="chart-bar" data-icon-size="16" style="vertical-align:-3px"></span> 本题评定</div>
             <div class="eval-scores">
-              <div class="eval-score-item"><div class="eval-score-label">内容质量</div><div class="eval-stars">⭐⭐⭐</div></div>
-              <div class="eval-score-item"><div class="eval-score-label">逻辑结构</div><div class="eval-stars">⭐⭐⭐⭐</div></div>
-              <div class="eval-score-item"><div class="eval-score-label">表达流利</div><div class="eval-stars">⭐⭐⭐</div></div>
-              <div class="eval-score-item"><div class="eval-score-label">岗位匹配</div><div class="eval-stars">⭐⭐⭐</div></div>
+              <div class="eval-score-item"><div class="eval-score-label">内容质量</div><div class="eval-stars"><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span></div></div>
+              <div class="eval-score-item"><div class="eval-score-label">逻辑结构</div><div class="eval-stars"><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span></div></div>
+              <div class="eval-score-item"><div class="eval-score-label">表达流利</div><div class="eval-stars"><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span></div></div>
+              <div class="eval-score-item"><div class="eval-score-label">岗位匹配</div><div class="eval-stars"><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span></div></div>
             </div>
             <div class="eval-feedback good">
-              <div class="eval-feedback-title">✅ 做得好</div>
+              <div class="eval-feedback-title"><span data-icon="check" data-icon-size="14" style="vertical-align:-2px"></span> 做得好</div>
               <div class="eval-feedback-content">有基本的结构（教育背景+实习经历+个人特点），信息比较完整。</div>
             </div>
             <div class="eval-feedback tip">
@@ -334,7 +334,7 @@
         <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
       </div>
       <div class="bottom-more-item" onclick="gotoBlogMine()">
-        <div class="bm-icon">📁</div><div class="bm-label">互动广场</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div><div class="bm-label">互动广场</div>
       </div>
       <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
         <div class="bm-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div><div class="bm-label">错题本</div>
@@ -402,13 +402,13 @@
         <div class="ai-title">AI学习助手</div>
         <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
       </div>
-      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录">🧹</div>
-      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板">✕</div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录"><span data-icon="delete" data-icon-size="16"></span></div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板"><span data-icon="close" data-icon-size="16"></span></div>
     </div>
     <div class="ai-messages" id="aiMessages"></div>
     <div class="ai-input-row">
       <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
-      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()">➤</div>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()"><span data-icon="arrow-right" data-icon-size="18"></span></div>
     </div>
   </div>
 
@@ -416,17 +416,17 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913h" defer></script>
-<script src="assets/xt-toast.js?v=20260913h" defer></script>
-<script src="assets/error-boundary.js?v=20260913h" defer></script>
-<script src="assets/app.js?v=20260913h" defer></script>
-<script src="assets/config.js?v=20260913h" defer></script>
-<script src="assets/api.js?v=20260913h" defer></script>
+<script src="assets/icon-map.js?v=20260913i" defer></script>
+<script src="assets/xt-toast.js?v=20260913i" defer></script>
+<script src="assets/error-boundary.js?v=20260913i" defer></script>
+<script src="assets/app.js?v=20260913i" defer></script>
+<script src="assets/config.js?v=20260913i" defer></script>
+<script src="assets/api.js?v=20260913i" defer></script>
 
-<script src="assets/mini-interview.js?v=20260913h" defer></script>
-<script src="assets/mini.js?v=20260913h" defer></script>
-<script src="assets/group-discussion.js?v=20260913h" defer></script>
-<script src="assets/study-stats.js?v=20260913h" defer></script>
+<script src="assets/mini-interview.js?v=20260913i" defer></script>
+<script src="assets/mini.js?v=20260913i" defer></script>
+<script src="assets/group-discussion.js?v=20260913i" defer></script>
+<script src="assets/study-stats.js?v=20260913i" defer></script>
 <script>
 /* ==================== T7 增量（P0-8/P0-12）：统计卡 + 四分类题库 + AI 模拟面试官 ==================== */
 (function () {
