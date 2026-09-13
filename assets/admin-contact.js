@@ -162,6 +162,60 @@
   }
   window.acSend = sendMsg;
 
+  /* ---------------- R43（2026-09-14）：联系管理员入口未读角标 ----------------
+     普通用户收到的「管理员来信」未读角标应显示在会话列表的「联系管理员」入口（.ac-entry）上。
+     数据源 GET /api/chat/unread，取 peerId === 管理员 id（S.adminId）的 count。
+     管理员 id 走 resolveAdminId()（已缓存到 localStorage，键名与 chat-local.js 共用 xt_admin_user_id）。 */
+  var badgeTimer = null;
+
+  function renderEntryBadge(n) {
+    var entry = document.querySelector('.ac-entry');
+    if (!entry) return;
+    var b = document.getElementById('acEntryBadge');
+    if (!b) {
+      b = document.createElement('span');
+      b.className = 'ac-badge';
+      b.id = 'acEntryBadge';
+      entry.appendChild(b);
+    }
+    var cnt = Number(n) || 0;
+    if (cnt > 0) {
+      b.textContent = cnt > 99 ? '99+' : String(cnt);
+      b.style.display = '';
+    } else {
+      b.textContent = '';
+      b.style.display = 'none';
+    }
+  }
+
+  function refreshEntryBadge() {
+    if (!tok()) { renderEntryBadge(0); return Promise.resolve(0); }
+    return resolveAdminId().then(function (id) {
+      if (id) S.adminId = id;
+      if (!S.adminId) { renderEntryBadge(0); return 0; }
+      return fetch(base() + '/api/chat/unread', { headers: { 'Authorization': 'Bearer ' + tok() } })
+        .then(function (r) { return r.ok ? r.json() : { items: [] }; })
+        .then(function (d) {
+          var items = (d && d.items) || [];
+          var hit = 0;
+          for (var i = 0; i < items.length; i++) {
+            if (Number(items[i].peerId) === Number(S.adminId)) { hit = Number(items[i].count) || 0; break; }
+          }
+          renderEntryBadge(hit);
+          return hit;
+        })
+        .catch(function () { return 0; });
+    }).catch(function () { return 0; });
+  }
+
+  function startBadgePoll() {
+    if (badgeTimer) return;
+    badgeTimer = setInterval(function () {
+      try { if (document.hidden) return; } catch (e) { /* 忽略 */ }
+      refreshEntryBadge();
+    }, 5000);
+  }
+
   function openPanel() {
     var panel = $('acPanel');
     if (!panel) return;
@@ -177,7 +231,7 @@
         toast('联系管理员失败，请稍后重试', 'error');
         return;
       }
-      return loadMsgs();
+      return loadMsgs().then(function () { refreshEntryBadge(); }); // 打开即已读 → 角标清零
     });
     // 打开期间轮询新消息（含管理员回复）
     if (S.timer) clearInterval(S.timer);
@@ -203,5 +257,9 @@
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && S.open) closePanel();
     });
+    // R43：进入页面即拉一次角标并每 5 秒轮询（无需先打开面板，入口角标也能显示）
+    function bootBadge() { refreshEntryBadge(); startBadgePoll(); }
+    if (document.readyState !== 'loading') bootBadge();
+    else document.addEventListener('DOMContentLoaded', bootBadge);
   }
 })();

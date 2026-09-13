@@ -105,7 +105,7 @@
     { keywords: ['累', '压力', '焦虑'], reply: '累了就休息一下，不要给自己太大压力，你已经很棒了💪' }
   ];
 
-  var S = { tab: 'chats', peer: null, group: null, chats: [], groups: [], presence: {}, msgs: [], myId: 999, aiBusy: false, swipeOpen: null };
+  var S = { tab: 'chats', peer: null, group: null, chats: [], groups: [], presence: {}, msgs: [], myId: 999, isAdmin: false, aiBusy: false, swipeOpen: null };
 
   /* ==================== 批次二 需求2（2026-09-11h）：会话列表左滑操作（置顶 / 免打扰 / 删除） ====================
      - 偏好持久化：localStorage key = study_workbench_chat_prefs，形如 { threadKey: {pinned, muted, hidden} }
@@ -183,7 +183,14 @@
     var all = getActiveAiFriends();
     var f = all.find(function (x) { return x.id === id; });
     if (f) return f;
-    return SERVER_FRIENDS.find(function (x) { return x.id === id; });
+    f = SERVER_FRIENDS.find(function (x) { return x.id === id; });
+    if (f) return f;
+    /* R39（2026-09-14）：动态生成的非好友服务器会话（如管理员来信）也要能被
+       imOpenChat 打开 —— imOpenChat 第一行 getFriend(friendId) 拿不到就 return，
+       这里补一层 S.chats 回退，会话行才能点开进服务器分支。 */
+    var c = (S.chats || []).find(function (x) { return x.isServer && x.id === id; });
+    if (c) return { id: c.id, serverId: c.serverId, nickname: c.nickname, avatar: c.avatar, motto: '', isServer: true };
+    return undefined;
   }
 
   function getOrCreateChat(friendId) {
@@ -207,7 +214,22 @@
       chat.isServer = !!f.isServer;
       chat.serverId = f.serverId;
       return chat;
-    }).sort(function (a, b) { return (b.time || 0) - (a.time || 0); });
+    });
+    /* R39（2026-09-14）：回填动态生成的非好友服务器会话（如管理员来信）。
+       S.chats 平时只从 allFriends 重建，动态会话不在 SERVER_FRIENDS 里会被丢弃；
+       这里从持久化 data.chats 里把 isServer 且不在列表里的会话补回来（已读归零也保留行），
+       再统一按时间排序 —— 刷新页面后动态会话仍在。 */
+    Object.keys(data.chats || {}).forEach(function (k) {
+      var c = data.chats[k];
+      if (!c || !c.isServer || !c.serverId) return;
+      if (S.chats.some(function (x) { return x.id === c.id; })) return;
+      S.chats.push({
+        id: c.id, serverId: c.serverId, isServer: true,
+        nickname: c.nickname || ('用户' + c.serverId), avatar: c.avatar || '',
+        last: c.last || '', unread: c.unread || 0, time: c.time || 0
+      });
+    });
+    S.chats.sort(function (a, b) { return (b.time || 0) - (a.time || 0); });
     renderList();
   }
 
@@ -402,6 +424,7 @@
   /* A2：点会话头像时的提示（不再误跳对方主页） */
   window.imShowPeerHint = function (serverId) {
     var f = (SERVER_FRIENDS || []).find(function (x) { return x.serverId === serverId; });
+    if (!f) f = (S.chats || []).find(function (x) { return x.isServer && x.serverId === serverId; });
     toast('「' + (f ? f.nickname : '好友') + '」点整行开始聊天 · 查看资料请到好友列表');
   };
 
@@ -434,6 +457,121 @@
       if (cb) cb(SERVER_FRIENDS);
     })
     .catch(function () { if (cb) cb([]); });
+  }
+
+  /* R39（2026-09-14）：非好友来信（如管理员私信）→ 动态补一条服务器会话。
+     背景：S.chats 只从好友列表构建，未读轮询里 peerId 匹配不到就把整条未读静默丢弃，
+     管理员看得到顶栏角标却无会话可点。修复：匹配不到时按服务器好友形状动态创建并入列。
+     字段映射注意：/api/chat/unread 返回 avatar（好友列表 /api/friends 是 avatarUrl），缺失兜底默认头像。
+     同时写入本地持久化（与现有服务器会话同一 data.chats 键空间），刷新后由 loadChats 回填；
+     已读归零后会话行保留（管理员要能继续这个对话），生命周期由用户手动删除。 */
+  function imEnsureServerChat(item) {
+    if (!item || !item.peerId) return null;
+    var peerId = Number(item.peerId);
+    var fid = 10000 + peerId;
+    var chat = {
+      id: fid,
+      serverId: peerId,
+      nickname: item.nickname || ('用户' + peerId),
+      avatar: item.avatar || '',
+      last: item.last || '',
+      unread: item.count || 0,
+      time: Date.now(),
+      isServer: true
+    };
+    S.chats.push(chat);
+    try {
+      var data = loadData();
+      data.chats[fid] = {
+        id: fid, serverId: peerId, isServer: true,
+        nickname: chat.nickname, avatar: chat.avatar,
+        last: chat.last, unread: 0, time: chat.time
+      };
+      saveData(data);
+    } catch (e) { /* localStorage 满 / 隐私模式：内存态仍可用 */ }
+    return chat;
+  }
+
+  /* R43（2026-09-14）：普通用户侧解析「管理员 id」（与 admin-contact.js 共用 localStorage 缓存键
+     xt_admin_user_id）。用于未读轮询：管理员来信统一走「联系管理员」入口 + 角标，
+     不在此动态建会话行，避免入口与角标分离 / 重复会话。 */
+  var IM_ADMIN_ID_KEY = 'xt_admin_user_id';
+  var _imAdminId = 0;
+  function imCachedAdminId() {
+    if (_imAdminId) return _imAdminId;
+    try { var c = localStorage.getItem(IM_ADMIN_ID_KEY) || ''; if (/^\d+$/.test(c)) _imAdminId = Number(c); } catch (e) { /* 忽略 */ }
+    return _imAdminId;
+  }
+  function imResolveAdminId() {
+    var id = imCachedAdminId();
+    if (id) return Promise.resolve(id);
+    var tk = getToken();
+    if (!tk) return Promise.resolve(0);
+    return fetch(apiBase() + '/api/admin/contact', { headers: { 'Authorization': 'Bearer ' + tk } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        var v = Number(d && (d.id !== undefined ? d.id : d.userId)) || 0;
+        if (v) { _imAdminId = v; try { localStorage.setItem(IM_ADMIN_ID_KEY, String(v)); } catch (e) { /* 忽略 */ } }
+        return v;
+      })
+      .catch(function () { return 0; });
+  }
+
+  /* R40（2026-09-14）：最近活跃时间轻量格式化（管理员用户列表徽标用）。
+     lastActive 为服务端 'YYYY-MM-DD HH:MM:SS' 串，可能为空 → 「—」。 */
+  function imFmtLastActive(s) {
+    if (!s) return '—';
+    var t = new Date(String(s).replace(' ', 'T'));
+    if (isNaN(t.getTime())) return '—';
+    var diff = Date.now() - t.getTime();
+    if (diff < 0) diff = 0;
+    var m = Math.floor(diff / 60000);
+    if (m < 1) return '刚刚';
+    if (m < 60) return m + ' 分钟前';
+    var h = Math.floor(m / 60);
+    if (h < 24) return h + ' 小时前';
+    var d = Math.floor(h / 24);
+    if (d < 7) return d + ' 天前';
+    return ('0' + (t.getMonth() + 1)).slice(-2) + '-' + ('0' + t.getDate()).slice(-2);
+  }
+
+  /* R40（2026-09-14）：管理员好友 tab「全部用户」分组渲染。
+     数据源 GET /api/admin/users（仅管理员可调）；仅列表展示，不写好友表。
+     行样式沿用注册好友行；昵称旁追加活跃徽标（在线=绿点，否则格式化 lastActive）。
+     is_admin 行标注「管理员」且不隐藏自己。 */
+  /* R41：把不可信字符串安全嵌入内联 onclick 的 JS 单引号字面量（先 HTML 转义 & < > "，再 JS 转义 \ '），
+     避免昵称含引号时破坏 onclick 属性或 JS 语法。 */
+  function imStrArg(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/\\/g, '\\\\')
+      .replace(/'/g, "\\'")
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+  function imAdminUsersHtml(items) {
+    var rows = (items || []).map(function (u) {
+      var avSrc = u.avatarUrl || u.avatar || '';
+      var av = avSrc
+        ? '<img src="' + (function (x) { return (x.indexOf('http') === 0 ? x : apiBase() + x); })(avSrc) + '" alt="" style="cursor:pointer" onclick="event.stopPropagation();imShowUserProfile(' + u.id + ')">'
+        : '<span style="cursor:pointer" onclick="event.stopPropagation();imShowUserProfile(' + u.id + ')">' + esc((u.nickname || '友').slice(0, 1)) + '</span>';
+      var fid = 10000 + u.id;
+      var isAdminRow = !!(u.isAdmin || u.is_admin);
+      var tag = isAdminRow ? ' <span style="font-size:11px;color:#e05040">[管理员]</span>' : '';
+      var act = (u.isOnline === true)
+        ? '<span style="font-size:11px;color:#0a8f4b;font-weight:600">● 在线</span>'
+        : '<span style="font-size:11px;color:#999">最近活跃 ' + esc(imFmtLastActive(u.lastActive || u.last_active)) + '</span>';
+      // R41：行 / 「发消息」按钮 → imOpenChatWithUser（合成 peer，非好友也能直接开聊）；昵称/头像安全内联
+      var ocArgs = u.id + ', \'' + imStrArg(u.nickname) + '\', \'' + imStrArg(u.avatarUrl || u.avatar) + '\'';
+      return '<div class="im-sess" onclick="imOpenChatWithUser(' + ocArgs + ')">' +
+        '<div class="im-av" style="position:relative">' + av + '<span class="im-dot" data-uid="' + u.id + '"></span></div>' +
+        '<div class="im-si"><div class="im-n" style="cursor:pointer" onclick="event.stopPropagation();imShowUserProfile(' + u.id + ')">' + esc(u.nickname || '用户') + tag + (u.username ? ' <span style="font-size:11px;color:#999;font-weight:400">@' + esc(u.username) + '</span>' : '') + '</div>' +
+        '<div class="im-sub">' + act + '</div></div>' +
+        '<div style="color:#667eea;font-size:12px;cursor:pointer" onclick="event.stopPropagation();imOpenChatWithUser(' + ocArgs + ')">发消息</div>' +
+        '</div>';
+    }).join('');
+    return '<div class="im-group-title">👥 全部用户 (' + (items || []).length + ')</div>' + rows;
   }
 
   function renderFriends(box) {
@@ -494,43 +632,76 @@
     box.innerHTML = aiHtml + groupsHtml + '<div class="im-group-title">👥 注册好友</div><div class="im-empty2">加载中…</div>';
     if (window.lucideAutoRender) window.lucideAutoRender();
 
-    loadServerFriends(function (friends) {
-      // 重新计算群行（loadGroups 可能已异步回填）
-      // T03：失败时也展示「点此重试」链接（loadServerFriends 也可能掩盖 retry）
-      var groups2 = (S.groups || []).filter(function (g) { return !((prefs['g' + g.id] || {}).hidden); });
-      var rows2 = imRenderGroupRows(groups2, prefs);
-      var groupsHtml2;
-      if (rows2) {
-        groupsHtml2 = '<div class="im-group-title">👥 我的群聊 (' + groups2.length + ')</div>' + rows2;
-      } else {
-        var stateHtml2 = S.groupsLoadFailed
-          ? '<span style="color:#e05040">加载失败</span>，<a style="color:var(--primary);cursor:pointer" onclick="loadGroups()">点此重试</a>'
-          : '加载中…';
-        groupsHtml2 = '<div class="im-group-title">👥 我的群聊 (' + groups2.length + ')</div>' +
-          '<div class="im-empty2" style="padding:6px 0 6px 14px">' + stateHtml2 + '</div>';
-      }
-      if (friends.length === 0) {
-        box.innerHTML = aiHtml + groupsHtml2 + '<div class="im-group-title">👥 注册好友</div><div class="im-empty2">还没有注册好友<br>在上方搜索框输入用户名找人加好友</div>';
-        return;
-      }
-      var srvHtml = friends.map(function (f) {
-        var av = f.avatarUrl || f.avatar
-          ? '<img src="' + (function(u){ return (u.startsWith('http') ? u : apiBase() + u); })(f.avatarUrl || f.avatar) + '" alt="" style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + f.serverId + ')">'
-          : '<span style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + f.serverId + ')">' + esc((f.nickname || '友').slice(0, 1)) + '</span>';
-        /* 批次二 需求11（2026-09-11h）：好友行只保留「发消息」，删除好友入口统一收敛到
-           对方公开主页（个人中心.html?user=id → api.js renderUserHome 的「🗑 删除好友」，uiConfirm 二次确认）。 */
-        return '<div class="im-sess" onclick="imOpenChat(' + f.id + ')">' +
-          '<div class="im-av" style="position:relative">' + av + '<span class="im-dot" data-uid="' + f.serverId + '"></span></div>' +
-          '<div class="im-si"><div class="im-n" style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + f.serverId + ')">' + esc(f.nickname) + ' <span style="font-size:11px;color:#999">@' + esc(f.username) + '</span></div>' +
-          '<div class="im-sub">' + esc(f.motto) + ' <span class="im-presence" data-uid="' + f.serverId + '"></span></div></div>' +
-          '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0">' +
-            '<div style="color:#667eea;font-size:12px;cursor:pointer" onclick="event.stopPropagation();imOpenChat(' + f.id + ')">发消息</div>' +
-          '</div>' +
-          '</div>';
-      }).join('');
-      box.innerHTML = aiHtml + groupsHtml2 + '<div class="im-group-title">👥 注册好友</div>' + srvHtml;
-      if (window.lucideAutoRender) window.lucideAutoRender();
-    });
+    /* 原注册好友渲染抽成函数（R40）：管理员用户列表拉取失败时降级复用 */
+    function renderRegFriends() {
+      loadServerFriends(function (friends) {
+        // 重新计算群行（loadGroups 可能已异步回填）
+        // T03：失败时也展示「点此重试」链接（loadServerFriends 也可能掩盖 retry）
+        var groups2 = (S.groups || []).filter(function (g) { return !((prefs['g' + g.id] || {}).hidden); });
+        var rows2 = imRenderGroupRows(groups2, prefs);
+        var groupsHtml2;
+        if (rows2) {
+          groupsHtml2 = '<div class="im-group-title">👥 我的群聊 (' + groups2.length + ')</div>' + rows2;
+        } else {
+          var stateHtml2 = S.groupsLoadFailed
+            ? '<span style="color:#e05040">加载失败</span>，<a style="color:var(--primary);cursor:pointer" onclick="loadGroups()">点此重试</a>'
+            : '加载中…';
+          groupsHtml2 = '<div class="im-group-title">👥 我的群聊 (' + groups2.length + ')</div>' +
+            '<div class="im-empty2" style="padding:6px 0 6px 14px">' + stateHtml2 + '</div>';
+        }
+        if (friends.length === 0) {
+          box.innerHTML = aiHtml + groupsHtml2 + '<div class="im-group-title">👥 注册好友</div><div class="im-empty2">还没有注册好友<br>在上方搜索框输入用户名找人加好友</div>';
+          return;
+        }
+        var srvHtml = friends.map(function (f) {
+          var av = f.avatarUrl || f.avatar
+            ? '<img src="' + (function(u){ return (u.startsWith('http') ? u : apiBase() + u); })(f.avatarUrl || f.avatar) + '" alt="" style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + f.serverId + ')">'
+            : '<span style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + f.serverId + ')">' + esc((f.nickname || '友').slice(0, 1)) + '</span>';
+          /* 批次二 需求11（2026-09-11h）：好友行只保留「发消息」，删除好友入口统一收敛到
+             对方公开主页（个人中心.html?user=id → api.js renderUserHome 的「🗑 删除好友」，uiConfirm 二次确认）。 */
+          return '<div class="im-sess" onclick="imOpenChat(' + f.id + ')">' +
+            '<div class="im-av" style="position:relative">' + av + '<span class="im-dot" data-uid="' + f.serverId + '"></span></div>' +
+            '<div class="im-si"><div class="im-n" style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + f.serverId + ')">' + esc(f.nickname) + ' <span style="font-size:11px;color:#999">@' + esc(f.username) + '</span></div>' +
+            '<div class="im-sub">' + esc(f.motto) + ' <span class="im-presence" data-uid="' + f.serverId + '"></span></div></div>' +
+            '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0">' +
+              '<div style="color:#667eea;font-size:12px;cursor:pointer" onclick="event.stopPropagation();imOpenChat(' + f.id + ')">发消息</div>' +
+            '</div>' +
+            '</div>';
+        }).join('');
+        box.innerHTML = aiHtml + groupsHtml2 + '<div class="im-group-title">👥 注册好友</div>' + srvHtml;
+        if (window.lucideAutoRender) window.lucideAutoRender();
+      });
+    }
+
+    /* R40（2026-09-14）：管理员登录时，「注册好友」分组改为渲染全量用户
+       （数据源 GET /api/admin/users，仅管理员可调；仅列表展示，不写好友表）。
+       分组标题「👥 全部用户 (N)」，昵称旁追加最近活跃徽标（在线=绿点 / lastActive 格式化）。
+       点击行走现有 imOpenChat 服务器分支（isServer/serverId），后端 can_message 已放行
+       管理员↔任意用户。拉取失败（403/网络）降级回 /api/friends 行为并 console.warn，不打断页面。 */
+    if (S.isAdmin) {
+      fetch(apiBase() + '/api/admin/users', { headers: { 'Authorization': 'Bearer ' + token } })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, status: r.status, d: d }; }); })
+      .then(function (res) {
+        var items = (res.ok && res.d && res.d.items) ? res.d.items : null;
+        if (!items) throw new Error('HTTP ' + res.status);
+        var groups2 = (S.groups || []).filter(function (g) { return !((prefs['g' + g.id] || {}).hidden); });
+        var rows2 = imRenderGroupRows(groups2, prefs);
+        var gh2 = rows2
+          ? '<div class="im-group-title">👥 我的群聊 (' + groups2.length + ')</div>' + rows2
+          : '<div class="im-group-title">👥 我的群聊 (' + groups2.length + ')</div><div class="im-empty2" style="padding:6px 0 6px 14px">' +
+            (S.groupsLoadFailed ? '<span style="color:#e05040">加载失败</span>，<a style="color:var(--primary);cursor:pointer" onclick="loadGroups()">点此重试</a>' : '加载中…') +
+            '</div>';
+        box.innerHTML = aiHtml + gh2 + imAdminUsersHtml(items);
+        if (window.lucideAutoRender) window.lucideAutoRender();
+      })
+      .catch(function (e) {
+        console.warn('[chat-local] 管理员用户列表拉取失败，降级为好友列表', e);
+        renderRegFriends();
+      });
+      return;
+    }
+
+    renderRegFriends();
   }
 
   /* ============ A5：删除好友（二次确认含昵称；可选清空本机聊天记录） ============ */
@@ -820,6 +991,39 @@
     // 聚焦输入框
     var inp = $id('imInput');
     if (inp) setTimeout(function () { inp.focus(); }, 100);
+  };
+
+  /* R41（2026-09-14）：管理员在「全部用户」列表点「给用户发消息」时，目标既非好友、
+     也还没有会话 → getFriend() 查不到，imOpenChat 会静默 return（点击无反应）。
+     这里用形参构造合成服务器 peer，确保其进入 S.chats 并持久化，再交给 imOpenChat 打开。 */
+  window.imOpenChatWithUser = function (userId, nickname, avatar) {
+    var uid = Number(userId);
+    if (!uid) return;
+    var fid = 10000 + uid;
+    var existing = (S.chats || []).find(function (x) { return x.id === fid; });
+    if (existing) {
+      existing.serverId = uid;
+      existing.isServer = true;
+      if (nickname) existing.nickname = nickname;
+      if (avatar) existing.avatar = avatar;
+    } else {
+      var chat = {
+        id: fid, serverId: uid, isServer: true,
+        nickname: nickname || ('用户' + uid), avatar: avatar || '',
+        last: '', unread: 0, time: Date.now()
+      };
+      S.chats.push(chat);
+      try {
+        var data = loadData();
+        data.chats[fid] = {
+          id: fid, serverId: uid, isServer: true,
+          nickname: chat.nickname, avatar: chat.avatar,
+          last: '', unread: 0, time: chat.time
+        };
+        saveData(data);
+      } catch (e) { /* localStorage 满 / 隐私模式：内存态仍可用 */ }
+    }
+    window.imOpenChat(fid);
   };
 
   // 渲染聊天头部（适配当前 HTML：操作 imCAv/imCName/imBack 元素）
@@ -1734,6 +1938,85 @@
     unbindModalEscIfIdle();
   };
 
+  /* R42（2026-09-14）：管理员在「全部用户」列表点用户头像/昵称 → 在私聊页内弹资料卡，
+     数据源 GET /api/admin/users/{userId}（后端 server/routers/admin.py 已就绪）。
+     注：不再跳 openUserHome（个人中心.html 不解析 ?user=，会显示登录者自己的资料）。 */
+  window.imShowUserProfile = function (userId) {
+    var uid = Number(userId);
+    if (!uid) return;
+    if (!getToken()) { toast('查看用户资料需要联网'); return; }
+    var old = $id('imUserProfileModal');
+    if (old) old.remove();
+    var ov = document.createElement('div');
+    ov.className = 'im-overlay';
+    ov.id = 'imUserProfileModal';
+    ov.innerHTML = '<div class="im-modal">' +
+      '<div class="im-modal-head"><div style="font-size:var(--xt-font-md);font-weight:700">用户资料</div>' +
+      '<div style="cursor:pointer;color:#999;font-size:var(--xt-font-2xl)" onclick="imCloseUserProfile()">✕</div></div>' +
+      '<div class="im-group-body" id="imUserProfileBody"><div class="im-empty2" style="padding:20px 0;text-align:center;color:#999;font-size:13px">加载中…</div></div>' +
+      '<div class="im-group-foot" style="justify-content:flex-end"><button class="btn btn-primary" id="imUserProfileChatBtn" disabled>发消息</button></div>' +
+      '</div>';
+    document.body.appendChild(ov);
+    ov.onclick = function (e) { if (e.target === ov) window.imCloseUserProfile(); };
+    bindModalEsc();
+
+    fetch(apiBase() + '/api/admin/users/' + uid, { headers: { 'Authorization': 'Bearer ' + getToken() } })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        var body = $id('imUserProfileBody');
+        if (!body) return;
+        var u = res.d || {};
+        if (!res.ok || !u || (!u.id && !u.username && !u.nickname)) {
+          body.innerHTML = '<div class="im-empty2" style="padding:20px 0;text-align:center;color:#999;font-size:13px">资料加载失败</div>';
+          return;
+        }
+        var username = u.username || '';
+        var nickname = u.nickname || ('用户' + uid);
+        var created = u.createdAt || u.created_at || '';
+        var last = u.lastActive || u.last_active || '';
+        var online = (u.isOnline === true || u.is_online === true);
+        var isAdmin = !!(u.isAdmin || u.is_admin);
+        var stats = u.stats || {};
+        var notesN = (stats.notes != null) ? stats.notes : '—';
+        var studyN = (stats.studyEvents != null) ? stats.studyEvents
+          : (stats.study_events != null ? stats.study_events : '—');
+        function row(k, v) {
+          return '<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">' +
+            '<div style="flex:0 0 74px;color:var(--text-secondary);font-size:13px">' + k + '</div>' +
+            '<div style="flex:1;font-size:13px;color:var(--text);word-break:break-all">' + v + '</div></div>';
+        }
+        body.innerHTML =
+          '<div style="text-align:center;padding:6px 0 12px">' +
+            '<div style="width:64px;height:64px;border-radius:50%;margin:0 auto 8px;overflow:hidden;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--primary)">' +
+              renderAvatar(u.avatarUrl || u.avatar || '', nickname) + '</div>' +
+            '<div style="font-size:16px;font-weight:700">' + esc(nickname) + (isAdmin ? ' <span style="font-size:11px;color:#e05040">[管理员]</span>' : '') + '</div>' +
+            (username ? '<div style="font-size:12px;color:#999;margin-top:2px">@' + esc(username) + '</div>' : '') +
+          '</div>' +
+          row('账号', username ? ('@' + esc(username)) : '—') +
+          row('注册时间', created ? esc(created) : '—') +
+          row('最近活跃', online ? '<span style="color:#0a8f4b;font-weight:600">● 在线</span>' : esc(imFmtLastActive(last))) +
+          row('笔记数', esc(String(notesN))) +
+          row('学习事件', esc(String(studyN)));
+        body.setAttribute('data-nick', nickname);
+        body.setAttribute('data-avatar', u.avatarUrl || u.avatar || '');
+        var btn = $id('imUserProfileChatBtn');
+        if (btn) { btn.disabled = false; btn.onclick = function () {
+          window.imCloseUserProfile();
+          window.imOpenChatWithUser(uid, nickname, u.avatarUrl || u.avatar || '');
+        }; }
+      })
+      .catch(function () {
+        var body = $id('imUserProfileBody');
+        if (body) body.innerHTML = '<div class="im-empty2" style="padding:20px 0;text-align:center;color:#999;font-size:13px">资料加载失败</div>';
+      });
+  };
+
+  window.imCloseUserProfile = function () {
+    var ov = $id('imUserProfileModal');
+    if (ov) ov.remove();
+    unbindModalEscIfIdle();
+  };
+
   function imReloadGroupDetail() {
     if (!GS.gid) return;
     fetch(apiBase() + '/api/groups/' + GS.gid, { headers: { 'Authorization': 'Bearer ' + getToken() } })
@@ -2102,7 +2385,12 @@
       fetch(apiBase() + '/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } })
       .then(function (r) { return r.json(); })
       .then(function (me) {
-        if (me && me.id) S.myId = me.id;
+        if (me && me.id) {
+          S.myId = me.id;
+          /* R40（2026-09-14）：缓存管理员标记（camelCase + snake 双写取一），
+             供好友 tab 判断是否渲染「全部用户」分组，避免重复请求 */
+          S.isAdmin = !!(me.isAdmin || me.is_admin);
+        }
       })
       .catch(function () {})
       .finally(function () {
@@ -2118,6 +2406,9 @@
     loadGroups();
     startConvPoll();
 
+    // R43（2026-09-14）：预解析管理员 id（普通用户），供未读轮询判断「管理员来信」
+    imResolveAdminId();
+
     // 每 5 秒轮询未读消息
     setInterval(function () {
       var token = getToken();
@@ -2130,6 +2421,12 @@
           var cnt = item.count || 0;
           // 找到对应的会话（后端字段：peerId / last / lastId）
           var chat = S.chats.find(function (c) { return c.isServer && c.serverId === item.peerId; });
+          /* R43（2026-09-14）：普通用户视角——管理员来信不动态建会话行，
+             统一由「联系管理员」入口 + .ac-badge 角标承载（避免入口与角标分离 / 重复会话行）。 */
+          var adminPeer = (!S.isAdmin && imCachedAdminId() && Number(item.peerId) === imCachedAdminId());
+          /* R39（2026-09-14）：非好友发信人（如管理员）匹配不到 → 动态创建服务器会话，
+             不再把整条未读静默丢弃；nickname/avatar 直接取未读接口返回值 */
+          if (!chat && !adminPeer) chat = imEnsureServerChat(item);
           if (chat) {
             // 如果当前正在和对方聊天，把新消息追加进去
             if (S.peer && S.peer.isServer && S.peer.serverId === item.peerId) {
@@ -2208,7 +2505,19 @@
     presenceText: presenceText,
     loadChats: loadChats,
     SWIPE_PX: SWIPE_PX,
-    imResolveMyRole: imResolveMyRole
+    imResolveMyRole: imResolveMyRole,
+    /* R39/R40（2026-09-14a）：动态会话 + 管理员用户列表校验钩子（仅测试引用，零运行时行为影响） */
+    imEnsureServerChat: imEnsureServerChat,
+    getFriend: getFriend,
+    loadData: loadData,
+    saveData: saveData,
+    imFmtLastActive: imFmtLastActive,
+    imAdminUsersHtml: imAdminUsersHtml,
+    /* R41/R42（2026-09-14b）：新增函数校验钩子（仅测试引用，零运行时行为影响） */
+    imOpenChatWithUser: window.imOpenChatWithUser,
+    imShowUserProfile: window.imShowUserProfile,
+    imStrArg: imStrArg,
+    imCachedAdminId: imCachedAdminId
   };
 
   $ready(boot);
