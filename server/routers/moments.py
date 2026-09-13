@@ -14,7 +14,8 @@ from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from database import (Moment, MomentComment, MomentLike, Notification, User,
-                      UserBlock, friend_ids_of, get_db, is_friend, now_str)
+                      UserBlock, friend_ids_of, get_db, is_admin_user,
+                      is_friend, now_str)
 from schemas import MomentCommentIn, MomentIn, user_brief
 from security import get_current_user
 
@@ -72,12 +73,30 @@ def _can_view(db: Session, viewer_id: int, author_id: int) -> bool:
     if _is_blocked_either(db, viewer_id, author_id):
         return False
     author = db.get(User, author_id)
+    # 需求01：管理员单向可见——其动态对任何其他人（含好友）均不可见
+    if is_admin_user(author):
+        return False
     vis = (author.moment_visibility if author else None) or "friends"
     if vis == "public":
         return True
     if vis == "private":
         return False
     return is_friend(db, viewer_id, author_id)
+
+
+def _can_view(db: Session, viewer_id: int, author_id: int) -> bool:
+    """动态可见性判定（T03 三档 + 双向拉黑优先拒绝）。
+
+    - 本人恒可见；
+    - 双向拉黑任一成立 → 不可见（优先于三档）；
+    - 作者 moment_visibility：public 任何登录用户可见 / friends 好友或本人 / private 仅本人。
+    存量 NULL/空值回退 friends（与老库默认一致）。
+    """
+    if viewer_id == author_id:
+        return True
+    if _is_blocked_either(db, viewer_id, author_id):
+        return False
+    return _visibility_allows(db, viewer_id, author_id)
 
 
 def moment_dict(m: Moment, author: User, me_id: int, db: Session) -> dict:

@@ -1582,6 +1582,28 @@ if (typeof stInitAccount === 'function') {
   function apiBase() { return (typeof window.getApiBase === 'function') ? window.getApiBase() : (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ''); }
   function tok() { return localStorage.getItem('study_workbench_token') || ''; }
   var OUTBOX_KEY = 'study_workbench_feedback_outbox';
+  /* 需求01：我提交过的反馈本地账本（含未登录提交的公开反馈），用于回查管理员回复。
+     结构：[{id, source:'public'|'account', type, content, createdAt}]，最多留 20 条。 */
+  var MY_FB_KEY = 'xt_my_feedback_ids';
+
+  function loadMyFbLedger() {
+    try {
+      var raw = JSON.parse(localStorage.getItem(MY_FB_KEY) || '[]');
+      return Array.isArray(raw) ? raw : [];
+    } catch (e) { return []; }
+  }
+  function saveMyFbLedger(list) {
+    try { localStorage.setItem(MY_FB_KEY, JSON.stringify((list || []).slice(-20))); } catch (e) { /* 无痕模式忽略 */ }
+  }
+  function rememberMyFb(rec) {
+    if (!rec || rec.id === undefined || rec.id === null) return;
+    var list = loadMyFbLedger();
+    for (var i = 0; i < list.length; i++) {
+      if (String(list[i].id) === String(rec.id)) { list[i] = rec; saveMyFbLedger(list); return; }
+    }
+    list.push(rec);
+    saveMyFbLedger(list);
+  }
   var FB_TYPE_TEXT = { bug: '功能异常', suggest: '体验建议', content: '内容问题', other: '其他' };
   var FB_STATUS_TEXT = { pending: '待处理', replied: '已回复' };
 
@@ -1621,6 +1643,8 @@ if (typeof stInitAccount === 'function') {
     .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.detail || '提交失败'); return d; }); })
     .then(function (d) {
       if (typeof showToast === 'function') showToast('✅ 已收到，编号 #' + d.id);
+      // 需求01：记住编号，便于在「我的反馈」里回查管理员回复
+      rememberMyFb({ id: d.id, source: 'account', type: body.type, content: content, createdAt: d.createdAt || d.created_at || '' });
       $id('fbContent').value = '';
       loadMine();
     })
@@ -1637,28 +1661,94 @@ if (typeof stInitAccount === 'function') {
     .finally(function () { if (btn) { btn.disabled = false; btn.textContent = '提交反馈'; } });
   };
 
+  /* 需求01：我的反馈 = 服务端回查（含管理员 reply）∪ 本地提交账本。
+     主接口 GET /api/feedback/mine（带 token）；后端尚未兑现时回退旧 GET /api/feedbacks/mine。
+     有 reply 显著展示「管理员回复」，没有则显示「等待回复」。 */
+  function fetchMineFromServer() {
+    var t = tok();
+    if (!t) return Promise.resolve([]);
+    var headers = { 'Authorization': 'Bearer ' + t };
+    return fetch(apiBase() + '/api/feedback/mine', { headers: headers })
+      .then(function (r) {
+        if (!r.ok) throw new Error('mine not ready');
+        return r.json();
+      })
+      .then(function (d) {
+        var items = Array.isArray(d) ? d : (d.items || []);
+        return items.map(function (f) { return { id: f.id, source: 'server', type: f.type, content: f.content, createdAt: f.createdAt || f.created_at || '', status: f.status, reply: f.reply || '' }; });
+      })
+      .catch(function () {
+        // 新接口未就绪 → 回退旧接口（结构：{items:[{id,type,content,createdAt,status}]}）
+        return fetch(apiBase() + '/api/feedbacks/mine', { headers: headers })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            var items = Array.isArray(d) ? d : (d.items || []);
+            return items.map(function (f) { return { id: f.id, source: 'server', type: f.type, content: f.content, createdAt: f.createdAt || f.created_at || '', status: f.status, reply: f.reply || '' }; });
+          })
+          .catch(function () { return null; });   // null = 后端不可用，仅用本地账本
+      });
+  }
+
+  function renderMine(items) {
+    var box = $id('fbMineList');
+    if (!box) return;
+    if (!items.length) {
+      box.innerHTML = tok() ? '还没有提交过反馈' : '提交过的反馈会显示在这里（登录后还能看到管理员回复）';
+    } else {
+      box.innerHTML = items.slice(0, 10).map(function (f) {
+        var replied = !!(f.reply && String(f.reply).trim()) || f.status === 'replied';
+        var replyHtml = replied
+          ? '<div class="fb-mine-reply"><b>管理员回复：</b>' + esc(f.reply || '（已处理）') + '</div>'
+          : '<div class="fb-mine-wait">等待回复</div>';
+        return '<div class="fb-mine-item">' +
+          '<div class="fb-mine-top">' +
+            '<span class="fb-mine-status ' + (replied ? 'ok' : 'wait') + '">' + (replied ? '已回复' : '待处理') + '</span>' +
+            '<span class="fb-mine-id">#' + esc(f.id) + ' · ' + esc(FB_TYPE_TEXT[f.type] || f.type) + ' · ' + esc(f.createdAt || '') + '</span>' +
+          '</div>' +
+          '<div class="fb-mine-content">' + esc(f.content) + '</div>' +
+          replyHtml +
+          '</div>';
+      }).join('');
+    }
+    var pending = items.filter(function (x) { return !(x.reply && String(x.reply).trim()) && x.status !== 'replied'; }).length;
+    var badge = $id('fbStatusBadge');
+    if (badge) badge.textContent = pending ? pending + ' 条待处理' : (items.length ? '无待处理' : '');
+  }
+
   function loadMine() {
     var box = $id('fbMineList');
     if (!box) return;
-    if (!tok()) { box.innerHTML = '登录后可提交和查看反馈'; return; }
-    fetch(apiBase() + '/api/feedbacks/mine', { headers: { 'Authorization': 'Bearer ' + tok() } })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        var items = d.items || [];
-        if (!items.length) { box.innerHTML = '还没有提交过反馈'; return; }
-        box.innerHTML = items.slice(0, 10).map(function (f) {
-          return '<div style="display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--border)">' +
-            '<div style="flex:1;min-width:0"><div style="color:var(--text)">' + esc(f.content) + '</div>' +
-            '<div style="font-size:var(--xt-font-xs);color:var(--text-secondary);margin-top:2px">#' + f.id + ' · ' + esc(FB_TYPE_TEXT[f.type] || f.type) + ' · ' + esc(f.createdAt || '') + '</div></div>' +
-            '<span style="font-size:var(--xt-font-sm);color:' + (f.status === 'replied' ? '#22c55e' : '#e6a23c') + ';flex-shrink:0">' + esc(FB_STATUS_TEXT[f.status] || f.status) + '</span>' +
-            '</div>';
-        }).join('');
-        var pending = items.filter(function (x) { return x.status === 'pending'; }).length;
-        var badge = $id('fbStatusBadge');
-        if (badge) badge.textContent = pending ? pending + ' 条待处理' : '无待处理';
-      })
-      .catch(function () { box.innerHTML = '反馈需联网查看（后端不可用）'; });
+    fetchMineFromServer().then(function (serverItems) {
+      var ledger = loadMyFbLedger();
+      var byId = {};
+      var out = [];
+      var i;
+      if (serverItems) {
+        for (i = 0; i < serverItems.length; i++) {
+          byId[String(serverItems[i].id)] = serverItems[i];
+          out.push(serverItems[i]);
+        }
+      }
+      // 本地账本补位：未登录提交的公开反馈 / 服务端未返回的条目
+      for (i = 0; i < ledger.length; i++) {
+        var rec = ledger[i] || {};
+        var key = String(rec.id);
+        if (!byId[key]) {
+          out.push({ id: rec.id, source: rec.source || 'public', type: rec.type, content: rec.content, createdAt: rec.createdAt || '', status: 'pending', reply: '' });
+        } else if (!byId[key].content && rec.content) {
+          byId[key].content = rec.content;
+          byId[key].createdAt = byId[key].createdAt || rec.createdAt || '';
+        }
+      }
+      out.sort(function (a, b) { return String(b.createdAt || '').localeCompare(String(a.createdAt || '')); });
+      renderMine(out);
+      if (serverItems === null && !ledger.length) {
+        box.innerHTML = '反馈需联网查看（后端不可用）';
+      }
+    });
   }
+  // 供「给创作者提优化建议」提交成功后刷新
+  window.xtLoadMyFeedback = loadMine;
 
   if (document.readyState !== 'loading') loadMine();
   else document.addEventListener('DOMContentLoaded', loadMine);
@@ -1715,8 +1805,17 @@ if (typeof stInitAccount === 'function') {
       .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.detail || 'error'); return d; }); })
       .then(function (d) {
         if (d && d.ok === false) { if (typeof showToast === 'function') showToast('提交失败，请稍后再试'); return; }
-        if (typeof showToast === 'function') showToast('已提交，感谢反馈');
+        // 需求01：记住编号（公开反馈免登录提交，本地账本是回查回复的唯一凭据）
+        var cfId = (d && (d.id !== undefined ? d.id : (d.data && d.data.id)));
+        if (cfId !== undefined && cfId !== null) {
+          rememberMyFb({
+            id: cfId, source: 'public', type: cfType, content: content,
+            createdAt: (d && (d.createdAt || d.created_at)) || ''
+          });
+          if (typeof showToast === 'function') showToast('已提交，感谢反馈（编号 #' + cfId + '）');
+        } else if (typeof showToast === 'function') showToast('已提交，感谢反馈');
         $id('cfContent').value = '';
+        if (typeof window.xtLoadMyFeedback === 'function') window.xtLoadMyFeedback();
       })
       .catch(function () {
         if (typeof showToast === 'function') showToast('提交失败，请稍后再试');
@@ -1748,6 +1847,17 @@ if (typeof stInitAccount === 'function') {
 .fb-hint{text-align:right;font-size:11px;color:var(--text-secondary);margin-top:3px}
 .fb-mine{padding:10px 4px;border-top:1px solid var(--border)}
 .fb-mine-title{font-size:13px;font-weight:600;margin-bottom:6px}
+/* 需求01：我的反馈条目 —— 管理员回复显著展示，无回复显示「等待回复」 */
+.fb-mine-item{padding:8px 0;border-bottom:1px dashed var(--border)}
+.fb-mine-item:last-child{border-bottom:none}
+.fb-mine-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.fb-mine-status{font-size:11px;line-height:16px;padding:0 8px;border-radius:8px;flex-shrink:0}
+.fb-mine-status.ok{background:#e8f8ee;color:#22a55e}
+.fb-mine-status.wait{background:#fdf3e2;color:#c8841b}
+.fb-mine-id{font-size:var(--xt-font-xs);color:var(--text-secondary);word-break:break-all}
+.fb-mine-content{font-size:var(--xt-font-base);color:var(--text);line-height:1.7;word-break:break-word;white-space:pre-wrap}
+.fb-mine-reply{margin-top:6px;padding:8px 10px;border-radius:10px;background:var(--primary-light);font-size:12.5px;line-height:1.7;color:var(--text);word-break:break-word;white-space:pre-wrap}
+.fb-mine-wait{margin-top:6px;font-size:12px;color:var(--text-muted)}
 /* 给创作者提优化建议：类型三选一 chip（对齐全站设计令牌） */
 .cf-chips{display:flex;gap:8px;flex-wrap:wrap}
 .cf-chip{border:1px solid var(--border);background:var(--bg);color:var(--text-secondary);border-radius:999px;padding:5px 14px;font-size:12.5px;cursor:pointer;transition:border-color .15s,background .15s,color .15s}

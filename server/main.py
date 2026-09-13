@@ -13,8 +13,9 @@ from fastapi.staticfiles import StaticFiles
 
 from config import AVATAR_DIR, IMAGE_DIR, UPLOAD_DIR
 from database import init_db
-from routers import (ai, auth, chat, feedback, feedback_public, friends, groups,
-                     migrate, moments, news, notes, social, study, uploads, users)
+from routers import (admin, ai, auth, chat, feedback, feedback_public, friends,
+                     groups, migrate, moments, news, notes, social, study,
+                     uploads, users)
 import ws
 
 app = FastAPI(title="学习工作台 · 多人博客后端", version="2.0")
@@ -28,6 +29,8 @@ app.add_middleware(
 )
 
 init_db()
+# 需求01：确保管理员超级账号存在且 is_admin=1（幂等；密码走 ADMIN_PASSWORD 环境变量）
+admin.ensure_admin_user()
 
 app.include_router(auth.router)
 app.include_router(users.router)
@@ -45,6 +48,7 @@ app.include_router(ai.router)
 app.include_router(uploads.router)
 app.include_router(migrate.router)
 app.include_router(ws.router)
+app.include_router(admin.router)  # 需求01：管理员观察台（/api/admin/*，非管理员 403）
 
 # 头像 / 笔记插图静态目录（数据库只存相对 URL）
 for d in (UPLOAD_DIR, AVATAR_DIR, IMAGE_DIR):

@@ -4,11 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
-<title>更多功能 · 星途</title>
+<title>管理后台 · 星途</title>
 <link rel="stylesheet" href="assets/common.css?v=20260913o">
 <link rel="stylesheet" href="assets/page-head.css?v=20260913o">
 <link rel="stylesheet" href="assets/states.css?v=20260913o">
 <link rel="stylesheet" href="assets/polish.css?v=20260913o">
+<link rel="stylesheet" href="assets/admin.css?v=20260913o">
 </head>
 <body class="theme-home">
 
@@ -74,7 +75,7 @@
 
   <div class="main">
 <header class="topbar">
-      <div class="topbar-title" id="topbarTitle">更多功能</div>
+      <div class="topbar-title" id="topbarTitle">管理后台</div>
       <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
       <div class="gs-wrap" id="gsWrap">
         <input type="text" class="gs-input" id="gsInput" placeholder="搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
@@ -90,49 +91,57 @@
       <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="16"></span></div>
     </header>
     <div class="content">
-      <div class="page active" id="page-more">
+      <div class="page active" id="page-admin">
         <!-- 顶部返回（独立页，history.back 回上一页；无历史时回首页） -->
         <div class="morepage-head">
           <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='学习工作台.html'}" title="返回" aria-label="返回">←</button>
-          <div class="morepage-title">☰ 更多功能</div>
+          <div class="morepage-title"><span class="nav-icon" data-icon="shield" data-icon-size="18">🛡️</span> 管理后台</div>
         </div>
 
-        <!-- 【A8】更多功能卡片纵向列表：与旧底部弹层「更多」同项同行为。T01 批次五（2026-09-12）#1.1：由 .morepage-grid 改为 .morepage-list 纵向排列（右侧 › 箭头为 CSS ::after） -->
-        <div class="morepage-list">
-          <div class="morepage-card morepage-list-item" onclick="openBlogStats()">
-            <div class="mpc-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div>
-            <div class="mpc-title">学习统计</div>
-            <div class="mpc-desc">学习概况 · 本周报告</div>
+        <!-- ==================== 管理后台主体（assets/admin.js 按 #adminRoot 挂载） ==================== -->
+        <div id="adminRoot">
+          <!-- 概览：总用户数 / 今日活跃 / 在线数（GET /api/admin/overview） -->
+          <div class="adm-overview" id="admOverview">
+            <div class="adm-ov-card">
+              <div class="adm-ov-icon"><span class="nav-icon" data-icon="users" data-icon-size="18"></span></div>
+              <div>
+                <div class="adm-ov-num" id="admTotalUsers">—</div>
+                <div class="adm-ov-label">总用户数</div>
+              </div>
+            </div>
+            <div class="adm-ov-card">
+              <div class="adm-ov-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="18"></span></div>
+              <div>
+                <div class="adm-ov-num" id="admActiveToday">—</div>
+                <div class="adm-ov-label">今日活跃</div>
+              </div>
+            </div>
+            <div class="adm-ov-card">
+              <div class="adm-ov-icon"><span class="nav-icon" data-icon="zap" data-icon-size="18"></span></div>
+              <div>
+                <div class="adm-ov-num" id="admOnlineCount">—</div>
+                <div class="adm-ov-label">在线数</div>
+              </div>
+            </div>
           </div>
-          <div class="morepage-card morepage-list-item" onclick="gotoBlogMine()">
-            <div class="mpc-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div>
-            <div class="mpc-title">互动广场</div>
-            <div class="mpc-desc">我的发贴与广场</div>
-          </div>
-          <div class="morepage-card morepage-list-item" onclick="navigateTo('wrong-book')">
-            <div class="mpc-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div>
-            <div class="mpc-title">错题本</div>
-            <div class="mpc-desc">错题收藏与复盘</div>
-          </div>
-          <div class="morepage-card morepage-list-item" onclick="navigateTo('settings')">
-            <div class="mpc-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div>
-            <div class="mpc-title">设置</div>
-            <div class="mpc-desc">主题 · 账号 · 隐私</div>
-          </div>
-          <!-- 需求01：管理后台入口，仅 is_admin 为 true 时由 assets/admin.js 显示（默认隐藏） -->
-          <div class="morepage-card morepage-list-item" id="adminEntryCard" style="display:none" onclick="location.href='管理员.html'">
-            <div class="mpc-icon"><span class="nav-icon" data-icon="shield" data-icon-size="20">🛡️</span></div>
-            <div class="mpc-title">管理后台</div>
-            <div class="mpc-desc">用户 · 在线 · 用户反馈</div>
-          </div>
-          <div class="morepage-card morepage-list-item" onclick="showAbout()">
-            <div class="mpc-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div>
-            <div class="mpc-title">关于</div>
-            <div class="mpc-desc">版本信息与说明</div>
+
+          <!-- 单一 tab 条 + 两个列表容器（全部用户 / 在线用户 / 用户反馈）
+               用户：GET /api/admin/users、/api/admin/online、/api/admin/users/{id}
+               反馈：GET /api/admin/feedback + POST /api/admin/feedback/{id}/reply -->
+          <div class="adm-card">
+            <div class="adm-card-head">
+              <div class="adm-tabs">
+                <button class="adm-tab active" id="admTabUsers" onclick="admSwitchTab('users')">全部用户</button>
+                <button class="adm-tab" id="admTabOnline" onclick="admSwitchTab('online')">在线用户</button>
+                <button class="adm-tab" id="admTabFeedback" onclick="admSwitchTab('feedback')">用户反馈</button>
+              </div>
+              <button class="btn btn-sm btn-secondary" onclick="admRefresh()">刷新</button>
+            </div>
+            <div class="adm-list" id="admUserList"></div>
+            <div class="adm-list" id="admFeedbackList" style="display:none"></div>
           </div>
         </div>
-
-        <!-- 【后续扩展点：更多功能自定义排序 / 快捷入口管理】本轮按固定顺序展示，后续可开放排序与增删。 -->
+        <!-- 【后续扩展点：封禁/禁言、按注册时间筛选、导出 CSV】本轮只做只读概览 + 反馈回复。 -->
       </div>
     </div>
   </div>
@@ -148,7 +157,7 @@
       <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
       <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
       <div class="bottom-nav-item" onclick="location.href='工具.html'"><div class="bn-icon"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span></div><div class="bn-label">工具</div></div>
-      <div class="bottom-nav-item active" onclick="location.href='更多.html'">
+      <div class="bottom-nav-item" onclick="location.href='更多.html'">
         <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
       </div>
     </div>

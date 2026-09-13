@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy.orm import Session
 
 from config import AVATAR_DIR
-from database import User, get_db, is_friend, now_iso
+from database import User, get_db, is_admin_user, is_friend, now_iso
 from filecheck import ext_for
 from rate_limit import rate_limit
 from schemas import PrivacyIn, ProfileIn, note_card, privacy_of, user_brief
@@ -147,7 +147,8 @@ def presence(ids: str = Query(default=""), user: User = Depends(get_current_user
             continue
         seen.add(uid)
         t = db.get(User, uid)
-        if t:
+        # 需求01：管理员的在线状态对普通用户完全不可见（跳过，不返回任何条目）
+        if t and not is_admin_user(t):
             out.append({"id": t.id, **_presence_fields(t)})
     return {"items": out}
 
@@ -160,7 +161,8 @@ def public_profile(user_id: int, user: User = Depends(get_current_user), db: Ses
     from database import Note
 
     target = db.get(User, user_id)
-    if not target:
+    # 需求01：管理员的资料与状态对普通用户完全不可见 → 一律按不存在处理
+    if not target or is_admin_user(target):
         raise HTTPException(404, "用户不存在")
     notes = (
         db.query(Note)

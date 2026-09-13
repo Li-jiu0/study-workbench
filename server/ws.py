@@ -18,7 +18,7 @@ import json
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from database import SessionLocal, User, is_friend
+from database import SessionLocal, User, can_message
 from routers.chat import (do_mark_read, msg_dict, store_and_deliver)
 from routers.friends import is_blocked
 from security import TYPE_ACCESS, decode_token
@@ -48,7 +48,8 @@ async def _handle_msg(uid: int, msg: dict) -> None:
         content = content[:5000]
     db = SessionLocal()
     try:
-        if not is_friend(db, uid, to):
+        # 需求01：好友照旧；任一方是管理员也放行（普通用户可主动给管理员发私信）
+        if not can_message(db, uid, to):
             await send_to(uid, {"type": "error", "detail": "仅好友之间可以私聊"})
             return
         if is_blocked(db, uid, to) or is_blocked(db, to, uid):

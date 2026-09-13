@@ -7,9 +7,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
+from typing import Optional
 
 from database import (Friend, FriendRequest, User, UserBlock, friend_pair,
-                      get_db, is_friend, now_iso)
+                      get_db, is_admin_user, is_friend, now_iso)
 from rate_limit import rate_limit
 from schemas import user_brief
 from security import get_current_user
@@ -29,6 +30,18 @@ def _peer_brief(u: User) -> dict:
     return {**user_brief(u), "motto": u.motto}
 
 
+def _visible_peer(db: Session, uid: int) -> Optional[User]:
+    """需求01：取一个「对普通用户可见」的用户；管理员或不存在一律返回 None。
+
+    单向可见：管理员不出现在好友列表 / 搜索 / 申请 / 黑名单等任何普通用户可见的返回里。
+    管理员自己调用时不受影响（他要能看全、看真，见 /api/admin/*）。
+    """
+    u = db.get(User, uid)
+    if u is None or is_admin_user(u):
+        return None
+    return u
+
+
 def require_friend(db: Session, a: int, b: int) -> None:
     """私聊前校验：必须互为好友，否则抛 403。"""
     if not is_friend(db, a, b):
@@ -44,7 +57,8 @@ def is_blocked(db: Session, blocker: int, blocked: int) -> bool:
 @router.post("/requests")
 def send_request(body: ReqIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     to = db.get(User, body.toUserId)
-    if not to:
+    # 需求01：管理员对普通用户完全不可见，加好友一律按「用户不存在」处理
+    if not to or is_admin_user(to):
         raise HTTPException(404, "用户不存在")
     if to.id == user.id:
         raise HTTPException(400, "不能添加自己为好友")
@@ -93,8 +107,11 @@ def send_request(body: ReqIn, user: User = Depends(get_current_user), db: Sessio
 
 @router.get("/requests")
 def list_requests(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    def _row(r: FriendRequest, me_id: int) -> dict:
+    def _row(r: FriendRequest, me_id: int) -> Optional[dict]:
         peer = r.from_user if r.to_user_id == me_id else r.to_user
+        # 需求01：管理员不出现在申请列表里（双向都过滤）
+        if peer is None or is_admin_user(peer):
+            return None
         return {"id": r.id, "fromMe": r.from_user_id == me_id,
                 "status": r.status,
                 "user": _peer_brief(peer), "createdAt": r.created_at}
@@ -110,8 +127,8 @@ def list_requests(user: User = Depends(get_current_user), db: Session = Depends(
     ).order_by(FriendRequest.id.desc()).all()
     pending_in = [r for r in all_in if r.status == "pending"]
     return {
-        "incoming": [_row(r, user.id) for r in all_in],
-        "outgoing": [_row(r, user.id) for r in all_out],
+        "incoming": [x for x in (_row(r, user.id) for r in all_in) if x],
+        "outgoing": [x for x in (_row(r, user.id) for r in all_out) if x],
         # 2026-09-12 新增（仅新增字段，incoming/outgoing 原语义不变）：
         # 未读申请数走双水位线（BUG-2 同秒边界修复，详见 _unread_count docstring）：
         # 主路径按 last_seen_request_id（id 单调递增）计数；存量用户回退
@@ -214,6 +231,8 @@ def search_users(q: str = "", user: User = Depends(get_current_user), db: Sessio
         db.query(User)
         .filter(User.id != user.id)
         .filter(or_(User.username.like(like), User.nickname.like(like)))
+        # 需求01：管理员账号不参与用户搜索（对普通用户完全不可见）
+        .filter(or_(User.is_admin.is_(None), User.is_admin.is_(False)))
         # searchable 过滤（T03 增量，C3）：只收窄搜索路径。
         # 双保险写法：or_(is_(None), !=0) —— 存量历史 NULL 行视为可搜（兼容老库）。
         .filter(or_(User.searchable.is_(None), User.searchable != 0))
@@ -237,7 +256,8 @@ def list_friends(user: User = Depends(get_current_user), db: Session = Depends(g
     out = []
     for f in rows:
         peer_id = f.user_b if f.user_a == user.id else f.user_a
-        peer = db.get(User, peer_id)
+        # 需求01：管理员不出现在好友列表里
+        peer = _visible_peer(db, peer_id)
         if peer:
             out.append({**_peer_brief(peer), "since": f.created_at})
     out.sort(key=lambda x: x["nickname"])
@@ -294,7 +314,8 @@ def list_blocked(user: User = Depends(get_current_user), db: Session = Depends(g
     )
     out = []
     for b in rows:
-        t = db.get(User, b.blocked_id)
+        # 需求01：管理员不出现在黑名单列表里
+        t = _visible_peer(db, b.blocked_id)
         if t:
             out.append({**_peer_brief(t), "since": b.created_at})
     return {"items": out}

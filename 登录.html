@@ -182,15 +182,19 @@ var REFRESH_KEY = 'study_workbench_refresh';
 var AUTH_KEY = 'study_workbench_auth';
 var USERS_KEY = 'study_workbench_users';
 var LAST_ACCOUNT_KEY = 'study_workbench_last_account';
+/* 需求01：管理员标记。登录/注册成功后落盘，供 更多.html「管理后台」入口与
+   管理员.html 读取（'1'=管理员，'0'=普通用户）；离线单机模式恒为 '0'。 */
+var ADMIN_FLAG_KEY = 'study_workbench_is_admin';
 var loginMode = 'login';
 var ONLINE = false; // 页面加载后探测后端得出，true=在线多人版，false=离线单机版
 
 function getToken() { return localStorage.getItem(TOKEN_KEY); }
-function saveSession(token, account, refreshToken) {
+function saveSession(token, account, refreshToken, isAdmin) {
   if (token) localStorage.setItem(TOKEN_KEY, token);
   if (refreshToken) localStorage.setItem(REFRESH_KEY, refreshToken);
-  localStorage.setItem(AUTH_KEY, JSON.stringify({ account: account, loginAt: Date.now() }));
+  localStorage.setItem(AUTH_KEY, JSON.stringify({ account: account, loginAt: Date.now(), is_admin: !!isAdmin }));
   localStorage.setItem(LAST_ACCOUNT_KEY, account || '');
+  try { localStorage.setItem(ADMIN_FLAG_KEY, isAdmin ? '1' : '0'); } catch (e) { /* 无痕模式忽略 */ }
 }
 /* 在线续期：access 过期时用 refresh 令牌静默换新（access + refresh 一起轮换） */
 function apiTryRefresh() {
@@ -475,7 +479,10 @@ function submitLogin() {
     return res.json().then(function (data) { return { ok: res.ok, data: data }; });
   }).then(function (r) {
     if (!r.ok) { fail(r.data.detail || '操作失败，请稍后再试'); return; }
-    saveSession(r.data.token, r.data.user.username, r.data.refreshToken);
+    // 需求01：后端在登录/注册响应里给 is_admin（camelCase 与 snake_case 双写，两处都读）
+    var adminFlag = r.data.is_admin || (r.data.user && r.data.user.is_admin) ||
+      r.data.isAdmin || (r.data.user && r.data.user.isAdmin);
+    saveSession(r.data.token, r.data.user.username, r.data.refreshToken, adminFlag);
     go();
   }).catch(function () {
     // 网络错误：后端可能刚好停了 → 切回离线模式提示（不自动用本地账号，避免账号混淆）
@@ -503,7 +510,9 @@ function showOnlineRetry(account, pass, btn, btnText) {
       return res.json().then(function (data) { return { ok: res.ok, data: data }; });
     }).then(function (r) {
       if (!r.ok) { showErr(r.data.detail || '账号或密码错误'); btn.disabled = false; btn.textContent = btnText; return; }
-      saveSession(r.data.token, r.data.user.username, r.data.refreshToken);
+      var adminFlag2 = r.data.is_admin || (r.data.user && r.data.user.is_admin) ||
+        r.data.isAdmin || (r.data.user && r.data.user.isAdmin);
+      saveSession(r.data.token, r.data.user.username, r.data.refreshToken, adminFlag2);
       location.href = '学习工作台.html';
     }).catch(function () { showErr('网络异常，请稍后再试'); btn.disabled = false; btn.textContent = btnText; });
   });

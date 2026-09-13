@@ -17,6 +17,9 @@ JWT_EXPIRE_DAYS = int(_get("JWT_EXPIRE_DAYS", "7") or 7)  # 兼容旧配置，�
 ACCESS_TOKEN_MINUTES = int(_get("ACCESS_TOKEN_MINUTES", "60") or 60)   # access 令牌时长（分钟）
 REFRESH_TOKEN_DAYS = int(_get("REFRESH_TOKEN_DAYS", "30") or 30)        # refresh 令牌时长（天）
 
+ADMIN_USERNAME = _get("ADMIN_USERNAME", "管理员")  # 管理员账号（需求01，中文；可环境变量覆盖）
+ADMIN_PASSWORD = _get("ADMIN_PASSWORD")                 # 管理员密码：仅从环境变量读取，不落库不落文档
+
 # ---- 请求限流（次/分钟，按 IP；单进程内存实现，多进程需换 Redis）----
 RATE_AUTH_PER_MIN = int(_get("RATE_AUTH_PER_MIN", "10") or 10)          # 注册 / 登录
 RATE_AI_PER_MIN = int(_get("RATE_AI_PER_MIN", "30") or 30)              # AI 流式对话

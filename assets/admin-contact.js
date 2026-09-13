@@ -1,0 +1,188 @@
+/* =====================================================================
+   assets/admin-contact.js · 需求01「联系管理员」固定入口（私聊.html）
+   ---------------------------------------------------------------------
+   背景：管理员账号对普通用户完全隐形（不在好友列表 / 搜索列表 / 在线状态里），
+        因此它是用户联系管理员的唯一途径。
+   后端已放行：server/routers/chat.py 的 can_message() 对「任一方是管理员」
+        额外放行，不需要好友关系；本文件直接走 /api/chat/*，绕开前端
+        chat-local.js 的 imOpenChat()（它要求本地好友记录，管理员没有）。
+
+   链路：
+     1) GET  /api/friends/search?q=管理员  → 取管理员 userId（唯一一次，结果缓存）
+     2) GET  /api/chat/{id}/messages?limit=50&markRead=1  → 会话历史
+     3) POST /api/chat/{id}/messages      body {content, kind:'text'} → 发消息
+   ===================================================================== */
+(function () {
+  'use strict';
+
+  var ADMIN_USERNAME = '管理员';                    // 与 server/config.py 的 ADMIN_USERNAME 一致
+  var ADMIN_ID_KEY = 'xt_admin_user_id';            // 解析结果缓存，避免每次点都搜一次
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function base() {
+    try { if (typeof window.getApiBase === 'function') return window.getApiBase() || ''; } catch (e) { /* 忽略 */ }
+    if (window.API_BASE != null) return window.API_BASE;
+    return ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000');
+  }
+  function tok() {
+    try { return localStorage.getItem('study_workbench_token') || ''; } catch (e) { return ''; }
+  }
+  function toast(msg, state) {
+    try { if (typeof window.xtToast === 'function') { window.xtToast(state || 'info', msg); return; } } catch (e) { /* 忽略 */ }
+    try { if (typeof window.showToast === 'function') { window.showToast(msg); return; } } catch (e) { /* 忽略 */ }
+  }
+
+  /* ---------------- 解析管理员 userId ---------------- */
+  function resolveAdminId() {
+    var cached = '';
+    try { cached = localStorage.getItem(ADMIN_ID_KEY) || ''; } catch (e) { /* 忽略 */ }
+    if (cached && /^\d+$/.test(cached)) return Promise.resolve(Number(cached));
+    if (!tok()) return Promise.resolve(0);
+
+    return fetch(base() + '/api/friends/search?q=' + encodeURIComponent(ADMIN_USERNAME), {
+      headers: { 'Authorization': 'Bearer ' + tok() }
+    }).then(function (r) { return r.ok ? r.json() : { items: [] }; }).then(function (d) {
+      var items = (d && d.items) || [];
+      var hit = null;
+      for (var i = 0; i < items.length; i++) {
+        if (items[i] && items[i].username === ADMIN_USERNAME) { hit = items[i]; break; }
+      }
+      if (!hit && items.length) hit = items[0];
+      var id = hit ? Number(hit.id) : 0;
+      if (id) { try { localStorage.setItem(ADMIN_ID_KEY, String(id)); } catch (e) { /* 忽略 */ } }
+      return id;
+    }).catch(function () { return 0; });
+  }
+
+  /* ---------------- 面板状态 ---------------- */
+  var S = { open: false, adminId: 0, msgs: [], myId: 0, timer: null, loading: false };
+
+  function myId() {
+    if (S.myId) return S.myId;
+    try {
+      if (window.CURRENT_USER && window.CURRENT_USER.id) { S.myId = Number(window.CURRENT_USER.id); return S.myId; }
+    } catch (e) { /* 忽略 */ }
+    return 0;
+  }
+
+  function fmtTime(v) {
+    var t = String(v || '').trim();
+    if (!t) return '';
+    var d = new Date(t.replace(' ', 'T'));
+    if (isNaN(d.getTime())) return '';
+    function p(n) { return (n < 10 ? '0' : '') + n; }
+    return p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  function renderMsgs() {
+    var box = $('acMsgs');
+    if (!box) return;
+    if (!S.msgs.length) {
+      box.innerHTML = '<div class="ac-empty">还没有消息，直接给管理员留言吧</div>';
+      return;
+    }
+    var me = myId();
+    var html = '';
+    for (var i = 0; i < S.msgs.length; i++) {
+      var m = S.msgs[i];
+      var mine = (me && Number(m.senderId) === me);
+      html += '<div class="ac-m ' + (mine ? 'me' : 'ot') + '">' +
+        '<div class="ac-m-text">' + esc(m.content) + '</div>' +
+        '<div class="ac-m-time">' + esc(fmtTime(m.createdAt || m.time || '')) + '</div>' +
+        '</div>';
+    }
+    box.innerHTML = html;
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function loadMsgs() {
+    if (!S.adminId || !tok()) return Promise.resolve();
+    return fetch(base() + '/api/chat/' + S.adminId + '/messages?limit=50&markRead=1', {
+      headers: { 'Authorization': 'Bearer ' + tok() }
+    }).then(function (r) { return r.ok ? r.json() : { items: [] }; }).then(function (d) {
+      var items = (d && d.items) || [];
+      // 服务端返回正序；id 去重，避免本地乐观插入的消息重复渲染
+      var seen = {};
+      var out = [];
+      var i;
+      for (i = 0; i < items.length; i++) { seen[String(items[i].id)] = true; out.push(items[i]); }
+      for (i = 0; i < S.msgs.length; i++) {
+        if (!S.msgs[i].id || !seen[String(S.msgs[i].id)]) out.push(S.msgs[i]);
+      }
+      out.sort(function (a, b) { return (a.id || 0) - (b.id || 0); });
+      S.msgs = out;
+      renderMsgs();
+    }).catch(function () { /* 静默：历史拉取失败不打断输入 */ });
+  }
+
+  function sendMsg() {
+    var inp = $('acInput');
+    var text = (inp && inp.value ? inp.value : '').trim();
+    if (!text) return;
+    if (!S.adminId) { toast('未找到管理员账号，请稍后再试', 'warning'); return; }
+    if (inp) inp.value = '';
+    // 乐观插入，等服务端返回后再以真实 id 重绘
+    S.msgs.push({ id: 0, senderId: myId(), content: text, kind: 'text', createdAt: new Date().toISOString().slice(0, 19).replace('T', ' ') });
+    renderMsgs();
+    fetch(base() + '/api/chat/' + S.adminId + '/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() },
+      body: JSON.stringify({ content: text, kind: 'text' })
+    }).then(function (r) {
+      if (!r.ok) throw new Error('send failed');
+      return r.json();
+    }).then(function () {
+      return loadMsgs();
+    }).catch(function () {
+      toast('消息发送失败，请稍后重试', 'error');
+    });
+  }
+  window.acSend = sendMsg;
+
+  function openPanel() {
+    var panel = $('acPanel');
+    if (!panel) return;
+    if (!tok()) { toast('请先登录后再联系管理员', 'warning'); return; }
+    S.open = true;
+    panel.style.display = 'flex';
+    var box = $('acMsgs');
+    if (box) box.innerHTML = '<div class="ac-empty">加载中…</div>';
+    resolveAdminId().then(function (id) {
+      S.adminId = id || 0;
+      if (!S.adminId) {
+        if (box) box.innerHTML = '<div class="ac-empty">暂时无法联系管理员，请稍后再试</div>';
+        return;
+      }
+      return loadMsgs();
+    });
+    // 打开期间轮询新消息（含管理员回复）
+    if (S.timer) clearInterval(S.timer);
+    S.timer = setInterval(function () {
+      if (!S.open) return;
+      try { if (document.hidden) return; } catch (e) { /* 忽略 */ }
+      if (S.adminId) loadMsgs();
+    }, 10000);
+    var inp = $('acInput');
+    if (inp) setTimeout(function () { inp.focus(); }, 100);
+  }
+  window.xtOpenAdminChat = openPanel;
+
+  function closePanel() {
+    var panel = $('acPanel');
+    if (panel) panel.style.display = 'none';
+    S.open = false;
+    if (S.timer) { clearInterval(S.timer); S.timer = null; }
+  }
+  window.acClose = closePanel;
+
+  if (typeof document !== 'undefined') {
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && S.open) closePanel();
+    });
+  }
+})();
