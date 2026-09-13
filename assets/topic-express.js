@@ -249,22 +249,37 @@
     `;
   }
 
-  // ========== 打开话题表达训练 ==========
+  // ========== 打开话题表达训练（页内全屏面板，与站内其他模块一致的进入/返回方式） ==========
   function open() {
-    let mask = document.getElementById('teMask');
-    if (mask) mask.remove();
+    ensurePage();
+    renderList();
+    // navigateTo 会按 themeMap 回退主题色，这里保留进入前的 body 类（含央国企主题与深色标记）
+    const prevBodyClass = document.body.className;
+    if (typeof navigateTo === 'function') { navigateTo('exam-topic'); document.body.className = prevBodyClass; }
+    else { document.getElementById('page-exam-topic').classList.add('active'); }
+    const titleEl = document.getElementById('topbarTitle');
+    if (titleEl) titleEl.textContent = '话题表达训练';
+  }
 
-    mask = document.createElement('div');
-    mask.id = 'teMask';
-    mask.className = 'te-mask';
-    mask.innerHTML = `
-      <div class="te-panel" id="tePanel">
-        <button class="te-close" onclick="TopicExpress.close()">✕</button>
-        <div id="teContent">${renderTopicList()}</div>
-      </div>
-    `;
-    document.body.appendChild(mask);
-
+  // 确保页内全屏面板容器存在（惰性创建，挂在 .content 内与其他 page 同级）
+  function ensurePage() {
+    let page = document.getElementById('page-exam-topic');
+    if (!page) {
+      page = document.createElement('div');
+      page.className = 'page';
+      page.id = 'page-exam-topic';
+      page.innerHTML = `
+        <div class="te-panel" id="tePanel">
+          <div id="teContent"></div>
+          <div class="te-page-footer">
+            <button class="btn btn-outline" onclick="TopicExpress.close()">← 返回笔试</button>
+          </div>
+        </div>
+      `;
+      const contentEl = document.querySelector('.content');
+      if (contentEl) contentEl.appendChild(page);
+      else document.body.appendChild(page);
+    }
     if (!document.getElementById('teStyle')) {
       const style = document.createElement('style');
       style.id = 'teStyle';
@@ -273,10 +288,16 @@
     }
   }
 
+  function renderList() {
+    const el = document.getElementById('teContent');
+    if (el) el.innerHTML = renderTopicList();
+  }
+
   // ========== 选择话题 ==========
   function select(topicId) {
     currentTopic = TOPICS.find(t => t.id === topicId);
-    document.getElementById('teContent').innerHTML = renderTopicDetail();
+    const el = document.getElementById('teContent');
+    if (el) el.innerHTML = renderTopicDetail();
   }
 
   // ========== 随机抽题 ==========
@@ -290,7 +311,7 @@
   function back() {
     stopRecord();
     currentTopic = null;
-    document.getElementById('teContent').innerHTML = renderTopicList();
+    renderList();
   }
 
   // ========== 录音控制 ==========
@@ -424,34 +445,29 @@
     feedback.style.display = 'block';
   }
 
-  // ========== 关闭 ==========
+  // ========== 关闭（返回央国企笔试主页，与其他模块的返回方式一致） ==========
   function close() {
     stopRecord();
-    const mask = document.getElementById('teMask');
-    if (mask) mask.remove();
+    currentTopic = null;
+    if (typeof navigateTo === 'function') {
+      navigateTo('exam');
+    } else {
+      const page = document.getElementById('page-exam-topic');
+      if (page) page.classList.remove('active');
+    }
   }
 
   // ========== 样式 ==========
   function getStyles() {
     return `
-      .te-mask {
-        position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-        z-index: 99998; display: flex; align-items: center; justify-content: center;
-        backdrop-filter: blur(4px);
-      }
+      /* 页内全屏面板：不再使用 modal 遮罩，作为 .page 内的卡片呈现 */
       .te-panel {
-        width: 92%; max-width: 600px; height: 88vh; max-height: 750px;
-        background: var(--bg, #fff); border-radius: 20px; overflow: hidden;
-        position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        width: 100%; max-width: 720px; margin: 0 auto;
+        background: var(--card, #fff); border-radius: 20px; overflow: hidden;
+        border: 1px solid var(--border, #eee);
         display: flex; flex-direction: column;
       }
-      .te-close {
-        position: absolute; top: 12px; right: 12px; z-index: 10;
-        width: 32px; height: 32px; border-radius: 50%; border: none;
-        background: rgba(0,0,0,0.1); cursor: pointer; font-size: 16px;
-        display: flex; align-items: center; justify-content: center;
-      }
-      .te-close:hover { background: rgba(0,0,0,0.2); }
+      .te-page-footer { padding: 16px 20px 4px; text-align: center; }
       #teContent { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
       
       .te-header { padding: 24px 20px 12px; text-align: center; }

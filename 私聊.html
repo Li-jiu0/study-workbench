@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>私信 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913i">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913i">
-<link rel="stylesheet" href="assets/states.css?v=20260913i">
-<link rel="stylesheet" href="assets/polish.css?v=20260913i">
+<link rel="stylesheet" href="assets/common.css?v=20260913j">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913j">
+<link rel="stylesheet" href="assets/states.css?v=20260913j">
+<link rel="stylesheet" href="assets/polish.css?v=20260913j">
 <style>
 
   /* ===== 私信页（嵌在应用外壳内）===== */
@@ -58,7 +58,7 @@
 <body class="theme-home">
 
 <div class="app">
-<nav class="sidebar"> <div class="logo"> <div class="logo-icon">📚</div> <div> <div class="logo-text">星途</div> <div class="logo-sub">致追梦的人->修身</div> </div> </div> <div class="nav-list"> <div class="nav-item" data-page="home"> <span class="nav-icon" data-icon="home"></span><span>首页</span> </div> <div class="nav-section">学习模块</div> <div class="nav-item" data-page="cet"> <span class="nav-icon" data-icon="book-open"></span><span>四级备考</span> </div> <div class="nav-item" data-page="exam"> <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span> </div> <div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span> </div> <div class="nav-item" data-page="ppt"> <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon" data-icon="globe"></span><span>广场</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="book"></span><span>错题本</span> </div> <div class="nav-item" data-page="profile"> <span class="nav-icon" data-icon="user"></span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon" data-icon="settings"></span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak">🔥 连续打卡 0 天</div> </div> </div> </div> </nav>
+<nav class="sidebar"> <div class="logo"> <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div> <div> <div class="logo-text">星途</div> <div class="logo-sub">致追梦的人->修身</div> </div> </div> <div class="nav-list"> <div class="nav-item" data-page="home"> <span class="nav-icon" data-icon="home"></span><span>首页</span> </div> <div class="nav-section">学习模块</div> <div class="nav-item" data-page="cet"> <span class="nav-icon" data-icon="book-open"></span><span>四级备考</span> </div> <div class="nav-item" data-page="exam"> <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span> </div> <div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span> </div> <div class="nav-item" data-page="ppt"> <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon" data-icon="globe"></span><span>广场</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="book"></span><span>错题本</span> </div> <div class="nav-item" data-page="profile"> <span class="nav-icon" data-icon="user"></span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon" data-icon="settings"></span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak">🔥 连续打卡 0 天</div> </div> </div> </div> </nav>
 
   <div class="main">
 <header class="topbar">
@@ -69,9 +69,9 @@
         <div class="gs-dropdown" id="gsDropdown"></div>
       </div>
       <div class="topbar-stats">
-        <div class="stat-item"><span class="stat-icon">🔥</span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
-        <div class="stat-item"><span class="stat-icon">⏱️</span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
-        <div class="stat-item"><span class="stat-icon">✅</span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="fire" data-icon-size="16"></span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="clock" data-icon-size="16"></span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="check" data-icon-size="16"></span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
       </div>
       <div class="topbar-date" id="topbarDate"></div>
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
@@ -80,21 +80,23 @@
 <div class="page active" id="page-im" style="display:flex;overflow:hidden">
       <aside class="im-side">
         <div class="im-head">
-          <div class="im-title">💬 好友</div>
           <div class="im-search">
             <input id="imSearch" class="form-input" placeholder="搜用户名/昵称找人…">
-            <button class="btn btn-outline" onclick="imDoSearch()" style="white-space:nowrap">🔍</button>
+            <button class="btn btn-outline" onclick="imDoSearch()" style="white-space:nowrap"><span class="nav-icon" data-icon="search" data-icon-size="16"></span></button>
           </div>
           <div class="im-tabs">
-            <!-- 需求08（C1 20260913h）：菜单重排 会话→好友→群聊→申请→加好友；onclick 与功能逻辑不变 -->
+            <!-- C1 20260913j：五 tab 顺序不变（会话→好友→群聊→申请→加好友）；「群聊」「加好友」由弹窗改为 tab 页面视图（onclick 改 imSwitchTab，原弹窗函数保留供面板复用） -->
             <button class="im-tab active" data-tab="chats" onclick="imSwitchTab('chats')">💬 会话</button>
             <button class="im-tab" data-tab="friends" onclick="imSwitchTab('friends')">👥 好友</button>
-            <button class="im-tab" onclick="imOpenGroupCreator()" title="多选好友发起群聊">👥 群聊</button>
+            <button class="im-tab" data-tab="groups" onclick="imSwitchTab('groups')" title="多选好友发起群聊">👥 群聊</button>
             <!-- 【后续扩展点】发起群聊（T4 增量）：多选好友建群，本地模式提示「群聊需要联网」 -->
             <button class="im-tab" data-tab="requests" onclick="imSwitchTab('requests')">📩 申请</button>
-            <button class="im-tab im-tab-add" onclick="imOpenAddFriendModal()" title="搜索用户名/昵称添加好友">加好友</button>
+            <button class="im-tab im-tab-add" data-tab="addfriend" onclick="imSwitchTab('addfriend')" title="搜索用户名/昵称添加好友">加好友</button>
           </div>
         </div>
+        <!-- C1 20260913j：「群聊」「加好友」tab 面板宿主（原弹窗节点由页尾脚本整体搬入，id 不变，chat-local.js 弹窗函数照常按 id 命中） -->
+        <div class="im-panel-host" id="imPanelGroups"></div>
+        <div class="im-panel-host" id="imPanelAddFriend"></div>
         <div class="im-list" id="imList"></div>
       </aside>
       <section class="im-chat" id="imChat">
@@ -109,11 +111,11 @@
           </div>
           <div class="im-msgs" id="imMsgs"></div>
           <div class="im-composer">
-            <textarea id="imInput" placeholder="输入消息，回车发送（Shift+回车换行）"></textarea>
+            <textarea id="imInput" placeholder="输入消息…"></textarea>
             <!-- A7：语音消息录制按钮（点击开始/结束，最长 60 秒；不支持时优雅降级） -->
-            <button class="im-icon" title="录音（点击开始/结束）" onclick="imToggleRecord()">🎤</button>
+            <button class="im-icon" title="录音（点击开始/结束）" onclick="imToggleRecord()"><span class="nav-icon" data-icon="mic" data-icon-size="20"></span></button>
             <!-- 【后续扩展点】表情面板（T4 增量）：[emoji:xx] 文本语法，Unicode 渲染，离线可用 -->
-            <button class="im-icon" title="表情" onclick="imToggleEmoji()">😊</button>
+            <button class="im-icon" title="表情" onclick="imToggleEmoji()"><span class="nav-icon" data-icon="smile" data-icon-size="20"></span></button>
             <div class="im-emoji-panel" id="imEmojiPanel" style="display:none"></div>
             <!-- T03 增量（2026-09-12）：发图按钮 + 隐藏 file input 整段移除（PRD §3.5）。
                  imSendImage() 函数保留（chat-local.js:880）作为【后续扩展点：图片消息回退】，
@@ -273,14 +275,14 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913i" defer></script>
-<script src="assets/xt-toast.js?v=20260913i" defer></script>
-<script src="assets/error-boundary.js?v=20260913i" defer></script>
-<script src="assets/app.js?v=20260913i" defer></script>
-<script src="assets/config.js?v=20260913i" defer></script>
-<script src="assets/emoji/manifest.js?v=20260913i" defer></script>
-<script src="assets/api.js?v=20260913i" defer></script>
-<script src="assets/chat-local.js?v=20260913i" defer></script>
+<script src="assets/icon-map.js?v=20260913j" defer></script>
+<script src="assets/xt-toast.js?v=20260913j" defer></script>
+<script src="assets/error-boundary.js?v=20260913j" defer></script>
+<script src="assets/app.js?v=20260913j" defer></script>
+<script src="assets/config.js?v=20260913j" defer></script>
+<script src="assets/emoji/manifest.js?v=20260913j" defer></script>
+<script src="assets/api.js?v=20260913j" defer></script>
+<script src="assets/chat-local.js?v=20260913j" defer></script>
 <style>
   /* 需求08（C1 20260913h）：菜单按钮视觉统一——im-tab-add 由硬编码橙色改为设计令牌（主题自适应），非激活 tab 补 hover 态 */
   .im-tab-add{background:var(--primary-light);border-color:var(--primary);color:var(--primary);font-weight:600}
@@ -290,6 +292,11 @@
   .im-tab{position:relative}
   .tab-badge{position:absolute;top:-7px;right:-4px;min-width:17px;height:17px;line-height:17px;padding:0 4px;background:#ff5d5d;color:#fff;border-radius:9px;font-size:10px;font-weight:700;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.25);z-index:2}
   .im-av-badge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;line-height:16px;padding:0 4px;background:#ff5d5d;color:#fff;border-radius:9px;font-size:11px;font-weight:700;text-align:center;border:2px solid #fff;box-sizing:border-box;z-index:2}
+  /* C1 20260913j：「群聊」「加好友」tab 页面视图——弹窗节点搬入侧栏面板宿主后取消浮层定位，随 tab 显隐 */
+  .im-panel-host{display:none;flex:1;overflow-y:auto;border-top:1px solid var(--border)}
+  .im-panel-host.active{display:block}
+  .im-panel-host .im-overlay{position:static;top:auto;left:auto;right:auto;bottom:auto;background:transparent;z-index:auto;align-items:stretch;justify-content:stretch;padding:10px}
+  .im-panel-host .im-modal{width:100%;max-width:none;max-height:none;margin:auto;box-shadow:none;border:1px solid var(--border)}
 </style>
 <script>
 /* 本页顶栏搜索框专用：只搜索聊天记录（好友昵称 + 本地/服务器消息内容），不搜发贴模块 */
@@ -311,12 +318,14 @@
     else {
       dd.innerHTML = hits.slice(0, 12).map(function (h) {
         return '<div class="gs-item" onclick="window.__gsOpen(' + h.fid + ');closeGsDropdown && closeGsDropdown()">' +
-          '<div class="gs-item-icon">💬</div><div class="gs-item-main">' +
+          '<div class="gs-item-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="18"></span></div><div class="gs-item-main">' +
           '<div class="gs-item-title">' + esc(h.name) + '</div>' +
           '<div class="gs-item-desc">' + esc(h.txt) + ' · ' + fmtTime(h.time) + '</div></div></div>';
       }).join('') + (hits.length > 12 ? '<div class="gs-empty">还有 ' + (hits.length - 12) + ' 条结果未显示</div>' : '');
     }
     dd.classList.add('open');
+    /* C1 20260913j：动态插入的 data-icon span 需手动触发一次图标水合 */
+    if (window.lucideAutoRender) window.lucideAutoRender();
   }
   window.__gsOpen = function (fid) { if (typeof imOpenChat === 'function') imOpenChat(fid); };
 
@@ -368,6 +377,99 @@
         .finally(function () { if (--pending === 0) { Array.prototype.push.apply(hits, serverHits); render(kw, hits); } });
     });
   };
+})();
+</script>
+<script>
+/* C1 20260913j：「加好友」「群聊」入口由弹窗改为 tab 页面视图。
+   实现方式：
+   1. 把 #imGroupModal / #imAddFriendModal 整体节点搬进侧栏面板宿主（DOM 位置变化、id 不变），
+      chat-local.js 的弹窗函数（imOpenGroupCreator / imOpenAddFriendModal 等）原样保留并复用——
+      其内部均按 id / querySelector 查找，搬家后依然命中，入口不再弹浮层；
+   2. 包装 imSwitchTab：groups / addfriend 两个 tab 走面板视图（隐藏 #imList、显示面板宿主、
+      复用原弹窗函数填充内容），其余 tab 走原逻辑并恢复列表；
+   3. 包装关闭函数：面板内 Esc / ✕ 关闭后自动回到「会话」tab，避免侧栏挂空面板。 */
+(function () {
+  'use strict';
+
+  var activePanel = null; // 当前面板 tab：null | 'groups' | 'addfriend'
+
+  function $id(x) { return document.getElementById(x); }
+
+  /* 1. 搬家：模态节点移入侧栏面板宿主（幂等，只搬一次） */
+  function relocateModals() {
+    [['imGroupModal', 'imPanelGroups'], ['imAddFriendModal', 'imPanelAddFriend']].forEach(function (p) {
+      var modal = $id(p[0]), host = $id(p[1]);
+      if (modal && host && modal.parentElement !== host) host.appendChild(modal);
+    });
+  }
+
+  /* 2. 面板显隐：进入面板 tab 时隐藏会话列表并复用原弹窗函数填充内容 */
+  function showPanel(tab) {
+    var modalId = tab === 'groups' ? 'imGroupModal' : 'imAddFriendModal';
+    if (tab === 'groups' && typeof window.imOpenGroupCreator === 'function') window.imOpenGroupCreator();
+    else if (tab === 'addfriend' && typeof window.imOpenAddFriendModal === 'function') window.imOpenAddFriendModal();
+    var modal = $id(modalId);
+    if (!modal || modal.style.display === 'none') {
+      // 原函数因未登录等条件只 toast 未开面板 → 回退会话 tab，侧栏不留空白
+      window.imSwitchTab('chats');
+      return;
+    }
+    var list = $id('imList');
+    if (list) list.style.display = 'none';
+    ['imPanelGroups', 'imPanelAddFriend'].forEach(function (hid) {
+      var h = $id(hid);
+      if (h) h.classList.toggle('active', hid === (tab === 'groups' ? 'imPanelGroups' : 'imPanelAddFriend'));
+    });
+    activePanel = tab;
+  }
+
+  function hidePanels() {
+    var list = $id('imList');
+    if (list) list.style.display = '';
+    ['imPanelGroups', 'imPanelAddFriend'].forEach(function (hid) {
+      var h = $id(hid);
+      if (h) h.classList.remove('active');
+    });
+    activePanel = null;
+  }
+
+  /* 3. 包装 imSwitchTab（须在 chat-local.js 加载后执行） */
+  function patchSwitchTab() {
+    if (typeof window.imSwitchTab !== 'function' || window.__imSwitchTabPatched) return;
+    var real = window.imSwitchTab;
+    window.imSwitchTab = function (tab) {
+      if (tab === 'groups' || tab === 'addfriend') {
+        real(tab);        // 复用原逻辑：tab 高亮切换 + 列表占位渲染（渲染结果被面板覆盖）
+        showPanel(tab);
+        return;
+      }
+      hidePanels();
+      real(tab);
+    };
+    window.__imSwitchTabPatched = true;
+  }
+
+  /* 4. 包装关闭函数：面板处于激活态时关闭后回到会话 tab */
+  function patchClosers() {
+    [['imCloseGroupCreator'], ['imCloseAddFriendModal']].forEach(function (p) {
+      var name = p[0], fn = window[name];
+      if (typeof fn !== 'function' || fn.__imPanelPatched) return;
+      var wrapped = function () {
+        fn();
+        if (activePanel) window.imSwitchTab('chats');
+      };
+      wrapped.__imPanelPatched = true;
+      window[name] = wrapped;
+    });
+  }
+
+  function init() {
+    relocateModals();
+    patchSwitchTab();
+    patchClosers();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
 })();
 </script>
 </body>

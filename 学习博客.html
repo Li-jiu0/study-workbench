@@ -5,17 +5,48 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>广场 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913i">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913i">
-<link rel="stylesheet" href="assets/states.css?v=20260913i">
-<link rel="stylesheet" href="assets/polish.css?v=20260913i">
+<link rel="stylesheet" href="assets/common.css?v=20260913j">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913j">
+<link rel="stylesheet" href="assets/states.css?v=20260913j">
+<link rel="stylesheet" href="assets/polish.css?v=20260913j">
+<style>
+/* =====================================================================
+   批次 20260913j（kou-blog）：写作台头部轻量化 + 按钮栏固定到预览卡下方
+   —— 仅作用于本页；公共 CSS（common.css/polish.css）不动。
+   ===================================================================== */
+/* ① 原渐变大卡 ed-hero 已从 DOM 删除，改为轻量标题行 */
+.ed-head-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 2px 4px; }
+.ed-head-title { display: inline-flex; align-items: center; gap: 7px; font-size: 16px; font-weight: 800; color: var(--text); }
+.ed-head-title .nav-icon { color: var(--primary); display: inline-flex; }
+.ed-head-sub { font-size: 11.5px; color: var(--text-secondary); }
+/* ② 编辑器工具条上的小型实时字数指示 + 未保存草稿轻提示（平时隐藏） */
+.ed-live-stats { margin-left: auto; font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+.ed-live-stats b { font-weight: 800; color: var(--primary); }
+.ed-draft-state {
+  font-size: 11px; font-weight: 600; color: #D4A056; white-space: nowrap;
+  background: color-mix(in srgb, #D4A056 14%, transparent);
+  padding: 3px 9px; border-radius: 999px;
+}
+/* ③ 操作栏不再吸底悬浮：固定在实时预览卡片正下方（in-flow） */
+.ed-actions-bar {
+  position: static; bottom: auto; z-index: auto;
+  margin-top: 2px; padding: 12px 14px; border-radius: 16px;
+  flex-wrap: wrap; overflow-x: visible;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card) 90%, transparent);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 16px 34px -24px rgba(0,0,0,.55);
+}
+/* 取消 common.css 为吸底栏预留的内容让位 padding */
+.blog-editor { padding-bottom: 20px; }
+</style>
 </head>
 <body class="theme-home">
 
 <div class="app">
 <nav class="sidebar">
     <div class="logo">
-      <div class="logo-icon">📚</div>
+      <div class="logo-icon"><span class="nav-icon" data-icon="book-open"></span></div>
       <div>
         <div class="logo-text">星途</div>
         <div class="logo-sub">致追梦的人->修身</div>
@@ -81,9 +112,9 @@
         <div class="gs-dropdown" id="gsDropdown"></div>
       </div>
       <div class="topbar-stats">
-        <div class="stat-item"><span class="stat-icon">🔥</span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
-        <div class="stat-item"><span class="stat-icon">⏱️</span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
-        <div class="stat-item"><span class="stat-icon">✅</span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="fire"></span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="clock"></span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="check"></span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
       </div>
       <div class="topbar-date" id="topbarDate"></div>
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
@@ -125,20 +156,11 @@
         <!-- ===== 视图：编辑器（写作工作台） ===== -->
         <div class="blog-wrap blog-editor" id="blogViewEdit" style="display:none">
 
-          <!-- 写作台头部：标题 + 实时字数/阅读时长/草稿状态 -->
-          <div class="ed-hero">
-            <div class="ed-hero-main">
-              <div class="ed-hero-emoji"><span class="nav-icon" data-icon="pen" data-icon-size="20"></span></div>
-              <div>
-                <div class="ed-hero-title">写发贴</div>
-                <div class="ed-hero-sub">支持轻量 Markdown · 左写右预览 · 草稿自动存到本机</div>
-              </div>
-            </div>
-            <div class="ed-hero-stats">
-              <div class="ed-stat"><b id="edWordCount">0</b><span>字数</span></div>
-              <div class="ed-stat"><b id="edReadTime">0</b><span>分钟阅读</span></div>
-              <div class="ed-stat"><b id="edDraftState">新发贴</b><span>草稿状态</span></div>
-            </div>
+          <!-- 写作台头部：轻量标题行（20260913j 原渐变大卡 ed-hero 已移除；
+               字数/阅读时长移至下方富文本工具条实时指示，草稿状态仅未保存时轻提示） -->
+          <div class="ed-head-bar">
+            <span class="ed-head-title"><span class="nav-icon" data-icon="pen" data-icon-size="18"></span>写发贴</span>
+            <span class="ed-head-sub">支持轻量 Markdown · 左写右预览 · 草稿自动存到本机</span>
           </div>
 
           <!-- 未完成草稿恢复条（本机存在自动保存的草稿时才出现） -->
@@ -213,6 +235,9 @@
                 <div class="rt-tool" title="公式" onclick="editorTool('formula')">∑</div>
                 <div class="rt-tool" title="图片链接" onclick="editorTool('image')">🖼</div>
                 <div class="rt-tool" title="分割线" onclick="editorTool('hr')">—</div>
+                <!-- ② 小型实时指示：字数/阅读时长随输入更新；草稿状态仅未保存时轻提示 -->
+                <span class="ed-live-stats"><b id="edWordCount">0</b> 字 · 约 <b id="edReadTime">0</b> 分钟</span>
+                <span class="ed-draft-state" id="edDraftState" style="display:none"></span>
               </div>
 
               <!-- 左写右预览 -->
@@ -226,17 +251,17 @@
                   <div class="blog-preview" id="blogEditorPreview"></div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <!-- 操作区（吸底） -->
-          <div class="editor-actions ed-actions-bar">
-            <button class="btn btn-primary" onclick="saveBlogNote('published')">📤 发布</button>
-            <button class="btn btn-outline" onclick="saveBlogNote('draft')">💾 存草稿</button>
-            <button class="btn btn-outline" onclick="editorAiAssist()">🤖 AI 辅助写发贴</button>
-            <button class="btn btn-outline" onclick="resetBlogEditor()">↺ 清空</button>
-            <div class="spacer"></div>
-            <span id="blogEditStatus" style="font-size:var(--xt-font-sm);color:var(--text-secondary)"></span>
+              <!-- 操作区（20260913j：固定在实时预览卡片正下方，事件绑定不变） -->
+              <div class="editor-actions ed-actions-bar">
+                <button class="btn btn-primary" onclick="saveBlogNote('published')">📤 发布</button>
+                <button class="btn btn-outline" onclick="saveBlogNote('draft')">💾 存草稿</button>
+                <button class="btn btn-outline" onclick="editorAiAssist()">🤖 AI 辅助写发贴</button>
+                <button class="btn btn-outline" onclick="resetBlogEditor()">↺ 清空</button>
+                <div class="spacer"></div>
+                <span id="blogEditStatus" style="font-size:var(--xt-font-sm);color:var(--text-secondary)"></span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -363,12 +388,12 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913i" defer></script>
-<script src="assets/xt-toast.js?v=20260913i" defer></script>
-<script src="assets/error-boundary.js?v=20260913i" defer></script>
-<script src="assets/app.js?v=20260913i" defer></script>
-<script src="assets/config.js?v=20260913i" defer></script>
-<script src="assets/api.js?v=20260913i" defer></script>
+<script src="assets/icon-map.js?v=20260913j" defer></script>
+<script src="assets/xt-toast.js?v=20260913j" defer></script>
+<script src="assets/error-boundary.js?v=20260913j" defer></script>
+<script src="assets/app.js?v=20260913j" defer></script>
+<script src="assets/config.js?v=20260913j" defer></script>
+<script src="assets/api.js?v=20260913j" defer></script>
 <script>
 /* ===================================================================
    广场（发贴）编辑页增强：【字数统计 / 阅读时长 / 草稿自动保存 / 快速模板】
@@ -405,7 +430,13 @@
     if ($('edReadTime')) $('edReadTime').textContent = words ? Math.max(1, Math.round(words / 300)) : 0;
     if ($('edPreviewHint')) $('edPreviewHint').textContent = words ? (words + ' 字') : '';
   }
-  function edState(text) { var el = $('edDraftState'); if (el) el.textContent = text; }
+  // ② 草稿状态：仅在存在未保存/编辑中/已恢复草稿时显示轻提示（工具条小胶囊），平时隐藏
+  function edState(text) {
+    var el = $('edDraftState'); if (!el) return;
+    if (!text || text === '新发贴') { el.style.display = 'none'; return; }
+    el.textContent = '● ' + text + '（未发布）';
+    el.style.display = '';
+  }
 
   // ② 草稿自动保存到本机（防误关丢失）
   function saveDraft() {

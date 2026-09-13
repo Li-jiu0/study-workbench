@@ -20,8 +20,8 @@ const ASSERTS = {
     present: ['词汇打卡', '听力训练', '阅读理解', '翻译专项', '真题模考', '考试指南', '情景式口语', 'countdownModal', 'cetStatsCard', 'cetSprintCard'],
   },
   '央国企笔试.html': {
-    absent: ['数量关系', 'exam-quant', 'exam-deduce', 'exam-data', '题型正确率', 'typeAcc'],
-    present: ['行测刷题', '综合知识', '企业定向库', '时政热点', '真题模考', '考试指南', '话题表达训练', 'countdownModal', 'examStatsCard'],
+    absent: ['数量关系', 'exam-quant', 'exam-deduce', 'exam-data', '题型正确率', 'typeAcc', '综合知识'],
+    present: ['行测刷题', '企业定向库', '时政热点', '真题模考', '考试指南', '话题表达训练', 'countdownModal', 'examStatsCard'],
   },
 };
 

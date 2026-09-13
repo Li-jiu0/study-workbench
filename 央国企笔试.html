@@ -5,17 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>央国企笔试备考 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913i">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913i">
-<link rel="stylesheet" href="assets/states.css?v=20260913i">
-<link rel="stylesheet" href="assets/polish.css?v=20260913i">
+<link rel="stylesheet" href="assets/common.css?v=20260913j">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913j">
+<link rel="stylesheet" href="assets/states.css?v=20260913j">
+<link rel="stylesheet" href="assets/polish.css?v=20260913j">
 </head>
 <body class="theme-exam">
 
 <div class="app">
 <nav class="sidebar">
     <div class="logo">
-      <div class="logo-icon">📚</div>
+      <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div>
       <div>
         <div class="logo-text">星途</div>
         <div class="logo-sub">致追梦的人->修身</div>
@@ -81,9 +81,9 @@
         <div class="gs-dropdown" id="gsDropdown"></div>
       </div>
       <div class="topbar-stats">
-        <div class="stat-item"><span class="stat-icon">🔥</span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
-        <div class="stat-item"><span class="stat-icon">⏱️</span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
-        <div class="stat-item"><span class="stat-icon">✅</span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
+        <div class="stat-item"><span class="stat-icon"><span class="nav-icon" data-icon="fire" data-icon-size="14"></span></span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon"><span class="nav-icon" data-icon="clock" data-icon-size="14"></span></span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+        <div class="stat-item"><span class="stat-icon"><span class="nav-icon" data-icon="check" data-icon-size="14"></span></span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
       </div>
       <div class="topbar-date" id="topbarDate"></div>
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
@@ -91,34 +91,6 @@
     </header>
     <div class="content">
 <div class="page active" id="page-exam">
-        <div class="module-hero">
-          <div class="module-hero-left">
-            <div class="module-hero-title">🏢 央国企笔试备考</div>
-            <div class="module-hero-desc">行测刷题+图解解析，综合知识、企业定向、时政热点全覆盖</div>
-            <div class="module-hero-stats">
-              <div class="module-hero-stat"><div class="num" id="examQuestions">0</div><div class="label">已做题数</div></div>
-              <div class="module-hero-stat"><div class="num" id="examWrong">0</div><div class="label">错题数</div></div>
-              <div class="module-hero-stat"><div class="num" id="examAccuracy">0%</div><div class="label">正确率</div></div>
-            </div>
-          </div>
-          <div class="module-hero-right">
-            <div class="hero-illustration">
-              <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
-                <circle cx="60" cy="60" r="55" fill="rgba(255,255,255,0.15)"/>
-                <rect x="28" y="32" width="64" height="56" rx="8" fill="#fff" opacity="0.95"/>
-                <rect x="36" y="42" width="48" height="6" rx="3" fill="#E05040"/>
-                <rect x="36" y="54" width="20" height="20" rx="4" fill="#FFE0E0"/>
-                <text x="46" y="68" text-anchor="middle" fill="#E05040" font-size="14" font-weight="800">A</text>
-                <rect x="62" y="54" width="20" height="20" rx="4" fill="#E8F8E8"/>
-                <text x="72" y="68" text-anchor="middle" fill="#4CAF50" font-size="14" font-weight="800">B</text>
-                <rect x="36" y="80" width="48" height="4" rx="2" fill="#ddd"/>
-                <path d="M85 30 L90 40 L100 42 L92 50 L94 60 L85 55 L76 60 L78 50 L70 42 L80 40 Z" fill="#FFD93D"/>
-                <text x="60" y="100" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">行测 · 刷题 · 解析</text>
-              </svg>
-            </div>
-          </div>
-        </div>
-
         <!-- 【后续扩展点】T7 增量（2026-09-11）：学习概况统计卡（study-stats.js 渲染） -->
         <div id="examStatsCard" class="study-stats-card"></div>
 
@@ -128,11 +100,6 @@
             <div class="feature-title">行测刷题</div>
             <div class="feature-desc">五大题型40道精选题，每题配详细解析，错题自动收录</div>
             <span class="feature-badge tag-primary">完整版</span>
-          </div>
-          <div class="feature-card" onclick="openMiniQuiz('exam-common')">
-            <div class="feature-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div>
-            <div class="feature-title">综合知识</div>
-            <div class="feature-desc">经济/管理/法律/计算机基础，高频考点卡片</div>
           </div>
           <div class="feature-card" onclick="openMiniQuiz('exam-company')">
             <div class="feature-icon"><span class="nav-icon" data-icon="package" data-icon-size="20"></span></div>
@@ -251,13 +218,13 @@
     <nav class="bottom-nav">
     <div class="bottom-nav-list">
       <div class="bottom-nav-item" data-page="home">
-        <div class="bn-icon">🏠</div><div class="bn-label">首页</div>
+        <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
       </div>
-      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon">💬</div><div class="bn-label">互动</div></div>
-      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon">👤</div><div class="bn-label">我的</div></div>
-      <div class="bottom-nav-item" onclick="location.href='工具.html'"><div class="bn-icon">🧰</div><div class="bn-label">工具</div></div>
+      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-square" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
+      <div class="bottom-nav-item" onclick="location.href='工具.html'"><div class="bn-icon"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span></div><div class="bn-label">工具</div></div>
       <div class="bottom-nav-item" onclick="location.href='更多.html'">
-        <div class="bn-icon">☰</div><div class="bn-label">更多</div>
+        <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
       </div>
     </div>
   </nav>
@@ -270,19 +237,19 @@
     <div class="bottom-more-title">更多功能</div>
     <div class="bottom-more-grid">
       <div class="bottom-more-item" onclick="openBlogStats()">
-        <div class="bm-icon">📊</div><div class="bm-label">学习统计</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
       </div>
       <div class="bottom-more-item" onclick="gotoBlogMine()">
         <div class="bm-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div><div class="bm-label">互动广场</div>
       </div>
       <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
-        <div class="bm-icon">📒</div><div class="bm-label">错题本</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div><div class="bm-label">错题本</div>
       </div>
       <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
-        <div class="bm-icon">⚙️</div><div class="bm-label">设置</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div><div class="bm-label">设置</div>
       </div>
       <div class="bottom-more-item" onclick="showAbout()">
-        <div class="bm-icon">ℹ️</div><div class="bm-label">关于</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div><div class="bm-label">关于</div>
       </div>
     </div>
   </div>
@@ -355,21 +322,21 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913i" defer></script>
-<script src="assets/xt-toast.js?v=20260913i" defer></script>
-<script src="assets/error-boundary.js?v=20260913i" defer></script>
-<script src="assets/app.js?v=20260913i" defer></script>
-<script src="assets/config.js?v=20260913i" defer></script>
-<script src="assets/api.js?v=20260913i" defer></script>
+<script src="assets/icon-map.js?v=20260913j" defer></script>
+<script src="assets/xt-toast.js?v=20260913j" defer></script>
+<script src="assets/error-boundary.js?v=20260913j" defer></script>
+<script src="assets/app.js?v=20260913j" defer></script>
+<script src="assets/config.js?v=20260913j" defer></script>
+<script src="assets/api.js?v=20260913j" defer></script>
 
-<script src="assets/mini-exam.js?v=20260913i" defer></script>
+<script src="assets/mini-exam.js?v=20260913j" defer></script>
 <!-- 【P0-B T03-06】删除弹窗版 mock-exam.js 引入（mock 已迁到 mock_exam.html 三独立页） -->
-<script src="assets/mini.js?v=20260913i" defer></script>
-<script src="assets/topic-express.js?v=20260913i" defer></script>
+<script src="assets/mini.js?v=20260913j" defer></script>
+<script src="assets/topic-express.js?v=20260913j" defer></script>
 
-<script src="assets/qbank.js?v=20260913i" defer></script>
-<script src="assets/hotnews.js?v=20260913i" defer></script>
-<script src="assets/study-stats.js?v=20260913i" defer></script>
+<script src="assets/qbank.js?v=20260913j" defer></script>
+<script src="assets/hotnews.js?v=20260913j" defer></script>
+<script src="assets/study-stats.js?v=20260913j" defer></script>
 <script>
 /* ==================== T7 增量（P0-8）：学习概况统计卡 ==================== */
 (function () {

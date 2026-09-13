@@ -48,6 +48,9 @@
       '.mz-card-t{display:flex;align-items:center;gap:8px;padding:12px 14px;background:var(--primary-light);color:var(--primary);font-weight:700;font-size:14px;cursor:pointer}' +
       '.mz-card-b{padding:12px 14px;font-size:13px;line-height:1.7;color:var(--text-secondary);white-space:pre-wrap}' +
       '.mz-tip{font-size:12px;color:var(--text-muted);text-align:center;padding:2px 0 10px}' +
+      /* 页面内视图（mz-inline）：去遮罩、占满宿主容器 */
+      '.mz-mask.mz-inline{position:static;inset:auto;background:none;backdrop-filter:none;display:block;padding:0;animation:none}' +
+      '.mz-mask.mz-inline .mz-box{width:100%;max-height:none;height:auto;min-height:360px}' +
       '@keyframes mzIn{from{opacity:0}to{opacity:1}}@keyframes mzPop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}';
     var st = document.createElement('style'); st.id = 'miniStyle'; st.textContent = css;
     (document.head || document.documentElement).appendChild(st);
@@ -61,7 +64,7 @@
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
-  function begin(id) {
+  function begin(id, containerId) {
     // 【P0-B T03-06】真题模考类目（cet-mock / exam-mock）改跳独立页
     // （不再转发到已被删除的 assets/mock-exam.js）；其他类目保持原逻辑
     if (id === 'cet-mock' || id === 'exam-mock') {
@@ -75,7 +78,7 @@
     var cat = BANK[id];
     if (!cat) { if (window.showToast) window.showToast('内容加载中，请稍后再试'); else alert('内容加载中'); return; }
     var qs = cat.mode === 'info' ? null : rand(cat.q || []);
-    S = { id: id, cat: cat, qs: qs, i: 0, right: 0, infoIdx: 0 };
+    S = { id: id, cat: cat, qs: qs, i: 0, right: 0, infoIdx: 0, container: containerId || null };
     renderShell();
     if (cat.mode === 'info') renderInfo(); else renderQ();
   }
@@ -129,7 +132,7 @@
   }
 
   function next() { S.i++; renderQ(); var b = document.getElementById('mzBody'); if (b) b.scrollTop = 0; }
-  function again() { begin(S.id); }
+  function again() { begin(S.id, S.container); }
 
   function finish() {
     var stat = loadStat(), key = S.id;
@@ -156,7 +159,8 @@
     document.getElementById('mzActs').innerHTML = '<button class="mz-btn primary" onclick="openMiniQuiz.__close()">完成</button>';
   }
 
-  function openMiniQuiz(id) { begin(id); }
+  /* containerId 可选：传入容器 id 时在页面内渲染（mz-inline），不传保持浮层行为 */
+  function openMiniQuiz(id, containerId) { begin(id, containerId); }
   openMiniQuiz.__pick = pick; openMiniQuiz.__next = next; openMiniQuiz.__again = again;
   openMiniQuiz.__finish = finish; openMiniQuiz.__close = close;
   window.openMiniQuiz = openMiniQuiz;

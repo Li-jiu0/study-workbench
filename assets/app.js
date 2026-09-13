@@ -112,9 +112,16 @@ const DEFAULT_SETTINGS = {
   aiMax: '',             // AI 最大输出
   aiStream: true,        // 流式输出
   aiContext: true,       // 上下文记忆
-  aiAvatar: '🤖',        // AI助手头像
+  aiAvatar: '🤖',        // AI助手头像（存储值兼容旧 emoji；渲染统一走 data-icon，见 aiAvatarHtml）
   aiPanelWidth: 'normal' // AI面板宽度
 };
+// J 批次：AI 演示浮标头像 emoji → lucide 图标名映射（🤖→bot / 🧠→brain / 💡→lightbulb / 📚→book）
+var AI_AVATAR_ICON_MAP = { '🤖': 'bot', '🧠': 'brain', '💡': 'lightbulb', '📚': 'book' };
+// 渲染 AI 浮标头像：入参兼容旧 emoji 值与图标名，未识别时兜底 bot
+function aiAvatarHtml(v) {
+  var name = AI_AVATAR_ICON_MAP[v] || (window.LUCIDE_ICONS && window.LUCIDE_ICONS[v] ? v : 'bot');
+  return '<span class="nav-icon" data-icon="' + name + '" data-icon-size="22"></span>';
+}
 function loadAllSettings() {
   try { return Object.assign({}, DEFAULT_SETTINGS, JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}); }
   catch (e) { return Object.assign({}, DEFAULT_SETTINGS); }
@@ -157,9 +164,12 @@ function applySettings() {
   window._voiceRate = s.voiceRate;
   window._voiceLang = s.voiceLang;
   
-  // 4. AI助手头像
+  // 4. AI助手头像（J 批次：emoji → data-icon span 渲染）
   var aiBtn = document.getElementById('aiFabBtn');
-  if (aiBtn) aiBtn.textContent = s.aiAvatar;
+  if (aiBtn) {
+    aiBtn.innerHTML = aiAvatarHtml(s.aiAvatar);
+    if (window.lucideAutoRender) window.lucideAutoRender();
+  }
   
   // 5. 屏幕常亮
   if (s.keepScreen && window.wakeLock) {
@@ -374,8 +384,8 @@ const EXAM_BANK = [
 // 其路径在本文件以 EXAM_BANK_LEGACY 显式声明：索引文件本身按 exam-bank-ext* 命名，
 // file:// / 离线 / 未部署场景会被整体跳过，而覆盖层对「离线兜底也要与线上一致」至关重要，
 // 故覆盖层由入口直连加载，索引可用时再据此做一次幂等校验加载。
-const EXAM_BANK_LEGACY = 'assets/data/exam-bank.json?v=20260913g';
-const EXAM_BANK_EXT_INDEX = 'assets/data/exam-bank-ext-index.json?v=20260913g';
+const EXAM_BANK_LEGACY = 'assets/data/exam-bank.json?v=20260913j';
+const EXAM_BANK_EXT_INDEX = 'assets/data/exam-bank-ext-index.json?v=20260913j';
 
 // 统一合并：同 id → allowOverride ? 覆盖内置 : 跳过；新 id → 一律 push。
 // 返回实际变更条数。allowOverride=true 即覆盖层语义（可覆盖 id<101 的内置题）；
@@ -441,7 +451,7 @@ function loadExamBankExt() {
 // 入口 loadVocabExt() 读索引 → Promise.all 并发拉取所有分片 → 同一套 mergeVocabWords() 合并。
 // 加词只改「对应分片 + 该片 count」，代码零改动。
 // 键=word；已存在词条不覆盖（vocabLearned 按 word 匹配，学习标记不丢失）。全程绝不调用 saveData()。
-const VOCAB_EXT_INDEX = 'assets/data/vocab-cet4-ext-index.json?v=20260913g';
+const VOCAB_EXT_INDEX = 'assets/data/vocab-cet4-ext-index.json?v=20260913j';
 
 // 统一合并：把一批增量词条并入内置 CET_VOCAB；已存在词条（含内置 466）不覆盖。
 // 返回实际追加条数。绝不落盘（不调 saveData）。
@@ -5056,13 +5066,14 @@ function markVocabKnown() {
 applyTheme();          // 应用上次保存的主题（深色/浅色）——全页面通用
 
 /* ========== 首页：功能中心快捷入口（可自选） + 最近打开 + 问候 ========== */
+// J 批次：dc = lucide data-icon 名（hq-ic 渲染用）；ic 保留 emoji（编辑面板 chip 文案用）
 var HOME_DEF = [
-  { k: 'plaza', ic: '🌍', t: '广场', d: '看大家的', url: '学习博客.html' },
-  { k: 'cet', ic: '📖', t: '四级备考', d: '词汇听力阅读', url: '四级备考.html' },
-  { k: 'exam', ic: '📝', t: '央国企笔试', d: '行测刷题', url: '央国企笔试.html' },
-  { k: 'comm', ic: '💬', t: '高情商表达', d: '场景话术', url: '高情商表达.html' },
-  { k: 'interview', ic: '🤝', t: '商务礼仪面试', d: '面试题库', url: '商务礼仪面试.html' },
-  { k: 'ppt', ic: '🎨', t: 'PPT训练', d: '版式案例', url: 'PPT训练.html' }
+  { k: 'plaza', ic: '🌍', dc: 'globe', t: '广场', d: '看大家的', url: '学习博客.html' },
+  { k: 'cet', ic: '📖', dc: 'book-open', t: '四级备考', d: '词汇听力阅读', url: '四级备考.html' },
+  { k: 'exam', ic: '📝', dc: 'pencil', t: '央国企笔试', d: '行测刷题', url: '央国企笔试.html' },
+  { k: 'comm', ic: '💬', dc: 'message-square', t: '高情商表达', d: '场景话术', url: '高情商表达.html' },
+  { k: 'interview', ic: '🤝', dc: 'handshake', t: '商务礼仪面试', d: '面试题库', url: '商务礼仪面试.html' },
+  { k: 'ppt', ic: '🎨', dc: 'palette', t: 'PPT训练', d: '版式案例', url: 'PPT训练.html' }
 ];
 var HOME_SHOW_KEY = lsKey('study_workbench_home_show');
 function homePrefs() { try { return JSON.parse(localStorage.getItem(HOME_SHOW_KEY)) || {}; } catch (e) { return {}; } }
@@ -5081,7 +5092,7 @@ function renderHomeQuick() {
   if (!nav) return;
   var show = HOME_DEF.filter(function (x) { return homeShow(x.k); });
   var grid = (show.length ? show : HOME_DEF).map(function (x) {
-    return '<a class="hq-it" href="' + x.url + '"><span class="hq-ic">' + x.ic + '</span><span class="hq-tx"><b>' + x.t + '</b><i>' + x.d + '</i></span></a>';
+    return '<a class="hq-it" href="' + x.url + '"><span class="hq-ic"><span class="nav-icon" data-icon="' + x.dc + '" data-icon-size="20"></span></span><span class="hq-tx"><b>' + x.t + '</b><i>' + x.d + '</i></span></a>';
   }).join('');
   var recent = [];
   try { recent = JSON.parse(localStorage.getItem(lsKey('study_workbench_recent')) || '[]'); } catch (e) { recent = []; }
@@ -5090,7 +5101,7 @@ function renderHomeQuick() {
       recent.map(function (r) { return '<a class="chip" href="' + (HOME_DEF.find(function (d) { return d.k === r.k; }) || {}).url + '" style="text-decoration:none">' + r.t + '</a>'; }).join('') + '</div>'
     : '';
   nav.innerHTML =
-    '<div class="card-header"><div class="card-title"><span class="title-icon">🛣️</span>功能中心</div>' +
+    '<div class="card-header"><div class="card-title"><span class="title-icon" data-icon="map"></span>功能中心</div>' +
     '<div class="card-action" style="font-size:12px" onclick="toggleHomeEdit()">' + (window.__homeEdit ? '✓ 完成' : '✎ 自选/排序') + '</div></div>' +
     '<div class="hq-grid">' + grid + '</div>' + recentRow +
     (window.__homeEdit
@@ -5098,6 +5109,7 @@ function renderHomeQuick() {
         HOME_DEF.map(function (x) { return '<button class="chip' + (homeShow(x.k) ? ' active' : '') + '" onclick="toggleHomeItem(\'' + x.k + '\')">' + x.ic + ' ' + x.t + '</button>'; }).join('') +
         '</div><div style="font-size:11px;color:var(--text-muted);margin-top:8px">隐藏后点上方“✎ 自选/排序”可再显示，点右上“✓ 完成”收起。</div></div>'
       : '');
+  if (window.lucideAutoRender) window.lucideAutoRender(); // 动态插入的 data-icon span 重渲染
 }
 function toggleHomeEdit() { window.__homeEdit = !window.__homeEdit; renderHomeQuick(); }
 function toggleHomeItem(k) { storeHome(k, !homeShow(k)); renderHomeQuick(); }
@@ -5241,13 +5253,15 @@ function initAiFabDrag() {
 initAiFabDrag();
 
 // ==================== 广场（发贴系统） ====================
+// J 批次：dc = lucide data-icon 名（帖子卡/筛选 chip/统计条渲染用）；
+// icon 保留 emoji（仅剩原生 <select><option> 等无法渲染 SVG 的位置使用）
 const BLOG_CATS = [
-  { id: 'cet', name: '四级备考', icon: '📖' },
-  { id: 'exam', name: '央国企笔试', icon: '📝' },
-  { id: 'comm', name: '高情商表达', icon: '💬' },
-  { id: 'interview', name: '商务礼仪面试', icon: '🤝' },
-  { id: 'ppt', name: 'PPT训练', icon: '🎨' },
-  { id: 'other', name: '其他', icon: '📚' }
+  { id: 'cet', name: '四级备考', icon: '📖', dc: 'book-open' },
+  { id: 'exam', name: '央国企笔试', icon: '📝', dc: 'pencil' },
+  { id: 'comm', name: '高情商表达', icon: '💬', dc: 'message-square' },
+  { id: 'interview', name: '商务礼仪面试', icon: '🤝', dc: 'handshake' },
+  { id: 'ppt', name: 'PPT训练', icon: '🎨', dc: 'palette' },
+  { id: 'other', name: '其他', icon: '📚', dc: 'globe' }
 ];
 const BLOG_COLORS = {
   cet: ['#5B8DEF', '#8FB6FF'], exam: ['#E05040', '#FF8A6B'],
@@ -5263,6 +5277,11 @@ let editingNoteId = null;    // 编辑器正在编辑的发贴 id
 
 // ---- 通用工具 ----
 function esc(t) { return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+// J 批次：data-icon 渲染助手 —— JS 动态拼接字符串里统一用 data-icon span；
+// 插入后需调用 window.lucideAutoRender() 触发一次图标渲染
+function icSpan(name, size) {
+  return '<span class="nav-icon" data-icon="' + (name || 'globe') + '" data-icon-size="' + (size || 20) + '"></span>';
+}
 function noteCat(id) { return BLOG_CATS.find(c => c.id === id) || BLOG_CATS[BLOG_CATS.length - 1]; }
 function noteColors(id) { return BLOG_COLORS[noteCat(id).id] || BLOG_COLORS.other; }
 function fmtTime(ts) { if (!ts) return ''; return String(ts).replace('T', ' ').slice(0, 16); }
@@ -5329,19 +5348,24 @@ function showBlogView(view) {
 
 // ---- 卡片渲染 ----
 function noteCoverHtml(n) {
-  const c = n.cover || noteCat(n.category).icon;
-  const isImg = /^(https?:|data:)/.test(c);
+  const cover = n.cover || '';
+  const isImg = /^(https?:|data:)/.test(cover);
   const [c0, c1] = noteColors(n.category);
+  // J 批次：公开徽章 🌍 → globe data-icon（🔒私密为文案语义，保留）
+  const priv = `<span class="nc-privacy">${n.privacy === 'private' ? '🔒私密' : icSpan('globe', 12) + '公开'}</span>`;
   if (isImg) {
-    return `<div class="note-cover" style="background:url(${c}) center/cover no-repeat"><span class="nc-privacy">${n.privacy === 'private' ? '🔒私密' : '🌍公开'}</span></div>`;
+    return `<div class="note-cover" style="background:url(${cover}) center/cover no-repeat">${priv}</div>`;
   }
-  return `<div class="note-cover" style="background:linear-gradient(135deg,${c0},${c1})">${c}<span class="nc-privacy">${n.privacy === 'private' ? '🔒私密' : '🌍公开'}</span></div>`;
+  // 无封面时回退为分类图标（原为分类 emoji，现走 data-icon）
+  const face = cover ? esc(cover) : icSpan(noteCat(n.category).dc, 26);
+  return `<div class="note-cover" style="background:linear-gradient(135deg,${c0},${c1})">${face}${priv}</div>`;
 }
 function noteCardHtml(n, opts) {
   opts = opts || {};
   const cat = noteCat(n.category);
   const tags = (n.tags || []).map(t => `<span class="nc-tag" onclick="event.stopPropagation();blogTagFilter='${esc(t)}';showBlogView('list')">#${esc(t)}</span>`).join('');
-  const stats = `<span>👁 ${n.views || 0}</span><span>👍 ${n.likes || 0}</span><span>💬 ${(n.comments || []).length}</span>`;
+  // J 批次：统计行 👁/👍/💬 → eye/thumbs-up/message-circle data-icon
+  const stats = `<span>${icSpan('eye', 12)} ${n.views || 0}</span><span>${icSpan('thumbs-up', 12)} ${n.likes || 0}</span><span>${icSpan('message-circle', 12)} ${(n.comments || []).length}</span>`;
   let acts = '';
   if (opts.mine) {
     const arch = n.status === 'archived';
@@ -5356,7 +5380,7 @@ function noteCardHtml(n, opts) {
     <div class="note-body">
       <div class="nc-title">${esc(n.title)}</div>
       <div class="nc-excerpt">${esc(n.excerpt)}</div>
-      <div class="nc-meta"><span class="nc-cat">${cat.icon} ${cat.name}</span><span>${fmtTime(n.createdAt)}</span></div>
+      <div class="nc-meta"><span class="nc-cat">${icSpan(cat.dc, 12)} ${cat.name}</span><span>${fmtTime(n.createdAt)}</span></div>
       ${tags ? `<div class="nc-tags">${tags}</div>` : ''}
       <div class="nc-actions">${stats}</div>
       ${acts}
@@ -5368,9 +5392,10 @@ function noteCardHtml(n, opts) {
 function renderBlogFilters() {
   const box = document.getElementById('blogFilterChips');
   let html = `<span class="chip ${blogCatFilter === 'all' ? 'active' : ''}" onclick="blogCatFilter='all';blogTagFilter='';renderBlogFilters();renderBlogList()">全部</span>`;
-  BLOG_CATS.forEach(c => { html += `<span class="chip ${blogCatFilter === c.id ? 'active' : ''}" onclick="blogCatFilter='${c.id}';blogTagFilter='';renderBlogFilters();renderBlogList()">${c.icon} ${c.name}</span>`; });
+  BLOG_CATS.forEach(c => { html += `<span class="chip ${blogCatFilter === c.id ? 'active' : ''}" onclick="blogCatFilter='${c.id}';blogTagFilter='';renderBlogFilters();renderBlogList()">${icSpan(c.dc, 12)} ${c.name}</span>`; });
   if (blogTagFilter) html += `<span class="chip active" onclick="clearBlogTagFilter()">🏷 #${esc(blogTagFilter)} ✕</span>`;
   box.innerHTML = html;
+  if (window.lucideAutoRender) window.lucideAutoRender();
 }
 function clearBlogTagFilter() { blogTagFilter = ''; renderBlogFilters(); renderBlogList(); }
 function renderBlogList() {
@@ -5436,13 +5461,13 @@ function renderBlogDetail() {
     <div class="note-detail-hero">
       <div class="nd-title">${esc(n.title)}</div>
       <div class="nd-meta">
-        <span class="nd-cat">${cat.icon} ${cat.name}</span>
-        <span>👁 ${n.views || 0} 次阅读</span>
-        <span>🕒 更新于 ${fmtTime(n.updatedAt || n.createdAt)}</span>
-        <span>${n.privacy === 'private' ? '🔒 私密' : '🌍 公开'}</span>
+        <span class="nd-cat">${icSpan(cat.dc, 12)} ${cat.name}</span>
+        <span>${icSpan('eye', 12)} ${n.views || 0} 次阅读</span>
+        <span>${icSpan('clock', 12)} 更新于 ${fmtTime(n.updatedAt || n.createdAt)}</span>
+        <span>${n.privacy === 'private' ? '🔒 私密' : icSpan('globe', 12) + ' 公开'}</span>
       </div>
       <div class="note-interact">
-        <button class="ni-btn ${n.liked ? 'active' : ''}" onclick="toggleNoteLike()">👍 赞 ${n.likes || 0}</button>
+        <button class="ni-btn ${n.liked ? 'active' : ''}" onclick="toggleNoteLike()">${icSpan('thumbs-up', 12)} 赞 ${n.likes || 0}</button>
         <button class="ni-btn ${fav ? 'active' : ''}" onclick="toggleNoteFavorite()">${fav ? '★ 已收藏' : '☆ 收藏'}</button>
         <button class="ni-btn" onclick="exportCurrentNoteMd()">📄 导出 Markdown</button>
         <button class="ni-btn" onclick="startEditNote('${n.id}')">✏️ 编辑</button>
@@ -5454,13 +5479,14 @@ function renderBlogDetail() {
     <div class="note-detail-box"><div class="nd-content">${reactMarkdown(n.content)}</div></div>
     ${pager}
     <div class="blog-comments">
-      <div class="bc-title">💬 评论区（${(n.comments || []).length}）</div>
+      <div class="bc-title">${icSpan('message-circle', 14)} 评论区（${(n.comments || []).length}）</div>
       <div class="bc-input-row">
         <input type="text" id="bcInput" placeholder="留言讨论知识点，共同学得更牢…">
         <button class="btn btn-primary" onclick="addBlogComment()">发送</button>
       </div>
       <div class="bc-list">${comments}</div>
     </div>`;
+  if (window.lucideAutoRender) window.lucideAutoRender();
   const inp = document.getElementById('bcInput');
   if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') addBlogComment(); });
 }
@@ -5748,24 +5774,26 @@ function renderBlogStats() {
   const maxCat = Math.max(1, ...Object.values(catCount));
   const catBars = BLOG_CATS.filter(c => catCount[c.id]).map(c =>
     `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-      <span style="width:110px;font-size:12px;color:var(--text-secondary)">${c.icon} ${c.name}</span>
+      <span style="display:inline-flex;align-items:center;gap:4px;width:110px;font-size:12px;color:var(--text-secondary)">${icSpan(c.dc, 12)} ${c.name}</span>
       <div style="flex:1;height:14px;background:var(--bg);border-radius:7px;overflow:hidden"><div style="height:100%;width:${Math.round(catCount[c.id] / maxCat * 100)}%;background:linear-gradient(90deg,${noteColors(c.id)[0]},${noteColors(c.id)[1]})"></div></div>
       <span style="width:60px;font-size:12px;color:var(--text-secondary)">${catCount[c.id]} 篇</span>
     </div>`).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有发贴，去“✍️ 写发贴”试试吧</div>';
   const statsBox = document.getElementById('blogStatsBox');
   if (!statsBox) return; // 当前页面没有统计容器（如个人中心页）时静默跳过
+  // J 批次：六宫格 📝/💾/📁/👍/💬/👁 → pencil/bookmark/inbox/thumbs-up/message-circle/eye
   statsBox.innerHTML = `
-    <div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>博客数据统计</div></div>
+    <div class="card"><div class="card-header"><div class="card-title"><span class="title-icon" data-icon="chart-bar"></span>博客数据统计</div></div>
       <div class="blog-grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">
-        ${[['📝', pub.length, '已发布'], ['💾', draft.length, '草稿'], ['📁', arch.length, '已归档'], ['👍', totalLikes, '总点赞'], ['💬', totalComments, '总评论'], ['👁', totalViews, '总阅读']].map(([ic, num, lb]) =>
-          `<div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center"><div style="font-size:22px;font-weight:800;color:var(--text)">${ic} ${num}</div><div style="font-size:12px;color:var(--text-secondary);margin-top:4px">${lb}</div></div>`).join('')}
+        ${[['pencil', pub.length, '已发布'], ['bookmark', draft.length, '草稿'], ['inbox', arch.length, '已归档'], ['thumbs-up', totalLikes, '总点赞'], ['message-circle', totalComments, '总评论'], ['eye', totalViews, '总阅读']].map(([ic, num, lb]) =>
+          `<div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center"><div style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:22px;font-weight:800;color:var(--text)">${icSpan(ic, 20)} ${num}</div><div style="font-size:12px;color:var(--text-secondary);margin-top:4px">${lb}</div></div>`).join('')}
       </div>
-      <div style="margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📚 发贴分类分布</div>${catBars}</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text)">${icSpan('book-open', 14)}</div><div style="font-size:13px;font-weight:700;color:var(--text)">发贴分类分布</div></div>${catBars}
       <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
         <button class="btn btn-outline" onclick="exportAllNotesMd()">📄 导出全部 Markdown</button>
         <button class="btn btn-outline" onclick="navigateTo('profile')">👤 前往个人中心</button>
       </div>
     </div>`;
+  if (window.lucideAutoRender) window.lucideAutoRender();
 }
 
 // ---- 个人中心（独立页面 个人中心.html 的渲染） ----
@@ -5785,7 +5813,7 @@ function renderProfilePage() {
   const maxCat = Math.max(1, ...Object.values(catCount));
   const catBars = BLOG_CATS.filter(c => catCount[c.id]).map(c =>
     `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-      <span style="width:110px;font-size:12px;color:var(--text-secondary)">${c.icon} ${c.name}</span>
+      <span style="display:inline-flex;align-items:center;gap:4px;width:110px;font-size:12px;color:var(--text-secondary)">${icSpan(c.dc, 12)} ${c.name}</span>
       <div style="flex:1;height:14px;background:var(--bg);border-radius:7px;overflow:hidden"><div style="height:100%;width:${Math.round(catCount[c.id] / maxCat * 100)}%;background:linear-gradient(90deg,${noteColors(c.id)[0]},${noteColors(c.id)[1]})"></div></div>
       <span style="width:60px;font-size:12px;color:var(--text-secondary)">${catCount[c.id]} 篇</span>
     </div>`).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有发贴，去「广场 → ✍️ 写发贴」试试吧</div>';
@@ -5895,24 +5923,24 @@ function renderProfilePage() {
 
     <!-- 功能菜单 -->
     <div class="pp-card" style="margin-bottom:16px">
-      <div class="pp-row" onclick="toggleProfilePanel('ppStatPanel', this)"><span class="pp-ic">📊</span><span class="pp-tx">发贴统计</span><span class="pp-st">${totalNotes} 篇</span><span class="pp-ar">▾</span></div>
+      <div class="pp-row" onclick="toggleProfilePanel('ppStatPanel', this)"><span class="pp-ic" data-icon="chart-bar"></span><span class="pp-tx">发贴统计</span><span class="pp-st">${totalNotes} 篇</span><span class="pp-ar">▾</span></div>
       <div class="pp-panel" id="ppStatPanel">
         <div class="profile-grid">
-          ${[['📝', pub.length, '已发布'], ['💾', draft.length, '草稿'], ['📁', arch.length, '已归档'], ['👍', totalLikes, '总点赞'], ['💬', totalComments, '总评论'], ['👁', totalViews, '总阅读']].map(([ic, num, lb]) =>
-            `<div class="profile-stat"><div class="ps-num">${ic} ${num}</div><div class="ps-label">${lb}</div></div>`).join('')}
+          ${[['pencil', pub.length, '已发布'], ['bookmark', draft.length, '草稿'], ['inbox', arch.length, '已归档'], ['thumbs-up', totalLikes, '总点赞'], ['message-circle', totalComments, '总评论'], ['eye', totalViews, '总阅读']].map(([ic, num, lb]) =>
+            `<div class="profile-stat"><div class="ps-num" style="display:flex;align-items:center;justify-content:center;gap:6px">${icSpan(ic, 18)} ${num}</div><div class="ps-label">${lb}</div></div>`).join('')}
         </div>
-        <div style="margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📚 发贴分类分布</div>${catBars}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text)">${icSpan('book-open', 14)}</div><div style="font-size:13px;font-weight:700;color:var(--text)">发贴分类分布</div></div>${catBars}
         <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
           <button class="btn btn-outline" onclick="exportAllNotesMd()">📄 导出 Markdown</button>
           <button class="btn btn-outline" onclick="navigateTo('blog')">📝 去写发贴</button>
         </div>
       </div>
 
-      <div class="pp-row" onclick="gotoChat()"><span class="pp-ic">💬</span><span class="pp-tx">好友互动</span><span class="pp-st">${friendCount} 位好友</span><span class="pp-ar">›</span></div>
+      <div class="pp-row" onclick="gotoChat()"><span class="pp-ic" data-icon="message-circle"></span><span class="pp-tx">好友互动</span><span class="pp-st">${friendCount} 位好友</span><span class="pp-ar">›</span></div>
 
-      <div class="pp-row" onclick="openBlogStats()"><span class="pp-ic">📈</span><span class="pp-tx">学习统计</span><span class="pp-st">详细报告</span><span class="pp-ar">›</span></div>
+      <div class="pp-row" onclick="openBlogStats()"><span class="pp-ic" data-icon="chart-bar"></span><span class="pp-tx">学习统计</span><span class="pp-st">详细报告</span><span class="pp-ar">›</span></div>
 
-      <div class="pp-row" onclick="toggleProfilePanel('ppLocalPanel', this)"><span class="pp-ic">📖</span><span class="pp-tx">学习模块</span><span class="pp-st">快速入口</span><span class="pp-ar">▾</span></div>
+      <div class="pp-row" onclick="toggleProfilePanel('ppLocalPanel', this)"><span class="pp-ic" data-icon="book-open"></span><span class="pp-tx">学习模块</span><span class="pp-st">快速入口</span><span class="pp-ar">▾</span></div>
       <div class="pp-panel" id="ppLocalPanel">
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
           <div style="text-align:center;padding:12px;background:var(--bg-sub);border-radius:10px;cursor:pointer" onclick="navigateTo('wrong-book')">
@@ -5942,23 +5970,24 @@ function renderProfilePage() {
         </div>
       </div>
 
-      <div class="pp-row" onclick="location.href='设置.html'"><span class="pp-ic">⚙️</span><span class="pp-tx">设置</span><span class="pp-st">${speakState}</span><span class="pp-ar">›</span></div>
+      <div class="pp-row" onclick="location.href='设置.html'"><span class="pp-ic" data-icon="settings"></span><span class="pp-tx">设置</span><span class="pp-st">${speakState}</span><span class="pp-ar">›</span></div>
 
-      <div class="pp-row" onclick="showAbout()"><span class="pp-ic">ℹ️</span><span class="pp-tx">关于</span><span class="pp-st">v2.2</span><span class="pp-ar">›</span></div>
+      <div class="pp-row" onclick="showAbout()"><span class="pp-ic" data-icon="info"></span><span class="pp-tx">关于</span><span class="pp-st">v2.2</span><span class="pp-ar">›</span></div>
     </div>
 
     <!-- 数据安全卡片 -->
     <div class="pp-card" style="margin-bottom:16px">
-      <div class="pp-row" onclick="exportData()"><span class="pp-ic">📤</span><span class="pp-tx">导出数据备份</span><span class="pp-ar">›</span></div>
-      <div class="pp-row" onclick="migrateLocalNotes()"><span class="pp-ic">☁️</span><span class="pp-tx">同步到云端</span><span class="pp-ar">›</span></div>
+      <div class="pp-row" onclick="exportData()"><span class="pp-ic" data-icon="upload"></span><span class="pp-tx">导出数据备份</span><span class="pp-ar">›</span></div>
+      <div class="pp-row" onclick="migrateLocalNotes()"><span class="pp-ic" data-icon="cloud"></span><span class="pp-tx">同步到云端</span><span class="pp-ar">›</span></div>
     </div>
 
     <!-- 退出登录 -->
     <div class="pp-card">
-      <div class="pp-row pp-danger" onclick="doLogout()"><span class="pp-ic">🚪</span><span class="pp-tx">退出登录</span><span class="pp-ar">›</span></div>
+      <div class="pp-row pp-danger" onclick="doLogout()"><span class="pp-ic" data-icon="logout"></span><span class="pp-tx">退出登录</span><span class="pp-ar">›</span></div>
     </div>`;
   // 【9/11 新增】渲染完成后同步今日学习时长进度条
   if (typeof syncStudyLimitUI === 'function') setTimeout(syncStudyLimitUI, 0);
+  if (window.lucideAutoRender) window.lucideAutoRender(); // 动态插入的 data-icon span 重渲染
 }
 
 /** 展开/收起个人中心内嵌面板（发贴统计 / 本机学习数据） */
@@ -6104,25 +6133,27 @@ updateProfileUI();
 // ==================== 全局搜索（顶栏，新增） ====================
 // 检索范围：① 广场发贴（标题/内容/标签/摘要） ② 各学习模块（标题/关键词）
 // 点击结果：发贴 → 跳 学习博客.html#note=ID 打开详情；模块 → navigateTo 跨页跳转
+// J 批次：dc = lucide data-icon 名（全局搜索 gs-item-icon 渲染用），映射与 HOME_DEF / E1-R 约定一致；
+// icon 保留 emoji（数据兼容字段，不再渲染进 gs-item-icon）
 const MODULE_INDEX = [
-  { page: 'home',           icon: '🏠', title: '首页',                 desc: '倒计时 · 今日任务 · 学习数据', kw: '首页 主页 倒计时 任务 统计' },
-  { page: 'cet',            icon: '📖', title: '四级备考',             desc: '词汇速记 · 听力 · 阅读 · 写作翻译', kw: '四级 英语 词汇 单词 听力 阅读 写作 翻译 cet' },
-  { page: 'exam',           icon: '📝', title: '央国企笔试',           desc: '行测全题型刷题', kw: '笔试 行测 图形推理 定义判断 类比推理 逻辑 言语 数量关系 资料分析 国企' },
-  { page: 'comm',           icon: '💬', title: '高情商表达',           desc: '场景话术 · 金句库 · 角色扮演', kw: '高情商 表达 话术 沟通 金句 情商' },
-  { page: 'interview',      icon: '🤝', title: '商务礼仪面试',         desc: '商务礼仪 · 模拟面试', kw: '面试 礼仪 自我介绍 简历 offer' },
-  { page: 'ppt',            icon: '🎨', title: 'PPT训练',             desc: '版式训练 · 案例拆解', kw: 'PPT 汇报 课件 幻灯片 版式 演示' },
-  { page: 'blog',           icon: '🗒️', title: '广场',             desc: '广场 · 写发贴 · 统计', kw: '博客 发贴 写作 草稿 日记' },
-  { page: 'exam-center',    icon: '🧮', title: '行测刷题',             desc: '分题型专项刷题中心', kw: '行测 刷题 专项 刷题中心' },
-  { page: 'wrong-book',     icon: '📒', title: '错题本',               desc: '错题收录与复盘', kw: '错题 错题本 复盘 收录' },
-  { page: 'cet-vocab',      icon: '📖', title: '四级词汇',             desc: '间隔重复背单词', kw: '四级 词汇 单词 背单词 间隔重复' },
-  { page: 'etiquette',      icon: '🎩', title: '商务礼仪',           desc: '礼仪知识点速查', kw: '礼仪 商务 着装 餐桌 会议' },
-  { page: 'iv-questions',   icon: '🗂️', title: '面试题库',             desc: '高频面试题与解析', kw: '面试 题库 面试题 高频' },
-  { page: 'ppt-layouts',    icon: '🧱', title: 'PPT版式库',           desc: '常用版式模板', kw: 'PPT 版式 模板 排版' },
-  { page: 'ppt-cases',      icon: '🏷️', title: 'PPT案例拆解',         desc: '真实报告案例拆解', kw: 'PPT 案例 拆解 麦肯锡 报告' },
-  { page: 'comm-scenes',    icon: '🎭', title: '场景话术库',           desc: '职场沟通场景话术', kw: '话术 场景 沟通 拒绝 汇报' },
-  { page: 'comm-quotes',    icon: '💬', title: '万能金句库',           desc: '面试/汇报金句', kw: '金句 万能金句 名言 句子' },
-  { page: 'settings',       icon: '⚙️', title: '设置',                 desc: '主题 · 数据管理 · AI配置', kw: '设置 主题 深色 导出 导入 清空 AI 密钥' },
-  { page: 'profile',        icon: '👤', title: '个人中心',             desc: '资料 · 发贴统计 · 导出', kw: '个人中心 资料 头像 昵称 统计 退出' }
+  { page: 'home',           icon: '🏠', dc: 'home',            title: '首页',                 desc: '倒计时 · 今日任务 · 学习数据', kw: '首页 主页 倒计时 任务 统计' },
+  { page: 'cet',            icon: '📖', dc: 'book-open',       title: '四级备考',             desc: '词汇速记 · 听力 · 阅读 · 写作翻译', kw: '四级 英语 词汇 单词 听力 阅读 写作 翻译 cet' },
+  { page: 'exam',           icon: '📝', dc: 'pencil',          title: '央国企笔试',           desc: '行测全题型刷题', kw: '笔试 行测 图形推理 定义判断 类比推理 逻辑 言语 数量关系 资料分析 国企' },
+  { page: 'comm',           icon: '💬', dc: 'message-square',  title: '高情商表达',           desc: '场景话术 · 金句库 · 角色扮演', kw: '高情商 表达 话术 沟通 金句 情商' },
+  { page: 'interview',      icon: '🤝', dc: 'handshake',       title: '商务礼仪面试',         desc: '商务礼仪 · 模拟面试', kw: '面试 礼仪 自我介绍 简历 offer' },
+  { page: 'ppt',            icon: '🎨', dc: 'palette',         title: 'PPT训练',             desc: '版式训练 · 案例拆解', kw: 'PPT 汇报 课件 幻灯片 版式 演示' },
+  { page: 'blog',           icon: '🗒️', dc: 'globe',           title: '广场',             desc: '广场 · 写发贴 · 统计', kw: '博客 发贴 写作 草稿 日记' },
+  { page: 'exam-center',    icon: '🧮', dc: 'pencil',          title: '行测刷题',             desc: '分题型专项刷题中心', kw: '行测 刷题 专项 刷题中心' },
+  { page: 'wrong-book',     icon: '📒', dc: 'book',            title: '错题本',               desc: '错题收录与复盘', kw: '错题 错题本 复盘 收录' },
+  { page: 'cet-vocab',      icon: '📖', dc: 'book-open',       title: '四级词汇',             desc: '间隔重复背单词', kw: '四级 词汇 单词 背单词 间隔重复' },
+  { page: 'etiquette',      icon: '🎩', dc: 'briefcase',       title: '商务礼仪',           desc: '礼仪知识点速查', kw: '礼仪 商务 着装 餐桌 会议' },
+  { page: 'iv-questions',   icon: '🗂️', dc: 'help-circle',     title: '面试题库',             desc: '高频面试题与解析', kw: '面试 题库 面试题 高频' },
+  { page: 'ppt-layouts',    icon: '🧱', dc: 'ruler',           title: 'PPT版式库',           desc: '常用版式模板', kw: 'PPT 版式 模板 排版' },
+  { page: 'ppt-cases',      icon: '🏷️', dc: 'tag',             title: 'PPT案例拆解',         desc: '真实报告案例拆解', kw: 'PPT 案例 拆解 麦肯锡 报告' },
+  { page: 'comm-scenes',    icon: '🎭', dc: 'messages-square', title: '场景话术库',           desc: '职场沟通场景话术', kw: '话术 场景 沟通 拒绝 汇报' },
+  { page: 'comm-quotes',    icon: '💬', dc: 'sparkles',        title: '万能金句库',           desc: '面试/汇报金句', kw: '金句 万能金句 名言 句子' },
+  { page: 'settings',       icon: '⚙️', dc: 'settings',        title: '设置',                 desc: '主题 · 数据管理 · AI配置', kw: '设置 主题 深色 导出 导入 清空 AI 密钥' },
+  { page: 'profile',        icon: '👤', dc: 'user',            title: '个人中心',             desc: '资料 · 发贴统计 · 导出', kw: '个人中心 资料 头像 昵称 统计 退出' }
 ];
 function gsEscape(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function gsHighlight(text, kw) {
@@ -6148,27 +6179,28 @@ function globalSearch(kw) {
       const idx = (n.content || '').toLowerCase().indexOf(kw);
       if (idx >= 0) ctx = '…' + (n.content || '').slice(Math.max(0, idx - 12), idx + 40) + '…';
       else ctx = (n.excerpt || (n.tags || []).join(' / ') || '');
-      results.push({ icon: '📝', title: n.title, desc: ctx + ' · ' + (n.status === 'draft' ? '草稿' : '发贴'), action: "if(document.getElementById('page-blog')){closeGsDropdown();openBlogDetail('" + n.id + "');}else{location.href='学习博客.html#note=" + n.id + "';}" });
+      results.push({ icon: 'pencil', title: n.title, desc: ctx + ' · ' + (n.status === 'draft' ? '草稿' : '发贴'), action: "if(document.getElementById('page-blog')){closeGsDropdown();openBlogDetail('" + n.id + "');}else{location.href='学习博客.html#note=" + n.id + "';}" });
     }
   });
   const noteCount = results.length;
   // ② 学习模块：标题 / 关键词
   MODULE_INDEX.forEach(m => {
     if ((m.title + ' ' + m.kw + ' ' + m.desc).toLowerCase().includes(kw)) {
-      results.push({ icon: m.icon, title: m.title, desc: m.desc, action: "navigateTo('" + m.page + "');closeGsDropdown()" });
+      results.push({ icon: m.dc, title: m.title, desc: m.desc, action: "navigateTo('" + m.page + "');closeGsDropdown()" });
     }
   });
   const shown = results.slice(0, 9);
   let html = '';
   if (noteCount > 0) html += '<div class="gs-group">📚 发贴（' + noteCount + '）</div>';
   html += shown.slice(0, noteCount).map(r =>
-    '<div class="gs-item" onclick="' + r.action.replace(/"/g, '&quot;') + '"><div class="gs-item-icon">' + r.icon + '</div><div class="gs-item-main"><div class="gs-item-title">' + gsHighlight(r.title, kw) + '</div><div class="gs-item-desc">' + gsEscape(r.desc) + '</div></div></div>').join('');
+    '<div class="gs-item" onclick="' + r.action.replace(/"/g, '&quot;') + '"><div class="gs-item-icon">' + icSpan(r.icon, 16) + '</div><div class="gs-item-main"><div class="gs-item-title">' + gsHighlight(r.title, kw) + '</div><div class="gs-item-desc">' + gsEscape(r.desc) + '</div></div></div>').join('');
   if (shown.length > noteCount) html += '<div class="gs-group">🧭 学习模块</div>';
   html += shown.slice(noteCount).map(r =>
-    '<div class="gs-item" onclick="navigateTo(\'' + (MODULE_INDEX.find(m => m.title === r.title) || {}).page + '\');closeGsDropdown()"><div class="gs-item-icon">' + r.icon + '</div><div class="gs-item-main"><div class="gs-item-title">' + gsHighlight(r.title, kw) + '</div><div class="gs-item-desc">' + gsEscape(r.desc) + '</div></div></div>').join('');
+    '<div class="gs-item" onclick="navigateTo(\'' + (MODULE_INDEX.find(m => m.title === r.title) || {}).page + '\');closeGsDropdown()"><div class="gs-item-icon">' + icSpan(r.icon, 16) + '</div><div class="gs-item-main"><div class="gs-item-title">' + gsHighlight(r.title, kw) + '</div><div class="gs-item-desc">' + gsEscape(r.desc) + '</div></div></div>').join('');
   if (!shown.length) html = '<div class="gs-empty">没有找到「' + gsEscape(kw) + '」相关内容<br>试试：四级 / 行测 / 面试 / PPT / 发贴关键词</div>';
   else if (results.length > 9) html += '<div class="gs-empty">还有 ' + (results.length - 9) + ' 条结果未显示，换个更具体的关键词试试</div>';
   dd.innerHTML = html;
+  if (window.lucideAutoRender) window.lucideAutoRender(); // 动态插入的 data-icon span 重渲染
   dd.classList.add('open');
 }
 function closeGsDropdown() {
@@ -6296,7 +6328,17 @@ function setAiIcon(icon, el) {
   wrap.querySelectorAll('.theme-option').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   var fab = document.getElementById('aiFab');
-  if (fab) fab.firstChild.textContent = icon;
+  if (fab) {
+    // J 批次：仅替换首个文本节点（原 emoji 头像）为 data-icon span，保留 ai-mode-badge 等后续节点
+    var iconSpan = document.createElement('span');
+    var name = AI_AVATAR_ICON_MAP[icon] || (window.LUCIDE_ICONS && window.LUCIDE_ICONS[icon] ? icon : 'bot');
+    iconSpan.className = 'nav-icon';
+    iconSpan.setAttribute('data-icon', name);
+    iconSpan.setAttribute('data-icon-size', '22');
+    if (fab.firstChild && fab.firstChild.nodeType === 3) fab.replaceChild(iconSpan, fab.firstChild);
+    else fab.insertBefore(iconSpan, fab.firstChild);
+    if (window.lucideAutoRender) window.lucideAutoRender();
+  }
   showToast('✅ 助手头像已更新');
 }
 

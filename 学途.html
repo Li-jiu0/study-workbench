@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>学途 · 个人学习中枢</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913i">
+<link rel="stylesheet" href="assets/common.css?v=20260913j">
 <style>
 /* ================= 学途 · 个人学习中枢（v1.15） ================= */
 body { margin: 0; background: var(--bg); }
@@ -167,9 +167,10 @@ body { margin: 0; background: var(--bg); }
   <div class="xt-tab" data-tab="me" onclick="xtSwitch('me')"><span class="ti">👤</span>我的</div>
 </nav>
 
-<script src="assets/app.js?v=20260913i"></script>
-<script src="assets/voiceplayer.js?v=20260913i"></script>
-<script src="assets/config.js?v=20260913i"></script>
+<script src="assets/app.js?v=20260913j"></script>
+<script src="assets/icon-map.js?v=20260913j"></script>
+<script src="assets/voiceplayer.js?v=20260913j"></script>
+<script src="assets/config.js?v=20260913j"></script>
 <script>
 /* ================= 学途 · 逻辑（v1.15） ================= */
 (function () {
@@ -262,7 +263,7 @@ body { margin: 0; background: var(--bg); }
       '<div class="xt-hello">' +
         '<div class="xt-hello-top">' +
           '<div><div class="xt-greet">👋 ' + greet() + '</div><div class="xt-date">' + fmtDate() + ' · 今天也要加油，一步一步来</div></div>' +
-          '<div><span class="xt-hello-ic" onclick="location.href=\'设置.html\'">⚙️</span></div>' +
+          '<div><span class="xt-hello-ic" onclick="location.href=\'设置.html\'"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></span></div>' +
         '</div>' +
       '</div>' +
       '<div class="xt-card"><div class="xt-stat-row">' +
@@ -293,6 +294,7 @@ body { margin: 0; background: var(--bg); }
         '<div style="font-size:12px;opacity:.92;margin:6px 0 12px">问它：今天该学什么 / 帮我出 10 道四级题 / 总结我的错题</div>' +
         '<button class="xt-btn sm" style="background:#fff;color:var(--primary)" onclick="toggleAiPanel()">打开助手</button>' +
       '</div>';
+    if (window.lucideAutoRender) window.lucideAutoRender(); // J 批次：动态 data-icon span 重渲染
   }
   window.xtTask = function (i) {
     var t = TASKS[i];
@@ -316,7 +318,7 @@ body { margin: 0; background: var(--bg); }
     var subs = []; try { subs = loadSubjects(); } catch (e) { }
     var subHtml = '';
     for (var i = 0; i < subs.length; i++) {
-      subHtml += '<div class="xt-mod"><span class="m-ic">📘</span><div class="m-tx"><div class="m-name">' + esc(subs[i].name) + '</div><div class="m-meta">自定义学科' + (subs[i].url ? ' · 可跳转' : '') + '</div></div>' +
+      subHtml += '<div class="xt-mod"><span class="m-ic"><span class="nav-icon" data-icon="book" data-icon-size="18"></span></span><div class="m-tx"><div class="m-name">' + esc(subs[i].name) + '</div><div class="m-meta">自定义学科' + (subs[i].url ? ' · 可跳转' : '') + '</div></div>' +
         (subs[i].url ? '<span class="m-ar" onclick="event.stopPropagation();location.href=\'' + esc(subs[i].url) + '\'">进入 →</span>' : '') +
         '<span class="m-ar" style="color:var(--danger)" onclick="event.stopPropagation();xtDelSubject(' + i + ')">✕</span></div>';
     }
@@ -333,18 +335,19 @@ body { margin: 0; background: var(--bg); }
           '<button class="xt-btn sm ghost" onclick="location.href=\'' + MODULE_URLS.vocab + '\'">🔊 听音辨词</button>' +
         '</div>' +
       '</div>' +
-      '<div class="xt-mod" onclick="location.href=\'' + MODULE_URLS.reading + '\'"><span class="m-ic">📚</span><div class="m-tx"><div class="m-name">四级阅读</div><div class="m-meta">阅读理解专项训练</div></div><span class="m-ar">›</span></div>' +
-      '<div class="xt-mod" onclick="xtListen()"><span class="m-ic">🎧</span><div class="m-tx"><div class="m-name">四级听力</div><div class="m-meta">精听 · 慢速 · 情景对话</div></div><span class="m-ar">›</span></div>' +
-      '<div class="xt-mod" onclick="openVoiceTrain(\'speak\')"><span class="m-ic">🗣️</span><div class="m-tx"><div class="m-name">口语跟读</div><div class="m-meta">听一句 · 读一句 · 系统识别反馈</div></div><span class="m-ar">›</span></div>' +
-      '<div class="xt-mod" onclick="location.href=\'' + MODULE_URLS.writing + '\'"><span class="m-ic">✍️</span><div class="m-tx"><div class="m-name">四级写作</div><div class="m-meta">作文模板与训练</div></div><span class="m-ar">›</span></div>' +
-      '<div class="xt-mod" onclick="location.href=\'' + MODULE_URLS.translate + '\'"><span class="m-ic">🔁</span><div class="m-tx"><div class="m-name">四级翻译</div><div class="m-meta">汉译英翻译练习</div></div><span class="m-ar">›</span></div>' +
+      '<div class="xt-mod" onclick="location.href=\'' + MODULE_URLS.reading + '\'"><span class="m-ic"><span class="nav-icon" data-icon="book-open" data-icon-size="18"></span></span><div class="m-tx"><div class="m-name">四级阅读</div><div class="m-meta">阅读理解专项训练</div></div><span class="m-ar">›</span></div>' +
+      '<div class="xt-mod" onclick="xtListen()"><span class="m-ic"><span class="nav-icon" data-icon="headphones" data-icon-size="18"></span></span><div class="m-tx"><div class="m-name">四级听力</div><div class="m-meta">精听 · 慢速 · 情景对话</div></div><span class="m-ar">›</span></div>' +
+      '<div class="xt-mod" onclick="openVoiceTrain(\'speak\')"><span class="m-ic"><span class="nav-icon" data-icon="mic" data-icon-size="18"></span></span><div class="m-tx"><div class="m-name">口语跟读</div><div class="m-meta">听一句 · 读一句 · 系统识别反馈</div></div><span class="m-ar">›</span></div>' +
+      '<div class="xt-mod" onclick="location.href=\'' + MODULE_URLS.writing + '\'"><span class="m-ic"><span class="nav-icon" data-icon="pencil" data-icon-size="18"></span></span><div class="m-tx"><div class="m-name">四级写作</div><div class="m-meta">作文模板与训练</div></div><span class="m-ar">›</span></div>' +
+      '<div class="xt-mod" onclick="location.href=\'' + MODULE_URLS.translate + '\'"><span class="m-ic"><span class="nav-icon" data-icon="languages" data-icon-size="18"></span></span><div class="m-tx"><div class="m-name">四级翻译</div><div class="m-meta">汉译英翻译练习</div></div><span class="m-ar">›</span></div>' +
       '<div class="xt-group-title">🎯 公考</div>' +
-      '<div class="xt-mod" onclick="goStudy(\'exam\',\'' + MODULE_URLS.exam + '\')"><span class="m-ic">🧮</span><div class="m-tx"><div class="m-name">行测</div><div class="m-meta">图形推理 · 数量关系 · 资料分析等</div></div><span class="m-ar">›</span></div>' +
-      '<div class="xt-mod" onclick="location.href=\'央国企笔试.html\'"><span class="m-ic">📝</span><div class="m-tx"><div class="m-name">申论 / 综合</div><div class="m-meta">央国企笔试备考</div></div><span class="m-ar">›</span></div>' +
-      '<div class="xt-mod" onclick="location.href=\'' + MODULE_URLS.iv + '\'"><span class="m-ic">🎙️</span><div class="m-tx"><div class="m-name">面试</div><div class="m-meta">面试题库 · 高频问题</div></div><span class="m-ar">›</span></div>' +
+      '<div class="xt-mod" onclick="goStudy(\'exam\',\'' + MODULE_URLS.exam + '\')"><span class="m-ic"><span class="nav-icon" data-icon="chart-bar" data-icon-size="18"></span></span><div class="m-tx"><div class="m-name">行测</div><div class="m-meta">图形推理 · 数量关系 · 资料分析等</div></div><span class="m-ar">›</span></div>' +
+      '<div class="xt-mod" onclick="location.href=\'央国企笔试.html\'"><span class="m-ic"><span class="nav-icon" data-icon="pen" data-icon-size="18"></span></span><div class="m-tx"><div class="m-name">申论 / 综合</div><div class="m-meta">央国企笔试备考</div></div><span class="m-ar">›</span></div>' +
+      '<div class="xt-mod" onclick="location.href=\'' + MODULE_URLS.iv + '\'"><span class="m-ic"><span class="nav-icon" data-icon="mic" data-icon-size="18"></span></span><div class="m-tx"><div class="m-name">面试</div><div class="m-meta">面试题库 · 高频问题</div></div><span class="m-ar">›</span></div>' +
       '<div class="xt-group-title">📖 自定义学科</div>' + subHtml +
       '<button class="xt-btn ghost" style="width:100%" onclick="xtAddSubject()">＋ 添加自定义学科</button>' +
       '<div class="xt-empty" style="font-size:12px">想学什么自己加：高数 / 专业课 / 考研政治 / Java…不用再改 App</div>';
+    if (window.lucideAutoRender) window.lucideAutoRender(); // J 批次：动态 data-icon span 重渲染
   }
   window.xtAddSubject = function () {
     var name = prompt('学科名称（如：高数 / 考研政治）');
@@ -420,9 +423,10 @@ body { margin: 0; background: var(--bg); }
         statsHtml + wrongHtml +
       '</div>' +
       '<div style="display:flex;gap:10px;margin-bottom:16px">' +
-        '<div class="xt-mod" style="flex:1;margin-bottom:0" onclick="location.href=\'' + MODULE_URLS.exam + '\'"><span class="m-ic">⭐</span><div class="m-tx"><div class="m-name">收藏题 ' + fav + '</div><div class="m-meta">行测页内收藏</div></div></div>' +
-        '<div class="xt-mod" style="flex:1;margin-bottom:0" onclick="location.href=\'' + MODULE_URLS.exam + '\'"><span class="m-ic">📅</span><div class="m-tx"><div class="m-name">历史记录</div><div class="m-meta">最近刷题</div></div></div>' +
+        '<div class="xt-mod" style="flex:1;margin-bottom:0" onclick="location.href=\'' + MODULE_URLS.exam + '\'"><span class="m-ic"><span class="nav-icon" data-icon="star" data-icon-size="18"></span></span><div class="m-tx"><div class="m-name">收藏题 ' + fav + '</div><div class="m-meta">行测页内收藏</div></div></div>' +
+        '<div class="xt-mod" style="flex:1;margin-bottom:0" onclick="location.href=\'' + MODULE_URLS.exam + '\'"><span class="m-ic"><span class="nav-icon" data-icon="clock" data-icon-size="18"></span></span><div class="m-tx"><div class="m-name">历史记录</div><div class="m-meta">最近刷题</div></div></div>' +
       '</div>';
+    if (window.lucideAutoRender) window.lucideAutoRender(); // J 批次：动态 data-icon span 重渲染
   }
   window.xtPickReason = function (qid, reason) {
     chooseWrongReason(qid, reason);
@@ -445,7 +449,7 @@ body { margin: 0; background: var(--bg); }
     for (var ri = 0; ri < recent.length; ri++) {
       var rn = recent[ri];
       var rc = (typeof noteCat === 'function') ? noteCat(rn.category) : { icon: '📝', name: '其他' };
-      recentHtml += '<div class="xt-note" onclick="location.href=\'学习博客.html\'"><span class="no-ic">' + (rc.icon || '📝') + '</span><div class="no-tx"><div class="no-title">' + esc(rn.title || '无标题') + '</div><div class="no-meta">' + esc((rc.name || '其他') + ' · 最近编辑') + '</div></div></div>';
+      recentHtml += '<div class="xt-note" onclick="location.href=\'学习博客.html\'"><span class="no-ic">' + (rc.icon || '<span class="nav-icon" data-icon="pen" data-icon-size="16"></span>') + '</span><div class="no-tx"><div class="no-title">' + esc(rn.title || '无标题') + '</div><div class="no-meta">' + esc((rc.name || '其他') + ' · 最近编辑') + '</div></div></div>';
     }
     if (!recentHtml) recentHtml = '<div class="xt-empty">还没有笔记</div>';
     var list = notes.filter(function (n) {
@@ -457,7 +461,7 @@ body { margin: 0; background: var(--bg); }
     for (var li = 0; li < list.length; li++) {
       var n = list[li];
       var lc = (typeof noteCat === 'function') ? noteCat(n.category) : { icon: '📝', name: '其他' };
-      listHtml += '<div class="xt-note" onclick="location.href=\'学习博客.html\'"><span class="no-ic">' + (lc.icon || '📝') + '</span><div class="no-tx"><div class="no-title">' + esc(n.title || '无标题') + '</div><div class="no-meta">' + esc(lc.name || '其他') + ' · ' + ((n.status === 'draft') ? '草稿' : (n.status === 'archived' ? '归档' : '已发布')) + '</div></div></div>';
+      listHtml += '<div class="xt-note" onclick="location.href=\'学习博客.html\'"><span class="no-ic">' + (lc.icon || '<span class="nav-icon" data-icon="pen" data-icon-size="16"></span>') + '</span><div class="no-tx"><div class="no-title">' + esc(n.title || '无标题') + '</div><div class="no-meta">' + esc(lc.name || '其他') + ' · ' + ((n.status === 'draft') ? '草稿' : (n.status === 'archived' ? '归档' : '已发布')) + '</div></div></div>';
     }
     if (!listHtml) listHtml = '<div class="xt-empty">没有匹配的笔记</div>';
     el('tab-notes').innerHTML =
@@ -469,6 +473,7 @@ body { margin: 0; background: var(--bg); }
       '<div class="xt-card"><div class="xt-card-title">🗂 笔记列表<span class="more">' + list.length + ' 篇</span></div>' + listHtml +
         '<button class="xt-btn" style="width:100%;margin-top:10px" onclick="location.href=\'学习博客.html\'">✍️ 写笔记</button>' +
       '</div>';
+    if (window.lucideAutoRender) window.lucideAutoRender(); // J 批次：动态 data-icon span 重渲染
   }
   window.xtNoteFilter = function (id) { noteFilter = id; renderNotes(); };
   window.xtNoteSearch = function (q) { noteQuery = q; renderNotes(); };
@@ -528,8 +533,9 @@ body { margin: 0; background: var(--bg); }
       '<div class="xt-bar-row" style="margin-top:16px">' + barHtml + '</div></div>' +
       '<div class="xt-card"><div class="xt-card-title">📅 学习日历<span class="more">近 7 天</span></div><div class="xt-cal">' + calHtml + '</div></div>' +
       '<div class="xt-card"><div class="xt-card-title">🎯 我的目标<button class="xt-btn sm ghost" onclick="xtAddGoal()">＋</button></div>' + goalHtml + '</div>' +
-      '<div class="xt-me-row" onclick="location.href=\'学习工作台.html\'"><span class="mr-ic">🗂</span><span class="mr-tx">全部功能（旧版入口）</span><span class="mr-ar">›</span></div>' +
-      '<div class="xt-me-row" onclick="location.href=\'学习博客.html\'"><span class="mr-ic">📝</span><span class="mr-tx">笔记广场</span><span class="mr-ar">›</span></div>';
+      '<div class="xt-me-row" onclick="location.href=\'学习工作台.html\'"><span class="mr-ic"><span class="nav-icon" data-icon="menu" data-icon-size="18"></span></span><span class="mr-tx">全部功能（旧版入口）</span><span class="mr-ar">›</span></div>' +
+      '<div class="xt-me-row" onclick="location.href=\'学习博客.html\'"><span class="mr-ic"><span class="nav-icon" data-icon="pen" data-icon-size="18"></span></span><span class="mr-tx">笔记广场</span><span class="mr-ar">›</span></div>';
+    if (window.lucideAutoRender) window.lucideAutoRender(); // J 批次：动态 data-icon span 重渲染
   }
   window.xtAddGoal = function () {
     var name = prompt('目标名称（如：英语四级）');

@@ -1,5 +1,6 @@
-/* QA C1 好友页菜单重排验证（2026-09-13h）—— 真加载页面，断言零未捕获异常 + 菜单重排断言
- * 覆盖：私聊.html（需求08：会话→好友→群聊→申请→加好友；「+好友」改「加好友」且排最末）
+/* QA C1 好友页菜单验证（2026-09-13h 建档 / 2026-09-13j 更新）—— 真加载页面，断言零未捕获异常 + 菜单断言
+ * 覆盖：私聊.html（需求08：会话→好友→群聊→申请→加好友；20260913j：「群聊」「加好友」由弹窗改为
+ *       tab 页面视图，onclick 统一为 imSwitchTab 目标序列，原弹窗函数保留供面板复用）
  * 运行：node tools/qa/qa_c1_0913h.js
  */
 'use strict';
@@ -11,13 +12,13 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const NODE_MODULES = path.resolve(ROOT, 'tools', 'verifier', 'node_modules');
 const { JSDOM, VirtualConsole } = require(path.join(NODE_MODULES, 'jsdom'));
 
-// 重排后期望的菜单（DOM 顺序 + onclick 目标 + 文案）
+// 期望的菜单（DOM 顺序 + onclick 目标 + 文案）；20260913j：群聊/加好友改 imSwitchTab 面板视图
 const EXPECTED_TABS = [
   { label: '会话', onclick: "imSwitchTab('chats')" },
   { label: '好友', onclick: "imSwitchTab('friends')" },
-  { label: '群聊', onclick: 'imOpenGroupCreator()' },
+  { label: '群聊', onclick: "imSwitchTab('groups')" },
   { label: '申请', onclick: "imSwitchTab('requests')" },
-  { label: '加好友', onclick: 'imOpenAddFriendModal()' },
+  { label: '加好友', onclick: "imSwitchTab('addfriend')" },
 ];
 
 function extractScripts(html) {
@@ -89,7 +90,7 @@ async function loadPage(file) {
 
 (async () => {
   let fail = 0;
-  console.log('\n========= QA C1 好友页菜单重排验证（20260913h） =========');
+  console.log('\n========= QA C1 好友页菜单验证（20260913j） =========');
   const r = await loadPage('私聊.html');
   const doc = r.window.document;
   const domFail = [];

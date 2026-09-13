@@ -1,5 +1,5 @@
 {
-  "at": "2026-09-13T07:18:15.679Z",
+  "at": "2026-09-13T09:20:22.780Z",
   "withC1": true,
   "results": [
     {
@@ -106,7 +106,7 @@
       "id": "A-①",
       "name": "assets/api.js 含 window.lsKey('study_workbench_ai_chat')（同步 AI 历史走前缀键）",
       "pass": true,
-      "detail": "line 1060"
+      "detail": "line 1063"
     },
     {
       "id": "A-②",
@@ -138,7 +138,7 @@
       "id": "C1-③",
       "name": "五个 onclick 目标逐一在位且顺序一致",
       "pass": true,
-      "detail": "got=[\"imSwitchTab('chats')\",\"imSwitchTab('friends')\",\"imOpenGroupCreator()\",\"imSwitchTab('requests')\",\"imOpenAddFriendModal()\"]"
+      "detail": "got=[\"imSwitchTab('chats')\",\"imSwitchTab('friends')\",\"imSwitchTab('groups')\",\"imSwitchTab('requests')\",\"imSwitchTab('addfriend')\"]"
     },
     {
       "id": "C1-④",
