@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>私信 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913j">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913j">
-<link rel="stylesheet" href="assets/states.css?v=20260913j">
-<link rel="stylesheet" href="assets/polish.css?v=20260913j">
+<link rel="stylesheet" href="assets/common.css?v=20260913k">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913k">
+<link rel="stylesheet" href="assets/states.css?v=20260913k">
+<link rel="stylesheet" href="assets/polish.css?v=20260913k">
 <style>
 
   /* ===== 私信页（嵌在应用外壳内）===== */
@@ -85,7 +85,7 @@
             <button class="btn btn-outline" onclick="imDoSearch()" style="white-space:nowrap"><span class="nav-icon" data-icon="search" data-icon-size="16"></span></button>
           </div>
           <div class="im-tabs">
-            <!-- C1 20260913j：五 tab 顺序不变（会话→好友→群聊→申请→加好友）；「群聊」「加好友」由弹窗改为 tab 页面视图（onclick 改 imSwitchTab，原弹窗函数保留供面板复用） -->
+            <!-- C1 20260913k：五 tab 顺序不变（会话→好友→群聊→申请→加好友）；「群聊」「加好友」由弹窗改为 tab 页面视图（onclick 改 imSwitchTab，原弹窗函数保留供面板复用） -->
             <button class="im-tab active" data-tab="chats" onclick="imSwitchTab('chats')">💬 会话</button>
             <button class="im-tab" data-tab="friends" onclick="imSwitchTab('friends')">👥 好友</button>
             <button class="im-tab" data-tab="groups" onclick="imSwitchTab('groups')" title="多选好友发起群聊">👥 群聊</button>
@@ -94,7 +94,7 @@
             <button class="im-tab im-tab-add" data-tab="addfriend" onclick="imSwitchTab('addfriend')" title="搜索用户名/昵称添加好友">加好友</button>
           </div>
         </div>
-        <!-- C1 20260913j：「群聊」「加好友」tab 面板宿主（原弹窗节点由页尾脚本整体搬入，id 不变，chat-local.js 弹窗函数照常按 id 命中） -->
+        <!-- C1 20260913k：「群聊」「加好友」tab 面板宿主（原弹窗节点由页尾脚本整体搬入，id 不变，chat-local.js 弹窗函数照常按 id 命中） -->
         <div class="im-panel-host" id="imPanelGroups"></div>
         <div class="im-panel-host" id="imPanelAddFriend"></div>
         <div class="im-list" id="imList"></div>
@@ -275,14 +275,14 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913j" defer></script>
-<script src="assets/xt-toast.js?v=20260913j" defer></script>
-<script src="assets/error-boundary.js?v=20260913j" defer></script>
-<script src="assets/app.js?v=20260913j" defer></script>
-<script src="assets/config.js?v=20260913j" defer></script>
-<script src="assets/emoji/manifest.js?v=20260913j" defer></script>
-<script src="assets/api.js?v=20260913j" defer></script>
-<script src="assets/chat-local.js?v=20260913j" defer></script>
+<script src="assets/icon-map.js?v=20260913k" defer></script>
+<script src="assets/xt-toast.js?v=20260913k" defer></script>
+<script src="assets/error-boundary.js?v=20260913k" defer></script>
+<script src="assets/app.js?v=20260913k" defer></script>
+<script src="assets/config.js?v=20260913k" defer></script>
+<script src="assets/emoji/manifest.js?v=20260913k" defer></script>
+<script src="assets/api.js?v=20260913k" defer></script>
+<script src="assets/chat-local.js?v=20260913k" defer></script>
 <style>
   /* 需求08（C1 20260913h）：菜单按钮视觉统一——im-tab-add 由硬编码橙色改为设计令牌（主题自适应），非激活 tab 补 hover 态 */
   .im-tab-add{background:var(--primary-light);border-color:var(--primary);color:var(--primary);font-weight:600}
@@ -292,7 +292,7 @@
   .im-tab{position:relative}
   .tab-badge{position:absolute;top:-7px;right:-4px;min-width:17px;height:17px;line-height:17px;padding:0 4px;background:#ff5d5d;color:#fff;border-radius:9px;font-size:10px;font-weight:700;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.25);z-index:2}
   .im-av-badge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;line-height:16px;padding:0 4px;background:#ff5d5d;color:#fff;border-radius:9px;font-size:11px;font-weight:700;text-align:center;border:2px solid #fff;box-sizing:border-box;z-index:2}
-  /* C1 20260913j：「群聊」「加好友」tab 页面视图——弹窗节点搬入侧栏面板宿主后取消浮层定位，随 tab 显隐 */
+  /* C1 20260913k：「群聊」「加好友」tab 页面视图——弹窗节点搬入侧栏面板宿主后取消浮层定位，随 tab 显隐 */
   .im-panel-host{display:none;flex:1;overflow-y:auto;border-top:1px solid var(--border)}
   .im-panel-host.active{display:block}
   .im-panel-host .im-overlay{position:static;top:auto;left:auto;right:auto;bottom:auto;background:transparent;z-index:auto;align-items:stretch;justify-content:stretch;padding:10px}
@@ -324,7 +324,7 @@
       }).join('') + (hits.length > 12 ? '<div class="gs-empty">还有 ' + (hits.length - 12) + ' 条结果未显示</div>' : '');
     }
     dd.classList.add('open');
-    /* C1 20260913j：动态插入的 data-icon span 需手动触发一次图标水合 */
+    /* C1 20260913k：动态插入的 data-icon span 需手动触发一次图标水合 */
     if (window.lucideAutoRender) window.lucideAutoRender();
   }
   window.__gsOpen = function (fid) { if (typeof imOpenChat === 'function') imOpenChat(fid); };
@@ -380,7 +380,7 @@
 })();
 </script>
 <script>
-/* C1 20260913j：「加好友」「群聊」入口由弹窗改为 tab 页面视图。
+/* C1 20260913k：「加好友」「群聊」入口由弹窗改为 tab 页面视图。
    实现方式：
    1. 把 #imGroupModal / #imAddFriendModal 整体节点搬进侧栏面板宿主（DOM 位置变化、id 不变），
       chat-local.js 的弹窗函数（imOpenGroupCreator / imOpenAddFriendModal 等）原样保留并复用——

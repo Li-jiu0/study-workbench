@@ -5,22 +5,47 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>PPT训练 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913j">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913j">
-<link rel="stylesheet" href="assets/states.css?v=20260913j">
-<link rel="stylesheet" href="assets/polish.css?v=20260913j">
+<link rel="stylesheet" href="assets/common.css?v=20260913k">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913k">
+<link rel="stylesheet" href="assets/states.css?v=20260913k">
+<link rel="stylesheet" href="assets/polish.css?v=20260913k">
+<style>
+  /* ==================== K4：设计基础/实战模板库/技巧提升 → 页面内全屏视图（本页局部样式，20260913K） ====================
+     原为 mini.js 生成的居中 modal（.mz-mask 弹窗），现改造为页面内全屏面板：
+     顶部返回栏 + ESC 退出 + 锁滚动；内容版式对齐「PPT版式库」的卡片呈现风格（纯样式覆盖，不改引擎 DOM）。 */
+  .ppt-view{position:fixed;inset:0;z-index:1900;background:var(--bg);display:none;flex-direction:column}
+  .ppt-view.open{display:flex}
+  .ppt-view-top{flex:none;display:flex;align-items:center;gap:12px;padding:12px 16px;background:linear-gradient(135deg,var(--primary),var(--g2));color:#fff}
+  .ppt-view-top b{flex:1;font-size:15px}
+  .ppt-view-back{background:rgba(255,255,255,.18);border:none;color:#fff;padding:6px 12px;border-radius:8px;font-size:13px;cursor:pointer;line-height:1.4}
+  .ppt-view-body{flex:1;min-height:0;overflow-y:auto;padding:16px}
+  .ppt-view-card{max-width:960px;margin:0 auto}
+  .ppt-view-desc{font-size:13px;color:var(--text-secondary);line-height:1.7;margin:10px 0 16px}
+  .ppt-view-slot{position:relative}
+  /* 引擎载体替换：#mzMask 由全屏弹窗改为面板内普通填充（引擎渲染/判分逻辑不变） */
+  .ppt-view-slot .mz-mask{position:static;inset:auto;background:none;backdrop-filter:none;display:block;padding:0;animation:none}
+  .ppt-view-slot .mz-box{width:100%;max-width:none;max-height:none;border-radius:14px;box-shadow:none;animation:none}
+  .ppt-view-slot .mz-head{display:none} /* 标题/关闭改由返回栏 + 卡片头承担 */
+  .ppt-view-slot .mz-body{padding:0 0 8px}
+  /* 引擎内容版式对齐「PPT版式库」条目卡（padding:16px + var(--bg) 面 + 14px 圆角 + 细边框） */
+  .ppt-view-slot .mz-card{background:var(--bg);border:1px solid var(--border);border-radius:14px}
+  .ppt-view-slot .mz-card-t{background:transparent;color:var(--text);font-size:15px;padding:14px 16px}
+  .ppt-view-slot .mz-card-b{padding:14px 16px;border-top:1px solid var(--border)}
+  .ppt-view-slot .mz-op{background:var(--bg);border-radius:12px}
+  .ppt-view-slot .mz-acts{border-top:none;padding:12px 0 4px}
+</style>
 </head>
 <body class="theme-ppt">
 
 <div class="app">
-<nav class="sidebar"> <div class="logo"> <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div> <div> <div class="logo-text">星途</div> <div class="logo-sub">致追梦的人->修身</div> </div> </div> <div class="nav-list"> <div class="nav-item" data-page="home"> <span class="nav-icon" data-icon="home"></span><span>首页</span> </div> <div class="nav-section">学习模块</div> <div class="nav-item" data-page="cet"> <span class="nav-icon" data-icon="book-open"></span><span>四级备考</span> </div> <div class="nav-item" data-page="exam"> <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span> </div> <div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span> </div> <div class="nav-item active" data-page="ppt"> <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon" data-icon="globe"></span><span>广场</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="book"></span><span>错题本</span> </div> <div class="nav-item" data-page="profile"> <span class="nav-icon" data-icon="user"></span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon" data-icon="settings"></span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak">🔥 连续打卡 0 天</div> </div> </div> </div> </nav>
+<nav class="sidebar"> <div class="logo"> <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div> <div> <div class="logo-text">星途</div> <div class="logo-sub">致追梦的人->修身</div> </div> </div> <div class="nav-list"> <div class="nav-item" data-page="home"> <span class="nav-icon" data-icon="home"></span><span>首页</span> </div> <div class="nav-section">学习模块</div> <div class="nav-item" data-page="cet"> <span class="nav-icon" data-icon="book-open"></span><span>四级备考</span> </div> <div class="nav-item" data-page="exam"> <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span> </div> <div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span> </div> <div class="nav-item active" data-page="ppt"> <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon" data-icon="globe"></span><span>广场</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="book"></span><span>错题本</span> </div> <div class="nav-item" data-page="profile"> <span class="nav-icon" data-icon="user"></span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon" data-icon="settings"></span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak"><span class="nav-icon" data-icon="fire" data-icon-size="12"></span> 连续打卡 0 天</div> </div> </div> </div> </nav>
 
   <div class="main">
 <header class="topbar">
       <div class="topbar-title" id="topbarTitle">PPT训练</div>
       <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
       <div class="gs-wrap" id="gsWrap">
-        <input type="text" class="gs-input" id="gsInput" placeholder="🔍 搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <input type="text" class="gs-input" id="gsInput" placeholder="搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
         <div class="gs-dropdown" id="gsDropdown"></div>
       </div>
       <div class="topbar-stats">
@@ -30,27 +55,17 @@
       </div>
       <div class="topbar-date" id="topbarDate"></div>
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
-      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0">🌙</div>
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="18"></span></div>
     </header>
     <div class="content">
 <div class="page active" id="page-ppt">
         <!-- 【后续扩展点】T7 增量（2026-09-11）：学习概况统计卡（study-stats.js 渲染） -->
-        <!-- 注：原 module-hero 英雄卡已删除（批次 20260913j），统计由下方 study-stats 卡承接 -->
+        <!-- 注：原 module-hero 英雄卡已删除（批次 20260913k），统计由下方 study-stats 卡承接 -->
         <div id="pptStatsCard" class="study-stats-card"></div>
 
-        <!-- 【后续扩展点】T7 增量（P0-13）：🗺 学习路径三关（案例拆解→版式仿写→限时命题，进度持久化） -->
+        <!-- 【后续扩展点】T7 增量（P0-13）：我的作品集（本地保存，标题+笔记+日期；容量受限时提示只存文本） -->
         <div class="pptpath-card">
-          <div class="sprint-head"><span>🗺 学习路径</span><span style="font-size:11px;color:var(--text-secondary);font-weight:400">点击关卡标记完成</span></div>
-          <div class="pptpath-steps">
-            <div class="pptpath-step" id="pptStep1" onclick="window.pptToggleStep(1)"><span class="dot">1</span><span>案例拆解<br>拆解 3 个优秀 PPT</span></div>
-            <div class="pptpath-step" id="pptStep2" onclick="window.pptToggleStep(2)"><span class="dot">2</span><span>版式仿写<br>完成 2 页仿写练习</span></div>
-            <div class="pptpath-step" id="pptStep3" onclick="window.pptToggleStep(3)"><span class="dot">3</span><span>限时命题<br>30 分钟完成命题作品</span></div>
-          </div>
-        </div>
-
-        <!-- 【后续扩展点】T7 增量（P0-13）：📁 我的作品集（本地保存，标题+笔记+日期；容量受限时提示只存文本） -->
-        <div class="pptpath-card">
-          <div class="sprint-head"><span>📁 我的作品集</span>
+          <div class="sprint-head"><span><span class="nav-icon" data-icon="briefcase" data-icon-size="16"></span> 我的作品集</span>
             <button class="btn btn-primary" style="font-size:var(--xt-font-sm);padding:5px 14px" onclick="window.pptAddWork()">+ 添加作品</button>
           </div>
           <div class="pptfolio-grid" id="pptFolioGrid"></div>
@@ -58,7 +73,7 @@
         </div>
 
         <div class="feature-grid">
-          <div class="feature-card" onclick="openMiniQuiz('ppt-design')">
+          <div class="feature-card" onclick="openPptPanel('ppt-design')">
             <div class="feature-icon" data-icon="star"></div>
             <div class="feature-title">设计基础</div>
             <div class="feature-desc">对齐/对比/重复/亲密性四原则，配色字体系统，正反例对比</div>
@@ -75,12 +90,12 @@
             <div class="feature-title">优秀案例拆解</div>
             <div class="feature-desc">麦肯锡/苹果发布会/答辩PPT，逐页分析设计亮点和可借鉴技巧</div><span class="feature-badge tag-primary">已上线</span>
           </div>
-          <div class="feature-card" onclick="openMiniQuiz('ppt-templates')">
+          <div class="feature-card" onclick="openPptPanel('ppt-templates')">
             <div class="feature-icon" data-icon="clipboard"></div>
             <div class="feature-title">实战模板库</div>
             <div class="feature-desc">课堂汇报/答辩/工作汇报/BP/产品介绍/竞聘，结构+版式+配色</div>
           </div>
-          <div class="feature-card" onclick="openMiniQuiz('ppt-tips')">
+          <div class="feature-card" onclick="openPptPanel('ppt-tips')">
             <div class="feature-icon" data-icon="zap"></div>
             <div class="feature-title">技巧提升</div>
             <div class="feature-desc">动画切换、图片处理、图标使用、母版统一、快捷键、演讲配合</div>
@@ -128,6 +143,27 @@
       </div>
       <div class="bottom-more-item" onclick="showAbout()">
         <div class="bm-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div><div class="bm-label">关于</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 设计基础 / 实战模板库 / 技巧提升：页面内全屏视图（原 modal 弹窗改造，20260913K）
+       交互参照「听力训练」面板：顶部返回栏 + ESC 退出 + 锁滚动；
+       题目渲染/判分/解析复用 assets/mini.js 引擎，本页仅替换呈现载体；
+       面板骨架（卡片头 + 简介行 + 内容槽）版式对齐「PPT版式库」页面 -->
+  <div class="ppt-view" id="pptPanel">
+    <div class="ppt-view-top">
+      <button class="ppt-view-back" onclick="closePptPanel()">← 返回</button>
+      <b>PPT训练</b>
+    </div>
+    <div class="ppt-view-body" id="pptPanelBody">
+      <div class="card ppt-view-card">
+        <div class="card-header">
+          <div class="card-title"><span class="title-icon" id="pptPanelIcon"></span><span id="pptPanelTitle">PPT 训练</span></div>
+          <span class="tag tag-primary" id="pptPanelTag">知识卡片</span>
+        </div>
+        <div class="ppt-view-desc" id="pptPanelDesc"></div>
+        <div class="ppt-view-slot" id="pptPanelSlot"></div>
       </div>
     </div>
   </div>
@@ -200,42 +236,25 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913j" defer></script>
-<script src="assets/xt-toast.js?v=20260913j" defer></script>
-<script src="assets/error-boundary.js?v=20260913j" defer></script>
-<script src="assets/app.js?v=20260913j" defer></script>
-<script src="assets/config.js?v=20260913j" defer></script>
-<script src="assets/api.js?v=20260913j" defer></script>
+<script src="assets/icon-map.js?v=20260913k" defer></script>
+<script src="assets/xt-toast.js?v=20260913k" defer></script>
+<script src="assets/error-boundary.js?v=20260913k" defer></script>
+<script src="assets/app.js?v=20260913k" defer></script>
+<script src="assets/config.js?v=20260913k" defer></script>
+<script src="assets/api.js?v=20260913k" defer></script>
 
-<script src="assets/mini-ppt.js?v=20260913j" defer></script>
-<script src="assets/mini.js?v=20260913j" defer></script>
-<script src="assets/study-stats.js?v=20260913j" defer></script>
+<script src="assets/mini-ppt.js?v=20260913k" defer></script>
+<script src="assets/mini.js?v=20260913k" defer></script>
+<script src="assets/study-stats.js?v=20260913k" defer></script>
 <script>
-/* ==================== T7 增量（P0-8/P0-13）：统计卡 + 学习路径闯关 + 作品集 ==================== */
+/* ==================== T7 增量（P0-8/P0-13）：统计卡 + 作品集 ====================
+   【20260913K】原三关卡闯关卡（含进度持久化 localStorage 键）已随卡片下线删除，无死引用。 */
 (function () {
   'use strict';
   function $id(x) { return document.getElementById(x); }
-  var PATH_KEY = 'study_workbench_ppt_path';      // {step1:1, step2:0, step3:0}
   var FOLIO_KEY = 'study_workbench_ppt_portfolio'; // [{title, note, date, thumb?}]
 
-  function loadPath() { try { return JSON.parse(localStorage.getItem(PATH_KEY) || '{}') || {}; } catch (e) { return {}; } }
   function loadFolio() { try { return JSON.parse(localStorage.getItem(FOLIO_KEY) || '[]') || []; } catch (e) { return []; } }
-
-  function renderPath() {
-    var p = loadPath();
-    for (var i = 1; i <= 3; i++) {
-      var el = $id('pptStep' + i);
-      if (el) el.classList.toggle('done', !!p['step' + i]);
-    }
-  }
-
-  window.pptToggleStep = function (n) {
-    var p = loadPath();
-    p['step' + n] = !p['step' + n] ? 1 : 0;
-    try { localStorage.setItem(PATH_KEY, JSON.stringify(p)); } catch (e) { }
-    if (p['step' + n] && window.StudyStats) StudyStats.track('ppt', 'task', { step: n });
-    renderPath();
-  };
 
   function renderFolio() {
     var grid = $id('pptFolioGrid');
@@ -294,9 +313,109 @@
   else document.addEventListener('DOMContentLoaded', boot);
   function boot() {
     if (window.StudyStats) StudyStats.render('pptStatsCard', 'ppt');
-    renderPath();
     renderFolio();
   }
+})();
+</script>
+<script>
+/* ==================== K4：设计基础/实战模板库/技巧提升 → 页面内全屏视图（20260913K） ====================
+   原三入口经 openMiniQuiz 生成居中弹窗（#mzMask），现改由本页 #pptPanel 全屏面板承载：
+   顶部返回栏 + ESC 退出 + 锁滚动，面板骨架与内容版式对齐「PPT版式库」呈现风格（样式见 <style> 区）。
+   题目渲染/判分/解析/学习数据联动逻辑全部保留在 assets/mini.js（openMiniQuiz 引擎），零改动；
+   本脚本只做「呈现载体」替换与入口包装（非本页类目照常透传原引擎）。 */
+(function () {
+  'use strict';
+  var PANEL_ID = 'pptPanel', SLOT_ID = 'pptPanelSlot';
+  var CATS = {
+    'ppt-design': {
+      t: '设计基础', icon: 'star', tag: '随堂小测 · 8 题',
+      desc: '对齐/对比/重复/亲密性四原则，配色与字体系统，正反例对比。随机抽题作答，选择后即时判定并展示解析，答完可查看成绩。'
+    },
+    'ppt-templates': {
+      t: '实战模板库', icon: 'clipboard', tag: '知识卡片',
+      desc: '课堂汇报/答辩/工作汇报/BP/产品介绍/竞聘六类场景的结构、版式与配色要点。点击卡片标题展开或收起阅读。'
+    },
+    'ppt-tips': {
+      t: '技巧提升', icon: 'zap', tag: '知识卡片',
+      desc: '动画切换、图片处理、图标使用、母版统一、快捷键、演讲配合六个专题技巧。点击卡片标题展开或收起阅读。'
+    }
+  };
+  var engineFn = null; // mini.js 引擎原函数（未包装前的引用，防自递归）
+
+  function $id(x) { return document.getElementById(x); }
+  function panelOpen() { var p = $id(PANEL_ID); return !!(p && p.classList.contains('open')); }
+
+  /* 把引擎生成的 #mzMask 迁入全屏面板（仅移动 DOM 节点，不改引擎内部状态） */
+  function mountMask() {
+    var m = $id('mzMask'), slot = $id(SLOT_ID);
+    if (m && slot && m.parentElement !== slot) slot.appendChild(m);
+  }
+  function hidePanel() {
+    var p = $id(PANEL_ID);
+    if (p) {
+      p.classList.remove('open');
+      var s = $id(SLOT_ID);
+      if (s) s.innerHTML = '';
+    }
+    if (window.closeAppModal) { try { window.closeAppModal(PANEL_ID); } catch (e) { /* 忽略 */ } }
+  }
+
+  /* 入口：本页「设计基础」「实战模板库」「技巧提升」三卡片调用（其余类目透传原引擎） */
+  window.openPptPanel = function (id) {
+    var cat = CATS[id];
+    if (!cat) { if (window.openMiniQuiz) window.openMiniQuiz(id); return; }
+    var engine = engineFn || window.openMiniQuiz;
+    if (!engine || engine.__pptPatched) { if (window.showToast) window.showToast('内容加载中，请稍后再试'); return; }
+    var t = $id('pptPanelTitle'); if (t) t.textContent = 'PPT · ' + cat.t;
+    var tag = $id('pptPanelTag'); if (tag) tag.textContent = cat.tag;
+    var desc = $id('pptPanelDesc'); if (desc) desc.textContent = cat.desc;
+    var ic = $id('pptPanelIcon');
+    if (ic) ic.innerHTML = (window.lucideIcon ? window.lucideIcon(cat.icon, 18) : '');
+    var body = $id('pptPanelBody'); if (body) body.scrollTop = 0;
+    var p = $id(PANEL_ID); if (p) p.classList.add('open');
+    if (window.openAppModal) { try { window.openAppModal(PANEL_ID); } catch (e) { /* 忽略 */ } } // 锁滚动，与听力面板一致
+    engine(id);   // 引擎照常渲染题目/解析/判分（逻辑零改动）
+    mountMask();  // 呈现载体迁入全屏面板
+  };
+
+  window.closePptPanel = function () {
+    if (window.openMiniQuiz && window.openMiniQuiz.__close) window.openMiniQuiz.__close(); // 引擎清理会话/移除 mzMask
+    hidePanel();
+  };
+
+  function setup() {
+    // 入口改指新视图：包装 openMiniQuiz，本页三个类目转由全屏面板承载，其余类目透传
+    var raw = window.openMiniQuiz;
+    if (raw && !raw.__pptPatched) {
+      engineFn = raw;
+      var wrapped = function (id) {
+        if (CATS[id]) window.openPptPanel(id);
+        else raw(id);
+      };
+      wrapped.__pick = raw.__pick;
+      wrapped.__next = raw.__next;
+      wrapped.__again = raw.__again;
+      wrapped.__finish = raw.__finish;
+      wrapped.__close = raw.__close;
+      wrapped.__pptPatched = true;
+      window.openMiniQuiz = wrapped;
+    }
+    // 兜底同步：引擎内部可能重建（再来一组）或移除（点关闭）#mzMask，观察 body 统一联动
+    if (window.MutationObserver) {
+      new MutationObserver(function () {
+        if (!panelOpen()) return;
+        if ($id('mzMask')) mountMask();
+        else hidePanel();
+      }).observe(document.body, { childList: true });
+    }
+    // ESC 退出全屏视图（对齐听力面板交互）
+    document.addEventListener('keydown', function (e) {
+      if ((e.key === 'Escape' || e.keyCode === 27) && panelOpen()) window.closePptPanel();
+    });
+  }
+
+  if (document.readyState !== 'loading') setup();
+  else document.addEventListener('DOMContentLoaded', setup);
 })();
 </script>
 </body>

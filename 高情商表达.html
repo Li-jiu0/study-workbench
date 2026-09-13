@@ -5,10 +5,90 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>高情商表达 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913j">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913j">
-<link rel="stylesheet" href="assets/states.css?v=20260913j">
-<link rel="stylesheet" href="assets/polish.css?v=20260913j">
+<link rel="stylesheet" href="assets/common.css?v=20260913k">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913k">
+<link rel="stylesheet" href="assets/states.css?v=20260913k">
+<link rel="stylesheet" href="assets/polish.css?v=20260913k">
+<style>
+  /* ==================== 高情商表达 · K 批改造（20260913K） ====================
+     ①案例拆解库/i人伙伴团：原 mini.js / i-partner.js 生成的居中弹窗改为页面内全屏面板
+       （顶部返回栏 + ESC 退出 + 锁滚动）；引擎渲染/判分/聊天逻辑零改动，仅替换呈现载体。
+     ②原「i人专区」菜单删除，内容并入「i人伙伴团」面板的心法区（重构为图标卡宫格）。
+     ③角色扮演训练：布局显示重构（对齐站内面板/卡片设计令牌），功能 id（rpCurrent/rpDialogue/rpInput/rpEval）与交互逻辑不变。 */
+  .gq-view{position:fixed;inset:0;z-index:1900;background:var(--bg);display:none;flex-direction:column}
+  .gq-view.open{display:flex}
+  .gq-view-top{flex:none;display:flex;align-items:center;gap:12px;padding:12px 16px;background:linear-gradient(135deg,var(--primary),var(--g2));color:#fff}
+  .gq-view-top b{flex:1;font-size:15px}
+  .gq-view-back{background:rgba(255,255,255,.18);border:none;color:#fff;padding:6px 12px;border-radius:8px;font-size:13px;cursor:pointer;line-height:1.4}
+  .gq-view-scroll{flex:1;min-height:0;overflow-y:auto;padding:16px 16px 24px}
+
+  /* 案例拆解库：mini.js 引擎生成的 #mzMask 由全屏弹窗改为面板内普通填充 */
+  .gq-cases-slot{flex:1;min-height:0;position:relative;overflow:hidden}
+  .gq-cases-slot .mz-mask{position:absolute;inset:0;z-index:auto;display:flex;align-items:stretch;justify-content:stretch;padding:0;background:transparent;backdrop-filter:none;animation:none}
+  .gq-cases-slot .mz-box{width:100%;max-width:none;height:100%;max-height:none;border-radius:0;box-shadow:none;animation:none}
+  .gq-cases-slot .mz-head{display:none} /* 标题/关闭改由 gq-view-top 返回栏承担 */
+  .gq-cases-slot .mz-body{flex:1}
+
+  /* i人伙伴团：i-partner.js 生成的 #ipMask 由遮罩弹窗改为面板内填充（含聊天室） */
+  .gq-ip-slot{position:relative;height:min(640px,72vh);min-height:480px;margin:0 0 20px;border:1px solid var(--border);border-radius:16px;overflow:hidden;background:var(--card);box-shadow:0 6px 18px -8px rgba(0,0,0,.12)}
+  .gq-ip-slot .ip-mask{position:absolute;inset:0;z-index:auto;display:flex;align-items:stretch;justify-content:stretch;padding:0;background:transparent;backdrop-filter:none}
+  .gq-ip-slot .ip-panel{width:100%;max-width:none;height:100%;max-height:none;border-radius:0;box-shadow:none}
+  .gq-ip-slot .ip-close{display:none} /* 关闭改由返回栏承担 */
+
+  /* i人心法（原「i人专区」内容并入）：图标+标题+正文的卡宫格 */
+  .gq-mindset{margin-bottom:20px}
+  .gq-mindset-head{display:flex;align-items:center;gap:8px;margin:0 0 4px;font-size:16px;font-weight:800;color:var(--text)}
+  .gq-mindset-head .nav-icon{color:var(--primary)}
+  .gq-mindset-sub{font-size:var(--xt-font-sm);color:var(--text-secondary);margin:0 0 12px}
+  .gq-mindset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+  .gq-mindset-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;transition:border-color .15s,transform .15s}
+  .gq-mindset-card:hover{border-color:var(--primary);transform:translateY(-2px)}
+  .gq-mindset-ic{width:34px;height:34px;border-radius:10px;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+  .gq-mindset-t{font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px}
+  .gq-mindset-b{font-size:13px;line-height:1.7;color:var(--text-secondary)}
+
+  /* 角色扮演训练：布局重排 */
+  .rp-topbar{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .rp-back{border:1px solid var(--border);background:var(--card);color:var(--text);padding:7px 14px;border-radius:10px;font-size:13px;cursor:pointer}
+  .rp-back:hover{border-color:var(--primary);color:var(--primary)}
+  .rp-topbar b{flex:1;font-size:18px;font-weight:800;color:var(--text)}
+  .rp-mode-tag{font-size:12px;padding:3px 10px;border-radius:20px;background:var(--primary-light);color:var(--primary);font-weight:600}
+  #page-roleplay-demo .player-container{max-width:760px;margin:0 auto;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 10px 30px -18px rgba(0,0,0,.25)}
+  #page-roleplay-demo .player-header{display:flex;align-items:center;justify-content:space-between;padding:0 0 12px;border-bottom:1px solid var(--border);margin-bottom:14px}
+  #page-roleplay-demo .player-title{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:800;color:var(--text)}
+  #page-roleplay-demo .player-title .nav-icon{color:var(--primary)}
+  #page-roleplay-demo .player-progress-text{font-size:var(--xt-font-sm);color:var(--text-secondary)}
+  #page-roleplay-demo .player-stage{display:flex;flex-direction:column;align-items:center;gap:16px}
+  #page-roleplay-demo .player-chars{display:flex;justify-content:center;gap:32px;width:100%}
+  #page-roleplay-demo .player-dialogue{width:100%;max-width:520px}
+  #page-roleplay-demo .rp-tip{display:flex;align-items:flex-start;gap:8px;width:100%;max-width:520px;padding:10px 14px;background:var(--primary-light);border-radius:12px;font-size:var(--xt-font-sm);color:var(--text-secondary);line-height:1.6}
+  #page-roleplay-demo .rp-tip .nav-icon{flex:none;color:var(--primary);margin-top:2px}
+  #page-roleplay-demo .player-controls{display:flex;align-items:center;gap:10px;width:100%;max-width:520px;margin:4px auto 0}
+  #page-roleplay-demo .player-btn{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:var(--bg);border:1px solid var(--border);cursor:pointer;transition:border-color .15s}
+  #page-roleplay-demo .player-btn:hover{border-color:var(--primary)}
+  #page-roleplay-demo .player-btn.play{background:var(--primary);border-color:var(--primary);color:#fff;width:48px;height:48px}
+  #page-roleplay-demo .player-progress{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+  #page-roleplay-demo .player-progress-fill{height:100%;background:linear-gradient(135deg,var(--primary),var(--g2));border-radius:3px}
+  #page-roleplay-demo .player-time{font-size:12px;color:var(--text-secondary);white-space:nowrap}
+  #page-roleplay-demo .player-record-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;border-radius:12px;border:1px dashed var(--primary);background:var(--primary-light);color:var(--primary);font-size:14px;font-weight:600;cursor:pointer}
+  #page-roleplay-demo .eval-panel{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;max-width:760px;margin:16px auto 0}
+  #page-roleplay-demo .eval-title{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:800;color:var(--text);margin-bottom:14px}
+  #page-roleplay-demo .eval-title .nav-icon{color:var(--primary)}
+  #page-roleplay-demo .eval-scores{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+  #page-roleplay-demo .eval-score-item{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+  #page-roleplay-demo .eval-score-label{font-size:12px;color:var(--text-secondary);margin-bottom:6px}
+  #page-roleplay-demo .eval-stars{display:flex;gap:2px;color:#F5A623}
+  #page-roleplay-demo .eval-feedback{border-radius:12px;padding:12px 14px;margin-bottom:10px}
+  #page-roleplay-demo .eval-feedback.good{background:rgba(82,196,26,.1)}
+  #page-roleplay-demo .eval-feedback.tip{background:var(--primary-light)}
+  #page-roleplay-demo .eval-feedback-title{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;margin-bottom:6px}
+  #page-roleplay-demo .eval-feedback.good .eval-feedback-title{color:var(--success,#52C41A)}
+  #page-roleplay-demo .eval-feedback.tip .eval-feedback-title{color:var(--primary)}
+  #page-roleplay-demo .eval-feedback-content{font-size:13px;line-height:1.7;color:var(--text-secondary)}
+  #page-roleplay-demo .eval-reference{background:var(--bg);border:1px dashed var(--border);border-radius:12px;padding:12px 14px;margin-bottom:6px}
+  #page-roleplay-demo .eval-reference-title{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--primary);margin-bottom:6px}
+  #page-roleplay-demo .eval-reference-text{font-size:13px;line-height:1.7;color:var(--text-secondary)}
+</style>
 </head>
 <body class="theme-comm">
 
@@ -77,7 +157,7 @@
       <div class="topbar-title" id="topbarTitle">高情商表达</div>
       <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
       <div class="gs-wrap" id="gsWrap">
-        <input type="text" class="gs-input" id="gsInput" placeholder="🔍 搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <input type="text" class="gs-input" id="gsInput" placeholder="搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
         <div class="gs-dropdown" id="gsDropdown"></div>
       </div>
       <div class="topbar-stats">
@@ -87,7 +167,7 @@
       </div>
       <div class="topbar-date" id="topbarDate"></div>
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
-      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0">🌙</div>
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="16"></span></div>
     </header>
     <div class="content">
 <div class="page active" id="page-comm">
@@ -109,17 +189,12 @@
             <span class="feature-badge tag-primary">已上线</span>
             <span class="feature-badge" id="commScenesTodayBadge" style="background:#F3E5F5;color:#7B1FA2;margin-left:4px">今日待学 0</span>
           </div>
-          <div class="feature-card" onclick="openMiniQuiz('comm-cases')">
+          <div class="feature-card" onclick="openGqCasesView()">
             <div class="feature-icon" data-icon="search" data-icon-size="20"></div>
             <div class="feature-title">案例拆解库</div>
             <div class="feature-desc">真实职场场景逐句分析，哪句好哪句有问题一目了然</div>
           </div>
-          <div class="feature-card" onclick="openMiniQuiz('comm-introvert')">
-            <div class="feature-icon" data-icon="message-circle" data-icon-size="20"></div>
-            <div class="feature-title">i人沟通专区</div>
-            <div class="feature-desc">不用变e人！i人专属沟通策略，提前准备、文字辅助</div>
-          </div>
-          <div class="feature-card" onclick="IPartner.open()">
+          <div class="feature-card" onclick="openGqIpartnerView()">
             <div class="feature-icon" data-icon="users" data-icon-size="20"></div>
             <div class="feature-title">i人伙伴团</div>
             <div class="feature-desc">5个不同性格虚拟伙伴，文字聊天练社交，安全不尴尬</div>
@@ -135,9 +210,15 @@
       </div>
 
 <div class="page" id="page-roleplay-demo">
+        <!-- 【20260913K】布局显示重构：新增面板式返回栏，播放器/评定区对齐站内卡片风格（功能 id 与交互逻辑不变） -->
+        <div class="rp-topbar">
+          <button class="rp-back" onclick="navigateTo('comm')">← 返回</button>
+          <b>角色扮演训练</b>
+          <span class="rp-mode-tag">体验版 · 中级</span>
+        </div>
         <div class="player-container">
           <div class="player-header">
-            <div class="player-title">💼 同事拖延催进度 · 中级</div>
+            <div class="player-title"><span class="nav-icon" data-icon="briefcase" data-icon-size="16"></span>同事拖延催进度 · 中级</div>
             <div class="player-progress-text">第 <span id="rpCurrent">1</span> / 5 轮</div>
           </div>
           <div class="player-stage">
@@ -228,21 +309,22 @@
             <div class="player-dialogue" id="rpDialogue">
               <div class="chat-bubble ai">哎呀，那个数据啊……我这两天太忙了，还没弄完呢，你再等等呗。</div>
             </div>
-            <div style="width:100%;max-width:500px;padding:10px 14px;background:rgba(255,255,255,0.7);border-radius:12px;font-size:var(--xt-font-sm);color:var(--text-secondary)">
-              💡 <strong>提示：</strong>先共情对方的忙碌，再表达你的紧迫性，最后给出解决方案
+            <div class="rp-tip">
+              <span class="nav-icon" data-icon="lightbulb" data-icon-size="15"></span>
+              <span><strong>提示：</strong>先共情对方的忙碌，再表达你的紧迫性，最后给出解决方案</span>
             </div>
           </div>
           <div class="player-controls">
-            <div class="player-btn" onclick="showToast('上一轮')">⏮️</div>
-            <div class="player-btn play" onclick="showToast('播放对话')">▶️</div>
-            <div class="player-btn" onclick="showToast('下一轮')">⏭️</div>
+            <div class="player-btn" onclick="showToast('上一轮')" title="上一轮"><span class="nav-icon" data-icon="chevron-left" data-icon-size="18"></span></div>
+            <div class="player-btn play" onclick="showToast('播放对话')" title="播放对话"><span class="nav-icon" data-icon="play" data-icon-size="18"></span></div>
+            <div class="player-btn" onclick="showToast('下一轮')" title="下一轮"><span class="nav-icon" data-icon="chevron-right" data-icon-size="18"></span></div>
             <div class="player-progress"><div class="player-progress-fill" style="width:20%"></div></div>
             <div class="player-time">第1轮</div>
           </div>
         </div>
         <div style="text-align:center;margin:20px 0">
           <button class="player-record-btn" onclick="showToast('语音输入功能开发中，体验版请用文字输入')">
-            🎤 语音回答
+            <span class="nav-icon" data-icon="mic" data-icon-size="15"></span>语音回答
           </button>
         </div>
         <div class="card">
@@ -254,25 +336,25 @@
         </div>
         <div id="rpEval" style="display:none">
           <div class="eval-panel">
-            <div class="eval-title">📊 本轮评定</div>
+            <div class="eval-title"><span class="nav-icon" data-icon="chart-bar" data-icon-size="16"></span>本轮评定</div>
             <div class="eval-scores">
-              <div class="eval-score-item"><div class="eval-score-label">共情度</div><div class="eval-stars">⭐⭐⭐</div></div>
-              <div class="eval-score-item"><div class="eval-score-label">策略性</div><div class="eval-stars">⭐⭐⭐⭐</div></div>
-              <div class="eval-score-item"><div class="eval-score-label">逻辑清晰</div><div class="eval-stars">⭐⭐⭐⭐</div></div>
-              <div class="eval-score-item"><div class="eval-score-label">用词得体</div><div class="eval-stars">⭐⭐⭐</div></div>
-              <div class="eval-score-item"><div class="eval-score-label">情绪稳定</div><div class="eval-stars">⭐⭐⭐⭐</div></div>
-              <div class="eval-score-item"><div class="eval-score-label">目标达成</div><div class="eval-stars">⭐⭐⭐</div></div>
+              <div class="eval-score-item"><div class="eval-score-label">共情度</div><div class="eval-stars"><span class="nav-icon" data-icon="star" data-icon-size="14"></span><span class="nav-icon" data-icon="star" data-icon-size="14"></span><span class="nav-icon" data-icon="star" data-icon-size="14"></span></div></div>
+              <div class="eval-score-item"><div class="eval-score-label">策略性</div><div class="eval-stars"><span class="nav-icon" data-icon="star" data-icon-size="14"></span><span class="nav-icon" data-icon="star" data-icon-size="14"></span><span class="nav-icon" data-icon="star" data-icon-size="14"></span><span class="nav-icon" data-icon="star" data-icon-size="14"></span></div></div>
+              <div class="eval-score-item"><div class="eval-score-label">逻辑清晰</div><div class="eval-stars"><span class="nav-icon" data-icon="star" data-icon-size="14"></span><span class="nav-icon" data-icon="star" data-icon-size="14"></span><span class="nav-icon" data-icon="star" data-icon-size="14"></span><span class="nav-icon" data-icon="star" data-icon-size="14"></span></div></div>
+              <div class="eval-score-item"><div class="eval-score-label">用词得体</div><div class="eval-stars"><span class="nav-icon" data-icon="star" data-icon-size="14"></span><span class="nav-icon" data-icon="star" data-icon-size="14"></span><span class="nav-icon" data-icon="star" data-icon-size="14"></span></div></div>
+              <div class="eval-score-item"><div class="eval-score-label">情绪稳定</div><div class="eval-stars"><span class="nav-icon" data-icon="star" data-icon-size="14"></span><span class="nav-icon" data-icon="star" data-icon-size="14"></span><span class="nav-icon" data-icon="star" data-icon-size="14"></span><span class="nav-icon" data-icon="star" data-icon-size="14"></span></div></div>
+              <div class="eval-score-item"><div class="eval-score-label">目标达成</div><div class="eval-stars"><span class="nav-icon" data-icon="star" data-icon-size="14"></span><span class="nav-icon" data-icon="star" data-icon-size="14"></span><span class="nav-icon" data-icon="star" data-icon-size="14"></span></div></div>
             </div>
             <div class="eval-feedback good">
-              <div class="eval-feedback-title">✅ 做得好</div>
+              <div class="eval-feedback-title"><span class="nav-icon" data-icon="check" data-icon-size="14"></span>做得好</div>
               <div class="eval-feedback-content">明确表达了时间紧迫性（"明天就截止了"），让对方知道事情的严重性。</div>
             </div>
             <div class="eval-feedback tip">
-              <div class="eval-feedback-title">💡 改进建议</div>
+              <div class="eval-feedback-title"><span class="nav-icon" data-icon="lightbulb" data-icon-size="14"></span>改进建议</div>
               <div class="eval-feedback-content">开头可以先共情对方（"我知道你最近忙"），避免直接指责引起抵触；可以给出具体解决方案（"要不要我帮你一起弄"），把对方拉到同一战线。</div>
             </div>
             <div class="eval-reference">
-              <div class="eval-reference-title">💡 参考回答</div>
+              <div class="eval-reference-title"><span class="nav-icon" data-icon="lightbulb" data-icon-size="14"></span>参考回答</div>
               <div class="eval-reference-text">"小王，我知道你最近手头事多，辛苦了。那个数据我这边确实等着用，明天就是截止日期了。你看现在主要卡在哪了？要不要我帮你一起弄？争取今天能出来。"</div>
             </div>
             <div style="display:flex;gap:10px;margin-top:14px">
@@ -280,9 +362,6 @@
               <button class="btn btn-primary btn-sm" onclick="nextRoleplayRound()">下一轮 →</button>
             </div>
           </div>
-        </div>
-        <div style="text-align:center;margin-top:20px">
-          <button class="btn btn-outline" onclick="navigateTo('comm')">← 返回高情商表达</button>
         </div>
       </div>
     </div>
@@ -364,6 +443,38 @@
     </div>
   </div>
 
+  <!-- 【20260913K】案例拆解库：页面内全屏面板（原 mini.js 居中弹窗改造；题目渲染/判分逻辑保留在 assets/mini.js，零改动） -->
+  <div class="gq-view" id="gqCasesView">
+    <div class="gq-view-top">
+      <button class="gq-view-back" onclick="closeGqCasesView()">← 返回</button>
+      <b>案例拆解库</b>
+    </div>
+    <div class="gq-cases-slot" id="gqCasesSlot"></div>
+  </div>
+
+  <!-- 【20260913K】i人伙伴团：页面内全屏面板（原 i-partner.js 遮罩弹窗改造，聊天逻辑零改动）；
+       原「i人专区」菜单已删除，其内容重构为下方「i人心法」卡宫格并入本面板 -->
+  <div class="gq-view" id="gqIpartnerView">
+    <div class="gq-view-top">
+      <button class="gq-view-back" onclick="closeGqIpartnerView()">← 返回</button>
+      <b>i人伙伴团</b>
+    </div>
+    <div class="gq-view-scroll">
+      <div class="gq-ip-slot" id="gqIpartnerSlot"></div>
+      <div class="gq-mindset">
+        <div class="gq-mindset-head"><span class="nav-icon" data-icon="sparkles" data-icon-size="17"></span>i人心法 · 沟通专区</div>
+        <p class="gq-mindset-sub">不用变e人！i人专属沟通策略，提前准备、文字辅助。选好伙伴先聊两句，再看看下面几条心法。</p>
+        <div class="gq-mindset-grid">
+          <div class="gq-mindset-card"><div class="gq-mindset-ic"><span class="nav-icon" data-icon="zap" data-icon-size="17"></span></div><div class="gq-mindset-t">承认“充电模式”</div><div class="gq-mindset-b">i人不是不会社交，而是社交后需要独处回血。把高强度社交排开，预留独处时间，状态反而更稳。</div></div>
+          <div class="gq-mindset-card"><div class="gq-mindset-ic"><span class="nav-icon" data-icon="message-square" data-icon-size="17"></span></div><div class="gq-mindset-t">一对一的优势</div><div class="gq-mindset-b">i人更适合深度一对一交流：主动约“边喝咖啡边聊”，比大场面更能发挥你的倾听与思考优势。</div></div>
+          <div class="gq-mindset-card"><div class="gq-mindset-ic"><span class="nav-icon" data-icon="pencil" data-icon-size="17"></span></div><div class="gq-mindset-t">小步骤热身</div><div class="gq-mindset-b">大型场合先从“提前准备2个问题”开始，用提问代替发言，慢慢找到参与节奏，不必逼自己喧哗。</div></div>
+          <div class="gq-mindset-card"><div class="gq-mindset-ic"><span class="nav-icon" data-icon="target" data-icon-size="17"></span></div><div class="gq-mindset-t">把“内向”转卖点</div><div class="gq-mindset-b">面试/自我介绍时强调：思考先行、善于倾听、专注深入——这些恰是很多岗位需要的。</div></div>
+          <div class="gq-mindset-card"><div class="gq-mindset-ic"><span class="nav-icon" data-icon="clock" data-icon-size="17"></span></div><div class="gq-mindset-t">电量管家小技巧</div><div class="gq-mindset-b">重要社交前不安排太多事；中间借口“去倒杯水”给自己缓冲；结束后允许自己安静半小时。</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast提示 -->
   <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center"></div>
 
@@ -384,13 +495,13 @@
         <div class="ai-title">AI学习助手</div>
         <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
       </div>
-      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录">🧹</div>
-      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板">✕</div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录"><span class="nav-icon" data-icon="eraser" data-icon-size="15"></span></div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板"><span class="nav-icon" data-icon="close" data-icon-size="15"></span></div>
     </div>
     <div class="ai-messages" id="aiMessages"></div>
     <div class="ai-input-row">
       <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
-      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()">➤</div>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()"><span class="nav-icon" data-icon="send" data-icon-size="15"></span></div>
     </div>
   </div>
 
@@ -398,17 +509,17 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913j" defer></script>
-<script src="assets/xt-toast.js?v=20260913j" defer></script>
-<script src="assets/error-boundary.js?v=20260913j" defer></script>
-<script src="assets/app.js?v=20260913j" defer></script>
-<script src="assets/config.js?v=20260913j" defer></script>
-<script src="assets/api.js?v=20260913j" defer></script>
+<script src="assets/icon-map.js?v=20260913k" defer></script>
+<script src="assets/xt-toast.js?v=20260913k" defer></script>
+<script src="assets/error-boundary.js?v=20260913k" defer></script>
+<script src="assets/app.js?v=20260913k" defer></script>
+<script src="assets/config.js?v=20260913k" defer></script>
+<script src="assets/api.js?v=20260913k" defer></script>
 
-<script src="assets/mini-comm.js?v=20260913j" defer></script>
-<script src="assets/mini.js?v=20260913j" defer></script>
-<script src="assets/i-partner.js?v=20260913j" defer></script>
-<script src="assets/study-stats.js?v=20260913j" defer></script>
+<script src="assets/mini-comm.js?v=20260913k" defer></script>
+<script src="assets/mini.js?v=20260913k" defer></script>
+<script src="assets/i-partner.js?v=20260913k" defer></script>
+<script src="assets/study-stats.js?v=20260913k" defer></script>
 <script>
 /* ==================== T7 增量（P0-8）：学习概况统计卡（study-stats.js 渲染） ====================
    说明：本页原情景问答题卡（P0-11 情景题 + AI 点评）已按功能删减 B3 下线，
@@ -420,6 +531,100 @@
   function boot() {
     if (window.StudyStats) StudyStats.render('eqStatsCard', 'eq');
   }
+})();
+</script>
+<script>
+/* ==================== 20260913K：弹窗 → 页面内全屏面板（呈现载体替换，引擎零改动） ====================
+   ①案例拆解库：assets/mini.js 的 openMiniQuiz('comm-cases') 引擎照常渲染，生成的 #mzMask 迁入
+     #gqCasesView 全屏面板（顶部返回栏 / ESC 退出 / openAppModal 锁滚动）。
+   ②i人伙伴团：assets/i-partner.js 的 IPartner.open() 照常渲染，生成的 #ipMask 迁入
+     #gqIpartnerView 全屏面板；关闭统一走返回栏/ESC。
+   ③原「i人专区」菜单已删除，内容重构为 i人伙伴团面板内的「i人心法」卡宫格。 */
+(function () {
+  'use strict';
+  var CASES_ID = 'comm-cases';
+  var engineFn = null; // mini.js 引擎原函数（未包装前的引用，防自递归）
+
+  function $id(x) { return document.getElementById(x); }
+  function panelOpen(pid) { var p = $id(pid); return !!(p && p.classList.contains('open')); }
+  function openPanel(pid) {
+    var p = $id(pid);
+    if (p) p.classList.add('open');
+    if (window.openAppModal) { try { window.openAppModal(pid); } catch (e) { /* 忽略 */ } }
+  }
+  function closePanel(pid) {
+    var p = $id(pid);
+    if (p) p.classList.remove('open');
+    if (window.closeAppModal) { try { window.closeAppModal(pid); } catch (e) { /* 忽略 */ } }
+  }
+
+  /* 把引擎生成的弹窗根节点迁入面板槽位（仅移动 DOM 节点，不改引擎内部状态） */
+  function mountInto(maskId, slotId) {
+    var m = $id(maskId), s = $id(slotId);
+    if (m && s && m.parentElement !== s) s.appendChild(m);
+  }
+
+  /* ---------- ① 案例拆解库（mini.js 引擎承载） ---------- */
+  window.openGqCasesView = function () {
+    var engine = engineFn || window.openMiniQuiz;
+    if (!engine) { if (window.showToast) window.showToast('内容加载中，请稍后再试'); return; }
+    openPanel('gqCasesView');
+    engine(CASES_ID);   // 引擎照常渲染题目/解析/判分（逻辑零改动）
+    mountInto('mzMask', 'gqCasesSlot');
+  };
+  window.closeGqCasesView = function () {
+    if (window.openMiniQuiz && window.openMiniQuiz.__close) window.openMiniQuiz.__close(); // 引擎清理会话/移除 mzMask
+    closePanel('gqCasesView');
+    var s = $id('gqCasesSlot'); if (s) s.innerHTML = '';
+  };
+
+  /* ---------- ② i人伙伴团（i-partner.js 承载） ---------- */
+  window.openGqIpartnerView = function () {
+    openPanel('gqIpartnerView');
+    if (window.IPartner && window.IPartner.open) window.IPartner.open(); // 伙伴选择/聊天室渲染逻辑零改动
+    mountInto('ipMask', 'gqIpartnerSlot');
+  };
+  window.closeGqIpartnerView = function () {
+    if (window.IPartner && window.IPartner.close) window.IPartner.close(); // 引擎移除 ipMask
+    closePanel('gqIpartnerView');
+  };
+
+  function setup() {
+    // 入口改指新视图：包装 openMiniQuiz，本页「comm-cases」转由全屏面板承载，其余类目透传
+    var raw = window.openMiniQuiz;
+    if (raw && !raw.__gqPatched) {
+      engineFn = raw;
+      var wrapped = function (id) {
+        if (id === CASES_ID) window.openGqCasesView();
+        else raw(id);
+      };
+      ['__pick', '__next', '__again', '__finish', '__close'].forEach(function (k) {
+        if (raw[k]) wrapped[k] = raw[k];
+      });
+      wrapped.__gqPatched = true;
+      window.openMiniQuiz = wrapped;
+    }
+    // 兜底同步：引擎内部可能重建（再来一组）或移除 #mzMask，观察 body 统一联动
+    if (window.MutationObserver) {
+      new MutationObserver(function () {
+        if (panelOpen('gqCasesView')) {
+          if ($id('mzMask')) mountInto('mzMask', 'gqCasesSlot');
+          else window.closeGqCasesView();
+        }
+        if (panelOpen('gqIpartnerView') && $id('ipMask')) mountInto('ipMask', 'gqIpartnerSlot');
+      }).observe(document.body, { childList: true });
+    }
+    // ESC 退出全屏面板（对齐站内面板交互）
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' || e.keyCode === 27) {
+        if (panelOpen('gqCasesView')) window.closeGqCasesView();
+        else if (panelOpen('gqIpartnerView')) window.closeGqIpartnerView();
+      }
+    });
+  }
+
+  if (document.readyState !== 'loading') setup();
+  else document.addEventListener('DOMContentLoaded', setup);
 })();
 </script>
 </body>

@@ -109,14 +109,15 @@ function renderHomeOnlineNav() {
   el.style.display = '';
   el.innerHTML =
     '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 2px">' +
-    '<span style="font-size:13px;font-weight:700;color:var(--text);display:inline-flex;align-items:center;gap:4px">💬 在线互动</span>' +
+    '<span style="font-size:13px;font-weight:700;color:var(--text);display:inline-flex;align-items:center;gap:4px"><span class="nav-icon" data-icon="message-square" data-icon-size="14"></span> 在线互动</span>' +
     '<span style="font-size:11px;color:var(--text-secondary)">多人在线（好友私信 / 博客 / AI）</span></div>' +
     '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-    '<a class="chip" href="私聊.html" style="text-decoration:none">💬 好友私信</a>' +
-    '<a class="chip" href="学习博客.html#mine" style="text-decoration:none">🗂️ 我的发贴·回收站</a>' +
-    '<a class="chip" href="学习博客.html#favorite" style="text-decoration:none">🔖 我的收藏</a>' +
-    '<a class="chip" href="学习博客.html" style="text-decoration:none">🌍 广场</a>' +
+    '<a class="chip" href="私聊.html" style="text-decoration:none"><span class="nav-icon" data-icon="message-square" data-icon-size="12"></span> 好友私信</a>' +
+    '<a class="chip" href="学习博客.html#mine" style="text-decoration:none"><span class="nav-icon" data-icon="inbox" data-icon-size="12"></span> 我的发贴·回收站</a>' +
+    '<a class="chip" href="学习博客.html#favorite" style="text-decoration:none"><span class="nav-icon" data-icon="bookmark" data-icon-size="12"></span> 我的收藏</a>' +
+    '<a class="chip" href="学习博客.html" style="text-decoration:none"><span class="nav-icon" data-icon="globe" data-icon-size="12"></span> 广场</a>' +
     '</div>';
+  if (window.lucideAutoRender) window.lucideAutoRender(); // K6：动态插入的 data-icon 图标重渲染
 }
 
 /* ---------- 当前登录用户（服务端资料，替代 appData.profile） ---------- */
@@ -189,21 +190,21 @@ async function renderProfilePage() {
       <div style="display:flex;align-items:center;gap:16px;padding:6px 0;flex-wrap:wrap">
         <div class="profile-avatar-lg">${u.avatarUrl ? '<img src="' + apiFileUrl(u.avatarUrl) + '" alt="头像">' : esc((u.nickname || '学').slice(0, 1))}</div>
         <div style="flex:1;min-width:180px"><div style="font-size:18px;font-weight:800;color:var(--text)">${esc(u.nickname)}</div><div style="font-size:13px;color:var(--text-secondary);margin-top:4px">${esc(u.motto || '')}</div></div>
-        <button class="btn btn-outline" onclick="editProfile()">✏️ 编辑资料</button>
-        <button class="btn btn-danger" onclick="doLogout()">🚪 退出登录</button>
+        <button class="btn btn-outline" onclick="editProfile()"><span class="nav-icon" data-icon="pen" data-icon-size="14"></span> 编辑资料</button>
+        <button class="btn btn-danger" onclick="doLogout()"><span class="nav-icon" data-icon="logout" data-icon-size="14"></span> 退出登录</button>
       </div>
       <div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">✅ 多用户在线版：资料保存在服务器数据库；头像为文件上传（不再 base64 入库）。</div>
     </div>
     <div class="card"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="18"></span></span>发贴统计</div></div>
       <div class="profile-grid">
-        ${[['📝', s.published || 0, '已发布'], ['💾', s.draft || 0, '草稿'], ['📁', s.archived || 0, '已归档'], ['👍', s.likes || 0, '总点赞'], ['💬', s.comments || 0, '总评论'], ['👁', s.views || 0, '总阅读']].map(function (x) {
-          return '<div class="profile-stat"><div class="ps-num">' + x[0] + ' ' + x[1] + '</div><div class="ps-label">' + x[2] + '</div></div>';
+        ${[['pen', s.published || 0, '已发布'], ['save', s.draft || 0, '草稿'], ['inbox', s.archived || 0, '已归档'], ['thumbs-up', s.likes || 0, '总点赞'], ['message-square', s.comments || 0, '总评论'], ['eye', s.views || 0, '总阅读']].map(function (x) {
+          return '<div class="profile-stat"><div class="ps-num"><span class="nav-icon" data-icon="' + x[0] + '" data-icon-size="14"></span> ' + x[1] + '</div><div class="ps-label">' + x[2] + '</div></div>';
         }).join('')}
       </div>
-      <div style="margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📚 发贴分类分布</div>${catBars}</div>
+      <div style="margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px"><span class="nav-icon" data-icon="book-open" data-icon-size="14"></span> 发贴分类分布</div>${catBars}</div>
       <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
-        <button class="btn btn-outline" onclick="exportAllNotesMd()">📄 导出全部 Markdown</button>
-        <button class="btn btn-outline" onclick="navigateTo('blog')">📝 去写发贴</button>
+        <button class="btn btn-outline" onclick="exportAllNotesMd()"><span class="nav-icon" data-icon="download" data-icon-size="14"></span> 导出全部 Markdown</button>
+        <button class="btn btn-outline" onclick="navigateTo('blog')"><span class="nav-icon" data-icon="pen" data-icon-size="14"></span> 去写发贴</button>
       </div>
     </div>`;
   if (window.lucideAutoRender) window.lucideAutoRender(); // J 批次：动态 data-icon span 重渲染
@@ -231,10 +232,10 @@ async function renderUserHome(userId, box) {
     '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-secondary);font-size:13px">TA 还没有公开发贴</div>';
   var actionBtns = '<button class="btn btn-outline" onclick="location.href=' + "'个人中心.html'" + '">← 回我的主页</button>';
   if (isFriend) {
-    actionBtns += ' <button class="btn btn-outline" onclick="chatWithUser(' + userId + ',\'' + esc(u.nickname) + '\')">💬 发消息</button>';
-    actionBtns += ' <button class="btn btn-danger" onclick="removeFriend(' + userId + ',\'' + esc(u.nickname) + '\')">🗑 删除好友</button>';
+    actionBtns += ' <button class="btn btn-outline" onclick="chatWithUser(' + userId + ',\'' + esc(u.nickname) + '\')"><span class="nav-icon" data-icon="message-square" data-icon-size="14"></span> 发消息</button>';
+    actionBtns += ' <button class="btn btn-danger" onclick="removeFriend(' + userId + ',\'' + esc(u.nickname) + '\')"><span class="nav-icon" data-icon="delete" data-icon-size="14"></span> 删除好友</button>';
   } else {
-    actionBtns += ' <button class="btn btn-primary" onclick="addFriend(' + userId + ')">👤 加为好友</button>';
+    actionBtns += ' <button class="btn btn-primary" onclick="addFriend(' + userId + ')"><span class="nav-icon" data-icon="user" data-icon-size="14"></span> 加为好友</button>';
   }
   var s = u.stats || {};
   
@@ -262,10 +263,10 @@ async function renderUserHome(userId, box) {
     // ===== 创作数据（服务端可核算；学习时长等本机数据不对外） =====
     '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="18"></span></span>创作数据</div></div>' +
     '<div class="profile-grid">' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">📝 ' + (s.published || 0) + '</div><div class="ps-label">公开发贴</div></div>' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">👍 ' + (s.likes || 0) + '</div><div class="ps-label">获赞</div></div>' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">👁 ' + (s.views || 0) + '</div><div class="ps-label">总阅读</div></div>' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">💬 ' + (s.comments || 0) + '</div><div class="ps-label">获评论</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)"><span class="nav-icon" data-icon="pen" data-icon-size="14"></span> ' + (s.published || 0) + '</div><div class="ps-label">公开发贴</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)"><span class="nav-icon" data-icon="thumbs-up" data-icon-size="14"></span> ' + (s.likes || 0) + '</div><div class="ps-label">获赞</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)"><span class="nav-icon" data-icon="eye" data-icon-size="14"></span> ' + (s.views || 0) + '</div><div class="ps-label">总阅读</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)"><span class="nav-icon" data-icon="message-square" data-icon-size="14"></span> ' + (s.comments || 0) + '</div><div class="ps-label">获评论</div></div>' +
     '</div></div>' +
 
     // ===== 成就徽章墙（按公开创作数据） =====
@@ -375,22 +376,22 @@ function noteCardHtml(n, opts) {
     return '<span class="nc-tag" onclick="event.stopPropagation();blogTagFilter=\'' + esc(t) + '\';showBlogView(\'list\')">#' + esc(t) + '</span>';
   }).join('');
   var cmt = (n.commentsCount != null) ? n.commentsCount : ((n.comments || []).length);
-  var stats = '<span>👁 ' + (n.views || 0) + '</span><span>👍 ' + (n.likes || 0) + '</span><span>💬 ' + cmt + '</span>';
+  var stats = '<span><span class="nav-icon" data-icon="eye" data-icon-size="12"></span> ' + (n.views || 0) + '</span><span><span class="nav-icon" data-icon="thumbs-up" data-icon-size="12"></span> ' + (n.likes || 0) + '</span><span><span class="nav-icon" data-icon="message-square" data-icon-size="12"></span> ' + cmt + '</span>';
   var author = '';
   if (n.author && (!CURRENT_USER || n.author.id !== CURRENT_USER.id)) {
     var avUrl = n.author.avatarUrl ? apiFileUrl(n.author.avatarUrl) : '';
     var avHtml = avUrl
       ? '<img src="' + avUrl + '" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;cursor:pointer" onclick="event.stopPropagation();openUserHome(' + n.author.id + ')">'
-      : '<span style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + n.author.id + ')">👤 </span>';
+      : '<span style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + n.author.id + ')"><span class="nav-icon" data-icon="user" data-icon-size="14"></span> </span>';
     author = '<span onclick="event.stopPropagation();openUserHome(' + n.author.id + ')" style="cursor:pointer">' + avHtml + esc(n.author.nickname) + '</span>';
   }
   var acts = '';
   if (opts.mine) {
     var arch = n.status === 'archived';
     acts = '<div class="nc-actions" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">' +
-      '<button class="btn btn-outline" style="padding:5px 10px;font-size:12px;flex:1" onclick="event.stopPropagation();startEditNote(' + n.id + ')">✏️ 编辑</button>' +
-      '<button class="btn btn-outline" style="padding:5px 10px;font-size:12px;flex:1" onclick="event.stopPropagation();' + (arch ? 'unarchiveNote' : 'archiveNote') + '(' + n.id + ')">' + (arch ? '📤 恢复' : '📁 归档') + '</button>' +
-      '<button class="btn btn-danger" style="padding:5px 10px;font-size:12px;flex:1" onclick="event.stopPropagation();deleteNote(' + n.id + ')">🗑️ 删除</button></div>';
+      '<button class="btn btn-outline" style="padding:5px 10px;font-size:12px;flex:1" onclick="event.stopPropagation();startEditNote(' + n.id + ')"><span class="nav-icon" data-icon="pen" data-icon-size="12"></span> 编辑</button>' +
+      '<button class="btn btn-outline" style="padding:5px 10px;font-size:12px;flex:1" onclick="event.stopPropagation();' + (arch ? 'unarchiveNote' : 'archiveNote') + '(' + n.id + ')">' + (arch ? '<span class="nav-icon" data-icon="send" data-icon-size="12"></span> 恢复' : '<span class="nav-icon" data-icon="inbox" data-icon-size="12"></span> 归档') + '</button>' +
+      '<button class="btn btn-danger" style="padding:5px 10px;font-size:12px;flex:1" onclick="event.stopPropagation();deleteNote(' + n.id + ')"><span class="nav-icon" data-icon="delete" data-icon-size="12"></span> 删除</button></div>';
   }
   return '<div class="note-card" onclick="openBlogDetail(' + n.id + ')">' +
     noteCoverHtml(n) +
@@ -427,6 +428,7 @@ async function renderBlogList(reset) {
     var html = blogFeed.list.map(function (n) { return noteCardHtml(n); }).join('');
     if (blogFeed.hasMore) html += '<div id="blogSentinel" style="grid-column:1/-1;text-align:center;padding:16px;color:var(--text-secondary);font-size:13px">加载更多…</div>';
     grid.innerHTML = html;
+    if (window.lucideAutoRender) window.lucideAutoRender(); // K6：卡片统计行 data-icon 重渲染
     var empty = document.getElementById('blogListEmpty'); if (empty) empty.style.display = d.total ? 'none' : 'block';
     observeBlogSentinel();
   } catch (e) {
@@ -464,18 +466,21 @@ async function renderBlogMine() {
       favorite: fav.items.length,
       trash: trashItems.length
     };
-    var labels = [['all', '全部'], ['published', '📤 已发布'], ['draft', '💾 草稿'], ['archived', '📁 归档'], ['favorite', '🔖 收藏'], ['trash', '🗑️ 回收站']];
+    var labels = [['all', '全部'], ['published', '<span class="nav-icon" data-icon="send" data-icon-size="12"></span> 已发布'], ['draft', '<span class="nav-icon" data-icon="save" data-icon-size="12"></span> 草稿'], ['archived', '<span class="nav-icon" data-icon="inbox" data-icon-size="12"></span> 归档'], ['favorite', '<span class="nav-icon" data-icon="bookmark" data-icon-size="12"></span> 收藏'], ['trash', '<span class="nav-icon" data-icon="delete" data-icon-size="12"></span> 回收站']];
     tabs.innerHTML = labels.map(function (x) {
       return '<span class="chip ' + (blogMineType === x[0] ? 'active' : '') + '" onclick="blogMineType=\'' + x[0] + '\';renderBlogMine()">' + x[1] + ' ' + counts[x[0]] + '</span>';
     }).join('');
+    if (window.lucideAutoRender) window.lucideAutoRender(); // K6：动态插入的 data-icon 图标重渲染
     if (blogMineType === 'trash') {
       grid.innerHTML = trashItems.map(function (n) { return trashCardHtml(n); }).join('') ||
         '<div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:13px;grid-column:1/-1">回收站是空的，删除的发贴会在这里，可恢复或彻底删除</div>';
+      if (window.lucideAutoRender) window.lucideAutoRender();
       return;
     }
     var arr = (blogMineType === 'favorite') ? fav.items : (blogMineType === 'all' ? items : items.filter(function (n) { return n.status === blogMineType; }));
     grid.innerHTML = arr.map(function (n) { return noteCardHtml(n, { mine: n.userId === (CURRENT_USER && CURRENT_USER.id) }); }).join('') ||
       '<div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:13px;grid-column:1/-1">还没有相关的发贴</div>';
+    if (window.lucideAutoRender) window.lucideAutoRender();
   } catch (e) { showToast('⚠️ 我的文章加载失败：' + e.message); }
 }
 
@@ -486,10 +491,10 @@ function trashCardHtml(n) {
     '<div class="note-body">' +
     '<div class="nc-title">' + esc(n.title) + '</div>' +
     '<div class="nc-excerpt">' + esc(n.excerpt) + '</div>' +
-    '<div class="nc-meta"><span>🗑️ 删除于 ' + fmtTime(n.deletedAt || n.updatedAt) + '</span></div>' +
+    '<div class="nc-meta"><span><span class="nav-icon" data-icon="delete" data-icon-size="12"></span> 删除于 ' + fmtTime(n.deletedAt || n.updatedAt) + '</span></div>' +
     '<div class="nc-actions" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;gap:8px">' +
-    '<button class="btn btn-outline" style="padding:5px 10px;font-size:12px;flex:1" onclick="restoreTrashNote(' + n.id + ')">♻️ 恢复</button>' +
-    '<button class="btn btn-danger" style="padding:5px 10px;font-size:12px;flex:1" onclick="purgeTrashNote(' + n.id + ')">🗑️ 彻底删除</button></div>' +
+    '<button class="btn btn-outline" style="padding:5px 10px;font-size:12px;flex:1" onclick="restoreTrashNote(' + n.id + ')"><span class="nav-icon" data-icon="rotate-ccw" data-icon-size="12"></span> 恢复</button>' +
+    '<button class="btn btn-danger" style="padding:5px 10px;font-size:12px;flex:1" onclick="purgeTrashNote(' + n.id + ')"><span class="nav-icon" data-icon="delete" data-icon-size="12"></span> 彻底删除</button></div>' +
     '</div></div>';
 }
 async function restoreTrashNote(id) {
@@ -524,17 +529,72 @@ function renderBlogDetail() {
   var tags = (n.tags || []).map(function (t) {
     return '<span class="nd-tag" onclick="openBlogTag(\'' + esc(t) + '\')">#' + esc(t) + '</span>';
   }).join('');
-  var comments = (n.comments || []).map(function (c) {
-    var canDel = CURRENT_USER && (c.userId === CURRENT_USER.id || isMine);
-    var replyMark = c.replyTo ? '<span style="font-size:11px;color:var(--text-muted);margin:0 4px">回复 @' + esc(c.replyTo) + '</span>' : '';
-    return '<div class="bc-item"><div class="bc-avatar" style="cursor:pointer" onclick="openUserHome(' + c.userId + ')">' + esc((c.nickname || ' ').slice(0, 1)) + '</div>' +
+  // K5-云贴评论渲染重构（批次 20260913K）：
+  // (a) 头像 bug 根因修复——服务端 comments 一直带 avatarUrl（c.author.avatar），
+  //     旧渲染只取 nickname 首字符导致头像永远显示不出来；现 avatarUrl 存在优先 <img>，空值兜底首字符。
+  // (b) replyTo 嵌套——兼容 c.replyTo（昵称）与 c.parentId（服务端字段）双通道，
+  //     子楼层渲染为被回复评论下方缩进楼层（class="bc-item bc-reply"），多级回复统一挂到顶层祖先。
+  // (c) 评论总数 >5 条折叠——默认显示前 3 条 + 「展开全部 N 条评论」按钮（class="bc-fold-btn"）。
+  var rawComments = (n.comments || []).slice();
+  var commentById = {};
+  rawComments.forEach(function (c) { commentById[c.id] = c; });
+  // 计算每条评论的被回复对象（只按昵称/parentId 匹配，找不到则视为顶层）
+  var parentMap = {};
+  var replyNameOf = function (c) {
+    if (c.replyTo) return c.replyTo;
+    if (c.parentId != null && commentById[c.parentId]) return commentById[c.parentId].nickname || '';
+    return '';
+  };
+  rawComments.forEach(function (c) {
+    var t = replyNameOf(c);
+    if (!t) { parentMap[c.id] = null; return; }
+    var hit = null;
+    for (var i = 0; i < rawComments.length; i++) {
+      var p = rawComments[i];
+      if (p.id !== c.id && (p.nickname || '') === t) { hit = p; break; }
+    }
+    parentMap[c.id] = hit;
+  });
+  var topComments = [], childMap = {};
+  rawComments.forEach(function (c) {
+    var p = parentMap[c.id], guard = 0;
+    while (p && parentMap[p.id] && guard++ < 10) p = parentMap[p.id]; // 多级回复收敛到顶层
+    if (p && p.id !== c.id) { (childMap[p.id] = childMap[p.id] || []).push(c); }
+    else topComments.push(c);
+  });
+  var canDelOf = function (c) { return CURRENT_USER && (c.userId === CURRENT_USER.id || isMine); };
+  var bcItemHtml = function (c, nested) {
+    var avUrl = c.avatarUrl ? apiFileUrl(c.avatarUrl) : '';
+    var avatarHtml = avUrl
+      ? '<img src="' + avUrl + '" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block">'
+      : esc((c.nickname || '学').slice(0, 1));
+    // 顶层评论若带回复标记（replyTo 未匹配到楼层时）保留「回复 @xx」提示
+    var replyMark = (!nested && !parentMap[c.id] && replyNameOf(c))
+      ? '<span style="font-size:11px;color:var(--text-muted);margin:0 4px">回复 @' + esc(replyNameOf(c)) + '</span>' : '';
+    var kids = (childMap[c.id] || []).map(function (k) { return bcItemHtml(k, true); }).join('');
+    return '<div class="bc-item' + (nested ? ' bc-reply' : '') + '"' + (nested ? ' style="margin-left:34px"' : '') + '>' +
+      '<div class="bc-avatar" style="cursor:pointer;overflow:hidden" onclick="openUserHome(' + c.userId + ')">' + avatarHtml + '</div>' +
       '<div class="bc-body"><div class="bc-head"><span style="cursor:pointer" onclick="openUserHome(' + c.userId + ')">' + esc(c.nickname) + '</span>' + replyMark + '<span>' + fmtTime(c.time) + '</span></div>' +
-      '<div class="bc-text">' + esc(c.text) + '</div></div>' +
+      '<div class="bc-text">' + esc(c.text) + '</div>' + kids + '</div>' +
       '<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">' +
       '<button style="background:none;border:none;color:var(--primary);cursor:pointer;font-size:11px;padding:0" onclick="setReplyTo(' + c.id + ',\'' + esc(c.nickname) + '\')">回复</button>' +
-      (canDel ? '<button style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:11px;padding:0" onclick="deleteBlogComment(' + c.id + ')">删除</button>' : '') +
+      (canDelOf(c) ? '<button style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:11px;padding:0" onclick="deleteBlogComment(' + c.id + ')">删除</button>' : '') +
       '</div></div>';
-  }).join('') || '<div style="color:var(--text-secondary);font-size:12px;padding:6px 0">暂无评论，来抢沙发～</div>';
+  };
+  var comments;
+  if (!topComments.length) {
+    comments = '<div style="color:var(--text-secondary);font-size:12px;padding:6px 0">暂无评论，来抢沙发～</div>';
+  } else {
+    var visibleHtml = topComments.slice(0, 3).map(function (c) { return bcItemHtml(c, false); }).join('');
+    var restHtml = topComments.slice(3).map(function (c) { return bcItemHtml(c, false); }).join('');
+    if (rawComments.length > 5 && restHtml) {
+      comments = visibleHtml +
+        '<div id="bcFoldedBox" style="display:none">' + restHtml + '</div>' +
+        '<button class="bc-fold-btn" data-total="' + rawComments.length + '" style="background:none;border:none;color:var(--primary);cursor:pointer;font-size:12px;padding:6px 0" onclick="toggleBcFold()">展开全部 ' + rawComments.length + ' 条评论</button>';
+    } else {
+      comments = visibleHtml + restHtml;
+    }
+  }
   var pg = function (nd, dir) {
     return '<button ' + (nd ? '' : 'disabled') + ' onclick="' + (nd ? 'openBlogDetail(' + nd.id + ')' : '') + '">' +
       '<span class="pg-label">' + (dir === 'prev' ? '← 上一篇' : '下一篇 →') + '</span><span class="pg-title">' + (nd ? esc(nd.title) : '已到尽头') + '</span></button>';
@@ -545,16 +605,16 @@ function renderBlogDetail() {
       <div class="nd-title">${esc(n.title)}</div>
       <div class="nd-meta">
         <span class="nd-cat">${cat.icon} ${cat.name}</span>
-        <span style="cursor:pointer" onclick="openUserHome(${n.author ? n.author.id : 0})">👤 ${n.author ? esc(n.author.nickname) : '未知'}</span>
-        <span>👁 ${n.views || 0} 次阅读</span>
-        <span>🕒 更新于 ${fmtTime(n.updatedAt || n.createdAt)}</span>
-        <span>${n.privacy === 'private' ? '🔒 私密' : '🌍 公开'}</span>
+        <span style="cursor:pointer" onclick="openUserHome(${n.author ? n.author.id : 0})"><span class="nav-icon" data-icon="user" data-icon-size="12"></span> ${n.author ? esc(n.author.nickname) : '未知'}</span>
+        <span><span class="nav-icon" data-icon="eye" data-icon-size="12"></span> ${n.views || 0} 次阅读</span>
+        <span><span class="nav-icon" data-icon="clock" data-icon-size="12"></span> 更新于 ${fmtTime(n.updatedAt || n.createdAt)}</span>
+        <span>${n.privacy === 'private' ? '<span class="nav-icon" data-icon="locked" data-icon-size="12"></span> 私密' : '<span class="nav-icon" data-icon="globe" data-icon-size="12"></span> 公开'}</span>
       </div>
       <div class="note-interact">
-        <button class="ni-btn ${n.liked ? 'active' : ''}" onclick="toggleNoteLike()">👍 赞 ${n.likes || 0}</button>
+        <button class="ni-btn ${n.liked ? 'active' : ''}" onclick="toggleNoteLike()"><span class="nav-icon" data-icon="thumbs-up" data-icon-size="14"></span> 赞 ${n.likes || 0}</button>
         <button class="ni-btn ${fav ? 'active' : ''}" onclick="toggleNoteFavorite()">${fav ? '★ 已收藏' : '☆ 收藏'}</button>
-        <button class="ni-btn" onclick="exportCurrentNoteMd()">📄 导出 Markdown</button>
-        ${isMine ? '<button class="ni-btn" onclick="startEditNote(' + n.id + ')">✏️ 编辑</button>' : ''}
+        <button class="ni-btn" onclick="exportCurrentNoteMd()"><span class="nav-icon" data-icon="download" data-icon-size="14"></span> 导出 Markdown</button>
+        ${isMine ? '<button class="ni-btn" onclick="startEditNote(' + n.id + ')"><span class="nav-icon" data-icon="pen" data-icon-size="14"></span> 编辑</button>' : ''}
         <div class="spacer" style="flex:1"></div>
       </div>
       ${tags ? '<div class="note-detail-tags">' + tags + '</div>' : ''}
@@ -562,7 +622,7 @@ function renderBlogDetail() {
     <div class="note-detail-box"><div class="nd-content">${reactMarkdown(n.content)}</div></div>
     ${pager}
     <div class="blog-comments">
-      <div class="bc-title">💬 评论区（${(n.comments || []).length}）</div>
+      <div class="bc-title"><span class="nav-icon" data-icon="message-square" data-icon-size="16"></span> 评论区（${(n.comments || []).length}）</div>
       <div class="bc-input-row">
         <div id="replyHint" style="display:none;font-size:12px;color:var(--primary);margin-bottom:4px">回复 @<span id="replyToName"></span> <a href="javascript:void(0)" onclick="cancelReply()" style="color:var(--text-muted);margin-left:8px">取消</a></div>
         <input type="text" id="bcInput" placeholder="留言讨论知识点，共同学得更牢…">
@@ -572,6 +632,20 @@ function renderBlogDetail() {
     </div>`;
   var inp = document.getElementById('bcInput');
   if (inp) inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') addBlogComment(); });
+  if (window.lucideAutoRender) window.lucideAutoRender(); // K6：动态插入的 data-icon 图标重渲染
+}
+
+/* K5：评论区折叠展开（配合 renderBlogDetail 的 bc-fold-btn） */
+function toggleBcFold() {
+  var box = document.getElementById('bcFoldedBox');
+  if (!box) return;
+  var btn = document.querySelector('.bc-fold-btn');
+  var opening = box.style.display === 'none';
+  box.style.display = opening ? 'block' : 'none';
+  if (btn) {
+    var total = btn.getAttribute('data-total') || '';
+    btn.textContent = opening ? '收起评论' : '展开全部 ' + total + ' 条评论';
+  }
 }
 
 async function toggleNoteLike() {
@@ -638,7 +712,7 @@ async function startEditNote(id) {
     document.getElementById('beCover').value = n.cover || '';
     document.getElementById('beTags').value = (n.tags || []).join(', ');
     document.getElementById('blogEditorInput').value = n.content || '';
-    document.getElementById('blogEditStatus').textContent = '✏️ 正在编辑：' + n.title + '（创建于 ' + fmtTime(n.createdAt) + '）';
+    document.getElementById('blogEditStatus').textContent = '正在编辑：' + n.title + '（创建于 ' + fmtTime(n.createdAt) + '）';
     updateEditorPreview();
     showBlogView('edit');
   } catch (e) { showToast('⚠️ ' + e.message); }
@@ -699,14 +773,14 @@ function renderBlogStats() {
   box.innerHTML = `
     <div class="card"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="18"></span></span>博客数据统计</div></div>
       <div class="blog-grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">
-        ${[['📝', s.published || 0, '已发布'], ['💾', s.draft || 0, '草稿'], ['📁', s.archived || 0, '已归档'], ['👍', s.likes || 0, '总点赞'], ['💬', s.comments || 0, '总评论'], ['👁', s.views || 0, '总阅读']].map(function (x) {
-          return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center"><div style="font-size:22px;font-weight:800;color:var(--text)">' + x[0] + ' ' + x[1] + '</div><div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + x[2] + '</div></div>';
+        ${[['pen', s.published || 0, '已发布'], ['save', s.draft || 0, '草稿'], ['inbox', s.archived || 0, '已归档'], ['thumbs-up', s.likes || 0, '总点赞'], ['message-square', s.comments || 0, '总评论'], ['eye', s.views || 0, '总阅读']].map(function (x) {
+          return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center"><div style="font-size:22px;font-weight:800;color:var(--text)"><span class="nav-icon" data-icon="' + x[0] + '" data-icon-size="16"></span> ' + x[1] + '</div><div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + x[2] + '</div></div>';
         }).join('')}
       </div>
-      <div style="margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📚 发贴分类分布</div>${catBars}</div>
+      <div style="margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px"><span class="nav-icon" data-icon="book-open" data-icon-size="14"></span> 发贴分类分布</div>${catBars}</div>
       <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
-        <button class="btn btn-outline" onclick="location.href='个人中心.html'">👤 前往个人中心</button>
-        <button class="btn btn-outline" onclick="exportAllNotesMd()">📄 导出全部 Markdown</button>
+        <button class="btn btn-outline" onclick="location.href='个人中心.html'"><span class="nav-icon" data-icon="user" data-icon-size="14"></span> 前往个人中心</button>
+        <button class="btn btn-outline" onclick="exportAllNotesMd()"><span class="nav-icon" data-icon="download" data-icon-size="14"></span> 导出全部 Markdown</button>
       </div>
     </div>`;
   if (window.lucideAutoRender) window.lucideAutoRender(); // J 批次：动态 data-icon span 重渲染
@@ -755,7 +829,8 @@ function globalSearch(kw) {
   if (!dd) return;
   kw = (kw || '').trim().toLowerCase();
   if (!kw) { dd.classList.remove('open'); dd.innerHTML = ''; return; }
-  dd.innerHTML = '<div class="gs-empty">🔍 搜索中…</div>';
+  dd.innerHTML = '<div class="gs-empty"><span class="nav-icon" data-icon="search" data-icon-size="16"></span> 搜索中…</div>';
+  if (window.lucideAutoRender) window.lucideAutoRender();
   dd.classList.add('open');
   clearTimeout(gsTimer);
   gsTimer = setTimeout(async function () {
@@ -768,7 +843,7 @@ function globalSearch(kw) {
       var ctx = (n.excerpt || (n.tags || []).join(' / ') || '');
       var hitIdx = (n.excerpt || '').toLowerCase().indexOf(kw);
       var desc = ctx + (n.author ? ' · 👤 ' + n.author.nickname : '');
-      return { icon: '📝', title: n.title, desc: desc, action: "if(document.getElementById('page-blog')){closeGsDropdown();openBlogDetail(" + n.id + ");}else{location.href='学习博客.html#note=" + n.id + "';}" };
+      return { icon: '<span class="nav-icon" data-icon="pen" data-icon-size="16"></span>', title: n.title, desc: desc, action: "if(document.getElementById('page-blog')){closeGsDropdown();openBlogDetail(" + n.id + ");}else{location.href='学习博客.html#note=" + n.id + "';}" };
     });
     var noteCount = results.length;
     MODULE_INDEX.forEach(function (m) {
@@ -778,17 +853,18 @@ function globalSearch(kw) {
     });
     var shown = results.slice(0, 9);
     var html = '';
-    if (noteCount > 0) html += '<div class="gs-group">📚 公开发贴（' + noteCount + '）</div>';
+    if (noteCount > 0) html += '<div class="gs-group"><span class="nav-icon" data-icon="book-open" data-icon-size="14"></span> 公开发贴（' + noteCount + '）</div>';
     html += shown.slice(0, noteCount).map(function (r) {
       return '<div class="gs-item" onclick="' + r.action.replace(/"/g, '&quot;') + '"><div class="gs-item-icon">' + r.icon + '</div><div class="gs-item-main"><div class="gs-item-title">' + gsHighlight(r.title, kw) + '</div><div class="gs-item-desc">' + gsEscape(r.desc) + '</div></div></div>';
     }).join('');
-    if (shown.length > noteCount) html += '<div class="gs-group">🧭 学习模块</div>';
+    if (shown.length > noteCount) html += '<div class="gs-group"><span class="nav-icon" data-icon="map" data-icon-size="14"></span> 学习模块</div>';
     html += shown.slice(noteCount).map(function (r) {
       return '<div class="gs-item" onclick="navigateTo(\'' + (MODULE_INDEX.find(function (m) { return m.title === r.title; }) || {}).page + '\');closeGsDropdown()"><div class="gs-item-icon">' + r.icon + '</div><div class="gs-item-main"><div class="gs-item-title">' + gsHighlight(r.title, kw) + '</div><div class="gs-item-desc">' + gsEscape(r.desc) + '</div></div></div>';
     }).join('');
     if (!shown.length) html = '<div class="gs-empty">没有找到「' + gsEscape(kw) + '」相关内容<br>试试：四级 / 行测 / 面试 / PPT / 发贴关键词</div>';
     else if (results.length > 9) html += '<div class="gs-empty">还有 ' + (results.length - 9) + ' 条结果未显示，换个更具体的关键词试试</div>';
     dd.innerHTML = html;
+    if (window.lucideAutoRender) window.lucideAutoRender(); // K6：搜索结果 data-icon 重渲染
     dd.classList.add('open');
   }, 250);
 }
@@ -950,10 +1026,11 @@ function initNotifyBell() {
   if (!bar || document.getElementById('notifyBell')) return;
   var el = document.createElement('div');
   el.id = 'notifyBell'; el.className = 'notify-bell'; el.title = '消息通知';
-  el.innerHTML = '🔔<span class="notify-badge" id="notifyBadge" style="display:none"></span>';
+  el.innerHTML = '<span class="nav-icon" data-icon="bell" data-icon-size="18"></span><span class="notify-badge" id="notifyBadge" style="display:none"></span>';
   el.addEventListener('click', function (e) { e.stopPropagation(); toggleNotifyPanel(); });
   var anchor = bar.querySelector('.topbar-stats');
   if (anchor) bar.insertBefore(el, anchor); else bar.appendChild(el);
+  if (window.lucideAutoRender) window.lucideAutoRender(); // K6：动态插入的 data-icon 图标重渲染
 }
 function renderNotifyBadge() {
   var badge = document.getElementById('notifyBadge'); if (!badge || !CURRENT_USER) return;
@@ -966,7 +1043,7 @@ async function loadNotifications(manual) {
     var d = await api('/api/notifications');
     if (CURRENT_USER) { CURRENT_USER.unread = d.unread; renderNotifyBadge(); }
     if (!manual && notifyLastUnread >= 0 && d.unread > notifyLastUnread) {
-      showToast('🔔 收到新的点赞 / 评论消息');
+      showToast('收到新的点赞 / 评论消息');
     }
     notifyLastUnread = d.unread;
     var panel = document.getElementById('notifyPanel');
@@ -986,20 +1063,22 @@ function toggleNotifyPanel() {
       document.removeEventListener('click', closePanel);
     }
   });
-  panel.innerHTML = '<div class="gs-empty">🔔 加载中…</div>';
+  panel.innerHTML = '<div class="gs-empty"><span class="nav-icon" data-icon="bell" data-icon-size="16"></span> 加载中…</div>';
+  if (window.lucideAutoRender) window.lucideAutoRender();
   loadNotifications(true).then(function (d) { if (d) renderNotifyPanel(d.items); });
 }
 function renderNotifyPanel(items) {
   var panel = document.getElementById('notifyPanel'); if (!panel) return;
-  var html = '<div class="notify-head"><b>🔔 消息通知</b><button class="btn btn-outline" style="padding:4px 10px;font-size:12px" onclick="markAllRead()">全部已读</button></div>';
+  var html = '<div class="notify-head"><b><span class="nav-icon" data-icon="bell" data-icon-size="16"></span> 消息通知</b><button class="btn btn-outline" style="padding:4px 10px;font-size:12px" onclick="markAllRead()">全部已读</button></div>';
   if (!items || !items.length) html += '<div class="gs-empty">暂无消息，收到点赞 / 评论会在这里提醒</div>';
   else html += items.map(function (x) {
-    var icon = x.type === 'like' ? '👍' : '💬';
+    var icon = '<span class="nav-icon" data-icon="' + (x.type === 'like' ? 'thumbs-up' : 'message-square') + '" data-icon-size="14" style="vertical-align:-2px"></span>';
     var txt = icon + ' <b>' + esc(x.actor) + '</b> ' + (x.type === 'like' ? '赞了你的发贴' : '评论了你的发贴') + '《' + esc(x.noteTitle) + '》';
     return '<div class="notify-item' + (x.isRead ? '' : ' unread') + '" onclick="openNotifyNote(' + (x.noteId || 0) + ')">' +
       '<div class="notify-text">' + txt + '</div><div class="notify-time">' + fmtTime(x.createdAt) + '</div></div>';
   }).join('');
   panel.innerHTML = html;
+  if (window.lucideAutoRender) window.lucideAutoRender(); // K6：动态插入的 data-icon 图标重渲染
 }
 function openNotifyNote(noteId) {
   var panel = document.getElementById('notifyPanel'); if (panel) panel.classList.remove('open');
@@ -1018,10 +1097,11 @@ function initChatEntry() {
   if (!bar || document.getElementById('chatEntry')) return;
   var el = document.createElement('div');
   el.id = 'chatEntry'; el.className = 'notify-bell'; el.title = '私信';
-  el.innerHTML = '💬<span class="notify-badge" id="chatBadge" style="display:none"></span>';
+  el.innerHTML = '<span class="nav-icon" data-icon="message-square" data-icon-size="18"></span><span class="notify-badge" id="chatBadge" style="display:none"></span>';
   el.addEventListener('click', function () { location.href = '私聊.html'; });
   var anchor = bar.querySelector('.topbar-stats');
   if (anchor) bar.insertBefore(el, anchor); else bar.appendChild(el);
+  if (window.lucideAutoRender) window.lucideAutoRender(); // K6：动态插入的 data-icon 图标重渲染
 }
 function renderChatBadge(n) {
   var b = document.getElementById('chatBadge'); if (!b) return;
@@ -1038,7 +1118,7 @@ async function loadChatUnread() {
     // 收到新私信提醒（仅当前不在私聊页时，且「提醒与通知」里开启）
     var chatOn = !(typeof getSetting === 'function') || getSetting('chatNotify') !== false;
     if (chatOn && chatUnreadPrev >= 0 && (d.total || 0) > chatUnreadPrev && !location.pathname.endsWith('私聊.html')) {
-      if (typeof showToast === 'function') showToast('💬 收到新的私信，点右上角 💬 查看');
+      if (typeof showToast === 'function') showToast('收到新的私信，点右上角消息图标查看');
       try {
         if ('Notification' in window && Notification.permission === 'granted') {
           new Notification('星途 · 新私信', { body: '有人给你发来新消息', tag: 'chat' });
@@ -1140,7 +1220,7 @@ function _tagChips(s) {
 }
 function _goalLine(g) {
   g = (g || '').trim();
-  return g ? '<div class="pp-goal">🎯 学习目标：<b>' + esc(g) + '</b></div>' : '';
+  return g ? '<div class="pp-goal"><span class="nav-icon" data-icon="target" data-icon-size="14" style="vertical-align:-2px"></span> 学习目标：<b>' + esc(g) + '</b></div>' : '';
 }
 
 function _peSource() {
@@ -1174,8 +1254,8 @@ function _renderProfileLocal(box, p) {
     (p.bio ? '<div style="font-size:13px;color:var(--text);margin-top:6px;line-height:1.6">' + esc(p.bio) + '</div>' : '') + _profileMeta(p.gender, p.birthday, p.city) +
     _tagChips(p.tags) + _goalLine(p.goal) +
     '</div>' +
-    '<button class="btn btn-outline" onclick="editProfile()">✏️ 编辑资料</button>' +
-    '<button class="btn btn-danger" onclick="doLogout()">🚪 退出登录</button></div>' +
+    '<button class="btn btn-outline" onclick="editProfile()"><span class="nav-icon" data-icon="pen" data-icon-size="14"></span> 编辑资料</button>' +
+    '<button class="btn btn-danger" onclick="doLogout()"><span class="nav-icon" data-icon="logout" data-icon-size="14"></span> 退出登录</button></div>' +
     '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">📱 当前为本地单机模式，资料保存在本机浏览器。在线登录后资料/发贴会存到服务器并可多端同步。</div></div>' +
     _localNotesCard();
   if (window.lucideAutoRender) window.lucideAutoRender(); // J 批次：动态 data-icon span 重渲染
@@ -1191,12 +1271,12 @@ function _localNotesCard() {
   var acc = d.totalQuestions > 0 ? Math.round(d.correctQuestions / d.totalQuestions * 100) : 0;
   return '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="18"></span></span>本机发贴统计</div></div>' +
     '<div class="profile-grid">' +
-    [['📝', pub.length, '已发布'], ['💾', draft.length, '草稿'], ['👍', likes, '点赞'], ['👁', views, '阅读']].map(function (x) {
-      return '<div class="profile-stat"><div class="ps-num">' + x[0] + ' ' + x[1] + '</div><div class="ps-label">' + x[2] + '</div></div>';
+    [['pen', pub.length, '已发布'], ['save', draft.length, '草稿'], ['thumbs-up', likes, '点赞'], ['eye', views, '阅读']].map(function (x) {
+      return '<div class="profile-stat"><div class="ps-num"><span class="nav-icon" data-icon="' + x[0] + '" data-icon-size="14"></span> ' + x[1] + '</div><div class="ps-label">' + x[2] + '</div></div>';
     }).join('') + '</div>' +
     '<div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">' +
-    '<button class="btn btn-outline" onclick="exportAllNotesMd()">📄 导出全部 Markdown</button>' +
-    '<button class="btn btn-outline" onclick="location.href=' + "'学习博客.html'" + '">📝 去写发贴</button></div></div>' +
+    '<button class="btn btn-outline" onclick="exportAllNotesMd()"><span class="nav-icon" data-icon="download" data-icon-size="14"></span> 导出全部 Markdown</button>' +
+    '<button class="btn btn-outline" onclick="location.href=' + "'学习博客.html'" + '"><span class="nav-icon" data-icon="pen" data-icon-size="14"></span> 去写发贴</button></div></div>' +
 
     // ===== 今日学习时长（本机计时，与设置页上限联动）=====
     (function () {
@@ -1209,16 +1289,16 @@ function _localNotesCard() {
         '<span id="pcStudyTime" style="font-size:26px;font-weight:800;color:var(--primary)">' + txt + '</span>' +
         '<span id="pcStudyTimeTip" style="font-size:12px;color:var(--text-secondary)"></span></div>' +
         '<div class="pc-studytime-bar"><i id="pcStudyTimeBar"></i></div>' +
-        '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.6">💡 打开任意页面即开始计时，切到后台自动暂停；到上限只友好提醒，不打断学习。可在 <a href="设置.html" style="color:var(--primary);text-decoration:none;font-weight:600">设置</a> 修改。</div></div>';
+        '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.6"><span class="nav-icon" data-icon="lightbulb" data-icon-size="14" style="vertical-align:-2px"></span> 打开任意页面即开始计时，切到后台自动暂停；到上限只友好提醒，不打断学习。可在 <a href="设置.html" style="color:var(--primary);text-decoration:none;font-weight:600">设置</a> 修改。</div></div>';
     })() +
 
     // ===== 学习数据概览（本机设备数据） =====
     '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="18"></span></span>学习数据</div></div>' +
     '<div class="profile-grid">' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🔥 ' + (d.streakDays || 0) + '</div><div class="ps-label">连续打卡</div></div>' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">⏱ ' + (d.totalHours || 0) + 'h</div><div class="ps-label">总学习时长</div></div>' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🧮 ' + (d.totalQuestions || 0) + '</div><div class="ps-label">做题总数</div></div>' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🎯 ' + acc + '%</div><div class="ps-label">正确率</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)"><span class="nav-icon" data-icon="fire" data-icon-size="14"></span> ' + (d.streakDays || 0) + '</div><div class="ps-label">连续打卡</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)"><span class="nav-icon" data-icon="clock" data-icon-size="14"></span> ' + (d.totalHours || 0) + 'h</div><div class="ps-label">总学习时长</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)"><span class="nav-icon" data-icon="clipboard" data-icon-size="14"></span> ' + (d.totalQuestions || 0) + '</div><div class="ps-label">做题总数</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)"><span class="nav-icon" data-icon="target" data-icon-size="14"></span> ' + acc + '%</div><div class="ps-label">正确率</div></div>' +
     '</div></div>' +
 
     // ===== 成就徽章墙（本机设备数据） =====
@@ -1233,9 +1313,9 @@ function _localNotesCard() {
     // ===== 新增：学习模块快捷入口 =====
     '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="18"></span></span>学习模块</div></div>' +
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">' +
-    '<div onclick="location.href=' + "'错题本.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px">📒</div><div style="font-size:12px;margin-top:4px">错题本</div></div>' +
-    '<div onclick="location.href=' + "'四级词汇.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px">📖</div><div style="font-size:12px;margin-top:4px">四级词汇</div></div>' +
-    '<div onclick="location.href=' + "'央国企笔试.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px">📝</div><div style="font-size:12px;margin-top:4px">行测刷题</div></div>' +
+    '<div onclick="location.href=' + "'错题本.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px"><span class="nav-icon" data-icon="book" data-icon-size="22"></span></div><div style="font-size:12px;margin-top:4px">错题本</div></div>' +
+    '<div onclick="location.href=' + "'四级词汇.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px"><span class="nav-icon" data-icon="book-open" data-icon-size="22"></span></div><div style="font-size:12px;margin-top:4px">四级词汇</div></div>' +
+    '<div onclick="location.href=' + "'央国企笔试.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px"><span class="nav-icon" data-icon="pen" data-icon-size="22"></span></div><div style="font-size:12px;margin-top:4px">行测刷题</div></div>' +
     '</div></div>';
   if (window.lucideAutoRender) window.lucideAutoRender(); // J 批次：动态 data-icon span 重渲染
 }
@@ -1265,18 +1345,18 @@ function _renderProfileOnline(box, u) {
     _tagChips(u.tags) + _goalLine(u.goal) +
     (u.createdAt ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:6px">📅 加入于 ' + esc(u.createdAt) + '</div>' : '') +
     '</div>' +
-    '<button class="btn btn-outline" onclick="editProfile()">✏️ 编辑资料</button>' +
-    '<button class="btn btn-danger" onclick="doLogout()">🚪 退出登录</button></div>' +
+    '<button class="btn btn-outline" onclick="editProfile()"><span class="nav-icon" data-icon="pen" data-icon-size="14"></span> 编辑资料</button>' +
+    '<button class="btn btn-danger" onclick="doLogout()"><span class="nav-icon" data-icon="logout" data-icon-size="14"></span> 退出登录</button></div>' +
     '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">✅ 多人在线：资料保存在服务器数据库，头像为文件上传。</div></div>' +
     '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="18"></span></span>发贴统计</div></div>' +
     '<div class="profile-grid">' +
-    [['📝', s.published || 0, '已发布'], ['💾', s.draft || 0, '草稿'], ['📁', s.archived || 0, '归档'], ['👍', s.likes || 0, '总点赞'], ['💬', s.comments || 0, '评论'], ['👁', s.views || 0, '阅读']].map(function (x) {
-      return '<div class="profile-stat"><div class="ps-num">' + x[0] + ' ' + x[1] + '</div><div class="ps-label">' + x[2] + '</div></div>';
+    [['pen', s.published || 0, '已发布'], ['save', s.draft || 0, '草稿'], ['inbox', s.archived || 0, '归档'], ['thumbs-up', s.likes || 0, '总点赞'], ['message-square', s.comments || 0, '评论'], ['eye', s.views || 0, '阅读']].map(function (x) {
+      return '<div class="profile-stat"><div class="ps-num"><span class="nav-icon" data-icon="' + x[0] + '" data-icon-size="14"></span> ' + x[1] + '</div><div class="ps-label">' + x[2] + '</div></div>';
     }).join('') + '</div>' +
-    '<div style="margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">📚 发贴分类分布</div>' + catBars + '</div>' +
+    '<div style="margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px"><span class="nav-icon" data-icon="book-open" data-icon-size="14"></span> 发贴分类分布</div>' + catBars + '</div>' +
     '<div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">' +
-    '<button class="btn btn-outline" onclick="exportAllNotesMd()">📄 导出全部 Markdown</button>' +
-    '<button class="btn btn-outline" onclick="location.href=' + "'学习博客.html'" + '">📝 去写发贴</button></div></div>' +
+    '<button class="btn btn-outline" onclick="exportAllNotesMd()"><span class="nav-icon" data-icon="download" data-icon-size="14"></span> 导出全部 Markdown</button>' +
+    '<button class="btn btn-outline" onclick="location.href=' + "'学习博客.html'" + '"><span class="nav-icon" data-icon="pen" data-icon-size="14"></span> 去写发贴</button></div></div>' +
 
     // ===== 今日学习时长（本机计时，与设置页上限联动）=====
     (function () {
@@ -1289,16 +1369,16 @@ function _renderProfileOnline(box, u) {
         '<span id="pcStudyTime" style="font-size:26px;font-weight:800;color:var(--primary)">' + txt + '</span>' +
         '<span id="pcStudyTimeTip" style="font-size:12px;color:var(--text-secondary)"></span></div>' +
         '<div class="pc-studytime-bar"><i id="pcStudyTimeBar"></i></div>' +
-        '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.6">💡 打开任意页面即开始计时，切到后台自动暂停；到上限只友好提醒，不打断学习。可在 <a href="设置.html" style="color:var(--primary);text-decoration:none;font-weight:600">设置</a> 修改。</div></div>';
+        '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.6"><span class="nav-icon" data-icon="lightbulb" data-icon-size="14" style="vertical-align:-2px"></span> 打开任意页面即开始计时，切到后台自动暂停；到上限只友好提醒，不打断学习。可在 <a href="设置.html" style="color:var(--primary);text-decoration:none;font-weight:600">设置</a> 修改。</div></div>';
     })() +
 
     // ===== 学习数据概览（本机设备数据） =====
     '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="18"></span></span>学习数据</div></div>' +
     '<div class="profile-grid">' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🔥 ' + (d.streakDays || 0) + '</div><div class="ps-label">连续打卡</div></div>' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">⏱ ' + (d.totalHours || 0) + 'h</div><div class="ps-label">总学习时长</div></div>' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🧮 ' + (d.totalQuestions || 0) + '</div><div class="ps-label">做题总数</div></div>' +
-    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🎯 ' + acc + '%</div><div class="ps-label">正确率</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)"><span class="nav-icon" data-icon="fire" data-icon-size="14"></span> ' + (d.streakDays || 0) + '</div><div class="ps-label">连续打卡</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)"><span class="nav-icon" data-icon="clock" data-icon-size="14"></span> ' + (d.totalHours || 0) + 'h</div><div class="ps-label">总学习时长</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)"><span class="nav-icon" data-icon="clipboard" data-icon-size="14"></span> ' + (d.totalQuestions || 0) + '</div><div class="ps-label">做题总数</div></div>' +
+    '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)"><span class="nav-icon" data-icon="target" data-icon-size="14"></span> ' + acc + '%</div><div class="ps-label">正确率</div></div>' +
     '</div></div>' +
 
     // ===== 成就徽章墙（本机设备数据） =====
@@ -1313,9 +1393,9 @@ function _renderProfileOnline(box, u) {
     // ===== 新增：学习模块快捷入口 =====
     '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="18"></span></span>学习模块</div></div>' +
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">' +
-    '<div onclick="location.href=' + "'错题本.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px">📒</div><div style="font-size:12px;margin-top:4px">错题本</div></div>' +
-    '<div onclick="location.href=' + "'四级词汇.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px">📖</div><div style="font-size:12px;margin-top:4px">四级词汇</div></div>' +
-    '<div onclick="location.href=' + "'央国企笔试.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px">📝</div><div style="font-size:12px;margin-top:4px">行测刷题</div></div>' +
+    '<div onclick="location.href=' + "'错题本.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px"><span class="nav-icon" data-icon="book" data-icon-size="22"></span></div><div style="font-size:12px;margin-top:4px">错题本</div></div>' +
+    '<div onclick="location.href=' + "'四级词汇.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px"><span class="nav-icon" data-icon="book-open" data-icon-size="22"></span></div><div style="font-size:12px;margin-top:4px">四级词汇</div></div>' +
+    '<div onclick="location.href=' + "'央国企笔试.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px"><span class="nav-icon" data-icon="pen" data-icon-size="22"></span></div><div style="font-size:12px;margin-top:4px">行测刷题</div></div>' +
     '</div></div>';
   if (window.lucideAutoRender) window.lucideAutoRender(); // J 批次：动态 data-icon span 重渲染
 }

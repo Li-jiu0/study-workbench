@@ -335,7 +335,7 @@
     if (!tt || document.getElementById('qbTopBtn')) return;
     var anchor = document.getElementById('themeToggle') || null;
     var b = document.createElement('button');
-    b.id = 'qbTopBtn'; b.textContent = '🧠'; b.title = '我的题库 · 自定义/导入管理';
+    b.id = 'qbTopBtn'; b.innerHTML = '<span class="nav-icon" data-icon="brain" data-icon-size="18"></span>'; b.title = '我的题库 · 自定义/导入管理';
     b.style.cssText = 'background:none;border:none;font-size:18px;cursor:pointer;padding:2px 4px;line-height:1';
     b.onclick = function () { openQBank(key); };
     if (anchor && anchor.parentElement) anchor.parentElement.insertBefore(b, anchor);

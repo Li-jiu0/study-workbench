@@ -17,7 +17,7 @@ const PAGES = ['四级备考.html', '央国企笔试.html'];
 const ASSERTS = {
   '四级备考.html': {
     absent: ['写作提升', 'cet-write'],
-    present: ['词汇打卡', '听力训练', '阅读理解', '翻译专项', '真题模考', '考试指南', '情景式口语', 'countdownModal', 'cetStatsCard', 'cetSprintCard'],
+    present: ['词汇打卡', '听力训练', '阅读理解', '翻译专项', '真题模考', '考试指南', 'countdownModal', 'cetStatsCard', 'cetSprintCard'], // K批 20260913k：情景式口语菜单已并入「听力训练」口语跟读 tab（用户拍板），从应保留清单移除
   },
   '央国企笔试.html': {
     absent: ['数量关系', 'exam-quant', 'exam-deduce', 'exam-data', '题型正确率', 'typeAcc', '综合知识'],

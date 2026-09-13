@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>学途 · 个人学习中枢</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913j">
+<link rel="stylesheet" href="assets/common.css?v=20260913k">
 <style>
 /* ================= 学途 · 个人学习中枢（v1.15） ================= */
 body { margin: 0; background: var(--bg); }
@@ -167,10 +167,10 @@ body { margin: 0; background: var(--bg); }
   <div class="xt-tab" data-tab="me" onclick="xtSwitch('me')"><span class="ti">👤</span>我的</div>
 </nav>
 
-<script src="assets/app.js?v=20260913j"></script>
-<script src="assets/icon-map.js?v=20260913j"></script>
-<script src="assets/voiceplayer.js?v=20260913j"></script>
-<script src="assets/config.js?v=20260913j"></script>
+<script src="assets/app.js?v=20260913k"></script>
+<script src="assets/icon-map.js?v=20260913k"></script>
+<script src="assets/voiceplayer.js?v=20260913k"></script>
+<script src="assets/config.js?v=20260913k"></script>
 <script>
 /* ================= 学途 · 逻辑（v1.15） ================= */
 (function () {
@@ -466,7 +466,7 @@ body { margin: 0; background: var(--bg); }
     if (!listHtml) listHtml = '<div class="xt-empty">没有匹配的笔记</div>';
     el('tab-notes').innerHTML =
       '<div class="xt-card">' +
-        '<input class="xt-note-search" placeholder="🔍 搜索笔记标题或内容…" value="' + esc(noteQuery) + '" oninput="xtNoteSearch(this.value)">' +
+        '<input class="xt-note-search" placeholder="搜索笔记标题或内容…" value="' + esc(noteQuery) + '" oninput="xtNoteSearch(this.value)">' +
       '</div>' +
       '<div class="xt-card"><div class="xt-card-title">📁 我的笔记本</div><div class="xt-chip-row">' + chipHtml + '</div></div>' +
       '<div class="xt-card"><div class="xt-card-title">📌 最近使用</div>' + recentHtml + '</div>' +

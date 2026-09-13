@@ -1200,10 +1200,10 @@ function renderCountdowns() {
     html += `
       <div class="countdown-card" style="--cd-color:${cd.color}">
         <div class="countdown-actions">
-          <div class="countdown-btn" onclick="editCountdown(${cd.id})" title="编辑">✏️</div>
-          <div class="countdown-btn" onclick="deleteCountdown(${cd.id})" title="删除">🗑️</div>
+          <div class="countdown-btn" onclick="editCountdown(${cd.id})" title="编辑">${icSpan('pencil', 14)}</div>
+          <div class="countdown-btn" onclick="deleteCountdown(${cd.id})" title="删除">${icSpan('trash', 14)}</div>
         </div>
-        <div class="countdown-name">${cd.name}${cd.pinned ? ' 📌' : ''}</div>
+        <div class="countdown-name">${cd.name}${cd.pinned ? ' ' + icSpan('pin', 12) : ''}</div>
         <div class="countdown-days">${days == null ? '--' : (days > 0 ? days : 0)}<span class="unit">天</span></div>
         <div class="countdown-date">${cd.date}</div>
       </div>
@@ -1217,6 +1217,7 @@ function renderCountdowns() {
     </div>
   `;
   row.innerHTML = html;
+  if (window.lucideAutoRender) window.lucideAutoRender();
 }
 
 function renderTasks() {
@@ -1888,9 +1889,12 @@ function applyTheme() {
     document.body.classList.remove('skin-' + k);
   });
   if (currentSkin && currentSkin !== 'default') document.body.classList.add('skin-' + currentSkin);
-  // 更新顶栏切换按钮图标
+  // 更新顶栏切换按钮图标（K 批次：🌙/☀️ → moon/sun data-icon）
   const toggleBtn = document.getElementById('themeToggle');
-  if (toggleBtn) toggleBtn.textContent = isDarkMode ? '☀️' : '🌙';
+  if (toggleBtn) {
+    toggleBtn.innerHTML = '<span class="nav-icon" data-icon="' + (isDarkMode ? 'sun' : 'moon') + '" data-icon-size="20"></span>';
+    if (window.lucideAutoRender) window.lucideAutoRender();
+  }
   // 更新设置页胶囊按钮激活态
   document.querySelectorAll('#themeOptions .theme-option').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.mode === themeMode);
@@ -1905,7 +1909,7 @@ function toggleTheme() {
   themeMode = isDarkMode ? 'dark' : 'light';
   localStorage.setItem(THEME_KEY, themeMode);
   applyTheme();
-  showToast(isDarkMode ? '🌙 已切换到深色模式' : '☀️ 已切换到浅色模式');
+  showToast(isDarkMode ? '已切换到深色模式' : '已切换到浅色模式');
 }
 
 /**
@@ -5272,6 +5276,8 @@ const BLOG_COLORS = {
 let blogCatFilter = 'all';   // 广场分类筛选
 let blogTagFilter = '';      // 广场标签筛选
 let blogMineType = 'all';    // 我的文章筛选：all/published/draft/archived/favorite
+let blogMineOpen = false;    // 我的文章：false=分类菜单页，true=分类列表页（K7）
+let bcExpandAll = false;     // 评论折叠：false=只显示前3条，true=展开全部（K5）
 let currentNoteId = null;    // 详情页当前发贴
 let editingNoteId = null;    // 编辑器正在编辑的发贴 id
 
@@ -5370,9 +5376,9 @@ function noteCardHtml(n, opts) {
   if (opts.mine) {
     const arch = n.status === 'archived';
     acts = `<div class="nc-actions" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
-      <button class="btn btn-outline" style="padding:5px 10px;font-size:12px;flex:1" onclick="event.stopPropagation();startEditNote('${n.id}')">✏️ 编辑</button>
-      <button class="btn btn-outline" style="padding:5px 10px;font-size:12px;flex:1" onclick="event.stopPropagation();${arch ? "unarchiveNote" : "archiveNote"}('${n.id}')">${arch ? '📤 恢复' : '📁 归档'}</button>
-      <button class="btn btn-danger" style="padding:5px 10px;font-size:12px;flex:1" onclick="event.stopPropagation();deleteNote('${n.id}')">🗑️ 删除</button>
+      <button class="btn btn-outline" style="padding:5px 10px;font-size:12px;flex:1" onclick="event.stopPropagation();startEditNote('${n.id}')">${icSpan('pencil', 12)} 编辑</button>
+      <button class="btn btn-outline" style="padding:5px 10px;font-size:12px;flex:1" onclick="event.stopPropagation();${arch ? "unarchiveNote" : "archiveNote"}('${n.id}')">${arch ? icSpan('rotate-ccw', 12) + ' 恢复' : icSpan('archive', 12) + ' 归档'}</button>
+      <button class="btn btn-danger" style="padding:5px 10px;font-size:12px;flex:1" onclick="event.stopPropagation();deleteNote('${n.id}')">${icSpan('trash', 12)} 删除</button>
     </div>`;
   }
   return `<div class="note-card" onclick="openBlogDetail('${n.id}')">
@@ -5389,14 +5395,77 @@ function noteCardHtml(n, opts) {
 }
 
 // ---- 广场（分类筛选 + 搜索 + 标签筛选）----
+// K9（20260913K）美化重设计：分类筛选收进与搜索框同一行的自定义下拉
+// （按钮上显示当前分类，展开列出全部 + 六分类）；blogCatFilter/blogTagFilter
+// 逻辑与 renderBlogList 联动保持不变。
 function renderBlogFilters() {
   const box = document.getElementById('blogFilterChips');
-  let html = `<span class="chip ${blogCatFilter === 'all' ? 'active' : ''}" onclick="blogCatFilter='all';blogTagFilter='';renderBlogFilters();renderBlogList()">全部</span>`;
-  BLOG_CATS.forEach(c => { html += `<span class="chip ${blogCatFilter === c.id ? 'active' : ''}" onclick="blogCatFilter='${c.id}';blogTagFilter='';renderBlogFilters();renderBlogList()">${icSpan(c.dc, 12)} ${c.name}</span>`; });
-  if (blogTagFilter) html += `<span class="chip active" onclick="clearBlogTagFilter()">🏷 #${esc(blogTagFilter)} ✕</span>`;
-  box.innerHTML = html;
+  if (!box) return;
+  // 把分类下拉挂到搜索框同一行（.blog-search-row），#blogFilterChips 只承载标签 chip
+  const row = document.querySelector('#blogViewList .blog-search-row');
+  let drop = document.getElementById('blogCatDrop');
+  if (row && !drop) {
+    row.style.display = 'flex';
+    row.style.alignItems = 'center';
+    row.style.gap = '8px';
+    const inp = document.getElementById('blogSearchInput');
+    if (inp) inp.style.flex = '1';
+    drop = document.createElement('div');
+    drop.id = 'blogCatDrop';
+    row.appendChild(drop);
+  }
+  const cur = blogCatFilter === 'all' ? null : noteCat(blogCatFilter);
+  const curName = blogCatFilter === 'all' ? '全部分类' : (cur ? cur.name : '全部分类');
+  const curDc = blogCatFilter === 'all' ? 'globe' : (cur ? cur.dc : 'globe');
+
+  const optHtml = (id, name, dc) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:13px;color:var(--text);cursor:pointer;border-radius:8px"
+      onmouseover="this.style.background='var(--bg-sub)'" onmouseout="this.style.background='transparent'"
+      onclick="pickBlogCat('${id}')">
+      ${icSpan(dc, 14)} <span style="flex:1">${name}</span>
+      ${blogCatFilter === id ? icSpan('check', 14) : ''}
+    </div>`;
+
+  const dropHtml = `
+    <div style="position:relative;display:inline-block" id="blogCatDropWrap">
+      <button id="blogCatDropBtn" style="display:inline-flex;align-items:center;gap:6px;padding:9px 12px;background:var(--card,#fff);border:1px solid var(--border);border-radius:10px;font-size:13px;color:var(--text);cursor:pointer;white-space:nowrap"
+        onclick="toggleBlogCatDrop(event)">
+        ${icSpan(curDc, 14)} ${esc(curName)} ${icSpan('chevron-down', 14)}
+      </button>
+      <div id="blogCatDropPanel" style="display:none;position:absolute;top:calc(100% + 6px);right:0;min-width:160px;background:var(--card,#fff);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.12);padding:6px;z-index:60">
+        ${optHtml('all', '全部', 'globe')}
+        ${BLOG_CATS.map(c => optHtml(c.id, c.name, c.dc)).join('')}
+      </div>
+    </div>`;
+  if (drop) drop.innerHTML = dropHtml;
+
+  // 标签筛选 chip（保留原逻辑）：仅当激活标签时显示
+  let chips = '';
+  if (blogTagFilter) chips += `<span class="chip active" onclick="clearBlogTagFilter()">${icSpan('tag', 12)} #${esc(blogTagFilter)} ✕</span>`;
+  box.innerHTML = chips;
   if (window.lucideAutoRender) window.lucideAutoRender();
 }
+function toggleBlogCatDrop(e) {
+  if (e) e.stopPropagation();
+  const p = document.getElementById('blogCatDropPanel');
+  if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+function pickBlogCat(id) {
+  blogCatFilter = id;
+  blogTagFilter = '';
+  const p = document.getElementById('blogCatDropPanel');
+  if (p) p.style.display = 'none';
+  renderBlogFilters();
+  renderBlogList();
+}
+// 点击下拉面板外区域自动收起
+document.addEventListener('click', function (e) {
+  const wrap = document.getElementById('blogCatDropWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    const p = document.getElementById('blogCatDropPanel');
+    if (p) p.style.display = 'none';
+  }
+});
 function clearBlogTagFilter() { blogTagFilter = ''; renderBlogFilters(); renderBlogList(); }
 function renderBlogList() {
   renderBlogFilters();
@@ -5411,8 +5480,12 @@ function renderBlogList() {
   document.getElementById('blogListEmpty').style.display = arr.length ? 'none' : 'block';
 }
 
-// ---- 我的文章 ----
+// ---- 我的文章（K7：列表菜单→页面模式）----
+// blogMineOpen=false → #blogMineTabs 渲染竖排分类菜单（全/已发布/草稿/归档/收藏+计数）；
+// 点击菜单项 → 同容器切换为「分类标题+返回」页头，下方 #blogMineGrid 显示该分类文章列表。
 function renderBlogMineTabs() {
+  const box = document.getElementById('blogMineTabs');
+  if (!box) return;
   const counts = {
     all: appData.notes.length,
     published: appData.notes.filter(n => n.status === 'published').length,
@@ -5420,17 +5493,46 @@ function renderBlogMineTabs() {
     archived: appData.notes.filter(n => n.status === 'archived').length,
     favorite: appData.favoriteNotes.length
   };
-  const labels = [['all', '全部'], ['published', '📤 已发布'], ['draft', '💾 草稿'], ['archived', '📁 归档'], ['favorite', '🔖 收藏']];
-  document.getElementById('blogMineTabs').innerHTML = labels.map(([k, name]) =>
-    `<span class="chip ${blogMineType === k ? 'active' : ''}" onclick="blogMineType='${k}';renderBlogMine()">${name} ${counts[k]}</span>`).join('');
+  const items = [
+    ['all', '全部', 'book-open'],
+    ['published', '已发布', 'send'],
+    ['draft', '草稿', 'save'],
+    ['archived', '归档', 'archive'],
+    ['favorite', '收藏', 'bookmark']
+  ];
+  if (!blogMineOpen) {
+    // ===== 菜单页：竖排列表 =====
+    box.style.cssText = 'display:flex;flex-direction:column;gap:8px;width:100%;max-width:420px;margin:0 auto;padding:8px 4px';
+    box.innerHTML = items.map(([k, name, ic]) => `
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--card,#fff);border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:box-shadow .15s" onclick="blogMineType='${k}';blogMineOpen=true;renderBlogMine()"
+        onmouseover="this.style.boxShadow='0 2px 10px rgba(0,0,0,.06)'" onmouseout="this.style.boxShadow='none'">
+        <span class="nav-icon" data-icon="${ic}" data-icon-size="18" style="color:var(--primary,#5B8DEF)"></span>
+        <span style="flex:1;font-size:14px;font-weight:600;color:var(--text)">${name}</span>
+        <span style="font-size:12px;color:var(--text-secondary);background:var(--bg-sub);border-radius:10px;padding:2px 10px">${counts[k]}</span>
+        <span class="nav-icon" data-icon="chevron-right" data-icon-size="16" style="color:var(--text-muted)"></span>
+      </div>`).join('');
+  } else {
+    // ===== 分类列表页：标题 + 返回按钮 =====
+    const cur = items.find(it => it[0] === blogMineType) || items[0];
+    box.style.cssText = 'display:flex;align-items:center;gap:10px;width:100%;padding:4px 0';
+    box.innerHTML = `
+      <button style="display:inline-flex;align-items:center;gap:4px;background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:13px;padding:6px 10px;border-radius:8px" onclick="blogMineOpen=false;renderBlogMine()" onmouseover="this.style.background='var(--bg-sub)'" onmouseout="this.style.background='none'">
+        <span class="nav-icon" data-icon="chevron-left" data-icon-size="16"></span>返回
+      </button>
+      <span style="font-size:15px;font-weight:700;color:var(--text)">${cur[1]}</span>
+      <span style="font-size:12px;color:var(--text-secondary)">${counts[cur[0]]} 篇</span>`;
+  }
+  if (window.lucideAutoRender) window.lucideAutoRender();
 }
 function renderBlogMine() {
   renderBlogMineTabs();
+  const grid = document.getElementById('blogMineGrid');
+  if (!blogMineOpen) { grid.innerHTML = ''; return; } // 菜单页不显示文章列表
   let arr = appData.notes.slice();
   if (blogMineType === 'favorite') arr = arr.filter(n => appData.favoriteNotes.includes(n.id));
   else if (blogMineType !== 'all') arr = arr.filter(n => n.status === blogMineType);
   arr.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-  document.getElementById('blogMineGrid').innerHTML = arr.map(n => noteCardHtml(n, { mine: true })).join('') ||
+  grid.innerHTML = arr.map(n => noteCardHtml(n, { mine: true })).join('') ||
     `<div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:13px;grid-column:1/-1">还没有相关的发贴</div>`;
 }
 
@@ -5439,10 +5541,81 @@ function openBlogDetail(id) {
   const n = appData.notes.find(x => x.id === id);
   if (!n) return;
   currentNoteId = id;
+  bcExpandAll = false; // 切换发贴时重置评论折叠状态
   n.views = (n.views || 0) + 1;
   saveData();
   renderBlogDetail();
   showBlogView('detail');
+}
+/**
+ * K5（20260913K）：本地贴评论区渲染
+ * - 头像兜底：取昵称第一个可见字符；空/纯空白昵称显示「？」（修复头像空白显示不出来的问题）
+ * - replyTo 嵌套渲染：c.replyTo 为被回复评论的昵称字符串（与 api.js 云贴口径一致），
+ *   子楼层跟随其父楼层缩进（class="bc-item bc-reply"），并带「回复 @xx」标记
+ * - 折叠：评论 >5 条时默认只显示前 3 条，底部出现「展开全部 N 条 / 收起」按钮
+ *   （class="bc-fold-btn"，命名与 学习博客.html 的 .bc-* CSS 契约一致）
+ */
+function renderLocalComments(n) {
+  const list = n.comments || [];
+  const empty = '<div style="color:var(--text-secondary);font-size:12px;padding:6px 0">暂无评论，来抢沙发～</div>';
+  if (!list.length) return empty;
+
+  // 折叠：>5 条时未展开状态只取前 3 条
+  const FOLD_THRESHOLD = 5, FOLD_COUNT = 3;
+  const folded = !bcExpandAll && list.length > FOLD_THRESHOLD;
+  const visible = folded ? list.slice(0, FOLD_COUNT) : list;
+
+  // 渲染单条评论（ori 为原数组下标，保证删除按钮定位正确；isReply 决定缩进样式）
+  const itemHtml = (c, ori, isReply) => {
+    const nm = String(c.name || '').trim();
+    const ch = nm ? nm.slice(0, 1) : '？';
+    const replyMark = isReply && c.replyTo
+      ? '<span style="font-size:11px;color:var(--text-muted);margin:0 4px">回复 @' + esc(c.replyTo) + '</span>' : '';
+    return `<div class="bc-item${isReply ? ' bc-reply' : ''}">
+      <div class="bc-avatar">${esc(ch)}</div>
+      <div class="bc-body"><div class="bc-head"><span>${esc(nm || '匿名同学')}</span>${replyMark}<span>${fmtTime(c.time)}</span></div>
+      <div class="bc-text">${esc(c.text)}</div></div>
+      <button style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:11px" onclick="deleteBlogComment(${ori})">删除</button>
+    </div>`;
+  };
+
+  // 主循环：顶层评论直接渲染；replyTo 命中已渲染父楼层昵称的评论作为子楼层缩进
+  let html = '';
+  const renderedNames = []; // 已渲染为顶层楼层的昵称（子楼层匹配用）
+  const pendingChildren = []; // 本轮已被父楼层吸收渲染的原下标，避免重复输出
+  visible.forEach((c, vi) => {
+    const ori = folded ? vi : vi; // visible 与 list 前段下标一致（slice(0,3) 场景）
+    if (pendingChildren.indexOf(ori) !== -1) return; // 已作为子楼层渲染过
+    if (!c.replyTo) {
+      html += itemHtml(c, ori, false);
+      renderedNames.push(String(c.name || '').trim());
+      // 吸收其后（仅可见范围内）回复该楼层的评论作为子楼层
+      visible.forEach((cc, vj) => {
+        const oj = vj;
+        if (oj <= ori) return;
+        if (pendingChildren.indexOf(oj) !== -1) return;
+        if (cc.replyTo && String(cc.replyTo).trim() === String(c.name || '').trim()) {
+          html += itemHtml(cc, oj, true);
+          pendingChildren.push(oj);
+        }
+      });
+    } else if (renderedNames.indexOf(String(c.replyTo).trim()) === -1) {
+      // 回复目标不在已渲染楼层中（被折叠或不存在）→ 降级为顶层楼层，保留回复标记
+      html += itemHtml(c, ori, true);
+    }
+  });
+
+  // 折叠按钮
+  if (folded) {
+    html += `<button class="bc-fold-btn" onclick="toggleBlogCommentFold()">展开全部 ${list.length} 条评论 ${icSpan('chevron-down', 12)}</button>`;
+  } else if (list.length > FOLD_THRESHOLD) {
+    html += `<button class="bc-fold-btn" onclick="toggleBlogCommentFold()">收起评论 ${icSpan('chevron-up', 12)}</button>`;
+  }
+  return html;
+}
+function toggleBlogCommentFold() {
+  bcExpandAll = !bcExpandAll;
+  renderBlogDetail();
 }
 function renderBlogDetail() {
   const n = appData.notes.find(x => x.id === currentNoteId);
@@ -5450,12 +5623,7 @@ function renderBlogDetail() {
   const cat = noteCat(n.category);
   const fav = appData.favoriteNotes.includes(n.id);
   const tags = (n.tags || []).map(t => `<span class="nd-tag" onclick="openBlogTag('${esc(t)}')">#${esc(t)}</span>`).join('');
-  const comments = (n.comments || []).map((c, i) =>
-    `<div class="bc-item"><div class="bc-avatar">${esc((c.name || ' ') .slice(0, 1))}</div>
-      <div class="bc-body"><div class="bc-head"><span>${esc(c.name)}</span><span>${fmtTime(c.time)}</span></div>
-      <div class="bc-text">${esc(c.text)}</div></div>
-      <button style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:11px" onclick="deleteBlogComment(${i})">删除</button>
-    </div>`).join('') || '<div style="color:var(--text-secondary);font-size:12px;padding:6px 0">暂无评论，来抢沙发～</div>';
+  const comments = renderLocalComments(n);
   const pager = blogPagerHtml(n);
   document.getElementById('blogDetailBox').innerHTML = `
     <div class="note-detail-hero">
@@ -5469,8 +5637,8 @@ function renderBlogDetail() {
       <div class="note-interact">
         <button class="ni-btn ${n.liked ? 'active' : ''}" onclick="toggleNoteLike()">${icSpan('thumbs-up', 12)} 赞 ${n.likes || 0}</button>
         <button class="ni-btn ${fav ? 'active' : ''}" onclick="toggleNoteFavorite()">${fav ? '★ 已收藏' : '☆ 收藏'}</button>
-        <button class="ni-btn" onclick="exportCurrentNoteMd()">📄 导出 Markdown</button>
-        <button class="ni-btn" onclick="startEditNote('${n.id}')">✏️ 编辑</button>
+        <button class="ni-btn" onclick="exportCurrentNoteMd()">${icSpan('file-text', 12)} 导出 Markdown</button>
+        <button class="ni-btn" onclick="startEditNote('${n.id}')">${icSpan('pencil', 12)} 编辑</button>
         <div class="spacer" style="flex:1"></div>
         <span style="font-size:11px;color:var(--text-secondary)">共 ${appData.notes.length} 篇 · ID:${n.id.slice(0, 8)}</span>
       </div>
@@ -5641,11 +5809,11 @@ function saveBlogNote(status) {
   if (!isNew) {
     const n = appData.notes.find(x => x.id === editingNoteId);
     if (n) { Object.assign(n, { title, category: cat, privacy, cover, tags, content, status, excerpt: makeExcerpt(content), updatedAt: now }); }
-    showToast(status === 'draft' ? '💾 草稿已更新' : '📤 已发布');
+    showToast(status === 'draft' ? '草稿已更新' : '已发布');
   } else {
     const id = uid();
     appData.notes.push({ id, title, category: cat, privacy, cover, tags, content, status, excerpt: makeExcerpt(content), views: 0, likes: 0, liked: false, comments: [], createdAt: now, updatedAt: now });
-    showToast(status === 'draft' ? '💾 已存为草稿' : '📤 已发布');
+    showToast(status === 'draft' ? '已存为草稿' : '已发布');
   }
   saveData();
   // 保存成功后清空编辑器，方便继续写下一篇
@@ -5789,8 +5957,8 @@ function renderBlogStats() {
       </div>
       <div style="display:flex;align-items:center;gap:6px;margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text)">${icSpan('book-open', 14)}</div><div style="font-size:13px;font-weight:700;color:var(--text)">发贴分类分布</div></div>${catBars}
       <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
-        <button class="btn btn-outline" onclick="exportAllNotesMd()">📄 导出全部 Markdown</button>
-        <button class="btn btn-outline" onclick="navigateTo('profile')">👤 前往个人中心</button>
+        <button class="btn btn-outline" onclick="exportAllNotesMd()">${icSpan('file-text', 14)} 导出全部 Markdown</button>
+        <button class="btn btn-outline" onclick="navigateTo('profile')">${icSpan('user', 14)} 前往个人中心</button>
       </div>
     </div>`;
   if (window.lucideAutoRender) window.lucideAutoRender();
@@ -5816,7 +5984,7 @@ function renderProfilePage() {
       <span style="display:inline-flex;align-items:center;gap:4px;width:110px;font-size:12px;color:var(--text-secondary)">${icSpan(c.dc, 12)} ${c.name}</span>
       <div style="flex:1;height:14px;background:var(--bg);border-radius:7px;overflow:hidden"><div style="height:100%;width:${Math.round(catCount[c.id] / maxCat * 100)}%;background:linear-gradient(90deg,${noteColors(c.id)[0]},${noteColors(c.id)[1]})"></div></div>
       <span style="width:60px;font-size:12px;color:var(--text-secondary)">${catCount[c.id]} 篇</span>
-    </div>`).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有发贴，去「广场 → ✍️ 写发贴」试试吧</div>';
+    </div>`).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有发贴，去「广场 → 写发贴」试试吧</div>';
   const auth = getAuth();
   let st = {};
   try { st = loadAllSettings(); } catch (e) { }
@@ -5846,33 +6014,33 @@ function renderProfilePage() {
       <div class="pp-avatar" style="width:80px;height:80px;margin:0 auto 12px;border:3px solid rgba(255,255,255,0.3);font-size:32px">${p.avatarImg && /^data:image\//.test(p.avatarImg) ? '<img src="' + p.avatarImg + '" alt="头像" style="border-radius:50%;width:100%;height:100%;object-fit:cover">' : esc(p.avatar)}</div>
       <div class="pp-name" style="color:#fff;font-size:20px;font-weight:700">${esc(p.name)}</div>
       <div class="pp-id" style="color:rgba(255,255,255,0.8);font-size:13px;margin-top:4px">${auth ? '@' + esc(auth.account) : '本地学习账号'}${p.motto ? ' · ' + esc(p.motto) : ''}</div>
-      <button class="pp-account-btn" onclick="editProfile()" style="margin-top:12px;background:rgba(255,255,255,0.2);color:#fff;border:none;padding:8px 20px;border-radius:20px;font-size:13px;cursor:pointer">✏️ 编辑资料</button>
+      <button class="pp-account-btn" onclick="editProfile()" style="margin-top:12px;background:rgba(255,255,255,0.2);color:#fff;border:none;padding:8px 20px;border-radius:20px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px">${icSpan('pencil', 14)} 编辑资料</button>
     </div>
 
     <!-- 数据概览 -->
     <div class="pp-card" style="margin-bottom:16px">
       <div class="profile-grid" style="margin-bottom:16px">
         <div class="profile-stat" style="text-align:center">
-          <div class="ps-num" style="font-size:22px;font-weight:800;color:var(--primary)">🔥 ${d.streakDays || 0}</div>
+          <div class="ps-num" style="font-size:22px;font-weight:800;color:var(--primary);display:inline-flex;align-items:center;gap:6px">${icSpan('fire', 18)} ${d.streakDays || 0}</div>
           <div class="ps-label">连续打卡</div>
         </div>
         <div class="profile-stat" style="text-align:center">
-          <div class="ps-num" style="font-size:22px;font-weight:800;color:var(--primary)">⏱ ${d.totalHours || 0}h</div>
+          <div class="ps-num" style="font-size:22px;font-weight:800;color:var(--primary);display:inline-flex;align-items:center;gap:6px">${icSpan('clock', 18)} ${d.totalHours || 0}h</div>
           <div class="ps-label">总学习时长</div>
         </div>
         <div class="profile-stat" style="text-align:center">
-          <div class="ps-num" style="font-size:22px;font-weight:800;color:var(--primary)">🧮 ${d.totalQuestions || 0}</div>
+          <div class="ps-num" style="font-size:22px;font-weight:800;color:var(--primary);display:inline-flex;align-items:center;gap:6px">${icSpan('calculator', 18)} ${d.totalQuestions || 0}</div>
           <div class="ps-label">做题总数</div>
         </div>
         <div class="profile-stat" style="text-align:center">
-          <div class="ps-num" style="font-size:22px;font-weight:800;color:var(--primary)">🎯 ${acc}%</div>
+          <div class="ps-num" style="font-size:22px;font-weight:800;color:var(--primary);display:inline-flex;align-items:center;gap:6px">${icSpan('target', 18)} ${acc}%</div>
           <div class="ps-label">正确率</div>
         </div>
       </div>
       <!-- 本周学习进度条 -->
       <div style="background:var(--bg-sub);border-radius:10px;padding:12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <span style="font-size:13px;font-weight:600">📅 本周学习</span>
+          <span style="font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px">${icSpan('calendar-days', 14)} 本周学习</span>
           <span style="font-size:12px;color:var(--text-secondary)">${weekDays}/7 天</span>
         </div>
         <div style="display:flex;gap:4px">
@@ -5890,7 +6058,7 @@ function renderProfilePage() {
     <!-- 【9/11 新增】今日学习时长（与设置页上限联动）-->
     <div class="pp-card" style="margin-bottom:16px">
       <div class="card-header" style="margin-bottom:12px">
-        <div class="card-title" style="font-size:15px;font-weight:700">⏱ 今日学习时长</div>
+        <div class="card-title" style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:6px">${icSpan('clock', 15)} 今日学习时长</div>
         <div class="card-action" style="font-size:12px;color:var(--text-secondary)">上限 ${st.studyLimitOn === false ? '未启用' : (st.studyLimitHours || 4) + ' 小时'}</div>
       </div>
       <div style="display:flex;align-items:baseline;gap:8px">
@@ -5898,16 +6066,16 @@ function renderProfilePage() {
         <span id="pcStudyTimeTip" style="font-size:12px;color:var(--text-secondary)"></span>
       </div>
       <div class="pc-studytime-bar"><i id="pcStudyTimeBar"></i></div>
-      <div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.6">
-        💡 打开任意页面即开始计时，切到后台自动暂停；到上限只会友好提醒，不会打断学习。可在
-        <a href="设置.html" style="color:var(--primary);text-decoration:none;font-weight:600">设置</a> 中修改上限或关闭。
+      <div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.6;display:flex;align-items:flex-start;gap:6px">
+        ${icSpan('lightbulb', 14)} <span>打开任意页面即开始计时，切到后台自动暂停；到上限只会友好提醒，不会打断学习。可在
+        <a href="设置.html" style="color:var(--primary);text-decoration:none;font-weight:600">设置</a> 中修改上限或关闭。</span>
       </div>
     </div>
 
     <!-- 我的成就 -->
     <div class="pp-card" style="margin-bottom:16px">
       <div class="card-header" style="margin-bottom:12px">
-        <div class="card-title" style="font-size:15px;font-weight:700">🏅 我的成就</div>
+        <div class="card-title" style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:6px">${icSpan('award', 15)} 我的成就</div>
         <div class="card-action" style="font-size:12px;color:var(--text-secondary)">${badges.length} 枚徽章</div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
@@ -5922,7 +6090,7 @@ function renderProfilePage() {
     </div>
 
     <!-- 功能菜单 -->
-    <div class="pp-card" style="margin-bottom:16px">
+    <div class="pp-card" id="ppStatsCard" style="margin-bottom:16px">
       <div class="pp-row" onclick="toggleProfilePanel('ppStatPanel', this)"><span class="pp-ic" data-icon="chart-bar"></span><span class="pp-tx">发贴统计</span><span class="pp-st">${totalNotes} 篇</span><span class="pp-ar">▾</span></div>
       <div class="pp-panel" id="ppStatPanel">
         <div class="profile-grid">
@@ -5931,8 +6099,8 @@ function renderProfilePage() {
         </div>
         <div style="display:flex;align-items:center;gap:6px;margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text)">${icSpan('book-open', 14)}</div><div style="font-size:13px;font-weight:700;color:var(--text)">发贴分类分布</div></div>${catBars}
         <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
-          <button class="btn btn-outline" onclick="exportAllNotesMd()">📄 导出 Markdown</button>
-          <button class="btn btn-outline" onclick="navigateTo('blog')">📝 去写发贴</button>
+          <button class="btn btn-outline" onclick="exportAllNotesMd()">${icSpan('file-text', 14)} 导出 Markdown</button>
+          <button class="btn btn-outline" onclick="navigateTo('blog')">${icSpan('pen', 14)} 去写发贴</button>
         </div>
       </div>
 
@@ -5944,27 +6112,27 @@ function renderProfilePage() {
       <div class="pp-panel" id="ppLocalPanel">
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
           <div style="text-align:center;padding:12px;background:var(--bg-sub);border-radius:10px;cursor:pointer" onclick="navigateTo('wrong-book')">
-            <div style="font-size:24px;margin-bottom:4px">📒</div>
+            <div style="margin-bottom:4px;display:flex;justify-content:center;color:var(--text)"><span class="nav-icon" data-icon="notebook" data-icon-size="24"></span></div>
             <div style="font-size:12px">错题本</div>
           </div>
           <div style="text-align:center;padding:12px;background:var(--bg-sub);border-radius:10px;cursor:pointer" onclick="location.href='四级词汇.html'">
-            <div style="font-size:24px;margin-bottom:4px">📖</div>
+            <div style="margin-bottom:4px;display:flex;justify-content:center;color:var(--text)"><span class="nav-icon" data-icon="book-open" data-icon-size="24"></span></div>
             <div style="font-size:12px">四级词汇</div>
           </div>
           <div style="text-align:center;padding:12px;background:var(--bg-sub);border-radius:10px;cursor:pointer" onclick="location.href='行测刷题.html'">
-            <div style="font-size:24px;margin-bottom:4px">📝</div>
+            <div style="margin-bottom:4px;display:flex;justify-content:center;color:var(--text)"><span class="nav-icon" data-icon="clipboard" data-icon-size="24"></span></div>
             <div style="font-size:12px">行测刷题</div>
           </div>
           <div style="text-align:center;padding:12px;background:var(--bg-sub);border-radius:10px;cursor:pointer" onclick="location.href='面试题库.html'">
-            <div style="font-size:24px;margin-bottom:4px">🎤</div>
+            <div style="margin-bottom:4px;display:flex;justify-content:center;color:var(--text)"><span class="nav-icon" data-icon="mic" data-icon-size="24"></span></div>
             <div style="font-size:12px">面试题库</div>
           </div>
           <div style="text-align:center;padding:12px;background:var(--bg-sub);border-radius:10px;cursor:pointer" onclick="location.href='四级备考.html'">
-            <div style="font-size:24px;margin-bottom:4px">🎧</div>
+            <div style="margin-bottom:4px;display:flex;justify-content:center;color:var(--text)"><span class="nav-icon" data-icon="headphones" data-icon-size="24"></span></div>
             <div style="font-size:12px">听力训练</div>
           </div>
           <div style="text-align:center;padding:12px;background:var(--bg-sub);border-radius:10px;cursor:pointer" onclick="location.href='万能金句库.html'">
-            <div style="font-size:24px;margin-bottom:4px">✨</div>
+            <div style="margin-bottom:4px;display:flex;justify-content:center;color:var(--text)"><span class="nav-icon" data-icon="sparkles" data-icon-size="24"></span></div>
             <div style="font-size:12px">金句库</div>
           </div>
         </div>
@@ -6108,7 +6276,7 @@ function openBlogStats() {
   else location.href = '学习博客.html#stats';   // 跨页：带 hash 定位到统计视图
 }
 function openBlogFavorites() {
-  if (document.getElementById('page-blog')) { closeMorePanel(); blogMineType = 'favorite'; showBlogView('mine'); }
+  if (document.getElementById('page-blog')) { closeMorePanel(); blogMineType = 'favorite'; blogMineOpen = true; showBlogView('mine'); }
   else location.href = '学习博客.html#favorite'; // 跨页：定位到我的收藏
 }
 function openBlogProfile() {
@@ -6124,7 +6292,7 @@ if (document.getElementById('page-blog')) {
   renderBlogMine();
   // 支持从其他页面带 #hash 跳转直达子视图（如 学习博客.html#stats / #note=xxx）
   const __h = location.hash.replace('#', '');
-  if (__h === 'favorite') { blogMineType = 'favorite'; showBlogView('mine'); }
+  if (__h === 'favorite') { blogMineType = 'favorite'; blogMineOpen = true; showBlogView('mine'); }
   else if (__h.startsWith('note=')) openBlogDetail(__h.slice(5));
   else if (['list', 'mine', 'edit', 'stats'].includes(__h)) showBlogView(__h);
 }
@@ -6277,17 +6445,18 @@ function renderAiProviderForm() {
 
     <!-- 助手外观设置 -->
     <div style="margin-top:16px;padding-top:16px;border-top:1px dashed var(--border)">
-      <div style="font-size:13px;font-weight:700;margin-bottom:12px">🎨 AI助手外观</div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px">${icSpan('palette', 14)} AI助手外观</div>
       <div class="setting-row">
         <div class="setting-info">
           <div class="setting-name">助手头像</div>
           <div class="setting-desc">悬浮按钮显示的头像</div>
         </div>
         <div class="setting-actions" id="swAiIcon">
-          <button class="theme-option active" data-val="🤖" onclick="setAiIcon('🤖',this)">🤖 机器人</button>
-          <button class="theme-option" data-val="🧠" onclick="setAiIcon('🧠',this)">🧠 大脑</button>
-          <button class="theme-option" data-val="💡" onclick="setAiIcon('💡',this)">💡 灯泡</button>
-          <button class="theme-option" data-val="📚" onclick="setAiIcon('📚',this)">📚 书本</button>
+          <!-- data-val 的 emoji 值是功能数据（存 localStorage / AI_AVATAR_ICON_MAP 键），不能动；仅按钮显示换成 data-icon -->
+          <button class="theme-option active" data-val="🤖" onclick="setAiIcon('🤖',this)"><span class="nav-icon" data-icon="bot" data-icon-size="16"></span> 机器人</button>
+          <button class="theme-option" data-val="🧠" onclick="setAiIcon('🧠',this)"><span class="nav-icon" data-icon="brain" data-icon-size="16"></span> 大脑</button>
+          <button class="theme-option" data-val="💡" onclick="setAiIcon('💡',this)"><span class="nav-icon" data-icon="lightbulb" data-icon-size="16"></span> 灯泡</button>
+          <button class="theme-option" data-val="📚" onclick="setAiIcon('📚',this)"><span class="nav-icon" data-icon="book" data-icon-size="16"></span> 书本</button>
         </div>
       </div>
       <div class="setting-row">
@@ -6306,13 +6475,14 @@ function renderAiProviderForm() {
     </div>
 
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
-      <button class="btn btn-primary" onclick="saveAiProviderForm()">💾 保存配置</button>
-      <button class="btn btn-outline" onclick="testAiConnection()">🔌 测试连接</button>
-      <button class="btn btn-outline" onclick="clearAiProviderConfigUI()">🗑️ 清除配置</button>
-      <button class="btn btn-outline" onclick="showAiUsage()">📊 用量统计</button>
+      <button class="btn btn-primary" onclick="saveAiProviderForm()">${icSpan('save', 14)} 保存配置</button>
+      <button class="btn btn-outline" onclick="testAiConnection()">${icSpan('plug', 14)} 测试连接</button>
+      <button class="btn btn-outline" onclick="clearAiProviderConfigUI()">${icSpan('trash', 14)} 清除配置</button>
+      <button class="btn btn-outline" onclick="showAiUsage()">${icSpan('chart-bar', 14)} 用量统计</button>
     </div>
     <div id="aiTestResult" style="margin-top:8px;font-size:12px"></div>
   `;
+  if (window.lucideAutoRender) window.lucideAutoRender(); // 动态插入的 data-icon 图标重渲染
 }
 
 // 快速选择模型
@@ -6400,7 +6570,7 @@ async function testAiConnection() {
     apiKey: (document.getElementById('aipKey') || {}).value.trim()
   };
   if (!cfg.apiKey || !cfg.baseUrl) { showToast('请先填写接口地址和 API Key'); return; }
-  showToast('🔌 正在测试连接…');
+  showToast('正在测试连接…');
   try {
     const res = await fetch(cfg.baseUrl, {
       method: 'POST',
@@ -6830,9 +7000,9 @@ function checkStudyLimitWarn() {
   if (_stWarnedDay === day) return;
   _stWarnedDay = day;
   var s = loadAllSettings();
-  var tip = '今天已经学习 ' + getTodayStudyText() + ' 啦，超过了你设置的 ' + s.studyLimitHours + ' 小时上限 🌙';
+  var tip = '今天已经学习 ' + getTodayStudyText() + ' 啦，超过了你设置的 ' + s.studyLimitHours + ' 小时上限';
   showStudyLimitModal(tip);
-  if (typeof showToast === 'function') showToast('🌙 ' + tip);
+  if (typeof showToast === 'function') showToast(tip);
 }
 
 /** 超限友好弹窗（自包含，不依赖外部组件；仅提醒不阻断） */
@@ -6845,7 +7015,7 @@ function showStudyLimitModal(desc) {
   mask.onclick = function (e) { if (e.target === mask) mask.remove(); };
   mask.innerHTML =
     '<div style="background:var(--card,#fff);color:var(--text,#1a1b1c);border-radius:20px;max-width:380px;width:100%;padding:26px 24px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)">' +
-    '<div style="font-size:44px;line-height:1">🌙</div>' +
+    '<div style="font-size:44px;line-height:1;color:var(--primary,#5B8DEF)"><span class="nav-icon" data-icon="moon" data-icon-size="44"></span></div>' +
     '<div style="font-size:19px;font-weight:800;margin-top:10px">今日学习达标啦</div>' +
     '<div style="font-size:14px;color:var(--text-secondary,#6b7280);line-height:1.7;margin-top:10px">' + desc + '</div>' +
     '<div style="font-size:13px;color:var(--text-secondary,#6b7280);line-height:1.7;margin-top:8px">注意劳逸结合，休息好了明天继续加油 💪 继续学习不会被打断～</div>' +
@@ -6854,6 +7024,7 @@ function showStudyLimitModal(desc) {
     '<button id="slmGo" style="flex:1;padding:11px;border:1px solid var(--border,#e4e3dd);border-radius:12px;background:transparent;color:var(--text,#1a1b1c);font-size:14px;font-weight:600;cursor:pointer">再学一会儿</button>' +
     '</div></div>';
   document.body.appendChild(mask);
+  if (window.lucideAutoRender) window.lucideAutoRender(); // 动态插入的 moon 图标重渲染
   var close = function () { mask.remove(); };
   document.getElementById('slmRest').onclick = close;
   document.getElementById('slmGo').onclick = close;
@@ -6905,7 +7076,7 @@ function syncStudyLimitUI() {
   var tip = document.getElementById('stLimitTip');
   if (tip) {
     if (!s.studyLimitOn) tip.textContent = '已关闭上限提醒，仍会照常统计今日时长。';
-    else if (over) tip.textContent = '🌙 已超过今日上限，注意休息；继续学习不会被打断。';
+    else if (over) tip.textContent = '已超过今日上限，注意休息；继续学习不会被打断。';
     else tip.textContent = '距离上限还有 ' + Math.max(0, Math.floor((limit - sec) / 60)) + ' 分钟。';
   }
   // 个人中心卡片（若存在）
