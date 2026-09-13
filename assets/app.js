@@ -74,6 +74,7 @@ const DEFAULT_SETTINGS = {
   
   // 学习
   dailyNew: 50,          // 每日新增学习内容
+  dailyReview: 20,       // 【R36】每日复习量：四级词汇复习队列的词数上限（10/20/30/50/100）
   focusMinutes: 25,      // 专注学习时长
   studyLimitOn: true,    // 【9/11 新增】每日学习时长上限开关
   studyLimitHours: 4,    // 【9/11 新增】每日学习时长上限（小时），默认 4
@@ -294,6 +295,7 @@ let appData = {
   activityLog: [],
   lastVisitDate: "",    // 上次访问日期，用于每日重置随机顺序
   dailyQueues: {},      // 每日学习队列 {commScenes: {date, ids: []}, ...}
+  reviewToday: { date: "", words: [] }, // 【R36】每日复习队列 {date, words:[单词,...]}，跨日自动重建
   // ===== 广场（发贴系统）数据 =====
   notes: [],            // 发贴文章 [{id,title,category,tags,cover,privacy,status,content,excerpt,views,likes,liked,comments,createdAt,updatedAt}]
   favoriteNotes: [],    // 我收藏的发贴 ID 列表
@@ -478,40 +480,101 @@ function afterVocabMerge(added) {
   }
 }
 
+// R35：通用 JSON 拉取——先标准 fetch（resp.ok 检查），任何异常/失败回退 XHR
+// （Promise 包装 XMLHttpRequest，同步式 GET）；file:// 下 fetch 会被拒而 XHR 可用，
+// 本地打开也能加载全量词库。两级都失败才 reject。
+// 判定约定：XHR 成功 = status 2xx；老 WebView file:// 下成功响应可能返回 status 0，
+// 此时以「status===0 且 responseText 非空」作为补充成功判定（仍以 2xx 为主）。
+function fetchJSONAnywhere(url) {
+  return new Promise(function (resolve, reject) {
+    function tryXhr() {
+      try {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState !== 4) return;
+          var ok = (xhr.status >= 200 && xhr.status < 300) || (xhr.status === 0 && !!xhr.responseText);
+          if (ok) {
+            try { resolve(JSON.parse(xhr.responseText)); }
+            catch (pe) { reject(pe); }
+          } else {
+            reject(new Error('XHR ' + xhr.status + ' ' + url));
+          }
+        };
+        xhr.onerror = function () { reject(new Error('XHR network error ' + url)); };
+        xhr.send(null);
+      } catch (xe) { reject(xe); }
+    }
+    var p;
+    try {
+      p = fetch(url).then(function (resp) {
+        if (!resp.ok) throw new Error('HTTP ' + resp.status + ' ' + url);
+        return resp.json();
+      });
+    } catch (fe) {
+      tryXhr(); return; // fetch 同步抛出（老环境无 fetch）→ 直接走 XHR
+    }
+    p.then(resolve, function () { tryXhr(); }); // fetch 异步失败（含 file:// 拒绝）→ 回退 XHR
+  });
+}
+
+// R35：词库扩展全量失败时的一次性提示（防重入标记，只提示一次）
+var _vocabExtFailNotified = false;
+function notifyVocabExtFailed() {
+  if (_vocabExtFailNotified) return;
+  _vocabExtFailNotified = true;
+  try { showToast('⚠️ 词库扩展加载失败，当前仅显示内置词表'); } catch (e) { /* 静默 */ }
+}
+
 // 增量分片加载：读索引 → 并发拉取所有分片 → 合并。
-// 容错：单片失败 → 跳过该片、console.warn，其余片照常合并（不整体失败）；
-//       索引本身失败（file:// / 离线 / 404）→ 静默回退内置 466 词。
+// R35 重构：索引与分片统一走 fetchJSONAnywhere（fetch 失败回退 XHR，file:// 可用）；
+// 容错：单片失败 → 跳过该片、console.warn（带 url 与错误信息），其余片照常合并；
+//       索引失败 / 无有效分片 / 全部分片失败（added===0）→ console.warn + 一次性
+//       showToast 提示回退内置 466 词。范围控制：本批只动词库链，exam/listening 链不改。
 function loadVocabExt() {
-  try {
-    fetch(VOCAB_EXT_INDEX).then(function (r) { return r.ok ? r.json() : null; }).then(function (idx) {
-      if (!idx || !Array.isArray(idx.shards)) return; // 索引不可用：静默回退内置 466
-      var files = [];
-      idx.shards.forEach(function (s) {
-        var f = (s && typeof s === 'object') ? s.file : s; // 兼容 shards 项直接写成文件名的旧格式
-        if (typeof f === 'string' && f) files.push(f);
-      });
-      if (!files.length) return;
-      return Promise.all(files.map(function (f) {
-        return fetch(f)
-          .then(function (r) { return r.ok ? r.json() : null; })
-          .catch(function () { return null; })                              // 单片网络失败 → 视为空
-          .then(function (j) {
-            return (j && Array.isArray(j.words)) ? { file: f, words: j.words } : { file: f, failed: true };
-          });
-      })).then(function (parts) {
-        var merged = [];
-        var failed = [];
-        parts.forEach(function (p) {
-          if (p && !p.failed && Array.isArray(p.words)) merged = merged.concat(p.words);
-          else failed.push(p ? p.file : '?');
+  fetchJSONAnywhere(VOCAB_EXT_INDEX).then(function (idx) {
+    if (!idx || !Array.isArray(idx.shards) || !idx.shards.length) {
+      console.warn('[vocab] 词库扩展索引不可用，回退内置 466：', VOCAB_EXT_INDEX);
+      notifyVocabExtFailed();
+      return null;
+    }
+    var files = [];
+    idx.shards.forEach(function (s) {
+      var f = (s && typeof s === 'object') ? s.file : s; // 兼容 shards 项直接写成文件名的旧格式
+      if (typeof f === 'string' && f) files.push(f);
+    });
+    if (!files.length) {
+      console.warn('[vocab] 词库扩展索引无有效分片：', VOCAB_EXT_INDEX);
+      notifyVocabExtFailed();
+      return null;
+    }
+    return Promise.all(files.map(function (f) {
+      return fetchJSONAnywhere(f)
+        .then(function (j) {
+          return (j && Array.isArray(j.words)) ? { file: f, words: j.words } : { file: f, failed: true };
+        })
+        .catch(function (err) {
+          console.warn('[vocab] 分片加载失败，已跳过：', f, err && err.message ? err.message : err);
+          return { file: f, failed: true };
         });
-        if (failed.length) {
-          try { console.warn('[vocab] 分片加载失败，已跳过：' + failed.join(', ')); } catch (e) {}
-        }
-        afterVocabMerge(mergeVocabWords(merged));
+    })).then(function (parts) {
+      var merged = [];
+      var failed = [];
+      parts.forEach(function (p) {
+        if (p && !p.failed && Array.isArray(p.words)) merged = merged.concat(p.words);
+        else failed.push(p ? p.file : '?');
       });
-    }).catch(function () { /* 索引不可用 / file:// 离线：静默回退内置 466 */ });
-  } catch (e) { /* fetch 不可用：回退 */ }
+      if (failed.length) {
+        try { console.warn('[vocab] 分片加载失败清单：' + failed.join(', ')); } catch (e) {}
+      }
+      var added = mergeVocabWords(merged);
+      if (added === 0) notifyVocabExtFailed(); // 一片都没成功合并 → 一次性提示
+      afterVocabMerge(added);
+    });
+  }).catch(function (err) {
+    console.warn('[vocab] 词库扩展索引加载失败，回退内置 466：', VOCAB_EXT_INDEX, err && err.message ? err.message : err);
+    notifyVocabExtFailed();
+  });
 }
 
 // 启动合并（file:// 失败自动回退内置兜底）
@@ -999,6 +1062,10 @@ function loadData() {
   } catch (e) { console.error('加载数据失败', e); }
   // 【P0-B T03】防御回退：旧档升级时确保 mockExams 字段存在
   if (!Array.isArray(appData.mockExams)) appData.mockExams = [];
+  // 【R36】旧档兼容：升级前没有 reviewToday（或结构损坏）时补默认值，跨日由复习队列自动重建
+  if (!appData.reviewToday || !Array.isArray(appData.reviewToday.words)) {
+    appData.reviewToday = { date: "", words: [] };
+  }
   // 【T03 批次三】旧档兼容：升级前没有 activityLog，补空数组（computeRecentLearning 会自动走日期回退）
   if (!Array.isArray(appData.activityLog)) appData.activityLog = [];
   // 【批次四 T02】废弃字段兜底清除：旧存档若携带 interviewDone / moduleProgress / weakPoints /
@@ -3964,14 +4031,48 @@ function recordVocabLearn(word, correct) {
   saveData();
 }
 
-// 获取待复习词汇
-function getReviewVocabs() {
-  if (!appData.vocabRecords) appData.vocabRecords = {};
+// 【R36】每日复习量设置读取（clamp：1~100，非法回退默认 20）
+function currentDailyReviewCount() {
+  const n = +getSetting('dailyReview');
+  return (n >= 1 && n <= 100) ? n : 20;
+}
+
+// 【R36】每日复习队列：当日首次进入复习模式时构建，跨日自动重建（date !== 今天即重建）。
+// 候选 = 所有「已学未掌握」词（vocabRecords 存在且 !mastered）；
+// 排序 = 今天到期（nextReview<=today）按 nextReview 升序在前，其后未到期按 nextReview 最早优先补足；
+// 总量按设置 dailyReview 切片。构建后落盘（用户自己的进度数据，可用 saveData）。
+function getDailyReviewQueue() {
   const today = getTodayStr();
-  return CET_VOCAB.filter(v => {
+  if (!appData.reviewToday || !Array.isArray(appData.reviewToday.words)) {
+    appData.reviewToday = { date: "", words: [] };
+  }
+  if (appData.reviewToday.date === today) return appData.reviewToday.words;
+
+  if (!appData.vocabRecords) appData.vocabRecords = {};
+  const learned = CET_VOCAB.filter(v => {
     const r = appData.vocabRecords[v.word];
-    return r && !r.mastered && r.nextReview <= today;
+    return r && !r.mastered;
   });
+  const byNext = (a, b) => {
+    const na = appData.vocabRecords[a.word].nextReview || '';
+    const nb = appData.vocabRecords[b.word].nextReview || '';
+    return na < nb ? -1 : (na > nb ? 1 : 0);
+  };
+  const due = learned.filter(v => (appData.vocabRecords[v.word].nextReview || '') <= today).sort(byNext);
+  const notDue = learned.filter(v => (appData.vocabRecords[v.word].nextReview || '') > today).sort(byNext);
+  const limit = currentDailyReviewCount();
+  appData.reviewToday = { date: today, words: due.concat(notDue).slice(0, limit).map(v => v.word) };
+  saveData();
+  return appData.reviewToday.words;
+}
+
+// 获取待复习词汇（【R36】改为返回今日复习队列对应的词条对象；
+// 四级词汇.html 的 vocab-merged 重建逻辑同样调用本函数，语义自动对齐）
+function getReviewVocabs() {
+  const words = getDailyReviewQueue();
+  const byWord = {};
+  CET_VOCAB.forEach(v => { byWord[v.word] = v; });
+  return words.map(w => byWord[w]).filter(Boolean);
 }
 
 // 获取未学习的新词汇
@@ -4084,7 +4185,7 @@ function renderEtiquette() {
   const todayItems = etiquetteFiltered.filter(e => queue.ids.includes(e.id));
   if (todayItems.length > 0) {
     itemsHtml += `<div style="font-size:12px;color:#1565C0;margin-bottom:8px;padding-left:8px;border-left:3px solid #5B8DEF;font-weight:700">📅 今日学习（${todayItems.length}个）</div>`;
-    itemsHtml += todayItems.map(e => renderEtiquetteCard(e, false)).join('');
+    itemsHtml += todayItems.map(e => renderEtiquetteCard(e, false, true)).join('');
   } else {
     itemsHtml += `<div style="padding:30px;text-align:center;color:var(--text-muted);background:var(--bg);border-radius:10px;margin-bottom:16px">🎉 今日礼仪已学完！明天再来学新的吧~</div>`;
   }
@@ -4104,9 +4205,11 @@ function renderEtiquette() {
   list.innerHTML = headerHtml + itemsHtml;
 }
 
-function renderEtiquetteCard(e, viewed) {
+function renderEtiquetteCard(e, viewed, isToday) {
   const opacity = viewed ? 'opacity:0.6' : '';
   const markBtn = viewed ? '' : `<button class="btn btn-outline btn-sm" style="padding:4px 10px;font-size:11px;margin-left:auto" onclick="markAsViewed('etiquette',${e.id});renderEtiquette()">标记已看</button>`;
+  // R31：仅「今日学习」区的未学卡片提供单条移除（已学完区/更多内容区不显示）
+  const removeBtn = (!viewed && isToday) ? `<button class="btn btn-outline btn-sm" style="padding:4px 10px;font-size:11px" onclick="removeTodayItem('etiquette',${e.id})">移除</button>` : '';
   const viewedTag = viewed ? '<span class="tag" style="background:#E8F5E9;color:#2E7D32">✓ 已查看</span>' : '';
   
   return `
@@ -4118,6 +4221,7 @@ function renderEtiquetteCard(e, viewed) {
           <div style="font-size:12px;color:var(--text-muted)">${e.category}</div>
         </div>
         ${viewedTag}
+        ${removeBtn}
         ${markBtn}
       </div>
       <div style="margin-bottom:12px">
@@ -4148,7 +4252,7 @@ function renderIvQuestions() {
   const todayItems = INTERVIEW_QUESTIONS.filter(q => queue.ids.includes(q.id));
   if (todayItems.length > 0) {
     itemsHtml += `<div style="font-size:12px;color:#E65100;margin-bottom:8px;padding-left:8px;border-left:3px solid #FF9800;font-weight:700">📅 今日学习（${todayItems.length}道）</div>`;
-    itemsHtml += todayItems.map(q => renderIvQuestionCard(q, false)).join('');
+    itemsHtml += todayItems.map(q => renderIvQuestionCard(q, false, true)).join('');
   } else {
     itemsHtml += `<div style="padding:30px;text-align:center;color:var(--text-muted);background:var(--bg);border-radius:10px;margin-bottom:16px">🎉 今日面试题已学完！明天再来学新的吧~</div>`;
   }
@@ -4168,9 +4272,11 @@ function renderIvQuestions() {
   list.innerHTML = headerHtml + itemsHtml;
 }
 
-function renderIvQuestionCard(q, viewed) {
+function renderIvQuestionCard(q, viewed, isToday) {
   const opacity = viewed ? 'opacity:0.6' : '';
   const markBtn = viewed ? '' : `<button class="btn btn-outline btn-sm" style="padding:4px 10px;font-size:11px;margin-left:auto" onclick="markAsViewed('ivQuestions',${q.id});renderIvQuestions()">标记已看</button>`;
+  // R31：仅「今日学习」区的未学卡片提供单条移除（已学完区/更多题目区不显示）
+  const removeBtn = (!viewed && isToday) ? `<button class="btn btn-outline btn-sm" style="padding:4px 10px;font-size:11px" onclick="removeTodayItem('ivQuestions',${q.id})">移除</button>` : '';
   const viewedTag = viewed ? '<span class="tag" style="background:#E8F5E9;color:#2E7D32">✓ 已查看</span>' : '';
   
   return `
@@ -4179,6 +4285,7 @@ function renderIvQuestionCard(q, viewed) {
         <span class="tag tag-warning">${q.type}</span>
         <span style="font-size:12px;color:var(--text-muted)">第${q.id}题</span>
         ${viewedTag}
+        ${removeBtn}
         ${markBtn}
       </div>
       <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:14px">${q.question}</div>
@@ -4226,7 +4333,7 @@ function renderLayouts() {
   const todayItems = layoutFiltered.filter(l => queue.ids.includes(l.id));
   if (todayItems.length > 0) {
     itemsHtml += `<div style="grid-column:1/-1;font-size:12px;color:#2E7D32;margin-bottom:4px;padding-left:8px;border-left:3px solid #4CAF50;font-weight:700"><span class="nav-icon" data-icon="calendar-days" data-icon-size="12"></span> 今日学习（${todayItems.length}种）</div>`;
-    itemsHtml += todayItems.map(l => renderLayoutCard(l, false)).join('');
+    itemsHtml += todayItems.map(l => renderLayoutCard(l, false, true)).join('');
   } else {
     itemsHtml += `<div style="grid-column:1/-1;padding:30px;text-align:center;color:var(--text-muted);background:var(--bg);border-radius:10px"><span class="nav-icon" data-icon="sparkles" data-icon-size="16"></span> 今日版式已学完！明天再来学新的吧~</div>`;
   }
@@ -4248,9 +4355,11 @@ function renderLayouts() {
   if (window.lucideAutoRender) window.lucideAutoRender();
 }
 
-function renderLayoutCard(l, viewed) {
+function renderLayoutCard(l, viewed, isToday) {
   const opacity = viewed ? 'opacity:0.6' : '';
   const markBtn = viewed ? '' : `<button class="btn btn-outline btn-sm" style="padding:2px 8px;font-size:10px;margin-left:auto" onclick="markAsViewed('pptLayouts',${l.id});renderLayouts()">标记已看</button>`;
+  // R31：仅「今日学习」区的未学卡片提供单条移除（已学完区/更多版式区不显示）
+  const removeBtn = (!viewed && isToday) ? `<button class="btn btn-outline btn-sm" style="padding:2px 8px;font-size:10px" onclick="removeTodayItem('pptLayouts',${l.id})">移除</button>` : '';
   const viewedTag = viewed ? '<span class="tag" style="background:#E8F5E9;color:#2E7D32;font-size:10px">✓</span>' : '';
   
   return `
@@ -4259,6 +4368,7 @@ function renderLayoutCard(l, viewed) {
         <span class="nav-icon" data-icon="${PPT_LAYOUT_ICON_MAP[l.icon] || 'image'}" data-icon-size="20" style="color:var(--primary,#5B8DEF)"></span>
         <span style="font-size:15px;font-weight:700;color:var(--text)">${l.name}</span>
         ${viewedTag}
+        ${removeBtn}
         ${markBtn}
       </div>
       <div style="background:#fff;border-radius:8px;padding:8px;margin-bottom:12px;display:flex;justify-content:center;border:1px solid #eee">
@@ -4315,28 +4425,28 @@ function filterCommScenes(cat) {
 function renderCommScenes() {
   const list = document.getElementById('commSceneList');
   if (!list) return;
-  
+
   // 按分类筛选
   const catFiltered = commScenesCat === '全部' ? COMM_SCENES : COMM_SCENES.filter(s => s.category === commScenesCat);
-  
+
   // 每日学习队列
   const queue = getDailyQueue('commScenes', catFiltered);
   const stats = getDailyQueueStats('commScenes', catFiltered);
-  
-  // 顶部统计条
+
+  // 顶部统计条（R32：📅/🔄 升级为 data-icon，与 PPT 版式库同风格）
   let headerHtml = `<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:12px 16px;background:#F3E5F5;border-radius:10px;flex-wrap:wrap">
-    <span style="font-size:13px;color:#7B1FA2"><strong>📅 今日待学：${queue.ids.length}个</strong> | 已学：${stats.totalViewed}/${stats.total} | 剩余：${stats.remaining}个</span>
-    <button class="btn btn-outline btn-sm" style="margin-left:auto;padding:4px 12px;font-size:12px" onclick="resetViewedProgress('commScenes');appData.dailyQueues.commScenes={date:'',ids:[]};saveData();renderCommScenes()">🔄 重置进度</button>
+    <span style="font-size:13px;color:#7B1FA2"><strong><span class="nav-icon" data-icon="calendar-days" data-icon-size="14"></span> 今日待学：${queue.ids.length}个</strong> | 已学：${stats.totalViewed}/${stats.total} | 剩余：${stats.remaining}个</span>
+    <button class="btn btn-outline btn-sm" style="margin-left:auto;padding:4px 12px;font-size:12px" onclick="resetViewedProgress('commScenes');appData.dailyQueues.commScenes={date:'',ids:[]};saveData();renderCommScenes()"><span class="nav-icon" data-icon="rotate-ccw" data-icon-size="12"></span> 重置进度</button>
   </div>`;
-  
+
   // 今日待学内容
   let itemsHtml = '';
   const todayItems = catFiltered.filter(s => queue.ids.includes(s.id));
   if (todayItems.length > 0) {
-    itemsHtml += `<div style="font-size:12px;color:#7B1FA2;margin-bottom:8px;padding-left:8px;border-left:3px solid #9C27B0;font-weight:700">📅 今日学习（${todayItems.length}个）</div>`;
-    itemsHtml += todayItems.map(s => renderCommSceneCard(s, false)).join('');
+    itemsHtml += `<div style="font-size:12px;color:#7B1FA2;margin-bottom:8px;padding-left:8px;border-left:3px solid #9C27B0;font-weight:700"><span class="nav-icon" data-icon="calendar-days" data-icon-size="12"></span> 今日学习（${todayItems.length}个）</div>`;
+    itemsHtml += todayItems.map(s => renderCommSceneCard(s, false, true)).join('');
   } else {
-    itemsHtml += `<div style="padding:30px;text-align:center;color:var(--text-muted);background:var(--bg);border-radius:10px;margin-bottom:16px">🎉 今日学习任务已完成！明天再来学新内容吧~</div>`;
+    itemsHtml += `<div style="padding:30px;text-align:center;color:var(--text-muted);background:var(--bg);border-radius:10px;margin-bottom:16px"><span class="nav-icon" data-icon="sparkles" data-icon-size="16"></span> 今日学习任务已完成！明天再来学新内容吧~</div>`;
   }
   
   // 更多未学内容（不在今日队列中的）
@@ -4354,40 +4464,75 @@ function renderCommScenes() {
   }
   
   list.innerHTML = headerHtml + itemsHtml;
+  // R32：卡片为动态拼接插入，需补调全局渲染，让 data-icon SVG 图标生效
+  if (window.lucideAutoRender) window.lucideAutoRender();
 }
 
-function renderCommSceneCard(s, viewed) {
+// R32：场景/金句库 emoji → icon-map 图标名映射（不改 COMM_SCENES/COMM_QUOTES 数据层，
+// 仅在渲染处换 data-icon；无合适图标的 emoji 保留原样，不硬上错图标）
+const COMM_EMOJI_ICON_MAP = {
+  '🙅': 'ban',            // 拒绝
+  '📢': 'megaphone',      // 向上沟通
+  '💬': 'message-circle', // 反馈/沟通
+  '🎤': 'mic',            // 会议发言
+  '🔥': 'fire',           // 冲突处理
+  '💰': 'banknote',       // 争取资源/加薪
+  '🍷': 'wine',           // 拒绝应酬
+  '🎯': 'target',         // 被甩锅/回应
+  '⏰': 'clock',          // 催进度
+  '🤔': 'help-circle',    // 表达不同意见/思考
+  '👋': 'hand',           // 自我介绍
+  '👏': 'thumbs-up',      // 赞美
+  '🙇': 'bow',            // 道歉
+  '🤗': 'heart',          // 安慰人
+  '✨': 'sparkles',       // 万能开场
+  '🦋': ''                // i人专属：无合适图标，保留 emoji
+};
+
+// emoji → data-icon 渲染辅助；映射为空或图标未注册时原样返回 emoji
+function commIconHtml(icon, size) {
+  const name = COMM_EMOJI_ICON_MAP[icon];
+  if (name && window.LUCIDE_ICONS && window.LUCIDE_ICONS[name]) {
+    return '<span class="nav-icon" data-icon="' + name + '" data-icon-size="' + size + '"></span>';
+  }
+  return icon;
+}
+
+function renderCommSceneCard(s, viewed, isToday) {
   const opacity = viewed ? 'opacity:0.6' : '';
   const viewedTag = viewed ? '<span class="tag" style="background:#E8F5E9;color:#2E7D32">✓ 已查看</span>' : '';
   const markBtn = viewed ? '' : `<button class="btn btn-outline btn-sm" style="padding:4px 10px;font-size:11px" onclick="markAsViewed('commScenes',${s.id});renderCommScenes()">标记已看</button>`;
-  
+  // R31：仅「今日学习」区的未学卡片提供单条移除（已学完区/更多内容区不显示）
+  const removeBtn = (!viewed && isToday) ? `<button class="btn btn-outline btn-sm" style="padding:4px 10px;font-size:11px" onclick="removeTodayItem('commScenes',${s.id})">移除</button>` : '';
+
   return `
     <div style="padding:20px;background:var(--bg);border-radius:14px;border-left:4px solid var(--comm-color,#9C27B0);${opacity};margin-bottom:16px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <span style="font-size:22px">${s.icon}</span>
+        <span style="font-size:22px">${commIconHtml(s.icon, 22)}</span>
         <span style="font-size:16px;font-weight:700;color:var(--text)">${s.title}</span>
         <span class="tag" style="margin-left:8px">${s.category}</span>
         ${viewedTag}
+        ${removeBtn}
         ${markBtn}
       </div>
       <div style="padding:12px 14px;background:#F3E5F5;border-radius:10px;margin-bottom:14px">
-        <div style="font-size:12px;font-weight:700;color:#7B1FA2;margin-bottom:4px">🎬 场景</div>
+        <div style="font-size:12px;font-weight:700;color:#7B1FA2;margin-bottom:4px"><span class="nav-icon" data-icon="scene" data-icon-size="14"></span> 场景</div>
         <div style="font-size:13px;color:var(--text-secondary);line-height:1.7">${s.scene}</div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
         <div style="padding:14px;background:#FFF0F0;border-radius:10px">
-          <div style="font-size:13px;font-weight:700;color:var(--danger);margin-bottom:8px">❌ 低情商回答</div>
+          <div style="font-size:13px;font-weight:700;color:var(--danger);margin-bottom:8px"><span class="nav-icon" data-icon="x-circle" data-icon-size="14"></span> 低情商回答</div>
           <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;white-space:pre-line">${s.wrong}</div>
-          <div style="margin-top:8px;padding-top:8px;border-top:1px dashed #FFCDD2;font-size:11px;color:#E57373;line-height:1.5">💡 问题：${s.wrongAnalysis}</div>
+          <div style="margin-top:8px;padding-top:8px;border-top:1px dashed #FFCDD2;font-size:11px;color:#E57373;line-height:1.5"><span class="nav-icon" data-icon="lightbulb" data-icon-size="12"></span> 问题：${s.wrongAnalysis}</div>
         </div>
         <div style="padding:14px;background:#E8F5E9;border-radius:10px">
-          <div style="font-size:13px;font-weight:700;color:var(--success);margin-bottom:8px">✅ 高情商回答</div>
+          <div style="font-size:13px;font-weight:700;color:var(--success);margin-bottom:8px"><span class="nav-icon" data-icon="check-circle" data-icon-size="14"></span> 高情商回答</div>
           <div style="font-size:12px;color:var(--text-secondary);line-height:1.7">${s.right}</div>
-          <div style="margin-top:8px;padding-top:8px;border-top:1px dashed #A5D6A7;font-size:11px;color:#66BB6A;line-height:1.5">📐 话术公式：${s.formula}</div>
+          <div style="margin-top:8px;padding-top:8px;border-top:1px dashed #A5D6A7;font-size:11px;color:#66BB6A;line-height:1.5"><span class="nav-icon" data-icon="ruler" data-icon-size="12"></span> 话术公式：${s.formula}</div>
         </div>
       </div>
       <div>
-        <div style="font-size:13px;font-weight:700;color:var(--comm-color,#9C27B0);margin-bottom:6px">💡 沟通要点</div>
+        <div style="font-size:13px;font-weight:700;color:var(--comm-color,#9C27B0);margin-bottom:6px"><span class="nav-icon" data-icon="lightbulb" data-icon-size="14"></span> 沟通要点</div>
         <div style="display:flex;flex-wrap:wrap;gap:8px">
           ${s.tips.map(t => '<span style="padding:6px 12px;background:#fff;border:1px solid #E1BEE7;border-radius:20px;font-size:12px;color:var(--text-secondary)">' + t + '</span>').join('')}
         </div>
@@ -4417,17 +4562,17 @@ function renderQuotes() {
   const stats = getDailyQueueStats('commQuotes', catFiltered);
   
   let headerHtml = `<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:12px 16px;background:#F3E5F5;border-radius:10px;flex-wrap:wrap">
-    <span style="font-size:13px;color:#7B1FA2"><strong>📅 今日待学：${queue.ids.length}句</strong> | 已学：${stats.totalViewed}/${stats.total} | 剩余：${stats.remaining}句</span>
-    <button class="btn btn-outline btn-sm" style="margin-left:auto;padding:4px 12px;font-size:12px" onclick="resetViewedProgress('commQuotes');appData.dailyQueues.commQuotes={date:'',ids:[]};saveData();renderQuotes()">🔄 重置进度</button>
+    <span style="font-size:13px;color:#7B1FA2"><strong><span class="nav-icon" data-icon="calendar-days" data-icon-size="14"></span> 今日待学：${queue.ids.length}句</strong> | 已学：${stats.totalViewed}/${stats.total} | 剩余：${stats.remaining}句</span>
+    <button class="btn btn-outline btn-sm" style="margin-left:auto;padding:4px 12px;font-size:12px" onclick="resetViewedProgress('commQuotes');appData.dailyQueues.commQuotes={date:'',ids:[]};saveData();renderQuotes()"><span class="nav-icon" data-icon="rotate-ccw" data-icon-size="12"></span> 重置进度</button>
   </div>`;
-  
+
   let itemsHtml = '';
   const todayItems = catFiltered.filter(q => queue.ids.includes(q.id));
   if (todayItems.length > 0) {
-    itemsHtml += `<div style="font-size:12px;color:#7B1FA2;margin-bottom:8px;padding-left:8px;border-left:3px solid #9C27B0;font-weight:700">📅 今日学习（${todayItems.length}句）</div>`;
-    itemsHtml += todayItems.map(q => renderQuoteCard(q, false)).join('');
+    itemsHtml += `<div style="font-size:12px;color:#7B1FA2;margin-bottom:8px;padding-left:8px;border-left:3px solid #9C27B0;font-weight:700"><span class="nav-icon" data-icon="calendar-days" data-icon-size="12"></span> 今日学习（${todayItems.length}句）</div>`;
+    itemsHtml += todayItems.map(q => renderQuoteCard(q, false, true)).join('');
   } else {
-    itemsHtml += `<div style="padding:30px;text-align:center;color:var(--text-muted);background:var(--bg);border-radius:10px;margin-bottom:16px">🎉 今日金句已学完！明天再来学新的吧~</div>`;
+    itemsHtml += `<div style="padding:30px;text-align:center;color:var(--text-muted);background:var(--bg);border-radius:10px;margin-bottom:16px"><span class="nav-icon" data-icon="sparkles" data-icon-size="16"></span> 今日金句已学完！明天再来学新的吧~</div>`;
   }
   
   const otherUnviewed = catFiltered.filter(q => !queue.ids.includes(q.id) && !appData.viewedContent.commQuotes?.includes(q.id));
@@ -4443,19 +4588,24 @@ function renderQuotes() {
   }
   
   list.innerHTML = headerHtml + itemsHtml;
+  // R32：卡片为动态拼接插入，需补调全局渲染，让 data-icon SVG 图标生效
+  if (window.lucideAutoRender) window.lucideAutoRender();
 }
 
-function renderQuoteCard(q, viewed) {
+function renderQuoteCard(q, viewed, isToday) {
   const opacity = viewed ? 'opacity:0.6' : '';
   const viewedTag = viewed ? '<span class="tag" style="background:#E8F5E9;color:#2E7D32">✓ 已查看</span>' : '';
   const markBtn = viewed ? '' : `<button class="btn btn-outline btn-sm" style="padding:4px 10px;font-size:11px" onclick="markAsViewed('commQuotes',${q.id});renderQuotes()">标记已看</button>`;
-  
+  // R31：仅「今日学习」区的未学卡片提供单条移除（已学完区/更多金句区不显示）
+  const removeBtn = (!viewed && isToday) ? `<button class="btn btn-outline btn-sm" style="padding:4px 10px;font-size:11px" onclick="removeTodayItem('commQuotes',${q.id})">移除</button>` : '';
+
   return `
     <div style="padding:20px;background:var(--bg);border-radius:14px;border-left:4px solid #FFD93D;${opacity};margin-bottom:16px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-        <span style="font-size:20px">${q.icon}</span>
+        <span style="font-size:20px">${commIconHtml(q.icon, 20)}</span>
         <span class="tag">${q.category}</span>
         ${viewedTag}
+        ${removeBtn}
         ${markBtn}
       </div>
       <div style="padding:14px 16px;background:linear-gradient(135deg,#FFF9E6,#FFF3CD);border-radius:10px;margin-bottom:12px">
@@ -4463,16 +4613,16 @@ function renderQuoteCard(q, viewed) {
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
         <div style="padding:10px 12px;background:#E3F2FD;border-radius:8px">
-          <div style="font-size:11px;font-weight:700;color:#1565C0;margin-bottom:4px">🎯 使用场景</div>
+          <div style="font-size:11px;font-weight:700;color:#1565C0;margin-bottom:4px"><span class="nav-icon" data-icon="target" data-icon-size="12"></span> 使用场景</div>
           <div style="font-size:12px;color:var(--text-secondary);line-height:1.5">${q.scene}</div>
         </div>
         <div style="padding:10px 12px;background:#E8F5E9;border-radius:8px">
-          <div style="font-size:11px;font-weight:700;color:#2E7D32;margin-bottom:4px">💡 为什么有效</div>
+          <div style="font-size:11px;font-weight:700;color:#2E7D32;margin-bottom:4px"><span class="nav-icon" data-icon="lightbulb" data-icon-size="12"></span> 为什么有效</div>
           <div style="font-size:12px;color:var(--text-secondary);line-height:1.5">${q.why}</div>
         </div>
       </div>
       <div style="padding:10px 12px;background:#F5F5F5;border-radius:8px">
-        <div style="font-size:11px;font-weight:700;color:#666;margin-bottom:4px">📝 示例对话</div>
+        <div style="font-size:11px;font-weight:700;color:#666;margin-bottom:4px"><span class="nav-icon" data-icon="file-text" data-icon-size="12"></span> 示例对话</div>
         <div style="font-size:12px;color:var(--text-secondary);line-height:1.6">${q.example}</div>
       </div>
     </div>
@@ -4604,6 +4754,20 @@ function removeFromDailyQueue(contentKey, id) {
   if (!appData.dailyQueues || !appData.dailyQueues[contentKey]) return;
   appData.dailyQueues[contentKey].ids = appData.dailyQueues[contentKey].ids.filter(i => i !== id);
   saveData();
+}
+
+// R31：从「今日学习」队列单条移除某条任务（用户主动删除自己的今日任务，
+// 属用户进度变更，用既有 saveData() 落盘；不影响已学完区/其它分类/其它今日任务）
+function removeTodayItem(contentKey, id) {
+  if (!appData.dailyQueues || !appData.dailyQueues[contentKey] || !appData.dailyQueues[contentKey].ids) return;
+  appData.dailyQueues[contentKey].ids = appData.dailyQueues[contentKey].ids.filter(i => i !== id);
+  saveData();
+  // 重渲染对应页面，让「今日学习」列表与顶部计数同步（同日刷新后仍保持，靠持久化的 dailyQueues[key].ids）
+  if (contentKey === 'etiquette') renderEtiquette();
+  else if (contentKey === 'ivQuestions') renderIvQuestions();
+  else if (contentKey === 'pptLayouts') renderLayouts();
+  else if (contentKey === 'commScenes') renderCommScenes();
+  else if (contentKey === 'commQuotes') renderQuotes();
 }
 
 // 获取每日队列统计
@@ -4921,15 +5085,14 @@ function switchVocabMode(mode) {
       return;
     }
   } else {
+    // 【R36】复习模式进入每日复习队列；队列为空时由 renderVocab 显示友好空态，
+    // 不再 toast 后强制切回新词模式（新学词 7 天后才到期，旧逻辑导致复习页 7 天内恒空）
     vocabModeList = getReviewVocabs();
-    if (vocabModeList.length === 0) {
-      showToast('✅ 今天没有需要复习的单词');
-      switchVocabMode('new');
-      return;
-    }
   }
   renderVocab();
-  showToast(mode === 'new' ? `开始学习新词（共${vocabModeList.length}个）` : `开始复习（共${vocabModeList.length}个）`);
+  if (vocabModeList.length > 0) {
+    showToast(mode === 'new' ? `开始学习新词（共${vocabModeList.length}个）` : `开始复习（共${vocabModeList.length}个）`);
+  }
 }
 
 function shuffleVocab() {
@@ -4955,13 +5118,21 @@ function renderVocab() {
     if (vocabMode === 'new') vocabModeList = getNewVocabs();
     else vocabModeList = getReviewVocabs();
   }
-  if (vocabModeList.length === 0) return;
+  if (vocabModeList.length === 0) {
+    // 【R36】复习模式队列为空：停留在复习模式，卡片区显示友好空态（不再静默 return）
+    if (vocabMode === 'review') { renderVocabReviewEmpty(); }
+    return;
+  }
   const v = vocabModeList[vocabCurrentIndex];
-  // 文案统一：「第 x 词 · 共 N · 已学 M」。
+  // 文案统一：「第 x 词 · 共 N · 已学 M」；【R36】复习模式显示「复习 x/y」语义。
   // N = CET_VOCAB.length（词库实时总数，含增量分片合并后的词条，不再硬编码）；
   // M = 已学词数。vocabProgress / vocabLearned 均做空值保护（多页面版仅四级词汇页有该 DOM）。
   var vp = document.getElementById('vocabProgress');
-  if (vp) vp.textContent = `第 ${vocabCurrentIndex + 1} 词 · 共 ${CET_VOCAB.length} · 已学 ${appData.vocabLearned.length}`;
+  if (vp) {
+    vp.textContent = vocabMode === 'review'
+      ? `复习 ${vocabCurrentIndex + 1}/${vocabModeList.length} · 已学 ${appData.vocabLearned.length}`
+      : `第 ${vocabCurrentIndex + 1} 词 · 共 ${CET_VOCAB.length} · 已学 ${appData.vocabLearned.length}`;
+  }
   var vl = document.getElementById('vocabLearned');
   if (vl) vl.textContent = `已学 ${appData.vocabLearned.length} 词`;
   document.getElementById('vocabWord').textContent = v.word;
@@ -5013,6 +5184,33 @@ function renderVocab() {
   const percent = Math.round((vocabCurrentIndex + 1) / vocabModeList.length * 100);
   document.getElementById('vocabPercent').textContent = percent + '%';
   document.getElementById('vocabBar').style.width = percent + '%';
+}
+
+// 【R36】复习模式空态：卡片区显示「今日复习已完成 🎉 + 明日到期 N 词」，停留在复习模式
+function renderVocabReviewEmpty() {
+  const wEl = document.getElementById('vocabWord');
+  const pEl = document.getElementById('vocabPhonetic');
+  const mEl = document.getElementById('vocabMeaning');
+  if (wEl) wEl.textContent = '今日复习已完成 🎉';
+  if (pEl) pEl.textContent = '';
+  if (mEl) { mEl.textContent = '休息一下，明天再来复习吧'; mEl.style.display = 'block'; }
+  const dEl = document.getElementById('vocabDetail');
+  if (dEl) dEl.style.display = 'none';
+  const hEl = document.getElementById('vocabHint');
+  if (hEl) hEl.style.display = 'none';
+  // 统计明日到期词数（未掌握且 nextReview 恰为明天）
+  const tomorrow = addDays(getTodayStr(), 1);
+  let dueTomorrow = 0;
+  CET_VOCAB.forEach(v => {
+    const r = appData.vocabRecords && appData.vocabRecords[v.word];
+    if (r && !r.mastered && r.nextReview === tomorrow) dueTomorrow++;
+  });
+  const vp = document.getElementById('vocabProgress');
+  if (vp) vp.textContent = `今日复习已完成 · 明日到期 ${dueTomorrow} 词`;
+  const pe = document.getElementById('vocabPercent');
+  if (pe) pe.textContent = '100%';
+  const pb = document.getElementById('vocabBar');
+  if (pb) pb.style.width = '100%';
 }
 
 function toggleVocabMeaning() {
@@ -5075,18 +5273,29 @@ function nextVocab() {
 function markVocabKnown() {
   if (vocabModeList.length === 0) return;
   const v = vocabModeList[vocabCurrentIndex];
-  // 记录到间隔重复系统
+  // 记录到间隔重复系统（stage/nextReview 晋级：REVIEW_INTERVALS=[7,14,30,90]，封顶即 mastered）
   recordVocabLearn(v.word, true);
   updateModuleStats();
-  showToast(`✅ 已学习：${v.word}（7天后复习）`);
+  // 【R36】提示语按模式区分：复习模式按晋级后的实际间隔显示，封顶 mastered 时显示已掌握
+  const _rAfter = appData.vocabRecords[v.word];
+  const _suffix = (_rAfter && _rAfter.mastered) ? '，已完全掌握 🎉'
+    : '（' + REVIEW_INTERVALS[_rAfter ? _rAfter.stage : 0] + '天后复习）';
+  showToast(`✅ ${vocabMode === 'review' ? '已复习' : '已学习'}：${v.word}${_suffix}`);
   // 从当前列表移除
   vocabModeList.splice(vocabCurrentIndex, 1);
+  // 【R36】复习模式下同步从今日复习队列移除并落盘（当日不再出现，跨日重建不受影响）
+  if (vocabMode === 'review' && appData.reviewToday && Array.isArray(appData.reviewToday.words)) {
+    appData.reviewToday.words = appData.reviewToday.words.filter(w => w !== v.word);
+    saveData();
+  }
   if (vocabCurrentIndex >= vocabModeList.length) {
     vocabCurrentIndex = Math.max(0, vocabModeList.length - 1);
   }
   if (vocabModeList.length === 0) {
     showToast(vocabMode === 'new' ? '🎉 新词全部学完！' : '✅ 复习全部完成！');
     document.getElementById('vocabProgress').textContent = '已完成';
+    // 【R36】复习模式复习完：渲染友好空态（含明日到期统计），保持停留在复习模式
+    if (vocabMode === 'review') renderVocabReviewEmpty();
     return;
   }
   renderVocab();
