@@ -112,7 +112,9 @@
       var i;
       for (i = 0; i < items.length; i++) { seen[String(items[i].id)] = true; out.push(items[i]); }
       for (i = 0; i < S.msgs.length; i++) {
-        if (!S.msgs[i].id || !seen[String(S.msgs[i].id)]) out.push(S.msgs[i]);
+        // 本地乐观插入的条目 id 为 0：交给服务端真值重绘，避免重复渲染
+        if (!S.msgs[i].id) continue;
+        if (!seen[String(S.msgs[i].id)]) out.push(S.msgs[i]);
       }
       out.sort(function (a, b) { return (a.id || 0) - (b.id || 0); });
       S.msgs = out;
@@ -136,9 +138,17 @@
     }).then(function (r) {
       if (!r.ok) throw new Error('send failed');
       return r.json();
-    }).then(function () {
+    }).then(function (m) {
+      // 用服务端返回的真实消息顶替本地乐观条目，再整体对齐一次
+      S.msgs = S.msgs.filter(function (x) {
+        return x.id && !(m && String(x.id) === String(m.id));
+      });
+      if (m && m.id) S.msgs.push(m);
+      renderMsgs();
       return loadMsgs();
     }).catch(function () {
+      S.msgs = S.msgs.filter(function (x) { return x.id; });  // 发送失败：撤掉乐观条目
+      renderMsgs();
       toast('消息发送失败，请稍后重试', 'error');
     });
   }
