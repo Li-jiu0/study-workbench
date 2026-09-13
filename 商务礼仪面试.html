@@ -104,8 +104,8 @@
           </div>
           <div class="qtab-q" id="ivQuizQ">加载中…</div>
           <div class="qtab-btns">
-            <button class="btn btn-outline" onclick="ivQuizNext()">换一题</button>
-            <button class="btn btn-outline" onclick="ivQuizShowTip()">查看答题要点</button>
+            <button class="btn btn-outline" onclick="ivQuizNext()"><span data-icon="shuffle" data-icon-size="16" style="vertical-align:-3px"></span> 换一题</button>
+            <button class="btn btn-outline" onclick="ivQuizShowTip()"><span data-icon="lightbulb" data-icon-size="16" style="vertical-align:-3px"></span> 查看答题要点</button>
             <button class="btn btn-primary" id="ivAiBtn" onclick="ivStartInterview()"><span data-icon="play" data-icon-size="16" style="vertical-align:-3px"></span> 开始模拟面试</button>
           </div>
           <div class="qtab-verdict" id="ivQuizTip"></div>
@@ -119,7 +119,7 @@
             <div style="display:flex;gap:8px">
               <input id="ivAiInput" class="fb-input" placeholder="输入你的回答…" style="flex:1"
                      onkeydown="if(event.key==='Enter'){event.preventDefault();ivAiSend()}">
-              <button class="btn btn-primary" onclick="ivAiSend()">发送</button>
+              <button class="btn btn-primary" onclick="ivAiSend()"><span data-icon="send" data-icon-size="16" style="vertical-align:-3px"></span> 发送</button>
             </div>
           </div>
         </div>
@@ -128,7 +128,7 @@
           <div class="feature-card" onclick="navigateTo('etiquette')">
             <div class="feature-icon"><span data-icon="briefcase" data-icon-size="24"></span></div>
             <div class="feature-title">商务礼仪</div>
-            <div class="feature-desc">8大核心场景，SVG插画+要点清单+错误警示，即学即用</div>
+            <div class="feature-desc">8大核心场景，场景图标+要点清单+错误警示，即学即用</div>
             <span class="feature-badge tag-primary">已上线</span>
             <span class="feature-badge" id="etiquetteTodayBadge" style="background:#E3F2FD;color:#1565C0;margin-left:4px">今日待学 0</span>
           </div>
@@ -242,7 +242,7 @@
             <div class="form-label">或输入文字回答：</div>
             <textarea class="form-input" rows="4" placeholder="输入你的自我介绍..." id="ivInput"></textarea>
           </div>
-          <button class="btn btn-primary btn-block" onclick="submitInterview()">提交回答</button>
+          <button class="btn btn-primary btn-block" onclick="submitInterview()"><span data-icon="check" data-icon-size="16" style="vertical-align:-3px"></span> 提交回答</button>
         </div>
         <div id="ivEval" style="display:none">
           <div class="eval-panel">
@@ -266,13 +266,13 @@
               <div class="eval-reference-text">1. 一句话定位：我是XX学校电商专业大三学生，有XX实习经验<br>2. 教育背景：学校+专业+核心课程+成绩（如优秀）<br>3. 实习/项目经历：2段，每段用STAR法则，量化成果<br>4. 个人优势：与岗位匹配的2-3个核心能力<br>5. 结尾：为什么申请这个岗位+职业规划</div>
             </div>
             <div style="display:flex;gap:10px;margin-top:14px">
-              <button class="btn btn-secondary btn-sm" onclick="showToast('重新回答')">重新回答</button>
-              <button class="btn btn-primary btn-sm" onclick="nextInterviewQuestion()">下一题 →</button>
+              <button class="btn btn-secondary btn-sm" onclick="showToast('重新回答')"><span data-icon="rotate-ccw" data-icon-size="16" style="vertical-align:-3px"></span> 重新回答</button>
+              <button class="btn btn-primary btn-sm" onclick="nextInterviewQuestion()">下一题 <span data-icon="arrow-right" data-icon-size="16" style="vertical-align:-3px"></span></button>
             </div>
           </div>
         </div>
         <div style="text-align:center;margin-top:20px">
-          <button class="btn btn-outline" onclick="navigateTo('interview')">← 返回面试</button>
+          <button class="btn btn-outline" onclick="navigateTo('interview')"><span data-icon="arrow-left" data-icon-size="16" style="vertical-align:-3px"></span> 返回面试</button>
         </div>
       </div>
 
@@ -290,7 +290,7 @@
           #gdAiPane{height:calc(100vh - 260px);min-height:480px}
         </style>
         <div class="gd-merge-bar">
-          <button class="btn btn-outline btn-sm" onclick="navigateTo('interview')">← 返回</button>
+          <button class="btn btn-outline btn-sm" onclick="navigateTo('interview')"><span data-icon="arrow-left" data-icon-size="16" style="vertical-align:-3px"></span> 返回</button>
           <div class="gd-merge-tabs" role="tablist">
             <button class="gd-merge-tab on" id="gdTabPrep" onclick="ivGroupTab('prep')">无领导小组讨论（准备）</button>
             <button class="gd-merge-tab" id="gdTabAi" onclick="ivGroupTab('ai')">AI 无领导小组讨论（实战）</button>
@@ -326,7 +326,7 @@
 
       <div class="page" id="page-iv-prep">
         <div class="ivp-bar">
-          <button class="btn btn-outline btn-sm" onclick="navigateTo('interview')">← 返回</button>
+          <button class="btn btn-outline btn-sm" onclick="navigateTo('interview')"><span data-icon="arrow-left" data-icon-size="16" style="vertical-align:-3px"></span> 返回</button>
           <div class="ivp-bar-title"><span data-icon="clipboard" data-icon-size="16" style="vertical-align:-3px"></span> 面试准备</div>
         </div>
         <div class="card">
@@ -340,7 +340,7 @@
 
       <div class="page" id="page-iv-after">
         <div class="ivp-bar">
-          <button class="btn btn-outline btn-sm" onclick="navigateTo('interview')">← 返回</button>
+          <button class="btn btn-outline btn-sm" onclick="navigateTo('interview')"><span data-icon="arrow-left" data-icon-size="16" style="vertical-align:-3px"></span> 返回</button>
           <div class="ivp-bar-title"><span data-icon="inbox" data-icon-size="16" style="vertical-align:-3px"></span> 面试后</div>
         </div>
         <div class="card">
@@ -588,7 +588,7 @@
     var last = IVQ.i === IVQ.qs.length - 1;
     acts.innerHTML = last
       ? '<button class="btn btn-outline btn-sm" onclick="window.ivqAgain()">再来一组</button><button class="btn btn-primary" onclick="window.ivqFinish()">查看成绩</button>'
-      : '<button class="btn btn-primary" onclick="window.ivqNext()">下一题 →</button>';
+      : '<button class="btn btn-primary" onclick="window.ivqNext()">下一题 <span data-icon="arrow-right" data-icon-size="16" style="vertical-align:-3px"></span></button>';
     body.appendChild(acts);
     acts.scrollIntoView({ block: 'nearest' });
     // 与 mini.js 口径一致：答题算一次「学习动作」，推进全局连续打卡

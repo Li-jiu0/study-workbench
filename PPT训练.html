@@ -72,11 +72,15 @@
           <!-- 【后续扩展点：作品缩略图 dataURL 上传与图片九宫格预览】当前仅存文本笔记 -->
         </div>
 
+        <!-- 需求07（2026-09-13）：入口收拢 —— 「设计基础 / 实战模板库 / 技巧提升」
+             并入「综合功能模块」单一入口；「版式库」「优秀案例拆解」按需求保留独立。
+             合并≠删除：三模块内容零删减，仍在综合模块内部可点击进入（容器见 #pptHub）。 -->
         <div class="feature-grid">
-          <div class="feature-card" onclick="openPptPanel('ppt-design')">
-            <div class="feature-icon" data-icon="star"></div>
-            <div class="feature-title">设计基础</div>
-            <div class="feature-desc">对齐/对比/重复/亲密性四原则，配色字体系统，正反例对比</div>
+          <div class="feature-card" onclick="window.openPptHub()">
+            <div class="feature-icon" data-icon="puzzle"></div>
+            <div class="feature-title">综合功能模块</div>
+            <div class="feature-desc">设计基础、实战模板库、技巧提升三项内容合集，点开按需进入</div>
+            <span class="feature-badge tag-primary">3 个子模块</span>
           </div>
           <div class="feature-card" onclick="navigateTo('ppt-layouts')">
             <div class="feature-icon" data-icon="ruler"></div>
@@ -89,16 +93,6 @@
             <div class="feature-icon" data-icon="search"></div>
             <div class="feature-title">优秀案例拆解</div>
             <div class="feature-desc">麦肯锡/苹果发布会/答辩PPT，逐页分析设计亮点和可借鉴技巧</div><span class="feature-badge tag-primary">已上线</span>
-          </div>
-          <div class="feature-card" onclick="openPptPanel('ppt-templates')">
-            <div class="feature-icon" data-icon="clipboard"></div>
-            <div class="feature-title">实战模板库</div>
-            <div class="feature-desc">课堂汇报/答辩/工作汇报/BP/产品介绍/竞聘，结构+版式+配色</div>
-          </div>
-          <div class="feature-card" onclick="openPptPanel('ppt-tips')">
-            <div class="feature-icon" data-icon="zap"></div>
-            <div class="feature-title">技巧提升</div>
-            <div class="feature-desc">动画切换、图片处理、图标使用、母版统一、快捷键、演讲配合</div>
           </div>
         </div>
       </div>
@@ -151,9 +145,45 @@
        交互参照「听力训练」面板：顶部返回栏 + ESC 退出 + 锁滚动；
        题目渲染/判分/解析复用 assets/mini.js 引擎，本页仅替换呈现载体；
        面板骨架（卡片头 + 简介行 + 内容槽）版式对齐「PPT版式库」页面 -->
+  <!-- 需求07（2026-09-13）：综合功能模块 —— 收纳「设计基础 / 实战模板库 / 技巧提升」三入口。
+       仅收拢入口，不删任何内容：三个子模块在此完整陈列，点击即进入原全屏面板，
+       题库渲染 / 判分 / 解析仍由 assets/mini.js 引擎承担，逻辑零改动。 -->
+  <div class="ppt-view" id="pptHub">
+    <div class="ppt-view-top">
+      <button class="ppt-view-back" onclick="window.closePptHub()"><span data-icon="arrow-left" data-icon-size="14" style="vertical-align:-2px"></span> 返回</button>
+      <b>综合功能模块</b>
+    </div>
+    <div class="ppt-view-body">
+      <div class="card ppt-view-card">
+        <div class="card-header">
+          <div class="card-title"><span class="title-icon" data-icon="puzzle"></span>综合功能模块</div>
+          <span class="tag tag-primary">3 个子模块</span>
+        </div>
+        <div class="ppt-view-desc">以下三项内容已收拢于此，点击任一子模块即可继续学习（内容与原模块完全一致）。</div>
+        <div class="feature-grid">
+          <div class="feature-card" onclick="openPptPanel('ppt-design')">
+            <div class="feature-icon" data-icon="star"></div>
+            <div class="feature-title">设计基础</div>
+            <div class="feature-desc">对齐/对比/重复/亲密性四原则，配色字体系统，正反例对比</div>
+          </div>
+          <div class="feature-card" onclick="openPptPanel('ppt-templates')">
+            <div class="feature-icon" data-icon="clipboard"></div>
+            <div class="feature-title">实战模板库</div>
+            <div class="feature-desc">课堂汇报/答辩/工作汇报/BP/产品介绍/竞聘，结构+版式+配色</div>
+          </div>
+          <div class="feature-card" onclick="openPptPanel('ppt-tips')">
+            <div class="feature-icon" data-icon="zap"></div>
+            <div class="feature-title">技巧提升</div>
+            <div class="feature-desc">动画切换、图片处理、图标使用、母版统一、快捷键、演讲配合</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="ppt-view" id="pptPanel">
     <div class="ppt-view-top">
-      <button class="ppt-view-back" onclick="closePptPanel()">← 返回</button>
+      <button class="ppt-view-back" onclick="closePptPanel()"><span data-icon="arrow-left" data-icon-size="14" style="vertical-align:-2px"></span> 返回</button>
       <b>PPT训练</b>
     </div>
     <div class="ppt-view-body" id="pptPanelBody">
@@ -223,7 +253,7 @@
         <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
       </div>
       <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录"><span class="nav-icon" data-icon="delete" data-icon-size="16"></span></div>
-      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板">✕</div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板"><span class="nav-icon" data-icon="close" data-icon-size="16"></span></div>
     </div>
     <div class="ai-messages" id="aiMessages"></div>
     <div class="ai-input-row">
@@ -383,6 +413,20 @@
     hidePanel();
   };
 
+  /* 需求07：综合功能模块容器开关（只收拢入口；子模块内容仍由上方三个 feature-card 承载） */
+  window.openPptHub = function () {
+    var h = $id('pptHub');
+    if (!h) return;
+    h.classList.add('open');
+    var b = h.querySelector('.ppt-view-body'); if (b) b.scrollTop = 0;
+    if (window.openAppModal) { try { window.openAppModal('pptHub'); } catch (e) { /* 忽略 */ } } // 锁滚动，与既有面板一致
+  };
+  window.closePptHub = function () {
+    var h = $id('pptHub');
+    if (h) h.classList.remove('open');
+    if (window.closeAppModal) { try { window.closeAppModal('pptHub'); } catch (e) { /* 忽略 */ } }
+  };
+
   function setup() {
     // 入口改指新视图：包装 openMiniQuiz，本页三个类目转由全屏面板承载，其余类目透传
     var raw = window.openMiniQuiz;
@@ -408,9 +452,12 @@
         else hidePanel();
       }).observe(document.body, { childList: true });
     }
-    // ESC 退出全屏视图（对齐听力面板交互）
+    // ESC 退出：先关子面板，再关综合模块容器（层级由内到外）
     document.addEventListener('keydown', function (e) {
-      if ((e.key === 'Escape' || e.keyCode === 27) && panelOpen()) window.closePptPanel();
+      if (!(e.key === 'Escape' || e.keyCode === 27)) return;
+      if (panelOpen()) { window.closePptPanel(); return; }
+      var h = $id('pptHub');
+      if (h && h.classList.contains('open')) window.closePptHub();
     });
   }
 
