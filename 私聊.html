@@ -98,6 +98,7 @@
              点击后由 assets/admin-contact.js 直接走 /api/chat/* 开会话，绕开好友前置。 -->
         <div class="ac-entry" onclick="xtOpenAdminChat()" title="联系管理员（管理员不参与好友列表）">
           <span class="nav-icon" data-icon="shield" data-icon-size="16">🛡️</span> 联系管理员
+          <span class="ac-badge" id="acEntryBadge" style="display:none"></span>
         </div>
         <!-- C1 20260913k：「群聊」「加好友」tab 面板宿主（原弹窗节点由页尾脚本整体搬入，id 不变，chat-local.js 弹窗函数照常按 id 命中） -->
         <div class="im-panel-host" id="imPanelGroups"></div>
@@ -306,8 +307,8 @@
 <script src="assets/config.js?v=20260913o" defer></script>
 <script src="assets/emoji/manifest.js?v=20260913o" defer></script>
 <script src="assets/api.js?v=20260913o" defer></script>
-<script src="assets/chat-local.js?v=20260913o" defer></script>
-<script src="assets/admin-contact.js?v=20260913o" defer></script>
+<script src="assets/chat-local.js?v=20260914b" defer></script>
+<script src="assets/admin-contact.js?v=20260914b" defer></script>
 <style>
   /* R33（20260913r）：tab 视觉统一——去掉 .im-tab-add 的特殊填充/加粗与专属 hover，加好友与其余 4 个 tab 同享 .im-tab/.im-tab.active；“im-tab-add” 类保留在 DOM 仅作语义标记，无样式副作用 */
   .im-tab:not(.active):hover{border-color:var(--primary);color:var(--primary)}
@@ -322,8 +323,10 @@
   .im-panel-host .im-modal{width:100%;max-width:none;max-height:none;margin:auto;box-shadow:none;border:1px solid var(--border)}
 
   /* 需求01：联系管理员固定入口 + 会话浮层（仅本页，全部 .ac- 前缀，不影响既有私信样式） */
-  .ac-entry{display:flex;align-items:center;gap:8px;margin:8px 14px 4px;padding:9px 12px;border-radius:10px;background:var(--primary-light);color:var(--primary);font-size:13px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:var(--transition)}
+  .ac-entry{display:flex;align-items:center;gap:8px;margin:8px 14px 4px;padding:9px 12px;border-radius:10px;background:var(--primary-light);color:var(--primary);font-size:13px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:var(--transition);position:relative}
   .ac-entry:hover{border-color:var(--primary)}
+  /* R43（20260914b）：联系管理员入口未读角标（管理员来信）。count>0 显示，>99 显示 99+ */
+  .ac-badge{position:absolute;top:-6px;right:-6px;min-width:17px;height:17px;line-height:17px;padding:0 4px;background:#ff5d5d;color:#fff;border-radius:9px;font-size:10px;font-weight:700;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.25);z-index:2}
   .ac-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
   .ac-panel{background:var(--card);width:100%;max-width:460px;max-height:82vh;border-radius:16px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 12px 48px rgba(0,0,0,.25)}
   .ac-head{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--card)}
