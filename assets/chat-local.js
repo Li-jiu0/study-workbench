@@ -443,7 +443,7 @@
     var aiExpanded = S.aiExpanded !== false; // 默认展开
     var aiArrow = aiExpanded ? '▼' : '▶';
     var aiHtml = '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0 4px;cursor:pointer" onclick="window.toggleAiGroup()">' +
-      '<span style="font-size:13px;font-weight:600;color:#333">🤖 AI伙伴 (' + activeAi.length + ')</span>' +
+      '<span style="font-size:13px;font-weight:600;color:#333;display:inline-flex;align-items:center;gap:4px"><span data-icon="bot" data-icon-size="14"></span>AI伙伴 (' + activeAi.length + ')</span>' +
       '<span style="font-size:11px;color:#999">' + aiArrow + '</span></div>';
     if (aiExpanded) {
       aiHtml += activeAi.map(function (f) {
@@ -492,6 +492,7 @@
     }
 
     box.innerHTML = aiHtml + groupsHtml + '<div class="im-group-title">👥 注册好友</div><div class="im-empty2">加载中…</div>';
+    if (window.lucideAutoRender) window.lucideAutoRender();
 
     loadServerFriends(function (friends) {
       // 重新计算群行（loadGroups 可能已异步回填）
@@ -528,6 +529,7 @@
           '</div>';
       }).join('');
       box.innerHTML = aiHtml + groupsHtml2 + '<div class="im-group-title">👥 注册好友</div>' + srvHtml;
+      if (window.lucideAutoRender) window.lucideAutoRender();
     });
   }
 
@@ -1289,8 +1291,9 @@
         return;
       }
       var serverHtml = imRenderFriendRows(serverUsers);
-      box.innerHTML = (presetResults.length ? '<div style="font-size:11px;color:#999;padding:8px 0 4px">🤖 AI好友</div>' + html : '') +
+      box.innerHTML = (presetResults.length ? '<div style="font-size:11px;color:#999;padding:8px 0 4px;display:flex;align-items:center;gap:4px"><span data-icon="bot" data-icon-size="12"></span>AI好友</div>' + html : '') +
         (serverUsers.length ? '<div style="font-size:11px;color:#999;padding:8px 0 4px">👥 注册用户</div>' + serverHtml : '');
+      if (window.lucideAutoRender) window.lucideAutoRender();
     })
     .catch(function (e) {
       if (presetResults.length === 0) {

@@ -4,11 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>AI模拟面试 - 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260913j">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
+/* common.css 会锁 html/body 高度并隐藏滚动，本页为独立长页面，恢复滚动 */
+html, body { height: auto; overflow-x: hidden; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-  background: linear-gradient(135deg, #5B8DEF 0%, #7B61FF 100%);
+  background: var(--bg);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -30,7 +33,7 @@ body {
   width: 36px; height: 36px;
   border-radius: 8px;
   background: #f0f0f0;
-  color: #5B8DEF;
+  color: var(--primary);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   font-size: 18px;
@@ -40,7 +43,7 @@ body {
 .header-title {
   font-size: 17px;
   font-weight: 700;
-  color: #333;
+  color: var(--text);
   flex: 1;
   letter-spacing: 1px;
 }
@@ -70,76 +73,98 @@ body {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
 }
-/* 面试设置面板 */
+/* 面试设置面板 —— 回归全站浅色设计令牌 */
 .setup-panel {
-  background: white;
+  background: var(--card);
   margin: 20px;
-  border-radius: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   padding: 28px 24px;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  box-shadow: var(--shadow);
 }
 .setup-title {
   font-size: 22px;
   font-weight: 700;
-  color: #eee;
+  color: var(--text);
   margin-bottom: 6px;
   text-align: center;
   letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
+.setup-title .title-icon { display: inline-flex; }
+.setup-title .title-icon svg { width: 22px; height: 22px; stroke: var(--primary); }
 .setup-desc {
   font-size: 13px;
-  color: #999;
+  color: var(--text-muted);
   text-align: center;
   margin-bottom: 28px;
 }
+/* 注意块：由橙色警示块改为简约信息提示条 */
 .setup-warning {
-  background: #fff3e0;
-  border-left: 3px solid #ff9800;
+  background: var(--primary-light);
+  border-left: 3px solid var(--primary);
   padding: 12px 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   margin-bottom: 24px;
   font-size: 13px;
-  color: #e65100;
+  color: var(--text-secondary);
   line-height: 1.6;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
 }
+.setup-warning .warn-ic { display: inline-flex; flex-shrink: 0; margin-top: 2px; }
+.setup-warning .warn-ic svg { width: 15px; height: 15px; stroke: var(--primary); }
+.setup-warning strong { color: var(--text); }
 .setup-group {
   margin-bottom: 20px;
 }
 .setup-label {
   font-size: 14px;
   font-weight: 600;
-  color: #555;
+  color: var(--text-secondary);
   margin-bottom: 10px;
 }
+/* 面试类型 / 应聘岗位：分段控件（segmented control）样式 */
 .setup-options {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
 }
 .setup-option {
-  padding: 8px 16px;
-  border: 1px solid #0f3460;
-  border-radius: 6px;
+  flex: 1;
+  min-width: 72px;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 8px;
   font-size: 13px;
-  color: #888;
+  text-align: center;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s;
-  background: linear-gradient(135deg, #5B8DEF 0%, #7B61FF 100%);
+  background: transparent;
 }
-.setup-option:hover { border-color: #5B8DEF; color: #5B8DEF; }
+.setup-option:hover { color: var(--primary); }
 .setup-option.active {
-  background: linear-gradient(135deg, #5B8DEF, #7B61FF);
-  color: white;
-  border-color: transparent;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: var(--shadow);
 }
 .start-btn {
   width: 100%;
   padding: 16px;
-  background: linear-gradient(135deg, #5B8DEF, #7B61FF);
+  background: var(--primary);
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
@@ -148,8 +173,9 @@ body {
   transition: all 0.2s;
 }
 .start-btn:hover {
+  background: var(--primary-dark);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(91,141,239,0.4);
+  box-shadow: var(--shadow-hover);
 }
 /* 倒计时条 */
 .timer-bar {
@@ -168,7 +194,7 @@ body {
 .timer-value {
   font-size: 20px;
   font-weight: 700;
-  color: #5B8DEF;
+  color: var(--primary);
   font-family: 'Courier New', monospace;
   min-width: 50px;
 }
@@ -182,7 +208,7 @@ body {
 .timer-track {
   flex: 1;
   height: 8px;
-  background: linear-gradient(135deg, #5B8DEF 0%, #7B61FF 100%);
+  background: var(--border);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -202,7 +228,7 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #5B8DEF 0%, #7B61FF 100%);
+  background: var(--bg);
 }
 .chat-messages {
   flex: 1;
@@ -280,12 +306,13 @@ body {
   font-size: 18px;
 }
 .message.ai .msg-avatar {
-  background: linear-gradient(135deg, #5B8DEF, #7B61FF);
+  background: var(--primary-light);
+  color: var(--primary-dark);
   border: none;
 }
 .message.user .msg-avatar {
-  background: linear-gradient(135deg, #5B8DEF, #7B61FF);
-  color: white;
+  background: var(--primary-light);
+  color: var(--primary-dark);
 }
 .msg-bubble {
   padding: 14px 18px;
@@ -294,13 +321,13 @@ body {
   line-height: 1.7;
 }
 .message.ai .msg-bubble {
-  background: white;
-  color: #333;
-  border: 1px solid #eee;
-  border-left: 3px solid #5B8DEF;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
 }
 .message.user .msg-bubble {
-  background: linear-gradient(135deg, #5B8DEF, #7B61FF);
+  background: var(--primary);
   color: white;
   border: none;
 }
@@ -342,23 +369,23 @@ body {
 .input-box {
   flex: 1;
   padding: 12px 16px;
-  border: 2px solid #0f3460;
+  border: 1px solid var(--border);
   border-radius: 8px;
   font-size: 14px;
   font-family: inherit;
   resize: none;
   max-height: 120px;
   outline: none;
-  background: linear-gradient(135deg, #5B8DEF 0%, #7B61FF 100%);
-  color: #eee;
+  background: var(--card);
+  color: var(--text);
   transition: border-color 0.2s;
 }
-.input-box:focus { border-color: #5B8DEF; background: white; }
-.input-box::placeholder { color: #555; }
+.input-box:focus { border-color: var(--primary); background: var(--card); }
+.input-box::placeholder { color: var(--text-muted); }
 .send-btn {
   padding: 12px 20px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #5B8DEF, #7B61FF);
+  border-radius: var(--radius-sm);
+  background: var(--primary);
   color: white;
   border: none;
   font-size: 14px;
@@ -366,11 +393,10 @@ body {
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;
-  border-radius: 12px;
 }
 .send-btn:hover { transform: scale(1.05); }
 .send-btn:disabled {
-  background: #555;
+  background: var(--text-muted);
   cursor: not-allowed;
 }
 /* 评定面板 */
@@ -397,19 +423,20 @@ body {
   margin-bottom: 24px;
 }
 .eval-score-item {
-  background: linear-gradient(135deg, #5B8DEF 0%, #7B61FF 100%);
+  background: var(--primary-light);
   padding: 14px;
   border-radius: 8px;
-  border: 1px solid #0f3460;
+  border: 1px solid var(--border);
 }
 .eval-score-label {
   font-size: 13px;
-  color: #999;
+  color: var(--text-secondary);
   margin-bottom: 8px;
 }
 .eval-stars {
   font-size: 16px;
   letter-spacing: 2px;
+  color: var(--primary-dark);
 }
 .eval-section {
   margin-bottom: 18px;
@@ -425,20 +452,20 @@ body {
 }
 .eval-section-content {
   font-size: 14px;
-  color: #aaa;
+  color: var(--text-secondary);
   line-height: 1.8;
-  background: linear-gradient(135deg, #5B8DEF 0%, #7B61FF 100%);
+  background: var(--bg);
   padding: 14px 18px;
   border-radius: 8px;
-  border: 1px solid #0f3460;
+  border: 1px solid var(--border);
 }
 .eval-btn {
   width: 100%;
   padding: 16px;
-  background: linear-gradient(135deg, #5B8DEF, #7B61FF);
+  background: var(--primary);
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
@@ -467,7 +494,7 @@ body {
 .hidden { display: none !important; }
 </style>
 </head>
-<body>
+<body class="theme-interview">
 
 <!-- 顶部栏 -->
 <div class="header">
@@ -478,11 +505,11 @@ body {
 
 <!-- 面试设置面板 -->
 <div class="setup-panel" id="setupPanel">
-  <div class="setup-title">🎯 面试准备</div>
+  <div class="setup-title"><span class="title-icon" data-icon="target"></span>面试准备</div>
   <div class="setup-desc">请选择面试类型和岗位，准备好后开始</div>
   
   <div class="setup-warning">
-    ⚠️ <strong>注意：</strong>面试过程中每道题限时回答，倒计时结束将自动进入下一题。请认真对待，模拟真实面试场景。
+    <span class="warn-ic" data-icon="alert-triangle"></span><span><strong>注意：</strong>面试过程中每道题限时回答，倒计时结束将自动进入下一题。请认真对待，模拟真实面试场景。</span>
   </div>
   
   <div class="setup-group">
@@ -580,6 +607,7 @@ body {
 </div>
 
 <script src="assets/config.js?v=20260913a"></script>
+<script src="assets/icon-map.js?v=20260913j" defer></script>
 <script>
 const INTERVIEW_QUESTIONS = [
   { q: '你好，请坐。我们今天的面试大概30分钟。首先，请你做一个简单的自我介绍。', keywords: ['姓名', '学校', '专业', '实习', '经历', '优势', '岗位'], tip: '自我介绍建议包含：基本信息+教育背景+实习/项目经历+为什么适合这个岗位，控制在2-3分钟。', time: 90 },

@@ -5,17 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>四级备考 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913i">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913i">
-<link rel="stylesheet" href="assets/states.css?v=20260913i">
-<link rel="stylesheet" href="assets/polish.css?v=20260913i">
+<link rel="stylesheet" href="assets/common.css?v=20260913j">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913j">
+<link rel="stylesheet" href="assets/states.css?v=20260913j">
+<link rel="stylesheet" href="assets/polish.css?v=20260913j">
+<style>
+  /* ==================== 阅读理解/翻译专项：页面内全屏视图（本页局部样式，20260913j） ====================
+     原为 mini.js 生成的居中 modal（.mz-mask 弹窗），现参照本页「听力训练」面板的展开/返回
+     交互改造为全屏视图；题目渲染/判分/解析逻辑全部保留在 assets/mini.js，仅替换呈现载体。 */
+  .cet-quiz-view{position:fixed;inset:0;z-index:1900;background:var(--bg);display:none;flex-direction:column}
+  .cet-quiz-view.open{display:flex}
+  .cet-quiz-top{flex:none;display:flex;align-items:center;gap:12px;padding:12px 16px;background:linear-gradient(135deg,var(--primary),var(--g2));color:#fff}
+  .cet-quiz-top b{flex:1;font-size:15px}
+  .cet-quiz-back{background:rgba(255,255,255,.18);border:none;color:#fff;padding:6px 12px;border-radius:8px;font-size:13px;cursor:pointer;line-height:1.4}
+  .cet-quiz-slot{flex:1;min-height:0;position:relative;overflow:hidden}
+  /* mini.js 载体替换：#mzMask 由全屏弹窗改为面板内普通填充（引擎渲染/判分逻辑不变） */
+  .cet-quiz-slot .mz-mask{position:absolute;inset:0;z-index:auto;display:flex;align-items:stretch;justify-content:stretch;padding:0;background:transparent;backdrop-filter:none;animation:none}
+  .cet-quiz-slot .mz-box{width:100%;max-width:none;height:100%;max-height:none;border-radius:0;box-shadow:none;animation:none}
+  .cet-quiz-slot .mz-head{display:none} /* 标题/关闭改由 cet-quiz-top 返回栏承担 */
+  .cet-quiz-slot .mz-body{flex:1}
+</style>
 </head>
 <body class="theme-cet">
 
 <div class="app">
 <nav class="sidebar">
     <div class="logo">
-      <div class="logo-icon">📚</div>
+      <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div>
       <div>
         <div class="logo-text">星途</div>
         <div class="logo-sub">致追梦的人->修身</div>
@@ -81,9 +97,9 @@
         <div class="gs-dropdown" id="gsDropdown"></div>
       </div>
       <div class="topbar-stats">
-        <div class="stat-item"><span class="stat-icon">🔥</span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
-        <div class="stat-item"><span class="stat-icon">⏱️</span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
-        <div class="stat-item"><span class="stat-icon">✅</span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
+        <div class="stat-item"><span class="stat-icon"><span class="nav-icon" data-icon="fire" data-icon-size="16"></span></span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon"><span class="nav-icon" data-icon="clock" data-icon-size="16"></span></span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+        <div class="stat-item"><span class="stat-icon"><span class="nav-icon" data-icon="check" data-icon-size="16"></span></span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
       </div>
       <div class="topbar-date" id="topbarDate"></div>
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
@@ -91,39 +107,15 @@
     </header>
     <div class="content">
 <div class="page active" id="page-cet">
-        <div class="module-hero">
-          <div class="module-hero-left">
-            <div class="module-hero-title">📚 四级备考</div>
-            <div class="module-hero-desc">词汇、听力、阅读、写作、翻译、口语，全方位突破四级</div>
-            <div class="module-hero-stats">
-              <div class="module-hero-stat"><div class="num" id="cetWords">0</div><div class="label">已学词汇</div></div>
-              <div class="module-hero-stat"><div class="num" id="cetListening">0</div><div class="label">听力练习</div></div>
-              <div class="module-hero-stat"><div class="num" id="cetSpeaking">0</div><div class="label">口语场景</div></div>
-            </div>
-          </div>
-          <div class="module-hero-right">
-            <div class="hero-illustration">
-              <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
-                <circle cx="60" cy="60" r="55" fill="rgba(255,255,255,0.15)"/>
-                <rect x="30" y="35" width="60" height="50" rx="6" fill="#fff" opacity="0.95"/>
-                <rect x="38" y="45" width="35" height="4" rx="2" fill="#5B8DEF"/>
-                <rect x="38" y="55" width="44" height="3" rx="1.5" fill="#ccc"/>
-                <rect x="38" y="63" width="40" height="3" rx="1.5" fill="#ccc"/>
-                <rect x="38" y="71" width="30" height="3" rx="1.5" fill="#ccc"/>
-                <circle cx="82" cy="78" r="12" fill="#FFD93D"/>
-                <path d="M78 78 L80 80 L86 74" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <text x="60" y="100" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">词汇 · 听力 · 口语</text>
-              </svg>
-            </div>
-          </div>
-        </div>
+        <!-- 【20260913j】英雄卡（module hero）整块删除：页面顶部直接从学习概况卡开始
+             （原三个统计位随卡删除；app.js 相关 update 已有空值保护） -->
 
         <!-- 【后续扩展点】T7 增量（2026-09-11）：学习概况统计卡（study-stats.js 渲染，本地优先可离线） -->
         <div id="cetStatsCard" class="study-stats-card"></div>
 
         <!-- 【后续扩展点】T7 增量（P0-9）：🎯 考试冲刺卡——倒计时 + 每日任务三勾选 + 完成率环形 -->
         <div class="sprint-card" id="cetSprintCard">
-          <div class="sprint-head"><span>🎯 考试冲刺</span><span id="sprintGoalLabel" style="font-size:var(--xt-font-sm);color:var(--text-secondary);font-weight:400">未设置目标日期</span></div>
+          <div class="sprint-head"><span><span class="nav-icon" data-icon="target" data-icon-size="16" style="vertical-align:-3px"></span> 考试冲刺</span><span id="sprintGoalLabel" style="font-size:var(--xt-font-sm);color:var(--text-secondary);font-weight:400">未设置目标日期</span></div>
           <div class="sprint-main">
             <div class="sprint-count"><b id="sprintDays">--</b><span>距目标考试（天）</span></div>
             <div class="sprint-ring" id="sprintRing"><i id="sprintPct">0%</i></div>
@@ -148,12 +140,12 @@
             <div class="feature-title">听力训练</div>
             <div class="feature-desc">精听+泛听，短篇新闻/长对话/篇章，逐句听写</div>
           </div>
-          <div class="feature-card" onclick="openMiniQuiz('cet-read')">
+          <div class="feature-card" onclick="openCetQuizView('cet-read')">
             <div class="feature-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div>
             <div class="feature-title">阅读理解</div>
             <div class="feature-desc">仔细阅读/长篇阅读/选词填空，技巧+刷题</div>
           </div>
-          <div class="feature-card" onclick="openMiniQuiz('cet-translate')">
+          <div class="feature-card" onclick="openCetQuizView('cet-translate')">
             <div class="feature-icon"><span class="nav-icon" data-icon="languages" data-icon-size="20"></span></div>
             <div class="feature-title">翻译专项</div>
             <div class="feature-desc">中国文化/历史/经济话题，常用表达积累</div>
@@ -333,13 +325,13 @@
     <nav class="bottom-nav">
     <div class="bottom-nav-list">
       <div class="bottom-nav-item" data-page="home">
-        <div class="bn-icon">🏠</div><div class="bn-label">首页</div>
+        <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
       </div>
-      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon">💬</div><div class="bn-label">互动</div></div>
-      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon">👤</div><div class="bn-label">我的</div></div>
-      <div class="bottom-nav-item" onclick="location.href='工具.html'"><div class="bn-icon">🧰</div><div class="bn-label">工具</div></div>
+      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
+      <div class="bottom-nav-item" onclick="location.href='工具.html'"><div class="bn-icon"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span></div><div class="bn-label">工具</div></div>
       <div class="bottom-nav-item" onclick="location.href='更多.html'">
-        <div class="bn-icon">☰</div><div class="bn-label">更多</div>
+        <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
       </div>
     </div>
   </nav>
@@ -352,21 +344,32 @@
     <div class="bottom-more-title">更多功能</div>
     <div class="bottom-more-grid">
       <div class="bottom-more-item" onclick="openBlogStats()">
-        <div class="bm-icon">📊</div><div class="bm-label">学习统计</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
       </div>
       <div class="bottom-more-item" onclick="gotoBlogMine()">
         <div class="bm-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div><div class="bm-label">互动广场</div>
       </div>
       <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
-        <div class="bm-icon">📒</div><div class="bm-label">错题本</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div><div class="bm-label">错题本</div>
       </div>
       <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
-        <div class="bm-icon">⚙️</div><div class="bm-label">设置</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div><div class="bm-label">设置</div>
       </div>
       <div class="bottom-more-item" onclick="showAbout()">
-        <div class="bm-icon">ℹ️</div><div class="bm-label">关于</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div><div class="bm-label">关于</div>
       </div>
     </div>
+  </div>
+
+  <!-- 阅读理解 / 翻译专项：页面内全屏视图（原 modal 弹窗改造，20260913j）
+       交互参照「听力训练」面板：顶部返回栏 + ESC 退出 + 锁滚动；
+       题目渲染/判分/解析复用 assets/mini.js 引擎，本页仅替换呈现载体 -->
+  <div class="cet-quiz-view" id="cetQuizView">
+    <div class="cet-quiz-top">
+      <button class="cet-quiz-back" onclick="closeCetQuizView()">← 返回</button>
+      <b id="cetQuizTitle">阅读理解</b>
+    </div>
+    <div class="cet-quiz-slot" id="cetQuizSlot"></div>
   </div>
 
   <!-- 添加倒计时弹窗 -->
@@ -437,18 +440,18 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913i" defer></script>
-<script src="assets/xt-toast.js?v=20260913i" defer></script>
-<script src="assets/error-boundary.js?v=20260913i" defer></script>
-<script src="assets/app.js?v=20260913i" defer></script>
-<script src="assets/voiceplayer.js?v=20260913i" defer></script>
-<script src="assets/config.js?v=20260913i" defer></script>
-<script src="assets/api.js?v=20260913i" defer></script>
+<script src="assets/icon-map.js?v=20260913j" defer></script>
+<script src="assets/xt-toast.js?v=20260913j" defer></script>
+<script src="assets/error-boundary.js?v=20260913j" defer></script>
+<script src="assets/app.js?v=20260913j" defer></script>
+<script src="assets/voiceplayer.js?v=20260913j" defer></script>
+<script src="assets/config.js?v=20260913j" defer></script>
+<script src="assets/api.js?v=20260913j" defer></script>
 
-<script src="assets/mini-cet.js?v=20260913i" defer></script>
+<script src="assets/mini-cet.js?v=20260913j" defer></script>
 <!-- 【P0-B T03-06】删除弹窗版 mock-exam.js 引入（mock 已迁到 mock_exam.html 三独立页） -->
-<script src="assets/mini.js?v=20260913i" defer></script>
-<script src="assets/study-stats.js?v=20260913i" defer></script>
+<script src="assets/mini.js?v=20260913j" defer></script>
+<script src="assets/study-stats.js?v=20260913j" defer></script>
 <script>
 /* ==================== T7 增量（P0-8/P0-9）：统计卡 + 考试冲刺 ==================== */
 (function () {
@@ -517,6 +520,87 @@
 
   if (document.readyState !== 'loading') { if (window.StudyStats) StudyStats.render('cetStatsCard', 'cet4'); renderSprint(); }
   else document.addEventListener('DOMContentLoaded', function () { if (window.StudyStats) StudyStats.render('cetStatsCard', 'cet4'); renderSprint(); });
+})();
+</script>
+<script>
+/* ==================== 阅读理解/翻译专项：modal → 页面内全屏视图（20260913j） ====================
+   题目渲染/判分/解析/学习数据联动逻辑全部保留在 assets/mini.js（openMiniQuiz 引擎），零改动；
+   本脚本只做「呈现载体」替换：引擎生成的 #mzMask 被迁入 #cetQuizView 全屏面板，
+   交互模式参照本页「听力训练」面板（顶部返回栏 / ESC 退出 / 锁滚动）。 */
+(function () {
+  'use strict';
+  var TITLES = { 'cet-read': '阅读理解', 'cet-translate': '翻译专项' };
+  var PANEL_ID = 'cetQuizView', SLOT_ID = 'cetQuizSlot';
+  var engineFn = null; // mini.js 引擎原函数（未包装前的引用，防自递归）
+
+  function $id(x) { return document.getElementById(x); }
+  function panelOpen() { var p = $id(PANEL_ID); return !!(p && p.classList.contains('open')); }
+
+  /* 把引擎生成的 #mzMask 迁入全屏面板（仅移动 DOM 节点，不改引擎内部状态） */
+  function mountMask() {
+    var m = $id('mzMask'), slot = $id(SLOT_ID);
+    if (m && slot && m.parentElement !== slot) slot.appendChild(m);
+  }
+  function hidePanel() {
+    var p = $id(PANEL_ID);
+    if (p) {
+      p.classList.remove('open');
+      var s = $id(SLOT_ID);
+      if (s) s.innerHTML = '';
+    }
+    if (window.closeAppModal) { try { window.closeAppModal(PANEL_ID); } catch (e) { /* 忽略 */ } }
+  }
+
+  /* 入口：本页「阅读理解」「翻译专项」两卡片调用（其余类目透传原引擎） */
+  window.openCetQuizView = function (id) {
+    if (!TITLES[id]) { if (window.openMiniQuiz) window.openMiniQuiz(id); return; }
+    var engine = engineFn || window.openMiniQuiz;
+    if (!engine || engine.__cetPatched) { if (window.showToast) window.showToast('内容加载中，请稍后再试'); return; }
+    var t = $id('cetQuizTitle'); if (t) t.textContent = TITLES[id];
+    var p = $id(PANEL_ID); if (p) p.classList.add('open');
+    if (window.openAppModal) { try { window.openAppModal(PANEL_ID); } catch (e) { /* 忽略 */ } } // 锁滚动，与听力面板一致
+    engine(id);   // 引擎照常渲染题目/解析/判分（逻辑零改动）
+    mountMask();  // 呈现载体迁入全屏面板
+  };
+
+  window.closeCetQuizView = function () {
+    if (window.openMiniQuiz && window.openMiniQuiz.__close) window.openMiniQuiz.__close(); // 引擎清理会话/移除 mzMask
+    hidePanel();
+  };
+
+  function setup() {
+    // 入口改指新视图：包装 openMiniQuiz，本页两个类目转由全屏面板承载，其余类目透传
+    var raw = window.openMiniQuiz;
+    if (raw && !raw.__cetPatched) {
+      engineFn = raw;
+      var wrapped = function (id) {
+        if (TITLES[id]) window.openCetQuizView(id);
+        else raw(id);
+      };
+      wrapped.__pick = raw.__pick;
+      wrapped.__next = raw.__next;
+      wrapped.__again = raw.__again;
+      wrapped.__finish = raw.__finish;
+      wrapped.__close = raw.__close;
+      wrapped.__cetPatched = true;
+      window.openMiniQuiz = wrapped;
+    }
+    // 兜底同步：引擎内部可能重建（再来一组）或移除（点遮罩关闭）#mzMask，观察 body 统一联动
+    if (window.MutationObserver) {
+      new MutationObserver(function () {
+        if (!panelOpen()) return;
+        if ($id('mzMask')) mountMask();
+        else hidePanel();
+      }).observe(document.body, { childList: true });
+    }
+    // ESC 退出全屏视图（对齐听力面板交互）
+    document.addEventListener('keydown', function (e) {
+      if ((e.key === 'Escape' || e.keyCode === 27) && panelOpen()) window.closeCetQuizView();
+    });
+  }
+
+  if (document.readyState !== 'loading') setup();
+  else document.addEventListener('DOMContentLoaded', setup);
 })();
 </script>
 </body>

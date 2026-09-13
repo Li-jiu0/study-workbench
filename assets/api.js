@@ -185,7 +185,7 @@ async function renderProfilePage() {
       '<span style="width:60px;font-size:12px;color:var(--text-secondary)">' + catCount[c.id] + ' 篇</span></div>';
   }).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有发贴，去「学习博客 → ✍️ 写发贴」试试吧</div>';
   box.innerHTML = `
-    <div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">👤</span>个人资料</div><div class="card-action">@${esc(u.username)}</div></div>
+    <div class="card"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="user" data-icon-size="18"></span></span>个人资料</div><div class="card-action">@${esc(u.username)}</div></div>
       <div style="display:flex;align-items:center;gap:16px;padding:6px 0;flex-wrap:wrap">
         <div class="profile-avatar-lg">${u.avatarUrl ? '<img src="' + apiFileUrl(u.avatarUrl) + '" alt="头像">' : esc((u.nickname || '学').slice(0, 1))}</div>
         <div style="flex:1;min-width:180px"><div style="font-size:18px;font-weight:800;color:var(--text)">${esc(u.nickname)}</div><div style="font-size:13px;color:var(--text-secondary);margin-top:4px">${esc(u.motto || '')}</div></div>
@@ -194,7 +194,7 @@ async function renderProfilePage() {
       </div>
       <div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">✅ 多用户在线版：资料保存在服务器数据库；头像为文件上传（不再 base64 入库）。</div>
     </div>
-    <div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>发贴统计</div></div>
+    <div class="card"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="18"></span></span>发贴统计</div></div>
       <div class="profile-grid">
         ${[['📝', s.published || 0, '已发布'], ['💾', s.draft || 0, '草稿'], ['📁', s.archived || 0, '已归档'], ['👍', s.likes || 0, '总点赞'], ['💬', s.comments || 0, '总评论'], ['👁', s.views || 0, '总阅读']].map(function (x) {
           return '<div class="profile-stat"><div class="ps-num">' + x[0] + ' ' + x[1] + '</div><div class="ps-label">' + x[2] + '</div></div>';
@@ -206,6 +206,7 @@ async function renderProfilePage() {
         <button class="btn btn-outline" onclick="navigateTo('blog')">📝 去写发贴</button>
       </div>
     </div>`;
+  if (window.lucideAutoRender) window.lucideAutoRender(); // J 批次：动态 data-icon span 重渲染
 }
 
 /* 他人公开主页：只展示对方公开发贴（草稿 / 私密 / 归档服务端一律不返回） */
@@ -238,7 +239,7 @@ async function renderUserHome(userId, box) {
   var s = u.stats || {};
   
   box.innerHTML =
-    '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">👤</span>TA 的主页</div><div class="card-action">公开发贴 ' + u.notes.length + ' 篇</div></div>' +
+    '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="user" data-icon-size="18"></span></span>TA 的主页</div><div class="card-action">公开发贴 ' + u.notes.length + ' 篇</div></div>' +
       '<div style="display:flex;align-items:center;gap:16px;padding:6px 0;flex-wrap:wrap">' +
         '<div class="profile-avatar-lg">' + (u.avatarUrl ? '<img src="' + apiFileUrl(u.avatarUrl) + '" alt="头像">' : esc((u.nickname || '学').slice(0, 1))) + '</div>' +
         '<div style="flex:1;min-width:180px">' +
@@ -259,7 +260,7 @@ async function renderUserHome(userId, box) {
     '</div>' +
 
     // ===== 创作数据（服务端可核算；学习时长等本机数据不对外） =====
-    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>创作数据</div></div>' +
+    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="18"></span></span>创作数据</div></div>' +
     '<div class="profile-grid">' +
     '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">📝 ' + (s.published || 0) + '</div><div class="ps-label">公开发贴</div></div>' +
     '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">👍 ' + (s.likes || 0) + '</div><div class="ps-label">获赞</div></div>' +
@@ -268,7 +269,7 @@ async function renderUserHome(userId, box) {
     '</div></div>' +
 
     // ===== 成就徽章墙（按公开创作数据） =====
-    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">🏅</span>TA 的成就</div></div>' +
+    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="trophy" data-icon-size="18"></span></span>TA 的成就</div></div>' +
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">' +
     '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🌱</div><div style="font-size:12px;margin-top:4px">初学者</div></div>' +
     ((s.published || 0) >= 1 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">✍️</div><div style="font-size:12px;margin-top:4px">处女作</div></div>' : '') +
@@ -276,9 +277,10 @@ async function renderUserHome(userId, box) {
     ((s.likes || 0) >= 10 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">👍</div><div style="font-size:12px;margin-top:4px">人气博主</div></div>' : '') +
     '</div></div>' +
     
-    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">🗒️</span>公开发贴</div></div>' +
+    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="pen" data-icon-size="18"></span></span>公开发贴</div></div>' +
       '<div class="blog-grid">' + cards + '</div>' +
     '</div>';
+  if (window.lucideAutoRender) window.lucideAutoRender(); // J 批次：动态 data-icon span 重渲染
 }
 async function addFriend(userId) {
   try {
@@ -695,7 +697,7 @@ function renderBlogStats() {
       '<span style="width:60px;font-size:12px;color:var(--text-secondary)">' + catCount[c.id] + ' 篇</span></div>';
   }).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有发贴，去“✍️ 写发贴”试试吧</div>';
   box.innerHTML = `
-    <div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>博客数据统计</div></div>
+    <div class="card"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="18"></span></span>博客数据统计</div></div>
       <div class="blog-grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">
         ${[['📝', s.published || 0, '已发布'], ['💾', s.draft || 0, '草稿'], ['📁', s.archived || 0, '已归档'], ['👍', s.likes || 0, '总点赞'], ['💬', s.comments || 0, '总评论'], ['👁', s.views || 0, '总阅读']].map(function (x) {
           return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center"><div style="font-size:22px;font-weight:800;color:var(--text)">' + x[0] + ' ' + x[1] + '</div><div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + x[2] + '</div></div>';
@@ -707,6 +709,7 @@ function renderBlogStats() {
         <button class="btn btn-outline" onclick="exportAllNotesMd()">📄 导出全部 Markdown</button>
       </div>
     </div>`;
+  if (window.lucideAutoRender) window.lucideAutoRender(); // J 批次：动态 data-icon span 重渲染
 }
 function exportCurrentNoteMd() {
   var n = NOTE_DETAIL; if (!n) { showToast('找不到发贴'); return; }
@@ -1163,7 +1166,7 @@ function _renderProfileLocal(box, p) {
   var avatar = (p.avatarImg && /^data:image\//.test(p.avatarImg))
     ? '<img src="' + p.avatarImg + '" alt="头像">' : esc((p.avatar || '学').slice(0, 1));
   box.innerHTML =
-    '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">👤</span>个人资料</div><div class="card-action">本地单机</div></div>' +
+    '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="user" data-icon-size="18"></span></span>个人资料</div><div class="card-action">本地单机</div></div>' +
     '<div style="display:flex;align-items:center;gap:16px;padding:6px 0;flex-wrap:wrap">' +
     '<div class="profile-avatar-lg">' + avatar + '</div>' +
     '<div style="flex:1;min-width:180px"><div style="font-size:18px;font-weight:800;color:var(--text)">' + esc(p.name || '同学') + '</div>' +
@@ -1175,6 +1178,7 @@ function _renderProfileLocal(box, p) {
     '<button class="btn btn-danger" onclick="doLogout()">🚪 退出登录</button></div>' +
     '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">📱 当前为本地单机模式，资料保存在本机浏览器。在线登录后资料/发贴会存到服务器并可多端同步。</div></div>' +
     _localNotesCard();
+  if (window.lucideAutoRender) window.lucideAutoRender(); // J 批次：动态 data-icon span 重渲染
 }
 
 function _localNotesCard() {
@@ -1185,7 +1189,7 @@ function _localNotesCard() {
   var views = pub.reduce(function (s, n) { return s + (n.views || 0); }, 0);
   var d = (typeof appData !== 'undefined' && appData && appData.stats) || {};
   var acc = d.totalQuestions > 0 ? Math.round(d.correctQuestions / d.totalQuestions * 100) : 0;
-  return '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>本机发贴统计</div></div>' +
+  return '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="18"></span></span>本机发贴统计</div></div>' +
     '<div class="profile-grid">' +
     [['📝', pub.length, '已发布'], ['💾', draft.length, '草稿'], ['👍', likes, '点赞'], ['👁', views, '阅读']].map(function (x) {
       return '<div class="profile-stat"><div class="ps-num">' + x[0] + ' ' + x[1] + '</div><div class="ps-label">' + x[2] + '</div></div>';
@@ -1199,7 +1203,7 @@ function _localNotesCard() {
       var st = (typeof loadAllSettings === 'function') ? loadAllSettings() : {};
       var txt = (typeof getTodayStudyText === 'function') ? getTodayStudyText() : '0 分钟';
       var on = st.studyLimitOn !== false;
-      return '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">⏱</span>今日学习时长</div>' +
+      return '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="clock" data-icon-size="18"></span></span>今日学习时长</div>' +
         '<div class="card-action">上限 ' + (on ? (st.studyLimitHours || 4) + ' 小时' : '未启用') + '</div></div>' +
         '<div style="display:flex;align-items:baseline;gap:8px;padding:4px 0">' +
         '<span id="pcStudyTime" style="font-size:26px;font-weight:800;color:var(--primary)">' + txt + '</span>' +
@@ -1209,7 +1213,7 @@ function _localNotesCard() {
     })() +
 
     // ===== 学习数据概览（本机设备数据） =====
-    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>学习数据</div></div>' +
+    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="18"></span></span>学习数据</div></div>' +
     '<div class="profile-grid">' +
     '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🔥 ' + (d.streakDays || 0) + '</div><div class="ps-label">连续打卡</div></div>' +
     '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">⏱ ' + (d.totalHours || 0) + 'h</div><div class="ps-label">总学习时长</div></div>' +
@@ -1218,7 +1222,7 @@ function _localNotesCard() {
     '</div></div>' +
 
     // ===== 成就徽章墙（本机设备数据） =====
-    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">🏅</span>我的成就</div></div>' +
+    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="trophy" data-icon-size="18"></span></span>我的成就</div></div>' +
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">' +
     '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🌱</div><div style="font-size:12px;margin-top:4px">初学者</div></div>' +
     ((d.streakDays || 0) >= 7 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🔥</div><div style="font-size:12px;margin-top:4px">坚持一周</div></div>' : '') +
@@ -1227,12 +1231,13 @@ function _localNotesCard() {
     '</div></div>' +
 
     // ===== 新增：学习模块快捷入口 =====
-    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">📚</span>学习模块</div></div>' +
+    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="18"></span></span>学习模块</div></div>' +
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">' +
     '<div onclick="location.href=' + "'错题本.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px">📒</div><div style="font-size:12px;margin-top:4px">错题本</div></div>' +
     '<div onclick="location.href=' + "'四级词汇.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px">📖</div><div style="font-size:12px;margin-top:4px">四级词汇</div></div>' +
     '<div onclick="location.href=' + "'央国企笔试.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px">📝</div><div style="font-size:12px;margin-top:4px">行测刷题</div></div>' +
     '</div></div>';
+  if (window.lucideAutoRender) window.lucideAutoRender(); // J 批次：动态 data-icon span 重渲染
 }
 
 function _renderProfileOnline(box, u) {
@@ -1250,7 +1255,7 @@ function _renderProfileOnline(box, u) {
       '<span style="width:60px;font-size:12px;color:var(--text-secondary)">' + catCount[c.id] + ' 篇</span></div>';
   }).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有发贴，去「学习博客 → ✍️ 写发贴」试试吧</div>';
   box.innerHTML =
-    '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">👤</span>个人资料</div><div class="card-action">@' + esc(u.username) + '</div></div>' +
+    '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="user" data-icon-size="18"></span></span>个人资料</div><div class="card-action">@' + esc(u.username) + '</div></div>' +
     '<div style="display:flex;align-items:center;gap:16px;padding:6px 0;flex-wrap:wrap">' +
     '<div class="profile-avatar-lg">' + (u.avatarUrl ? '<img src="' + apiFileUrl(u.avatarUrl) + '" alt="头像">' : esc((u.nickname || '学').slice(0, 1))) + '</div>' +
     '<div style="flex:1;min-width:180px"><div style="font-size:18px;font-weight:800;color:var(--text)">' + esc(u.nickname) + '</div>' +
@@ -1263,7 +1268,7 @@ function _renderProfileOnline(box, u) {
     '<button class="btn btn-outline" onclick="editProfile()">✏️ 编辑资料</button>' +
     '<button class="btn btn-danger" onclick="doLogout()">🚪 退出登录</button></div>' +
     '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">✅ 多人在线：资料保存在服务器数据库，头像为文件上传。</div></div>' +
-    '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>发贴统计</div></div>' +
+    '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="18"></span></span>发贴统计</div></div>' +
     '<div class="profile-grid">' +
     [['📝', s.published || 0, '已发布'], ['💾', s.draft || 0, '草稿'], ['📁', s.archived || 0, '归档'], ['👍', s.likes || 0, '总点赞'], ['💬', s.comments || 0, '评论'], ['👁', s.views || 0, '阅读']].map(function (x) {
       return '<div class="profile-stat"><div class="ps-num">' + x[0] + ' ' + x[1] + '</div><div class="ps-label">' + x[2] + '</div></div>';
@@ -1278,7 +1283,7 @@ function _renderProfileOnline(box, u) {
       var st = (typeof loadAllSettings === 'function') ? loadAllSettings() : {};
       var txt = (typeof getTodayStudyText === 'function') ? getTodayStudyText() : '0 分钟';
       var on = st.studyLimitOn !== false;
-      return '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">⏱</span>今日学习时长</div>' +
+      return '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="clock" data-icon-size="18"></span></span>今日学习时长</div>' +
         '<div class="card-action">上限 ' + (on ? (st.studyLimitHours || 4) + ' 小时' : '未启用') + '</div></div>' +
         '<div style="display:flex;align-items:baseline;gap:8px;padding:4px 0">' +
         '<span id="pcStudyTime" style="font-size:26px;font-weight:800;color:var(--primary)">' + txt + '</span>' +
@@ -1288,7 +1293,7 @@ function _renderProfileOnline(box, u) {
     })() +
 
     // ===== 学习数据概览（本机设备数据） =====
-    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">📊</span>学习数据</div></div>' +
+    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="18"></span></span>学习数据</div></div>' +
     '<div class="profile-grid">' +
     '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">🔥 ' + (d.streakDays || 0) + '</div><div class="ps-label">连续打卡</div></div>' +
     '<div class="profile-stat"><div class="ps-num" style="color:var(--primary)">⏱ ' + (d.totalHours || 0) + 'h</div><div class="ps-label">总学习时长</div></div>' +
@@ -1297,7 +1302,7 @@ function _renderProfileOnline(box, u) {
     '</div></div>' +
 
     // ===== 成就徽章墙（本机设备数据） =====
-    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">🏅</span>我的成就</div></div>' +
+    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="trophy" data-icon-size="18"></span></span>我的成就</div></div>' +
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">' +
     '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🌱</div><div style="font-size:12px;margin-top:4px">初学者</div></div>' +
     ((d.streakDays || 0) >= 7 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🔥</div><div style="font-size:12px;margin-top:4px">坚持一周</div></div>' : '') +
@@ -1306,12 +1311,13 @@ function _renderProfileOnline(box, u) {
     '</div></div>' +
 
     // ===== 新增：学习模块快捷入口 =====
-    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon">📚</span>学习模块</div></div>' +
+    '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="18"></span></span>学习模块</div></div>' +
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">' +
     '<div onclick="location.href=' + "'错题本.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px">📒</div><div style="font-size:12px;margin-top:4px">错题本</div></div>' +
     '<div onclick="location.href=' + "'四级词汇.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px">📖</div><div style="font-size:12px;margin-top:4px">四级词汇</div></div>' +
     '<div onclick="location.href=' + "'央国企笔试.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px">📝</div><div style="font-size:12px;margin-top:4px">行测刷题</div></div>' +
     '</div></div>';
+  if (window.lucideAutoRender) window.lucideAutoRender(); // J 批次：动态 data-icon span 重渲染
 }
 
 function editProfile() {

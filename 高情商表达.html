@@ -5,17 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>高情商表达 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913i">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913i">
-<link rel="stylesheet" href="assets/states.css?v=20260913i">
-<link rel="stylesheet" href="assets/polish.css?v=20260913i">
+<link rel="stylesheet" href="assets/common.css?v=20260913j">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913j">
+<link rel="stylesheet" href="assets/states.css?v=20260913j">
+<link rel="stylesheet" href="assets/polish.css?v=20260913j">
 </head>
 <body class="theme-comm">
 
 <div class="app">
 <nav class="sidebar">
     <div class="logo">
-      <div class="logo-icon">📚</div>
+      <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div>
       <div>
         <div class="logo-text">星途</div>
         <div class="logo-sub">致追梦的人->修身</div>
@@ -81,9 +81,9 @@
         <div class="gs-dropdown" id="gsDropdown"></div>
       </div>
       <div class="topbar-stats">
-        <div class="stat-item"><span class="stat-icon">🔥</span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
-        <div class="stat-item"><span class="stat-icon">⏱️</span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
-        <div class="stat-item"><span class="stat-icon">✅</span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
+        <div class="stat-item"><span class="stat-icon"><span class="nav-icon" data-icon="fire" data-icon-size="14"></span></span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon"><span class="nav-icon" data-icon="clock" data-icon-size="14"></span></span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+        <div class="stat-item"><span class="stat-icon"><span class="nav-icon" data-icon="check" data-icon-size="14"></span></span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
       </div>
       <div class="topbar-date" id="topbarDate"></div>
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
@@ -91,40 +91,12 @@
     </header>
     <div class="content">
 <div class="page active" id="page-comm">
-        <div class="module-hero">
-          <div class="module-hero-left">
-            <div class="module-hero-title">💬 高情商表达</div>
-            <div class="module-hero-desc">i人专属沟通指南，场景话术库+角色扮演训练，让你会说话、说好话</div>
-            <div class="module-hero-stats">
-              <div class="module-hero-stat"><div class="num" id="commScenes">0</div><div class="label">练习场景</div></div>
-              <div class="module-hero-stat"><div class="num" id="commRounds">0</div><div class="label">对话轮次</div></div>
-              <div class="module-hero-stat"><div class="num" id="commScore">0</div><div class="label">平均评分</div></div>
-            </div>
-          </div>
-          <div class="module-hero-right">
-            <div class="hero-illustration">
-              <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
-                <circle cx="60" cy="60" r="55" fill="rgba(255,255,255,0.15)"/>
-                <circle cx="42" cy="55" r="14" fill="#fff" opacity="0.95"/>
-                <circle cx="42" cy="52" r="5" fill="#9C27B0"/>
-                <path d="M34 68 Q42 62 50 68" stroke="#9C27B0" stroke-width="2" fill="none"/>
-                <circle cx="78" cy="55" r="14" fill="#fff" opacity="0.95"/>
-                <circle cx="78" cy="52" r="5" fill="#FF9800"/>
-                <path d="M70 68 Q78 62 86 68" stroke="#FF9800" stroke-width="2" fill="none"/>
-                <rect x="50" y="78" width="20" height="8" rx="4" fill="#FFD93D"/>
-                <text x="60" y="84" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">💬</text>
-                <text x="60" y="100" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">沟通 · 话术 · 情商</text>
-              </svg>
-            </div>
-          </div>
-        </div>
-
         <!-- 【后续扩展点】T7 增量（2026-09-11）：学习概况统计卡（study-stats.js 渲染） -->
         <div id="eqStatsCard" class="study-stats-card"></div>
 
         <div class="feature-grid">
           <div class="feature-card" onclick="navigateTo('comm-quotes')">
-            <div class="feature-icon">✨</div>
+            <div class="feature-icon" data-icon="sparkles" data-icon-size="20"></div>
             <div class="feature-title">万能金句库</div>
             <div class="feature-desc">18句万能金句，直接套用，拒绝/赞美/道歉/催更全覆盖</div>
             <span class="feature-badge tag-primary">已上线</span>
@@ -143,7 +115,7 @@
             <div class="feature-desc">真实职场场景逐句分析，哪句好哪句有问题一目了然</div>
           </div>
           <div class="feature-card" onclick="openMiniQuiz('comm-introvert')">
-            <div class="feature-icon">🦋</div>
+            <div class="feature-icon" data-icon="message-circle" data-icon-size="20"></div>
             <div class="feature-title">i人沟通专区</div>
             <div class="feature-desc">不用变e人！i人专属沟通策略，提前准备、文字辅助</div>
           </div>
@@ -154,7 +126,7 @@
             <span class="feature-badge tag-primary">新上线</span>
           </div>
           <div class="feature-card" onclick="openRoleplayDemo()">
-            <div class="feature-icon">🎭</div>
+            <div class="feature-icon" data-icon="play" data-icon-size="20"></div>
             <div class="feature-title">角色扮演训练</div>
             <div class="feature-desc">播放器式动画对话，AI角色实时互动，六维评定+总评报告</div>
             <span class="feature-badge tag-primary">体验版</span>
@@ -322,13 +294,13 @@
     <nav class="bottom-nav">
     <div class="bottom-nav-list">
       <div class="bottom-nav-item" data-page="home">
-        <div class="bn-icon">🏠</div><div class="bn-label">首页</div>
+        <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
       </div>
-      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon">💬</div><div class="bn-label">互动</div></div>
-      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon">👤</div><div class="bn-label">我的</div></div>
-      <div class="bottom-nav-item" onclick="location.href='工具.html'"><div class="bn-icon">🧰</div><div class="bn-label">工具</div></div>
+      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-square" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
+      <div class="bottom-nav-item" onclick="location.href='工具.html'"><div class="bn-icon"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span></div><div class="bn-label">工具</div></div>
       <div class="bottom-nav-item" onclick="location.href='更多.html'">
-        <div class="bn-icon">☰</div><div class="bn-label">更多</div>
+        <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
       </div>
     </div>
   </nav>
@@ -341,19 +313,19 @@
     <div class="bottom-more-title">更多功能</div>
     <div class="bottom-more-grid">
       <div class="bottom-more-item" onclick="openBlogStats()">
-        <div class="bm-icon">📊</div><div class="bm-label">学习统计</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
       </div>
       <div class="bottom-more-item" onclick="gotoBlogMine()">
         <div class="bm-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div><div class="bm-label">互动广场</div>
       </div>
       <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
-        <div class="bm-icon">📒</div><div class="bm-label">错题本</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div><div class="bm-label">错题本</div>
       </div>
       <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
-        <div class="bm-icon">⚙️</div><div class="bm-label">设置</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div><div class="bm-label">设置</div>
       </div>
       <div class="bottom-more-item" onclick="showAbout()">
-        <div class="bm-icon">ℹ️</div><div class="bm-label">关于</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div><div class="bm-label">关于</div>
       </div>
     </div>
   </div>
@@ -426,17 +398,17 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913i" defer></script>
-<script src="assets/xt-toast.js?v=20260913i" defer></script>
-<script src="assets/error-boundary.js?v=20260913i" defer></script>
-<script src="assets/app.js?v=20260913i" defer></script>
-<script src="assets/config.js?v=20260913i" defer></script>
-<script src="assets/api.js?v=20260913i" defer></script>
+<script src="assets/icon-map.js?v=20260913j" defer></script>
+<script src="assets/xt-toast.js?v=20260913j" defer></script>
+<script src="assets/error-boundary.js?v=20260913j" defer></script>
+<script src="assets/app.js?v=20260913j" defer></script>
+<script src="assets/config.js?v=20260913j" defer></script>
+<script src="assets/api.js?v=20260913j" defer></script>
 
-<script src="assets/mini-comm.js?v=20260913i" defer></script>
-<script src="assets/mini.js?v=20260913i" defer></script>
-<script src="assets/i-partner.js?v=20260913i" defer></script>
-<script src="assets/study-stats.js?v=20260913i" defer></script>
+<script src="assets/mini-comm.js?v=20260913j" defer></script>
+<script src="assets/mini.js?v=20260913j" defer></script>
+<script src="assets/i-partner.js?v=20260913j" defer></script>
+<script src="assets/study-stats.js?v=20260913j" defer></script>
 <script>
 /* ==================== T7 增量（P0-8）：学习概况统计卡（study-stats.js 渲染） ====================
    说明：本页原情景问答题卡（P0-11 情景题 + AI 点评）已按功能删减 B3 下线，

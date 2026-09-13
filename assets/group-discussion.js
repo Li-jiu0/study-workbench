@@ -259,20 +259,31 @@
   }
 
   // ========== 打开无领导小组讨论 ==========
+  // 【批次 20260913j】页面内全屏视图：存在宿主容器 #gdAiPane（商务礼仪面试.html 合并页）时，
+  // 直接渲染为页面内面板，不再创建浮层蒙版；其他调用环境保持原浮层行为不变。
   function open() {
     let mask = document.getElementById('gdMask');
     if (mask) mask.remove();
 
-    mask = document.createElement('div');
-    mask.id = 'gdMask';
-    mask.className = 'gd-mask';
-    mask.innerHTML = `
-      <div class="gd-panel" id="gdPanel">
-        <button class="gd-close" onclick="GroupDiscussion.close()">✕</button>
-        <div id="gdContent">${renderTopicList()}</div>
-      </div>
-    `;
-    document.body.appendChild(mask);
+    const host = document.getElementById('gdAiPane');
+    if (host) {
+      host.innerHTML = `
+        <div class="gd-panel gd-panel-inline" id="gdPanel">
+          <div id="gdContent">${renderTopicList()}</div>
+        </div>
+      `;
+    } else {
+      mask = document.createElement('div');
+      mask.id = 'gdMask';
+      mask.className = 'gd-mask';
+      mask.innerHTML = `
+        <div class="gd-panel" id="gdPanel">
+          <button class="gd-close" onclick="GroupDiscussion.close()">✕</button>
+          <div id="gdContent">${renderTopicList()}</div>
+        </div>
+      `;
+      document.body.appendChild(mask);
+    }
 
     if (!document.getElementById('gdStyle')) {
       const style = document.createElement('style');
@@ -435,6 +446,8 @@
         display: flex; align-items: center; justify-content: center;
       }
       .gd-close:hover { background: rgba(0,0,0,0.2); }
+      /* 页面内全屏视图（合并页 #gdAiPane 宿主）：占满容器，无浮层阴影 */
+      .gd-panel-inline { width: 100%; max-width: none; height: 100%; max-height: none; border-radius: 16px; box-shadow: none; }
       #gdContent { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
       
       .gd-header { padding: 24px 20px 12px; text-align: center; }

@@ -124,8 +124,8 @@ function c1MenuChecks() {
   const onclicks = tabs.map(t => t.onclick);
   const expectLabels = ['会话', '好友', '群聊', '申请', '加好友'];
   const expectOnclicks = [
-    "imSwitchTab('chats')", "imSwitchTab('friends')", "imOpenGroupCreator()",
-    "imSwitchTab('requests')", "imOpenAddFriendModal()"
+    "imSwitchTab('chats')", "imSwitchTab('friends')", "imSwitchTab('groups')",
+    "imSwitchTab('requests')", "imSwitchTab('addfriend')"
   ];
   return [
     {

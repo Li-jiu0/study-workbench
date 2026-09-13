@@ -5,17 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>工具 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913i">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913i">
-<link rel="stylesheet" href="assets/states.css?v=20260913i">
-<link rel="stylesheet" href="assets/polish.css?v=20260913i">
+<link rel="stylesheet" href="assets/common.css?v=20260913j">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913j">
+<link rel="stylesheet" href="assets/states.css?v=20260913j">
+<link rel="stylesheet" href="assets/polish.css?v=20260913j">
+<style>
+  /* 【批次 20260913j】导入题库：由弹窗改为页面内全屏视图（复用 importer.js 向导逻辑，带返回） */
+  .importer-view{position:fixed;inset:0;z-index:900;background:var(--bg);overflow-y:auto;display:none}
+  .importer-view.open{display:block}
+  .importer-view-inner{max-width:760px;margin:0 auto;padding:16px 16px 32px}
+  .importer-view-body{background:var(--card);color:var(--text);border-radius:18px;padding:16px;box-shadow:0 10px 30px -18px rgba(0,0,0,.25)}
+  .importer-view-body .imp-body{overflow:visible;padding:0}
+</style>
 </head>
 <body class="theme-home">
 
 <div class="app">
 <nav class="sidebar">
     <div class="logo">
-      <div class="logo-icon">📚</div>
+      <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div>
       <div>
         <div class="logo-text">星途</div>
         <div class="logo-sub">致追梦的人->修身</div>
@@ -81,9 +89,9 @@
         <div class="gs-dropdown" id="gsDropdown"></div>
       </div>
       <div class="topbar-stats">
-        <div class="stat-item"><span class="stat-icon">🔥</span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
-        <div class="stat-item"><span class="stat-icon">⏱️</span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
-        <div class="stat-item"><span class="stat-icon">✅</span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="fire" data-icon-size="16"></span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="clock" data-icon-size="16"></span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="check" data-icon-size="16"></span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
       </div>
       <div class="topbar-date" id="topbarDate"></div>
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
@@ -99,7 +107,7 @@
 
         <!-- 【A8】工具卡片纵向列表：与旧底部弹层「工具」同项同行为；卡片可后续扩展。T01 批次五（2026-09-12）#1.0：由 .morepage-grid 改为 .morepage-list 纵向排列（右侧 › 箭头为 CSS ::after） -->
         <div class="morepage-list">
-          <div class="morepage-card morepage-list-item" onclick="if(window.openImporter){openImporter()}else{location.href='设置.html'}">
+          <div class="morepage-card morepage-list-item" onclick="openImporterView()">
             <div class="mpc-icon" data-icon="inbox" data-icon-size="20"></div>
             <div class="mpc-title">导入题库</div>
             <div class="mpc-desc">Excel/CSV 一键导入</div>
@@ -133,19 +141,53 @@
     </div>
   </div>
 
-
+  <!-- 导入题库 · 页面内全屏视图（批次 20260913j：原 importer.js 弹层外壳移除，向导主体 impBody 移入本视图；解析/预览/导入逻辑全部复用 assets/importer.js，功能不变） -->
+  <div class="importer-view" id="importerView" role="dialog" aria-label="导入题库">
+    <div class="importer-view-inner">
+      <div class="morepage-head">
+        <button class="morepage-back" onclick="closeImporterView()" title="返回" aria-label="返回">←</button>
+        <div class="morepage-title">导入题库</div>
+      </div>
+      <!-- importer.js 的 shell()/fileStep()/targetStep() 按 id=impBody 定位并渲染步骤内容 -->
+      <div class="importer-view-body"><div class="imp-body" id="impBody"></div></div>
+    </div>
+  </div>
+  <script>
+    /* 打开导入题库全屏视图：先由 importer.js 的 openImporter() 初始化向导状态/样式/步骤 DOM，
+       再把向导主体 #impBody 从弹层外壳搬进本视图并移除弹层外壳（不改动 importer.js 任何函数）。 */
+    function openImporterView() {
+      if (!window.openImporter) { location.href = '设置.html'; return; }
+      window.openImporter();
+      var mask = document.getElementById('impMask');
+      var body = document.getElementById('impBody');
+      var host = document.getElementById('importerView');
+      if (mask && body && host) {
+        host.querySelector('.importer-view-body').appendChild(body);
+        mask.parentNode.removeChild(mask);
+      }
+      if (host) host.classList.add('open');
+    }
+    /* 关闭视图并复位向导状态（__impClose 由 importer.js 暴露，负责清空内部状态 S） */
+    function closeImporterView() {
+      if (typeof window.__impClose === 'function') window.__impClose();
+      var host = document.getElementById('importerView');
+      if (host) host.classList.remove('open');
+    }
+    window.openImporterView = openImporterView;
+    window.closeImporterView = closeImporterView;
+  </script>
 
   <!-- 底部导航（手机端） -->
     <nav class="bottom-nav">
     <div class="bottom-nav-list">
       <div class="bottom-nav-item" data-page="home">
-        <div class="bn-icon">🏠</div><div class="bn-label">首页</div>
+        <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
       </div>
-      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon">💬</div><div class="bn-label">互动</div></div>
-      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon">👤</div><div class="bn-label">我的</div></div>
-      <div class="bottom-nav-item active" onclick="location.href='工具.html'"><div class="bn-icon">🧰</div><div class="bn-label">工具</div></div>
+      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-square" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
+      <div class="bottom-nav-item active" onclick="location.href='工具.html'"><div class="bn-icon"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span></div><div class="bn-label">工具</div></div>
       <div class="bottom-nav-item" onclick="location.href='更多.html'">
-        <div class="bn-icon">☰</div><div class="bn-label">更多</div>
+        <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
       </div>
     </div>
   </nav>
@@ -158,19 +200,19 @@
     <div class="bottom-more-title">更多功能</div>
     <div class="bottom-more-grid">
       <div class="bottom-more-item" onclick="openBlogStats()">
-        <div class="bm-icon">📊</div><div class="bm-label">学习统计</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
       </div>
       <div class="bottom-more-item" onclick="gotoBlogMine()">
         <div class="bm-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div><div class="bm-label">互动广场</div>
       </div>
       <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
-        <div class="bm-icon">📒</div><div class="bm-label">错题本</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div><div class="bm-label">错题本</div>
       </div>
       <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
-        <div class="bm-icon">⚙️</div><div class="bm-label">设置</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div><div class="bm-label">设置</div>
       </div>
       <div class="bottom-more-item" onclick="showAbout()">
-        <div class="bm-icon">ℹ️</div><div class="bm-label">关于</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div><div class="bm-label">关于</div>
       </div>
     </div>
   </div>
@@ -181,13 +223,13 @@
     <div class="bottom-more-title">🧰 更多工具</div>
     <div class="bottom-more-grid">
       <div class="bottom-more-item" onclick="location.href='AI模拟面试.html';toggleToolsPanel()">
-        <div class="bm-icon">🎙️</div><div class="bm-label">AI面试</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="mic" data-icon-size="20"></span></div><div class="bm-label">AI面试</div>
       </div>
       <div class="bottom-more-item" onclick="location.href='PPT版式库.html';toggleToolsPanel()">
-        <div class="bm-icon">📊</div><div class="bm-label">PPT版式</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">PPT版式</div>
       </div>
       <div class="bottom-more-item" onclick="location.href='四级经验分享.html';toggleToolsPanel()">
-        <div class="bm-icon">📖</div><div class="bm-label">四级经验</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div><div class="bm-label">四级经验</div>
       </div>
       <div class="bottom-more-item" onclick="if(window.openQuest){openQuest()}else{location.href='工具.html'};toggleToolsPanel()">
         <div class="bm-icon"><span class="nav-icon" data-icon="zap" data-icon-size="20"></span></div><div class="bm-label">穿越英语</div>
@@ -235,22 +277,22 @@
   <!-- ==================== AI学习助手（悬浮聊天窗口） ====================
        说明：默认“本地演示模式”；密钥只放在后端 .env，前端永不出现密钥。 -->
   <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">
-    🤖<span class="ai-mode-badge" id="aiModeBadge">演示</span>
+    <span class="nav-icon" data-icon="bot" data-icon-size="20"></span><span class="ai-mode-badge" id="aiModeBadge">演示</span>
   </div>
   <div class="ai-panel" id="aiPanel">
     <div class="ai-panel-header">
-      <div class="ai-avatar">🤖</div>
+      <div class="ai-avatar"><span class="nav-icon" data-icon="bot" data-icon-size="20"></span></div>
       <div style="flex:1">
         <div class="ai-title">AI学习助手</div>
         <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
       </div>
-      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录">🧹</div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录"><span class="nav-icon" data-icon="delete" data-icon-size="18"></span></div>
       <div class="ai-close" onclick="toggleAiPanel()" title="收起面板">✕</div>
     </div>
     <div class="ai-messages" id="aiMessages"></div>
     <div class="ai-input-row">
       <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
-      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()">➤</div>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()"><span class="nav-icon" data-icon="arrow-right" data-icon-size="18"></span></div>
     </div>
   </div>
 
@@ -258,14 +300,14 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913i" defer></script>
-<script src="assets/xt-toast.js?v=20260913i" defer></script>
-<script src="assets/error-boundary.js?v=20260913i" defer></script>
-<script src="assets/app.js?v=20260913i" defer></script>
-<script src="assets/quest.js?v=20260913i" defer></script>
-<script src="assets/config.js?v=20260913i" defer></script>
-<script src="assets/api.js?v=20260913i" defer></script>
-<script src="assets/importer.js?v=20260913i" defer></script>
-<script src="assets/study-stats.js?v=20260913i" defer></script>
+<script src="assets/icon-map.js?v=20260913j" defer></script>
+<script src="assets/xt-toast.js?v=20260913j" defer></script>
+<script src="assets/error-boundary.js?v=20260913j" defer></script>
+<script src="assets/app.js?v=20260913j" defer></script>
+<script src="assets/quest.js?v=20260913j" defer></script>
+<script src="assets/config.js?v=20260913j" defer></script>
+<script src="assets/api.js?v=20260913j" defer></script>
+<script src="assets/importer.js?v=20260913j" defer></script>
+<script src="assets/study-stats.js?v=20260913j" defer></script>
 </body>
 </html>
