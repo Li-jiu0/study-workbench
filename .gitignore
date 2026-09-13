@@ -40,6 +40,10 @@ server/data.db.backup-*
 *.db-wal
 server/backups/
 
+# 反馈等后端运行数据目录（免登录反馈落盘 server/data/feedback.json，属运行时数据，
+# 每次真实提交都会追写，绝不入库；2026-09-13 需求01 收尾补充）
+server/data/
+
 # 后端真实配置（含 JWT 密钥与各家大模型 API Key，只留 .env.example 模板入库）
 server/.env
 .env
