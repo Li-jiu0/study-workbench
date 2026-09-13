@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>PPT版式库 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913l">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913l">
-<link rel="stylesheet" href="assets/states.css?v=20260913l">
-<link rel="stylesheet" href="assets/polish.css?v=20260913l">
+<link rel="stylesheet" href="assets/common.css?v=20260913m">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913m">
+<link rel="stylesheet" href="assets/states.css?v=20260913m">
+<link rel="stylesheet" href="assets/polish.css?v=20260913m">
 </head>
 <body class="theme-home">
 
@@ -66,7 +66,7 @@
         <div class="user-avatar">学</div>
         <div class="user-info">
           <div class="user-name">同学</div>
-          <div class="user-streak">🔥 连续打卡 0 天</div>
+          <div class="user-streak"><span class="nav-icon" data-icon="fire" data-icon-size="12"></span> 连续打卡 0 天</div>
         </div>
       </div>
     </div>
@@ -192,22 +192,22 @@
        3. 安全约束：大模型密钥只放在后端 .env 里，前端代码永远不出现密钥。 -->
   <!-- 悬浮头像：可按住拖拽到任意位置（见下方 JS.initAiFabDrag），点击打开/收起面板，双击复位 -->
   <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">
-    🤖<span class="ai-mode-badge" id="aiModeBadge">演示</span>
+    <span class="nav-icon" data-icon="bot" data-icon-size="24"></span><span class="ai-mode-badge" id="aiModeBadge">演示</span>
   </div>
   <div class="ai-panel" id="aiPanel">
     <div class="ai-panel-header">
-      <div class="ai-avatar">🤖</div>
+      <div class="ai-avatar"><span class="nav-icon" data-icon="bot" data-icon-size="18"></span></div>
       <div style="flex:1">
         <div class="ai-title">AI学习助手</div>
         <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
       </div>
-      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录">🧹</div>
-      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板">✕</div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录"><span class="nav-icon" data-icon="eraser" data-icon-size="14"></span></div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板"><span class="nav-icon" data-icon="close" data-icon-size="14"></span></div>
     </div>
     <div class="ai-messages" id="aiMessages"></div>
     <div class="ai-input-row">
       <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
-      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()">➤</div>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()"><span class="nav-icon" data-icon="send" data-icon-size="18"></span></div>
     </div>
   </div>
 
@@ -215,13 +215,13 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913l" defer></script>
-<script src="assets/xt-toast.js?v=20260913l" defer></script>
-<script src="assets/error-boundary.js?v=20260913l" defer></script>
-<script src="assets/app.js?v=20260913l" defer></script>
-<script src="assets/config.js?v=20260913l" defer></script>
-<script src="assets/api.js?v=20260913l" defer></script>
+<script src="assets/icon-map.js?v=20260913m" defer></script>
+<script src="assets/xt-toast.js?v=20260913m" defer></script>
+<script src="assets/error-boundary.js?v=20260913m" defer></script>
+<script src="assets/app.js?v=20260913m" defer></script>
+<script src="assets/config.js?v=20260913m" defer></script>
+<script src="assets/api.js?v=20260913m" defer></script>
 
-<script src="assets/qbank.js?v=20260913l" defer></script>
+<script src="assets/qbank.js?v=20260913m" defer></script>
 </body>
 </html>

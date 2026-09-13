@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>工具 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913l">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913l">
-<link rel="stylesheet" href="assets/states.css?v=20260913l">
-<link rel="stylesheet" href="assets/polish.css?v=20260913l">
+<link rel="stylesheet" href="assets/common.css?v=20260913m">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913m">
+<link rel="stylesheet" href="assets/states.css?v=20260913m">
+<link rel="stylesheet" href="assets/polish.css?v=20260913m">
 <style>
   /* 【批次 20260913k】导入题库：由弹窗改为页面内全屏视图（复用 importer.js 向导逻辑，带返回） */
   .importer-view{position:fixed;inset:0;z-index:900;background:var(--bg);overflow-y:auto;display:none}
@@ -74,7 +74,7 @@
         <div class="user-avatar">学</div>
         <div class="user-info">
           <div class="user-name">同学</div>
-          <div class="user-streak">🔥 连续打卡 0 天</div>
+          <div class="user-streak"><span class="nav-icon" data-icon="fire" data-icon-size="14"></span> 连续打卡 0 天</div>
         </div>
       </div>
     </div>
@@ -85,7 +85,7 @@
       <div class="topbar-title" id="topbarTitle">工具</div>
       <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
       <div class="gs-wrap" id="gsWrap">
-        <input type="text" class="gs-input" id="gsInput" placeholder="🔍 搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <input type="text" class="gs-input" id="gsInput" placeholder="搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
         <div class="gs-dropdown" id="gsDropdown"></div>
       </div>
       <div class="topbar-stats">
@@ -95,14 +95,14 @@
       </div>
       <div class="topbar-date" id="topbarDate"></div>
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
-      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0">🌙</div>
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="20"></span></div>
     </header>
     <div class="content">
       <div class="page active" id="page-tools">
         <!-- 顶部返回（独立页，history.back 回上一页；无历史时回首页） -->
         <div class="morepage-head">
           <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='学习工作台.html'}" title="返回" aria-label="返回">←</button>
-          <div class="morepage-title">🧰 工具</div>
+          <div class="morepage-title"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span> 工具</div>
         </div>
 
         <!-- 【A8】工具卡片纵向列表：与旧底部弹层「工具」同项同行为；卡片可后续扩展。T01 批次五（2026-09-12）#1.0：由 .morepage-grid 改为 .morepage-list 纵向排列（右侧 › 箭头为 CSS ::after） -->
@@ -220,7 +220,7 @@
   <!-- 工具面板遮罩 + 工具面板（旧弹层保留，可回退；app.js 的 toggleToolsPanel 需要它们存在） -->
   <div class="more-overlay" onclick="toggleToolsPanel()" id="toolsOverlay"></div>
   <div class="bottom-more-panel" id="toolsPanel">
-    <div class="bottom-more-title">🧰 更多工具</div>
+    <div class="bottom-more-title"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span> 更多工具</div>
     <div class="bottom-more-grid">
       <div class="bottom-more-item" onclick="location.href='AI模拟面试.html';toggleToolsPanel()">
         <div class="bm-icon"><span class="nav-icon" data-icon="mic" data-icon-size="20"></span></div><div class="bm-label">AI面试</div>
@@ -300,14 +300,14 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913l" defer></script>
-<script src="assets/xt-toast.js?v=20260913l" defer></script>
-<script src="assets/error-boundary.js?v=20260913l" defer></script>
-<script src="assets/app.js?v=20260913l" defer></script>
-<script src="assets/quest.js?v=20260913l" defer></script>
-<script src="assets/config.js?v=20260913l" defer></script>
-<script src="assets/api.js?v=20260913l" defer></script>
-<script src="assets/importer.js?v=20260913l" defer></script>
-<script src="assets/study-stats.js?v=20260913l" defer></script>
+<script src="assets/icon-map.js?v=20260913m" defer></script>
+<script src="assets/xt-toast.js?v=20260913m" defer></script>
+<script src="assets/error-boundary.js?v=20260913m" defer></script>
+<script src="assets/app.js?v=20260913m" defer></script>
+<script src="assets/quest.js?v=20260913m" defer></script>
+<script src="assets/config.js?v=20260913m" defer></script>
+<script src="assets/api.js?v=20260913m" defer></script>
+<script src="assets/importer.js?v=20260913m" defer></script>
+<script src="assets/study-stats.js?v=20260913m" defer></script>
 </body>
 </html>

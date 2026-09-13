@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" data-page-node-id="OlgAXTFaD9mAg3AFsfpeiy">
 <meta name="theme-color" content="#5B8DEF" data-page-node-id="XIP3tSfjex43vTn5HPKTvm">
 <title>首页 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913l" data-page-node-id="cG8803QAoDbKSd7v8tsEs9">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913l" data-page-node-id="">
-<link rel="stylesheet" href="assets/states.css?v=20260913l" data-page-node-id="">
-<link rel="stylesheet" href="assets/polish.css?v=20260913l" data-page-node-id="lkxFYcwbHH3N6LYB00qIeL">
+<link rel="stylesheet" href="assets/common.css?v=20260913m" data-page-node-id="cG8803QAoDbKSd7v8tsEs9">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913m" data-page-node-id="">
+<link rel="stylesheet" href="assets/states.css?v=20260913m" data-page-node-id="">
+<link rel="stylesheet" href="assets/polish.css?v=20260913m" data-page-node-id="lkxFYcwbHH3N6LYB00qIeL">
 </head>
 <body class="theme-home" data-page-node-id="BTU8kiFHiuvsPFdnqvbOiF">
 
@@ -337,6 +337,25 @@
     </div>
   </div>
 
+  <!-- 添加自定义任务弹窗（kou-l-home 增量：复用全站 modal 体系，样式在页内 <style> 补充） -->
+  <div class="modal-overlay" id="xtTaskModal">
+    <div class="modal" style="width:min(320px,88vw)">
+      <div class="modal-title">添加自定义任务</div>
+      <div class="form-group">
+        <div class="form-label">任务名称</div>
+        <input type="text" class="form-input" id="xtTaskName" maxlength="30" placeholder="如：四级词汇">
+      </div>
+      <div class="form-group">
+        <div class="form-label">目标量（可选）</div>
+        <input type="text" class="form-input" id="xtTaskTarget" maxlength="20" placeholder="如：500个">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeXtTaskModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveXtTask()">保存</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast提示 -->
   <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center" data-page-node-id="dQVVHWENF91NhnlPGe37Do"></div>
 
@@ -371,14 +390,14 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913l" defer></script>
-<script src="assets/xt-toast.js?v=20260913l" defer></script>
-<script src="assets/error-boundary.js?v=20260913l" defer></script>
-<script src="assets/app.js?v=20260913l" defer></script>
-<script src="assets/quest.js?v=20260913l" defer></script>
-<script src="assets/config.js?v=20260913l" defer></script>
-<script src="assets/api.js?v=20260913l" defer></script>
-<script src="assets/study-stats.js?v=20260913l" defer></script>
+<script src="assets/icon-map.js?v=20260913m" defer></script>
+<script src="assets/xt-toast.js?v=20260913m" defer></script>
+<script src="assets/error-boundary.js?v=20260913m" defer></script>
+<script src="assets/app.js?v=20260913m" defer></script>
+<script src="assets/quest.js?v=20260913m" defer></script>
+<script src="assets/config.js?v=20260913m" defer></script>
+<script src="assets/api.js?v=20260913m" defer></script>
+<script src="assets/study-stats.js?v=20260913m" defer></script>
 <script>
 /* ==================== T7 增量（P0-14）：更多工具使用痕迹 + 按最近使用排序 ==================== */
 (function () {
@@ -431,6 +450,243 @@
 
   if (document.readyState !== 'loading') renderToolTraces();
   else document.addEventListener('DOMContentLoaded', renderToolTraces);
+})();
+</script>
+
+<style id="xtHomeEnhanceCss">
+/* ========== 首页增强（kou-l-home）：任务卡自定义任务 + 各模块进度布局重构 ==========
+   纯增量覆盖：不改共享 CSS，页内样式在文档序上晚于 common.css，同特异性下优先生效。 */
+
+/* —— 各模块进度：5列挤排 → 两列整齐网格；卡内重排为「图标 | 名称…百分比 / 通栏进度条」 —— */
+.module-progress-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.module-progress-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "icon name percent"
+    "icon bar   bar";
+  align-items: center;
+  column-gap: 10px;
+  text-align: left;
+  padding: 14px;
+}
+.module-progress-card .module-icon { grid-area: icon; align-self: start; margin-bottom: 0; line-height: 0; padding-top: 2px; }
+.module-progress-card .module-name { grid-area: name; margin-bottom: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.module-progress-card .module-percent { grid-area: percent; font-size: var(--xt-font-md, 15px); }
+.module-progress-card .module-percent.muted { color: var(--text-muted); font-weight: 600; }
+.module-progress-card .module-bar { grid-area: bar; margin-top: 10px; }
+@media (max-width: 768px) {
+  /* 窄屏保持两列（覆盖 common.css 响应式的 3 列），间距节奏与桌面一致 */
+  .module-progress-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .module-progress-card { padding: 12px; }
+}
+
+/* —— 今日任务：＋添加按钮 + 自定义任务条 —— */
+.xt-task-add {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  margin-top: 2px; padding: 10px 12px;
+  border: 1.5px dashed var(--border); border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 600; color: var(--text-secondary);
+  cursor: pointer; transition: var(--transition);
+  user-select: none;
+}
+.xt-task-add:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+.xt-task-add .nav-icon { display: inline-flex; align-items: center; }
+.xt-custom-task { position: relative; }
+.xt-task-del {
+  flex-shrink: 0; width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; font-size: 12px; line-height: 1;
+  color: var(--text-muted); transition: var(--transition);
+}
+.xt-task-del:hover { color: #fff; background: #e0524d; }
+/* 自定义任务完成态：划线 + 变灰（复用 .task-item.done 基础样式，补充 meta 行） */
+.xt-custom-task.done .task-name { text-decoration: line-through; color: var(--text-muted); opacity: 0.6; }
+.xt-custom-task.done .task-meta { text-decoration: line-through; }
+
+/* —— 添加自定义任务弹窗微调 —— */
+#xtTaskModal .modal { width: min(320px, 88vw); }
+</style>
+
+<script id="xtHomeEnhanceJs">
+/* ==================== 首页增强（kou-l-home）：自定义任务 + 进度卡布局 ====================
+   纯增量方案：不改 assets/app.js / common.css。
+   1) DOMContentLoaded（defer 脚本已执行完）后包一层 window.renderTasks：
+      原渲染照旧 → 再向 #taskList 末尾追加自定义任务条与「＋添加」按钮；
+   2) 自定义任务持久化到 localStorage（按账号隔离，key = lsKey('xt_custom_tasks_v1')），
+      JSON 数组结构：{ id, name, target, done, createdAt }；
+   3) 勾选切换 / ✕ 删除走 #taskList 事件委托；弹层复用全站 .modal-overlay.active 体系。 */
+(function () {
+  'use strict';
+  var STORE_KEY = 'xt_custom_tasks_v1';
+
+  function storeKey() {
+    try { if (typeof window.lsKey === 'function') return window.lsKey(STORE_KEY); } catch (e) { /* 忽略 */ }
+    return STORE_KEY;
+  }
+  function newId() {
+    return 'ct' + Date.now() + Math.random().toString(36).slice(2, 6);
+  }
+  /* 读取自定义任务（容错：坏数据一律回退空数组，绝不阻断页面） */
+  function loadCustomTasks() {
+    try {
+      var raw = localStorage.getItem(storeKey());
+      if (!raw) return [];
+      var arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) return [];
+      return arr.filter(function (t) {
+        return t && typeof t.name === 'string' && t.name.trim();
+      }).map(function (t) {
+        return {
+          id: String(t.id || newId()),
+          name: String(t.name).trim(),
+          target: (t.target == null) ? '' : String(t.target),
+          done: !!t.done,
+          createdAt: Number(t.createdAt) || Date.now()
+        };
+      });
+    } catch (e) { return []; }
+  }
+  function saveCustomTasks(tasks) {
+    try { localStorage.setItem(storeKey(), JSON.stringify(tasks)); } catch (e) { /* 存储异常静默 */ }
+  }
+  function escHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function toast(msg) {
+    try { if (typeof window.showToast === 'function') { window.showToast(msg); return; } } catch (e) { /* 忽略 */ }
+    console.log('[xt-home] ' + msg);
+  }
+
+  /* —— 渲染：追加到 #taskList 末尾（原生任务由 app.js 渲染，保持原样不动） —— */
+  function renderXtCustomTasks() {
+    var list = document.getElementById('taskList');
+    if (!list) return;
+    // 幂等：先清掉旧的自定义节点，避免重复追加
+    Array.prototype.slice.call(list.querySelectorAll('.xt-task-add, .xt-custom-task'))
+      .forEach(function (n) { if (n.parentNode) n.parentNode.removeChild(n); });
+    var tasks = loadCustomTasks();
+    var html = '';
+    tasks.forEach(function (t) {
+      html += '<div class="task-item xt-custom-task' + (t.done ? ' done' : '') + '" data-xt-id="' + escHtml(t.id) + '">'
+        + '<div class="task-checkbox">✓</div>'
+        + '<div class="task-info">'
+        + '<div class="task-name">' + escHtml(t.name) + '</div>'
+        + '<div class="task-meta">自定义任务' + (t.target ? ' · 目标 ' + escHtml(t.target) : '') + '</div>'
+        + '</div>'
+        + '<div class="xt-task-del" title="删除该任务">✕</div>'
+        + '</div>';
+    });
+    html += '<div class="xt-task-add" onclick="openXtTaskModal()" title="添加自定义任务">'
+      + '<span class="nav-icon" data-icon="plus" data-icon-size="14"></span>添加自定义任务'
+      + '</div>';
+    list.insertAdjacentHTML('beforeend', html);
+    // 动态插入含 data-icon 的节点后补跑图标渲染
+    if (window.lucideAutoRender) window.lucideAutoRender();
+  }
+
+  /* —— 交互：勾选切换 / 删除（#taskList 事件委托，只绑一次） —— */
+  function bindTaskListDelegation() {
+    var list = document.getElementById('taskList');
+    if (!list || list.__xtBound) return;
+    list.__xtBound = true;
+    list.addEventListener('click', function (ev) {
+      var target = ev.target;
+      var row = target && target.closest ? target.closest('.xt-custom-task') : null;
+      if (!row) return; // 原生任务行走各自的 onclick，不干预
+      var id = row.getAttribute('data-xt-id');
+      var tasks = loadCustomTasks();
+      if (target.closest('.xt-task-del')) {
+        saveCustomTasks(tasks.filter(function (t) { return t.id !== id; }));
+        renderXtCustomTasks();
+        toast('已删除自定义任务');
+        return;
+      }
+      // 勾选框（或整行）点击 → 完成/未完成切换
+      var changed = false;
+      var next = tasks.map(function (t) {
+        if (t.id === id) { changed = true; return { id: t.id, name: t.name, target: t.target, done: !t.done, createdAt: t.createdAt }; }
+        return t;
+      });
+      if (changed) {
+        saveCustomTasks(next);
+        renderXtCustomTasks();
+        var hit = null;
+        for (var i = 0; i < next.length; i++) { if (next[i].id === id) { hit = next[i]; break; } }
+        if (hit && hit.done) toast('✅ 自定义任务完成！');
+      }
+    });
+  }
+
+  /* —— 添加任务弹层（复用全站 modal 体系：.modal-overlay.active） —— */
+  window.openXtTaskModal = function () {
+    var modal = document.getElementById('xtTaskModal');
+    if (!modal) return;
+    var n = document.getElementById('xtTaskName');
+    var g = document.getElementById('xtTaskTarget');
+    if (n) n.value = '';
+    if (g) g.value = '';
+    modal.classList.add('active');
+    if (n) setTimeout(function () { n.focus(); }, 50);
+  };
+  window.closeXtTaskModal = function () {
+    var modal = document.getElementById('xtTaskModal');
+    if (modal) modal.classList.remove('active');
+  };
+  window.saveXtTask = function () {
+    var nameEl = document.getElementById('xtTaskName');
+    var targetEl = document.getElementById('xtTaskTarget');
+    var name = nameEl ? nameEl.value.trim() : '';
+    var target = targetEl ? targetEl.value.trim() : '';
+    if (!name) { toast('请先填写任务名称'); return; }
+    var tasks = loadCustomTasks();
+    tasks.push({ id: newId(), name: name, target: target, done: false, createdAt: Date.now() });
+    saveCustomTasks(tasks);
+    window.closeXtTaskModal();
+    renderXtCustomTasks();
+    toast('已添加任务：' + name);
+  };
+  // 点击遮罩空白处关闭（对齐全站弹窗习惯）
+  document.addEventListener('click', function (ev) {
+    if (ev.target && ev.target.id === 'xtTaskModal') window.closeXtTaskModal();
+  });
+  // 弹层内 Enter 保存 / Esc 取消
+  document.addEventListener('keydown', function (ev) {
+    var modal = document.getElementById('xtTaskModal');
+    if (!modal || !modal.classList.contains('active')) return;
+    if (ev.key === 'Enter') { ev.preventDefault(); window.saveXtTask(); }
+    if (ev.key === 'Escape') window.closeXtTaskModal();
+  });
+
+  /* —— 挂载：等 app.js（defer）执行完再包一层 renderTasks；未就绪则短重试 —— */
+  function mount() {
+    if (typeof window.renderTasks === 'function' && !window.renderTasks.__xtWrapped) {
+      var original = window.renderTasks;
+      var wrapped = function () {
+        try { original.apply(this, arguments); } catch (e) { /* 原渲染异常不阻断增强层 */ }
+        try { renderXtCustomTasks(); } catch (e2) { /* 静默 */ }
+      };
+      wrapped.__xtWrapped = true;
+      window.renderTasks = wrapped;
+    }
+    renderXtCustomTasks();
+    bindTaskListDelegation();
+  }
+  function mountWithRetry(tries) {
+    if (typeof window.renderTasks === 'function') { mount(); return; }
+    if (tries <= 0) { renderXtCustomTasks(); bindTaskListDelegation(); return; }
+    setTimeout(function () { mountWithRetry(tries - 1); }, 200);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { mountWithRetry(20); });
+  } else {
+    mountWithRetry(20);
+  }
 })();
 </script>
 </body>
