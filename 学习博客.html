@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>广场 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913g">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913g">
-<link rel="stylesheet" href="assets/states.css?v=20260913g">
-<link rel="stylesheet" href="assets/polish.css?v=20260913g">
+<link rel="stylesheet" href="assets/common.css?v=20260913h">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913h">
+<link rel="stylesheet" href="assets/states.css?v=20260913h">
+<link rel="stylesheet" href="assets/polish.css?v=20260913h">
 </head>
 <body class="theme-home">
 
@@ -90,19 +90,14 @@
       <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0">🌙</div>
     </header>
 <div class="page active" id="page-blog">
-        <div class="module-hero">
-          <div class="module-hero-left">
-            <div class="module-hero-title">📝 广场</div>
-            <div class="module-hero-desc">写发贴 · 分类标签 · 草稿归档 · 数据本地保存</div>
-          </div>
-        </div>
+        <!-- 需求10（C2 20260913h）：删除顶端说明性卡片；「广场/我的文章/写发贴/统计」提升为顶端主导航 -->
 
-        <!-- 博客子导航 -->
+        <!-- 博客主导航（原子导航提级，语义与跳转目标不变） -->
         <div class="blog-subnav">
-          <div class="sb-tab active" id="blogTabList" onclick="showBlogView('list')">📚 广场</div>
-          <div class="sb-tab" id="blogTabMine" onclick="showBlogView('mine')">👤 我的文章</div>
-          <div class="sb-tab" id="blogTabEdit" onclick="showBlogView('edit')">✍️ 写发贴</div>
-          <div class="sb-tab" id="blogTabStats" onclick="showBlogView('stats')">📊 统计</div>
+          <div class="sb-tab active" id="blogTabList" onclick="showBlogView('list')"><span class="nav-icon" data-icon="globe" data-icon-size="20"></span><span>广场</span></div>
+          <div class="sb-tab" id="blogTabMine" onclick="showBlogView('mine')"><span class="nav-icon" data-icon="user" data-icon-size="20"></span><span>我的文章</span></div>
+          <div class="sb-tab" id="blogTabEdit" onclick="showBlogView('edit')"><span class="nav-icon" data-icon="pen" data-icon-size="20"></span><span>写发贴</span></div>
+          <div class="sb-tab" id="blogTabStats" onclick="showBlogView('stats')"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span><span>统计</span></div>
         </div>
 
         <!-- ===== 视图：广场 ===== -->
@@ -114,7 +109,7 @@
             <div class="blog-filters" id="blogFilterChips"></div>
           </div>
           <div class="blog-empty" id="blogListEmpty" style="display:none;text-align:center;padding:40px;color:var(--text-secondary);font-size:var(--xt-font-base)">
-            还没有公开的发贴，点右上角“✍️ 写发贴”发布第一篇吧～
+            还没有公开的发贴，点上方「写发贴」发布第一篇吧～
           </div>
           <div class="blog-grid" id="blogGrid"></div>
         </div>
@@ -133,7 +128,7 @@
           <!-- 写作台头部：标题 + 实时字数/阅读时长/草稿状态 -->
           <div class="ed-hero">
             <div class="ed-hero-main">
-              <div class="ed-hero-emoji">✍️</div>
+              <div class="ed-hero-emoji"><span class="nav-icon" data-icon="pen" data-icon-size="20"></span></div>
               <div>
                 <div class="ed-hero-title">写发贴</div>
                 <div class="ed-hero-sub">支持轻量 Markdown · 左写右预览 · 草稿自动存到本机</div>
@@ -264,13 +259,13 @@
     <nav class="bottom-nav">
     <div class="bottom-nav-list">
       <div class="bottom-nav-item" data-page="home">
-        <div class="bn-icon">🏠</div><div class="bn-label">首页</div>
+        <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
       </div>
-      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon">💬</div><div class="bn-label">互动</div></div>
-      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon">👤</div><div class="bn-label">我的</div></div>
-      <div class="bottom-nav-item" onclick="location.href='工具.html'"><div class="bn-icon">🧰</div><div class="bn-label">工具</div></div>
+      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
+      <div class="bottom-nav-item" onclick="location.href='工具.html'"><div class="bn-icon"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span></div><div class="bn-label">工具</div></div>
       <div class="bottom-nav-item" onclick="location.href='更多.html'">
-        <div class="bn-icon">☰</div><div class="bn-label">更多</div>
+        <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
       </div>
     </div>
   </nav>
@@ -283,19 +278,19 @@
     <div class="bottom-more-title">更多功能</div>
     <div class="bottom-more-grid">
       <div class="bottom-more-item" onclick="openBlogStats()">
-        <div class="bm-icon">📊</div><div class="bm-label">学习统计</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
       </div>
       <div class="bottom-more-item" onclick="gotoBlogMine()">
         <div class="bm-icon">📁</div><div class="bm-label">互动广场</div>
       </div>
       <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
-        <div class="bm-icon">📒</div><div class="bm-label">错题本</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div><div class="bm-label">错题本</div>
       </div>
       <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
-        <div class="bm-icon">⚙️</div><div class="bm-label">设置</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div><div class="bm-label">设置</div>
       </div>
       <div class="bottom-more-item" onclick="showAbout()">
-        <div class="bm-icon">ℹ️</div><div class="bm-label">关于</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div><div class="bm-label">关于</div>
       </div>
     </div>
   </div>
@@ -368,12 +363,12 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913g" defer></script>
-<script src="assets/xt-toast.js?v=20260913g" defer></script>
-<script src="assets/error-boundary.js?v=20260913g" defer></script>
-<script src="assets/app.js?v=20260913g" defer></script>
-<script src="assets/config.js?v=20260913g" defer></script>
-<script src="assets/api.js?v=20260913g" defer></script>
+<script src="assets/icon-map.js?v=20260913h" defer></script>
+<script src="assets/xt-toast.js?v=20260913h" defer></script>
+<script src="assets/error-boundary.js?v=20260913h" defer></script>
+<script src="assets/app.js?v=20260913h" defer></script>
+<script src="assets/config.js?v=20260913h" defer></script>
+<script src="assets/api.js?v=20260913h" defer></script>
 <script>
 /* ===================================================================
    广场（发贴）编辑页增强：【字数统计 / 阅读时长 / 草稿自动保存 / 快速模板】

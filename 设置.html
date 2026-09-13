@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" data-page-node-id="ppAOS1DYQGgIIySlO2fdxi">
 <meta name="theme-color" content="#5B8DEF" data-page-node-id="EXvc7QppIKtHC8PUM71nFK">
 <title>设置 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913g" data-page-node-id="oNplQZjsSu34O6b7wLTk3t">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913g">
-<link rel="stylesheet" href="assets/states.css?v=20260913g">
-<link rel="stylesheet" href="assets/polish.css?v=20260913g" data-page-node-id="gZ2lwtNBjEq5CgqQTlbjFi">
+<link rel="stylesheet" href="assets/common.css?v=20260913h" data-page-node-id="oNplQZjsSu34O6b7wLTk3t">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913h">
+<link rel="stylesheet" href="assets/states.css?v=20260913h">
+<link rel="stylesheet" href="assets/polish.css?v=20260913h" data-page-node-id="gZ2lwtNBjEq5CgqQTlbjFi">
 </head>
 <body class="theme-home" data-page-node-id="wneJ1qXxVLXB9kpk29RxqH">
 
@@ -95,7 +95,22 @@
         <div class="subpage-list">
           <div class="subpage-group-card" onclick="SubpageRouter.navigate('appearance')">
             <div class="sgc-icon">🎨</div>
-            <div class="sgc-main"><div class="sgc-title">外观</div><div class="sgc-desc">主题外观、阅读与界面偏好</div></div>
+            <div class="sgc-main"><div class="sgc-title">外观</div><div class="sgc-desc">主题外观、配色皮肤</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
+          <div class="subpage-group-card" onclick="SubpageRouter.navigate('reading')">
+            <div class="sgc-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div>
+            <div class="sgc-main"><div class="sgc-title">阅读与界面</div><div class="sgc-desc">全局字号、动效与紧凑模式偏好</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
+          <div class="subpage-group-card" onclick="SubpageRouter.navigate('voice')">
+            <div class="sgc-icon"><span class="nav-icon" data-icon="headphones" data-icon-size="20"></span></div>
+            <div class="sgc-main"><div class="sgc-title">语音与朗读</div><div class="sgc-desc">朗读开关、语速、英文发音口音</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
+          <div class="subpage-group-card" onclick="SubpageRouter.navigate('help')">
+            <div class="sgc-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div>
+            <div class="sgc-main"><div class="sgc-title">帮助与反馈</div><div class="sgc-desc">常见问题、意见反馈、我的反馈</div></div>
             <div class="sgc-arrow">›</div>
           </div>
           <div class="subpage-group-card" onclick="SubpageRouter.navigate('account')">
@@ -166,8 +181,8 @@
         </div>
         </section>
 
-        <!-- 阅读与界面（【9/11 新增】） -->
-        <section data-subpage="appearance">
+        <!-- 阅读与界面（【9/11 新增】；C3 20260913h：提升为一级菜单 reading） -->
+        <section data-subpage="reading">
         <div class="card" data-page-node-id="EnrL89SBCpsPxZslMZSyhM">
           <div class="card-header" data-page-node-id="dpJMpndv6PTGkjExIB97HA">
             <div class="card-title" data-page-node-id="xj1BeOWLHqsQXZd00mAMjO"><span class="title-icon" data-page-node-id="bEpwVg0ImkCJxXXIFmhgWP">📐</span>阅读与界面</div>
@@ -330,8 +345,8 @@
         </div>
         </section>
 
-        <!-- 语音 -->
-        <section data-subpage="appearance">
+        <!-- 语音（C3 20260913h：提升为一级菜单 voice） -->
+        <section data-subpage="voice">
         <div class="card" data-page-node-id="30BJOEyfUA0kDwDFzV6Myh">
           <div class="card-header" data-page-node-id="4ygm6PxU0kcfq3wvZRYhXs">
             <div class="card-title" data-page-node-id="ts34Ui250fFbX4uWz2pcOC"><span class="title-icon" data-page-node-id="4VDaZjc0lVqJbv4mSmzcwc">🔊</span>语音与朗读</div>
@@ -462,7 +477,7 @@
         <!-- 【后续扩展点】帮助与反馈卡（T6 增量 2026-09-11）：FAQ 手风琴（纯前端离线可用）+ 反馈表单 + 我的反馈。
              提交走 /api/feedbacks（≥10 字，服务端限频 10 分钟 1 条）；失败暂存 study_workbench_feedback_outbox。
              【后续扩展点：反馈处理台】管理员查询/处理接口本轮留空。 -->
-        <section data-subpage="about">
+        <section data-subpage="help">
         <div class="card" id="feedbackCard">
           <div class="card-header">
             <div class="card-title"><span class="title-icon">🆘</span>帮助与反馈</div>
@@ -914,15 +929,15 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913g" defer></script>
-<script src="assets/xt-toast.js?v=20260913g" defer></script>
-<script src="assets/error-boundary.js?v=20260913g" defer></script>
-<script src="assets/app.js?v=20260913g" defer></script>
-<script src="assets/config.js?v=20260913g" defer></script>
-<script src="assets/api.js?v=20260913g" defer></script>
-<script src="assets/subpage-router.js?v=20260913g" defer></script>
-<script src="assets/qbank.js?v=20260913g" defer></script>
-<script src="assets/importer.js?v=20260913g" defer></script>
+<script src="assets/icon-map.js?v=20260913h" defer></script>
+<script src="assets/xt-toast.js?v=20260913h" defer></script>
+<script src="assets/error-boundary.js?v=20260913h" defer></script>
+<script src="assets/app.js?v=20260913h" defer></script>
+<script src="assets/config.js?v=20260913h" defer></script>
+<script src="assets/api.js?v=20260913h" defer></script>
+<script src="assets/subpage-router.js?v=20260913h" defer></script>
+<script src="assets/qbank.js?v=20260913h" defer></script>
+<script src="assets/importer.js?v=20260913h" defer></script>
 <script>
 /* 单机离线版（如安卓 APK，未打包 assets/api.js）适配：
    ① 隐藏依赖后端的「本地发贴迁移」卡片；

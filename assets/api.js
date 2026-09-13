@@ -1056,7 +1056,8 @@ async function syncAiFromServer() {
     aiChatHistory = items.map(function (m, i) {
       return { role: m.role === 'user' ? 'user' : 'ai', text: m.content, time: Date.now() + i };
     });
-    localStorage.setItem('study_workbench_ai_chat', JSON.stringify(aiChatHistory));
+    // 需求15（数据按账号隔离）：写账号前缀键（app.js 定义 lsKey；本文件兜底）
+    localStorage.setItem((typeof window.lsKey === 'function' ? window.lsKey('study_workbench_ai_chat') : 'study_workbench_ai_chat'), JSON.stringify(aiChatHistory));
     renderAiMessages();
   } catch (e) { /* 静默：不影响离线模式 */ }
 }

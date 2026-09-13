@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>更多功能 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913g">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913g">
-<link rel="stylesheet" href="assets/states.css?v=20260913g">
-<link rel="stylesheet" href="assets/polish.css?v=20260913g">
+<link rel="stylesheet" href="assets/common.css?v=20260913h">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913h">
+<link rel="stylesheet" href="assets/states.css?v=20260913h">
+<link rel="stylesheet" href="assets/polish.css?v=20260913h">
 </head>
 <body class="theme-home">
 
@@ -100,7 +100,7 @@
         <!-- 【A8】更多功能卡片纵向列表：与旧底部弹层「更多」同项同行为。T01 批次五（2026-09-12）#1.1：由 .morepage-grid 改为 .morepage-list 纵向排列（右侧 › 箭头为 CSS ::after） -->
         <div class="morepage-list">
           <div class="morepage-card morepage-list-item" onclick="openBlogStats()">
-            <div class="mpc-icon">📊</div>
+            <div class="mpc-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div>
             <div class="mpc-title">学习统计</div>
             <div class="mpc-desc">学习概况 · 本周报告</div>
           </div>
@@ -110,17 +110,17 @@
             <div class="mpc-desc">我的发贴与广场</div>
           </div>
           <div class="morepage-card morepage-list-item" onclick="navigateTo('wrong-book')">
-            <div class="mpc-icon">📒</div>
+            <div class="mpc-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div>
             <div class="mpc-title">错题本</div>
             <div class="mpc-desc">错题收藏与复盘</div>
           </div>
           <div class="morepage-card morepage-list-item" onclick="navigateTo('settings')">
-            <div class="mpc-icon">⚙️</div>
+            <div class="mpc-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div>
             <div class="mpc-title">设置</div>
             <div class="mpc-desc">主题 · 账号 · 隐私</div>
           </div>
           <div class="morepage-card morepage-list-item" onclick="showAbout()">
-            <div class="mpc-icon">ℹ️</div>
+            <div class="mpc-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div>
             <div class="mpc-title">关于</div>
             <div class="mpc-desc">版本信息与说明</div>
           </div>
@@ -137,13 +137,13 @@
     <nav class="bottom-nav">
     <div class="bottom-nav-list">
       <div class="bottom-nav-item" data-page="home">
-        <div class="bn-icon">🏠</div><div class="bn-label">首页</div>
+        <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
       </div>
-      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon">💬</div><div class="bn-label">互动</div></div>
-      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon">👤</div><div class="bn-label">我的</div></div>
-      <div class="bottom-nav-item" onclick="location.href='工具.html'"><div class="bn-icon">🧰</div><div class="bn-label">工具</div></div>
+      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
+      <div class="bottom-nav-item" onclick="location.href='工具.html'"><div class="bn-icon"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span></div><div class="bn-label">工具</div></div>
       <div class="bottom-nav-item active" onclick="location.href='更多.html'">
-        <div class="bn-icon">☰</div><div class="bn-label">更多</div>
+        <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
       </div>
     </div>
   </nav>
@@ -156,19 +156,19 @@
     <div class="bottom-more-title">更多功能</div>
     <div class="bottom-more-grid">
       <div class="bottom-more-item" onclick="openBlogStats()">
-        <div class="bm-icon">📊</div><div class="bm-label">学习统计</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
       </div>
       <div class="bottom-more-item" onclick="gotoBlogMine()">
         <div class="bm-icon">📁</div><div class="bm-label">互动广场</div>
       </div>
       <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
-        <div class="bm-icon">📒</div><div class="bm-label">错题本</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div><div class="bm-label">错题本</div>
       </div>
       <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
-        <div class="bm-icon">⚙️</div><div class="bm-label">设置</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div><div class="bm-label">设置</div>
       </div>
       <div class="bottom-more-item" onclick="showAbout()">
-        <div class="bm-icon">ℹ️</div><div class="bm-label">关于</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div><div class="bm-label">关于</div>
       </div>
     </div>
   </div>
@@ -179,13 +179,13 @@
     <div class="bottom-more-title">🧰 更多工具</div>
     <div class="bottom-more-grid">
       <div class="bottom-more-item" onclick="location.href='AI模拟面试.html';toggleToolsPanel()">
-        <div class="bm-icon">🎙️</div><div class="bm-label">AI面试</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="mic" data-icon-size="20"></span></div><div class="bm-label">AI面试</div>
       </div>
       <div class="bottom-more-item" onclick="location.href='PPT版式库.html';toggleToolsPanel()">
-        <div class="bm-icon">📊</div><div class="bm-label">PPT版式</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">PPT版式</div>
       </div>
       <div class="bottom-more-item" onclick="location.href='四级经验分享.html';toggleToolsPanel()">
-        <div class="bm-icon">📖</div><div class="bm-label">四级经验</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div><div class="bm-label">四级经验</div>
       </div>
       <div class="bottom-more-item" onclick="if(window.openQuest){openQuest()}else{location.href='工具.html'};toggleToolsPanel()">
         <div class="bm-icon">⚡</div><div class="bm-label">穿越英语</div>
@@ -256,12 +256,12 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913g" defer></script>
-<script src="assets/xt-toast.js?v=20260913g" defer></script>
-<script src="assets/error-boundary.js?v=20260913g" defer></script>
-<script src="assets/app.js?v=20260913g" defer></script>
-<script src="assets/config.js?v=20260913g" defer></script>
-<script src="assets/api.js?v=20260913g" defer></script>
-<script src="assets/study-stats.js?v=20260913g" defer></script>
+<script src="assets/icon-map.js?v=20260913h" defer></script>
+<script src="assets/xt-toast.js?v=20260913h" defer></script>
+<script src="assets/error-boundary.js?v=20260913h" defer></script>
+<script src="assets/app.js?v=20260913h" defer></script>
+<script src="assets/config.js?v=20260913h" defer></script>
+<script src="assets/api.js?v=20260913h" defer></script>
+<script src="assets/study-stats.js?v=20260913h" defer></script>
 </body>
 </html>
