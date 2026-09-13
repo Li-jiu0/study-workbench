@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>工具 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913g">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913g">
-<link rel="stylesheet" href="assets/states.css?v=20260913g">
-<link rel="stylesheet" href="assets/polish.css?v=20260913g">
+<link rel="stylesheet" href="assets/common.css?v=20260913h">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913h">
+<link rel="stylesheet" href="assets/states.css?v=20260913h">
+<link rel="stylesheet" href="assets/polish.css?v=20260913h">
 </head>
 <body class="theme-home">
 
@@ -100,32 +100,23 @@
         <!-- 【A8】工具卡片纵向列表：与旧底部弹层「工具」同项同行为；卡片可后续扩展。T01 批次五（2026-09-12）#1.0：由 .morepage-grid 改为 .morepage-list 纵向排列（右侧 › 箭头为 CSS ::after） -->
         <div class="morepage-list">
           <div class="morepage-card morepage-list-item" onclick="if(window.openImporter){openImporter()}else{location.href='设置.html'}">
-            <div class="mpc-icon">📥</div>
+            <div class="mpc-icon" data-icon="inbox" data-icon-size="20"></div>
             <div class="mpc-title">导入题库</div>
             <div class="mpc-desc">Excel/CSV 一键导入</div>
           </div>
-          <div class="morepage-card morepage-list-item" onclick="location.href='万能金句库.html'">
-            <div class="mpc-icon">📚</div>
-            <div class="mpc-title">万能金句</div>
-            <div class="mpc-desc">写作/表达金句库</div>
-          </div>
-          <div class="morepage-card morepage-list-item" onclick="location.href='场景话术库.html'">
-            <div class="mpc-icon">💬</div>
-            <div class="mpc-title">场景话术</div>
-            <div class="mpc-desc">高情商沟通话术</div>
-          </div>
+          <!-- 功能删减 B4（2026-09-13）：「万能金句」「场景话术」两个重复入口已删除——同名功能在高情商表达页（万能金句库.html / 场景话术库.html）保留，此处入口与其重复 -->
           <div class="morepage-card morepage-list-item" onclick="location.href='PPT版式库.html'">
-            <div class="mpc-icon">📊</div>
+            <div class="mpc-icon" data-icon="chart-bar" data-icon-size="20"></div>
             <div class="mpc-title">PPT版式</div>
             <div class="mpc-desc">版式与案例素材</div>
           </div>
           <div class="morepage-card morepage-list-item" onclick="location.href='AI模拟面试.html'">
-            <div class="mpc-icon">🎙️</div>
+            <div class="mpc-icon" data-icon="mic" data-icon-size="20"></div>
             <div class="mpc-title">AI面试</div>
             <div class="mpc-desc">多轮追问模拟面试</div>
           </div>
           <div class="morepage-card morepage-list-item" onclick="location.href='四级经验分享.html'">
-            <div class="mpc-icon">📖</div>
+            <div class="mpc-icon" data-icon="book-open" data-icon-size="20"></div>
             <div class="mpc-title">四级经验</div>
             <div class="mpc-desc">学霸备考方法</div>
           </div>
@@ -267,14 +258,14 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913g" defer></script>
-<script src="assets/xt-toast.js?v=20260913g" defer></script>
-<script src="assets/error-boundary.js?v=20260913g" defer></script>
-<script src="assets/app.js?v=20260913g" defer></script>
-<script src="assets/quest.js?v=20260913g" defer></script>
-<script src="assets/config.js?v=20260913g" defer></script>
-<script src="assets/api.js?v=20260913g" defer></script>
-<script src="assets/importer.js?v=20260913g" defer></script>
-<script src="assets/study-stats.js?v=20260913g" defer></script>
+<script src="assets/icon-map.js?v=20260913h" defer></script>
+<script src="assets/xt-toast.js?v=20260913h" defer></script>
+<script src="assets/error-boundary.js?v=20260913h" defer></script>
+<script src="assets/app.js?v=20260913h" defer></script>
+<script src="assets/quest.js?v=20260913h" defer></script>
+<script src="assets/config.js?v=20260913h" defer></script>
+<script src="assets/api.js?v=20260913h" defer></script>
+<script src="assets/importer.js?v=20260913h" defer></script>
+<script src="assets/study-stats.js?v=20260913h" defer></script>
 </body>
 </html>

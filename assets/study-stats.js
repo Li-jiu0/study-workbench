@@ -16,8 +16,12 @@
 (function () {
   'use strict';
 
-  var STORE_KEY = 'study_workbench_stats';
-  var QUEUE_KEY = 'study_workbench_stats_queue';
+  /* 需求15（数据按账号隔离）：统一走 app.js 的 lsKey 账号前缀；本文件独立兜底。
+     键：study_workbench_stats / study_workbench_stats_queue / study_workbench_tool_<tool> 均带 @账号 后缀。 */
+  function LK(k) { return (typeof window.lsKey === 'function') ? window.lsKey(k) : k; }
+
+  var STORE_KEY = LK('study_workbench_stats');
+  var QUEUE_KEY = LK('study_workbench_stats_queue');
   var VALID_MODULES = ['cet4', 'xingce', 'eq', 'etiquette', 'ppt', 'tools'];
 
   /* ---------- 后端地址（统一走 config.js，本文件禁止硬编码 IP） ---------- */
@@ -224,7 +228,7 @@
       count += evs; // 粗粒度：events 里含 tool_use，明细在云端聚合【后续扩展点：按事件类型细分】
     });
     try {
-      var detail = JSON.parse(localStorage.getItem('study_workbench_tool_' + tool) || 'null');
+      var detail = JSON.parse(localStorage.getItem(LK('study_workbench_tool_' + tool)) || 'null');
       if (detail && detail.count) { count = detail.count; lastTs = detail.lastTs || 0; }
     } catch (e) { }
     return { count: count, lastTs: lastTs };
@@ -232,10 +236,10 @@
 
   function markToolUse(tool) {
     try {
-      var detail = JSON.parse(localStorage.getItem('study_workbench_tool_' + tool) || '{"count":0,"lastTs":0}');
+      var detail = JSON.parse(localStorage.getItem(LK('study_workbench_tool_' + tool)) || '{"count":0,"lastTs":0}');
       detail.count = (detail.count || 0) + 1;
       detail.lastTs = Date.now();
-      localStorage.setItem('study_workbench_tool_' + tool, JSON.stringify(detail));
+      localStorage.setItem(LK('study_workbench_tool_' + tool), JSON.stringify(detail));
     } catch (e) { }
     track('tools', 'tool_use', { tool: tool });
   }

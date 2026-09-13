@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>央国企笔试备考 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913g">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913g">
-<link rel="stylesheet" href="assets/states.css?v=20260913g">
-<link rel="stylesheet" href="assets/polish.css?v=20260913g">
+<link rel="stylesheet" href="assets/common.css?v=20260913h">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913h">
+<link rel="stylesheet" href="assets/states.css?v=20260913h">
+<link rel="stylesheet" href="assets/polish.css?v=20260913h">
 </head>
 <body class="theme-exam">
 
@@ -122,64 +122,42 @@
         <!-- 【后续扩展点】T7 增量（2026-09-11）：学习概况统计卡（study-stats.js 渲染） -->
         <div id="examStatsCard" class="study-stats-card"></div>
 
-        <!-- 【后续扩展点】T7 增量（P0-10）：题型正确率条形组 + 弱项提示（只读行测本地做题记录，不改原逻辑） -->
-        <div class="typeacc-card" id="typeAccCard">
-          <div class="sprint-head"><span>📝 题型正确率</span><span style="font-size:var(--xt-font-xs);color:var(--text-secondary);font-weight:400">数据来自本机做题记录</span></div>
-          <div id="typeAccRows"></div>
-          <div class="typeacc-weak" id="typeAccWeak" style="display:none"></div>
-        </div>
-
         <div class="feature-grid">
           <div class="feature-card" onclick="navigateTo('exam-center')">
-            <div class="feature-icon">🧩</div>
+            <div class="feature-icon"><span class="nav-icon" data-icon="pencil" data-icon-size="20"></span></div>
             <div class="feature-title">行测刷题</div>
             <div class="feature-desc">五大题型40道精选题，每题配详细解析，错题自动收录</div>
             <span class="feature-badge tag-primary">完整版</span>
           </div>
-          <div class="feature-card" onclick="openMiniQuiz('exam-quant')">
-            <div class="feature-icon">🔢</div>
-            <div class="feature-title">数量关系</div>
-            <div class="feature-desc">工程/行程/利润/排列组合，线段图辅助理解</div>
-          </div>
-          <div class="feature-card" onclick="openMiniQuiz('exam-deduce')">
-            <div class="feature-icon">🧠</div>
-            <div class="feature-title">判断推理</div>
-            <div class="feature-desc">图形推理/定义判断/类比推理/逻辑判断，推理路径标注</div>
-          </div>
-          <div class="feature-card" onclick="openMiniQuiz('exam-data')">
-            <div class="feature-icon">📊</div>
-            <div class="feature-title">资料分析</div>
-            <div class="feature-desc">速算技巧、图表解读，在原题上标注关键数据</div>
-          </div>
           <div class="feature-card" onclick="openMiniQuiz('exam-common')">
-            <div class="feature-icon">📚</div>
+            <div class="feature-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div>
             <div class="feature-title">综合知识</div>
             <div class="feature-desc">经济/管理/法律/计算机基础，高频考点卡片</div>
           </div>
           <div class="feature-card" onclick="openMiniQuiz('exam-company')">
-            <div class="feature-icon">🏛️</div>
+            <div class="feature-icon"><span class="nav-icon" data-icon="package" data-icon-size="20"></span></div>
             <div class="feature-title">企业定向库</div>
             <div class="feature-desc">目标企业企业文化、最新动态、历年笔试形式</div>
           </div>
           <div class="feature-card" onclick="openHotNewsPanel()">
-            <div class="feature-icon">🔥</div>
+            <div class="feature-icon"><span class="nav-icon" data-icon="fire" data-icon-size="20"></span></div>
             <div class="feature-title">时政热点</div>
             <div class="feature-desc">自动获取最新网络热点议题，实时更新（可切换题库模式）</div>
           </div>
           <div class="feature-card" onclick="window.location.href='mock_exam.html?cat=exam-mock'">
-            <div class="feature-icon">📋</div>
+            <div class="feature-icon"><span class="nav-icon" data-icon="clipboard" data-icon-size="20"></span></div>
             <div class="feature-title">真题模考</div>
             <!-- 【P0-B T03-06】改跳独立页 mock_exam.html（三独立页 + 9 题型 + 计时 + 答题卡 + 成绩页） -->
             <div class="feature-desc">套卷模考 + 计时判分 + 成绩归档</div>
           </div>
           <!-- 【P0-B T04】新增：原攻略面板迁到 exam-guide -->
           <div class="feature-card" onclick="openMiniQuiz('exam-guide')">
-            <div class="feature-icon">📖</div>
+            <div class="feature-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div>
             <div class="feature-title">考试指南</div>
             <div class="feature-desc">题型结构、时间分配、复盘方法</div>
           </div>
           <div class="feature-card" onclick="TopicExpress.open()">
-            <div class="feature-icon">🎤</div>
+            <div class="feature-icon"><span class="nav-icon" data-icon="mic" data-icon-size="20"></span></div>
             <div class="feature-title">话题表达训练</div>
             <div class="feature-desc">随机话题+深度解读+1分钟语音表达，练综合分析</div>
             <span class="feature-badge tag-primary">新上线</span>
@@ -377,71 +355,28 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913g" defer></script>
-<script src="assets/xt-toast.js?v=20260913g" defer></script>
-<script src="assets/error-boundary.js?v=20260913g" defer></script>
-<script src="assets/app.js?v=20260913g" defer></script>
-<script src="assets/config.js?v=20260913g" defer></script>
-<script src="assets/api.js?v=20260913g" defer></script>
+<script src="assets/icon-map.js?v=20260913h" defer></script>
+<script src="assets/xt-toast.js?v=20260913h" defer></script>
+<script src="assets/error-boundary.js?v=20260913h" defer></script>
+<script src="assets/app.js?v=20260913h" defer></script>
+<script src="assets/config.js?v=20260913h" defer></script>
+<script src="assets/api.js?v=20260913h" defer></script>
 
-<script src="assets/mini-exam.js?v=20260913g" defer></script>
+<script src="assets/mini-exam.js?v=20260913h" defer></script>
 <!-- 【P0-B T03-06】删除弹窗版 mock-exam.js 引入（mock 已迁到 mock_exam.html 三独立页） -->
-<script src="assets/mini.js?v=20260913g" defer></script>
-<script src="assets/topic-express.js?v=20260913g" defer></script>
+<script src="assets/mini.js?v=20260913h" defer></script>
+<script src="assets/topic-express.js?v=20260913h" defer></script>
 
-<script src="assets/qbank.js?v=20260913g" defer></script>
-<script src="assets/hotnews.js?v=20260913g" defer></script>
-<script src="assets/study-stats.js?v=20260913g" defer></script>
+<script src="assets/qbank.js?v=20260913h" defer></script>
+<script src="assets/hotnews.js?v=20260913h" defer></script>
+<script src="assets/study-stats.js?v=20260913h" defer></script>
 <script>
-/* ==================== T7 增量（P0-8/P0-10）：统计卡 + 题型正确率 ==================== */
+/* ==================== T7 增量（P0-8）：学习概况统计卡 ==================== */
 (function () {
   'use strict';
-  function $id(x) { return document.getElementById(x); }
 
-  function renderTypeAcc() {
-    var rows = $id('typeAccRows');
-    if (!rows) return;
-    var acc = {}; // type -> {done, correct}
-    try {
-      var data = JSON.parse(localStorage.getItem(window.lsKey ? window.lsKey('study_workbench_data') : 'study_workbench_data') || '{}');
-      var records = (data && data.examRecords) || {};
-      var bank = (typeof EXAM_BANK !== 'undefined') ? EXAM_BANK : [];
-      Object.keys(records).forEach(function (qid) {
-        var q = bank.find(function (x) { return String(x.id) === String(qid); });
-        if (!q) return;
-        var t = acc[q.type] || (acc[q.type] = { done: 0, correct: 0 });
-        t.done += 1;
-        if (records[qid] && records[qid].correct) t.correct += 1;
-      });
-    } catch (e) { }
-    var keys = Object.keys(acc);
-    if (!keys.length) {
-      rows.innerHTML = '<div style="font-size:12px;color:var(--text-secondary);padding:6px 0">还没有做题记录，去「行测刷题」开始第一组练习吧</div>';
-      $id('typeAccWeak').style.display = 'none';
-      return;
-    }
-    var pctOf = function (t) { return Math.round(acc[t].correct / acc[t].done * 100); };
-    rows.innerHTML = keys.sort().map(function (t) {
-      var pct = pctOf(t);
-      var color = pct > 80 ? '#22c55e' : pct >= 50 ? '#e6a23c' : '#ef4444';
-      return '<div class="typeacc-row"><span class="name">' + t + '</span>' +
-        '<span class="track"><i style="width:' + pct + '%;background:' + color + '"></i></span>' +
-        '<span class="pct" style="color:' + color + '">' + pct + '%</span></div>';
-    }).join('');
-    // 弱项提示：正确率最低题型置顶
-    var weakest = keys.sort(function (a, b) { return pctOf(a) - pctOf(b); })[0];
-    var weakEl = $id('typeAccWeak');
-    if (weakEl) {
-      var wp = pctOf(weakest);
-      weakEl.style.display = 'flex';
-      weakEl.className = 'typeacc-weak' + (wp >= 80 ? ' typeacc-good' : '');
-      weakEl.innerHTML = '<span style="flex:1">今日建议练：<b>' + weakest + '</b>（正确率 ' + wp + '%）</span>' +
-        '<a href="行测刷题.html" style="color:inherit;font-weight:700;text-decoration:none">去练习 →</a>';
-    }
-  }
-
-  if (document.readyState !== 'loading') { if (window.StudyStats) StudyStats.render('examStatsCard', 'xingce'); renderTypeAcc(); }
-  else document.addEventListener('DOMContentLoaded', function () { if (window.StudyStats) StudyStats.render('examStatsCard', 'xingce'); renderTypeAcc(); });
+  if (document.readyState !== 'loading') { if (window.StudyStats) StudyStats.render('examStatsCard', 'xingce'); }
+  else document.addEventListener('DOMContentLoaded', function () { if (window.StudyStats) StudyStats.render('examStatsCard', 'xingce'); });
 })();
 </script>
 </body>
