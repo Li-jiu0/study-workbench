@@ -1,14 +1,14 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN" data-page-node-id="T644pKH8TzKnQZYp0uMX8Y">
 <head data-page-node-id="zBpP04ygieGNnvsjrpSpBf">
 <meta charset="UTF-8" data-page-node-id="F1s43AzcWXyQRzpbolootk">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" data-page-node-id="ppAOS1DYQGgIIySlO2fdxi">
 <meta name="theme-color" content="#5B8DEF" data-page-node-id="EXvc7QppIKtHC8PUM71nFK">
 <title>设置 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913m" data-page-node-id="oNplQZjsSu34O6b7wLTk3t">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913m">
-<link rel="stylesheet" href="assets/states.css?v=20260913m">
-<link rel="stylesheet" href="assets/polish.css?v=20260913m" data-page-node-id="gZ2lwtNBjEq5CgqQTlbjFi">
+<link rel="stylesheet" href="assets/common.css?v=20260913n" data-page-node-id="oNplQZjsSu34O6b7wLTk3t">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913n">
+<link rel="stylesheet" href="assets/states.css?v=20260913n">
+<link rel="stylesheet" href="assets/polish.css?v=20260913n" data-page-node-id="gZ2lwtNBjEq5CgqQTlbjFi">
 </head>
 <body class="theme-home" data-page-node-id="wneJ1qXxVLXB9kpk29RxqH">
 
@@ -288,6 +288,21 @@
                 <option value="1" data-page-node-id="WysRrluEE5ZNReDPTTrVjC">1 条/天</option><option value="2" data-page-node-id="RWerjOZm8MKUeZ1YlrKdAD">2 条/天</option><option value="3" data-page-node-id="8EFWS0hemFzELHk2VMpr9i">3 条/天</option>
                 <option value="4" data-page-node-id="J980mMbo2UmSM6IeDRVdR9">4 条/天</option><option value="5" data-page-node-id="16njJ7li2VbpEdHPVjhlJv">5 条/天</option><option value="6" data-page-node-id="SPeZijF2ECn1agkLaN0fVv">6 条/天</option>
                 <option value="8" data-page-node-id="X6rtE1SV0p76QGFTX7GT27">8 条/天</option><option value="10" data-page-node-id="2PUD1xfCKMJWzsrbEzGGUh">10 条/天</option>
+              </select>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">每日复习量</div>
+              <div class="setting-desc">四级词汇每日复习队列的词数上限（到期词优先，未到期按最早复习日补足）</div>
+            </div>
+            <div class="setting-actions">
+              <select class="form-input" id="stDailyReview" onchange="setSetting('dailyReview',+this.value);showToast('✅ 每日复习量已保存')">
+                <option value="10">10 词/天</option>
+                <option value="20">20 词/天</option>
+                <option value="30">30 词/天</option>
+                <option value="50">50 词/天</option>
+                <option value="100">100 词/天</option>
               </select>
             </div>
           </div>
@@ -950,15 +965,15 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913m" defer></script>
-<script src="assets/xt-toast.js?v=20260913m" defer></script>
-<script src="assets/error-boundary.js?v=20260913m" defer></script>
-<script src="assets/app.js?v=20260913m" defer></script>
-<script src="assets/config.js?v=20260913m" defer></script>
-<script src="assets/api.js?v=20260913m" defer></script>
-<script src="assets/subpage-router.js?v=20260913m" defer></script>
-<script src="assets/qbank.js?v=20260913m" defer></script>
-<script src="assets/importer.js?v=20260913m" defer></script>
+<script src="assets/icon-map.js?v=20260913n" defer></script>
+<script src="assets/xt-toast.js?v=20260913n" defer></script>
+<script src="assets/error-boundary.js?v=20260913n" defer></script>
+<script src="assets/app.js?v=20260913n" defer></script>
+<script src="assets/config.js?v=20260913n" defer></script>
+<script src="assets/api.js?v=20260913n" defer></script>
+<script src="assets/subpage-router.js?v=20260913n" defer></script>
+<script src="assets/qbank.js?v=20260913n" defer></script>
+<script src="assets/importer.js?v=20260913n" defer></script>
 <script>
 /* 单机离线版（如安卓 APK，未打包 assets/api.js）适配：
    ① 隐藏依赖后端的「本地发贴迁移」卡片；
@@ -998,6 +1013,7 @@ function stToggle(key, val, el) {
   var set = loadAllSettings();
   var pick = function (id, v) { var el = document.getElementById(id); if (el) el.value = v; };
   pick('stDailyNew', set.dailyNew);
+  pick('stDailyReview', set.dailyReview == null ? 20 : set.dailyReview);
   pick('stAiTemp', set.aiTemp == null ? '' : set.aiTemp);
   pick('stAiMax', set.aiMax == null ? '' : set.aiMax);
   pick('stFocus', set.focusMinutes);
@@ -1210,11 +1226,19 @@ function stCurAccount() {
 function stIsOnline() {
   try { return (typeof apiGetToken === 'function') && !!apiGetToken(); } catch (e) { return false; }
 }
+var ST_ACCT_RETRIES = 0; // R34：账号检测延迟重试计数（最多 2 次）
 function stInitAccount() {
   var desc = document.getElementById('stAcctDesc');
   var mode = document.getElementById('stAcctMode');
   var online = stIsOnline();
   var acct = stCurAccount();
+  /* R34 加固（2026-09-15）：CURRENT_USER 由 api.js 的 async loadCurrentUser 异步填充，
+     DOMContentLoaded 时可能尚未就绪。若在线（apiGetToken 有值，说明必然有账号）但此时
+     取不到 CURRENT_USER，则 600ms 后再刷一次，最多重试 2 次，避免误显示「访客态」。 */
+  if (ST_ACCT_RETRIES < 2 && online && (typeof CURRENT_USER === 'undefined' || !CURRENT_USER)) {
+    ST_ACCT_RETRIES++;
+    setTimeout(function () { try { stInitAccount(); } catch (e) { } }, 600);
+  }
   if (mode) mode.textContent = online ? '🌐 在线模式（服务器）' : '📱 本地单机模式';
   if (desc) desc.innerHTML = acct
     ? ('账号：<b>' + stEsc(acct) + '</b>　' + (online ? '数据存于服务器，可多端同步' : '账号与数据仅保存在本机浏览器'))
@@ -1524,11 +1548,24 @@ if (typeof window !== 'undefined') {
   apply('swCompact', s.compact);
   apply('swStudyRemind', s.studyRemind);
   stRefreshOverview();
-  stInitAccount();
   applyStudyReminder();
   stLoadBlocked();
   stLoadPrivacy();
 })();
+
+/* R34（寇豆码 2026-09-15）：账号检测原在解析期 IIFE 内「同步」调用 stInitAccount()，
+   但本页内联脚本先于 defer 脚本（app.js/api.js/config.js）执行，此时 CURRENT_USER /
+   apiGetToken 尚不存在，导致卡片永远停在「检测中… / —」。
+   修复：延后到依赖就绪后再调用。defer 脚本在 DOMContentLoaded 之前已执行完毕，
+   故挂 DOMContentLoaded 最稳妥；若事件已过（readyState 已非 loading）则立即执行兜底。
+   进入「账号与安全」子页时由下方 T02 区块的 onSubpageChange 再刷新一次。 */
+if (typeof stInitAccount === 'function') {
+  if (document.readyState !== 'loading') {
+    stInitAccount();
+  } else {
+    window.addEventListener('DOMContentLoaded', stInitAccount);
+  }
+}
 </script>
 
 <script>
@@ -1733,6 +1770,11 @@ if (typeof window !== 'undefined') {
       // privacy 子页面激活时拉取隐私三控件（批次四 T05 落地，stLoadPrivacy 保留）
       if (key === 'privacy') {
         try { if (typeof stLoadPrivacy === 'function') stLoadPrivacy(); } catch (e) { if (window.console) console.warn('stLoadPrivacy error', e); }
+      }
+      // R34（寇豆码 2026-09-15）：进入「账号与安全」子页时刷新一次账号检测，
+      // 保证登录态（CURRENT_USER / apiGetToken）就绪后卡片显示正确账号，而非残留「检测中… / —」。
+      if (key === 'account') {
+        try { if (typeof stInitAccount === 'function') stInitAccount(); } catch (e) { if (window.console) console.warn('stInitAccount error', e); }
       }
     });
   }
