@@ -407,13 +407,25 @@ function mergeExamBankQuestions(questions, allowOverride) {
 // 加载单个题库 JSON 分片。allowOverride=true → 覆盖层语义（同 id 覆盖内置）；
 // 省略 / false → 增量分片语义（同 id 跳过、新 id 追加）。任何情况都不落盘（不调 saveData）。
 function loadExamBankShard(url, allowOverride) {
-  try {
-    fetch(url).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
-      if (!j || !Array.isArray(j.questions)) return;
+  // 【R35 遗留】统一走 fetchJSONAnywhere（fetch 优先、XHR 兜底，file:// 下可用）；
+  // 失败 → console.warn（带 url 与错误信息）+ 一次性 toast（同名只提示一次），回退内置题库。
+  // 任何情况都不落盘（不调 saveData）。返回 Promise<实际变更条数>。
+  return fetchJSONAnywhere(url)
+    .then(function (j) {
+      if (!j || !Array.isArray(j.questions)) {
+        console.warn('[exam] 题库分片结构无效，已跳过：', url);
+        notifyDataLoadFailed('题库扩展', url, '⚠️ 题库扩展加载失败，当前仅显示内置题目');
+        return 0;
+      }
       var changed = mergeExamBankQuestions(j.questions, !!allowOverride);
       if (changed > 0 && typeof renderExamQuestion === 'function') { try { renderExamQuestion(); } catch (e) { /* 静默 */ } }
-    }).catch(function () { /* file:// / 离线：回退内置 */ });
-  } catch (e) { /* fetch 不可用：回退 */ }
+      return changed;
+    })
+    .catch(function (err) {
+      console.warn('[exam] 题库分片加载失败，回退内置：', url, err && err.message ? err.message : err);
+      notifyDataLoadFailed('题库扩展', url, '⚠️ 题库扩展加载失败，当前仅显示内置题目');
+      return 0;
+    });
 }
 
 // 统一入口：① 覆盖层（同 id 覆盖内置）→ ② 增量分片索引（只 push）。
@@ -421,27 +433,34 @@ function loadExamBankExt() {
   // ① 覆盖层：按显式路径立即加载，索引不可用（file:// / 离线）时也能覆盖内置，保证兜底与线上一致
   loadExamBankShard(EXAM_BANK_LEGACY, true);
   // ② 增量分片：先拉索引，再按 shards[].file 逐片加载 —— 加题只改索引，代码零改动
-  try {
-    fetch(EXAM_BANK_EXT_INDEX).then(function (r) { return r.ok ? r.json() : null; }).then(function (idx) {
-      if (!idx) return;
-      var files = [];
-      if (Array.isArray(idx.shards)) {
-        idx.shards.forEach(function (s) {
-          var f = (s && typeof s === 'object') ? s.file : s; // 兼容 shards 项直接写成文件名的旧格式
-          if (typeof f === 'string' && f) files.push(f);
-        });
-      }
-      // 索引若另行声明 legacy（与 EXAM_BANK_LEGACY 相同则跳过，避免重复覆盖）
-      // 比较时剥掉查询串（?v=），否则单边带版本号会导致字符串不等、legacy 被加载两遍。
-      if (idx.legacy) {
-        var lg = (typeof idx.legacy === 'object') ? idx.legacy.file : idx.legacy;
-        var lgPath = String(lg).split('?')[0];
-        var legacyPath = String(EXAM_BANK_LEGACY).split('?')[0];
-        if (typeof lg === 'string' && lg && lgPath !== legacyPath) files.push(lg);
-      }
-      files.forEach(function (f) { loadExamBankShard(f); });
-    }).catch(function () { /* 索引不可用：静默回退内置 + 覆盖层 */ });
-  } catch (e) { /* fetch 不可用：回退 */ }
+  // 【R35 遗留】索引同样统一走 fetchJSONAnywhere：失败 → console.warn（带 url 与错误信息）
+  // + 一次性 toast（同名只提示一次），回退内置题库 + 覆盖层。
+  fetchJSONAnywhere(EXAM_BANK_EXT_INDEX).then(function (idx) {
+    if (!idx) {
+      console.warn('[exam] 题库分片索引不可用，回退内置 + 覆盖层：', EXAM_BANK_EXT_INDEX);
+      notifyDataLoadFailed('题库扩展', EXAM_BANK_EXT_INDEX, '⚠️ 题库扩展加载失败，当前仅显示内置题目');
+      return;
+    }
+    var files = [];
+    if (Array.isArray(idx.shards)) {
+      idx.shards.forEach(function (s) {
+        var f = (s && typeof s === 'object') ? s.file : s; // 兼容 shards 项直接写成文件名的旧格式
+        if (typeof f === 'string' && f) files.push(f);
+      });
+    }
+    // 索引若另行声明 legacy（与 EXAM_BANK_LEGACY 相同则跳过，避免重复覆盖）
+    // 比较时剥掉查询串（?v=），否则单边带版本号会导致字符串不等、legacy 被加载两遍。
+    if (idx.legacy) {
+      var lg = (typeof idx.legacy === 'object') ? idx.legacy.file : idx.legacy;
+      var lgPath = String(lg).split('?')[0];
+      var legacyPath = String(EXAM_BANK_LEGACY).split('?')[0];
+      if (typeof lg === 'string' && lg && lgPath !== legacyPath) files.push(lg);
+    }
+    files.forEach(function (f) { loadExamBankShard(f); });
+  }).catch(function (err) {
+    console.warn('[exam] 题库分片索引加载失败，回退内置 + 覆盖层：', EXAM_BANK_EXT_INDEX, err && err.message ? err.message : err);
+    notifyDataLoadFailed('题库扩展', EXAM_BANK_EXT_INDEX, '⚠️ 题库扩展加载失败，当前仅显示内置题目');
+  });
 }
 
 // ========== T06（批次三 R3-1）+ 批次五：词库增量分片加载合并 ==========
@@ -515,11 +534,19 @@ function fetchJSONAnywhere(url) {
 }
 
 // R35：词库扩展全量失败时的一次性提示（防重入标记，只提示一次）
-var _vocabExtFailNotified = false;
+// 【R35 遗留】数据加载失败统一提示：同名只提示一次（防重复弹窗刷屏）。
+// 词库 / 题库等所有 file:// 静态 JSON 加载链共用这一套。
+var _dataLoadFailedFlags = {};
+function notifyDataLoadFailed(name, detail, msg) {
+  if (_dataLoadFailedFlags[name]) return;
+  _dataLoadFailedFlags[name] = true;
+  try { console.warn('[data] ' + name + ' 加载失败，回退内置数据：', detail || ''); } catch (e) { /* 静默 */ }
+  try { showToast(msg || ('⚠️ ' + name + ' 加载失败，当前仅显示内置内容')); } catch (e) { /* 静默 */ }
+}
+
+// R35：词库扩展专用入口（保留原提示文案，内部转调通用实现）
 function notifyVocabExtFailed() {
-  if (_vocabExtFailNotified) return;
-  _vocabExtFailNotified = true;
-  try { showToast('⚠️ 词库扩展加载失败，当前仅显示内置词表'); } catch (e) { /* 静默 */ }
+  notifyDataLoadFailed('词库扩展', VOCAB_EXT_INDEX, '⚠️ 词库扩展加载失败，当前仅显示内置词表');
 }
 
 // 增量分片加载：读索引 → 并发拉取所有分片 → 合并。
