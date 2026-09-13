@@ -250,13 +250,9 @@ let appData = {
   countdowns: [],
   // 【P0-B T03】模考成绩归档（mock-exam.js 写入；走既有 lsKey 约束，不新建裸 localStorage 键）
   mockExams: [],
-  tasks: [
-    { id: 1, name: '四级词汇 50个', module: 'cet', done: false, progress: '0/50' },
-    { id: 2, name: '行测图形推理 20题', module: 'exam', done: false, progress: '0/20' },
-    { id: 3, name: '高情商场景练习 1个', module: 'comm', done: false, progress: '0/1' },
-    { id: 4, name: 'PPT版式练习 1题', module: 'ppt', done: false, progress: '0/1' },
-    { id: 5, name: '模拟面试 1次（可选）', module: 'interview', done: false, progress: '0/1' }
-  ],
+  // 【R37】用户拍板 2026-09-13：移除内置任务条，首页仅保留自定义任务
+  // （自定义任务由 学习工作台.html xtHomeEnhanceJs 渲染、独立 localStorage key xt_custom_tasks_v1）
+  tasks: [],
   stats: {
     totalHours: 0,
     totalQuestions: 0,
@@ -1062,6 +1058,9 @@ function loadData() {
   } catch (e) { console.error('加载数据失败', e); }
   // 【P0-B T03】防御回退：旧档升级时确保 mockExams 字段存在
   if (!Array.isArray(appData.mockExams)) appData.mockExams = [];
+  // 【R37】老数据清理：旧档 localStorage 里仍存着内置 5 条任务，强制清空，
+  // 避免继续渲染出会触发 toggleTask→updateTopbarStats 崩溃的内置任务条
+  appData.tasks = [];
   // 【R36】旧档兼容：升级前没有 reviewToday（或结构损坏）时补默认值，跨日由复习队列自动重建
   if (!appData.reviewToday || !Array.isArray(appData.reviewToday.words)) {
     appData.reviewToday = { date: "", words: [] };
@@ -1288,6 +1287,10 @@ function renderCountdowns() {
 }
 
 function renderTasks() {
+  // 【R37】内置任务已移除：无任务时在触碰 #taskList 之前直接返回。
+  // 严禁走到 list.innerHTML 赋值——#taskList 由 学习工作台.html xtHomeEnhanceJs
+  // 渲染自定义任务，整块重写（即使是空串）会误删自定义任务节点。
+  if (!appData.tasks || !appData.tasks.length) return;
   const list = document.getElementById('taskList');
   let html = '';
   appData.tasks.forEach(task => {
@@ -1780,11 +1783,13 @@ function renderRecentLearning() {
 }
 
 function updateTopbarStats() {
-  document.getElementById('streakDays').textContent = getConvergedStreak(); // T18②：全局口径
-  document.getElementById('todayMinutes').textContent = appData.stats.todayMinutes;
+  // 【R37】逐项判空：学习工作台.html 顶栏只有 #streakDays / #todayMinutes，
+  // 不存在 #todayTasks / #totalTasks，裸赋值会在 toggleTask 链路抛 TypeError
+  setStatText('streakDays', getConvergedStreak()); // T18②：全局口径
+  setStatText('todayMinutes', appData.stats.todayMinutes);
   const doneCount = appData.tasks.filter(t => t.done).length;
-  document.getElementById('todayTasks').textContent = doneCount;
-  document.getElementById('totalTasks').textContent = appData.tasks.length;
+  setStatText('todayTasks', doneCount);
+  setStatText('totalTasks', appData.tasks.length);
 }
 
 // ========== 倒计时管理 ==========
