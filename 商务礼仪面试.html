@@ -590,6 +590,7 @@
       ? '<button class="btn btn-outline btn-sm" onclick="window.ivqAgain()">再来一组</button><button class="btn btn-primary" onclick="window.ivqFinish()">查看成绩</button>'
       : '<button class="btn btn-primary" onclick="window.ivqNext()">下一题 <span data-icon="arrow-right" data-icon-size="16" style="vertical-align:-3px"></span></button>';
     body.appendChild(acts);
+    if (window.lucideAutoRender) window.lucideAutoRender(); // 动态插入的 data-icon（如「下一题」箭头）重渲染
     acts.scrollIntoView({ block: 'nearest' });
     // 与 mini.js 口径一致：答题算一次「学习动作」，推进全局连续打卡
     try { window.Streak && window.Streak.bump(); } catch (e) { /* 静默 */ }

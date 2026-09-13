@@ -15,7 +15,7 @@
 <div class="app">
 <nav class="sidebar">
     <div class="logo">
-      <div class="logo-icon">📚</div>
+      <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div>
       <div>
         <div class="logo-text">星途</div>
         <div class="logo-sub">致追梦的人->修身</div>
@@ -52,7 +52,7 @@
         <div class="user-avatar">学</div>
         <div class="user-info">
           <div class="user-name">同学</div>
-          <div class="user-streak">🔥 连续打卡 0 天</div>
+          <div class="user-streak"><span data-icon="fire" data-icon-size="14" style="vertical-align:-2px"></span> 连续打卡 0 天</div>
         </div>
       </div>
     </div>
@@ -67,28 +67,28 @@
         <div class="gs-dropdown" id="gsDropdown"></div>
       </div>
       <div class="topbar-stats">
-        <div class="stat-item"><span class="stat-icon">🔥</span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
-        <div class="stat-item"><span class="stat-icon">⏱️</span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
-        <div class="stat-item"><span class="stat-icon">✅</span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="fire" data-icon-size="16"></span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="clock" data-icon-size="16"></span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="check" data-icon-size="16"></span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
       </div>
       <div class="topbar-date" id="topbarDate"></div>
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
-      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0">🌙</div>
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="18"></span></div>
     </header>
 <div class="page active" id="page-blog">
         <div class="module-hero">
           <div class="module-hero-left">
-            <div class="module-hero-title">📝 互动广场</div>
+            <div class="module-hero-title"><span data-icon="pen" data-icon-size="18" style="vertical-align:-3px"></span> 互动广场</div>
             <div class="module-hero-desc">写发贴 · 分类标签 · 草稿归档 · 数据本地保存</div>
           </div>
         </div>
 
         <!-- 博客子导航 -->
         <div class="blog-subnav">
-          <div class="sb-tab active" id="blogTabList" onclick="showBlogView('list')">📚 广场</div>
-          <div class="sb-tab" id="blogTabMine" onclick="showBlogView('mine')">👤 我的文章</div>
-          <div class="sb-tab" id="blogTabEdit" onclick="showBlogView('edit')">✍️ 写发贴</div>
-          <div class="sb-tab" id="blogTabStats" onclick="showBlogView('stats')">📊 统计</div>
+          <div class="sb-tab active" id="blogTabList" onclick="showBlogView('list')"><span data-icon="book-open" data-icon-size="14" style="vertical-align:-3px"></span> 广场</div>
+          <div class="sb-tab" id="blogTabMine" onclick="showBlogView('mine')"><span data-icon="user" data-icon-size="14" style="vertical-align:-3px"></span> 我的文章</div>
+          <div class="sb-tab" id="blogTabEdit" onclick="showBlogView('edit')"><span data-icon="pen" data-icon-size="14" style="vertical-align:-3px"></span> 写发贴</div>
+          <div class="sb-tab" id="blogTabStats" onclick="showBlogView('stats')"><span data-icon="chart-bar" data-icon-size="14" style="vertical-align:-3px"></span> 统计</div>
         </div>
 
         <!-- ===== 视图：广场 ===== -->
@@ -156,33 +156,33 @@
             <div class="rt-tool" title="斜体" onclick="editorTool('italic')"><i>I</i></div>
             <div class="rt-tool" title="标题" onclick="editorTool('h2')">H₂</div>
             <div class="rt-tool" title="无序列表" onclick="editorTool('ul')">•≡</div>
-            <div class="rt-tool" title="待办清单" onclick="editorTool('task')">☑</div>
-            <div class="rt-tool" title="引用" onclick="editorTool('quote')">❝</div>
+            <div class="rt-tool" title="待办清单" onclick="editorTool('task')"><span data-icon="check-circle" data-icon-size="16"></span></div>
+            <div class="rt-tool" title="引用" onclick="editorTool('quote')"><span data-icon="quote" data-icon-size="16"></span></div>
             <div class="rt-tool" title="代码块" onclick="editorTool('code')">&lt;/&gt;</div>
             <div class="rt-tool" title="行内代码" onclick="editorTool('inline')">`</div>
             <div class="rt-tool" title="公式" onclick="editorTool('formula')">∑</div>
-            <div class="rt-tool" title="图片链接" onclick="editorTool('image')">🖼</div>
+            <div class="rt-tool" title="图片链接" onclick="editorTool('image')"><span data-icon="image" data-icon-size="16"></span></div>
             <div class="rt-tool" title="分割线" onclick="editorTool('hr')">—</div>
           </div>
 
           <!-- 左写右预览 -->
           <div class="editor-panes">
             <div class="editor-pane-box">
-              <div class="pane-label">✍️ 编辑（支持轻量 Markdown）</div>
+              <div class="pane-label"><span data-icon="pen" data-icon-size="16" style="vertical-align:-3px"></span> 编辑（支持轻量 Markdown）</div>
               <textarea id="blogEditorInput" placeholder="写下你的知识点总结、错题记录、复习提纲…&#10;&#10;支持语法：# 标题 · **加粗** · *斜体* · `行内代码` · 行首 ``` 代码块 · $公式$ · 行首 - 列表 / - [ ] 待办 / &gt; 引用"></textarea>
             </div>
             <div class="editor-pane-box">
-              <div class="pane-label">👁️ 实时预览</div>
+              <div class="pane-label"><span data-icon="eye" data-icon-size="16" style="vertical-align:-3px"></span> 实时预览</div>
               <div class="blog-preview" id="blogEditorPreview"></div>
             </div>
           </div>
 
           <!-- 操作区 -->
           <div class="editor-actions">
-            <button class="btn btn-primary" onclick="saveBlogNote('published')">📤 发布</button>
-            <button class="btn btn-outline" onclick="saveBlogNote('draft')">💾 存草稿</button>
-            <button class="btn btn-outline" onclick="editorAiAssist()">🤖 AI 辅助写发贴</button>
-            <button class="btn btn-outline" onclick="resetBlogEditor()">↺ 清空</button>
+            <button class="btn btn-primary" onclick="saveBlogNote('published')"><span data-icon="upload" data-icon-size="16" style="vertical-align:-3px"></span> 发布</button>
+            <button class="btn btn-outline" onclick="saveBlogNote('draft')"><span data-icon="save" data-icon-size="16" style="vertical-align:-3px"></span> 存草稿</button>
+            <button class="btn btn-outline" onclick="editorAiAssist()"><span data-icon="bot" data-icon-size="16" style="vertical-align:-3px"></span> AI 辅助写发贴</button>
+            <button class="btn btn-outline" onclick="resetBlogEditor()"><span data-icon="rotate-ccw" data-icon-size="16" style="vertical-align:-3px"></span> 清空</button>
             <div class="spacer"></div>
             <span id="blogEditStatus" style="font-size:var(--xt-font-sm);color:var(--text-secondary)"></span>
           </div>
@@ -190,7 +190,7 @@
 
         <!-- ===== 视图：文章详情 ===== -->
         <div class="blog-wrap blog-detail" id="blogViewDetail" style="display:none">
-          <button class="btn btn-outline" style="align-self:flex-start" onclick="showBlogView('list')">← 返回列表</button>
+          <button class="btn btn-outline" style="align-self:flex-start" onclick="showBlogView('list')"><span data-icon="arrow-left" data-icon-size="16" style="vertical-align:-3px"></span> 返回列表</button>
           <div id="blogDetailBox"></div>
         </div>
 
@@ -296,22 +296,22 @@
        3. 安全约束：大模型密钥只放在后端 .env 里，前端代码永远不出现密钥。 -->
   <!-- 悬浮头像：可按住拖拽到任意位置（见下方 JS.initAiFabDrag），点击打开/收起面板，双击复位 -->
   <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">
-    🤖<span class="ai-mode-badge" id="aiModeBadge">演示</span>
+    <span class="nav-icon" data-icon="bot" data-icon-size="22"></span><span class="ai-mode-badge" id="aiModeBadge">演示</span>
   </div>
   <div class="ai-panel" id="aiPanel">
     <div class="ai-panel-header">
-      <div class="ai-avatar">🤖</div>
+      <div class="ai-avatar"><span class="nav-icon" data-icon="bot" data-icon-size="20"></span></div>
       <div style="flex:1">
         <div class="ai-title">AI学习助手</div>
         <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
       </div>
-      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录">🧹</div>
-      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板">✕</div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录"><span class="nav-icon" data-icon="delete" data-icon-size="16"></span></div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板"><span class="nav-icon" data-icon="close" data-icon-size="16"></span></div>
     </div>
     <div class="ai-messages" id="aiMessages"></div>
     <div class="ai-input-row">
       <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
-      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()">➤</div>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()"><span data-icon="arrow-right" data-icon-size="18"></span></div>
     </div>
   </div>
 
@@ -330,7 +330,7 @@
 
   <!-- 工具面板 -->
   <div class="bottom-more-panel" id="toolsPanel">
-    <div class="bottom-more-title">🧰 更多工具</div>
+    <div class="bottom-more-title"><span data-icon="wrench" data-icon-size="16"></span> 更多工具</div>
     <div class="bottom-more-grid">
       <div class="bottom-more-item" onclick="location.href='AI模拟面试.html';toggleToolsPanel()">
         <div class="bm-icon"><span class="nav-icon" data-icon="mic" data-icon-size="20"></span></div><div class="bm-label">AI面试</div>

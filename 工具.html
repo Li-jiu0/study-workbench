@@ -101,7 +101,7 @@
       <div class="page active" id="page-tools">
         <!-- 顶部返回（独立页，history.back 回上一页；无历史时回首页） -->
         <div class="morepage-head">
-          <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='学习工作台.html'}" title="返回" aria-label="返回">←</button>
+          <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='学习工作台.html'}" title="返回" aria-label="返回"><span data-icon="arrow-left" data-icon-size="18"></span></button>
           <div class="morepage-title"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span> 工具</div>
         </div>
 
@@ -145,7 +145,7 @@
   <div class="importer-view" id="importerView" role="dialog" aria-label="导入题库">
     <div class="importer-view-inner">
       <div class="morepage-head">
-        <button class="morepage-back" onclick="closeImporterView()" title="返回" aria-label="返回">←</button>
+        <button class="morepage-back" onclick="closeImporterView()" title="返回" aria-label="返回"><span data-icon="arrow-left" data-icon-size="18"></span></button>
         <div class="morepage-title">导入题库</div>
       </div>
       <!-- importer.js 的 shell()/fileStep()/targetStep() 按 id=impBody 定位并渲染步骤内容 -->
@@ -287,7 +287,7 @@
         <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
       </div>
       <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录"><span class="nav-icon" data-icon="delete" data-icon-size="18"></span></div>
-      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板">✕</div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板"><span class="nav-icon" data-icon="close" data-icon-size="16"></span></div>
     </div>
     <div class="ai-messages" id="aiMessages"></div>
     <div class="ai-input-row">
