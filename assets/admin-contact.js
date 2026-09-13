@@ -8,7 +8,9 @@
         chat-local.js 的 imOpenChat()（它要求本地好友记录，管理员没有）。
 
    链路：
-     1) GET  /api/friends/search?q=管理员  → 取管理员 userId（唯一一次，结果缓存）
+     1) GET  /api/admin/contact            → 取管理员 userId（登录即可，结果缓存）
+        （管理员隐形 → /api/friends/search 已按 is_admin 过滤，不可用；
+          过渡期若该端点尚未部署，自动回退旧搜索路径）
      2) GET  /api/chat/{id}/messages?limit=50&markRead=1  → 会话历史
      3) POST /api/chat/{id}/messages      body {content, kind:'text'} → 发消息
    ===================================================================== */
@@ -38,12 +40,30 @@
   }
 
   /* ---------------- 解析管理员 userId ---------------- */
-  function resolveAdminId() {
-    var cached = '';
-    try { cached = localStorage.getItem(ADMIN_ID_KEY) || ''; } catch (e) { /* 忽略 */ }
-    if (cached && /^\d+$/.test(cached)) return Promise.resolve(Number(cached));
-    if (!tok()) return Promise.resolve(0);
+  function cacheAdminId(id) {
+    if (id) { try { localStorage.setItem(ADMIN_ID_KEY, String(id)); } catch (e) { /* 忽略 */ } }
+    return id;
+  }
 
+  /* 主路径：GET /api/admin/contact（登录即可访问，返回最小信息 {id, username, nickname}）。
+     管理员对普通用户隐形，/api/friends/search 已按 is_admin 过滤（0 命中），
+     因此绝不能再靠搜索拿 id。 */
+  function fetchAdminId() {
+    return fetch(base() + '/api/admin/contact', {
+      headers: { 'Authorization': 'Bearer ' + tok() }
+    }).then(function (r) {
+      if (!r.ok) throw new Error('contact unavailable');
+      return r.json();
+    }).then(function (d) {
+      var id = Number(d && (d.id !== undefined ? d.id : d.userId));
+      if (!id) throw new Error('bad payload');
+      return id;
+    });
+  }
+
+  /* 过渡期兜底：后端 /api/admin/contact 尚未部署时，退回旧搜索路径。
+     正常情况下 search 已被过滤 → 0 命中，最终仍返回 0（面板给出友好提示）。 */
+  function fetchAdminIdFallback() {
     return fetch(base() + '/api/friends/search?q=' + encodeURIComponent(ADMIN_USERNAME), {
       headers: { 'Authorization': 'Bearer ' + tok() }
     }).then(function (r) { return r.ok ? r.json() : { items: [] }; }).then(function (d) {
@@ -53,10 +73,19 @@
         if (items[i] && items[i].username === ADMIN_USERNAME) { hit = items[i]; break; }
       }
       if (!hit && items.length) hit = items[0];
-      var id = hit ? Number(hit.id) : 0;
-      if (id) { try { localStorage.setItem(ADMIN_ID_KEY, String(id)); } catch (e) { /* 忽略 */ } }
-      return id;
+      return hit ? Number(hit.id) : 0;
     }).catch(function () { return 0; });
+  }
+
+  function resolveAdminId() {
+    var cached = '';
+    try { cached = localStorage.getItem(ADMIN_ID_KEY) || ''; } catch (e) { /* 忽略 */ }
+    if (cached && /^\d+$/.test(cached)) return Promise.resolve(Number(cached));
+    if (!tok()) return Promise.resolve(0);
+    return fetchAdminId()
+      .then(function (id) { return cacheAdminId(id); })
+      .catch(function () { return fetchAdminIdFallback().then(function (id) { return cacheAdminId(id); }); })
+      .catch(function () { return 0; });
   }
 
   /* ---------------- 面板状态 ---------------- */
