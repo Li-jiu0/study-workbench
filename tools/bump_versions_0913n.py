@@ -18,11 +18,14 @@ OLD = "20260913m"
 NEW = "20260913n"
 
 
-def _cli_version():
-    for a in sys.argv[1:]:
-        if re.fullmatch(r"[0-9A-Za-z._]+", a):
-            return a
-    return None
+def _cli_versions():
+    """返回 (old, new)：命令行里第一个版本串=OLD，第二个=NEW；只给一个则 OLD 保持默认。"""
+    vs = [a for a in sys.argv[1:] if re.fullmatch(r"[0-9A-Za-z._]+", a)]
+    if len(vs) >= 2:
+        return vs[0], vs[1]
+    if len(vs) == 1:
+        return OLD, vs[0]
+    return OLD, NEW
 
 
 def bump_line(line: str) -> str:
@@ -33,10 +36,8 @@ def bump_line(line: str) -> str:
 
 
 def main() -> None:
-    global NEW
-    v = _cli_version()
-    if v:
-        NEW = v
+    global OLD, NEW
+    OLD, NEW = _cli_versions()
 
     changed_files = 0
     for f in sorted(glob.glob("*.html")):
