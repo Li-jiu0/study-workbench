@@ -1,14 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>工具 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913h">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913h">
-<link rel="stylesheet" href="assets/states.css?v=20260913h">
-<link rel="stylesheet" href="assets/polish.css?v=20260913h">
+<link rel="stylesheet" href="assets/common.css?v=20260913i">
+<link rel="stylesheet" href="assets/page-head.css?v=20260913i">
+<link rel="stylesheet" href="assets/states.css?v=20260913i">
+<link rel="stylesheet" href="assets/polish.css?v=20260913i">
 </head>
 <body class="theme-home">
 
@@ -122,7 +122,7 @@
           </div>
           <!-- 【铁律】「穿越英语」入口必须保留可见：指向现有 quest.js 的 openQuest()（不可用时回退到首页的穿越英语卡）。内容升级属批次三。 -->
           <div class="morepage-card morepage-list-item" onclick="if(window.openQuest){openQuest()}else{location.href='学习工作台.html'}">
-            <div class="mpc-icon">⚡</div>
+            <div class="mpc-icon" data-icon="zap" data-icon-size="20"></div>
             <div class="mpc-title">穿越英语</div>
             <div class="mpc-desc">闯关式剧情学英语</div>
           </div>
@@ -161,7 +161,7 @@
         <div class="bm-icon">📊</div><div class="bm-label">学习统计</div>
       </div>
       <div class="bottom-more-item" onclick="gotoBlogMine()">
-        <div class="bm-icon">📁</div><div class="bm-label">互动广场</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div><div class="bm-label">互动广场</div>
       </div>
       <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
         <div class="bm-icon">📒</div><div class="bm-label">错题本</div>
@@ -190,7 +190,7 @@
         <div class="bm-icon">📖</div><div class="bm-label">四级经验</div>
       </div>
       <div class="bottom-more-item" onclick="if(window.openQuest){openQuest()}else{location.href='工具.html'};toggleToolsPanel()">
-        <div class="bm-icon">⚡</div><div class="bm-label">穿越英语</div>
+        <div class="bm-icon"><span class="nav-icon" data-icon="zap" data-icon-size="20"></span></div><div class="bm-label">穿越英语</div>
       </div>
     </div>
   </div>
@@ -258,14 +258,14 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913h" defer></script>
-<script src="assets/xt-toast.js?v=20260913h" defer></script>
-<script src="assets/error-boundary.js?v=20260913h" defer></script>
-<script src="assets/app.js?v=20260913h" defer></script>
-<script src="assets/quest.js?v=20260913h" defer></script>
-<script src="assets/config.js?v=20260913h" defer></script>
-<script src="assets/api.js?v=20260913h" defer></script>
-<script src="assets/importer.js?v=20260913h" defer></script>
-<script src="assets/study-stats.js?v=20260913h" defer></script>
+<script src="assets/icon-map.js?v=20260913i" defer></script>
+<script src="assets/xt-toast.js?v=20260913i" defer></script>
+<script src="assets/error-boundary.js?v=20260913i" defer></script>
+<script src="assets/app.js?v=20260913i" defer></script>
+<script src="assets/quest.js?v=20260913i" defer></script>
+<script src="assets/config.js?v=20260913i" defer></script>
+<script src="assets/api.js?v=20260913i" defer></script>
+<script src="assets/importer.js?v=20260913i" defer></script>
+<script src="assets/study-stats.js?v=20260913i" defer></script>
 </body>
 </html>
