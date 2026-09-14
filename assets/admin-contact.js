@@ -87,11 +87,56 @@
     return p(d.getHours()) + ':' + p(d.getMinutes());
   }
 
+  /* ---------------- R45（2026-09-14e）：入口行副标题「最近一条消息 / 时间」 ----------------
+     入口已改为与好友会话行同款（.im-sess + .im-av + .im-n + .im-sub）。
+     这里只写 #acEntrySub 的 textContent（文本节点级更新，不重建任何节点），
+     且文案相同直接 return —— 与 R46 的「无变化不重建」同思路，避免每 5s 轮询引起重绘。 */
+  var AC_SUB_DEFAULT = '管理员在线时会回复你';
+
+  function fmtSubTime(v) {
+    var t = String(v || '').trim();
+    if (!t) return '';
+    var d = new Date(t.replace(' ', 'T'));
+    if (isNaN(d.getTime())) return '';
+    var now = new Date();
+    var sameDay = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+    function p(n) { return (n < 10 ? '0' : '') + n; }
+    if (sameDay) return p(d.getHours()) + ':' + p(d.getMinutes());
+    return (d.getMonth() + 1) + '/' + d.getDate();
+  }
+
+  function entrySubText() {
+    // 面板未打开时（S.msgs 为空）用未读接口带回的最后一条消息兜底，不再额外发请求
+    if (!S.msgs.length) return S.lastRemote ? clipSub(S.lastRemote) : AC_SUB_DEFAULT;
+    var last = S.msgs[S.msgs.length - 1];
+    var me = myId();
+    var pre = (me && Number(last.senderId) === me) ? '我：' : '';
+    var body = pre + clipSub(last.content);
+    if (!body) return AC_SUB_DEFAULT;
+    var tm = fmtSubTime(last.createdAt || last.time || '');
+    return tm ? body + ' · ' + tm : body;
+  }
+
+  /* 副标题文案裁剪：超过 24 字截断加省略号，避免撑破单行（.im-sub 是 ellipsis） */
+  function clipSub(s) {
+    var txt = String(s || '');
+    return txt.length > 24 ? txt.slice(0, 24) + '…' : txt;
+  }
+
+  function updateEntrySub() {
+    var el = $('acEntrySub');
+    if (!el) return;
+    var next = entrySubText();
+    if (el.textContent === next) return;
+    el.textContent = next;
+  }
+
   function renderMsgs() {
     var box = $('acMsgs');
     if (!box) return;
     if (!S.msgs.length) {
       box.innerHTML = '<div class="ac-empty">还没有消息，直接给管理员留言吧</div>';
+      updateEntrySub();   // R45：回到默认副标题
       return;
     }
     var me = myId();
@@ -106,6 +151,7 @@
     }
     box.innerHTML = html;
     box.scrollTop = box.scrollHeight;
+    updateEntrySub();   // R45：入口行副标题跟随最新一条消息
   }
 
   function loadMsgs() {
@@ -199,9 +245,15 @@
           var items = (d && d.items) || [];
           var hit = 0;
           for (var i = 0; i < items.length; i++) {
-            if (Number(items[i].peerId) === Number(S.adminId)) { hit = Number(items[i].count) || 0; break; }
+            if (Number(items[i].peerId) === Number(S.adminId)) {
+              hit = Number(items[i].count) || 0;
+              // R45：未读接口顺带回的最后一条消息，用于入口行副标题（不额外发请求）
+              if (items[i].last) S.lastRemote = String(items[i].last);
+              break;
+            }
           }
           renderEntryBadge(hit);
+          updateEntrySub();   // R45：仅写文本节点，文案相同则 return
           return hit;
         })
         .catch(function () { return 0; });

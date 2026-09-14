@@ -1,0 +1,32 @@
+=== 1. 生产 feedback_public.py：admin.py 依赖的三个私有符号是否存在 ===
+FILE_BYTES: 6469
+  _load_all    def=YES  assign=NO
+  _write_lock  def=NO  assign=YES
+  _save_all    def=YES  assign=NO
+  ---- 文件内所有顶层 def ----
+   def _load_all
+   def _save_all
+   def _current_user_optional
+   def submit_feedback
+   def list_feedback
+   def my_feedback
+
+=== 2. .env / systemd 环境变量（只报是否设置，绝不打印值）===
+ENV_FILE: YES
+  ADMIN_USERNAME: EMPTY_OR_ABSENT
+  ADMIN_PASSWORD: SET(len=10)
+SYSTEMD_ENV:
+PYTHONUNBUFFERED=1
+12:Environment=PYTHONUNBUFFERED=1
+
+=== 3. 生产 auth.py 是否含 is_admin / isAdmin 双写（Bug D 入口显示依赖）===
+8
+  (0 = 无，即旧版)
+
+=== 4. 生产 database.py 是否含 is_admin_user / can_message（混部署 ImportError 风险）===
+  is_admin_user  YES
+  can_message    YES
+
+=== 5. /api/feedback/mine 现状（kou-r44-server 提到）===
+/api/feedback/mine -> 401
+/api/health        -> 200

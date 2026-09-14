@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>PPT训练 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913o">
+<link rel="stylesheet" href="assets/common.css?v=20260914f">
 <link rel="stylesheet" href="assets/page-head.css?v=20260913o">
 <link rel="stylesheet" href="assets/states.css?v=20260913o">
 <link rel="stylesheet" href="assets/polish.css?v=20260913o">
@@ -33,6 +33,43 @@
   .ppt-view-slot .mz-card-b{padding:14px 16px;border-top:1px solid var(--border)}
   .ppt-view-slot .mz-op{background:var(--bg);border-radius:12px}
   .ppt-view-slot .mz-acts{border-top:none;padding:12px 0 4px}
+
+  /* ===== R58 · 我的作品集（P0 卡片 + 添加弹窗 / P1 大图预览，20260914e） =====
+     逻辑见 assets/ppt-works.js；本页只补样式，不改结构。 */
+  .pw-card{position:relative;padding:0;overflow:hidden;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
+  .pw-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px -8px rgba(0,0,0,.25)}
+  .pw-thumb{width:100%;height:100px;object-fit:cover;display:block;background:var(--bg)}
+  .pw-thumb-ph{display:flex;align-items:center;justify-content:center;color:var(--text-secondary);opacity:.45}
+  .pw-body{padding:8px 10px 10px}
+  .pw-title{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pw-meta{font-size:11px;color:var(--text-secondary);margin-top:2px}
+  .pw-typeline{display:flex;align-items:center;gap:6px;margin-top:6px}
+  .pw-type{font-size:11px;padding:1px 7px;border-radius:99px;background:rgba(91,141,239,.12);color:var(--primary,#5B8DEF)}
+  .pw-imgcnt{font-size:11px;color:var(--text-secondary);display:inline-flex;align-items:center;gap:2px}
+  /* pointer-events:none —— 触屏无 hover 时遮罩不可点，点卡片即进预览（避免误触删除） */
+  .pw-hover{position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;gap:14px;opacity:0;pointer-events:none;transition:opacity .15s ease}
+  .pw-card:hover .pw-hover{opacity:1;pointer-events:auto}
+  .pw-act{display:inline-flex;align-items:center;gap:4px;color:#fff;font-size:12px;cursor:pointer}
+  .pw-act-del{color:#FFB4B4}
+  .pw-m-title{display:flex;align-items:center;gap:6px;font-size:16px;font-weight:700;color:var(--text);margin-bottom:12px}
+  .pw-pick{display:inline-flex;align-items:center;gap:6px;border:1px dashed var(--border);border-radius:10px;padding:8px 12px;font-size:13px;color:var(--text-secondary);cursor:pointer}
+  .pw-thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .pw-thumb-item{position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+  .pw-thumb-item img{width:100%;height:100%;object-fit:cover;display:block}
+  .pw-thumb-x{position:absolute;top:0;right:0;width:18px;height:18px;line-height:18px;text-align:center;background:rgba(0,0,0,.6);color:#fff;font-size:12px;cursor:pointer}
+  .pw-viewer{max-width:640px}
+  .pw-v-stage{position:relative;background:#111;min-height:200px;display:flex;align-items:center;justify-content:center}
+  .pw-v-stage img{max-width:100%;max-height:52vh;display:block}
+  .pw-v-nav{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.45);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .pw-v-prev{left:8px}
+  .pw-v-next{right:8px}
+  .pw-v-count{position:absolute;bottom:8px;right:10px;background:rgba(0,0,0,.5);color:#fff;font-size:12px;padding:2px 8px;border-radius:99px}
+  .pw-v-info{padding:14px 16px 16px}
+  .pw-v-title{font-size:15px;font-weight:700;color:var(--text)}
+  .pw-v-meta{font-size:12px;color:var(--text-secondary);margin-top:2px}
+  .pw-v-desc{font-size:13px;line-height:1.8;color:var(--text-secondary);white-space:pre-wrap;margin-top:8px}
+  .pw-v-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .pw-tag{font-size:11px;padding:2px 8px;border-radius:99px;border:1px solid var(--border);color:var(--text-secondary)}
 </style>
 </head>
 <body class="theme-ppt">
@@ -69,7 +106,7 @@
             <button class="btn btn-primary" style="font-size:var(--xt-font-sm);padding:5px 14px" onclick="window.pptAddWork()">+ 添加作品</button>
           </div>
           <div class="pptfolio-grid" id="pptFolioGrid"></div>
-          <!-- 【后续扩展点：作品缩略图 dataURL 上传与图片九宫格预览】当前仅存文本笔记 -->
+          <!-- R58：多图上传（自动压缩 base64）+ 卡片缩略图 + 大图翻页预览已落地，见 assets/ppt-works.js -->
         </div>
 
         <!-- 需求07（2026-09-13）：入口收拢 —— 「设计基础 / 实战模板库 / 技巧提升」
@@ -86,14 +123,11 @@
             <div class="feature-icon" data-icon="ruler"></div>
             <div class="feature-title">版式库</div>
             <div class="feature-desc">15种常用版式，SVG示意图+适用场景+设计要点，即学即用</div>
-            <span class="feature-badge tag-primary">已上线</span>
-            <span class="feature-badge" id="pptLayoutsTodayBadge" style="background:#E8F5E9;color:#2E7D32;margin-left:4px">今日待学 0</span>
-          </div>
+            </div>
           <div class="feature-card" onclick="navigateTo('ppt-cases')">
             <div class="feature-icon" data-icon="search"></div>
             <div class="feature-title">优秀案例拆解</div>
-            <div class="feature-desc">麦肯锡/苹果发布会/答辩PPT，逐页分析设计亮点和可借鉴技巧</div><span class="feature-badge tag-primary">已上线</span>
-          </div>
+            <div class="feature-desc">麦肯锡/苹果发布会/答辩PPT，逐页分析设计亮点和可借鉴技巧</div></div>
         </div>
       </div>
     </div>
@@ -174,7 +208,7 @@
           <div class="feature-card" onclick="openPptPanel('ppt-tips')">
             <div class="feature-icon" data-icon="zap"></div>
             <div class="feature-title">技巧提升</div>
-            <div class="feature-desc">动画切换、图片处理、图标使用、母版统一、快捷键、演讲配合</div>
+            <div class="feature-desc">快捷键提效、对齐三件套、图片处理、动画克制、演示衔接五个专题，每个专题配套练习</div>
           </div>
         </div>
       </div>
@@ -232,6 +266,74 @@
     </div>
   </div>
 
+  <!-- ==================== R58 · 添加作品弹窗（P0-1：取代原两步 prompt()） ====================
+       结构沿用 T19 统一弹窗约定（.app-modal-mask + .app-modal + .app-modal-close）：
+       ESC 关闭 / 点遮罩关闭 / 打开锁滚动均由 assets/app.js 基础设施承担，本页不重复实现。
+       逻辑全部在 assets/ppt-works.js。【后续扩展点：拖拽排序 / 图片裁剪】 -->
+  <div class="app-modal-mask" id="pptWorkModal">
+    <div class="app-modal">
+      <button class="app-modal-close" onclick="window.pptWorksCloseAdd()" aria-label="关闭">✕</button>
+      <div style="padding:18px 18px 14px">
+        <div class="pw-m-title"><span class="nav-icon" data-icon="briefcase" data-icon-size="18"></span> 添加作品</div>
+        <div class="form-group">
+          <div class="form-label">标题</div>
+          <input type="text" class="form-input" id="pwTitle" maxlength="40" placeholder="如：科技风封面仿写">
+        </div>
+        <div class="form-group">
+          <div class="form-label">类型</div>
+          <select class="form-input" id="pwType">
+            <option>封面页</option>
+            <option>目录页</option>
+            <option>内容页</option>
+            <option>数据页</option>
+            <option>结束页</option>
+            <option>整份稿件</option>
+            <option>其他</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <div class="form-label">作品图片（可多选，最多 6 张，自动压缩后本地保存）</div>
+          <input type="file" id="pwFiles" accept="image/*" multiple style="display:none" onchange="window.pptWorksPick(this)">
+          <div class="pw-pick" onclick="document.getElementById('pwFiles').click()"><span class="nav-icon" data-icon="image" data-icon-size="14"></span> 选择图片</div>
+          <div class="pw-thumbs" id="pwThumbs"></div>
+        </div>
+        <div class="form-group">
+          <div class="form-label">设计说明</div>
+          <textarea class="form-input" id="pwDesc" rows="3" maxlength="300" placeholder="配色 / 字体 / 版式思路…"></textarea>
+        </div>
+        <div class="form-group">
+          <div class="form-label">标签（逗号或空格分隔，最多 6 个）</div>
+          <input type="text" class="form-input" id="pwTags" maxlength="60" placeholder="如：左字右图 蓝橙撞色">
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-outline" onclick="window.pptWorksCloseAdd()">取消</button>
+          <button class="btn btn-primary" onclick="window.pptWorksSave()">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== R58 · 作品大图预览（P1：多图左右翻页 + 设计说明 + 标签） ====================
+       同样走 .app-modal 基础设施；← → 方向键翻页见 assets/ppt-works.js。
+       【后续扩展点】P2 个人主页作品墙 / P3 他人可见·隐私·分享（isPublic/authorId/likes/views 字段已预留） -->
+  <div class="app-modal-mask" id="pptWorkView">
+    <div class="app-modal pw-viewer">
+      <button class="app-modal-close" onclick="window.pptWorksCloseView()" aria-label="关闭">✕</button>
+      <div class="pw-v-stage">
+        <img id="pwVImg" alt="作品预览">
+        <div class="pw-v-nav pw-v-prev" onclick="window.pptWorksNav(-1)" title="上一张"><span class="nav-icon" data-icon="chevron-left" data-icon-size="20"></span></div>
+        <div class="pw-v-nav pw-v-next" onclick="window.pptWorksNav(1)" title="下一张"><span class="nav-icon" data-icon="chevron-right" data-icon-size="20"></span></div>
+        <div class="pw-v-count" id="pwVCount">暂无图片</div>
+      </div>
+      <div class="pw-v-info">
+        <div class="pw-v-title" id="pwVTitle"></div>
+        <div class="pw-v-meta" id="pwVMeta"></div>
+        <div class="pw-v-desc" id="pwVDesc"></div>
+        <div class="pw-v-tags" id="pwVTags"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast提示 -->
   <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center"></div>
 
@@ -269,7 +371,7 @@
 <script src="assets/icon-map.js?v=20260913o" defer></script>
 <script src="assets/xt-toast.js?v=20260913o" defer></script>
 <script src="assets/error-boundary.js?v=20260913o" defer></script>
-<script src="assets/app.js?v=20260913o" defer></script>
+<script src="assets/app.js?v=20260914f" defer></script>
 <script src="assets/config.js?v=20260913o" defer></script>
 <script src="assets/api.js?v=20260913o" defer></script>
 
@@ -281,11 +383,20 @@
      A6 企业定向库专用的 company-lib.js / data-exam-company.js 由 企业定向库.html 自行引入，
      本页不引用（QA 清理后已从 7 个收敛到 5 个，勿再加回）。
      顺序铁律：xt-content.js 必须在所有 data-*.js / 业务 js 之前。 -->
-<script src="assets/xt-content.js?v=20260914e" defer></script>
+<script src="assets/xt-content.js?v=20260914f" defer></script>
 <script src="assets/data-ppt-templates.js?v=20260914e" defer></script>
 <script src="assets/tpl-preview.js?v=20260914e" defer></script>
 <script src="assets/data-ppt-class.js?v=20260914e" defer></script>
 <script src="assets/design-class.js?v=20260914e" defer></script>
+<!-- ===== R48 第 3 批（B1 PPT·技巧提升「做真内容」） =====
+     顺序铁律：data-ppt-tips.js 必须在 assets/mini-ppt.js **之后**（ADR-1 后置覆盖同名 key），
+     xt-content.js 已在上方先加载。回滚只需删除下面两个 script 标签。 -->
+<script src="assets/data-ppt-tips.js?v=20260914e" defer></script>
+<script src="assets/ppt-tips.js?v=20260914e" defer></script>
+<!-- ===== R58（20260914e）· PPT·作品集 P0+P1 =====
+     顺序铁律：必须在 xt-content.js 之后（依赖 XTC.storage / XTC.icon）；
+     与 ppt-tips.js 同级，幂等注册 window.PPTV2['ppt-works']，不改本页 HTML 结构。回滚只需删掉本行。 -->
+<script src="assets/ppt-works.js?v=20260914f" defer></script>
 <script src="assets/mini.js?v=20260913o" defer></script>
 <script src="assets/study-stats.js?v=20260913o" defer></script>
 <script>
@@ -294,61 +405,25 @@
 (function () {
   'use strict';
   function $id(x) { return document.getElementById(x); }
-  var FOLIO_KEY = 'study_workbench_ppt_portfolio'; // [{title, note, date, thumb?}]
+  /* R58（20260914e）：作品集 P0（Modal 添加 + 缩略图卡片）/ P1（大图预览 + 说明 + 标签）
+     已下沉到 assets/ppt-works.js —— 存储键 xtc:lib:pptw:works（经 XTC.storage 自动 lsKeySafe 多账号隔离），
+     旧键 study_workbench_ppt_portfolio 由该模块一次性升迁读取且**保留不清空**。
+     此处只保留转发，保证页面既有 onclick 与其它脚本的调用不失效（行为不回退）。 */
+  function W() { return window.PPTWorks; }
 
-  function loadFolio() { try { return JSON.parse(localStorage.getItem(FOLIO_KEY) || '[]') || []; } catch (e) { return []; } }
+  function loadFolio() { return W() ? W().load() : []; }
+  function renderFolio() { if (W()) W().render(); }
 
-  function renderFolio() {
-    var grid = $id('pptFolioGrid');
-    if (!grid) return;
-    var items = loadFolio();
-    if (!items.length) {
-      grid.innerHTML = '<div class="pptfolio-empty" style="grid-column:1/-1">还没有作品，点「+ 添加作品」记录你的仿写练习</div>';
-      return;
-    }
-    grid.innerHTML = items.slice().reverse().map(function (w, ri) {
-      var idx = items.length - 1 - ri;
-      return '<div class="pptfolio-item">' +
-        (w.thumb ? '<img src="' + w.thumb + '" style="width:100%;border-radius:8px;margin-bottom:6px">' : '') +
-        '<b>' + w.title + '</b>' +
-        '<div class="meta">' + w.date + (w.note ? ' · ' + w.note : '') + '</div>' +
-        '<span class="view" onclick="window.pptViewWork(' + idx + ')">查看</span>' +
-        '<span class="view" style="color:var(--danger);margin-left:8px" onclick="window.pptDelWork(' + idx + ')">删除</span>' +
-        '</div>';
-    }).join('');
-  }
-
-  window.pptAddWork = function () {
-    var title = prompt('作品标题（如：科技风封面仿写）：');
-    if (!title || !title.trim()) return;
-    var note = prompt('一句话笔记（可选，如：学会了左字右图版式）：') || '';
-    var item = { title: title.trim().slice(0, 30), note: note.trim().slice(0, 60), date: new Date().toLocaleDateString('zh-CN') };
-    var items = loadFolio();
-    items.push(item);
-    try {
-      localStorage.setItem(FOLIO_KEY, JSON.stringify(items));
-    } catch (e) {
-      // 容量受限：提示只存文本笔记【后续扩展点：缩略图压缩存储】
-      if (typeof showToast === 'function') showToast('本地空间不足，已只保留文本笔记');
-      item.thumb = undefined;
-      items[items.length - 1] = item;
-      try { localStorage.setItem(FOLIO_KEY, JSON.stringify(items)); } catch (e2) { }
-    }
-    if (window.StudyStats) StudyStats.track('ppt', 'task', { type: 'portfolio_add' });
-    renderFolio();
-  };
+  window.pptAddWork = function () { if (W()) W().openAdd(); };
 
   window.pptViewWork = function (idx) {
     var w = loadFolio()[idx];
-    if (w) alert(w.title + '\n' + w.date + '\n\n' + (w.note || '（无笔记）'));
+    if (w && W()) W().openView(w.id);
   };
 
   window.pptDelWork = function (idx) {
-    if (!confirm('删除这份作品记录？')) return;
-    var items = loadFolio();
-    items.splice(idx, 1);
-    try { localStorage.setItem(FOLIO_KEY, JSON.stringify(items)); } catch (e) { }
-    renderFolio();
+    var w = loadFolio()[idx];
+    if (w && W()) W().del(w.id);
   };
 
   if (document.readyState !== 'loading') boot();
@@ -378,8 +453,8 @@
       desc: '通用八件套 / 商务汇报风 / 教育培训风 / 数据分析风 / 模板选用方法论共 5 套，每套含 5 帧骨架预览（封面、目录、内容双栏、数据页、结束页）、4 色配色方案与标题正文字体搭配，可一键复制 HTML 骨架直接套用。'
     },
     'ppt-tips': {
-      t: '技巧提升', icon: 'zap', tag: '知识卡片',
-      desc: '动画切换、图片处理、图标使用、母版统一、快捷键、演讲配合六个专题技巧。点击卡片标题展开或收起阅读。'
+      t: '技巧提升', icon: 'zap', tag: '5 专题 · 13 道练习 · 6 项实战任务',
+      desc: '学练闭环三个环节：①技巧速览保留原有 5 个专题卡片（可展开深入说明）；②技巧练习按专题配 13 道题，即时判分带解析；③实战任务 6 项 checklist，对着自己的 PPT 逐条打勾。'
     }
   };
   var engineFn = null; // mini.js 引擎原函数（未包装前的引用，防自递归）

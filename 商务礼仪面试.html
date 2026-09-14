@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>商务礼仪及面试 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913o">
+<link rel="stylesheet" href="assets/common.css?v=20260914f">
 <link rel="stylesheet" href="assets/page-head.css?v=20260913o">
 <link rel="stylesheet" href="assets/states.css?v=20260913o">
 <link rel="stylesheet" href="assets/polish.css?v=20260913o">
@@ -129,38 +129,32 @@
             <div class="feature-icon"><span data-icon="briefcase" data-icon-size="24"></span></div>
             <div class="feature-title">商务礼仪</div>
             <div class="feature-desc">8大核心场景，场景图标+要点清单+错误警示，即学即用</div>
-            <span class="feature-badge tag-primary">已上线</span>
-            <span class="feature-badge" id="etiquetteTodayBadge" style="background:#E3F2FD;color:#1565C0;margin-left:4px">今日待学 0</span>
-          </div>
+            </div>
           <div class="feature-card" onclick="ivPrepAfterEnter('prep')">
             <div class="feature-icon"><span data-icon="clipboard" data-icon-size="24"></span></div>
             <div class="feature-title">面试准备</div>
-            <div class="feature-desc">简历优化、自我介绍、公司调研、着装材料清单</div>
+            <div class="feature-desc">8 道高频题三件套：参考框架 → 示范回答（可朗读）→ 自答 + 自查清单</div>
           </div>
           <div class="feature-card" onclick="navigateTo('iv-questions')">
             <div class="feature-icon"><span data-icon="help-circle" data-icon-size="24"></span></div>
             <div class="feature-title">高频问题库</div>
             <div class="feature-desc">8类高频题型，STAR/PREP法则，答题框架+话术模板+参考回答</div>
-            <span class="feature-badge tag-primary">已上线</span>
-            <span class="feature-badge" id="ivQuestionsTodayBadge" style="background:#FFF3E0;color:#E65100;margin-left:4px">今日待学 0</span>
-          </div>
+            </div>
           <!-- 【批次 20260913k+】「无领导小组讨论」独立菜单卡已删除（用户拍板）：准备内容并入下方 AI无领导小组讨论 入口的合并页双 tab -->
           <div class="feature-card" onclick="ivGroupEnter('ai')">
             <div class="feature-icon"><span data-icon="message-circle" data-icon-size="24"></span></div>
             <div class="feature-title">AI无领导小组讨论</div>
             <div class="feature-desc">AI模拟4名组员真实对话，你随时参与发言，结束给评定</div>
-            <span class="feature-badge tag-primary">新上线</span>
-          </div>
+            </div>
           <div class="feature-card" onclick="openInterviewDemo()">
             <div class="feature-icon"><span data-icon="mic" data-icon-size="24"></span></div>
             <div class="feature-title">模拟面试</div>
             <div class="feature-desc">AI面试官语音提问+追问，即时评定，结束给总评报告</div>
-            <span class="feature-badge tag-primary">体验版</span>
-          </div>
+            </div>
           <div class="feature-card" onclick="ivPrepAfterEnter('after')">
             <div class="feature-icon"><span data-icon="inbox" data-icon-size="24"></span></div>
             <div class="feature-title">面试后</div>
-            <div class="feature-desc">感谢信模板、复盘清单、offer对比与谈判、入职准备</div>
+            <div class="feature-desc">输入式复盘四栏：问了什么 / 答得好的 / 卡壳的 / 怎么改 → 自动生成改进清单</div>
           </div>
         </div>
       </div>
@@ -331,7 +325,7 @@
         </div>
         <div class="card">
           <div class="card-header">
-            <div class="card-title"><span class="title-icon" data-icon="clipboard"></span>面试准备 · 自测题库</div>
+            <div class="card-title"><span class="title-icon" data-icon="clipboard"></span>面试准备 · 8 题三件套</div>
             <span class="tag tag-primary" id="ivPrepCount">精选题</span>
           </div>
           <div class="ivq-root" id="ivPrepBody"></div>
@@ -345,7 +339,7 @@
         </div>
         <div class="card">
           <div class="card-header">
-            <div class="card-title"><span class="title-icon" data-icon="inbox"></span>面试后 · 自测题库</div>
+            <div class="card-title"><span class="title-icon" data-icon="inbox"></span>面试后 · 输入式复盘</div>
             <span class="tag tag-primary" id="ivAfterCount">精选题</span>
           </div>
           <div class="ivq-root" id="ivAfterBody"></div>
@@ -467,11 +461,23 @@
 <script src="assets/icon-map.js?v=20260913o" defer></script>
 <script src="assets/xt-toast.js?v=20260913o" defer></script>
 <script src="assets/error-boundary.js?v=20260913o" defer></script>
-<script src="assets/app.js?v=20260913o" defer></script>
+<script src="assets/app.js?v=20260914f" defer></script>
 <script src="assets/config.js?v=20260913o" defer></script>
 <script src="assets/api.js?v=20260913o" defer></script>
 
 <script src="assets/mini-interview.js?v=20260913o" defer></script>
+<!-- ===== R48 第 3 批（A4 面试准备 / A5 面试后「做真内容」） =====
+     顺序铁律：xt-content.js 必须在最前；两个 data-*.js 必须在 mini-interview.js **之后**
+     （ADR-1 后置覆盖同名 key；旧 8 道准备题、旧 6 道复盘题由数据在覆盖前抢救，
+     分别在两个视图底部保留为「知识自测」）。
+     挂载点沿用既有 #ivPrepBody / #ivAfterBody，只链式包装 window.ivQuizMount，
+     不碰 HTML 结构（ADR-2）；iv-group 不受影响，仍走原自测渲染器。
+     回滚：删掉这五个 script 标签即可回到原来的选择题。 -->
+<script src="assets/xt-content.js?v=20260914f" defer></script>
+<script src="assets/data-iv-prep.js?v=20260914e" defer></script>
+<script src="assets/iv-prep.js?v=20260914e" defer></script>
+<script src="assets/data-iv-after.js?v=20260914e" defer></script>
+<script src="assets/iv-after.js?v=20260914e" defer></script>
 <script src="assets/mini.js?v=20260913o" defer></script>
 <script src="assets/group-discussion.js?v=20260913o" defer></script>
 <script src="assets/study-stats.js?v=20260913o" defer></script>

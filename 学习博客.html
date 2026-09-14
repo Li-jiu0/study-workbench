@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>广场 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913o">
+<link rel="stylesheet" href="assets/common.css?v=20260914f">
 <link rel="stylesheet" href="assets/page-head.css?v=20260913o">
 <link rel="stylesheet" href="assets/states.css?v=20260913o">
 <link rel="stylesheet" href="assets/polish.css?v=20260913o">
@@ -49,6 +49,34 @@
 .bc-fold-btn:hover {
   color: color-mix(in srgb, var(--primary) 70%, var(--text));
 }
+/* ⑥ R55（20260914）：帖子卡片分享 —— 统计行右侧按钮 + 浮动小菜单
+   —— 仅作用于本页；不改动 common.css / polish.css。 */
+.nc-share-btn {
+  display: inline-flex; align-items: center; gap: 3px;
+  margin-left: auto; padding: 2px 9px;
+  border: 1px solid var(--border); border-radius: 999px;
+  background: transparent; color: var(--text-secondary);
+  font-size: 11px; font-weight: 600; line-height: 1.7;
+  white-space: nowrap; cursor: pointer;
+}
+.nc-share-btn:hover {
+  color: var(--primary); border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+}
+.xt-share-menu {
+  position: fixed; z-index: 1900; min-width: 170px; padding: 6px;
+  background: var(--card, #fff); border: 1px solid var(--border);
+  border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,.18);
+  display: none;
+}
+.xt-share-menu.open { display: block; }
+.xt-share-item {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 9px 10px; border: none; border-radius: 8px;
+  background: transparent; color: var(--text);
+  font-size: 13px; font-weight: 600; text-align: left; cursor: pointer;
+}
+.xt-share-item:hover { background: var(--bg-sub); color: var(--primary); }
 </style>
 </head>
 <body class="theme-home">
@@ -394,7 +422,7 @@
 <script src="assets/icon-map.js?v=20260913o" defer></script>
 <script src="assets/xt-toast.js?v=20260913o" defer></script>
 <script src="assets/error-boundary.js?v=20260913o" defer></script>
-<script src="assets/app.js?v=20260913o" defer></script>
+<script src="assets/app.js?v=20260914f" defer></script>
 <script src="assets/config.js?v=20260913o" defer></script>
 <script src="assets/api.js?v=20260913o" defer></script>
 <script>
@@ -530,6 +558,197 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initEd);
   else initEd();
+})();
+</script>
+<script>
+/* ===================================================================
+   R55（20260914）：广场帖子分享 —— 复制链接 / 转发给好友 / 系统分享
+   -------------------------------------------------------------------
+   设计原则：不修改 app.js / api.js 中任何既有函数的内部实现，只在卡片渲染
+   完成后向统计行（.note-body > .nc-actions，第一个）右侧「叠加」分享按钮。
+   点赞 / 评论 / 浏览三个计数与卡片原有 onclick 打开详情的行为完全不变。
+
+   兼容两套渲染器：
+     · 本地模式 assets/app.js  renderBlogList()  —— 同步，id 形如 openBlogDetail('abc')
+     · 在线模式 assets/api.js  renderBlogList()  —— 异步，id 形如 openBlogDetail(123)
+   因此用 MutationObserver 监听两个 grid 的 childList，而不是包一层函数。
+
+   【B 转发契约】写入 localStorage 键 study_workbench_share_forward_v1，
+   再调用站内现成的 gotoChat()（assets/api.js）跳转私聊页；私聊页读取该键
+   后即可把卡片渲染进输入框发送（读取侧不在本页实现范围）。
+   【C 系统分享】navigator.share 不可用（如 file:// 协议）时自动回退到 A。
+   =================================================================== */
+(function () {
+  var FWD_KEY = 'study_workbench_share_forward_v1';
+
+  function toast(msg) { try { if (typeof showToast === 'function') showToast(msg); } catch (e) { } }
+
+  // 从卡片 onclick 提取发贴 id（兼容带引号 / 不带引号两种写法）
+  function cardId(card) {
+    var m = /openBlogDetail\(\s*['"]?([^'")\s]+)['"]?\s*\)/.exec(card.getAttribute('onclick') || '');
+    return m ? m[1] : '';
+  }
+  // 深链：沿用 app.js 已有的 #note=ID 约定（app.js 初始化处会解析并打开详情）
+  function shareUrl(id) { return location.href.split('#')[0] + '#note=' + encodeURIComponent(id); }
+
+  function payload(id) {
+    var n = null;
+    try {
+      var arr = (typeof appData !== 'undefined' && appData.notes) || [];
+      for (var i = 0; i < arr.length; i++) { if (String(arr[i].id) === String(id)) { n = arr[i]; break; } }
+    } catch (e) { }
+    n = n || {};
+    var ex = n.excerpt || '';
+    if (!ex && n.content) ex = String(n.content).replace(/[#*`>\-]/g, '').slice(0, 60);
+    return { v: 1, type: 'note', id: String(id), title: n.title || '', excerpt: ex, cover: n.cover || '', url: shareUrl(id), ts: Date.now() };
+  }
+
+  // ---- A 复制链接：Clipboard API 优先，失败回退 execCommand ----
+  function legacyCopy(text) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;top:-1000px;left:-1000px;opacity:0';
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch (e) { return false; }
+  }
+  function copyText(text) {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text).then(function () { return true; }, function () { return legacyCopy(text); });
+      }
+    } catch (e) { }
+    return Promise.resolve(legacyCopy(text));
+  }
+  function doCopy(id) {
+    copyText(shareUrl(id)).then(function (ok) {
+      toast(ok ? '🔗 帖子链接已复制，粘贴给同学吧～' : '⚠️ 复制失败，请手动复制地址栏链接');
+    });
+  }
+
+  // ---- B 转发给好友 / 群：存卡片 → gotoChat()（在线校验由 gotoChat 负责）----
+  function doForward(id) {
+    var p = payload(id);
+    try { localStorage.setItem(FWD_KEY, JSON.stringify(p)); } catch (e) { }
+    var t = (p.title || '').slice(0, 12);
+    toast('📨 已带上《' + (t || '这篇发贴') + '》卡片，去选好友 / 群发送');
+    if (typeof gotoChat === 'function') gotoChat();
+    else location.href = '私聊.html';
+  }
+
+  // ---- C 系统分享：不支持时回退 A ----
+  function doSystem(id) {
+    var p = payload(id);
+    if (!navigator.share) { doCopy(id); return; }
+    try {
+      navigator.share({ title: p.title || '星途广场发贴', text: p.excerpt || p.title || '', url: p.url })
+        .catch(function (err) { if (!err || err.name !== 'AbortError') doCopy(id); });
+    } catch (e) { doCopy(id); }
+  }
+
+  // ---- 浮动小菜单（全页复用一个）----
+  var menu = null, curId = '', curBtn = null;
+  function ensureMenu() {
+    if (menu) return menu;
+    menu = document.createElement('div');
+    menu.id = 'xtShareMenu';
+    menu.className = 'xt-share-menu';
+    menu.innerHTML =
+      '<button type="button" class="xt-share-item" data-act="copy"><span class="nav-icon" data-icon="clipboard" data-icon-size="14"></span>复制链接</button>' +
+      '<button type="button" class="xt-share-item" data-act="forward"><span class="nav-icon" data-icon="users" data-icon-size="14"></span>转发给好友 / 群</button>' +
+      '<button type="button" class="xt-share-item" data-act="system"><span class="nav-icon" data-icon="smartphone" data-icon-size="14"></span>系统分享</button>';
+    document.body.appendChild(menu);
+    menu.addEventListener('click', function (e) {
+      var it = e.target.closest ? e.target.closest('.xt-share-item') : null;
+      if (!it) return;
+      var act = it.getAttribute('data-act');
+      var id = curId;
+      closeMenu();
+      if (act === 'copy') doCopy(id);
+      else if (act === 'forward') doForward(id);
+      else if (act === 'system') doSystem(id);
+    });
+    if (window.lucideAutoRender) window.lucideAutoRender(); // 动态插入的 data-icon 需补渲染
+    return menu;
+  }
+  function openMenu(id, btn) {
+    curId = id; curBtn = btn;
+    var m = ensureMenu();
+    m.classList.add('open');
+    var r = btn.getBoundingClientRect();
+    var mw = m.offsetWidth, mh = m.offsetHeight;
+    var left = Math.min(r.right - mw, window.innerWidth - mw - 8);
+    if (left < 8) left = 8;
+    var top = r.bottom + 6;
+    if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 6);
+    m.style.left = left + 'px';
+    m.style.top = top + 'px';
+  }
+  function closeMenu() { if (menu) menu.classList.remove('open'); }
+  function isOpen() { return !!(menu && menu.classList.contains('open')); }
+
+  // ---- 给每张卡片追加分享按钮 ----
+  function decorate() {
+    var grids = [document.getElementById('blogGrid'), document.getElementById('blogMineGrid')];
+    var added = false;
+    for (var gi = 0; gi < grids.length; gi++) {
+      var g = grids[gi];
+      if (!g) continue;
+      var cards = g.querySelectorAll('.note-card');
+      for (var i = 0; i < cards.length; i++) {
+        var card = cards[i];
+        if (card.querySelector('.nc-share-btn')) continue;
+        var id = cardId(card);
+        if (!id) continue;
+        var row = card.querySelector('.note-body > .nc-actions'); // 第一个即统计行（浏览/点赞/评论）
+        if (!row) continue;
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'nc-share-btn';
+        b.setAttribute('data-share-id', id);
+        b.setAttribute('title', '分享这篇发贴');
+        b.innerHTML = '<span class="nav-icon" data-icon="send" data-icon-size="12"></span> 分享';
+        // 绑在按钮自身：stopPropagation 后才不会触发卡片的 openBlogDetail
+        b.addEventListener('click', function (ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          var myId = this.getAttribute('data-share-id');
+          if (isOpen() && curId === myId) { closeMenu(); return; }
+          openMenu(myId, this);
+        });
+        row.appendChild(b);
+        added = true;
+      }
+    }
+    if (added && window.lucideAutoRender) window.lucideAutoRender();
+  }
+
+  document.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('.nc-share-btn')) return;
+    if (isOpen() && !(menu.contains(e.target))) closeMenu();
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' || e.key === 'Esc') closeMenu(); });
+  window.addEventListener('scroll', closeMenu, true);
+  window.addEventListener('resize', closeMenu);
+
+  function initShare() {
+    decorate();
+    if (typeof MutationObserver === 'function') {
+      // 在线模式 renderBlogList 是 async，innerHTML 在 await 之后才写入，
+      // 只监听 grid 的 childList（subtree:false，避免自身插入按钮造成回环）
+      var mo = new MutationObserver(function () { decorate(); });
+      var gs = [document.getElementById('blogGrid'), document.getElementById('blogMineGrid')];
+      for (var i = 0; i < gs.length; i++) { if (gs[i]) mo.observe(gs[i], { childList: true, subtree: false }); }
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initShare);
+  else initShare();
 })();
 </script>
 </body>

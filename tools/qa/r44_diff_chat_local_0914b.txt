@@ -1,0 +1,192 @@
+=== DIFF (OLD=chat-local.js.bak-0914b) vs (NEW=chat-local.js) ===
+  ...after new line 494...
+  + new[495]   /* R43（2026-09-14）：普通用户侧解析「管理员 id」（与 admin-contact.js 共用 localStorage 缓存键
+  + new[496]      xt_admin_user_id）。用于未读轮询：管理员来信统一走「联系管理员」入口 + 角标，
+  + new[497]      不在此动态建会话行，避免入口与角标分离 / 重复会话。 */
+  + new[498]   var IM_ADMIN_ID_KEY = 'xt_admin_user_id';
+  + new[499]   var _imAdminId = 0;
+  + new[500]   function imCachedAdminId() {
+  + new[501]     if (_imAdminId) return _imAdminId;
+  + new[502]     try { var c = localStorage.getItem(IM_ADMIN_ID_KEY) || ''; if (/^\d+$/.test(c)) _imAdminId = Number(c); } catch (e) { /* 忽略 */ }
+  + new[503]     return _imAdminId;
+  + new[504]   }
+  + new[505]   function imResolveAdminId() {
+  + new[506]     var id = imCachedAdminId();
+  + new[507]     if (id) return Promise.resolve(id);
+  + new[508]     var tk = getToken();
+  + new[509]     if (!tk) return Promise.resolve(0);
+  + new[510]     return fetch(apiBase() + '/api/admin/contact', { headers: { 'Authorization': 'Bearer ' + tk } })
+  + new[511]       .then(function (r) { return r.ok ? r.json() : null; })
+  + new[512]       .then(function (d) {
+  + new[513]         var v = Number(d && (d.id !== undefined ? d.id : d.userId)) || 0;
+  + new[514]         if (v) { _imAdminId = v; try { localStorage.setItem(IM_ADMIN_ID_KEY, String(v)); } catch (e) { /* 忽略 */ } }
+  + new[515]         return v;
+  + new[516]       })
+  + new[517]       .catch(function () { return 0; });
+  + new[518]   }
+  + new[519] 
+  ...after new line 541...
+  + new[542]   /* R41：把不可信字符串安全嵌入内联 onclick 的 JS 单引号字面量（先 HTML 转义 & < > "，再 JS 转义 \ '），
+  + new[543]      避免昵称含引号时破坏 onclick 属性或 JS 语法。 */
+  + new[544]   function imStrArg(s) {
+  + new[545]     return String(s == null ? '' : s)
+  + new[546]       .replace(/&/g, '&amp;')
+  + new[547]       .replace(/\\/g, '\\\\')
+  + new[548]       .replace(/'/g, "\\'")
+  + new[549]       .replace(/"/g, '&quot;')
+  + new[550]       .replace(/</g, '&lt;')
+  + new[551]       .replace(/>/g, '&gt;');
+  + new[552]   }
+  ...after new line 556...
+  - old[521]         ? '<img src="' + (function (x) { return (x.indexOf('http') === 0 ? x : apiBase() + x); })(avSrc) + '" alt="" style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + u.id + ')">'
+  - old[522]         : '<span style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + u.id + ')">' + esc((u.nickname || '友').slice(0, 1)) + '</span>';
+  + new[557]         ? '<img src="' + (function (x) { return (x.indexOf('http') === 0 ? x : apiBase() + x); })(avSrc) + '" alt="" style="cursor:pointer" onclick="event.stopPropagation();imShowUserProfile(' + u.id + ')">'
+  + new[558]         : '<span style="cursor:pointer" onclick="event.stopPropagation();imShowUserProfile(' + u.id + ')">' + esc((u.nickname || '友').slice(0, 1)) + '</span>';
+  ...after new line 564...
+  - old[529]       return '<div class="im-sess" onclick="imOpenChat(' + fid + ')">' +
+  + new[565]       // R41：行 / 「发消息」按钮 → imOpenChatWithUser（合成 peer，非好友也能直接开聊）；昵称/头像安全内联
+  + new[566]       var ocArgs = u.id + ', \'' + imStrArg(u.nickname) + '\', \'' + imStrArg(u.avatarUrl || u.avatar) + '\'';
+  + new[567]       return '<div class="im-sess" onclick="imOpenChatWithUser(' + ocArgs + ')">' +
+  ...after new line 568...
+  - old[531]         '<div class="im-si"><div class="im-n" style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + u.id + ')">' + esc(u.nickname || '用户') + tag + ' <span style="font-size:11px;color:#999">@' + esc(u.username || '') + '</span></div>' +
+  + new[569]         '<div class="im-si"><div class="im-n" style="cursor:pointer" onclick="event.stopPropagation();imShowUserProfile(' + u.id + ')">' + esc(u.nickname || '用户') + tag + (u.username ? ' <span style="font-size:11px;color:#999;font-weight:400">@' + esc(u.username) + '</span>' : '') + '</div>' +
+  ...after new line 570...
+  - old[533]         '<div style="color:#667eea;font-size:12px;cursor:pointer" onclick="event.stopPropagation();imOpenChat(' + fid + ')">发消息</div>' +
+  + new[571]         '<div style="color:#667eea;font-size:12px;cursor:pointer" onclick="event.stopPropagation();imOpenChatWithUser(' + ocArgs + ')">发消息</div>' +
+  ...after new line 682...
+  - old[645]       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+  + new[683]       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, status: r.status, d: d }; }); })
+  ...after new line 995...
+  + new[996]   /* R41（2026-09-14）：管理员在「全部用户」列表点「给用户发消息」时，目标既非好友、
+  + new[997]      也还没有会话 → getFriend() 查不到，imOpenChat 会静默 return（点击无反应）。
+  + new[998]      这里用形参构造合成服务器 peer，确保其进入 S.chats 并持久化，再交给 imOpenChat 打开。 */
+  + new[999]   window.imOpenChatWithUser = function (userId, nickname, avatar) {
+  + new[1000]     var uid = Number(userId);
+  + new[1001]     if (!uid) return;
+  + new[1002]     var fid = 10000 + uid;
+  + new[1003]     var existing = (S.chats || []).find(function (x) { return x.id === fid; });
+  + new[1004]     if (existing) {
+  + new[1005]       existing.serverId = uid;
+  + new[1006]       existing.isServer = true;
+  + new[1007]       if (nickname) existing.nickname = nickname;
+  + new[1008]       if (avatar) existing.avatar = avatar;
+  + new[1009]     } else {
+  + new[1010]       var chat = {
+  + new[1011]         id: fid, serverId: uid, isServer: true,
+  + new[1012]         nickname: nickname || ('用户' + uid), avatar: avatar || '',
+  + new[1013]         last: '', unread: 0, time: Date.now()
+  + new[1014]       };
+  + new[1015]       S.chats.push(chat);
+  + new[1016]       try {
+  + new[1017]         var data = loadData();
+  + new[1018]         data.chats[fid] = {
+  + new[1019]           id: fid, serverId: uid, isServer: true,
+  + new[1020]           nickname: chat.nickname, avatar: chat.avatar,
+  + new[1021]           last: '', unread: 0, time: chat.time
+  + new[1022]         };
+  + new[1023]         saveData(data);
+  + new[1024]       } catch (e) { /* localStorage 满 / 隐私模式：内存态仍可用 */ }
+  + new[1025]     }
+  + new[1026]     window.imOpenChat(fid);
+  + new[1027]   };
+  + new[1028] 
+  ...after new line 1940...
+  + new[1941]   /* R42（2026-09-14）：管理员在「全部用户」列表点用户头像/昵称 → 在私聊页内弹资料卡，
+  + new[1942]      数据源 GET /api/admin/users/{userId}（后端 server/routers/admin.py 已就绪）。
+  + new[1943]      注：不再跳 openUserHome（个人中心.html 不解析 ?user=，会显示登录者自己的资料）。 */
+  + new[1944]   window.imShowUserProfile = function (userId) {
+  + new[1945]     var uid = Number(userId);
+  + new[1946]     if (!uid) return;
+  + new[1947]     if (!getToken()) { toast('查看用户资料需要联网'); return; }
+  + new[1948]     var old = $id('imUserProfileModal');
+  + new[1949]     if (old) old.remove();
+  + new[1950]     var ov = document.createElement('div');
+  + new[1951]     ov.className = 'im-overlay';
+  + new[1952]     ov.id = 'imUserProfileModal';
+  + new[1953]     ov.innerHTML = '<div class="im-modal">' +
+  + new[1954]       '<div class="im-modal-head"><div style="font-size:var(--xt-font-md);font-weight:700">用户资料</div>' +
+  + new[1955]       '<div style="cursor:pointer;color:#999;font-size:var(--xt-font-2xl)" onclick="imCloseUserProfile()">✕</div></div>' +
+  + new[1956]       '<div class="im-group-body" id="imUserProfileBody"><div class="im-empty2" style="padding:20px 0;text-align:center;color:#999;font-size:13px">加载中…</div></div>' +
+  + new[1957]       '<div class="im-group-foot" style="justify-content:flex-end"><button class="btn btn-primary" id="imUserProfileChatBtn" disabled>发消息</button></div>' +
+  + new[1958]       '</div>';
+  + new[1959]     document.body.appendChild(ov);
+  + new[1960]     ov.onclick = function (e) { if (e.target === ov) window.imCloseUserProfile(); };
+  + new[1961]     bindModalEsc();
+  + new[1962] 
+  + new[1963]     fetch(apiBase() + '/api/admin/users/' + uid, { headers: { 'Authorization': 'Bearer ' + getToken() } })
+  + new[1964]       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+  + new[1965]       .then(function (res) {
+  + new[1966]         var body = $id('imUserProfileBody');
+  + new[1967]         if (!body) return;
+  + new[1968]         var u = res.d || {};
+  + new[1969]         if (!res.ok || !u || (!u.id && !u.username && !u.nickname)) {
+  + new[1970]           body.innerHTML = '<div class="im-empty2" style="padding:20px 0;text-align:center;color:#999;font-size:13px">资料加载失败</div>';
+  + new[1971]           return;
+  + new[1972]         }
+  + new[1973]         var username = u.username || '';
+  + new[1974]         var nickname = u.nickname || ('用户' + uid);
+  + new[1975]         var created = u.createdAt || u.created_at || '';
+  + new[1976]         var last = u.lastActive || u.last_active || '';
+  + new[1977]         var online = (u.isOnline === true || u.is_online === true);
+  + new[1978]         var isAdmin = !!(u.isAdmin || u.is_admin);
+  + new[1979]         var stats = u.stats || {};
+  + new[1980]         var notesN = (stats.notes != null) ? stats.notes : '—';
+  + new[1981]         var studyN = (stats.studyEvents != null) ? stats.studyEvents
+  + new[1982]           : (stats.study_events != null ? stats.study_events : '—');
+  + new[1983]         function row(k, v) {
+  + new[1984]           return '<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">' +
+  + new[1985]             '<div style="flex:0 0 74px;color:var(--text-secondary);font-size:13px">' + k + '</div>' +
+  + new[1986]             '<div style="flex:1;font-size:13px;color:var(--text);word-break:break-all">' + v + '</div></div>';
+  + new[1987]         }
+  + new[1988]         body.innerHTML =
+  + new[1989]           '<div style="text-align:center;padding:6px 0 12px">' +
+  + new[1990]             '<div style="width:64px;height:64px;border-radius:50%;margin:0 auto 8px;overflow:hidden;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--primary)">' +
+  + new[1991]               renderAvatar(u.avatarUrl || u.avatar || '', nickname) + '</div>' +
+  + new[1992]             '<div style="font-size:16px;font-weight:700">' + esc(nickname) + (isAdmin ? ' <span style="font-size:11px;color:#e05040">[管理员]</span>' : '') + '</div>' +
+  + new[1993]             (username ? '<div style="font-size:12px;color:#999;margin-top:2px">@' + esc(username) + '</div>' : '') +
+  + new[1994]           '</div>' +
+  + new[1995]           row('账号', username ? ('@' + esc(username)) : '—') +
+  + new[1996]           row('注册时间', created ? esc(created) : '—') +
+  + new[1997]           row('最近活跃', online ? '<span style="color:#0a8f4b;font-weight:600">● 在线</span>' : esc(imFmtLastActive(last))) +
+  + new[1998]           row('笔记数', esc(String(notesN))) +
+  + new[1999]           row('学习事件', esc(String(studyN)));
+  + new[2000]         body.setAttribute('data-nick', nickname);
+  + new[2001]         body.setAttribute('data-avatar', u.avatarUrl || u.avatar || '');
+  + new[2002]         var btn = $id('imUserProfileChatBtn');
+  + new[2003]         if (btn) { btn.disabled = false; btn.onclick = function () {
+  + new[2004]           window.imCloseUserProfile();
+  + new[2005]           window.imOpenChatWithUser(uid, nickname, u.avatarUrl || u.avatar || '');
+  + new[2006]         }; }
+  + new[2007]       })
+  + new[2008]       .catch(function () {
+  + new[2009]         var body = $id('imUserProfileBody');
+  + new[2010]         if (body) body.innerHTML = '<div class="im-empty2" style="padding:20px 0;text-align:center;color:#999;font-size:13px">资料加载失败</div>';
+  + new[2011]       });
+  + new[2012]   };
+  + new[2013] 
+  + new[2014]   window.imCloseUserProfile = function () {
+  + new[2015]     var ov = $id('imUserProfileModal');
+  + new[2016]     if (ov) ov.remove();
+  + new[2017]     unbindModalEscIfIdle();
+  + new[2018]   };
+  + new[2019] 
+  ...after new line 2408...
+  + new[2409]     // R43（2026-09-14）：预解析管理员 id（普通用户），供未读轮询判断「管理员来信」
+  + new[2410]     imResolveAdminId();
+  + new[2411] 
+  ...after new line 2423...
+  + new[2424]           /* R43（2026-09-14）：普通用户视角——管理员来信不动态建会话行，
+  + new[2425]              统一由「联系管理员」入口 + .ac-badge 角标承载（避免入口与角标分离 / 重复会话行）。 */
+  + new[2426]           var adminPeer = (!S.isAdmin && imCachedAdminId() && Number(item.peerId) === imCachedAdminId());
+  ...after new line 2428...
+  - old[2273]           if (!chat) chat = imEnsureServerChat(item);
+  + new[2429]           if (!chat && !adminPeer) chat = imEnsureServerChat(item);
+  ...after new line 2514...
+  - old[2359]     imAdminUsersHtml: imAdminUsersHtml
+  + new[2515]     imAdminUsersHtml: imAdminUsersHtml,
+  + new[2516]     /* R41/R42（2026-09-14b）：新增函数校验钩子（仅测试引用，零运行时行为影响） */
+  + new[2517]     imOpenChatWithUser: window.imOpenChatWithUser,
+  + new[2518]     imShowUserProfile: window.imShowUserProfile,
+  + new[2519]     imStrArg: imStrArg,
+  + new[2520]     imCachedAdminId: imCachedAdminId
+=== END (old 2364 lines, new 2525 lines) ===

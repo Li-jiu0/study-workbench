@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" data-page-node-id="scAqzajn3bTDCBBENuGZj0">
 <meta name="theme-color" content="#5B8DEF" data-page-node-id="xcIilqbK544vSHAWBPyO4w">
 <title>个人中心 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913o" data-page-node-id="tBLcp6JxdB6dWCmMCCx7F8">
+<link rel="stylesheet" href="assets/common.css?v=20260914f" data-page-node-id="tBLcp6JxdB6dWCmMCCx7F8">
 <link rel="stylesheet" href="assets/page-head.css?v=20260913o">
 <link rel="stylesheet" href="assets/states.css?v=20260913o">
 <link rel="stylesheet" href="assets/polish.css?v=20260913o" data-page-node-id="uqByqsnHV08jClPBpI9G16">
@@ -369,7 +369,7 @@
 <script src="assets/icon-map.js?v=20260913o" defer></script>
 <script src="assets/xt-toast.js?v=20260913o" defer></script>
 <script src="assets/error-boundary.js?v=20260913o" defer></script>
-<script src="assets/app.js?v=20260913o" defer></script>
+<script src="assets/app.js?v=20260914f" defer></script>
 <script src="assets/config.js?v=20260913o" defer></script>
 <script src="assets/api.js?v=20260913o" defer></script>
 <script src="assets/subpage-router.js?v=20260913o" defer></script>
@@ -765,8 +765,18 @@ window.peBirthdayOnBlur = function () {
         if (pb && profSec && pb.parentNode !== profSec) profSec.appendChild(pb);
         try { if (typeof renderProfilePage === 'function') renderProfilePage(); } catch (e) { if (window.console) console.warn('renderProfilePage error', e); }
       } else if (key === 'posts') {
-        if (pb && postsHost && pb.parentNode !== postsHost) postsHost.appendChild(pb);
-        try { if (typeof renderProfilePage === 'function') renderProfilePage(); } catch (e) { if (window.console) console.warn('renderProfilePage error', e); }
+        /* 【R61】posts 子页只渲染「发贴统计」内容到 #profileBoxPostsHost，
+           不再把整块 #profileBox（资料头/概览/时长/成就/菜单行）搬过来堆进子页。
+           renderPostStatsOnly 缺失时（旧 app.js）自动回退到原行为。 */
+        if (postsHost && typeof renderPostStatsOnly === 'function') {
+          // 回退路径可能已经把 profileBox 移到 posts 宿主里，这里先搬回 profile 区
+          if (pb && profSec && pb.parentNode !== profSec) profSec.appendChild(pb);
+          if (pb && pb.classList && pb.classList.contains('posts-mode')) pb.classList.remove('posts-mode');
+          try { renderPostStatsOnly(postsHost); } catch (e) { if (window.console) console.warn('renderPostStatsOnly error', e); }
+        } else {
+          if (pb && postsHost && pb.parentNode !== postsHost) postsHost.appendChild(pb);
+          try { if (typeof renderProfilePage === 'function') renderProfilePage(); } catch (e) { if (window.console) console.warn('renderProfilePage error', e); }
+        }
       } else if (key === 'moments') {
         try { if (typeof window.loadMyMoments === 'function') window.loadMyMoments(); } catch (e) {}
       } else if (key === 'prefs' || key === 'local-data') {

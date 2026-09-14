@@ -19,6 +19,26 @@
   }
   window.toast = toast;
 
+  /* ==================== R60（2026-09-14）：与 app.js（线1）的跨文件钩子 ====================
+     契约（线1 在 app.js 消费，线2 只负责产出）：
+       - window.currentChatUserId：当前打开的会话对象 userId（私聊=对方 serverId；群聊/无会话=null）
+       - window.__xtChatTransportActive：本页已持有聊天轮询（HTTP），app.js 看到 true 就不要再另开轮询
+       - window.xtNotifyMessage(msg)：入站消息通知（msg = {peerId,nickname,avatar,preview,count}）
+       - window.xtSetUnread(n)：未读总数变化
+     容错铁律：app.js 尚未落地 / 加载失败 / 抛异常，一律静默跳过，绝不影响本页聊天。 */
+  function xtSetChatUser(uid) {
+    try { window.currentChatUserId = uid || null; } catch (e) { /* 无 window 场景忽略 */ }
+  }
+  function xtTransport(active) {
+    try { window.__xtChatTransportActive = !!active; } catch (e) { /* 同上 */ }
+  }
+  function xtNotify(msg) {
+    try { if (typeof window.xtNotifyMessage === 'function') window.xtNotifyMessage(msg); } catch (e) { /* 通知失败不打断聊天 */ }
+  }
+  function xtUnread(n) {
+    try { if (typeof window.xtSetUnread === 'function') window.xtSetUnread(Number(n) || 0); } catch (e) { /* 同上 */ }
+  }
+
   // 渲染头像：如果是URL就用img，否则用emoji/文字
   function renderAvatar(avatar, nickname) {
     if (!avatar) {
@@ -31,6 +51,25 @@
     }
     // 否则当emoji/文字
     return '<span>' + esc(avatar) + '</span>';
+  }
+
+  /* R53（2026-09-14）：群头像渲染（三选一取值统一走这里，避免群列表/会话头/设置面板各写一套）。
+     取值约定（与后端 server/routers/groups.py PATCH /{gid} 的 avatar 校验一致）：
+       - '/uploads/…' 或 http(s) 开头 → 图片
+       - 'color:#RRGGBB'              → 纯色块（不想传图时的低成本方案）
+       - 其它短文本（emoji / 单字）    → 文字兜底
+       - 空                            → 沿用原默认 👥（未设头像的群视觉与改造前一致，避免无谓变更） */
+  function imGroupAvatarHtml(avatar, name) {
+    var a = (avatar == null ? '' : String(avatar));
+    if (/^(https?:|\/uploads\/|data:)/.test(a)) {
+      var url = a.indexOf('http') === 0 ? a : apiBase() + a;
+      return '<img src="' + esc(url) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+    }
+    if (a.indexOf('color:') === 0) {
+      return '<span style="display:block;width:100%;height:100%;border-radius:50%;background:' + esc(a.slice(6)) + '"></span>';
+    }
+    if (a) return '<span>' + esc(a) + '</span>';
+    return '<span>👥</span>';
   }
 
   var STORAGE_KEY = 'study_im_local_data';
@@ -153,6 +192,78 @@
     });
     return total;
   }
+
+  /* R46（2026-09-14e）：会话列表渲染签名 —— 5s 未读轮询靠它判断「列表视觉是否真的变了」。
+     纳入字段（都会直接改变某一行的外观）：行集合与顺序、未读数 unread、最后一条消息 last、最后一条消息 id、
+     置顶 pinned、免打扰 muted、在线标记、当前选中会话/群，以及群行的未读数/最后消息/人数/免打扰。
+     刻意不纳入：chat.time（每轮询被改写成 Date.now()）与 presence 相对时间文案（随秒数自然漂移）——
+     二者纳入会让签名每次都不同，等于没做比对。presence 只取 online 布尔（新行补渲染靠 30s refreshPresence）。 */
+  /* R46（2026-09-14e）：好友 tab 渲染签名（与 imChatsSig 同思路，按好友行真正会变的东西逐项取）。
+     覆盖：登录态 / 管理员身份 / AI 分组展开态 / AI 好友行（集合·顺序·id·昵称·签名·头像）/
+     群行（id·群名·未读·最后消息·人数·免打扰·加载失败态）/
+     注册好友行（id·serverId·昵称·用户名·头像·签名·在线标记）。
+     好友新增或删除、上下线、改昵称换头像、群数据变化都会改签名 → 照旧重建；
+     只有全都没变才跳过渲染。（好友行本身不展示未读，故未读不参与好友签名。） */
+  var lastFriendsSig = '';
+  function imFriendsSig() {
+    var prefs = imLoadPrefs();
+    var out = [];
+    var i;
+    out.push('tok' + (getToken() ? 1 : 0));
+    out.push('adm' + (S.isAdmin ? 1 : 0));
+    out.push('aix' + (S.aiExpanded !== false ? 1 : 0));
+    var ai = getActiveAiFriends() || [];
+    out.push('ain' + ai.length);
+    for (i = 0; i < ai.length; i++) {
+      out.push('a' + ai[i].id + ':' + (ai[i].nickname || '') + ':' + (ai[i].motto || '') + ':' + (ai[i].avatar || ''));
+    }
+    out.push('glf' + (S.groupsLoadFailed ? 1 : 0));
+    var groups = (S.groups || []).filter(function (g) { return !((prefs['g' + g.id] || {}).hidden); });
+    out.push('gn' + groups.length);
+    for (i = 0; i < groups.length; i++) {
+      var g = groups[i] || {};
+      var gp = prefs['g' + g.id] || {};
+      out.push('g' + g.id + ':' + (g.name || '') + ':' + (g.unreadCount || 0) + ':' + ((g.lastMessage && g.lastMessage.id) || 0) + ':' +
+        (g.memberCount || 0) + ':' + (gp.muted ? 1 : 0));
+    }
+    var sf = SERVER_FRIENDS || [];
+    out.push('sfn' + sf.length);
+    for (i = 0; i < sf.length; i++) {
+      var f = sf[i] || {};
+      var p = f.serverId ? S.presence[f.serverId] : null;
+      out.push('u' + f.id + ':' + (f.serverId || 0) + ':' + (f.nickname || '') + ':' + (f.username || '') + ':' +
+        (f.avatar || '') + ':' + (f.motto || '') + ':' + (p ? (p.online ? 1 : 0) : 0));
+    }
+    return out.join('|');
+  }
+
+  var lastChatsSig = '';
+  /* R46：/api/friends/requests 的 30s 节流时间戳（0 = 从未拉取，进页面后第一次轮询立即拉） */
+  var lastReqFetchAt = 0;
+  function imChatsSig() {
+    var prefs = imLoadPrefs();
+    var out = [];
+    var i, c, p;
+    var list = imApplyChatPrefs(S.chats, prefs);
+    for (i = 0; i < list.length; i++) {
+      c = list[i] || {};
+      p = (c.isServer && c.serverId) ? S.presence[c.serverId] : null;
+      out.push('c' + c.id + ':' + (c.unread || 0) + ':' + (c.last || '') + ':' + (c.lastId || 0) + ':' +
+        (c.pinned ? 1 : 0) + ':' + (c.muted ? 1 : 0) + ':' + (p ? (p.online ? 1 : 0) : 0));
+    }
+    var groups = (S.groups || []).filter(function (g) { return !((prefs['g' + g.id] || {}).hidden); });
+    for (i = 0; i < groups.length; i++) {
+      var g = groups[i] || {};
+      var gp = prefs['g' + g.id] || {};
+      // 群名也纳入：群设置里改名后 loadGroups() 必须重绘行（否则列表会停留在旧群名）
+      // R53：群头像同样纳入（改头像后列表行必须重绘，否则停留旧头像）
+      out.push('g' + g.id + ':' + (g.name || '') + ':' + (g.avatar || '') + ':' + (g.unreadCount || 0) + ':' + ((g.lastMessage && g.lastMessage.id) || 0) + ':' +
+        (g.memberCount || 0) + ':' + (gp.muted ? 1 : 0));
+    }
+    out.push('@' + (S.peer ? S.peer.id : 0) + ':' + (S.group ? S.group.id : 0));
+    return out.join('|');
+  }
+
   window.imChatPrefs = {
     load: imLoadPrefs,
     threadKeyOf: threadKeyOfChat,
@@ -238,8 +349,52 @@
     if (!box) return;
     if (S.tab === 'chats') renderChats(box);
     else if (S.tab === 'friends') renderFriends(box);
+    else if (S.tab === 'groups') renderGroupsTab(box); // R56：群聊 tab = 「我的群聊」列表
     else renderRequests(box);
   }
+
+  /* R56（2026-09-14）：「我的群聊」分组从好友 tab 迁到「群聊」tab。
+     - 好友 tab 只剩 AI伙伴 + 我的好友（顺带消掉 R49「每 30s 重建整表」的一半来源）
+     - 群行复用 imRenderGroupRows()（与会话 tab 同源，视觉/未读角标/左滑行为一致）
+     - 顶部「+ 发起群聊」复用既有 imOpenGroupCreator()（弹层，关闭后仍留在本 tab）
+     - 未登录 / 加载失败给出明确提示与重试入口，不给空白面板 */
+  var lastGroupsSig = '';
+  function imGroupsSig() {
+    var prefs = imLoadPrefs();
+    var parts = (S.groups || []).filter(function (g) { return !((prefs['g' + g.id] || {}).hidden); })
+      .map(function (g) {
+        var gp = prefs['g' + g.id] || {};
+        return g.id + ':' + (g.name || '') + ':' + (g.avatar || '') + ':' + (g.unreadCount || 0) + ':' +
+          ((g.lastMessage && g.lastMessage.id) || 0) + ':' + (g.memberCount || 0) + ':' + (gp.muted ? 1 : 0);
+      });
+    return parts.join('|') + '#lf' + (S.groupsLoadFailed ? 1 : 0) + '#tok' + (getToken() ? 1 : 0);
+  }
+  function renderGroupsTab(box) {
+    if (!box) return;
+    lastGroupsSig = imGroupsSig();
+    if (!getToken()) {
+      box.innerHTML = '<div class="im-empty2">登录后可查看和发起群聊</div>';
+      return;
+    }
+    var prefs = imLoadPrefs();
+    var groups = (S.groups || []).filter(function (g) { return !((prefs['g' + g.id] || {}).hidden); });
+    var head = '<div class="im-group-title">👥 我的群聊 (' + groups.length + ')</div>';
+    var createBtn = '<div class="im-sess" style="cursor:pointer" onclick="window.imOpenGroupCreator()">' +
+      '<div class="im-av" style="background:#f0f0f0;color:#999">+</div>' +
+      '<div class="im-si"><div class="im-n" style="color:#667eea">发起群聊</div>' +
+      '<div class="im-sub">选择 2 位以上好友创建一个新的群聊</div></div></div>';
+    var rows = imRenderGroupRows(groups, prefs);
+    if (!rows) {
+      var state = S.groupsLoadFailed
+        ? '<span style="color:#e05040">加载失败</span>，<a style="color:var(--primary);cursor:pointer" onclick="loadGroups()">点此重试</a>'
+        : ((S.groups || []).length ? '群聊已全部被隐藏（左滑可恢复）' : '加载中…');
+      box.innerHTML = head + createBtn + '<div class="im-empty2" style="padding:6px 0 6px 14px">' + state + '</div>';
+      if (!S._groupsFetched) { S._groupsFetched = true; loadGroups(); }
+      return;
+    }
+    box.innerHTML = head + createBtn + rows;
+  }
+  window.imRenderGroupsTab = renderGroupsTab;
 
   /* T03 增量（2026-09-12）：群行共用渲染函数
      - 会话 tab（renderChats）与好友 tab（renderFriends）共用同一份 HTML，避免双份维护漂移
@@ -256,7 +411,7 @@
       var active = S.group && S.group.id === g.id;
       return '<div class="im-swipe" data-tid="' + esc(gk) + '">' +
         '<div class="im-sess' + (active ? ' on' : '') + '" data-tid="' + esc(gk) + '" onclick="imOpenGroup(' + g.id + ')">' +
-        '<div class="im-av" style="position:relative"><span>👥</span>' +
+        '<div class="im-av" style="position:relative">' + imGroupAvatarHtml(g.avatar, g.name) +
         (g.unreadCount > 0 ? '<span class="im-av-badge">' + (g.unreadCount > 99 ? '99+' : g.unreadCount) + '</span>' : '') + '</div>' +
         '<div class="im-si"><div class="im-n">' + esc(g.name) + ' <span style="font-size:11px;color:#999">(' + g.memberCount + ')</span></div>' +
         '<div class="im-sub">' + esc(g.lastMessage ? ((g.lastMessage.senderId === S.myId ? '我：' : '') + previewText(g.lastMessage.kind, g.lastMessage.content)) : '') + '</div></div>' +
@@ -268,6 +423,8 @@
 
   function renderChats(box) {
     var prefs = imLoadPrefs();
+    // R46：记下本次渲染所对应的状态签名，供 5s 未读轮询做「无变化不重建」判断
+    lastChatsSig = imChatsSig();
     // 需求2：被「删除」的群会话同样仅本机隐藏
     var groups = (S.groups || []).filter(function (g) { return !((prefs['g' + g.id] || {}).hidden); });
     var chatList = imApplyChatPrefs(S.chats, prefs);
@@ -574,8 +731,36 @@
     return '<div class="im-group-title">👥 全部用户 (' + (items || []).length + ')</div>' + rows;
   }
 
+  /* R57（2026-09-14）：分组标题「注册好友」→「我的好友」（与「我的群聊」措辞对齐）。
+     R49：抽成纯函数，好友 tab 首次/轮询两条路径共用同一份 HTML，缓存命中时可同步渲染。 */
+  function imRegFriendsHtml(friends) {
+    var list = friends || [];
+    if (!list.length) {
+      return '<div class="im-group-title">👥 我的好友 (0)</div>' +
+        '<div class="im-empty2">还没有好友<br>在上方搜索框输入用户名找人加好友</div>';
+    }
+    var rows = list.map(function (f) {
+      var av = f.avatarUrl || f.avatar
+        ? '<img src="' + (function (u) { return (u.indexOf('http') === 0 ? u : apiBase() + u); })(f.avatarUrl || f.avatar) + '" alt="" style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + f.serverId + ')">'
+        : '<span style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + f.serverId + ')">' + esc((f.nickname || '友').slice(0, 1)) + '</span>';
+      /* 批次二 需求11（2026-09-11h）：好友行只保留「发消息」，删除好友入口统一收敛到
+         对方公开主页（个人中心.html?user=id → api.js renderUserHome 的「🗑 删除好友」，uiConfirm 二次确认）。 */
+      return '<div class="im-sess" onclick="imOpenChat(' + f.id + ')">' +
+        '<div class="im-av" style="position:relative">' + av + '<span class="im-dot" data-uid="' + f.serverId + '"></span></div>' +
+        '<div class="im-si"><div class="im-n" style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + f.serverId + ')">' + esc(f.nickname) + ' <span style="font-size:11px;color:#999">@' + esc(f.username) + '</span></div>' +
+        '<div class="im-sub">' + esc(f.motto) + ' <span class="im-presence" data-uid="' + f.serverId + '"></span></div></div>' +
+        '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0">' +
+          '<div style="color:#667eea;font-size:12px;cursor:pointer" onclick="event.stopPropagation();imOpenChat(' + f.id + ')">发消息</div>' +
+        '</div>' +
+        '</div>';
+    }).join('');
+    return '<div class="im-group-title">👥 我的好友 (' + list.length + ')</div>' + rows;
+  }
+
   function renderFriends(box) {
     var token = getToken();
+    // R46：记下本次渲染对应的好友状态签名，供 30s 群/好友轮询做「无变化不重建」判断
+    lastFriendsSig = imFriendsSig();
     // AI好友分组（可折叠）
     var activeAi = getActiveAiFriends();
     var aiExpanded = S.aiExpanded !== false; // 默认展开
@@ -598,82 +783,43 @@
         '</div>';
     }
 
-    // —— T03 增量（2026-09-12）：「我的群聊」分组（仅登录时显示）——
-    //   与「注册好友」共用 .im-group-title 样式（common.css 末尾追加）；
-    //   复用 imRenderGroupRows() 渲染群行（与 renderChats 同源）；
-    //   加载失败时显示「加载失败，点此重试」；进入好友 tab 时若 S.groups 为空，主动 loadGroups()。
-    var prefs = imLoadPrefs();
-    var groupsHtml = '';
-    if (token) {
-      var groups = (S.groups || []).filter(function (g) { return !((prefs['g' + g.id] || {}).hidden); });
-      var groupRows = imRenderGroupRows(groups, prefs);
-      var groupHeader = '<div class="im-group-title">👥 我的群聊 (' + groups.length + ')</div>';
-      if (groupRows) {
-        groupsHtml = groupHeader + groupRows;
-      } else {
-        // 0 个群：要么还在加载、要么失败（首次进入本 tab 主动拉一次）
-        var stateHtml = S.groupsLoadFailed
-          ? '<span style="color:#e05040">加载失败</span>，<a style="color:var(--primary);cursor:pointer" onclick="loadGroups()">点此重试</a>'
-          : '加载中…';
-        groupsHtml = groupHeader + '<div class="im-empty2" style="padding:6px 0 6px 14px">' + stateHtml + '</div>';
-        if (!S._groupsFetched) {
-          S._groupsFetched = true;
-          loadGroups();
-        }
-      }
-    }
-
-    var token = getToken();
+    /* R56（2026-09-14）：「我的群聊」分组已迁到「群聊」tab（见 renderGroupsTab），好友 tab 不再渲染群行。
+       R49（2026-09-14）：SERVER_FRIENDS 有缓存时**同步直接渲染**，绝不先写「加载中…」再异步覆盖 ——
+       旧代码每次 renderFriends 都先把好友区清空成「加载中…」，而 30s loadGroups() 在好友 tab 下
+       会触发 renderFriends()，于是用户每 30 秒看到一次列表闪空。现在只有「从未加载过」才显示占位。 */
     if (!token) {
-      box.innerHTML = aiHtml + '<div class="im-group-title">👥 注册好友</div><div class="im-empty2">登录后可添加注册用户为好友</div>';
+      box.innerHTML = aiHtml + '<div class="im-group-title">👥 我的好友</div><div class="im-empty2">登录后可添加注册用户为好友</div>';
+      if (window.lucideAutoRender) window.lucideAutoRender();
       return;
     }
 
-    box.innerHTML = aiHtml + groupsHtml + '<div class="im-group-title">👥 注册好友</div><div class="im-empty2">加载中…</div>';
-    if (window.lucideAutoRender) window.lucideAutoRender();
+    var cached = SERVER_FRIENDS || [];
+    if (cached.length) {
+      box.innerHTML = aiHtml + imRegFriendsHtml(cached);
+      lastFriendsSig = imFriendsSig();   // R49：签名为准到「真正写进 DOM 的那一刻」
+      if (window.lucideAutoRender) window.lucideAutoRender();
+    } else {
+      box.innerHTML = aiHtml + '<div class="im-group-title">👥 我的好友</div><div class="im-empty2">加载中…</div>';
+      // 占位态哨兵：异步结果无论「有没有变化」都必须回写一次（否则 0 好友时永远停在「加载中…」）
+      lastFriendsSig = '__pending__';
+      if (window.lucideAutoRender) window.lucideAutoRender();
+    }
 
     /* 原注册好友渲染抽成函数（R40）：管理员用户列表拉取失败时降级复用 */
     function renderRegFriends() {
       loadServerFriends(function (friends) {
-        // 重新计算群行（loadGroups 可能已异步回填）
-        // T03：失败时也展示「点此重试」链接（loadServerFriends 也可能掩盖 retry）
-        var groups2 = (S.groups || []).filter(function (g) { return !((prefs['g' + g.id] || {}).hidden); });
-        var rows2 = imRenderGroupRows(groups2, prefs);
-        var groupsHtml2;
-        if (rows2) {
-          groupsHtml2 = '<div class="im-group-title">👥 我的群聊 (' + groups2.length + ')</div>' + rows2;
-        } else {
-          var stateHtml2 = S.groupsLoadFailed
-            ? '<span style="color:#e05040">加载失败</span>，<a style="color:var(--primary);cursor:pointer" onclick="loadGroups()">点此重试</a>'
-            : '加载中…';
-          groupsHtml2 = '<div class="im-group-title">👥 我的群聊 (' + groups2.length + ')</div>' +
-            '<div class="im-empty2" style="padding:6px 0 6px 14px">' + stateHtml2 + '</div>';
-        }
-        if (friends.length === 0) {
-          box.innerHTML = aiHtml + groupsHtml2 + '<div class="im-group-title">👥 注册好友</div><div class="im-empty2">还没有注册好友<br>在上方搜索框输入用户名找人加好友</div>';
-          return;
-        }
-        var srvHtml = friends.map(function (f) {
-          var av = f.avatarUrl || f.avatar
-            ? '<img src="' + (function(u){ return (u.startsWith('http') ? u : apiBase() + u); })(f.avatarUrl || f.avatar) + '" alt="" style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + f.serverId + ')">'
-            : '<span style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + f.serverId + ')">' + esc((f.nickname || '友').slice(0, 1)) + '</span>';
-          /* 批次二 需求11（2026-09-11h）：好友行只保留「发消息」，删除好友入口统一收敛到
-             对方公开主页（个人中心.html?user=id → api.js renderUserHome 的「🗑 删除好友」，uiConfirm 二次确认）。 */
-          return '<div class="im-sess" onclick="imOpenChat(' + f.id + ')">' +
-            '<div class="im-av" style="position:relative">' + av + '<span class="im-dot" data-uid="' + f.serverId + '"></span></div>' +
-            '<div class="im-si"><div class="im-n" style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + f.serverId + ')">' + esc(f.nickname) + ' <span style="font-size:11px;color:#999">@' + esc(f.username) + '</span></div>' +
-            '<div class="im-sub">' + esc(f.motto) + ' <span class="im-presence" data-uid="' + f.serverId + '"></span></div></div>' +
-            '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0">' +
-              '<div style="color:#667eea;font-size:12px;cursor:pointer" onclick="event.stopPropagation();imOpenChat(' + f.id + ')">发消息</div>' +
-            '</div>' +
-            '</div>';
-        }).join('');
-        box.innerHTML = aiHtml + groupsHtml2 + '<div class="im-group-title">👥 注册好友</div>' + srvHtml;
+        /* R49：异步结果只在「签名真的变了」时才回写 DOM。
+           —— 有缓存（已同步渲染过）时无变化直接 return，列表绝不回退成「加载中…」；
+           —— 占位态（lastFriendsSig === '__pending__'）必然与真实签名不同，保证回填一次。 */
+        var sig2 = imFriendsSig();
+        if (sig2 === lastFriendsSig) return;
+        lastFriendsSig = sig2;
+        box.innerHTML = aiHtml + imRegFriendsHtml(friends);
         if (window.lucideAutoRender) window.lucideAutoRender();
       });
     }
 
-    /* R40（2026-09-14）：管理员登录时，「注册好友」分组改为渲染全量用户
+    /* R40（2026-09-14）：管理员登录时，「我的好友」分组改为渲染全量用户
        （数据源 GET /api/admin/users，仅管理员可调；仅列表展示，不写好友表）。
        分组标题「👥 全部用户 (N)」，昵称旁追加最近活跃徽标（在线=绿点 / lastActive 格式化）。
        点击行走现有 imOpenChat 服务器分支（isServer/serverId），后端 can_message 已放行
@@ -684,14 +830,8 @@
       .then(function (res) {
         var items = (res.ok && res.d && res.d.items) ? res.d.items : null;
         if (!items) throw new Error('HTTP ' + res.status);
-        var groups2 = (S.groups || []).filter(function (g) { return !((prefs['g' + g.id] || {}).hidden); });
-        var rows2 = imRenderGroupRows(groups2, prefs);
-        var gh2 = rows2
-          ? '<div class="im-group-title">👥 我的群聊 (' + groups2.length + ')</div>' + rows2
-          : '<div class="im-group-title">👥 我的群聊 (' + groups2.length + ')</div><div class="im-empty2" style="padding:6px 0 6px 14px">' +
-            (S.groupsLoadFailed ? '<span style="color:#e05040">加载失败</span>，<a style="color:var(--primary);cursor:pointer" onclick="loadGroups()">点此重试</a>' : '加载中…') +
-            '</div>';
-        box.innerHTML = aiHtml + gh2 + imAdminUsersHtml(items);
+        box.innerHTML = aiHtml + imAdminUsersHtml(items);
+        lastFriendsSig = imFriendsSig();   // R46：管理员「全部用户」分支同理
         if (window.lucideAutoRender) window.lucideAutoRender();
       })
       .catch(function (e) {
@@ -934,6 +1074,8 @@
     var friend = getFriend(friendId);
     if (!friend) return;
     S.peer = friend;
+    // R60：告诉 app.js 当前会话对象（本地/AI 好友没有 serverId → null，避免误报）
+    xtSetChatUser(S.peer.isServer ? S.peer.serverId : null);
     getOrCreateChat(friendId);
 
     var data = loadData();
@@ -1031,8 +1173,8 @@
     var avEl = $id('imCAv');
     var nameEl = $id('imCName');
     if (S.group) {
-      // T4 增量：群会话头部（群名 + 成员数）
-      if (avEl) avEl.innerHTML = '<span>👥</span>';
+      // T4 增量：群会话头部（群名 + 成员数）；R53：头像改渲染 group.avatar（无则回落群名首字）
+      if (avEl) avEl.innerHTML = imGroupAvatarHtml(S.group.avatar, S.group.name);
       if (nameEl) nameEl.innerHTML = esc(S.group.name) +
         '<span style="font-size:10px;color:#667eea;background:#EEF1FF;padding:1px 6px;border-radius:4px;margin-left:6px;font-weight:400">' + esc(String(S.group.memberCount || '')) + '人群</span>';
       // T02 增量：群会话显示「⋯」群设置入口
@@ -1066,6 +1208,7 @@
     document.body.classList.remove('im-mobile');
     S.peer = null;
     S.group = null; // T4 增量：退出群会话状态
+    xtSetChatUser(null); // R60：离开会话 → 清掉当前会话对象
     var conv = $id('imConv');
     if (conv) conv.style.display = 'none';
     var empty = $id('imEmpty');
@@ -1104,7 +1247,11 @@
       var body;
       if (m.kind === 'image') {
         var src = /^(https?:|data:)/.test(m.content) ? m.content : apiBase() + m.content;
-        body = '<div class="im-m ' + (isMe ? 'me' : 'ot') + '" data-mid="' + esc(m.id || '') + '"><img src="' + esc(src) + '" style="max-width:200px;border-radius:8px"><div class="im-mt">' + timeStr + '</div>' + readTag + '</div>';
+        /* R51（2026-09-14）：图片气泡 —— 限宽 200px + 圆角，点击全屏预览（imPreviewImage）。
+           收到（他人）与发出（自己）走同一分支，服务端消息与离线 dataURL 都能渲染。 */
+        body = '<div class="im-m ' + (isMe ? 'me' : 'ot') + '" data-mid="' + esc(m.id || '') + '">' +
+          '<img class="im-img" src="' + esc(src) + '" alt="[图片]" onclick="imPreviewImage(this.getAttribute(\'src\'))">' +
+          '<div class="im-mt">' + timeStr + '</div>' + readTag + '</div>';
       } else if (m.kind === 'voice') {
         // A7：语音条（点击播放/暂停/续播；进度条随时间更新；显示时长）
         var vsrc = /^(https?:|data:)/.test(m.content) ? m.content : apiBase() + m.content;
@@ -1135,35 +1282,140 @@
   /* 【后续扩展点：群消息逐人已读回执】群内只保证自己未读数准确（last_read_msg_id 游标），不渲染逐条已读。 */
   function groupReadReceipt() { /* 空实现：预留群已读回执扩展 */ }
 
-  // 发送图片（适配 HTML 里的 imSendImage(this)）
-  window.imSendImage = function (input) {
-    if (!S.peer || !input.files || !input.files[0]) return;
-    var file = input.files[0];
+  /* ==================== R51（2026-09-14）：图片消息（上传 / 发送 / 预览） ====================
+     在线：POST /api/uploads/image（FormData + Bearer，≤5MB，魔数白名单，返回 {url}）
+           → 私聊 POST /api/chat/{serverId}/messages {content:url, kind:'image'}
+           → 群聊 POST /api/groups/{gid}/messages      {content:url, kind:'image'}
+           与语音（kind='voice'）完全同一模型：content 只存 URL，不存 base64。
+     离线：本地 / AI 好友会话 → 沿用原 localStorage dataURL 路径（不连服务器，容量受限时静默失败）。 */
+  var MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+  function imUploadImage(file, cb) {
+    var fd = new FormData();
+    fd.append('file', file, file.name || 'image.png');
+    fetch(apiBase() + '/api/uploads/image', {
+      method: 'POST', headers: { 'Authorization': 'Bearer ' + getToken() }, body: fd
+    })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        if (!res.ok || !res.d || !res.d.url) {
+          toast((res.d && res.d.detail) || '图片上传失败');
+          if (cb) cb(null);
+          return;
+        }
+        if (cb) cb(res.d.url);
+      })
+      .catch(function (e) { toast('图片上传失败：' + (e.message || '网络错误')); if (cb) cb(null); });
+  }
+
+  /* 上传成功后把 url 作为一条 kind='image' 消息发出去（群聊 / 私聊各一条分支）。
+     发送成功后立刻重拉一次，服务端消息会覆盖掉先前的乐观气泡（与 postVoiceMsg 同节奏）。 */
+  function imPostImageMsg(url) {
+    if (S.group) {
+      fetch(apiBase() + '/api/groups/' + S.group.id + '/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+        body: JSON.stringify({ content: url, kind: 'image' })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (m) {
+          if (m && m.id) {
+            S.msgs.push({ id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true });
+            renderMsgs();
+          }
+          fetchGroupMsgs(true);
+        })
+        .catch(function () { toast('图片发送失败，请重试'); });
+      return;
+    }
+    fetch(apiBase() + '/api/chat/' + S.peer.serverId + '/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+      body: JSON.stringify({ content: url, kind: 'image' })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (m) {
+        if (m && m.id) {
+          S.msgs.push({ id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read });
+          renderMsgs();
+        }
+        fetchPeerMsgs(true);
+      })
+      .catch(function () { toast('图片发送失败，请重试'); });
+  }
+
+  /* 离线 / 本地 AI 好友：dataURL 存 localStorage（原 T03 之前的行为，完整保留） */
+  function imSendImageLocal(file) {
+    if (!S.peer) { toast('群聊图片需要联网'); return; }
     var reader = new FileReader();
     reader.onload = function (e) {
       var dataUrl = e.target.result;
       var now = Date.now();
-      var msg = { id: S.msgs.length + 1, senderId: S.myId, content: dataUrl, kind: 'image', time: now };
-      S.msgs.push(msg);
+      S.msgs.push({ id: S.msgs.length + 1, senderId: S.myId, content: dataUrl, kind: 'image', time: now });
       var data = loadData();
       if (!data.messages[S.peer.id]) data.messages[S.peer.id] = [];
       data.messages[S.peer.id].push({ senderId: S.myId, content: dataUrl, kind: 'image', time: now });
+      if (!data.chats[S.peer.id]) data.chats[S.peer.id] = {};
       data.chats[S.peer.id].last = '[图片]';
       data.chats[S.peer.id].time = now;
       saveData(data);
       renderMsgs();
       loadChats();
-      input.value = '';
       // 图片也触发 AI 回复
       triggerAiReply('发了一张图片');
     };
     reader.readAsDataURL(file);
+  }
+
+  /* 统一入口：图片按钮 / 粘贴板 / 其它调用方都走这里 */
+  function imSendImageFile(file) {
+    if (!file) return;
+    if (!S.group && !S.peer) { toast('请先选择一个会话再发送图片'); return; }
+    if (file.size && file.size > MAX_IMAGE_BYTES) { toast('图片超过 5MB，请压缩后再发'); return; }
+    var online = !!getToken() && (!!S.group || !!(S.peer && S.peer.isServer));
+    if (!online) { imSendImageLocal(file); return; }
+    // 乐观渲染：先用本地 dataURL 顶上（上传有网络延迟），服务端消息回来后覆盖
+    var rd = new FileReader();
+    rd.onload = function (e) {
+      S.msgs.push({ id: 'tmp' + Date.now(), senderId: S.myId, content: e.target.result, kind: 'image', time: Date.now() });
+      renderMsgs();
+    };
+    rd.readAsDataURL(file);
+    imUploadImage(file, function (url) { if (url) imPostImageMsg(url); });
+  }
+  window.imSendImageFile = imSendImageFile;
+
+  // 发送图片（适配 HTML 里的 imSendImage(this)；file input 的 change 事件）
+  window.imSendImage = function (input) {
+    if (!input || !input.files || !input.files[0]) return;
+    var file = input.files[0];
+    try { input.value = ''; } catch (e) { /* 老 WebView 重置失败不影响发送 */ }
+    imSendImageFile(file);
   };
 
-  /* T03 增量（2026-09-12）：拦截粘贴板里的图片（铁律 10 / R-4 缓解）
-     - 只拦 type 以 'image' 开头的项；HTML/纯文本/表情 [emoji:xx] 一律放行
-     - 拦截成功 = preventDefault + toast；任何 clipboardData 缺失、items 为空都安全 no-op
-     - 暴露到 window，便于 jsdom / 其他页面复用 */
+  // 点击输入栏图片按钮 → 触发隐藏 file input（HTML 里 #imImgInput）
+  window.imPickImage = function () {
+    var inp = $id('imImgInput');
+    if (!inp) { toast('当前页面不支持发送图片'); return; }
+    try { inp.value = ''; } catch (e) { /* 同上 */ }
+    inp.click();
+  };
+
+  // 点击图片气泡 → 全屏预览（点任意处关闭）
+  window.imPreviewImage = function (src) {
+    if (!src) return;
+    var ov = document.createElement('div');
+    ov.className = 'im-img-preview';
+    ov.innerHTML = '<img src="' + esc(src) + '" alt="图片预览">';
+    ov.onclick = function () { if (ov.parentNode) ov.parentNode.removeChild(ov); };
+    document.body.appendChild(ov);
+  };
+
+  /* T03 增量（2026-09-12）+ R51（2026-09-14）：粘贴板图片
+     - 旧行为：拦截 + toast「暂不支持图片消息」
+     - 新行为：拦截后直接走上传发送流程（与图片按钮同一条 imSendImageFile 路径）
+     - 只处理 type 以 'image' 开头的项；HTML/纯文本/表情 [emoji:xx] 一律放行
+     - clipboardData 缺失、items 为空、取不到 File 都安全 no-op / toast，不抛错 */
   window.imOnPaste = function (e) {
     if (!e || !e.clipboardData || !e.clipboardData.items) return;
     var items = e.clipboardData.items;
@@ -1171,7 +1423,9 @@
       var t = (items[i] && items[i].type) || '';
       if (t.indexOf('image') === 0) {
         try { e.preventDefault(); } catch (_e) { /* 老 WebView 无 preventDefault 也不致命 */ }
-        toast('⚠️ 暂不支持图片消息');
+        var f = (items[i].getAsFile ? items[i].getAsFile() : null);
+        if (!f) { toast('⚠️ 读取剪贴板图片失败，请改用图片按钮上传'); return; }
+        imSendImageFile(f);
         return;
       }
     }
@@ -1379,12 +1633,16 @@
     });
   }
 
-  // 发送文字消息
+    // 发送文字消息
   window.imSendText = function () {
     if (S.aiBusy) return;
     var inp = $id('imInput');
     var text = (inp.value || '').trim();
     if (!text) return;
+    // R55（2026-09-14）：帖子分享接收侧 —— 若带转发意图（来自帖子分享卡片），
+    // 取 #note=ID 深链拼到正文并消费掉（私聊/群聊都走这里）；无转发时 __imConsumeForward 返回 ''。
+    var _fwd = (typeof window.__imConsumeForward === 'function') ? window.__imConsumeForward() : '';
+    if (_fwd) text = (text + ' ' + _fwd).trim();
     // T4 增量：群会话发送分支
     if (S.group) { imSendGroupText(text); return; }
     if (!S.peer) return;
@@ -1681,14 +1939,48 @@
       var list = $id('imList');
       if (!list) return;
       // T03：好友 tab 也要看到群行（与原 renderChats 同源重渲染）
-      if (S.tab === 'chats') renderChats(list);
-      else if (S.tab === 'friends') renderFriends(list);
+      /* R46（2026-09-14e）：群列表路径同样走快照比对，消掉「每 30s 无条件 renderChats()」的残余整表重建。
+         语义与 5s 未读轮询完全一致：先消费签名（lastChatsSig = gSig）再渲染，
+         否则非会话 tab 下签名永不更新、每次都会被判成「有变化」。
+         imChatsSig() 已纳入群行的 unreadCount / lastMessage.id / memberCount / muted，
+         群数据真的变了照旧重建 —— 这里只拦「没变还重建」。 */
+      if (S.tab === 'chats') {
+        var gSig = imChatsSig();
+        if (gSig === lastChatsSig) return;
+        lastChatsSig = gSig;
+        renderChats(list);
+      }
+      else if (S.tab === 'groups') {
+        /* R56（2026-09-14）：群聊 tab 同样走快照比对（imGroupsSig 只取群行相关字段）。
+           注意与好友 tab 的差别：这里直接 return 不会漏刷新 —— 群数据就来自本次 loadGroups()。 */
+        var gsSig = imGroupsSig();
+        if (gsSig === lastGroupsSig) return;
+        renderGroupsTab(list);   // 内部会刷新 lastGroupsSig
+      }
+      else if (S.tab === 'friends') {
+        /* R46（2026-09-14e）：好友 tab 同样走快照比对（先消费签名再渲染）。
+           与会话 tab 的差别：好友数据要等 loadServerFriends() 回来才可知，若判定「无变化」就直接 return，
+           新好友 / 上下线 / 改名都会漏掉（好友 tab 没有别的轮询源）。所以这里无变化时仍拉一次好友，
+           只有拉取结果真的改变了签名才渲染 —— 既不闪，也不丢刷新。 */
+        var fSig = imFriendsSig();
+        if (fSig === lastFriendsSig) {
+          loadServerFriends(function () {
+            var sig2 = imFriendsSig();
+            if (sig2 !== lastFriendsSig) { lastFriendsSig = sig2; renderFriends(list); }
+          });
+          return;
+        }
+        lastFriendsSig = fSig;
+        renderFriends(list);
+      }
     })
     .catch(function () {
       S.groupsLoadFailed = true;           // T03：失败时让 renderFriends 显示「加载失败，点此重试」
       S.groups = S.groups || [];
       var list = $id('imList');
       if (list && S.tab === 'friends') renderFriends(list);
+      // R56：群聊 tab 同样需要把失败态渲染出来（「加载失败，点此重试」）
+      if (list && S.tab === 'groups') { lastGroupsSig = ''; renderGroupsTab(list); }
     });
   }
 
@@ -1697,7 +1989,12 @@
     if (!getToken()) { toast('群聊需要联网'); return; }
     var g = (S.groups || []).find(function (x) { return x.id === gid; });
     S.peer = null;
-    S.group = g ? { id: g.id, name: g.name, memberCount: g.memberCount } : { id: gid, name: '群聊', memberCount: 0 };
+    // R53：群头像随会话状态一起带出来，renderChatHeader() 直接渲染
+    S.group = g
+      ? { id: g.id, name: g.name, memberCount: g.memberCount, avatar: g.avatar || '' }
+      : { id: gid, name: '群聊', memberCount: 0, avatar: '' };
+    // R60：群聊不是单人会话，清掉「当前会话对象」
+    xtSetChatUser(null);
     var empty = $id('imEmpty');
     if (empty) empty.style.display = 'none';
     var conv = $id('imConv');
@@ -2050,8 +2347,30 @@
 
     // 段1：群信息（D1 接线 2026-09-11：PATCH /api/groups/{gid}，仅群主/管理员可改）
     var canEdit = (myRole === 'owner' || myRole === 'admin'); // D6：权限判定；【后续扩展点：设置管理员】
+    /* R53（2026-09-14）：群头像（三选一：上传图片 / emoji / 色块），仅群主/管理员可改。
+       取值直接落到 group.avatar，群列表行与会话头通过 imGroupAvatarHtml() 渲染。 */
+    var avBtns;
+    if (canEdit) {
+      avBtns = '<div style="flex:1;min-width:0">' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
+          '<button class="btn btn-outline im-gs-kick" onclick="imPickGroupAvatar()">上传图片</button>' +
+          '<button class="btn btn-outline im-gs-kick" onclick="imToggleGroupAvatarPicker(\'emoji\')">Emoji</button>' +
+          '<button class="btn btn-outline im-gs-kick" onclick="imToggleGroupAvatarPicker(\'color\')">色块</button>' +
+        '</div>' +
+        '<div id="imGsAvPicker"></div>' +
+        '</div>';
+    } else {
+      avBtns = '<div class="im-gs-hint" style="margin:0">仅群主/管理员可以设置群头像</div>';
+    }
+    var secAv = '<div class="im-gs-field"><div class="im-gs-label">群头像</div>' +
+        '<div style="display:flex;align-items:center;gap:12px">' +
+          '<div class="im-av" id="imGsAvPrev" style="width:52px;height:52px;flex-shrink:0">' + imGroupAvatarHtml(d.avatar, gname) + '</div>' +
+          avBtns +
+        '</div></div>';
+
     var sec1 = '<div class="im-gs-sec">' +
         '<div class="im-gs-sec-title">群信息</div>' +
+        secAv +
         '<div class="im-gs-field"><div class="im-gs-label">群名称</div>' +
           '<input class="form-input im-gs-input" id="imGsName" maxlength="20" value="' + esc(gname) + '"' + (canEdit ? '' : ' disabled') + ' placeholder="群名称"></div>' +
         '<div class="im-gs-field"><div class="im-gs-label">群公告</div>' +
@@ -2064,11 +2383,16 @@
     // 段2：成员管理（D2）
     var memRows = members.map(function (m) {
       var nm = m.groupNickname || m.nickname || '已注销用户';
+      var uid = Number(m.id || 0);
       var canKick = isOwner && String(m.id) !== String(S.myId);
+      /* R54（2026-09-14）：群主转让 —— 仅群主可见，且不能转给自己（自己本就是群主）。
+         转让后后端把新群主 role 置 owner、原群主降 admin，imGsRoleTag 会立即体现。 */
+      var canTransfer = canKick;
       return '<div class="im-gs-mem">' +
-          '<div class="im-av im-gs-mem-av" onclick="event.stopPropagation();openUserHome(' + Number(m.id || 0) + ')" title="查看主页">' + renderAvatar(m.avatarUrl, nm) + '</div>' +
+          '<div class="im-av im-gs-mem-av" onclick="event.stopPropagation();openUserHome(' + uid + ')" title="查看主页">' + renderAvatar(m.avatarUrl, nm) + '</div>' +
           '<div class="im-gs-mem-main"><div class="im-gs-mem-name">' + esc(nm) + '</div>' + imGsRoleTag(m.role) + '</div>' +
-          (canKick ? '<button class="btn btn-outline im-gs-kick" onclick="imKickMember(' + Number(m.id || 0) + ')">移出</button>' : '') +
+          (canTransfer ? '<button class="btn btn-outline im-gs-kick" onclick="imTransferOwner(' + uid + ')">转让</button>' : '') +
+          (canKick ? '<button class="btn btn-outline im-gs-kick" onclick="imKickMember(' + uid + ')">移出</button>' : '') +
         '</div>';
     }).join('');
     var sec2 = '<div class="im-gs-sec">' +
@@ -2209,6 +2533,107 @@
       })
       .catch(function (e) { toast('保存失败：' + ((e && e.message) || '网络错误')); })
       .finally(function () { if (btn) { btn.disabled = false; btn.textContent = '保存'; } });
+  };
+
+  /* ==================== R53（2026-09-14）：群头像设置（上传图片 / emoji / 色块） ==================== */
+  var GS_AV_EMOJI = ['🎉', '📚', '🚀', '💡', '🎯', '🏆', '🍀', '🎨', '🐱', '🌟'];
+  var GS_AV_COLOR = ['#5B8DEF', '#E05040', '#9B6BD9', '#D4A056', '#36CFC9', '#FF9F68', '#2E9E5B', '#667eea'];
+
+  window.imToggleGroupAvatarPicker = function (kind) {
+    var box = $id('imGsAvPicker');
+    if (!box) return;
+    if (GS.avPicker === kind) { box.innerHTML = ''; GS.avPicker = null; return; }
+    GS.avPicker = kind;
+    var html;
+    if (kind === 'emoji') {
+      html = GS_AV_EMOJI.map(function (em) {
+        return '<span class="im-gs-av-opt" onclick="imSaveGroupAvatar(\'' + em + '\')">' + em + '</span>';
+      }).join('');
+    } else {
+      html = GS_AV_COLOR.map(function (c) {
+        return '<span class="im-gs-av-opt" style="background:' + c + '" onclick="imSaveGroupAvatar(\'color:' + c + '\')"></span>';
+      }).join('');
+    }
+    box.innerHTML = '<div class="im-gs-av-pick">' + html + '</div>';
+  };
+
+  /* 上传图片做群头像：临时 file input → POST /api/uploads/image → PATCH avatar。
+     与聊天图片走同一个上传端点（≤5MB / 魔数白名单），不另起一套上传逻辑。 */
+  window.imPickGroupAvatar = function () {
+    if (imGsMyRole(GS.detail) === 'member') { toast('仅群主/管理员可以设置'); return; }
+    var inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/*';
+    inp.style.display = 'none';
+    document.body.appendChild(inp);
+    inp.onchange = function () {
+      var f = inp.files && inp.files[0];
+      if (inp.parentNode) inp.parentNode.removeChild(inp);
+      if (!f) return;
+      if (f.size && f.size > MAX_IMAGE_BYTES) { toast('图片超过 5MB，请换一张小一点的'); return; }
+      toast('上传中…');
+      imUploadImage(f, function (url) { if (url) imSaveGroupAvatar(url); });
+    };
+    inp.click();
+  };
+
+  /* 保存群头像：PATCH /api/groups/{gid} {avatar}（后端 R53 已支持 avatar 字段）。
+     落库后同步三处：GS.detail（面板预览）/ S.group（会话头）/ S.groups（列表行）。 */
+  window.imSaveGroupAvatar = function (value) {
+    var gid = GS.gid || (S.group && S.group.id);
+    if (!gid) return;
+    if (imGsMyRole(GS.detail) === 'member') { toast('仅群主/管理员可以设置'); return; }
+    var v = String(value == null ? '' : value);
+    var prev = $id('imGsAvPrev');
+    if (prev) prev.innerHTML = imGroupAvatarHtml(v, (GS.detail && GS.detail.name) || (S.group && S.group.name));
+    fetch(apiBase() + '/api/groups/' + gid, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+      body: JSON.stringify({ avatar: v })
+    })
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error((d && d.detail) || '保存失败'); return d; }); })
+      .then(function (d) {
+        var saved = (d && typeof d.avatar === 'string') ? d.avatar : v;
+        if (GS.detail) GS.detail.avatar = saved;
+        GS.avPicker = null;
+        if (S.group && S.group.id === gid) { S.group.avatar = saved; renderChatHeader(); }
+        var g = (S.groups || []).filter(function (x) { return x.id === gid; })[0];
+        if (g) g.avatar = saved;
+        toast('✅ 群头像已更新');
+        loadGroups();
+        imReloadGroupDetail();
+      })
+      .catch(function (e) { toast('保存失败：' + ((e && e.message) || '网络错误')); });
+  };
+
+  /* ==================== R54（2026-09-14）：群主转让 ====================
+     POST /api/groups/{gid}/transfer {userId}：仅群主；新群主须是本群成员。
+     转让后新群主 role=owner、原群主降 admin，UI 上「群主」角标与「转让/移出」按钮随之换位。 */
+  window.imTransferOwner = async function (uid) {
+    uid = Number(uid || 0);
+    if (!uid) return;
+    if (imGsMyRole(GS.detail) !== 'owner') { toast('仅群主可以转让群主'); return; }
+    var nm = '';
+    try {
+      var mm = ((GS.detail && GS.detail.members) || []).filter(function (x) { return Number(x.id) === uid; })[0];
+      if (mm) nm = mm.groupNickname || mm.nickname || '';
+    } catch (e) { /* 取不到昵称用占位 */ }
+    var msg = '确定把群主转让给「' + (nm || '该成员') + '」吗？转让后你将变为管理员。';
+    var ok = (typeof uiConfirm === 'function') ? await uiConfirm(msg, '转让') : confirm(msg);
+    if (!ok) return;
+    fetch(apiBase() + '/api/groups/' + GS.gid + '/transfer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+      body: JSON.stringify({ userId: uid })
+    })
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error((d && d.detail) || '转让失败'); return d; }); })
+      .then(function () {
+        toast('✅ 群主已转让');
+        if (GS.detail) GS.detail.ownerId = uid;
+        loadGroups();
+        imReloadGroupDetail();
+      })
+      .catch(function (e) { toast('转让失败：' + ((e && e.message) || '网络错误')); });
   };
 
   // —— 表情面板（[emoji:xx] 文本语法，Unicode 渲染，离线可用） ——
@@ -2363,8 +2788,28 @@
 
   function boot() {
     var style = document.createElement('style');
-    style.textContent = '@keyframes typing{0%,60%,100%{opacity:.3}30%{opacity:1}}';
+    /* R51/R53（2026-09-14）：图片气泡 / 全屏预览 / 群头像选择器。
+       样式随脚本注入，避免改 common.css（本批次该文件由其它线并行修改，杜绝覆盖风险）。 */
+    style.textContent = '@keyframes typing{0%,60%,100%{opacity:.3}30%{opacity:1}}' +
+      '.im-img{max-width:200px;max-height:260px;border-radius:8px;display:block;cursor:zoom-in;object-fit:cover}' +
+      '.im-img-preview{position:fixed;left:0;top:0;right:0;bottom:0;z-index:3000;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box}' +
+      '.im-img-preview img{max-width:100%;max-height:100%;border-radius:8px}' +
+      '.im-gs-av-pick{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}' +
+      '.im-gs-av-opt{width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;border:1px solid var(--border);background:var(--bg-secondary,#f5f5f5)}' +
+      '.im-gs-av-opt:active{transform:scale(.92)}' +
+      /* R55（2026-09-14）：帖子分享接收侧转发卡片预览（落在输入框上方） */
+      '.im-forward-card{margin:8px 10px 0;padding:8px 10px;background:var(--bg-secondary,#f7f7fb);border:1px solid var(--border,#eee);border-radius:10px;font-size:13px;color:var(--text,#333)}' +
+      '.im-forward-tag{font-size:11px;color:#667eea;font-weight:600;margin-bottom:3px}' +
+      '.im-forward-body{display:flex;align-items:flex-start;gap:8px;justify-content:space-between}' +
+      '.im-forward-title{font-weight:600;line-height:1.4}' +
+      '.im-forward-sum{color:var(--text-secondary,#999);font-size:12px;margin-top:2px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}' +
+      '.im-forward-cancel{flex-shrink:0;margin-left:8px;color:#e05040;cursor:pointer;font-size:12px;white-space:nowrap}';
     document.head.appendChild(style);
+
+    /* R60：本页已持有聊天轮询（2.5s 会话 + 5s 未读 + 30s 群/在线），
+       告诉 app.js 不要再为同一件事另开一套轮询，避免重复请求。页面隐藏/卸载时置 false。 */
+    xtTransport(true);
+    window.addEventListener('pagehide', function () { xtTransport(false); });
 
     // 绑定回车发送（HTML 已有 imInput）
     var inp = $id('imInput');
@@ -2410,9 +2855,11 @@
     imResolveAdminId();
 
     // 每 5 秒轮询未读消息
+    // R46（2026-09-14e）：补 visibilityState 守卫 —— 同一文件里 2.5s 会话轮询与 30s 群/在线轮询都有，唯独这条漏了
     setInterval(function () {
       var token = getToken();
       if (!token) return;
+      if (document.visibilityState !== 'visible') return;
       fetch(apiBase() + '/api/chat/unread', { headers: { 'Authorization': 'Bearer ' + token } })
       .then(function (r) { return r.json(); })
       .then(function (d) {
@@ -2449,9 +2896,25 @@
                 body: JSON.stringify({ upToId: item.lastId })
               }).catch(function () {});
             } else {
-              chat.unread = cnt;
-              chat.last = item.last || chat.last;
-              chat.time = Date.now();
+              var idChanged = !!item.lastId && chat.lastId !== item.lastId;
+              chat.unread = Number(cnt) || 0;
+              if (item.last) chat.last = item.last;
+              /* R46：只有「真来了新消息」（lastId 变化）才推进排序时间。
+                 旧代码无条件 chat.time = Date.now()，排序键每次轮询都被改写，
+                 会让列表反复重排（也是闪烁的帮凶之一）。 */
+              if (idChanged) { chat.lastId = item.lastId; chat.time = Date.now(); }
+              else if (!chat.time) chat.time = Date.now();
+              /* R60：真来了新消息且不在该会话里 → 抛给 app.js 做全局通知。
+                 正在和对方聊天时不抛（本地已即时渲染并标记已读，再弹通知属于自扰）。 */
+              if (idChanged) {
+                xtNotify({
+                  peerId: item.peerId,
+                  nickname: chat.nickname || item.nickname || '',
+                  avatar: chat.avatar || item.avatar || '',
+                  preview: item.last || '',
+                  count: Number(cnt) || 0
+                });
+              }
               // 批次二 需求2：被「删除」隐藏的会话，对方再发新消息时自动恢复显示（云端记录一直都在）
               var hk = 'u' + item.peerId;
               if ((imLoadPrefs()[hk] || {}).hidden) window.imChatPrefs.set(hk, { hidden: false });
@@ -2462,21 +2925,49 @@
         S.chats.forEach(function (c) {
           if (c.isServer && !items.some(function (x) { return x.peerId === c.serverId; })) c.unread = 0;
         });
-        // 重新渲染会话列表（红点：未读显示、已读消失）
-        renderList();
+        /* R46（2026-09-14e）：快照比对 + 早退 —— 只有「会影响行外观」的字段变了才重建列表。
+           旧代码无条件 renderList() → renderChats() 的 box.innerHTML = ... 整表销毁重建，
+           头像重绘 + .im-sess 背景过渡重放 = 每 5 秒闪一下（本条 Bug 的正面修法）。
+           注意先消费签名再渲染：非会话 tab（好友/申请）时 renderChats 不会执行，签名也必须更新，
+           否则每次轮询都会判定「有变化」，好友列表照样 5 秒重建一次。 */
+        var sig = imChatsSig();
+        if (sig !== lastChatsSig) {
+          lastChatsSig = sig;
+          renderList();
+        }
         // tab 按钮角标：会话=未读消息总数（批次二 需求2：免打扰 / 已隐藏会话不计入）
-        updateTabBadge('chats', imCountUnread(S.chats, imLoadPrefs()));
+        var unreadTotal = imCountUnread(S.chats, imLoadPrefs());
+        updateTabBadge('chats', unreadTotal);
+        // R60：未读总数（私聊 + 群聊，同样跳过免打扰/已隐藏）抛给 app.js
+        xtUnread(unreadTotal + imGroupUnread());
         // 待处理好友申请数 → 申请 tab 角标（需求1，2026-09-11h）：
         // 优先消费后端未读水位线字段 unreadCount（created_at > last_request_seen_at 的 pending 条数），
         // 修复旧逻辑「角标 = incoming.length，查看后刷新必复发」的 Bug；旧后端无该字段时回退为旧行为。
-        fetch(apiBase() + '/api/friends/requests', { headers: { 'Authorization': 'Bearer ' + token } })
-          .then(function (r) { return r.json(); })
-          .then(function (rd) { window.imApplyRequestBadge(rd); })
-          .catch(function () { });
+        // R46（可选项）：该接口原本每 5s 拉一次，降到 30s（与群列表轮询同频），减少无谓请求。
+        if (Date.now() - lastReqFetchAt >= 30000) {
+          lastReqFetchAt = Date.now();
+          fetch(apiBase() + '/api/friends/requests', { headers: { 'Authorization': 'Bearer ' + token } })
+            .then(function (r) { return r.json(); })
+            .then(function (rd) { window.imApplyRequestBadge(rd); })
+            .catch(function () { });
+        }
         // 顶栏 💬 角标由 assets/api.js 的 loadChatUnread() 轮询维护，这里不再越权改写
       })
       .catch(function () {});
     }, 5000);
+  }
+
+  /* R60：群聊未读总数（/api/chat/unread 只统计私聊，群未读来自 loadGroups 的 unreadCount）。
+     与 imCountUnread 同口径：免打扰 / 已隐藏的群不计入。 */
+  function imGroupUnread() {
+    var prefs = imLoadPrefs();
+    var total = 0;
+    (S.groups || []).forEach(function (g) {
+      var gp = prefs['g' + g.id] || {};
+      if (gp.muted || gp.hidden) return;
+      total += Number(g.unreadCount) || 0;
+    });
+    return total;
   }
 
   /* tab 按钮角标：n>0 显示红色数字，n<=0 移除 */
@@ -2517,7 +3008,24 @@
     imOpenChatWithUser: window.imOpenChatWithUser,
     imShowUserProfile: window.imShowUserProfile,
     imStrArg: imStrArg,
-    imCachedAdminId: imCachedAdminId
+    imCachedAdminId: imCachedAdminId,
+    /* R46（2026-09-14e）：列表渲染签名（jsdom 可断言「无变化时签名不变 → 不重建」） */
+    imChatsSig: imChatsSig,
+    getLastChatsSig: function () { return lastChatsSig; },
+    imFriendsSig: imFriendsSig,
+    getLastFriendsSig: function () { return lastFriendsSig; },
+    /* R51/R53/R54/R56/R57（2026-09-14）：本批次新增函数的校验钩子（仅测试引用，零运行时行为影响） */
+    imGroupAvatarHtml: imGroupAvatarHtml,
+    renderGroupsTab: renderGroupsTab,
+    imGroupsSig: imGroupsSig,
+    getLastGroupsSig: function () { return lastGroupsSig; },
+    imRegFriendsHtml: imRegFriendsHtml,
+    imGroupUnread: imGroupUnread,
+    imSendImageFile: imSendImageFile,
+    imPreviewImage: window.imPreviewImage,
+    imTransferOwner: window.imTransferOwner,
+    imSaveGroupAvatar: window.imSaveGroupAvatar,
+    SERVER_FRIENDS_REF: function () { return SERVER_FRIENDS; }
   };
 
   $ready(boot);
