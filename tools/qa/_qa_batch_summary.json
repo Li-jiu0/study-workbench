@@ -1,5 +1,5 @@
 {
-  "at": "2026-09-13T11:43:20.177Z",
+  "at": "2026-09-13T18:51:04.180Z",
   "withC1": true,
   "results": [
     {
@@ -89,16 +89,18 @@
     {
       "name": "qa_c1_0913h.js",
       "desc": "C1 好友页菜单重排",
-      "status": "PASS",
-      "exit": 0,
+      "status": "FAIL",
+      "exit": 1,
       "counts": {
         "total": 1,
-        "pass": 1,
-        "fail": 0,
+        "pass": 0,
+        "fail": 1,
         "mode": "page"
       },
-      "verdict": "========= C1 好友页菜单重排验证: ALL PASS =========",
-      "failures": []
+      "verdict": "========= C1 好友页菜单重排验证: FAIL=1 =========",
+      "failures": [
+        "--- 私聊.html : FAIL ---"
+      ]
     }
   ],
   "antiOverwrite": [
@@ -149,11 +151,11 @@
     {
       "id": "C1-⑤",
       "name": "im-tab-add 使用设计令牌（var(--primary-...)），无硬编码橙色",
-      "pass": true,
-      "detail": "token=true"
+      "pass": false,
+      "detail": "token=false"
     }
   ],
-  "totalFail": 0,
+  "totalFail": 1,
   "pending": 0,
-  "antiFail": 0
+  "antiFail": 1
 }

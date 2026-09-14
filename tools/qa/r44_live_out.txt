@@ -1,0 +1,92 @@
+RC=0
+SERVICE:active
+---PY---
+=== A. 服务与站点状态 ===
+HEALTH: 200
+
+=== B. 用户库（只读 SELECT）===
+USER_COLS: id,username,password_hash,nickname,motto,bio,gender,birthday,city,avatar,created_at,phone,goal,tags,last_seen_at,token_version,last_request_seen_at,last_seen_request_id,moment_visibility,friend_allow,searchable
+HASH_COL: password_hash
+USERS_TOTAL: 8
+ROW id=1 username='good' is_admin=NO_COL password_hash=[pbkdf2$1...] len=111
+ROW id=2 username='asdf' is_admin=NO_COL password_hash=[pbkdf2$1...] len=111
+ROW id=3 username='goos' is_admin=NO_COL password_hash=[pbkdf2$1...] len=111
+ROW id=4 username='aaa' is_admin=NO_COL password_hash=[pbkdf2$1...] len=111
+ROW id=6 username='qqqqq' is_admin=NO_COL password_hash=[pbkdf2$1...] len=111
+ROW id=7 username='Sage' is_admin=NO_COL password_hash=[pbkdf2$1...] len=111
+ROW id=8 username='777' is_admin=NO_COL password_hash=[pbkdf2$1...] len=111
+ROW id=9 username='123yeyuehui' is_admin=NO_COL password_hash=[pbkdf2$1...] len=111
+
+=== C. 登录接口实测 ===
+LOGIN_STATUS: 400
+LOGIN_BODY: {"detail":"账号或密码错误"}
+LOGIN_GOT_TOKEN: NO
+
+=== D. /api/admin/contact 无 Authorization ===
+CONTACT_NOAUTH_STATUS: 404
+CONTACT_NOAUTH_BODY: {"detail":"Not Found"}
+
+=== E. /api/admin/contact 带管理员 token ===
+CONTACT_AUTH: 跳过（未拿到 token）
+
+=== F. chat / 会话相关表结构（Bug C 线索，只读）===
+TABLES: ai_logs,ai_usage,board_likes,board_messages,board_replies,chat_group_members,chat_groups,comments,favorites,feedbacks,friend_requests,friends,likes,messages,moment_comments,moment_likes,moments,notes,notifications,study_logs,user_blocks,users
+TABLE board_messages rows=2 cols=id,user_id,content,created_at,likes_count,replies_count
+TABLE chat_group_members rows=3 cols=id,group_id,user_id,role,last_read_msg_id,joined_at,group_nickname
+TABLE chat_groups rows=1 cols=id,name,owner_id,avatar,created_at,announcement
+TABLE friend_requests rows=3 cols=id,from_user_id,to_user_id,status,created_at
+TABLE friends rows=5 cols=id,user_a,user_b,created_at
+TABLE messages rows=123 cols=id,sender_id,receiver_id,kind,content,read_at,created_at,group_id
+---LOG-BEGIN---
+Sep 14 00:40:34 VM-0-10-ubuntu uvicorn[1022855]: INFO:     13.214.174.161:46604 - "OPTIONS /api/admin/contact HTTP/1.1" 200 OK
+Sep 14 00:40:35 VM-0-10-ubuntu uvicorn[1022855]: INFO:     13.214.174.161:46604 - "GET /api/admin/contact HTTP/1.1" 404 Not Found
+Sep 14 00:48:44 VM-0-10-ubuntu uvicorn[1022855]: INFO:     67.159.52.89:28506 - "OPTIONS /api/admin/contact HTTP/1.1" 200 OK
+Sep 14 00:48:45 VM-0-10-ubuntu uvicorn[1022855]: INFO:     67.159.52.89:28506 - "GET /api/admin/contact HTTP/1.1" 404 Not Found
+Sep 14 01:49:49 VM-0-10-ubuntu uvicorn[1022855]: INFO:     18.138.22.38:63232 - "OPTIONS /api/admin/contact HTTP/1.1" 200 OK
+Sep 14 01:49:49 VM-0-10-ubuntu uvicorn[1022855]: INFO:     18.138.22.38:63238 - "GET /api/admin/contact HTTP/1.1" 404 Not Found
+Sep 14 01:49:49 VM-0-10-ubuntu uvicorn[1022855]: INFO:     18.138.22.38:63240 - "OPTIONS /api/admin/contact HTTP/1.1" 200 OK
+Sep 14 01:49:49 VM-0-10-ubuntu uvicorn[1022855]: INFO:     18.138.22.38:63240 - "GET /api/admin/contact HTTP/1.1" 404 Not Found
+Sep 14 01:49:52 VM-0-10-ubuntu uvicorn[1022855]: INFO:     18.138.22.38:63240 - "OPTIONS /api/admin/contact HTTP/1.1" 200 OK
+Sep 14 01:49:52 VM-0-10-ubuntu uvicorn[1022855]: INFO:     18.138.22.38:63240 - "GET /api/admin/contact HTTP/1.1" 404 Not Found
+Sep 14 01:49:54 VM-0-10-ubuntu uvicorn[1022855]: INFO:     18.140.98.174:38476 - "OPTIONS /api/admin/contact HTTP/1.1" 200 OK
+Sep 14 01:49:54 VM-0-10-ubuntu uvicorn[1022855]: INFO:     18.140.98.174:38476 - "GET /api/admin/contact HTTP/1.1" 404 Not Found
+Sep 14 01:49:59 VM-0-10-ubuntu uvicorn[1022855]: INFO:     18.138.22.38:63240 - "OPTIONS /api/admin/contact HTTP/1.1" 200 OK
+Sep 14 01:49:59 VM-0-10-ubuntu uvicorn[1022855]: INFO:     18.140.98.174:38476 - "GET /api/admin/contact HTTP/1.1" 404 Not Found
+Sep 14 02:03:49 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:03:49 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:03:51 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:03:54 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:03:59 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:04:03 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:04:03 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:04:04 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:04:08 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:04:13 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:04:18 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:05:47 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:05:47 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:05:48 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:05:52 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:05:58 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:05:58 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:05:59 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:06:03 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:07:10 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:07:10 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:07:11 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:07:15 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:07:15 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:07:20 VM-0-10-ubuntu uvicorn[1022855]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:16:29 VM-0-10-ubuntu uvicorn[1022855]: INFO:     18.138.22.38:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:16:30 VM-0-10-ubuntu uvicorn[1022855]: INFO:     18.140.98.174:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:16:30 VM-0-10-ubuntu uvicorn[1022855]: INFO:     18.140.98.174:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:16:33 VM-0-10-ubuntu uvicorn[1022855]: INFO:     18.140.98.174:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:16:35 VM-0-10-ubuntu uvicorn[1022855]: INFO:     18.140.98.174:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:16:38 VM-0-10-ubuntu uvicorn[1022855]: INFO:     18.140.98.174:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:16:40 VM-0-10-ubuntu uvicorn[1022855]: INFO:     18.140.98.174:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:16:43 VM-0-10-ubuntu uvicorn[1022855]: INFO:     18.140.98.174:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:16:48 VM-0-10-ubuntu uvicorn[1022855]: INFO:     18.140.98.174:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:16:49 VM-0-10-ubuntu uvicorn[1022855]: INFO:     18.140.98.174:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:16:50 VM-0-10-ubuntu uvicorn[1022855]: INFO:     18.138.22.38:0 - "GET /api/admin/contact HTTP/1.0" 404 Not Found
+Sep 14 02:16:53 VM-0-10-ubuntu uvicorn[1022855]: INFO:     127.0.0.1:37918 - "GET /api/admin/contact HTTP/1.1" 404 Not Found
+---LOG-END---

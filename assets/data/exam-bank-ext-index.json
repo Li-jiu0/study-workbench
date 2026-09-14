@@ -2,79 +2,79 @@
   "version": "20260913b",
   "comment": "题库增量分片索引。第一批=内置60+增量140=200题；第二批新增100题（id 301–400），合并后总量300题。legacy=覆盖层分片（assets/data/exam-bank.json，14题，id 1–10/41–44）：与内置同 id 则以 JSON 为准（覆盖内置），新 id 追加；它与 shards 增量分片同属统一题库入口（app.js loadExamBankExt 编排、mergeExamBankQuestions 合并）。",
   "legacy": {
-    "file": "assets/data/exam-bank.json?v=20260913g",
+    "file": "assets/data/exam-bank.json?v=20260914f",
     "type": "图形推理",
     "count": 14,
     "mode": "override"
   },
   "shards": [
     {
-      "file": "assets/data/exam-bank-ext-figure.json?v=20260913g",
+      "file": "assets/data/exam-bank-ext-figure.json?v=20260914f",
       "type": "图形推理",
       "count": 20
     },
     {
-      "file": "assets/data/exam-bank-ext-define.json?v=20260913g",
+      "file": "assets/data/exam-bank-ext-define.json?v=20260914f",
       "type": "定义判断",
       "count": 20
     },
     {
-      "file": "assets/data/exam-bank-ext-analogy.json?v=20260913g",
+      "file": "assets/data/exam-bank-ext-analogy.json?v=20260914f",
       "type": "类比推理",
       "count": 20
     },
     {
-      "file": "assets/data/exam-bank-ext-logic.json?v=20260913g",
+      "file": "assets/data/exam-bank-ext-logic.json?v=20260914f",
       "type": "逻辑判断",
       "count": 20
     },
     {
-      "file": "assets/data/exam-bank-ext-verbal.json?v=20260913g",
+      "file": "assets/data/exam-bank-ext-verbal.json?v=20260914f",
       "type": "言语理解",
       "count": 20
     },
     {
-      "file": "assets/data/exam-bank-ext-quant.json?v=20260913g",
+      "file": "assets/data/exam-bank-ext-quant.json?v=20260914f",
       "type": "数量关系",
       "count": 20
     },
     {
-      "file": "assets/data/exam-bank-ext-data.json?v=20260913g",
+      "file": "assets/data/exam-bank-ext-data.json?v=20260914f",
       "type": "资料分析",
       "count": 20
     },
     {
-      "file": "assets/data/exam-bank-ext-2-figure.json?v=20260913g",
+      "file": "assets/data/exam-bank-ext-2-figure.json?v=20260914f",
       "type": "图形推理",
       "count": 15
     },
     {
-      "file": "assets/data/exam-bank-ext-2-define.json?v=20260913g",
+      "file": "assets/data/exam-bank-ext-2-define.json?v=20260914f",
       "type": "定义判断",
       "count": 14
     },
     {
-      "file": "assets/data/exam-bank-ext-2-analogy.json?v=20260913g",
+      "file": "assets/data/exam-bank-ext-2-analogy.json?v=20260914f",
       "type": "类比推理",
       "count": 14
     },
     {
-      "file": "assets/data/exam-bank-ext-2-logic.json?v=20260913g",
+      "file": "assets/data/exam-bank-ext-2-logic.json?v=20260914f",
       "type": "逻辑判断",
       "count": 14
     },
     {
-      "file": "assets/data/exam-bank-ext-2-verbal.json?v=20260913g",
+      "file": "assets/data/exam-bank-ext-2-verbal.json?v=20260914f",
       "type": "言语理解",
       "count": 15
     },
     {
-      "file": "assets/data/exam-bank-ext-2-quant.json?v=20260913g",
+      "file": "assets/data/exam-bank-ext-2-quant.json?v=20260914f",
       "type": "数量关系",
       "count": 14
     },
     {
-      "file": "assets/data/exam-bank-ext-2-data.json?v=20260913g",
+      "file": "assets/data/exam-bank-ext-2-data.json?v=20260914f",
       "type": "资料分析",
       "count": 14
     }

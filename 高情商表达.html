@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>高情商表达 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913o">
+<link rel="stylesheet" href="assets/common.css?v=20260914f">
 <link rel="stylesheet" href="assets/page-head.css?v=20260913o">
 <link rel="stylesheet" href="assets/states.css?v=20260913o">
 <link rel="stylesheet" href="assets/polish.css?v=20260913o">
@@ -179,33 +179,27 @@
             <div class="feature-icon" data-icon="sparkles" data-icon-size="20"></div>
             <div class="feature-title">万能金句库</div>
             <div class="feature-desc">18句万能金句，直接套用，拒绝/赞美/道歉/催更全覆盖</div>
-            <span class="feature-badge tag-primary">已上线</span>
-            <span class="feature-badge" id="commQuotesTodayBadge" style="background:#F3E5F5;color:#7B1FA2;margin-left:4px">今日待学 0</span>
-          </div>
+            </div>
           <div class="feature-card" onclick="navigateTo('comm-scenes')">
             <div class="feature-icon" data-icon="pen" data-icon-size="20"></div>
             <div class="feature-title">场景话术库</div>
             <div class="feature-desc">12个高频场景，错误示范vs高情商回答+话术公式，即学即用</div>
-            <span class="feature-badge tag-primary">已上线</span>
-            <span class="feature-badge" id="commScenesTodayBadge" style="background:#F3E5F5;color:#7B1FA2;margin-left:4px">今日待学 0</span>
-          </div>
+            </div>
           <div class="feature-card" onclick="openGqCasesView()">
             <div class="feature-icon" data-icon="search" data-icon-size="20"></div>
             <div class="feature-title">案例拆解库</div>
-            <div class="feature-desc">真实职场场景逐句分析，哪句好哪句有问题一目了然</div>
+            <div class="feature-desc">8 个场景四段式拆解：背景 → 冲突 → 处理 → 要点 + 可复用公式</div>
           </div>
           <div class="feature-card" onclick="openGqIpartnerView()">
             <div class="feature-icon" data-icon="users" data-icon-size="20"></div>
             <div class="feature-title">i人伙伴团</div>
             <div class="feature-desc">5个不同性格虚拟伙伴，文字聊天练社交，安全不尴尬</div>
-            <span class="feature-badge tag-primary">新上线</span>
-          </div>
+            </div>
           <div class="feature-card" onclick="openRoleplayDemo()">
             <div class="feature-icon" data-icon="play" data-icon-size="20"></div>
             <div class="feature-title">角色扮演训练</div>
             <div class="feature-desc">播放器式动画对话，AI角色实时互动，六维评定+总评报告</div>
-            <span class="feature-badge tag-primary">体验版</span>
-          </div>
+            </div>
         </div>
       </div>
 
@@ -514,11 +508,19 @@
 <script src="assets/icon-map.js?v=20260913o" defer></script>
 <script src="assets/xt-toast.js?v=20260913o" defer></script>
 <script src="assets/error-boundary.js?v=20260913o" defer></script>
-<script src="assets/app.js?v=20260913o" defer></script>
+<script src="assets/app.js?v=20260914f" defer></script>
 <script src="assets/config.js?v=20260913o" defer></script>
 <script src="assets/api.js?v=20260913o" defer></script>
 
 <script src="assets/mini-comm.js?v=20260913o" defer></script>
+<!-- ===== R48 第 3 批（A3 案例拆解库「做真内容」） =====
+     顺序铁律：xt-content.js 必须在最前；data-comm-cases.js 必须在 mini-comm.js **之后**
+     （ADR-1 后置覆盖同名 key，旧 8 道情景题由数据文件在覆盖前抢救并降级为案例验证题）。
+     挂载点沿用既有 #gqCasesView / #gqCasesSlot，只注册渲染函数，不改 HTML 结构（ADR-2）。
+     回滚：删掉这三个 script 标签即可回到原来的四选一题库。 -->
+<script src="assets/xt-content.js?v=20260914f" defer></script>
+<script src="assets/data-comm-cases.js?v=20260914e" defer></script>
+<script src="assets/comm-cases.js?v=20260914e" defer></script>
 <script src="assets/mini.js?v=20260913o" defer></script>
 <script src="assets/i-partner.js?v=20260913o" defer></script>
 <script src="assets/study-stats.js?v=20260913o" defer></script>
@@ -609,6 +611,10 @@
     // 兜底同步：引擎内部可能重建（再来一组）或移除 #mzMask，观察 body 统一联动
     if (window.MutationObserver) {
       new MutationObserver(function () {
+        /* R48 守卫：V2 视图激活期（window.__gqV2Active，由 assets/comm-cases.js 置位）
+           不接管面板。缺少这个守卫，V2 里任何一次动态插入节点都会被误判为
+           "引擎已关闭"，进而把正在阅读的案例面板直接关掉（零报错的那种坑）。 */
+        if (window.__gqV2Active) return;
         if (panelOpen('gqCasesView')) {
           if ($id('mzMask')) mountInto('mzMask', 'gqCasesSlot');
           else window.closeGqCasesView();

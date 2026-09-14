@@ -1,0 +1,42 @@
+=== 结论：需随本批一起部署的 server 文件 ===
+仅本地有（生产缺失，必须新增）: routers/admin.py
+两边都有但内容不同（必须更新）: config.py, database.py, main.py, rate_limit.py, routers/ai.py, routers/auth.py, routers/chat.py, routers/feedback.py, routers/feedback_public.py, routers/friends.py, routers/migrate.py, routers/moments.py, routers/notes.py, routers/social.py, routers/users.py, schemas.py, ws.py, wsmanager.py
+完全一致（无需动）: 7 个
+仅生产有（本地已删？留意）: check_users.py, fix_friend_requests_backend.py, scripts/backup_db.py, scripts/smoke_m1.py, scripts/smoke_m2.py, scripts/smoke_m3.py, scripts/smoke_m4.py, test_friends.py, test_friends2.py
+
+=== 明细 ===
+  [NEW]      routers/admin.py
+  [MODIFIED] config.py
+  [MODIFIED] database.py
+  [MODIFIED] main.py
+  [MODIFIED] rate_limit.py
+  [MODIFIED] routers/ai.py
+  [MODIFIED] routers/auth.py
+  [MODIFIED] routers/chat.py
+  [MODIFIED] routers/feedback.py
+  [MODIFIED] routers/feedback_public.py
+  [MODIFIED] routers/friends.py
+  [MODIFIED] routers/migrate.py
+  [MODIFIED] routers/moments.py
+  [MODIFIED] routers/notes.py
+  [MODIFIED] routers/social.py
+  [MODIFIED] routers/users.py
+  [MODIFIED] schemas.py
+  [MODIFIED] ws.py
+  [MODIFIED] wsmanager.py
+  [same]     filecheck.py
+  [same]     routers/__init__.py
+  [same]     routers/groups.py
+  [same]     routers/news.py
+  [same]     routers/study.py
+  [same]     routers/uploads.py
+  [same]     security.py
+  [REMOTE-ONLY] check_users.py
+  [REMOTE-ONLY] fix_friend_requests_backend.py
+  [REMOTE-ONLY] scripts/backup_db.py
+  [REMOTE-ONLY] scripts/smoke_m1.py
+  [REMOTE-ONLY] scripts/smoke_m2.py
+  [REMOTE-ONLY] scripts/smoke_m3.py
+  [REMOTE-ONLY] scripts/smoke_m4.py
+  [REMOTE-ONLY] test_friends.py
+  [REMOTE-ONLY] test_friends2.py

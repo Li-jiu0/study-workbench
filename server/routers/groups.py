@@ -12,7 +12,7 @@ from database import (ChatGroup, ChatGroupMember, Message, User,
                       friend_ids_of, get_db, now_iso)
 from rate_limit import rate_limit
 from schemas import (GroupCreateIn, GroupMeIn, GroupMsgIn, GroupPatchIn,
-                     GroupReadIn)
+                     GroupReadIn, GroupTransferIn)
 from security import get_current_user
 from wsmanager import send_to
 
@@ -125,6 +125,7 @@ def list_groups(user: User = Depends(get_current_user), db: Session = Depends(ge
             "id": g.id,
             "name": g.name,
             "ownerId": g.owner_id,
+            "avatar": g.avatar,          # R53：群头像（群列表行 / 会话头展示）
             "memberCount": member_count,
             "lastMessage": {
                 "content": last.content[:80] if last else "",
@@ -190,8 +191,18 @@ def patch_group(gid: int, body: GroupPatchIn, user: User = Depends(get_current_u
         if len(ann) > 300:
             raise HTTPException(400, "公告最长 300 字")
         g.announcement = ann
+    if body.avatar is not None:
+        # R53（2026-09-14）：群头像三选一 —— 上传图片 URL / color:#RRGGBB 色块 / 短 emoji 文本。
+        # 服务端只做长度与前缀白名单校验（防把整段脚本塞进 avatar 字段），具体内容由前端保证。
+        a = body.avatar.strip()
+        if len(a) > 200:
+            raise HTTPException(400, "群头像取值过长")
+        if a and not (a.startswith("/uploads/") or a.startswith("color:#")) and len(a) > 16:
+            raise HTTPException(400, "群头像格式不正确")
+        g.avatar = a or None
     db.commit()
-    return {"id": g.id, "name": g.name, "announcement": g.announcement or ""}
+    return {"id": g.id, "name": g.name, "announcement": g.announcement or "",
+            "avatar": g.avatar}
 
 
 @router.patch("/{gid}/me")
@@ -294,9 +305,38 @@ def kick_member(gid: int, uid: int, user: User = Depends(get_current_user),
     return {"ok": True}
 
 
+@router.post("/{gid}/transfer")
+def transfer_owner(gid: int, body: GroupTransferIn,
+                   user: User = Depends(get_current_user), db: Session = Depends(get_db),
+                   _rl: None = Depends(rate_limit("default"))):
+    """群主转让（R54，2026-09-14）：仅群主；新群主必须是本群现有成员。
+
+    转让后：chat_groups.owner_id 改指新群主；新群主 role=owner，原群主降级为 admin。
+    返回 {ok, ownerId}，前端据此刷新成员列表角标与操作按钮。
+    """
+    g = require_group(db, gid)
+    if g.owner_id != user.id:
+        raise HTTPException(403, "仅群主可以转让群主")
+    uid = int(body.userId)
+    if uid == user.id:
+        raise HTTPException(400, "你已经是该群群主")
+    target = db.query(ChatGroupMember).filter(
+        ChatGroupMember.group_id == gid, ChatGroupMember.user_id == uid).first()
+    if not target:
+        raise HTTPException(404, "该用户不是本群成员")
+    g.owner_id = uid
+    target.role = "owner"
+    mine = db.query(ChatGroupMember).filter(
+        ChatGroupMember.group_id == gid, ChatGroupMember.user_id == user.id).first()
+    if mine:
+        mine.role = "admin"
+    db.commit()
+    return {"ok": True, "ownerId": uid}
+
+
 @router.post("/{gid}/quit")
 def quit_group(gid: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """退群；群主退群 = 解散（成员与群消息一并清理）。【后续扩展点：群主转让】"""
+    """退群；群主退群 = 解散（成员与群消息一并清理）。【群主转让见 POST /{gid}/transfer】"""
     require_group(db, gid)
     me = require_member(db, gid, user.id)
     if me.role == "owner":

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>四级备考 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913o">
+<link rel="stylesheet" href="assets/common.css?v=20260914f">
 <link rel="stylesheet" href="assets/page-head.css?v=20260913o">
 <link rel="stylesheet" href="assets/states.css?v=20260913o">
 <link rel="stylesheet" href="assets/polish.css?v=20260913o">
@@ -133,8 +133,7 @@
             <div class="feature-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div>
             <div class="feature-title">词汇打卡</div>
             <div class="feature-desc">50个高频核心词，卡片式学习，点击显示释义，标记认识进度</div>
-            <span class="feature-badge tag-primary">完整版</span>
-          </div>
+            </div>
           <!-- 【20260913K/K1】原「情景对话」独立卡删除：口语跟读并入听力训练面板内双 tab
                （openVoiceTrain('speak') 仍可用，由面板顶部 tab 承接入口） -->
           <div class="feature-card" onclick="openVoiceTrain('listen')">
@@ -435,7 +434,7 @@
 <script src="assets/icon-map.js?v=20260913o" defer></script>
 <script src="assets/xt-toast.js?v=20260913o" defer></script>
 <script src="assets/error-boundary.js?v=20260913o" defer></script>
-<script src="assets/app.js?v=20260913o" defer></script>
+<script src="assets/app.js?v=20260914f" defer></script>
 <script src="assets/voiceplayer.js?v=20260913o" defer></script>
 <script src="assets/config.js?v=20260913o" defer></script>
 <script src="assets/api.js?v=20260913o" defer></script>
@@ -444,6 +443,17 @@
 <!-- 【P0-B T03-06】删除弹窗版 mock-exam.js 引入（mock 已迁到 mock_exam.html 三独立页） -->
 <script src="assets/mini.js?v=20260913o" defer></script>
 <script src="assets/study-stats.js?v=20260913o" defer></script>
+
+<!-- ==================== R48 第 2 批（20260914e）：A1 阅读理解 / A2 翻译专项 做真内容 ====================
+     ADR-1 数据外置 + 后置覆盖：以下 5 个文件全部在 mini-cet.js / mini.js 之后加载，
+     旧数据（MINI_BANK['cet-read'] / ['cet-translate']）一行未删，仅降级为「技巧速览 / 表达积累」tab；
+     回滚只需删掉这 5 个 script 标签（注：注释内不写字面标签，免得配对脚本误判）。
+     顺序铁律：xt-content.js（共用契约基建）必须最先，data-*.js 次之，渲染器最后。 -->
+<script src="assets/xt-content.js?v=20260914f" defer></script>
+<script src="assets/data-cet-read.js?v=20260914e" defer></script>
+<script src="assets/data-cet-translate.js?v=20260914e" defer></script>
+<script src="assets/cet-read.js?v=20260914e" defer></script>
+<script src="assets/cet-translate.js?v=20260914e" defer></script>
 <script>
 /* ==================== T7 增量（P0-8/P0-9）：统计卡 + 考试冲刺 ==================== */
 (function () {
@@ -578,9 +588,10 @@
       window.openMiniQuiz = wrapped;
     }
     // 兜底同步：引擎内部可能重建（再来一组）或移除（点遮罩关闭）#mzMask，观察 body 统一联动
+    // R48 T20：V2 渲染期（window.__cetV2Active）不接管面板，避免 body 子节点变动误关 V2 视图
     if (window.MutationObserver) {
       new MutationObserver(function () {
-        if (!panelOpen()) return;
+        if (!panelOpen() || window.__cetV2Active) return;
         if ($id('mzMask')) mountMask();
         else hidePanel();
       }).observe(document.body, { childList: true });
@@ -593,6 +604,110 @@
 
   if (document.readyState !== 'loading') setup();
   else document.addEventListener('DOMContentLoaded', setup);
+})();
+</script>
+<script>
+/* ==================== R48 T20 · CETV2 注册表预埋（20260914e，一次性冻结） ====================
+   ADR-2：宿主页只在此处预埋一次注册表与分发逻辑，之后 A1(阅读理解)/A2(翻译专项)
+   只调用 XTC.registerView('CETV2', id, fn) 注册渲染函数，**禁止再改本 HTML**（规避并行覆盖）。
+   铁律 1：未命中注册表的 id 一律原样透传旧的 openCetQuizView / openMiniQuiz 逻辑，一行未删。
+   挂载点沿用既有 #cetQuizView / #cetQuizSlot（页内全屏视图，**非弹窗**，ADR-3），不新建容器。
+
+   ★ 时序（对齐 PPT训练.html T00 的 F12 修正，两条硬约束）：
+     1) 代理必须包进 DOMContentLoaded：本页内联脚本在解析期执行，早于所有 defer 脚本与页尾
+        DOMContentLoaded 回调；只有在 DOMContentLoaded 里取到的 window.openCetQuizView 才是最终实现。
+     2) #cetQuizSlot 每次调用时重新取：面板子节点可能被重建，缓存引用会写进已被丢弃的旧节点。
+     注：注册表对象 CETV2 仍必须在解析期同步创建 —— defer 的业务脚本早于 DOMContentLoaded 注册。
+
+   ★ mountMask 判定结论（20260914e，实测依据）：
+     mini.js 的 renderShell() 生成 #mzMask 时只赋 className＝'mz-mask'，**没有内联 style**；
+     其 position:fixed 来自 mini.js 注入到 head 的 #miniStyle 样式表，而本页头部 style 块中
+     `.cet-quiz-slot .mz-mask{position:absolute;inset:0;...}` 以更高特异性（0,2,0 > 0,1,0）覆盖之。
+     故「mountMask 把 #mzMask 挪进 slot」对**旧 mini.js 内容**确为可用的内联渲染方案（原样保留）。
+     但 A1/A2 新内容为原创长文 + 输入框，不需要也不应依赖 mini.js 引擎，
+     因此新内容走「注册表直渲」：fn(slot) 直接写 #cetQuizSlot，无 mask、无弹窗、无 mountMask。 */
+(function () {
+  'use strict';
+  /* ① 解析期同步建表：cet-read.js / cet-translate.js 等 defer 脚本早于 DOMContentLoaded 执行 */
+  window.CETV2 = window.CETV2 || {};   // { 'cet-read': fn(slotEl), 'cet-translate': fn(slotEl) }
+  window.__cetV2Active = false;        // V2 视图打开标记（供上方 MutationObserver 判断）
+
+  function $id(x) { return document.getElementById(x); }
+  function findSlot() { return $id('cetQuizSlot'); }   // ★ 每次现取，绝不缓存
+
+  function fallback(_legacy, id) {
+    if (typeof _legacy === 'function') return _legacy.call(window, id);
+    if (typeof window.openMiniQuiz === 'function') return window.openMiniQuiz(id);
+    if (window.console && console.warn) console.warn('[CETV2] openCetQuizView / openMiniQuiz 均不可用：' + id);
+    return undefined;
+  }
+
+  /** 关闭时执行各渲染器注册的清理钩子（目前主要是阅读模块的计时器） */
+  function destroyHooks() {
+    var hs = (window.CETV2 && window.CETV2.__hooks) || [], i;
+    for (i = 0; i < hs.length; i++) {
+      try { hs[i](); } catch (e) { /* 清理异常不影响关闭 */ }
+    }
+  }
+
+  function boot() {
+    var _legacy = window.openCetQuizView;          // ★ 此处才拿得到最终实现
+    var _legacyClose = window.closeCetQuizView;
+    if (typeof _legacy !== 'function') {
+      // 不静默吞掉：拿不到就明确告警并停止包装，避免又是一个零报错的坑
+      if (window.console && console.warn) console.warn('[CETV2] legacy openCetQuizView 未就绪，跳过包装');
+      return;
+    }
+    if (window.console && console.log) {
+      var names = Object.keys(window.CETV2 || {}).filter(function (k) { return typeof window.CETV2[k] === 'function'; });
+      console.log('[CETV2] 已接管 openCetQuizView；已注册视图 = ' + names.join(','));
+    }
+
+    window.openCetQuizView = function (id) {
+      var fn = (window.CETV2 || {})[id];
+      var panel = $id('cetQuizView');
+      var slot = findSlot();
+      if (typeof fn !== 'function' || !panel || !slot) {
+        window.__cetV2Active = false;              // 未命中 → 原样透传旧逻辑
+        return fallback(_legacy, id);
+      }
+      var title = $id('cetQuizTitle');
+      if (title) {
+        if (id === 'cet-read') title.textContent = '阅读理解';
+        else if (id === 'cet-translate') title.textContent = '翻译专项';
+      }
+      window.__cetV2Active = true;
+      try {
+        slot.innerHTML = '';
+        panel.classList.add('open');
+        if (typeof window.openAppModal === 'function') {
+          try { window.openAppModal('cetQuizView'); } catch (e) { /* 锁滚动失败不影响展示 */ }
+        }
+        fn(slot);
+        if (window.XTC && typeof window.XTC.renderIcons === 'function') {
+          try { window.XTC.renderIcons(slot); } catch (e) { /* 忽略 */ }
+        }
+        return true;
+      } catch (err) {
+        // 异常自动回退旧路径，绝不白屏
+        window.__cetV2Active = false;
+        if (window.console && console.error) console.error('[CETV2] ' + id + ' 渲染失败，回退旧逻辑', err);
+        slot.innerHTML = '';
+        return fallback(_legacy, id);
+      }
+    };
+
+    if (typeof _legacyClose === 'function') {
+      window.closeCetQuizView = function () {
+        window.__cetV2Active = false;
+        destroyHooks();
+        return _legacyClose.apply(this, arguments);
+      };
+    }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
 })();
 </script>
 </body>

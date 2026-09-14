@@ -148,18 +148,29 @@ class GroupReadIn(BaseModel):
 
 
 class GroupPatchIn(BaseModel):
-    """改群名 / 群公告（T04，D1）：部分更新。
+    """改群名 / 群公告 / 群头像（T04 D1 + R53）：部分更新。
 
     长度/空值不走 pydantic 约束，统一在路由层抛中文 400
     （空群名→「群名称不能为空」/超长→「群名称最长 20 字」/公告超长→「公告最长 300 字」）。
+
+    R53 群头像 avatar 取值三选一（前端保证，后端只做长度/前缀校验）：
+      - "/uploads/images/xxx.png"：上传图片（走 POST /api/uploads/image）
+      - "color:#RRGGBB"：纯色块
+      - 单个 emoji / 短文本：兜底展示
     """
     name: str | None = None
     announcement: str | None = None
+    avatar: str | None = None
 
 
 class GroupMeIn(BaseModel):
     """设置我在本群的群名片（T04，D5）：空串 = 清除，回退全局昵称。"""
     groupNickname: str | None = None
+
+
+class GroupTransferIn(BaseModel):
+    """群主转让（R54，2026-09-14）：仅群主可把群主身份转给某个现有成员。"""
+    userId: int
 
 
 class MomentIn(BaseModel):

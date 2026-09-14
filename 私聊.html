@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>私信 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260913o">
+<link rel="stylesheet" href="assets/common.css?v=20260914f">
 <link rel="stylesheet" href="assets/page-head.css?v=20260913o">
 <link rel="stylesheet" href="assets/states.css?v=20260913o">
 <link rel="stylesheet" href="assets/polish.css?v=20260913o">
@@ -88,16 +88,20 @@
             <!-- C1 20260913k：五 tab 顺序不变（会话→好友→群聊→申请→加好友）；「群聊」「加好友」由弹窗改为 tab 页面视图（onclick 改 imSwitchTab，原弹窗函数保留供面板复用） -->
             <button class="im-tab active" data-tab="chats" onclick="imSwitchTab('chats')">💬 会话</button>
             <button class="im-tab" data-tab="friends" onclick="imSwitchTab('friends')">👥 好友</button>
-            <button class="im-tab" data-tab="groups" onclick="imSwitchTab('groups')" title="多选好友发起群聊">👥 群聊</button>
+            <button class="im-tab" data-tab="groups" onclick="imSwitchTab('groups')" title="我的群聊 · 发起新群聊">👥 群聊</button>
             <!-- 【后续扩展点】发起群聊（T4 增量）：多选好友建群，本地模式提示「群聊需要联网」 -->
             <button class="im-tab" data-tab="requests" onclick="imSwitchTab('requests')">📩 申请</button>
             <button class="im-tab im-tab-add" data-tab="addfriend" onclick="imSwitchTab('addfriend')" title="搜索用户名/昵称添加好友">加好友</button>
           </div>
         </div>
         <!-- 需求01：联系管理员固定入口（管理员对普通用户完全隐形，这是唯一联系途径）。
-             点击后由 assets/admin-contact.js 直接走 /api/chat/* 开会话，绕开好友前置。 -->
-        <div class="ac-entry" onclick="xtOpenAdminChat()" title="联系管理员（管理员不参与好友列表）">
-          <span class="nav-icon" data-icon="shield" data-icon-size="16">🛡️</span> 联系管理员
+             点击后由 assets/admin-contact.js 直接走 /api/chat/* 开会话，绕开好友前置。
+             R45（20260914e）：视觉改为与好友会话行（.im-sess）同款 —— 圆形盾牌头像 + 昵称 + 最近一条消息/时间，
+             固定为会话列表首行。节点刻意留在 #imList 之外独立渲染：admin-contact.js 只改写文本节点与角标，
+             不参与 chat-local.js renderChats() 的整表 innerHTML 重建，因此不会随 5s 未读轮询闪烁。 -->
+        <div class="ac-entry im-sess" id="acEntry" onclick="xtOpenAdminChat()" title="联系管理员（管理员不参与好友列表）">
+          <div class="im-av ac-av"><span class="nav-icon" data-icon="shield" data-icon-size="18"></span></div>
+          <div class="im-si"><div class="im-n">管理员</div><div class="im-sub" id="acEntrySub">管理员在线时会回复你</div></div>
           <span class="ac-badge" id="acEntryBadge" style="display:none"></span>
         </div>
         <!-- C1 20260913k：「群聊」「加好友」tab 面板宿主（原弹窗节点由页尾脚本整体搬入，id 不变，chat-local.js 弹窗函数照常按 id 命中） -->
@@ -116,16 +120,18 @@
             <button class="im-icon" id="imGSBtn" onclick="imOpenGroupSettings()" title="群设置" style="display:none">⋯</button>
           </div>
           <div class="im-msgs" id="imMsgs"></div>
+          <!-- R55（2026-09-14）：帖子分享接收侧转发卡片预览容器（默认隐藏，由页尾脚本按 localStorage 渲染） -->
+          <div id="imForwardCard" class="im-forward-card" style="display:none"></div>
           <div class="im-composer">
             <textarea id="imInput" placeholder="输入消息…"></textarea>
-            <!-- A7：语音消息录制按钮（点击开始/结束，最长 60 秒；不支持时优雅降级） -->
-            <button class="im-icon" title="录音（点击开始/结束）" onclick="imToggleRecord()"><span class="nav-icon" data-icon="mic" data-icon-size="20"></span></button>
             <!-- 【后续扩展点】表情面板（T4 增量）：[emoji:xx] 文本语法，Unicode 渲染，离线可用 -->
             <button class="im-icon" title="表情" onclick="imToggleEmoji()"><span class="nav-icon" data-icon="smile" data-icon-size="20"></span></button>
             <div class="im-emoji-panel" id="imEmojiPanel" style="display:none"></div>
-            <!-- T03 增量（2026-09-12）：发图按钮 + 隐藏 file input 整段移除（PRD §3.5）。
-                 imSendImage() 函数保留（chat-local.js:880）作为【后续扩展点：图片消息回退】，
-                 APK 缓存老 JS 可能仍调用，头部已有守卫 `if (!S.peer || !input.files || !input.files[0]) return;`。 -->
+            <!-- R51（2026-09-14）：发图按钮 + 隐藏 file input 恢复（图片消息正式支持）。
+                 点击 → imPickImage() → 触发 #imImgInput → change → imSendImage(this)
+                 → chat-local.js：在线 POST /api/uploads/image + 发 kind='image' 消息；离线回落 dataURL。 -->
+            <button class="im-icon" title="发送图片" onclick="imPickImage()"><span class="nav-icon" data-icon="image" data-icon-size="20"></span></button>
+            <input type="file" id="imImgInput" accept="image/*" style="display:none" onchange="imSendImage(this)">
             <button class="im-send" onclick="imSendText()">发送</button>
           </div>
         </div>
@@ -303,12 +309,12 @@
 <script src="assets/icon-map.js?v=20260913o" defer></script>
 <script src="assets/xt-toast.js?v=20260913o" defer></script>
 <script src="assets/error-boundary.js?v=20260913o" defer></script>
-<script src="assets/app.js?v=20260913o" defer></script>
+<script src="assets/app.js?v=20260914f" defer></script>
 <script src="assets/config.js?v=20260913o" defer></script>
 <script src="assets/emoji/manifest.js?v=20260913o" defer></script>
 <script src="assets/api.js?v=20260913o" defer></script>
-<script src="assets/chat-local.js?v=20260914b" defer></script>
-<script src="assets/admin-contact.js?v=20260914b" defer></script>
+<script src="assets/chat-local.js?v=20260914f" defer></script>
+<script src="assets/admin-contact.js?v=20260914f" defer></script>
 <style>
   /* R33（20260913r）：tab 视觉统一——去掉 .im-tab-add 的特殊填充/加粗与专属 hover，加好友与其余 4 个 tab 同享 .im-tab/.im-tab.active；“im-tab-add” 类保留在 DOM 仅作语义标记，无样式副作用 */
   .im-tab:not(.active):hover{border-color:var(--primary);color:var(--primary)}
@@ -323,10 +329,16 @@
   .im-panel-host .im-modal{width:100%;max-width:none;max-height:none;margin:auto;box-shadow:none;border:1px solid var(--border)}
 
   /* 需求01：联系管理员固定入口 + 会话浮层（仅本页，全部 .ac- 前缀，不影响既有私信样式） */
-  .ac-entry{display:flex;align-items:center;gap:8px;margin:8px 14px 4px;padding:9px 12px;border-radius:10px;background:var(--primary-light);color:var(--primary);font-size:13px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:var(--transition);position:relative}
-  .ac-entry:hover{border-color:var(--primary)}
+  /* R45（20260914e）：入口改为会话行同款（.im-sess 结构 + 圆形头像），仅保留必要的自身覆写：
+     与好友行同样的 10px 14px 内边距 / 下边框 / 卡片底色；hover 用 --bg 而非主色描边。 */
+  .ac-entry{gap:10px;padding:10px 14px;border-radius:0;border-bottom:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px;font-weight:400;cursor:pointer;border-top:0;border-left:0;border-right:0;position:relative}
+  .ac-entry:hover{background:var(--bg)}
+  .ac-entry .ac-av{position:relative;background:linear-gradient(135deg,var(--primary-light),#e9ecff);color:var(--primary)}
+  .ac-entry .im-n{font-size:14px;font-weight:600;color:var(--text)}
   /* R43（20260914b）：联系管理员入口未读角标（管理员来信）。count>0 显示，>99 显示 99+ */
   .ac-badge{position:absolute;top:-6px;right:-6px;min-width:17px;height:17px;line-height:17px;padding:0 4px;background:#ff5d5d;color:#fff;border-radius:9px;font-size:10px;font-weight:700;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.25);z-index:2}
+  /* R45：入口变为会话行后，角标改到行内右侧（与好友行 .im-badge 同一位置），不再浮在行外右上角 */
+  .ac-entry .ac-badge{position:static;display:inline-block;margin-left:auto;flex-shrink:0;box-shadow:none;font-size:11px;min-width:18px;height:18px;line-height:18px}
   .ac-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
   .ac-panel{background:var(--card);width:100%;max-width:460px;max-height:82vh;border-radius:16px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 12px 48px rgba(0,0,0,.25)}
   .ac-head{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--card)}
@@ -444,9 +456,12 @@
 
   function $id(x) { return document.getElementById(x); }
 
-  /* 1. 搬家：模态节点移入侧栏面板宿主（幂等，只搬一次） */
+  /* 1. 搬家：模态节点移入侧栏面板宿主（幂等，只搬一次）
+        R56（2026-09-14）：imGroupModal 不再搬家 —— 「群聊」tab 改为承载「我的群聊」列表
+        （chat-local.js renderGroupsTab），建群弹层恢复为独立的 .im-overlay 浮层，
+        由列表顶部「+ 发起群聊」按钮触发 imOpenGroupCreator()。 */
   function relocateModals() {
-    [['imGroupModal', 'imPanelGroups'], ['imAddFriendModal', 'imPanelAddFriend']].forEach(function (p) {
+    [['imAddFriendModal', 'imPanelAddFriend']].forEach(function (p) {
       var modal = $id(p[0]), host = $id(p[1]);
       if (modal && host && modal.parentElement !== host) host.appendChild(modal);
     });
@@ -487,7 +502,10 @@
     if (typeof window.imSwitchTab !== 'function' || window.__imSwitchTabPatched) return;
     var real = window.imSwitchTab;
     window.imSwitchTab = function (tab) {
-      if (tab === 'groups' || tab === 'addfriend') {
+      /* R56（2026-09-14）：'groups' 不再是「面板 tab」——它现在承载「我的群聊」列表
+         （chat-local.js renderGroupsTab 渲染到 #imList），建群弹层改为列表内按钮触发的浮层。
+         只有 'addfriend' 仍走面板视图。 */
+      if (tab === 'addfriend') {
         real(tab);        // 复用原逻辑：tab 高亮切换 + 列表占位渲染（渲染结果被面板覆盖）
         showPanel(tab);
         return;
@@ -519,6 +537,74 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
+})();
+</script>
+<script>
+/* R55（2026-09-14）：帖子分享「接收侧」—— 读 study_workbench_share_forward_v1 渲染转发卡片。
+   数据由广场帖子分享（线4）写入 localStorage；本页只在打开时读一次并渲染预览。
+   发送时由 chat-local.js 的 imSendText 调 window.__imConsumeForward() 取出深链拼到正文；
+   取消即移除。键缺失 / JSON 非法 / id 为空 → 不渲染、不抛错（零侵入）。
+   2026-09-14 修：兼容发送侧的 excerpt 摘要字段与字符串 id（原 Number(id) 会把 'n_001' 判为无效）。 */
+(function () {
+  'use strict';
+  var KEY = 'study_workbench_share_forward_v1';
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  /* 发送侧（学习博客.html R55）实际写入契约（只读核对，不改发送侧）：
+       {v:1, type:'note', id:String, title:String, excerpt:String, cover:String, url:'…#note=<id>', ts:Number}
+     两条兼容要点（2026-09-14 修）：
+       1) 摘要字段是 **excerpt**，不是 summary → 两者都兼容（优先 summary，兼容历史/他处写法）；
+       2) id 可能是字符串（本地笔记形如 'n_001'）或数字串（在线）→ **只校验非空**，不做 Number 强转，
+          否则字符串 id 会被 Number() 变成 NaN 判为无效，卡片直接不渲染。 */
+  function parsePayload() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (!raw) return null;
+      var p = JSON.parse(raw);
+      if (!p || typeof p !== 'object') return null;
+      var rawId = (p.id != null && p.id !== '') ? p.id : (p.noteId != null ? p.noteId : '');
+      var id = String(rawId == null ? '' : rawId).trim();
+      if (!id) return null;
+      var url = (typeof p.url === 'string' && p.url) ? p.url.trim() : '';
+      return {
+        id: id,
+        url: url,
+        title: String(p.title || p.name || '帖子').slice(0, 60),
+        summary: String(p.summary || p.excerpt || '').slice(0, 80)
+      };
+    } catch (e) { return null; }
+  }
+  function render() {
+    var host = document.getElementById('imForwardCard');
+    if (!host) return;
+    var p = parsePayload();
+    if (!p) { host.style.display = 'none'; host.innerHTML = ''; return; }
+    host.innerHTML =
+      '<div class="im-forward-tag">🔗 转发自帖子</div>' +
+      '<div class="im-forward-body"><div style="flex:1;min-width:0">' +
+        '<div class="im-forward-title">' + esc(p.title) + '</div>' +
+        (p.summary ? '<div class="im-forward-sum">' + esc(p.summary) + '</div>' : '') +
+      '</div><div class="im-forward-cancel" onclick="window.__imClearForwardCard()">取消</div></div>';
+    host.style.display = 'block';
+  }
+  window.__imClearForwardCard = function () {
+    try { localStorage.removeItem(KEY); } catch (e) { }
+    var host = document.getElementById('imForwardCard');
+    if (host) { host.style.display = 'none'; host.innerHTML = ''; }
+  };
+  window.__imConsumeForward = function () {
+    var p = parsePayload();
+    if (!p) return '';
+    window.__imClearForwardCard();
+    // 优先用发送侧已拼好的深链 url（自带 #note=<id>）；只有 id 的旧数据再自行拼，不再重新拼 url
+    return p.url || ('#note=' + p.id);
+  };
+  window.__imRenderForwardCard = render;
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render);
+  else render();
 })();
 </script>
 </body>

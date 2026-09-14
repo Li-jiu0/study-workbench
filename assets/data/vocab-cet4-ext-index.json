@@ -3,42 +3,42 @@
   "comment": "四级高频词增量分片索引（按首字母区间拆 8 片，ASCII 名）。加词 = 只往对应片追加 + 更新该片 count，代码零改动。区间外字符（数字/符号，本批 0 条）归 v-z 片。file 字段带缓存破坏参数 ?v=20260913c（nginx 不注入 Cache-Control，靠 ?v= 绕开启发式缓存）。",
   "shards": [
     {
-      "file": "assets/data/vocab-cet4-ext-a-c.json?v=20260913g",
+      "file": "assets/data/vocab-cet4-ext-a-c.json?v=20260914f",
       "range": "a-c",
       "count": 365
     },
     {
-      "file": "assets/data/vocab-cet4-ext-d-f.json?v=20260913g",
+      "file": "assets/data/vocab-cet4-ext-d-f.json?v=20260914f",
       "range": "d-f",
       "count": 281
     },
     {
-      "file": "assets/data/vocab-cet4-ext-g-i.json?v=20260913g",
+      "file": "assets/data/vocab-cet4-ext-g-i.json?v=20260914f",
       "range": "g-i",
       "count": 284
     },
     {
-      "file": "assets/data/vocab-cet4-ext-j-l.json?v=20260913g",
+      "file": "assets/data/vocab-cet4-ext-j-l.json?v=20260914f",
       "range": "j-l",
       "count": 110
     },
     {
-      "file": "assets/data/vocab-cet4-ext-m-o.json?v=20260913g",
+      "file": "assets/data/vocab-cet4-ext-m-o.json?v=20260914f",
       "range": "m-o",
       "count": 306
     },
     {
-      "file": "assets/data/vocab-cet4-ext-p-r.json?v=20260913g",
+      "file": "assets/data/vocab-cet4-ext-p-r.json?v=20260914f",
       "range": "p-r",
       "count": 326
     },
     {
-      "file": "assets/data/vocab-cet4-ext-s-u.json?v=20260913g",
+      "file": "assets/data/vocab-cet4-ext-s-u.json?v=20260914f",
       "range": "s-u",
       "count": 418
     },
     {
-      "file": "assets/data/vocab-cet4-ext-v-z.json?v=20260913g",
+      "file": "assets/data/vocab-cet4-ext-v-z.json?v=20260914f",
       "range": "v-z",
       "count": 146
     }

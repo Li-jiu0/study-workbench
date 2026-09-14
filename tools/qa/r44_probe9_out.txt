@@ -1,0 +1,39 @@
+=== A. 当前 admin.py 是否已存在 ===
+-rw-rw-rw- 1 root root 14675 Sep 14 00:33 /opt/study-workbench/server/routers/admin.py
+
+=== B. main.py mtime + 是否 include admin router ===
+2026-09-13 23:53:43.193041300 +0800 2314
+16:from routers import (admin, ai, auth, chat, feedback, feedback_public, friends,
+32:# 需求01：确保管理员超级账号存在且 is_admin=1（幂等；密码走 ADMIN_PASSWORD 环境变量）
+33:admin.ensure_admin_user()
+51:app.include_router(admin.router)  # 需求01：管理员观察台（/api/admin/*，非管理员 403）
+
+=== C. 服务启动时间 / PID（判断是否被重启过）===
+Mon 2026-09-14 02:36:51 CST
+1120278
+
+=== D. 关键接口当前状态码 ===
+/api/health -> 200
+/api/admin/contact -> 401
+/api/admin/users -> 401
+/api/feedback/mine -> 401
+/api/chat/unread -> 401
+
+=== E. 各文件 is_admin / isAdmin 命中数（复验早轮结论）===
+  auth.py: 8
+  database.py: 8
+  users.py: 3
+  chat.py: 0
+
+=== F. 远端 OpenAPI 中 admin / feedback 路径 ===
+  ADMIN: /api/admin/contact,/api/admin/feedback,/api/admin/feedback/{feedback_id}/reply,/api/admin/online,/api/admin/overview,/api/admin/users,/api/admin/users/{user_id}
+  FEEDBACK: /api/admin/feedback,/api/admin/feedback/{feedback_id}/reply,/api/feedback,/api/feedback/mine,/api/feedbacks,/api/feedbacks/mine
+  TOTAL: 79
+=== 6. 生产 .env 中 ADMIN_PASSWORD 的 MD5（用于候选比对，不打印明文）===
+ADMIN_PASSWORD_MD5:bb21bbefc6cb6144dcd984af2a9f0366  <=> xingtu2026
+ADMIN_USERNAME_LEN:0
+ADMIN_PASSWORD_LEN:10
+
+STDERR:
+bash: line 41: C0_MD5_ce5dec5f7d5cda41bd625bd6a23bb9aa: command not found
+bash: line 42: C1_MD5_bb21bbefc6cb6144dcd984af2a9f0366: command not found
