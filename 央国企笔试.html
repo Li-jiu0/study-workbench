@@ -101,10 +101,12 @@
             <div class="feature-desc">五大题型40道精选题，每题配详细解析，错题自动收录</div>
             <span class="feature-badge tag-primary">完整版</span>
           </div>
-          <div class="feature-card" onclick="openMiniQuiz('exam-company')">
+          <!-- 【T10 A6 2026-09-14】企业定向库改独立页：原 openMiniQuiz('exam-company') 弹窗已升级为 企业定向库.html
+               旧数据在 assets/mini-exam.js 一行未删，回滚只需把 onclick 改回 openMiniQuiz('exam-company') -->
+          <div class="feature-card" onclick="location.href=encodeURI('企业定向库.html')">
             <div class="feature-icon"><span class="nav-icon" data-icon="package" data-icon-size="20"></span></div>
             <div class="feature-title">企业定向库</div>
-            <div class="feature-desc">目标企业企业文化、最新动态、历年笔试形式</div>
+            <div class="feature-desc">8 类 · 企业名片 / 笔试考情 / 考点自测，含考情与自测</div>
           </div>
           <div class="feature-card" onclick="openHotNewsPanel()">
             <div class="feature-icon"><span class="nav-icon" data-icon="fire" data-icon-size="20"></span></div>
