@@ -104,8 +104,8 @@
         window.setTimeout(function () { t.className = 'toast'; }, 2200);
         return;
       }
-    } catch (e) { /* 忽略，最后回退 alert */ }
-    window.alert(msg);
+    } catch (e) { /* 忽略，最后回退 xtToast */ }
+    if (typeof window.xtToast === 'function') { try { window.xtToast('info', msg); } catch (e2) { /* 忽略 */ } }
   }
 
   /**

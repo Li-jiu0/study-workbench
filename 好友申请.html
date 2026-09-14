@@ -4,8 +4,11 @@
 <meta charset="UTF-8" data-page-node-id="Dm3mxT6LpVN8XXkKxiV3Zr">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="EX5g2ip0isH3SdQKFF3fnn">
 <title>加好友 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260914f" data-page-node-id="c7p5rq1mDkvvJq2cCDe855">
+<link rel="stylesheet" href="assets/common.css?v=20260915c" data-page-node-id="c7p5rq1mDkvvJq2cCDe855">
 <style>
+  /* common.css 会锁 html/body 高度并隐藏滚动，本页为独立长页面（好友申请列表），恢复滚动 */
+  html{height:auto;overflow:auto}
+  body{height:auto;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch}
   body{margin:0;background:var(--bg);font-family:inherit;min-height:100vh}
   .af-wrap{max-width:560px;margin:0 auto;padding:16px}
   .af-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
@@ -59,7 +62,7 @@
   </div>
 </div>
 
-<script src="assets/config.js?v=20260913a"></script>
+<script src="assets/config.js?v=20260915c"></script>
 <script>
 (function () {
   'use strict';
@@ -150,11 +153,15 @@
   window.afOpenChat = function (uid) {
     location.href = '私聊.html?uid=' + uid;
   };
+  /* 全站禁用原生 confirm：改走 app.js 的 uiConfirm（轻量页内确认层）。删除好友的正式入口在对方公开主页（api.js renderUserHome）。 */
   window.afRemoveFriend = function (uid) {
-    if (!confirm('确定删除该好友吗？\n删除后双方互不可见，且无法继续私聊。')) return;
-    req('/api/friends/' + uid, { method: 'DELETE' })
-      .then(function () { toast('🗑 已删除好友，可重新添加'); doSearch(); })
-      .catch(function (e) { toast('⚠️ ' + e.message); });
+    if (typeof window.uiConfirm !== 'function') { toast('页面还在加载，请稍后再试'); return; }
+    window.uiConfirm('确定删除该好友吗？\n删除后双方互不可见，且无法继续私聊。', '删除').then(function (ok) {
+      if (!ok) return;
+      req('/api/friends/' + uid, { method: 'DELETE' })
+        .then(function () { toast('已删除好友，可重新添加'); doSearch(); })
+        .catch(function (e) { toast('操作失败：' + e.message); });
+    });
   };
 
   loadRequests();

@@ -76,7 +76,7 @@
       return;
     }
     var cat = BANK[id];
-    if (!cat) { if (window.showToast) window.showToast('内容加载中，请稍后再试'); else alert('内容加载中'); return; }
+    if (!cat) { if (window.showToast) window.showToast('内容加载中，请稍后再试'); return; }
     var qs = cat.mode === 'info' ? null : rand(cat.q || []);
     S = { id: id, cat: cat, qs: qs, i: 0, right: 0, infoIdx: 0, container: containerId || null };
     renderShell();

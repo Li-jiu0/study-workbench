@@ -141,7 +141,7 @@
   // + news/longconv/passage 三个题型）；ext JSON 按 key 合并，已存在 key 不覆盖（与 T06/T08 同策略）。
   function loadListeningExt() {
     try {
-      fetch('assets/data/listening-ext.json?v=20260914f').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      fetch('assets/data/listening-ext.json?v=20260915b').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
         if (!j || !j.scenes || typeof SCENES === 'undefined' || !SCENES) return;
         var added = 0;
         Object.keys(j.scenes).forEach(function (k) {
@@ -177,6 +177,7 @@
       '.vp-card{background:var(--card);color:var(--text);width:100%;max-width:560px;border-radius:var(--radius);padding:26px 22px;text-align:center;min-height:180px;display:flex;flex-direction:column;justify-content:center;box-shadow:var(--shadow);border:1px solid var(--border)}' +
       '.vp-en{font-size:24px;font-weight:800;line-height:1.5}' +
       '.vp-en.blur{color:transparent;text-shadow:0 0 12px rgba(0,0,0,.18);user-select:none}' +
+      '.vp-en.playing{color:var(--primary)}' +
       '.vp-zh{font-size:15px;color:var(--text-secondary);margin-top:14px}' +
       '.vp-zh.hide{visibility:hidden}' +
       '.vp-ctl{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap}' +
@@ -244,12 +245,118 @@
     paintIcons();
     render();
   }
+  /* ============ P1 修复：Web Speech 安全播放层（2026-09-15） ============
+     背景：浏览器里点播放报「朗读服务暂不可用」，根因是 speakUtterance → netSpeak →
+     speakFallback 最终落到裸 Web Speech 调用，踩中 Chrome 三个经典坑：
+       ① getVoices() 首次返回空数组，未等 voiceschanged 就放弃；
+       ② 未指定 voice（voices 为空时合成被静默丢弃）；
+       ③ 未处理 paused 状态、未挂 onerror，失败无声无息。
+     本层在 voiceplayer 内自救，不改动 app.js 的 TTS 链路（避免与其它改动冲突）。
+     注意：禁用正则 lookbehind —— 旧版 Android WebView 会直接抛 SyntaxError。 */
+  var _vpVoicesOk = false, _vpPlaying = false;
+
+  function vpEnsureVoices(cb) {
+    var ss = window.speechSynthesis;
+    if (!ss) { cb(false); return; }
+    try { if (ss.getVoices && ss.getVoices().length) { _vpVoicesOk = true; cb(true); return; } } catch (e) {}
+    var done = false;
+    function fin() {
+      if (done) return;
+      done = true;
+      try { ss.removeEventListener('voiceschanged', fin); } catch (e) {}
+      _vpVoicesOk = true; cb(true);
+    }
+    try { ss.addEventListener('voiceschanged', fin); } catch (e) {}
+    setTimeout(fin, 500); // 超时兜底：拿不到 voices 也要尝试朗读
+  }
+
+  function vpPickVoice(lang) {
+    var ss = window.speechSynthesis;
+    if (!ss || !ss.getVoices) return null;
+    var vs = [], i, v;
+    try { vs = ss.getVoices() || []; } catch (e) { return null; }
+    var want = String(lang || '').toLowerCase();
+    for (i = 0; i < vs.length; i++) { v = vs[i]; if (v && v.lang && v.lang.toLowerCase() === want) return v; }
+    for (i = 0; i < vs.length; i++) { v = vs[i]; if (v && v.lang && v.lang.toLowerCase().indexOf(want.slice(0, 2)) === 0) return v; }
+    return null;
+  }
+
+  /* 长文本分句：Chrome 对单条 utterance 约 15 秒静默截断，超过阈值就切段顺序播放。
+     用逐字符扫描实现，不使用 lookbehind（兼容旧 WebView）。 */
+  function vpSplit(t) {
+    if (t.length <= 180) return [t];
+    var out = [], cur = '', i, c;
+    for (i = 0; i < t.length; i++) {
+      c = t.charAt(i); cur += c;
+      if ((c === '.' || c === '!' || c === '?' || c === '。' || c === '！' || c === '？') && cur.length > 60) { out.push(cur); cur = ''; }
+    }
+    if (cur.replace(/\s/g, '')) out.push(cur);
+    return out.length ? out : [t];
+  }
+
+  function vpSetPlaying(on) {
+    _vpPlaying = !!on;
+    var en = document.getElementById('vpEn');
+    if (en) { try { en.classList.toggle('playing', _vpPlaying); } catch (e) {} }
+    var b = document.getElementById('vpMask');
+    if (b) {
+      var btns = b.querySelectorAll('.vp-ctl button');
+      for (var i = 0; i < btns.length; i++) {
+        if (btns[i].getAttribute('onclick') && btns[i].getAttribute('onclick').indexOf('__play') >= 0) {
+          btns[i].textContent = _vpPlaying ? '停止' : '播放';
+        }
+      }
+    }
+  }
+  function vpIsPlaying() { return _vpPlaying; }
+  function vpStop() {
+    try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
+    vpSetPlaying(false);
+  }
+
+  function vpSpeakPieces(pieces, lang, rate, idx) {
+    if (idx >= pieces.length) { vpSetPlaying(false); return; }
+    var ss = window.speechSynthesis;
+    var u = new SpeechSynthesisUtterance(pieces[idx]);
+    u.lang = lang || 'en-US';
+    u.rate = Number(rate) > 0 ? Number(rate) : 0.9;
+    var v = vpPickVoice(u.lang); if (v) u.voice = v;
+    u.onend = function () { vpSpeakPieces(pieces, lang, rate, idx + 1); };
+    u.onerror = function (ev) {
+      vpSetPlaying(false);
+      var e = (ev && ev.error) || '';
+      if (e === 'not-allowed' || e === 'audio-busy') toast('被浏览器自动播放策略拦截，请再点一次播放');
+      else if (e === 'language-unavailable' || e === 'voice-unavailable') toast('系统缺少可用的英文语音，无法朗读');
+      else toast('朗读失败：' + (e || '未知原因'));
+    };
+    try { ss.speak(u); } catch (e) { vpSetPlaying(false); toast('朗读失败，请稍后重试'); }
+  }
+
+  function vpSafeSpeak(text, lang, rate) {
+    var t = String(text == null ? '' : text).trim();
+    if (!t) return false;
+    var ss = window.speechSynthesis;
+    if (!ss || typeof window.SpeechSynthesisUtterance !== 'function') { toast('当前浏览器不支持语音合成，无法朗读'); return false; }
+    vpEnsureVoices(function () {
+      try {
+        ss.cancel();
+        var pieces = vpSplit(t);
+        vpSetPlaying(true);
+        vpSpeakPieces(pieces, lang || 'en-US', rate, 0);
+        if (ss.paused) { try { ss.resume(); } catch (e) {} }
+      } catch (e) { vpSetPlaying(false); toast('朗读失败，请稍后重试'); }
+    });
+    return true;
+  }
+
   function play() {
     var it = SCENES[S.scene].lines[S.i];
-    if (typeof speakUtterance === 'function') speakUtterance(it.en, 'en-US');
+    // App 内保持既有链路（原生 TTS / netSpeak），浏览器内改走安全播放层
+    if (typeof isNativeApp === 'function') { try { if (isNativeApp() && typeof speakUtterance === 'function') { speakUtterance(it.en, 'en-US'); return; } } catch (e) {} }
+    vpSafeSpeak(it.en, 'en-US', 0.9);
   }
   window.openVoiceTrain = function (mode) { openVoice(mode); };
-  window.openVoiceTrain.__close = function () { try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {} var m = document.getElementById('vpMask'); if (m) m.remove(); S = null; if (window.closeAppModal) window.closeAppModal('vpMask'); };
+  window.openVoiceTrain.__close = function () { vpStop(); try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {} var m = document.getElementById('vpMask'); if (m) m.remove(); S = null; if (window.closeAppModal) window.closeAppModal('vpMask'); };
   window.openVoiceTrain.__mode = function (mo) {
     if (!S || !mo) return;
     S.mode = mo; S.showEn = (mo === 'speak'); S.i = 0;
@@ -269,24 +376,26 @@
     if (S.i < SCENES[S.scene].lines.length - 1) { S.i++; render(); }
     else { toast('本情景完成！换个情景再练吧'); }
   };
-  window.openVoiceTrain.__play = function () { play(); };
+  // 播放/停止同一按钮：朗读中再点一次即停止，并复位按钮与高亮
+  window.openVoiceTrain.__play = function () { if (vpIsPlaying()) { vpStop(); return; } play(); };
   window.openVoiceTrain.__slow = function () {
     if (!S) return;
     S.slow = !S.slow;
     toast(S.slow ? '慢速播放' : '正常语速');
     var it = SCENES[S.scene].lines[S.i];
-    if (typeof netSpeak === 'function' && typeof isNativeApp === 'function' && isNativeApp() && netSpeak(it.en, 'en-US', 0.7, null)) return;  // App 内网络 TTS 慢速（playbackRate）
-    if (typeof nativeSpeak === 'function' && nativeSpeak(it.en, 'en-US', 0.7)) return;  // Android App 原生 TTS 慢速
-    if (typeof window.speakUtterance === 'function' && typeof window.__speakRate === 'undefined') {
-      // 用临时慢速
+    // App 内：保持既有原生/网络 TTS 慢速链路
+    if (typeof isNativeApp === 'function') {
       try {
-        window.speechSynthesis.cancel();
-        var u = new SpeechSynthesisUtterance(it.en);
-        u.lang = 'en-US'; u.rate = 0.7;
-        window.speechSynthesis.speak(u);
-      } catch (e) { }
-    } else if (typeof speakUtterance === 'function') speakUtterance(it.en, 'en-US');
+        if (isNativeApp()) {
+          if (typeof netSpeak === 'function' && netSpeak(it.en, 'en-US', 0.7, null)) return;
+          if (typeof nativeSpeak === 'function' && nativeSpeak(it.en, 'en-US', 0.7)) return;
+        }
+      } catch (e) {}
+    }
+    // 浏览器内：走安全播放层（替代原先裸 speechSynthesis.speak，那段会因 voices 未就绪静默失败）
+    vpSafeSpeak(it.en, 'en-US', 0.7);
   };
+  window.openVoiceTrain.__stop = function () { vpStop(); };
   window.openVoiceTrain.__en = function () { if (!S) return; S.showEn = !S.showEn; render(); };
   window.openVoiceTrain.__zh = function () { if (!S) return; S.showZh = !S.showZh; render(); };
   window.openVoiceTrain.__rec = function () {

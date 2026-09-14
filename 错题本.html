@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>错题本 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260914f">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913o">
-<link rel="stylesheet" href="assets/states.css?v=20260913o">
-<link rel="stylesheet" href="assets/polish.css?v=20260913o">
+<link rel="stylesheet" href="assets/common.css?v=20260915c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260915c">
+<link rel="stylesheet" href="assets/states.css?v=20260915c">
+<link rel="stylesheet" href="assets/polish.css?v=20260915c">
 </head>
 <body class="theme-home">
 
@@ -31,6 +31,9 @@
       </div>
       <div class="nav-item" data-page="exam">
         <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span>
+      </div>
+      <div class="nav-item" onclick="location.href='申论刷题.html'" title="申论刷题（题目精练 / 阅读积累）">
+        <span class="nav-icon" data-icon="file-text"></span><span>申论刷题</span>
       </div>
       <div class="nav-item" data-page="comm">
         <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span>
@@ -89,6 +92,18 @@
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
       <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="16"></span></div>
     </header>
+<style>
+/* 错题本·题型分类筛选条（页面级样式，避免改动全站 common.css） */
+.wb-filter{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px;padding:0 2px}
+.wb-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--border);
+  border-radius:999px;background:var(--card);color:var(--text-secondary);font-size:13px;line-height:1.2;
+  cursor:pointer;transition:all .15s ease;user-select:none;white-space:nowrap}
+.wb-chip:hover{border-color:var(--primary);color:var(--primary)}
+.wb-chip.active{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:600}
+.wb-chip .wb-n{display:inline-block;min-width:18px;padding:0 5px;border-radius:9px;font-size:12px;
+  background:var(--bg-secondary,rgba(0,0,0,.06));color:inherit;text-align:center}
+.wb-chip.active .wb-n{background:rgba(255,255,255,.25)}
+</style>
 <div class="page active" id="page-wrong-book">
       <div class="card">
         <div class="card-header">
@@ -98,6 +113,7 @@
             <button class="btn btn-outline btn-sm" style="margin-left:8px" onclick="clearWrongBook()">清空</button>
           </div>
         </div>
+        <div id="wrongTypeFilter" class="wb-filter"></div>
         <div id="wrongList" style="display:flex;flex-direction:column;gap:12px"></div>
         <div id="wrongEmpty" class="coming-soon" style="display:none">
           <div class="cs-icon" data-icon="pen"></div>
@@ -219,11 +235,11 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913o" defer></script>
-<script src="assets/xt-toast.js?v=20260913o" defer></script>
-<script src="assets/error-boundary.js?v=20260913o" defer></script>
-<script src="assets/app.js?v=20260914f" defer></script>
-<script src="assets/config.js?v=20260913o" defer></script>
-<script src="assets/api.js?v=20260913o" defer></script>
+<script src="assets/icon-map.js?v=20260915c" defer></script>
+<script src="assets/xt-toast.js?v=20260915c" defer></script>
+<script src="assets/error-boundary.js?v=20260915c" defer></script>
+<script src="assets/app.js?v=20260915c" defer></script>
+<script src="assets/config.js?v=20260915c" defer></script>
+<script src="assets/api.js?v=20260915c" defer></script>
 </body>
 </html>

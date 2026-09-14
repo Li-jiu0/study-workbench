@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>PPT训练 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260914f">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913o">
-<link rel="stylesheet" href="assets/states.css?v=20260913o">
-<link rel="stylesheet" href="assets/polish.css?v=20260913o">
+<link rel="stylesheet" href="assets/common.css?v=20260915c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260915c">
+<link rel="stylesheet" href="assets/states.css?v=20260915c">
+<link rel="stylesheet" href="assets/polish.css?v=20260915c">
 <style>
   /* ==================== K4：设计基础/实战模板库/技巧提升 → 页面内全屏视图（本页局部样式，20260913K） ====================
      原为 mini.js 生成的居中 modal（.mz-mask 弹窗），现改造为页面内全屏面板：
@@ -75,7 +75,10 @@
 <body class="theme-ppt">
 
 <div class="app">
-<nav class="sidebar"> <div class="logo"> <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div> <div> <div class="logo-text">星途</div> <div class="logo-sub">致追梦的人->修身</div> </div> </div> <div class="nav-list"> <div class="nav-item" data-page="home"> <span class="nav-icon" data-icon="home"></span><span>首页</span> </div> <div class="nav-section">学习模块</div> <div class="nav-item" data-page="cet"> <span class="nav-icon" data-icon="book-open"></span><span>四级备考</span> </div> <div class="nav-item" data-page="exam"> <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span> </div> <div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span> </div> <div class="nav-item active" data-page="ppt"> <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon" data-icon="globe"></span><span>广场</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="book"></span><span>错题本</span> </div> <div class="nav-item" data-page="profile"> <span class="nav-icon" data-icon="user"></span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon" data-icon="settings"></span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak"><span class="nav-icon" data-icon="fire" data-icon-size="12"></span> 连续打卡 0 天</div> </div> </div> </div> </nav>
+<nav class="sidebar"> <div class="logo"> <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div> <div> <div class="logo-text">星途</div> <div class="logo-sub">致追梦的人->修身</div> </div> </div> <div class="nav-list"> <div class="nav-item" data-page="home"> <span class="nav-icon" data-icon="home"></span><span>首页</span> </div> <div class="nav-section">学习模块</div> <div class="nav-item" data-page="cet"> <span class="nav-icon" data-icon="book-open"></span><span>四级备考</span> </div> <div class="nav-item" data-page="exam"> <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span> </div>
+      <div class="nav-item" onclick="location.href='申论刷题.html'" title="申论刷题（题目精练 / 阅读积累）">
+        <span class="nav-icon" data-icon="file-text"></span><span>申论刷题</span>
+      </div> <div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span> </div> <div class="nav-item active" data-page="ppt"> <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon" data-icon="globe"></span><span>广场</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="book"></span><span>错题本</span> </div> <div class="nav-item" data-page="profile"> <span class="nav-icon" data-icon="user"></span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon" data-icon="settings"></span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak"><span class="nav-icon" data-icon="fire" data-icon-size="12"></span> 连续打卡 0 天</div> </div> </div> </div> </nav>
 
   <div class="main">
 <header class="topbar">
@@ -208,7 +211,7 @@
           <div class="feature-card" onclick="openPptPanel('ppt-tips')">
             <div class="feature-icon" data-icon="zap"></div>
             <div class="feature-title">技巧提升</div>
-            <div class="feature-desc">快捷键提效、对齐三件套、图片处理、动画克制、演示衔接五个专题，每个专题配套练习</div>
+            <div class="feature-desc">快捷键提效、对齐三件套、图片处理、动画克制、演示衔接 5 个专题速览，配 13 道带解析练习与 6 项实战任务</div>
           </div>
         </div>
       </div>
@@ -224,7 +227,7 @@
       <div class="card ppt-view-card">
         <div class="card-header">
           <div class="card-title"><span class="title-icon" id="pptPanelIcon"></span><span id="pptPanelTitle">PPT 训练</span></div>
-          <span class="tag tag-primary" id="pptPanelTag">知识卡片</span>
+          <span class="tag tag-primary" id="pptPanelTag">内容合集</span>
         </div>
         <div class="ppt-view-desc" id="pptPanelDesc"></div>
         <div class="ppt-view-slot" id="pptPanelSlot"></div>
@@ -368,14 +371,14 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913o" defer></script>
-<script src="assets/xt-toast.js?v=20260913o" defer></script>
-<script src="assets/error-boundary.js?v=20260913o" defer></script>
-<script src="assets/app.js?v=20260914f" defer></script>
-<script src="assets/config.js?v=20260913o" defer></script>
-<script src="assets/api.js?v=20260913o" defer></script>
+<script src="assets/icon-map.js?v=20260915c" defer></script>
+<script src="assets/xt-toast.js?v=20260915c" defer></script>
+<script src="assets/error-boundary.js?v=20260915c" defer></script>
+<script src="assets/app.js?v=20260915c" defer></script>
+<script src="assets/config.js?v=20260915c" defer></script>
+<script src="assets/api.js?v=20260915c" defer></script>
 
-<script src="assets/mini-ppt.js?v=20260913o" defer></script>
+<script src="assets/mini-ppt.js?v=20260915c" defer></script>
 <!-- ===== R48 第 1 批新 JS（T00 一次性预埋，之后冻结；宿主 HTML 不再改动） =====
      说明：本页只保留 PPT 相关内容资产（A7 模板库 / B2 设计课堂）所需脚本，共 5 个：
        xt-content.js（共用契约基建，必须最先）→ data-ppt-templates.js → tpl-preview.js
@@ -383,22 +386,22 @@
      A6 企业定向库专用的 company-lib.js / data-exam-company.js 由 企业定向库.html 自行引入，
      本页不引用（QA 清理后已从 7 个收敛到 5 个，勿再加回）。
      顺序铁律：xt-content.js 必须在所有 data-*.js / 业务 js 之前。 -->
-<script src="assets/xt-content.js?v=20260914f" defer></script>
-<script src="assets/data-ppt-templates.js?v=20260914e" defer></script>
-<script src="assets/tpl-preview.js?v=20260914e" defer></script>
-<script src="assets/data-ppt-class.js?v=20260914e" defer></script>
-<script src="assets/design-class.js?v=20260914e" defer></script>
+<script src="assets/xt-content.js?v=20260915c" defer></script>
+<script src="assets/data-ppt-templates.js?v=20260915c" defer></script>
+<script src="assets/tpl-preview.js?v=20260915c" defer></script>
+<script src="assets/data-ppt-class.js?v=20260915c" defer></script>
+<script src="assets/design-class.js?v=20260915c" defer></script>
 <!-- ===== R48 第 3 批（B1 PPT·技巧提升「做真内容」） =====
      顺序铁律：data-ppt-tips.js 必须在 assets/mini-ppt.js **之后**（ADR-1 后置覆盖同名 key），
      xt-content.js 已在上方先加载。回滚只需删除下面两个 script 标签。 -->
-<script src="assets/data-ppt-tips.js?v=20260914e" defer></script>
-<script src="assets/ppt-tips.js?v=20260914e" defer></script>
+<script src="assets/data-ppt-tips.js?v=20260915c" defer></script>
+<script src="assets/ppt-tips.js?v=20260915c" defer></script>
 <!-- ===== R58（20260914e）· PPT·作品集 P0+P1 =====
      顺序铁律：必须在 xt-content.js 之后（依赖 XTC.storage / XTC.icon）；
      与 ppt-tips.js 同级，幂等注册 window.PPTV2['ppt-works']，不改本页 HTML 结构。回滚只需删掉本行。 -->
-<script src="assets/ppt-works.js?v=20260914f" defer></script>
-<script src="assets/mini.js?v=20260913o" defer></script>
-<script src="assets/study-stats.js?v=20260913o" defer></script>
+<script src="assets/ppt-works.js?v=20260915c" defer></script>
+<script src="assets/mini.js?v=20260915c" defer></script>
+<script src="assets/study-stats.js?v=20260915c" defer></script>
 <script>
 /* ==================== T7 增量（P0-8/P0-13）：统计卡 + 作品集 ====================
    【20260913K】原三关卡闯关卡（含进度持久化 localStorage 键）已随卡片下线删除，无死引用。 */

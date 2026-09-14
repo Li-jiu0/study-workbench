@@ -24,6 +24,8 @@
        - window.currentChatUserId：当前打开的会话对象 userId（私聊=对方 serverId；群聊/无会话=null）
        - window.__xtChatTransportActive：本页已持有聊天轮询（HTTP），app.js 看到 true 就不要再另开轮询
        - window.xtNotifyMessage(msg)：入站消息通知（msg = {peerId,nickname,avatar,preview,count}）
+         —— 2026-09-15 批次八起，本页不再转发它，改由本文件的 imTopNotify 渲染顶端通知条（见下方）；
+            该钩子继续供 app.js 在其它页面使用，本文件只是不再调用。
        - window.xtSetUnread(n)：未读总数变化
      容错铁律：app.js 尚未落地 / 加载失败 / 抛异常，一律静默跳过，绝不影响本页聊天。 */
   function xtSetChatUser(uid) {
@@ -32,12 +34,164 @@
   function xtTransport(active) {
     try { window.__xtChatTransportActive = !!active; } catch (e) { /* 同上 */ }
   }
-  function xtNotify(msg) {
-    try { if (typeof window.xtNotifyMessage === 'function') window.xtNotifyMessage(msg); } catch (e) { /* 通知失败不打断聊天 */ }
-  }
+  /* 2026-09-15 批次八（notify-fix1）：本页改由自己渲染「页面顶端通知条」（见下方 imTopNotify）。
+     不再转发 window.xtNotifyMessage，原因：① 那是右上角堆叠小卡片，不是用户要的顶端横条；
+     ② 它只读 text/content/last，读不到本文件抛的 preview 字段 → 内容摘要恒为空，看着就像没弹；
+     ③ 本页置了 __xtChatTransportActive=true，app.js 那条 8s 轮询在本页根本不启动，转发只会导致
+        同一条消息在本页弹两次。app.js 那份继续服务其它页面（该文件未改动）。 */
+  function xtNotify(msg) { imTopNotify(msg); }
   function xtUnread(n) {
     try { if (typeof window.xtSetUnread === 'function') window.xtSetUnread(Number(n) || 0); } catch (e) { /* 同上 */ }
   }
+
+  /* ==================== 2026-09-15 批次八：页面顶端入站消息通知条（微信式） ====================
+     用户反馈「收消息没有微信式页面顶端弹窗提醒」。落地形态：
+       - fixed 顶部居中横条：圆形头像 + 昵称 + 内容摘要（最多 2 行省略）+ 关闭按钮；
+       - 点击直达该会话（复用 imOpenChatWithUser）；关闭按钮 / 向上向下滑动可关；4 秒自动消失；
+       - 同一会话连发 → 原地合并计数并续命，不同会话最多同时 2 条、其余排队（不叠成一堆）。
+     ADR-3 合规：轻交互浮层，容器 pointer-events:none 只让横条本身可点，**无全屏遮罩**。
+     样式随脚本注入（与 R51/R55 同一处 style 注入），变量全部复用 common.css，不新增依赖。 */
+  var TN_MAX = 2;      // 同屏最多 2 条
+  var TN_MS = 4000;    // 自动消失
+  var TN_SWIPE_PX = 24;
+  var tnWrap = null, tnLive = [], tnQueue = [];
+
+  function tnEnsureWrap() {
+    if (tnWrap && tnWrap.parentNode) return tnWrap;
+    tnWrap = document.getElementById('imTopNotifyWrap');
+    if (!tnWrap) {
+      tnWrap = document.createElement('div');
+      tnWrap.id = 'imTopNotifyWrap';
+      tnWrap.className = 'im-tn-wrap';
+      document.body.appendChild(tnWrap);
+    }
+    return tnWrap;
+  }
+
+  function tnDrain() {
+    while (tnLive.length < TN_MAX && tnQueue.length) tnMount(tnQueue.shift());
+  }
+
+  function tnSchedule(item) {
+    if (item.timer) { clearTimeout(item.timer); item.timer = null; }
+    item.startedAt = Date.now();
+    item.timer = setTimeout(function () { tnClose(item); }, item.remaining);
+  }
+
+  function tnClose(item) {
+    if (!item || item.closed) return;
+    item.closed = true;
+    if (item.timer) { clearTimeout(item.timer); item.timer = null; }
+    var i = tnLive.indexOf(item);
+    if (i >= 0) tnLive.splice(i, 1);
+    if (item.el) {
+      var el = item.el;
+      el.classList.remove('show');
+      setTimeout(function () { if (el && el.parentNode) el.parentNode.removeChild(el); }, 280);
+    }
+    tnDrain();
+  }
+
+  function tnOpenPeer(item) {
+    var uid = Number(item.peerId);
+    if (!uid) return;
+    try {
+      if (typeof window.imOpenChatWithUser === 'function') { window.imOpenChatWithUser(uid, item.name, item.avatar); return; }
+    } catch (e) { /* 落到下面的兜底 */ }
+    if (typeof window.imOpenChat === 'function') window.imOpenChat(10000 + uid);
+  }
+
+  function tnMount(item) {
+    var host = tnEnsureWrap();
+    var el = document.createElement('div');
+    el.className = 'im-tn';
+    el.setAttribute('role', 'alert');
+    el.innerHTML =
+      '<span class="im-tn-av"></span>' +
+      '<span class="im-tn-body">' +
+        '<span class="im-tn-name"></span>' +
+        '<span class="im-tn-text"></span>' +
+      '</span>' +
+      '<span class="im-tn-close" title="关闭" aria-label="关闭">✕</span>';
+    el.querySelector('.im-tn-av').innerHTML = renderAvatar(item.avatar, item.name);
+    el.querySelector('.im-tn-name').textContent = item.name;
+    el.querySelector('.im-tn-text').textContent = item.text;
+    host.appendChild(el);
+    item.el = el;
+    tnLive.push(item);
+
+    // 下一帧加 .show 触发下滑 + 淡入
+    if (window.requestAnimationFrame) window.requestAnimationFrame(function () {
+      window.requestAnimationFrame(function () { el.classList.add('show'); });
+    });
+    else setTimeout(function () { el.classList.add('show'); }, 16);
+
+    // 悬停暂停倒计时，移出按剩余时间续命
+    el.addEventListener('mouseenter', function () {
+      if (item.timer) { clearTimeout(item.timer); item.timer = null; }
+      item.remaining -= Math.max(0, Date.now() - (item.startedAt || Date.now()));
+    });
+    el.addEventListener('mouseleave', function () { if (!item.closed) tnSchedule(item); });
+
+    el.querySelector('.im-tn-close').addEventListener('click', function (e) {
+      e.stopPropagation();
+      tnClose(item);
+    });
+    el.addEventListener('click', function () {
+      tnClose(item);
+      tnOpenPeer(item);
+    });
+
+    // 向上 / 向下滑动关闭（移动端微信同款手势）
+    var sy = 0, tracking = false;
+    el.addEventListener('touchstart', function (e) {
+      var t = e.touches && e.touches[0];
+      if (!t) return;
+      sy = t.clientY; tracking = true;
+    }, { passive: true });
+    el.addEventListener('touchmove', function (e) {
+      if (!tracking) return;
+      var t = e.touches && e.touches[0];
+      if (!t) return;
+      if (Math.abs(t.clientY - sy) >= TN_SWIPE_PX) { tracking = false; tnClose(item); }
+    }, { passive: true });
+    el.addEventListener('touchend', function () { tracking = false; });
+
+    item.remaining = TN_MS;
+    tnSchedule(item);
+  }
+
+  /** 弹一条顶端通知。msg: {peerId, nickname, avatar, preview, count}
+      非当前会话才弹；同会话已在屏则合并计数并续命；超出同屏上限排队。 */
+  function imTopNotify(msg) {
+    try {
+      msg = msg || {};
+      var peerId = msg.peerId != null ? msg.peerId : msg.senderId;
+      if (peerId == null) return;
+      if (window.currentChatUserId != null && String(peerId) === String(window.currentChatUserId)) return; // 正在跟对方聊：不打扰
+      var name = msg.nickname || msg.senderName || msg.name || ('用户' + peerId);
+      var raw = msg.preview != null ? msg.preview : (msg.text != null ? msg.text : (msg.content != null ? msg.content : (msg.last || '')));
+      var text = String(raw).slice(0, 140);
+      var count = Number(msg.count) || 1;
+      // 合并：同一会话连发多条 → 原地更新摘要 + 计数，并续命（不叠成一堆）
+      for (var i = 0; i < tnLive.length; i++) {
+        if (String(tnLive[i].peerId) === String(peerId)) {
+          var it = tnLive[i];
+          it.text = text;
+          it.count += count;
+          it.remaining = TN_MS;
+          var tx = it.el && it.el.querySelector('.im-tn-text');
+          if (tx) tx.textContent = (it.count > 1 ? '[' + it.count + '条] ' : '') + text;
+          tnSchedule(it);
+          return;
+        }
+      }
+      var item = { peerId: peerId, name: name, avatar: msg.avatar || '', text: text, count: count, remaining: TN_MS };
+      if (tnLive.length < TN_MAX) tnMount(item);
+      else tnQueue.push(item);
+    } catch (e) { /* 通知失败不打断聊天 */ }
+  }
+  window.imTopNotify = imTopNotify;
 
   // 渲染头像：如果是URL就用img，否则用emoji/文字
   function renderAvatar(avatar, nickname) {
@@ -290,6 +444,154 @@
     return { chats: {}, messages: {} };
   }
   function saveData(data) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) { } }
+
+  /* ==================== 批次八（2026-09-15）：消息撤回 ====================
+     约束与说明：
+       - 仅本人发出的私聊消息可撤回；2 分钟时限；轻量确认气泡（非全屏 modal，符合 ADR-3）。
+       - 撤回采用「持久化撤回集合」+「占位记录」双保险：
+         data.recalled[threadKey][msgId]=1 保证跨刷新 / 跨轮询仍隐藏；
+         data.messages 内对应消息标记 recalled:true 占位，时间线不塌。
+       - 本地 / AI 好友消息完全本地生效；服务器好友消息因后端无撤回接口，仅本端隐藏，
+         不会同步到对方 / 服务端（详见交付说明）。 */
+  var RECALL_MS = 2 * 60 * 1000;
+
+  function genMsgId() {
+    return 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
+  function imThreadKey() {
+    if (S.group) return 'g' + S.group.id;
+    if (S.peer) return String(S.peer.id);
+    return '';
+  }
+
+  function imIsRecalled(key, id) {
+    if (!key || id == null) return false;
+    var data = loadData();
+    return !!(data.recalled && data.recalled[key] && data.recalled[key][String(id)]);
+  }
+
+  function imMarkRecalled(key, id) {
+    var data = loadData();
+    if (!data.recalled) data.recalled = {};
+    if (!data.recalled[key]) data.recalled[key] = {};
+    data.recalled[key][String(id)] = 1;
+    saveData(data);
+  }
+
+  /* 每条消息气泡带上定位属性 data-msg-id（稳定唯一 id）/ data-self（是否自己发的）；
+     自己发的消息挂载长按撤回手势（移动端真机场景）。 */
+  function imMsgAttrs(m, isMe) {
+    var a = ' data-msg-id="' + esc(m.id) + '" data-self="' + (isMe ? '1' : '0') + '"';
+    if (isMe && !S.group) {
+      a += ' ontouchstart="imRecallPressStart(\'' + esc(m.id) + '\',event)" ontouchend="imRecallPressEnd()" ontouchmove="imRecallPressEnd()"';
+    }
+    return a;
+  }
+
+  /* 撤回入口：仅本人 2 分钟内的私聊消息显示（桌面 hover、移动长按共用此入口） */
+  function imRecallEntryHtml(m) {
+    if (m.senderId !== S.myId || S.group) return '';
+    if ((Date.now() - (m.time || 0)) > RECALL_MS) return '';
+    return '<div class="im-recall-btn" onclick="imAskRecall(\'' + esc(m.id) + '\')">撤回</div>';
+  }
+
+  var _recallPress = null;
+  window.imRecallPressStart = function (id, e) {
+    if (_recallPress) clearTimeout(_recallPress);
+    _recallPress = setTimeout(function () {
+      _recallPress = null;
+      window.__imRecallHandled = Date.now();
+      imAskRecall(id);
+    }, 500);
+  };
+  window.imRecallPressEnd = function () {
+    if (_recallPress) { clearTimeout(_recallPress); _recallPress = null; }
+  };
+
+  window.imCloseRecallConfirm = function () {
+    var el = document.getElementById('imRecallConfirm');
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+  };
+
+  /* 轻量确认气泡（非全屏 modal，符合 ADR-3）："确定撤回这条消息？[取消][撤回]" */
+  window.imAskRecall = function (id) {
+    var msg = (S.msgs || []).find(function (m) { return String(m.id) === String(id); });
+    if (!msg || msg.senderId !== S.myId) return;
+    if ((Date.now() - (msg.time || 0)) > RECALL_MS) { toast('消息已超过 2 分钟，无法撤回'); return; }
+    if (imIsRecalled(imThreadKey(), id)) return;
+    imCloseRecallConfirm();
+    var box = document.createElement('div');
+    box.id = 'imRecallConfirm';
+    box.className = 'im-recall-confirm';
+    box.innerHTML = '<div class="im-rc-txt">确定撤回这条消息？</div>' +
+      '<div class="im-rc-btns"><button class="im-rc-cancel" onclick="imCloseRecallConfirm()">取消</button>' +
+      '<button class="im-rc-ok" onclick="imDoRecall(\'' + esc(id) + '\')">撤回</button></div>';
+    document.body.appendChild(box);
+    var el = document.querySelector('[data-msg-id="' + String(id).replace(/"/g, '\\"') + '"]');
+    if (el) {
+      var r = el.getBoundingClientRect();
+      var bw = box.offsetWidth || 200;
+      var bh = box.offsetHeight || 70;
+      var left = Math.max(8, Math.min(window.innerWidth - bw - 8, r.left + r.width / 2 - bw / 2));
+      var top = r.top - bh - 8;
+      if (top < 8) top = r.bottom + 8;
+      box.style.left = left + 'px';
+      box.style.top = top + 'px';
+    } else {
+      box.style.left = '50%';
+      box.style.top = '50%';
+      box.style.transform = 'translate(-50%,-50%)';
+    }
+    // 点击气泡外部关闭
+    setTimeout(function () {
+      var docClose = function (ev) {
+        var c = document.getElementById('imRecallConfirm');
+        if (!c) { document.removeEventListener('click', docClose, true); return; }
+        if (!c.contains(ev.target)) { imCloseRecallConfirm(); document.removeEventListener('click', docClose, true); }
+      };
+      document.addEventListener('click', docClose, true);
+    }, 0);
+  };
+
+  /* 执行撤回：校验归属 + 2 分钟，标记撤回集合与本地占位，重渲染当前会话与会话列表 */
+  window.imDoRecall = function (id) {
+    imCloseRecallConfirm();
+    var key = imThreadKey();
+    var msg = (S.msgs || []).find(function (m) { return String(m.id) === String(id); });
+    if (!msg || msg.senderId !== S.myId) return;
+    if ((Date.now() - (msg.time || 0)) > RECALL_MS) { toast('消息已超过 2 分钟，无法撤回'); return; }
+    if (imIsRecalled(key, id)) return;
+    imMarkRecalled(key, id);
+    // 本地存储内对应消息标记占位（时间线不塌），并刷新会话列表预览
+    var data = loadData();
+    var pid = S.peer ? S.peer.id : null;
+    var rset = (data.recalled && data.recalled[key]) || {};
+    if (pid != null && data.messages && data.messages[pid]) {
+      /* 占位标记：S.msgs 是 data.messages[pid] 按下标一一映射的视图（本地消息载入时 id 会被重排
+         为下标+1），故按下标 / 按 id / 按撤回集合三路命中，避免 id 重排后占位与预览刷新失效。 */
+      var hitIdx = -1;
+      (S.msgs || []).forEach(function (m, i) { if (String(m.id) === String(id)) hitIdx = i; });
+      var hidden = [];
+      (data.messages[pid] || []).forEach(function (m2, i) {
+        var hit = (i === hitIdx) || String(m2.id) === String(id) || !!rset[String(m2.id)];
+        if (hit) { m2.recalled = true; if (m2.content != null) m2.content = ''; }
+        hidden[i] = hit;
+      });
+      if (data.chats && data.chats[pid]) {
+        var arr = data.messages[pid] || [];
+        var lastReal = null;
+        for (var i = arr.length - 1; i >= 0; i--) { if (!hidden[i]) { lastReal = arr[i]; break; } }
+        data.chats[pid].last = lastReal
+          ? (lastReal.kind === 'image' ? '[图片]' : (lastReal.kind === 'voice' ? '[语音]' : (lastReal.content || '')))
+          : '你撤回了一条消息';
+      }
+    }
+    saveData(data);
+    S.msgs.forEach(function (m3) { if (String(m3.id) === String(id)) m3.recalled = true; });
+    renderMsgs();
+    loadChats();
+  };
   function getFriend(id) {
     var all = getActiveAiFriends();
     var f = all.find(function (x) { return x.id === id; });
@@ -1039,13 +1341,15 @@
   window.imDeleteRequest = function (rid) {
     var token = localStorage.getItem('study_workbench_token');
     var API_BASE = (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000'));
-    if (!confirm('确定删除这条申请记录吗？')) return;
-    fetch(API_BASE + '/api/friends/requests/' + rid, {
-      method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token }
-    })
-    .then(function (r) { return r.json(); })
-    .then(function () { toast('已删除'); renderRequests($id('imList')); })
-    .catch(function (e) { toast('失败：' + (e.message || '')); });
+    window.uiConfirm('确定删除这条申请记录吗？', '删除').then(function (ok) {
+      if (!ok) return;
+      fetch(API_BASE + '/api/friends/requests/' + rid, {
+        method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token }
+      })
+      .then(function (r) { return r.json(); })
+      .then(function () { toast('已删除'); renderRequests($id('imList')); })
+      .catch(function (e) { toast('失败：' + (e.message || '')); });
+    });
   }
 
   // 同意/拒绝好友申请
@@ -1235,6 +1539,7 @@
       return;
     }
     var isGroup = !!S.group;
+    var key = imThreadKey();
     box.innerHTML = S.msgs.map(function (m) {
       var isMe = m.senderId === S.myId;
       var time = new Date(m.time);
@@ -1244,25 +1549,29 @@
       if (isMe && !isGroup && m.server) {
         readTag = '<div class="im-read' + (m.read ? ' ok' : '') + '">' + (m.read ? '✓✓ 已读' : '✓ 已发送') + '</div>';
       }
-      var body;
+      // 撤回：已撤回消息渲染为灰色居中系统提示（保留时间线占位）
+      if (imIsRecalled(key, m.id)) {
+        var rtip = (m.senderId === S.myId) ? '你撤回了一条消息' : '对方撤回了一条消息';
+        return '<div class="im-recall-tip">' + esc(rtip) + '</div>';
+      }
+      var inner;
       if (m.kind === 'image') {
         var src = /^(https?:|data:)/.test(m.content) ? m.content : apiBase() + m.content;
         /* R51（2026-09-14）：图片气泡 —— 限宽 200px + 圆角，点击全屏预览（imPreviewImage）。
            收到（他人）与发出（自己）走同一分支，服务端消息与离线 dataURL 都能渲染。 */
-        body = '<div class="im-m ' + (isMe ? 'me' : 'ot') + '" data-mid="' + esc(m.id || '') + '">' +
-          '<img class="im-img" src="' + esc(src) + '" alt="[图片]" onclick="imPreviewImage(this.getAttribute(\'src\'))">' +
-          '<div class="im-mt">' + timeStr + '</div>' + readTag + '</div>';
+        inner = '<img class="im-img" src="' + esc(src) + '" alt="[图片]" onclick="imPreviewImage(this.getAttribute(\'src\'))">' +
+          '<div class="im-mt">' + timeStr + '</div>' + readTag;
       } else if (m.kind === 'voice') {
         // A7：语音条（点击播放/暂停/续播；进度条随时间更新；显示时长）
         var vsrc = /^(https?:|data:)/.test(m.content) ? m.content : apiBase() + m.content;
-        body = '<div class="im-m ' + (isMe ? 'me' : 'ot') + '" data-mid="' + esc(m.id || '') + '">' +
-          '<div class="im-voice" onclick="imTogglePlayVoice(this,this.dataset.src)" data-src="' + esc(vsrc) + '">' +
+        inner = '<div class="im-voice" onclick="imTogglePlayVoice(this,this.dataset.src)" data-src="' + esc(vsrc) + '">' +
           '<span class="im-voice-ic">▶</span><span class="im-voice-bar"><i></i></span>' +
           '<span class="im-voice-dur">' + (m.duration ? m.duration + '″' : '语音') + '</span></div>' +
-          '<div class="im-mt">' + timeStr + '</div>' + readTag + '</div>';
+          '<div class="im-mt">' + timeStr + '</div>' + readTag;
       } else {
-        body = '<div class="im-m ' + (isMe ? 'me' : 'ot') + '" data-mid="' + esc(m.id || '') + '">' + renderContent(m.content) + '<div class="im-mt">' + timeStr + '</div>' + readTag + '</div>';
+        inner = renderContent(m.content) + '<div class="im-mt">' + timeStr + '</div>' + readTag;
       }
+      var body = '<div class="im-m ' + (isMe ? 'me' : 'ot') + '"' + imMsgAttrs(m, isMe) + ' data-mid="' + esc(m.id || '') + '">' + inner + imRecallEntryHtml(m) + '</div>';
       // 群聊：他人消息左侧加发送者小头像 + 昵称（自己的消息保持右侧绿底）
       // 批次二 需求9（2026-09-11h）：头像/昵称点击 → 打开该用户公开主页（复用 api.js openUserHome，
       // 与私聊好友列表点头像行为一致；非好友主页只有「加为好友」，好友主页有「发消息」；
@@ -1351,10 +1660,11 @@
     reader.onload = function (e) {
       var dataUrl = e.target.result;
       var now = Date.now();
-      S.msgs.push({ id: S.msgs.length + 1, senderId: S.myId, content: dataUrl, kind: 'image', time: now });
+      var uid = genMsgId();
+      S.msgs.push({ id: uid, senderId: S.myId, content: dataUrl, kind: 'image', time: now });
       var data = loadData();
       if (!data.messages[S.peer.id]) data.messages[S.peer.id] = [];
-      data.messages[S.peer.id].push({ senderId: S.myId, content: dataUrl, kind: 'image', time: now });
+      data.messages[S.peer.id].push({ id: uid, senderId: S.myId, content: dataUrl, kind: 'image', time: now });
       if (!data.chats[S.peer.id]) data.chats[S.peer.id] = {};
       data.chats[S.peer.id].last = '[图片]';
       data.chats[S.peer.id].time = now;
@@ -1649,12 +1959,13 @@
     inp.value = '';
 
     var now = Date.now();
-    var msg = { id: S.msgs.length + 1, senderId: S.myId, content: text, kind: 'text', time: now };
+    var uid = genMsgId();
+    var msg = { id: uid, senderId: S.myId, content: text, kind: 'text', time: now };
     S.msgs.push(msg);
 
     var data = loadData();
     if (!data.messages[S.peer.id]) data.messages[S.peer.id] = [];
-    data.messages[S.peer.id].push({ senderId: S.myId, content: text, kind: 'text', time: now });
+    data.messages[S.peer.id].push({ id: uid, senderId: S.myId, content: text, kind: 'text', time: now });
     if (!data.chats[S.peer.id]) data.chats[S.peer.id] = {};
     data.chats[S.peer.id].last = text;
     data.chats[S.peer.id].time = now;
@@ -2439,7 +2750,7 @@
       if (mm) nm = mm.groupNickname || mm.nickname || '';
     } catch (e) { }
     var msg = '确定把「' + (nm || '该成员') + '」移出群聊吗？';
-    var ok = (typeof uiConfirm === 'function') ? await uiConfirm(msg, '移出') : confirm(msg);
+    var ok = await window.uiConfirm(msg, '移出');
     if (!ok) return;
     fetch(apiBase() + '/api/groups/' + GS.gid + '/members/' + uid, {
       method: 'DELETE', headers: { 'Authorization': 'Bearer ' + getToken() }
@@ -2465,7 +2776,7 @@
     var msg = isOwner
       ? '确定解散该群聊吗？解散后群与全部群消息将被清除，不可恢复。'
       : '确定退出该群聊吗？退出后将不再接收该群消息。';
-    var ok = (typeof uiConfirm === 'function') ? await uiConfirm(msg, isOwner ? '解散' : '退出') : confirm(msg);
+    var ok = await window.uiConfirm(msg, isOwner ? '解散' : '退出');
     if (!ok) return;
     fetch(apiBase() + '/api/groups/' + gid + '/quit', {
       method: 'POST', headers: { 'Authorization': 'Bearer ' + getToken() }
@@ -2619,7 +2930,7 @@
       if (mm) nm = mm.groupNickname || mm.nickname || '';
     } catch (e) { /* 取不到昵称用占位 */ }
     var msg = '确定把群主转让给「' + (nm || '该成员') + '」吗？转让后你将变为管理员。';
-    var ok = (typeof uiConfirm === 'function') ? await uiConfirm(msg, '转让') : confirm(msg);
+    var ok = await window.uiConfirm(msg, '转让');
     if (!ok) return;
     fetch(apiBase() + '/api/groups/' + GS.gid + '/transfer', {
       method: 'POST',
@@ -2757,13 +3068,13 @@
     .catch(function () { /* 失败显示 -- ：占位符留空即可 */ });
   }
 
-  // —— 会话轮询（2.5s 主干）：当前会话可见时高频拉取，页面隐藏暂停 ——
+  // —— 会话轮询（2s 主干）：当前会话可见时高频拉取，页面隐藏暂停 ——
   function startConvPoll() {
     setInterval(function () {
       if (document.visibilityState !== 'visible' || !getToken()) return;
       if (S.group) { fetchGroupMsgs(true); return; }
       if (S.peer && S.peer.isServer) fetchPeerMsgs(true);
-    }, 2500);
+    }, 2000);
     // 群列表 + 好友在线状态：30s
     setInterval(function () {
       if (document.visibilityState !== 'visible' || !getToken()) return;
@@ -2803,7 +3114,21 @@
       '.im-forward-body{display:flex;align-items:flex-start;gap:8px;justify-content:space-between}' +
       '.im-forward-title{font-weight:600;line-height:1.4}' +
       '.im-forward-sum{color:var(--text-secondary,#999);font-size:12px;margin-top:2px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}' +
-      '.im-forward-cancel{flex-shrink:0;margin-left:8px;color:#e05040;cursor:pointer;font-size:12px;white-space:nowrap}';
+      '.im-forward-cancel{flex-shrink:0;margin-left:8px;color:#e05040;cursor:pointer;font-size:12px;white-space:nowrap}' +
+      /* 2026-09-15 批次八（notify-fix1）：页面顶端入站消息通知条（.im-tn-*）。
+         fixed 顶部居中；容器 pointer-events:none，只有横条本体可交互 —— 不遮挡输入框 / 底部导航，
+         且无全屏遮罩（ADR-3 只允许轻交互浮层）。变量全部取自 common.css，不引入新库。 */
+      '.im-tn-wrap{position:fixed;top:0;left:0;right:0;z-index:9998;display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 12px 0;pointer-events:none}' +
+      '.im-tn{pointer-events:auto;width:100%;max-width:420px;box-sizing:border-box;display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card,#fff);border:1px solid var(--border,#eee);border-radius:var(--radius,12px);box-shadow:0 8px 24px rgba(0,0,0,.14);opacity:0;transform:translateY(-140%);transition:transform .28s cubic-bezier(.22,.68,.32,1),opacity .28s ease;cursor:pointer}' +
+      '.im-tn.show{opacity:1;transform:translateY(0)}' +
+      '.im-tn-av{flex:0 0 38px;width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--primary-light,#EEF1FF),#e9ecff);color:var(--primary,#5B8DEF);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden}' +
+      '.im-tn-av img{width:100%;height:100%;object-fit:cover}' +
+      '.im-tn-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}' +
+      '.im-tn-name{font-size:14px;font-weight:700;color:var(--text,#2D3436);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}' +
+      '.im-tn-text{font-size:12px;line-height:1.5;color:var(--text-secondary,#636E72);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}' +
+      '.im-tn-close{flex:0 0 auto;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text-secondary,#999);cursor:pointer}' +
+      '.im-tn-close:hover{background:var(--bg,#F5F7FA);color:var(--text,#2D3436)}' +
+      'body.reduce-motion .im-tn{transition:none}';
     document.head.appendChild(style);
 
     /* R60：本页已持有聊天轮询（2.5s 会话 + 5s 未读 + 30s 群/在线），
@@ -2854,9 +3179,11 @@
     // R43（2026-09-14）：预解析管理员 id（普通用户），供未读轮询判断「管理员来信」
     imResolveAdminId();
 
-    // 每 5 秒轮询未读消息
-    // R46（2026-09-14e）：补 visibilityState 守卫 —— 同一文件里 2.5s 会话轮询与 30s 群/在线轮询都有，唯独这条漏了
-    setInterval(function () {
+    /* 2026-09-15 批次八：5s → 2s。未读轮询是「非当前会话来新消息」的唯一发现通道，
+       5s 意味着平均 2.5s、最坏 5s 才看到，是用户反馈「收消息迟钝」的直接根因。
+       R46（2026-09-14e）：visibilityState 守卫 —— 同一文件里 2s 会话轮询与 30s 群/在线轮询都有，唯独这条漏了 */
+    var imUnreadBaseline = false;   // 首次成功轮询只建基线，不把历史未读一次性弹成通知条
+    function imPollUnread() {
       var token = getToken();
       if (!token) return;
       if (document.visibilityState !== 'visible') return;
@@ -2904,9 +3231,10 @@
                  会让列表反复重排（也是闪烁的帮凶之一）。 */
               if (idChanged) { chat.lastId = item.lastId; chat.time = Date.now(); }
               else if (!chat.time) chat.time = Date.now();
-              /* R60：真来了新消息且不在该会话里 → 抛给 app.js 做全局通知。
-                 正在和对方聊天时不抛（本地已即时渲染并标记已读，再弹通知属于自扰）。 */
-              if (idChanged) {
+              /* R60：真来了新消息且不在该会话里 → 顶端通知条。
+                 正在和对方聊天时不抛（本地已即时渲染并标记已读，再弹通知属于自扰）。
+                 批次八：加 imUnreadBaseline 守卫，避免进页面时把历史未读一次性弹一排。 */
+              if (idChanged && imUnreadBaseline) {
                 xtNotify({
                   peerId: item.peerId,
                   nickname: chat.nickname || item.nickname || '',
@@ -2951,10 +3279,23 @@
             .then(function (rd) { window.imApplyRequestBadge(rd); })
             .catch(function () { });
         }
+        /* 2026-09-15 批次八：首次成功轮询只建基线（chat.lastId 已在上面落库），
+           历史未读不再一次性弹成通知条；下一轮起真有新消息才弹。 */
+        imUnreadBaseline = true;
         // 顶栏 💬 角标由 assets/api.js 的 loadChatUnread() 轮询维护，这里不再越权改写
       })
       .catch(function () {});
-    }, 5000);
+    }
+    setInterval(imPollUnread, 2000);
+
+    /* 2026-09-15 批次八：切回前台立刻补拉一次（未读 + 当前会话）。
+       旧逻辑只等下一个轮询周期，从后台切回最坏要干等一整轮才看到新消息。 */
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState !== 'visible' || !getToken()) return;
+      imPollUnread();
+      if (S.group) fetchGroupMsgs(true);
+      else if (S.peer && S.peer.isServer) fetchPeerMsgs(true);
+    });
   }
 
   /* R60：群聊未读总数（/api/chat/unread 只统计私聊，群未读来自 loadGroups 的 unreadCount）。
@@ -3025,6 +3366,8 @@
     imPreviewImage: window.imPreviewImage,
     imTransferOwner: window.imTransferOwner,
     imSaveGroupAvatar: window.imSaveGroupAvatar,
+    /* 2026-09-15 批次八（notify-fix1）：顶端通知条（jsdom 直接触发，断言 DOM / 自动消失 / 点击跳转） */
+    imTopNotify: imTopNotify,
     SERVER_FRIENDS_REF: function () { return SERVER_FRIENDS; }
   };
 

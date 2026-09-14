@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>央国企笔试备考 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260914f">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913o">
-<link rel="stylesheet" href="assets/states.css?v=20260913o">
-<link rel="stylesheet" href="assets/polish.css?v=20260913o">
+<link rel="stylesheet" href="assets/common.css?v=20260915c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260915c">
+<link rel="stylesheet" href="assets/states.css?v=20260915c">
+<link rel="stylesheet" href="assets/polish.css?v=20260915c">
 </head>
 <body class="theme-exam">
 
@@ -107,10 +107,14 @@
             <div class="feature-title">企业定向库</div>
             <div class="feature-desc">8 类 · 企业名片 / 笔试考情 / 考点自测，含考情与自测</div>
           </div>
-          <div class="feature-card" onclick="openHotNewsPanel()">
+          <!-- 【ADR-3 2026-09-15】时政热点改独立页：原 openHotNewsPanel() 用全屏遮罩弹窗承载
+               热点内容，违反 ADR-3「核心内容必须走完整页面内布局」。已升级为独立页
+               时政热点.html（热点榜 / 分类·时间筛选 / 详情 / 收藏 全部页面内承载）。
+               openHotNewsPanel() 仍在 assets/hotnews.js 保留，现为跳转兼容入口，勿再用于弹窗。 -->
+          <div class="feature-card" onclick="location.href=encodeURI('时政热点.html')">
             <div class="feature-icon"><span class="nav-icon" data-icon="fire" data-icon-size="20"></span></div>
             <div class="feature-title">时政热点</div>
-            <div class="feature-desc">自动获取最新网络热点议题，实时更新（可切换题库模式）</div>
+            <div class="feature-desc">实时榜单 + 分类/时间筛选 + 详情 + 收藏，独立页面呈现</div>
           </div>
           <div class="feature-card" onclick="window.location.href='mock_exam.html?cat=exam-mock'">
             <div class="feature-icon"><span class="nav-icon" data-icon="clipboard" data-icon-size="20"></span></div>
@@ -318,21 +322,21 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913o" defer></script>
-<script src="assets/xt-toast.js?v=20260913o" defer></script>
-<script src="assets/error-boundary.js?v=20260913o" defer></script>
-<script src="assets/app.js?v=20260914f" defer></script>
-<script src="assets/config.js?v=20260913o" defer></script>
-<script src="assets/api.js?v=20260913o" defer></script>
+<script src="assets/icon-map.js?v=20260915c" defer></script>
+<script src="assets/xt-toast.js?v=20260915c" defer></script>
+<script src="assets/error-boundary.js?v=20260915c" defer></script>
+<script src="assets/app.js?v=20260915c" defer></script>
+<script src="assets/config.js?v=20260915c" defer></script>
+<script src="assets/api.js?v=20260915c" defer></script>
 
-<script src="assets/mini-exam.js?v=20260913o" defer></script>
+<script src="assets/mini-exam.js?v=20260915c" defer></script>
 <!-- 【P0-B T03-06】删除弹窗版 mock-exam.js 引入（mock 已迁到 mock_exam.html 三独立页） -->
-<script src="assets/mini.js?v=20260913o" defer></script>
-<script src="assets/topic-express.js?v=20260913o" defer></script>
+<script src="assets/mini.js?v=20260915c" defer></script>
+<script src="assets/topic-express.js?v=20260915c" defer></script>
 
-<script src="assets/qbank.js?v=20260913o" defer></script>
-<script src="assets/hotnews.js?v=20260913o" defer></script>
-<script src="assets/study-stats.js?v=20260913o" defer></script>
+<script src="assets/qbank.js?v=20260915c" defer></script>
+<script src="assets/hotnews.js?v=20260915c" defer></script>
+<script src="assets/study-stats.js?v=20260915c" defer></script>
 <script>
 /* ==================== T7 增量（P0-8）：学习概况统计卡 ==================== */
 (function () {

@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0b1026">
 <title>登录 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260914f">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913a">
-<link rel="stylesheet" href="assets/states.css?v=20260913a">
+<link rel="stylesheet" href="assets/common.css?v=20260915c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260915c">
+<link rel="stylesheet" href="assets/states.css?v=20260915c">
 <style>
   :root{
     --primary:#5b8def; --accent:#9b6bd9;
@@ -17,7 +17,8 @@
     --danger:#ff6b6b; --ok:#3ddc97;
   }
   *{box-sizing:border-box}
-  html,body{height:100%}
+  /* common.css 会锁 html/body 高度并隐藏滚动；矮屏 / 横屏时登录卡片会被裁掉且无法滚动，这里恢复纵向滚动 */
+  html,body{height:auto;min-height:100%;overflow-y:auto}
   body{
     margin:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
     background:radial-gradient(1200px 800px at 20% -10%,#2b3a8f 0%,transparent 55%),
@@ -160,10 +161,10 @@
   <div class="login-notice" id="loginNotice">💡 正在检测运行模式……</div>
 </div>
 
-<script src="assets/icon-map.js?v=20260913a" defer></script>
-<script src="assets/xt-toast.js?v=20260913a" defer></script>
-<script src="assets/error-boundary.js?v=20260913a" defer></script>
-<script src="assets/config.js?v=20260913a" defer></script>
+<script src="assets/icon-map.js?v=20260915c" defer></script>
+<script src="assets/xt-toast.js?v=20260915c" defer></script>
+<script src="assets/error-boundary.js?v=20260915c" defer></script>
+<script src="assets/config.js?v=20260915c" defer></script>
 <script>
 /* ==================== 登录页逻辑（独立于 app.js） =====================================
    双模式（自动检测，互不影响）：

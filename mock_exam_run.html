@@ -5,18 +5,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>真题模考 · 考试中</title>
-<link rel="stylesheet" href="assets/common.css?v=20260914f">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913o">
-<link rel="stylesheet" href="assets/states.css?v=20260913o">
-<script src="assets/icon-map.js?v=20260913o" defer></script>
-<script src="assets/xt-toast.js?v=20260913o" defer></script>
-<script src="assets/error-boundary.js?v=20260913o" defer></script>
-<script src="assets/app.js?v=20260914f" defer></script>
-<script src="data/mock-papers.js?v=20260913o" defer></script>
-<script src="assets/mock-engine.js?v=20260913o" defer></script>
+<link rel="stylesheet" href="assets/common.css?v=20260915c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260915c">
+<link rel="stylesheet" href="assets/states.css?v=20260915c">
+<script src="assets/icon-map.js?v=20260915c" defer></script>
+<script src="assets/xt-toast.js?v=20260915c" defer></script>
+<script src="assets/error-boundary.js?v=20260915c" defer></script>
+<script src="assets/app.js?v=20260915c" defer></script>
+<script src="data/mock-papers.js?v=20260915c" defer></script>
+<script src="assets/mock-engine.js?v=20260915c" defer></script>
 <style>
 /* mock_exam_run.html 考试页专属样式（不走弹窗 mask；用 .confirm-mask 轻量确认条） */
 body { background: var(--xt-bg); margin: 0; color: var(--xt-text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif; }
+
+/* 修复：common.css 第 68 行有全局规则 `html, body { height: 100%; overflow: hidden; }`，
+   它把整个窗口锁成「高度 100%、不可滚动」。站点其它页面都包在 .app > .main > .page 里，
+   而 .page 自带 overflow-y:auto 滚动容器，所以能滚；本页是独立页，内容直接挂在 <body> 下，
+   没有 .page 滚动容器，于是被全局规则锁死，长题干/题目回顾全部滑不动。
+   本页不在 .app 外壳内，故在页内用更具体的选择器放开 body 自己的滚动（不动 common.css）。
+   注意：本页顶部 .mock-topbar 是 position:fixed，内容区靠 .mock-stages 的 margin-top 留出安全距离。 */
+html { height: auto; overflow: auto; }
+body { height: auto; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
 /* 顶部固定栏 */
 .mock-topbar {
@@ -524,6 +533,13 @@ body { background: var(--xt-bg); margin: 0; color: var(--xt-text); font-family: 
   function $(id) { return document.getElementById(id); }
   function escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
+  // —— 背景滚动锁（弹层/移动端答题卡抽屉共用，计数防互相抵消）——
+  // 复用 common.css 的 body.modal-lock 类（该类比本页 body 覆盖规则更具体，可锁住滚动），
+  // 关闭时移除类即还原，不在此硬写 overflow:hidden/auto。
+  var scrollLockCount = 0;
+  function lockScroll() { scrollLockCount++; document.body.classList.add('modal-lock'); }
+  function unlockScroll() { scrollLockCount = Math.max(0, scrollLockCount - 1); if (scrollLockCount === 0) document.body.classList.remove('modal-lock'); }
+
   // —— 全局：当前 paper / 当前 qid / timer handle ——
   var paper = null;
   var allQuestions = [];   // 含子题铺平（含 reading 的 subQ 视为独立 qid）
@@ -722,9 +738,12 @@ body { background: var(--xt-bg); margin: 0; color: var(--xt-text); font-family: 
         '</div>' +
       '</div>';
     host.style.display = 'block';
+    // 弹层（确认交卷）打开时锁背景滚动（计数 +1，关闭时 -1 还原）
+    lockScroll();
     function close(result) {
       host.innerHTML = '';
       host.style.display = 'none';
+      unlockScroll();
       cb(result);
     }
     host.querySelector('.confirm-mask').addEventListener('click', function (e) {
@@ -759,6 +778,8 @@ body { background: var(--xt-bg); margin: 0; color: var(--xt-text); font-family: 
       pane.classList.add('is-open');
       var btn = $('acToggle');
       if (btn) btn.setAttribute('aria-expanded', 'true');
+      // 移动端抽屉展开时锁背景滚动（底部抽屉覆盖下半屏，避免背后内容误滚）
+      lockScroll();
     }
   }
   function closeAcDrawer() {
@@ -767,6 +788,7 @@ body { background: var(--xt-bg); margin: 0; color: var(--xt-text); font-family: 
     pane.classList.remove('is-open');
     var btn = $('acToggle');
     if (btn) btn.setAttribute('aria-expanded', 'false');
+    if (window.innerWidth <= 768) unlockScroll();
   }
   document.addEventListener('DOMContentLoaded', function () {
     var btn = $('acToggle');

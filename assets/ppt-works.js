@@ -62,7 +62,7 @@
 
   function toast(msg) {
     if (typeof window.showToast === 'function') { try { window.showToast(msg); return; } catch (e) { /* 继续兜底 */ } }
-    if (window.alert) window.alert(msg);
+    if (typeof window.xtToast === 'function') { try { window.xtToast('info', msg); } catch (e) { /* 忽略 */ } }
   }
 
   function rawKey(k) {
@@ -414,14 +414,16 @@
   function del(id) {
     var w = findById(id);
     if (!w) return;
-    if (!window.confirm('删除作品「' + w.title + '」？此操作不可恢复。')) return;
-    var list = load();
-    var next = [];
-    for (var i = 0; i < list.length; i++) if (list[i] && list[i].id !== id) next.push(list[i]);
-    save(next);
-    if (curId === id) closeView();
-    render();
-    toast('已删除');
+    window.uiConfirm('删除作品「' + w.title + '」？此操作不可恢复。', '删除').then(function (ok) {
+      if (!ok) return;
+      var list = load();
+      var next = [];
+      for (var i = 0; i < list.length; i++) if (list[i] && list[i].id !== id) next.push(list[i]);
+      save(next);
+      if (curId === id) closeView();
+      render();
+      toast('已删除');
+    });
   }
 
   /* ---------------------------------------------------------------- 事件委托 */

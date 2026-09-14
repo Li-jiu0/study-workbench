@@ -145,7 +145,10 @@
   function closeQ() { var m = document.getElementById('qbMask'); if (m) m.remove(); cur = null; }
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function toast(m) { if (typeof showToast === 'function') { showToast(m); return; } if (typeof alert === 'function') alert(m); }
+  function toast(m) {
+    if (typeof showToast === 'function') { showToast(m); return; }
+    if (typeof window.xtToast === 'function') { window.xtToast('info', m); }
+  }
 
   function download(name, text) {
     var blob = new Blob([text], { type: 'application/json;charset=utf-8' });
@@ -239,28 +242,32 @@
   };
   window.__qbDel = function (i) {
     var it = cur.custom[i]; if (!it) return;
-    if (!confirm('删除这条自定义内容？')) return;
-    cur.custom.splice(i, 1); setCustom(cur.key, cur.custom);
-    var live = cur.live;
-    if (live) {
-      var idx = live.findIndex(function (o) { return o && o.id != null && String(o.id) === String(it.id); });
-      if (idx >= 0) live.splice(idx, 1);
-    }
-    if (cur.cfg.refresh) cur.cfg.refresh();
-    renderList(); toast('已删除');
-  };
-  window.__qbClear = function () {
-    if (!confirm('清空该题库的全部自定义内容？')) return;
-    var live = cur.live;
-    if (live) {
-      cur.custom.forEach(function (it) {
+    window.uiConfirm('删除这条自定义内容？', '删除').then(function (ok) {
+      if (!ok) return;
+      cur.custom.splice(i, 1); setCustom(cur.key, cur.custom);
+      var live = cur.live;
+      if (live) {
         var idx = live.findIndex(function (o) { return o && o.id != null && String(o.id) === String(it.id); });
         if (idx >= 0) live.splice(idx, 1);
-      });
-    }
-    cur.custom = []; setCustom(cur.key, []);
-    if (cur.cfg.refresh) cur.cfg.refresh();
-    renderList(); toast('已清空自定义内容');
+      }
+      if (cur.cfg.refresh) cur.cfg.refresh();
+      renderList(); toast('已删除');
+    });
+  };
+  window.__qbClear = function () {
+    window.uiConfirm('清空该题库的全部自定义内容？', '清空').then(function (ok) {
+      if (!ok) return;
+      var live = cur.live;
+      if (live) {
+        cur.custom.forEach(function (it) {
+          var idx = live.findIndex(function (o) { return o && o.id != null && String(o.id) === String(it.id); });
+          if (idx >= 0) live.splice(idx, 1);
+        });
+      }
+      cur.custom = []; setCustom(cur.key, []);
+      if (cur.cfg.refresh) cur.cfg.refresh();
+      renderList(); toast('已清空自定义内容');
+    });
   };
   window.__qbExport = function (onlyCustom) {
     var live = cur.live;

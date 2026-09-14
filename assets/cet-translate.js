@@ -10,7 +10,7 @@
  * 约束：不调 saveData()；localStorage 键前缀 xtc:lib:cettrans:（XTC.storage 内部自动 lsKey 包装）；
  *       图标走 data-icon（icon-map.js），每次 innerHTML 后补 XTC.renderIcons()；
  *       内容资产页内全屏视图承载，禁止弹窗（ADR-3）。
- * 版本戳：20260914e
+ * 版本戳：20260915b
  * ========================================================================== */
 (function () {
   'use strict';
@@ -68,9 +68,9 @@
 
   /* ------------------------------------------------------------------ 样式 */
   var CSS =
-    '.ct-wrap{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px 48px}' +
+    '.ct-wrap{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:14px 16px 64px}' +
     '.ct-wrap>div{margin-bottom:14px}' +
-    '.ct-item{border:1px solid var(--border,#E5E7EB);border-radius:12px;padding:12px 14px;margin-bottom:12px;background:var(--card,transparent)}' +
+    '.ct-item{border:1px solid var(--border,#E5E7EB);border-radius:var(--radius-sm,12px);padding:12px 14px;margin-bottom:12px;background:var(--card,#fff);box-shadow:var(--shadow,0 2px 12px rgba(0,0,0,.06));min-width:0}' +
     '.ct-h{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px}' +
     '.ct-no{flex:none;min-width:22px;height:22px;line-height:22px;text-align:center;border-radius:6px;background:var(--primary,#5B8DEF);color:#fff;font-size:12px;font-weight:700}' +
     '.ct-topic{font-size:12px;color:var(--text-secondary,#9CA3AF)}' +
@@ -79,7 +79,8 @@
     '.ct-meta{font-size:12px;color:var(--text-secondary,#9CA3AF);margin-bottom:8px}' +
     '.ct-ta{width:100%;box-sizing:border-box;min-height:88px;padding:10px 12px;border:1px solid var(--border,#E5E7EB);border-radius:10px;background:var(--bg,#fff);color:var(--text,#1F2937);font-size:14px;line-height:1.8;font-family:inherit;resize:vertical}' +
     '.ct-ta:focus{outline:none;border-color:var(--primary,#5B8DEF)}' +
-    '.ct-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}' +
+    /* 操作条：常驻卡片底部（sticky bottom），滚动到哪张卡都能看到「提交/看译文/清空」 */
+    '.ct-acts{display:flex;flex-wrap:wrap;gap:8px;position:sticky;bottom:0;margin:12px -14px -12px;padding:10px 14px;background:var(--card,#fff);border-top:1px solid var(--border,#E5E7EB);border-radius:0 0 12px 12px;z-index:4}' +
     '.ct-btn{border:1px solid var(--primary,#5B8DEF);background:var(--primary,#5B8DEF);color:#fff;padding:6px 14px;border-radius:8px;font-size:13px;cursor:pointer;line-height:1.5}' +
     '.ct-btn.ghost{background:transparent;color:var(--primary,#5B8DEF)}' +
     '.ct-btn.plain{border-color:var(--border,#E5E7EB);background:transparent;color:var(--text-secondary,#6B7280)}' +
@@ -94,7 +95,17 @@
     '.ct-ref{font-size:13.5px;line-height:1.85;color:var(--text,#1F2937);white-space:pre-wrap}' +
     '.ct-tip{font-size:13px;line-height:1.8;color:var(--text-secondary,#6B7280);white-space:pre-wrap}' +
     '.ct-note{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--bg,#F9FAFB);font-size:13px;line-height:1.7;color:var(--text-secondary,#6B7280)}' +
-    '.ct-empty{padding:30px 0;text-align:center;font-size:14px;color:var(--text-secondary,#9CA3AF)}';
+    '.ct-empty{padding:30px 0;text-align:center;font-size:14px;color:var(--text-secondary,#9CA3AF)}' +
+    /* 分栏：窄屏单列；宽屏左（中文原文）/ 右（作答区）。minmax(0,·) + min-width:0 双保险防横向溢出 */
+    '.ct-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:start}' +
+    '.ct-col-cn{min-width:0;max-width:100%}' +
+    '.ct-col-do{min-width:0;max-width:100%;display:flex;flex-direction:column}' +
+    '.ct-item[data-type="para"] .ct-ta{min-height:150px}' +
+    '@media(min-width:900px){' +
+      '.ct-grid{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:16px;align-items:start}' +
+      /* 左栏（中文原文）吸顶 + 区域内独立滚动：段落翻译原文较长时不被裁切，右侧作答不受影响 */
+      '.ct-col-cn{position:sticky;top:0;max-height:calc(100vh - 140px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding-right:4px}' +
+    '}';
 
   function injectStyle() {
     try {
@@ -173,16 +184,20 @@
       '<div class="ct-h"><span class="ct-no">' + (idx + 1) + '</span>' +
       '<span class="ct-topic">' + esc(typeLabel) + ' · ' + esc(item.topic || '') + '</span>' +
       '<span class="ct-sp"></span>' + best + '</div>' +
-      '<div class="ct-cn">' + esc(item.cn) + '</div>' +
-      '<div class="ct-meta">建议 ' + esc(item.minutes) + ' 分钟 · 参考词数约 ' + esc(item.words) +
-      ' · 关键表达 ' + ((item.keys || []).length) + ' 组</div>' +
-      '<textarea class="ct-ta" placeholder="在这里写出你的英文译文…"></textarea>' +
-      '<div class="ct-acts">' +
-      '<button type="button" class="ct-btn" data-act="submit">提交评分</button>' +
-      '<button type="button" class="ct-btn ghost" data-act="ref">看参考译文</button>' +
-      '<button type="button" class="ct-btn plain" data-act="clear">清空</button>' +
+      '<div class="ct-grid">' +
+        '<div class="ct-col ct-col-cn"><div class="ct-cn">' + esc(item.cn) + '</div>' +
+          '<div class="ct-meta">建议 ' + esc(item.minutes) + ' 分钟 · 参考词数约 ' + esc(item.words) +
+          ' · 关键表达 ' + ((item.keys || []).length) + ' 组</div></div>' +
+        '<div class="ct-col ct-col-do">' +
+          '<textarea class="ct-ta" placeholder="在这里写出你的英文译文…"></textarea>' +
+          '<div class="ct-acts">' +
+          '<button type="button" class="ct-btn" data-act="submit">提交评分</button>' +
+          '<button type="button" class="ct-btn ghost" data-act="ref">看参考译文</button>' +
+          '<button type="button" class="ct-btn plain" data-act="clear">清空</button>' +
+          '</div>' +
+          '<div class="ct-res" hidden></div>' +
+        '</div>' +
       '</div>' +
-      '<div class="ct-res" hidden></div>' +
       '</div>';
   }
 
@@ -196,7 +211,8 @@
       h += '<span class="ct-key ' + cls + '">' + (sc.hits[i] ? '' : '') + esc(g[0] || '') + '</span>';
     }
     h += '</div>';
-    h += '<div class="ct-lab">参考译文</div><div class="ct-ref">' + esc(item.ref) + '</div>';
+    var refHtml = item.ref ? esc(item.ref) : '<span class="ct-tip">本题暂未提供参考译文</span>';
+    h += '<div class="ct-lab">参考译文</div><div class="ct-ref">' + refHtml + '</div>';
     h += '<div class="ct-lab">解析 · 易错点</div><div class="ct-tip">' + esc(item.tips || '') + '</div>';
     return h;
   }
@@ -236,8 +252,9 @@
             return;
           }
           if (act === 'ref') {
-            res.innerHTML = '<div class="ct-lab">参考译文</div><div class="ct-ref">' + esc(item.ref) + '</div>' +
-              '<div class="ct-lab">解析 · 易错点</div><div class="ct-tip">' + esc(item.tips || '') + '</div>';
+            res.innerHTML = '<div class="ct-lab">参考译文</div><div class="ct-ref">' +
+              (item.ref ? esc(item.ref) : '<span class="ct-tip">本题暂未提供参考译文</span>') +
+              '</div><div class="ct-lab">解析 · 易错点</div><div class="ct-tip">' + esc(item.tips || '') + '</div>';
             res.hidden = false;
             icons(res);
             return;
@@ -321,7 +338,11 @@
       if (prog[all[i].id]) { done++; sum += prog[all[i].id].score || 0; }
     }
     var avg = done ? Math.round(sum / done) : 0;
+    /* 纯展示文案：起始态 / 进行中 / 全部完成结束态 */
     var label = '已练 ' + done + ' / ' + all.length + ' 题' + (done ? ' · 平均 ' + avg + ' 分' : '');
+    if (!all.length) label = '暂无可练习题';
+    else if (done === 0) label += ' · 建议先做「单句翻译」';
+    else if (done >= all.length) label += ' · 全部练完，可回看参考译文与解析';
     if (window.XTC && typeof window.XTC.progressBar === 'function') {
       window.XTC.progressBar(barEl, { done: done, total: all.length, label: label });
     } else {

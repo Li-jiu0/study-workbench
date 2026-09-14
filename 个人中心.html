@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" data-page-node-id="scAqzajn3bTDCBBENuGZj0">
 <meta name="theme-color" content="#5B8DEF" data-page-node-id="xcIilqbK544vSHAWBPyO4w">
 <title>个人中心 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260914f" data-page-node-id="tBLcp6JxdB6dWCmMCCx7F8">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913o">
-<link rel="stylesheet" href="assets/states.css?v=20260913o">
-<link rel="stylesheet" href="assets/polish.css?v=20260913o" data-page-node-id="uqByqsnHV08jClPBpI9G16">
+<link rel="stylesheet" href="assets/common.css?v=20260915c" data-page-node-id="tBLcp6JxdB6dWCmMCCx7F8">
+<link rel="stylesheet" href="assets/page-head.css?v=20260915c">
+<link rel="stylesheet" href="assets/states.css?v=20260915c">
+<link rel="stylesheet" href="assets/polish.css?v=20260915c" data-page-node-id="uqByqsnHV08jClPBpI9G16">
 <style>
 /* ==================== 个人中心页内补充样式（K14 / K15，批次 20260913K） ==================== */
 /* K15-html：posts 子页与 profile 共享 #profileBox——进入 posts 时给 profileBox 加 .posts-mode，
@@ -27,7 +27,8 @@
 .pf-pref-info { flex: 1; min-width: 0; }
 .pf-pref-name { font-size: var(--xt-font-base); font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 6px; }
 .pf-pref-desc { font-size: var(--xt-font-xs); color: var(--text-muted); margin-top: 2px; }
-.pf-pref-row .form-input { min-width: 150px; flex-shrink: 0; }
+/* 修「我的学习偏好」文字竖排：flex-basis 必须归零，否则回退读 .form-input{width:100%} 独占整行 */
+.pf-pref-row .form-input { width: auto; flex: 0 0 auto; min-width: 150px; }
 .pf-pref-actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; align-items: center; }
 .pf-pref-actions .theme-option.active { background: var(--primary); border-color: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(91,141,239,0.3); }
 .pf-pref-actions .theme-option:disabled { opacity: 0.45; cursor: not-allowed; }
@@ -39,7 +40,10 @@
 <body class="theme-home" data-page-node-id="YOxnETeT4z4J4WFn6FB0qJ">
 
 <div class="app" data-page-node-id="rC7PFhhDSQoJOtAFwVAjO6">
-<nav class="sidebar"> <div class="logo"> <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div> <div> <div class="logo-text">星途</div> <div class="logo-sub">致追梦的人->修身</div> </div> </div> <div class="nav-list"> <div class="nav-item" data-page="home"> <span class="nav-icon" data-icon="home"></span><span>首页</span> </div> <div class="nav-section">学习模块</div> <div class="nav-item" data-page="cet"> <span class="nav-icon" data-icon="book-open"></span><span>四级备考</span> </div> <div class="nav-item" data-page="exam"> <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span> </div> <div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span> </div> <div class="nav-item" data-page="ppt"> <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon" data-icon="globe"></span><span>广场</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="book"></span><span>错题本</span> </div> <div class="nav-item active" data-page="profile"> <span class="nav-icon" data-icon="user"></span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon" data-icon="settings"></span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak"><span data-icon="fire" data-icon-size="14" style="vertical-align:-2px"></span> 连续打卡 0 天</div> </div> </div> </div> </nav>
+<nav class="sidebar"> <div class="logo"> <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div> <div> <div class="logo-text">星途</div> <div class="logo-sub">致追梦的人->修身</div> </div> </div> <div class="nav-list"> <div class="nav-item" data-page="home"> <span class="nav-icon" data-icon="home"></span><span>首页</span> </div> <div class="nav-section">学习模块</div> <div class="nav-item" data-page="cet"> <span class="nav-icon" data-icon="book-open"></span><span>四级备考</span> </div> <div class="nav-item" data-page="exam"> <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span> </div>
+      <div class="nav-item" onclick="location.href='申论刷题.html'" title="申论刷题（题目精练 / 阅读积累）">
+        <span class="nav-icon" data-icon="file-text"></span><span>申论刷题</span>
+      </div> <div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span> </div> <div class="nav-item" data-page="ppt"> <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon" data-icon="globe"></span><span>广场</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="book"></span><span>错题本</span> </div> <div class="nav-item active" data-page="profile"> <span class="nav-icon" data-icon="user"></span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon" data-icon="settings"></span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak"><span data-icon="fire" data-icon-size="14" style="vertical-align:-2px"></span> 连续打卡 0 天</div> </div> </div> </div> </nav>
 
   <div class="main" data-page-node-id="9bopuDa08t6vS7NC3NKjd2">
 <header class="topbar" data-page-node-id="qJPc52dgEhqzp4JZlJYJfQ">
@@ -98,6 +102,12 @@
         <!-- 个人中心内容（由 assets/app.js 的 renderProfilePage() 渲染，v1.14 豆包风格） -->
         <!-- T02 批次五：profile / posts 共享 #profileBox（api.js 单函数渲染整盒，不破坏） -->
         <section data-subpage="profile">
+        <!-- feed-btn（2026-09-15）：资料区「查看动态」按钮。挂在 #profileBox 之前，由 window.updateProfileFeedBtn() 在 profile 子页显形时填充；不改动 assets/app.js 的 renderProfilePage。 -->
+        <div id="profileFeedBtnRow" style="display:none;margin-bottom:12px">
+          <button class="btn btn-primary" id="profileFeedBtn" type="button">
+            <span data-icon="rss" data-icon-size="14" style="vertical-align:-2px"></span> <span id="profileFeedBtnText">查看 TA 的动态</span>
+          </button>
+        </div>
         <div id="profileBox" data-page-node-id="pai821WhCBnDvGkFiQ3xiQ"></div>
         </section>
         <section data-subpage="posts">
@@ -366,13 +376,14 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913o" defer></script>
-<script src="assets/xt-toast.js?v=20260913o" defer></script>
-<script src="assets/error-boundary.js?v=20260913o" defer></script>
-<script src="assets/app.js?v=20260914f" defer></script>
-<script src="assets/config.js?v=20260913o" defer></script>
-<script src="assets/api.js?v=20260913o" defer></script>
-<script src="assets/subpage-router.js?v=20260913o" defer></script>
+<script src="assets/icon-map.js?v=20260915c" defer></script>
+<script src="assets/xt-toast.js?v=20260915c" defer></script>
+<script src="assets/error-boundary.js?v=20260915c" defer></script>
+<script src="assets/app.js?v=20260915c" defer></script>
+<script src="assets/quest.js?v=20260915c" defer></script>
+<script src="assets/config.js?v=20260915c" defer></script>
+<script src="assets/api.js?v=20260915c" defer></script>
+<script src="assets/subpage-router.js?v=20260915c" defer></script>
 
 <script>
 function overviewGo(key) {
@@ -678,11 +689,14 @@ window.addEventListener('load', function() {
       .catch(function () { box.innerHTML = '动态需联网查看（后端不可用）'; });
   }
 
+  /* 全站禁用原生 confirm/alert，改用 app.js 的 uiConfirm（轻量页内确认层） */
   window.mmDelete = function (mid) {
-    if (!confirm('删除这条动态？点赞与评论会一并删除。')) return;
-    fetch(apiBase() + '/api/moments/' + mid, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + tok() } })
-      .then(function (r) { if (!r.ok) throw new Error('删除失败'); loadMyMoments(); })
-      .catch(function (e) { alert(e.message || '网络错误'); });
+    uiConfirm('删除这条动态？点赞与评论会一并删除。', '删除').then(function (ok) {
+      if (!ok) return;
+      fetch(apiBase() + '/api/moments/' + mid, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + tok() } })
+        .then(function (r) { if (!r.ok) throw new Error('删除失败'); loadMyMoments(); })
+        .catch(function (e) { showToast(e.message || '网络错误'); });
+    });
   };
 
   if (document.readyState !== 'loading') loadMyMoments();
@@ -764,6 +778,8 @@ window.peBirthdayOnBlur = function () {
       if (key === 'profile') {
         if (pb && profSec && pb.parentNode !== profSec) profSec.appendChild(pb);
         try { if (typeof renderProfilePage === 'function') renderProfilePage(); } catch (e) { if (window.console) console.warn('renderProfilePage error', e); }
+        /* feed-btn（2026-09-15）：profile 子页显形时填充「查看动态」按钮（不改动 renderProfilePage 任何判定） */
+        try { if (typeof window.updateProfileFeedBtn === 'function') window.updateProfileFeedBtn(); } catch (e) { if (window.console) console.warn('updateProfileFeedBtn error', e); }
       } else if (key === 'posts') {
         /* 【R61】posts 子页只渲染「发贴统计」内容到 #profileBoxPostsHost，
            不再把整块 #profileBox（资料头/概览/时长/成就/菜单行）搬过来堆进子页。
@@ -783,9 +799,72 @@ window.peBirthdayOnBlur = function () {
         try { if (typeof renderProfileOverview === 'function') renderProfileOverview(); } catch (e) {}
       }
     });
+    /* fix-bug4（2026-09-15）：解析 ?user=<uid>，直达 TA 的公开主页。
+       根因：SubpageRouter 初始化后默认停在 'list'（分组卡列表），而 #profileBox 位于
+       [data-subpage="profile"] 内，在 list 态是被 display:none 的；api.js renderProfilePage()
+       里已有的 ?user= 分支（→ renderUserHome）其实写了，只是渲染结果藏在隐藏 section 里看不见，
+       表现为「个人中心.html 不解析 ?user=，只显示登录者自己的资料」。
+       这里仅「带 user 参数时自动跳到 profile 子页」，不改动 renderProfilePage 的任何判定
+       （含 isMe 回跳、CURRENT_USER 在线/离线旁路），无 user 参数时行为与改动前完全一致。 */
+    try {
+      var _uid = new URLSearchParams(location.search).get('user');
+      if (_uid && /^\d+$/.test(String(_uid).trim())) SubpageRouter.navigate('profile');
+    } catch (e) { /* URLSearchParams 不可用时保持原样，绝不阻断页面 */ }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
+})();
+</script>
+
+<script>
+/* feed-btn（2026-09-15）：个人资料页「查看动态」按钮逻辑。
+   约定（沿用项目既有）：他人视角 ?user=<uid> → 文案「查看 TA 的动态」；
+   自视角（无 user 参数）→ 文案「我的动态」。点击统一跳 动态.html?user=<uid>。
+   样式复用页面 .btn / .btn-primary，不另起配色；不直接改 assets/app.js。
+   按钮节点挂在 [data-subpage="profile"] 内 #profileBox 之前，由本脚本在
+   SubpageRouter 切到 profile 子页时（见上方 onSubpageChange 钩子）调用填充。 */
+(function () {
+  'use strict';
+  function $id(x) { return document.getElementById(x); }
+  function apiBase() { return (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000')); }
+  function tok() { try { return localStorage.getItem('study_workbench_token') || ''; } catch (e) { return ''; } }
+  function viewUid() { try { var u = new URLSearchParams(location.search).get('user'); if (u && /^\d+$/.test(String(u).trim())) return String(u).trim(); } catch (e) {} return null; }
+
+  window.gotoUserMoments = function (uid) { if (uid) location.href = '动态.html?user=' + encodeURIComponent(uid); };
+
+  function renderBtn() {
+    if (typeof window.lucideAutoRender === 'function') window.lucideAutoRender();
+  }
+
+  window.updateProfileFeedBtn = function () {
+    var row = $id('profileFeedBtnRow');
+    if (!row) return;
+    var btn = $id('profileFeedBtn');
+    var txt = $id('profileFeedBtnText');
+    if (!btn || !txt) { row.style.display = 'none'; return; }
+    var vu = viewUid();
+    if (vu) {
+      txt.textContent = '查看 TA 的动态';
+      btn.onclick = function () { window.gotoUserMoments(vu); };
+      row.style.display = 'block';
+      renderBtn();
+      return;
+    }
+    // 自视角：取自己的 uid（localStorage 优先，否则 /api/auth/me）
+    var own = '';
+    try { own = localStorage.getItem('study_workbench_uid') || ''; } catch (e) {}
+    function showSelf(id) {
+      txt.textContent = '我的动态';
+      btn.onclick = function () { window.gotoUserMoments(id); };
+      row.style.display = 'block';
+      renderBtn();
+    }
+    if (own && /^\d+$/.test(String(own).trim())) { showSelf(String(own).trim()); return; }
+    fetch(apiBase() + '/api/auth/me', { headers: { 'Authorization': 'Bearer ' + tok() } })
+      .then(function (r) { return r.json(); })
+      .then(function (me) { if (me && me.id) showSelf(String(me.id)); else row.style.display = 'none'; })
+      .catch(function () { row.style.display = 'none'; });
+  };
 })();
 </script>
 </body>
