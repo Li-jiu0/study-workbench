@@ -166,3 +166,8 @@ tools/_artifacts/
 # 注意：tools/verifier/_backup_0913b/ 是 14 个分片的最初原始版本备份，**必须入库**，勿套用本规则。
 tools/verifier/_*.txt
 tools/verifier/out_*.txt
+
+# ===== 2026-09-14 批次七：本地参考资料 PDF 不入库 =====
+# tencent_2025_interim/ 是腾讯2025中期报告的本地参考资料（约19MB），
+# 20260914f 提交时曾被误扫入，已剔除；此规则防止复发。
+tencent_2025_interim/*.pdf
