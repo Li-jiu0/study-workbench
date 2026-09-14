@@ -21,9 +21,48 @@
   }
 
   var S = null;
-  function toast(m) { if (typeof showToast === 'function') { showToast(m); return; } if (typeof alert === 'function') alert(m); }
+  /* 统一提示：优先 xtToast → showToast → 自建 DOM toast。严禁 alert/confirm/prompt（静默失败即为此前的“导不进去”） */
+  function toast(m, st) {
+    var msg = String(m == null ? '' : m);
+    try { if (typeof window.xtToast === 'function') { window.xtToast(st || 'info', msg); return; } } catch (e) { }
+    try { if (typeof window.showToast === 'function') { window.showToast(msg); return; } } catch (e2) { }
+    try { if (typeof showToast === 'function') { showToast(msg); return; } } catch (e3) { }
+    try {
+      var d = document.createElement('div');
+      d.textContent = msg;
+      d.style.cssText = 'position:fixed;left:50%;bottom:88px;transform:translateX(-50%);z-index:4000;background:rgba(20,22,34,.92);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;max-width:80vw;line-height:1.6';
+      document.body.appendChild(d);
+      setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 2600);
+    } catch (e4) { }
+  }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function closeI() { var m = document.getElementById('impMask'); if (m) m.remove(); S = null; }
+
+  /* ---------- 自定义题库（按文件名自动建立，存本机 localStorage） ----------
+     与 qbank.js 的内置题库(REG) 解耦：导入向导自带一个“按文件名”的自定义题库表，
+     写入 localStorage['study_workbench_imports'] = { "<自定义库名>": {label,type,items,updatedAt} }。
+     导入成功后无论选内置还是自定义目标，都按文件名自动建立/覆盖一个自定义题库，
+     重复导入同名文件整体替换（合理行为，避免无限新建同名库）。 */
+  var IMPORTS_KEY = 'study_workbench_imports';
+  function safeFileName(name) {
+    var n = (name || '未命名文件').replace(/\.[^.]+$/, '');
+    n = n.replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').replace(/\s+/g, ' ').trim();
+    return (n || '未命名文件').slice(0, 40);
+  }
+  function loadImportBanks() { try { return JSON.parse(localStorage.getItem(IMPORTS_KEY)) || {}; } catch (e) { return {}; } }
+  function saveImportBanks(m) { try { localStorage.setItem(IMPORTS_KEY, JSON.stringify(m)); } catch (e) { } }
+  function upsertImportBank(name, type, items) {
+    var m = loadImportBanks();
+    m[name] = { label: name, type: type, items: (items || []).slice(), updatedAt: new Date().toISOString().slice(0, 10) };
+    saveImportBanks(m);
+    return (items || []).length;
+  }
+  function detectType(key) {
+    if (key === 'cet') return 'cet';
+    if (key === 'exam') return 'exam';
+    if (key === 'iv') return 'iv';
+    return 'text';
+  }
 
   /* ---------- 字节/文本工具 ---------- */
   async function readXlsxText(file) {
@@ -82,6 +121,23 @@
     return lines(text).map(function (ln) { return { text: ln.replace(/^\s*[\d\.\-\*•]+\s*/, '') }; });
   }
   function toText(u8) { try { return new TextDecoder('utf-8').decode(u8); } catch (e) { return ''; } }
+  /* 读取 txt/csv：去 BOM → 先按 UTF-8 严格解码 → 失败/出现乱码字符时回退 GBK/GB18030/Big5（避免中文文件读出乱码或 0 条） */
+  async function readTextFile(f) {
+    var buf = await f.arrayBuffer();
+    var u8 = new Uint8Array(buf);
+    if (u8.length >= 3 && u8[0] === 0xEF && u8[1] === 0xBB && u8[2] === 0xBF) u8 = u8.subarray(3);
+    if (!u8.length) return '';
+    var txt = null;
+    try { txt = new TextDecoder('utf-8', { fatal: true }).decode(u8); } catch (e) { txt = null; }
+    if (txt == null || /\uFFFD/.test(txt)) {
+      var alts = ['gbk', 'gb18030', 'big5'];
+      for (var i = 0; i < alts.length; i++) {
+        try { var t2 = new TextDecoder(alts[i]).decode(u8); if (t2 && !/\uFFFD/.test(t2)) { txt = t2; break; } } catch (e2) { }
+      }
+    }
+    if (txt == null) txt = toText(u8);
+    return txt;
+  }
   async function inflateRaw(u8) {
     var mk = function (fmt) {
       try { var ds = new DecompressionStream(fmt); return new Response(new Blob([u8]).stream().pipeThrough(ds)).arrayBuffer(); }
@@ -267,8 +323,10 @@
     });
   }
   function targetStep() {
-    var tg = __qbReg ? __qbReg() : {};
-    var cards = [
+    // 防御：依赖 qbank.js 暴露的 __qbReg；若组件未加载也不要让整步崩溃（避免裸 __qbReg 触发 ReferenceError）
+    var tg = {};
+    try { if (typeof window.__qbReg === 'function') tg = window.__qbReg() || {}; } catch (e) { tg = {}; }
+    var std = [
       { k: 'cet', ic: '📖', nm: '四级词汇', ds: '每行：单词、音标(可选)、释义' },
       { k: 'exam', ic: '🧮', nm: '行测刷题', ds: '题干 + A/B/C/D 选项 + 答案 + 解析' },
       { k: 'iv', ic: '🤝', nm: '面试题库', ds: '每题一段文字（问题/要点/参考）' },
@@ -277,21 +335,54 @@
       { k: 'etiquet', ic: '🎩', nm: '商务礼仪', ds: '每行一条礼仪要点文字' },
       { k: 'layouts', ic: '🧱', nm: 'PPT版式', ds: '每行一条版式/技巧文字' }
     ].filter(function (c) { return tg[c.k]; });
-    var on = cards.map(function (c) { return '<div class="imp-t' + (c.k === S.target ? ' on' : '') + '" data-k="' + c.k + '" onclick="__impTarget(\'' + c.k + '\')"><div class="ic">' + c.ic + '</div><div class="nm">' + c.nm + '</div><div class="ds">' + c.ds + '</div></div>'; }).join('');
+
+    var banks = loadImportBanks();
+    var curName = '自定义·' + safeFileName(S.rawName);
+    var card = function (c) {
+      return '<div class="imp-t' + (c.k === S.target ? ' on' : '') + '" data-k="' + esc(c.k) + '" onclick="__impTarget(\'' + esc(c.k) + '\')"><div class="ic">' + c.ic + '</div><div class="nm">' + esc(c.nm) + '</div><div class="ds">' + esc(c.ds) + '</div></div>';
+    };
+    var stdHtml = std.map(card).join('');
+    var customCards = Object.keys(banks).map(function (n) {
+      return { k: n, ic: '📦', nm: n, ds: '自定义题库 · ' + ((banks[n].items || []).length) + ' 条（点它作为导入目标）' };
+    });
+    if (banks[curName] == null) customCards.unshift({ k: curName, ic: '➕', nm: curName, ds: '为本次文件新建自定义题库（点它作为导入目标）' });
+    var customHtml = customCards.map(card).join('');
+
+    var parsedTotal = lines(S.text).length;
     shell('第 2 步：要把这份内容导入到哪个题库？', function () {
-      return '<div class="imp-tg">' + on + '</div>' +
+      return '<div class="imp-res">已读取文件：<b>' + esc(S.rawName) + '</b> · 共 ' + parsedTotal + ' 行/段，解析出 <b>' + ((S.parsed && S.parsed.length) || 0) + '</b> 条可入库内容</div>' +
+        (std.length
+          ? '<div style="font-weight:700;margin:8px 0 4px">① 内置题库（导入后立即可在对应页面刷题/查看）</div><div class="imp-tg">' + stdHtml + '</div>'
+          : '<div class="imp-note">⚠️ 内置题库组件未加载（qbank.js），请刷新本页后重试；你仍可选择下方“自定义题库”完成导入。</div>') +
+        '<div style="font-weight:700;margin:10px 0 4px">② 自定义题库（按文件名自动建立，可重复导入覆盖）</div><div class="imp-tg">' + (customHtml || '<div class="imp-note">暂无，导入后会自动生成</div>') + '</div>' +
         '<div id="impPreviewBox"></div>' +
         '<div class="imp-acts" style="padding:0;border:none;justify-content:flex-start;margin-top:12px">' +
         '<button class="btn btn-outline" onclick="__impBackFile()">← 换文件</button>' +
         '<button class="btn btn-primary" id="impDo" onclick="__impDo()">导入</button></div>';
     });
   }
+  /* 自定义题库的目标：按库里已存的类型解析；新库按文件内容自动判定类型（选项/答案→行测；音标→词汇） */
+  function autoType(text) {
+    var t = String(text || '');
+    if (/^\s*[A-Da-d][\.\、\)）]\s*\S/m.test(t) || /(?:答案|正确答案)\s*[:：]?\s*[A-Da-d]/m.test(t)) return 'exam';
+    if (/^\s*[A-Za-z][A-Za-z\-\' ]{0,20}\s*[\/\[][^\/\]]{1,30}[\/\]]/m.test(t)) return 'cet';
+    return 'text';
+  }
+  function parseKeyOf(k) {
+    if (isBuiltin(k)) return k;
+    var b = (S && S.banks) ? S.banks[k] : loadImportBanks()[k];
+    if (b && b.type) return b.type;
+    return (S && S.ftype) ? S.ftype : 'text';
+  }
+  function parseFor(k, text) {
+    var pk = parseKeyOf(k);
+    if (pk === 'cet') return parseCet(text);
+    if (pk === 'exam') return parseExam(text);
+    return parseTextCards(text);
+  }
   function showPreview() {
     var key = S.target;
-    var parsed = [];
-    if (key === 'cet') parsed = parseCet(S.text);
-    else if (key === 'exam') parsed = parseExam(S.text);
-    else parsed = parseTextCards(S.text);
+    var parsed = parseFor(key, S.text);
     S.parsed = parsed;
     var box = document.getElementById('impPreviewBox');
     var first = parsed.slice(0, 6).map(function (it) {
@@ -301,7 +392,15 @@
     box.innerHTML = '<div style="font-weight:700;color:var(--text);margin:4px 0 6px">预览（识别 ' + parsed.length + ' 条，前几条）</div>' +
       '<div class="imp-pv">' + (first || '未能识别出内容。\n\n请检查：\n1. 文档是否有实际文字内容（不是纯图片/扫描件）\n2. 四级词汇：每行一个单词（可加音标/释义）\n3. 行测题：题干 + A/B/C/D 选项 + 答案 + 解析，每题之间空一行\n4. 面试题：每行一个问题') + '</div>';
     var doBtn = document.getElementById('impDo');
-    if (doBtn) { doBtn.style.display = parsed.length ? '' : 'none'; }
+    if (doBtn) {
+      doBtn.style.display = '';
+      if (parsed.length) { doBtn.disabled = false; doBtn.textContent = '✅ 导入 ' + parsed.length + ' 条到「' + labelOf(key) + '」'; }
+      else { doBtn.disabled = true; doBtn.textContent = '解析出 0 条，无法导入'; }
+    }
+  }
+  function labelOf(k) {
+    try { var r = (typeof window.__qbReg === 'function') ? window.__qbReg() : {}; if (r[k]) return r[k]; } catch (e) { }
+    return k || '题库';
   }
 
   window.__impPick = async function (ev) {
@@ -310,39 +409,122 @@
     // 文件大小检查
     if (f.size === 0) { toast('⚠️ 文件为空（0 字节），请选择有效的文档文件'); return; }
     if (f.size > 20 * 1024 * 1024) { toast('⚠️ 文件过大（超过 20MB），请选择较小的文档'); return; }
-    document.getElementById('impFileName').textContent = f.name;
+    var nameEl = document.getElementById('impFileName');
+    if (nameEl) nameEl.textContent = '⏳ 正在读取 ' + f.name + ' …（' + Math.max(1, Math.round(f.size / 1024)) + ' KB）';
     var ext = (f.name.split('.').pop() || '').toLowerCase();
     // 老格式 .doc 不支持
-    if (ext === 'doc') { toast('⚠️ 不支持 .doc 老格式，请用 Word 另存为 .docx 后再导入'); return; }
-    if (ext === 'ppt') { toast('⚠️ 不支持 .ppt 老格式，请用 PowerPoint 另存为 .pptx 后再导入'); return; }
+    if (ext === 'doc') { if (nameEl) nameEl.textContent = f.name; toast('⚠️ 不支持 .doc 老格式：请用 Word 打开后「另存为 .docx」，或把内容复制到 .txt 再导入', 'warning'); return; }
+    if (ext === 'ppt') { if (nameEl) nameEl.textContent = f.name; toast('⚠️ 不支持 .ppt 老格式：请用 PowerPoint 另存为 .pptx 后再导入', 'warning'); return; }
     var res;
-    if (ext === 'docx') { res = await readDocxText(f); if (!res.ok) { toast(res.msg); return; } S.text = res.text; }
-    else if (ext === 'xlsx') { res = await readXlsxText(f); if (!res.ok) { toast(res.msg); return; } S.text = res.text; }
-    else if (ext === 'pptx') { res = await readPptxText(f); if (!res.ok) { toast(res.msg); return; } S.text = res.text; }
+    try {
+    if (ext === 'docx') { res = await readDocxText(f); if (!res.ok) { if (nameEl) nameEl.textContent = f.name; toast('⚠️ 第 1 步：' + res.msg, 'error'); return; } S.text = res.text; }
+    else if (ext === 'xlsx') { res = await readXlsxText(f); if (!res.ok) { if (nameEl) nameEl.textContent = f.name; toast('⚠️ 第 1 步：' + res.msg, 'error'); return; } S.text = res.text; }
+    else if (ext === 'pptx') { res = await readPptxText(f); if (!res.ok) { if (nameEl) nameEl.textContent = f.name; toast('⚠️ 第 1 步：' + res.msg, 'error'); return; } S.text = res.text; }
     else if (ext === 'csv' || ext === 'txt') {
-      try {
-        if (typeof f.text === 'function') { S.text = await f.text(); }
-        else { S.text = await new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(r.result); }; r.onerror = rej; r.readAsText(f, 'utf-8'); }); }
-      } catch (e) { toast('读取文件失败：' + e.message); return; }
+        S.text = await readTextFile(f);
     }
-    else { toast('暂只支持 .docx / .txt / .csv / .xlsx'); return; }
+    else { if (nameEl) nameEl.textContent = f.name; toast('⚠️ 暂不支持 .' + (ext || '未知') + ' 格式：请提供 .docx / .pptx / .txt / .csv / .xlsx 文件', 'warning'); return; }
+    } catch (err) {
+      if (nameEl) nameEl.textContent = f.name;
+      toast('⚠️ 第 1 步读取文件失败：' + (err && err.message ? err.message : err) + '。若为 .docx/.xlsx/.pptx，请确认文件未损坏、未被加密', 'error');
+      return;
+    }
+    if (!String(S.text || '').trim()) {
+      if (nameEl) nameEl.textContent = f.name;
+      toast('⚠️ 第 1 步：文件里没有读到任何文字。若是扫描件/纯图片 PDF 转成的 Word，请先做文字识别；也可把内容复制到 .txt 再导入', 'error');
+      return;
+    }
     S.rawName = f.name;
+    S.ftype = autoType(S.text);
+    S.banks = loadImportBanks();
     ev.target.value = '';
     S.target = null; S.parsed = [];
     targetStep();
-    } catch (e) { toast('导入向导出错：' + e.message); }
+    } catch (e) { toast('⚠️ 导入向导出错：' + (e && e.message ? e.message : e), 'error'); }
   };
   window.__impTarget = function (k) { S.target = k; S.parsed = []; targetStep(); showPreview(); };
   window.__impBackFile = function () { fileStep(); };
+  function isBuiltin(k) {
+    try { return !!(window.__qbReg && window.__qbReg()[k]); } catch (e) { return false; }
+  }
+  function itemKey(it) {
+    return String(it && (it.text || it.q || it.question || it.word || it.title || '')).replace(/\s+/g, ' ').trim();
+  }
   window.__impDo = function () {
-    if (!S.target) { toast('请先选择目标题库'); return; }
-    var items = S.parsed || [];
-    if (!items.length) { toast('没有可导入的内容'); return; }
-    var r = __qbImportRaw(S.target, items);
-    if (!r.ok) { toast(r.msg || '导入失败'); return; }
-    var libName = __qbReg ? (__qbReg()[S.target] || '该题库') : '题库';
-    toast('✅ 已导入 ' + r.n + ' 条到「' + libName + '」' + (r.skip ? '，跳过 ' + r.skip + ' 条重复' : '') + '。到对应题库页面点 🧠 可管理');
-    closeI();
+    if (!S) { toast('⚠️ 向导未打开，请从「工具 → 导入题库」重新进入', 'warning'); return; }
+    if (!String(S.text || '').trim()) { toast('⚠️ 第 1 步：还没读到文件内容，请先选择文件', 'warning'); return; }
+    if (!S.target) { toast('⚠️ 第 2 步：请先点一个题库卡片（内置题库或自定义题库）', 'warning'); return; }
+    var items = (S.parsed && S.parsed.length) ? S.parsed : (parseFor(S.target, S.text) || []);
+    S.parsed = items;
+    if (!items.length) {
+      toast('⚠️ 第 2 步：解析出 0 条内容，请检查文件是否为 .txt/.csv/.docx/.xlsx/.pptx，且每行/每段含题干与选项', 'warning');
+      return;
+    }
+    var btn = document.getElementById('impDo');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ 正在导入 ' + items.length + ' 条…'; }
+    try {
+      var banks = loadImportBanks();
+      var curName = '自定义·' + safeFileName(S.rawName);
+      var curType = (banks[curName] && banks[curName].type) || S.ftype || 'text';
+      var toBuiltin = isBuiltin(S.target);
+      var extra = '';
+
+      /* ① 内置题库：走 qbank.js 的 __qbImportRaw（必须判空，工具.html 未加载 qbank.js，裸调用会 ReferenceError 静默失败） */
+      if (toBuiltin) {
+        if (typeof window.__qbImportRaw !== 'function') {
+          toast('⚠️ 内置题库组件（qbank.js）未加载，无法写入「' + labelOf(S.target) + '」。请刷新页面后重试，或改选下方「自定义题库」', 'error');
+          if (btn) { btn.disabled = false; btn.textContent = '✅ 导入 ' + items.length + ' 条到「' + labelOf(S.target) + '」'; }
+          return;
+        }
+        var r = window.__qbImportRaw(S.target, items) || { ok: false, msg: '未知原因' };
+        if (!r.ok) {
+          toast('⚠️ 第 3 步：写入「' + labelOf(S.target) + '」失败：' + (r.msg || '未知原因') + '。请改选下方「自定义题库」完成导入', 'error');
+          if (btn) { btn.disabled = false; btn.textContent = '✅ 导入 ' + items.length + ' 条到「' + labelOf(S.target) + '」'; }
+          return;
+        }
+        if (r.n <= 0) {
+          toast('⚠️ 第 3 步：' + items.length + ' 条全部未通过「' + labelOf(S.target) + '」的格式校验' + (r.skip ? '（跳过 ' + r.skip + ' 条）' : '') + '。内容已存为自定义题库「' + curName + '」，也可换一个题库再试', 'warning');
+        } else {
+          extra = '到「' + labelOf(S.target) + '」' + (r.skip ? '（跳过 ' + r.skip + ' 条重复/不合规）' : '');
+        }
+      }
+
+      /* ② 自定义题库：按文件名自动建库，写 localStorage['study_workbench_imports'] */
+      if (toBuiltin || S.target === curName || !banks[S.target]) {
+        // 同一文件重复导入 → 整体替换（避免每次新建一个同名库）
+        upsertImportBank(curName, curType, items);
+        if (!toBuiltin) extra = '到自定义题库「' + curName + '」（' + items.length + ' 条，' + (banks[curName] ? '已覆盖更新' : '已新建') + '）';
+      } else {
+        // 目标为其它已存在的自定义库 → 追加并按内容去重
+        var old = (banks[S.target].items || []).slice();
+        var seen = {};
+        old.forEach(function (x) { var k = itemKey(x); if (k) seen[k] = 1; });
+        var add = items.filter(function (it) { var k = itemKey(it); if (!k || seen[k]) return false; seen[k] = 1; return true; });
+        upsertImportBank(S.target, banks[S.target].type || curType, old.concat(add));
+        upsertImportBank(curName, curType, items);
+        extra = '到自定义题库「' + S.target + '」（新增 ' + add.length + ' 条，跳过 ' + (items.length - add.length) + ' 条重复）';
+      }
+
+      var curN = ((loadImportBanks()[curName] || {}).items || []).length;
+      var tip = '✅ 已导入 ' + items.length + ' 条' + (extra || ('到「' + labelOf(S.target) + '」')) +
+        (toBuiltin ? '；并已自动保存为自定义题库「' + curName + '」' + (curN ? '（' + curN + ' 条）' : '') : '');
+      toast(tip, 'success');
+
+      /* ③ 收尾：刷新宿主页面的题库列表 → 关闭向导 */
+      try { if (typeof window.__impAfterImport === 'function') window.__impAfterImport(); } catch (e) { }
+      var view = document.getElementById('importerView');
+      if (view && typeof window.closeImporterView === 'function') window.closeImporterView();
+      else closeI();
+    } catch (e) {
+      if (btn) { btn.disabled = false; btn.textContent = '✅ 导入 ' + items.length + ' 条'; }
+      toast('⚠️ 第 3 步导入失败：' + (e && e.message ? e.message : e), 'error');
+    }
+  };
+  /* 供宿主页面（工具.html）展示 / 删除自定义题库 */
+  window.__impBanks = loadImportBanks;
+  window.__impBankKey = IMPORTS_KEY;
+  window.__impDelBank = function (name) {
+    var m = loadImportBanks(); if (m[name]) { delete m[name]; saveImportBanks(m); return true; } return false;
   };
   window.__impClose = closeI;
   window.__impParse = function (key, text) { return key === 'cet' ? parseCet(text) : key === 'exam' ? parseExam(text) : parseTextCards(text); };
@@ -351,7 +533,7 @@
   function openImporter() {
     TARGETS = regs();
     ensureCss();
-    S = { text: '', rawName: '', target: null, parsed: [] };
+    S = { text: '', rawName: '', target: null, parsed: [], ftype: 'text', banks: loadImportBanks() };
     var m = document.createElement('div'); m.id = 'impMask'; m.className = 'imp-mask';
     m.innerHTML = '<div class="imp-box"><div class="imp-head"><b>📥 导入题库</b><button class="imp-x" onclick="__impClose()">✕</button></div><div class="imp-body" id="impBody"></div></div>';
     document.body.appendChild(m);

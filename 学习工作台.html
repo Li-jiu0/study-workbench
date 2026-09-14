@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" data-page-node-id="OlgAXTFaD9mAg3AFsfpeiy">
 <meta name="theme-color" content="#5B8DEF" data-page-node-id="XIP3tSfjex43vTn5HPKTvm">
 <title>首页 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260914f" data-page-node-id="cG8803QAoDbKSd7v8tsEs9">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913o" data-page-node-id="">
-<link rel="stylesheet" href="assets/states.css?v=20260913o" data-page-node-id="">
-<link rel="stylesheet" href="assets/polish.css?v=20260913o" data-page-node-id="lkxFYcwbHH3N6LYB00qIeL">
+<link rel="stylesheet" href="assets/common.css?v=20260915c" data-page-node-id="cG8803QAoDbKSd7v8tsEs9">
+<link rel="stylesheet" href="assets/page-head.css?v=20260915c" data-page-node-id="">
+<link rel="stylesheet" href="assets/states.css?v=20260915c" data-page-node-id="">
+<link rel="stylesheet" href="assets/polish.css?v=20260915c" data-page-node-id="lkxFYcwbHH3N6LYB00qIeL">
 </head>
 <body class="theme-home" data-page-node-id="BTU8kiFHiuvsPFdnqvbOiF">
 
@@ -31,6 +31,9 @@
       </div>
       <div class="nav-item" data-page="exam" data-page-node-id="tSt8EKwZOClyytSHTvN37H">
         <span class="nav-icon" data-page-node-id="goJZJ8B8TLaKBwGmMpdFUe" data-icon="pencil"></span><span data-page-node-id="KwpLQldrcYAAczTHTBV5Bp">央国企笔试</span>
+      </div>
+      <div class="nav-item" onclick="location.href='申论刷题.html'" title="申论刷题（题目精练 / 阅读积累）">
+        <span class="nav-icon" data-icon="file-text"></span><span>申论刷题</span>
       </div>
       <div class="nav-item" data-page="comm" data-page-node-id="8SpJei9Zb0wPsI4cNRPbZZ">
         <span class="nav-icon" data-page-node-id="6Bd1IksreFmwaSoM8P2N88" data-icon="message-square"></span><span data-page-node-id="8XUk4QeHBuPNvrW4gSMkP6">高情商表达</span>
@@ -390,14 +393,14 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913o" defer></script>
-<script src="assets/xt-toast.js?v=20260913o" defer></script>
-<script src="assets/error-boundary.js?v=20260913o" defer></script>
-<script src="assets/app.js?v=20260914f" defer></script>
-<script src="assets/quest.js?v=20260913o" defer></script>
-<script src="assets/config.js?v=20260913o" defer></script>
-<script src="assets/api.js?v=20260913o" defer></script>
-<script src="assets/study-stats.js?v=20260913o" defer></script>
+<script src="assets/icon-map.js?v=20260915c" defer></script>
+<script src="assets/xt-toast.js?v=20260915c" defer></script>
+<script src="assets/error-boundary.js?v=20260915c" defer></script>
+<script src="assets/app.js?v=20260915c" defer></script>
+<script src="assets/quest.js?v=20260915c" defer></script>
+<script src="assets/config.js?v=20260915c" defer></script>
+<script src="assets/api.js?v=20260915c" defer></script>
+<script src="assets/study-stats.js?v=20260915c" defer></script>
 <script>
 /* ==================== T7 增量（P0-14）：更多工具使用痕迹 + 按最近使用排序 ==================== */
 (function () {
@@ -457,19 +460,70 @@
 /* ========== 首页增强（kou-l-home）：任务卡自定义任务 + 各模块进度布局重构 ==========
    纯增量覆盖：不改共享 CSS，页内样式在文档序上晚于 common.css，同特异性下优先生效。 */
 
-/* —— 各模块进度：5列挤排 → 两列整齐网格；卡内重排为「图标 | 名称…百分比 / 通栏进度条」 —— */
-.module-progress-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+/* ========== 2026-09-15 重构：分组分区 + 总览条 + 错题徽标 ==========
+   12 个模块平铺会挤爆首屏，改为「总览条 + 分组（行测/申论/英语/内容库）」。
+   分组容器改为单列纵向堆叠，组内卡片用 auto-fill 自适应，窄屏自动降列。 */
+.module-progress-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+
+/* —— 顶部总览条：只汇总同量纲数据，混量纲（题+词+条）不做加法 —— */
+.module-summary {
+  display: flex; flex-wrap: wrap; gap: 6px 18px;
+  padding: 10px 14px;
+  font-size: var(--xt-font-xs, 12px);
+  color: var(--text-muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
 }
+.module-summary .ms-item b { color: var(--text); font-weight: 700; }
+.module-summary .ms-item.is-warn b { color: var(--danger, #e5484d); }
+
+/* —— 分组 —— */
+.module-group { display: block; }
+.module-group-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 8px; margin: 0 0 8px;
+}
+.module-group-head .mg-name {
+  font-size: var(--xt-font-sm, 13px); font-weight: 700; color: var(--text);
+}
+.module-group-head .mg-count {
+  font-size: var(--xt-font-xs, 12px); color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.module-group-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+/* 错题徽标：右上角小胶囊，0 时由 JS 不渲染 */
+.module-wrong {
+  grid-area: wrong;
+  justify-self: start;
+  margin-top: 4px;
+  padding: 1px 7px;
+  font-size: 11px; font-weight: 600; line-height: 1.6;
+  color: var(--danger, #e5484d);
+  background: color-mix(in srgb, var(--danger, #e5484d) 10%, transparent);
+  border-radius: 999px;
+}
+/* 卡片网格区域加入错题行 */
+.module-progress-card {
+  grid-template-areas:
+    "icon name percent"
+    "icon bar   bar"
+    "icon meta  meta"
+    "icon wrong wrong";
+}
+
+/* —— 各模块进度：两列整齐网格；卡内重排为「图标 | 名称…百分比 / 通栏进度条 / 通栏明细」 —— */
 .module-progress-card {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-areas:
-    "icon name percent"
-    "icon bar   bar";
   align-items: center;
   column-gap: 10px;
+  row-gap: 4px;
   text-align: left;
   padding: 14px;
 }
@@ -477,11 +531,40 @@
 .module-progress-card .module-name { grid-area: name; margin-bottom: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .module-progress-card .module-percent { grid-area: percent; font-size: var(--xt-font-md, 15px); }
 .module-progress-card .module-percent.muted { color: var(--text-muted); font-weight: 600; }
-.module-progress-card .module-bar { grid-area: bar; margin-top: 10px; }
+.module-progress-card .module-bar { grid-area: bar; margin-top: 6px; }
+/* 明细行：已学 x/y · 正确率 r% · N 分钟前（小屏不换行，超出省略） */
+.module-progress-card .module-meta {
+  grid-area: meta;
+  margin-top: 2px;
+  font-size: var(--xt-font-xs, 12px);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* 空态 / 展开收起按钮：横跨整行 */
+.module-progress-grid .empty-hint,
+.module-progress-grid .module-progress-toggle { grid-column: 1 / -1; }
+.module-progress-toggle {
+  padding: 8px 12px;
+  text-align: center;
+  font-size: var(--xt-font-xs, 12px);
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--bg);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.module-progress-toggle:hover { border-color: var(--primary); }
 @media (max-width: 768px) {
-  /* 窄屏保持两列（覆盖 common.css 响应式的 3 列），间距节奏与桌面一致 */
-  .module-progress-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* 窄屏：组内自适应降到单列，明细允许换行（覆盖 common.css 的多列响应式） */
+  .module-progress-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .module-group-body { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
   .module-progress-card { padding: 12px; }
+  .module-progress-card .module-meta { white-space: normal; line-height: 1.35; }
+  .module-summary { padding: 8px 12px; gap: 4px 14px; }
 }
 
 /* —— 今日任务：＋添加按钮 + 自定义任务条 —— */

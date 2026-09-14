@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>私信 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260914f">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913o">
-<link rel="stylesheet" href="assets/states.css?v=20260913o">
-<link rel="stylesheet" href="assets/polish.css?v=20260913o">
+<link rel="stylesheet" href="assets/common.css?v=20260915c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260915c">
+<link rel="stylesheet" href="assets/states.css?v=20260915c">
+<link rel="stylesheet" href="assets/polish.css?v=20260915c">
 <style>
 
   /* ===== 私信页（嵌在应用外壳内）===== */
@@ -40,6 +40,21 @@
   .im-m.ot{align-self:flex-start;background:var(--card);border:1px solid var(--border);border-bottom-left-radius:4px}
   .im-mt{font-size:10px;opacity:.75;margin-top:4px;text-align:right}
   .im-m.ot .im-mt{color:var(--text-secondary)}
+  /* 2026-09-15 批次八：消息撤回 —— 入口按钮 / 轻量确认气泡 / 已撤回系统提示 */
+  .im-m{position:relative}
+  .im-recall-btn{position:absolute;top:50%;left:-46px;transform:translateY(-50%);width:40px;height:22px;line-height:20px;text-align:center;font-size:11px;color:var(--text-secondary);background:var(--card);border:1px solid var(--border);border-radius:6px;cursor:pointer;user-select:none;white-space:nowrap;box-sizing:border-box;opacity:0;transition:opacity .15s}
+  .im-m:hover .im-recall-btn{opacity:1}
+  .im-recall-btn:hover{color:#fff;background:#ff5d5d;border-color:#ff5d5d}
+  .im-recall-tip{align-self:center;max-width:80%;padding:4px 10px;font-size:12px;color:var(--text-secondary);background:var(--bg);border-radius:10px;text-align:center}
+  .im-recall-confirm{position:fixed;z-index:10000;min-width:190px;padding:12px 14px;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.18)}
+  .im-rc-txt{font-size:13px;color:var(--text);margin-bottom:10px}
+  .im-rc-btns{display:flex;justify-content:flex-end;gap:8px}
+  .im-rc-btns button{border:0;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;font-family:inherit}
+  .im-rc-cancel{background:var(--bg);color:var(--text-secondary);border:1px solid var(--border)}
+  .im-rc-ok{background:#ff5d5d;color:#fff}
+  @media (max-width:760px){
+    .im-recall-btn{position:static;display:inline-block;margin-top:4px;transform:none;opacity:.6}
+  }
   .im-empty2{text-align:center;padding:36px 16px;color:var(--text-secondary);font-size:13px}
   .im-composer{display:flex;gap:8px;align-items:flex-end;padding:10px 12px;background:var(--card);border-top:1px solid var(--border)}
   .im-composer textarea{flex:1;resize:none;height:44px;max-height:120px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;font-size:14px;outline:none;font-family:inherit;background:var(--bg);color:var(--text)}
@@ -58,7 +73,10 @@
 <body class="theme-home">
 
 <div class="app">
-<nav class="sidebar"> <div class="logo"> <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div> <div> <div class="logo-text">星途</div> <div class="logo-sub">致追梦的人->修身</div> </div> </div> <div class="nav-list"> <div class="nav-item" data-page="home"> <span class="nav-icon" data-icon="home"></span><span>首页</span> </div> <div class="nav-section">学习模块</div> <div class="nav-item" data-page="cet"> <span class="nav-icon" data-icon="book-open"></span><span>四级备考</span> </div> <div class="nav-item" data-page="exam"> <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span> </div> <div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span> </div> <div class="nav-item" data-page="ppt"> <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon" data-icon="globe"></span><span>广场</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="book"></span><span>错题本</span> </div> <div class="nav-item" data-page="profile"> <span class="nav-icon" data-icon="user"></span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon" data-icon="settings"></span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak">🔥 连续打卡 0 天</div> </div> </div> </div> </nav>
+<nav class="sidebar"> <div class="logo"> <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div> <div> <div class="logo-text">星途</div> <div class="logo-sub">致追梦的人->修身</div> </div> </div> <div class="nav-list"> <div class="nav-item" data-page="home"> <span class="nav-icon" data-icon="home"></span><span>首页</span> </div> <div class="nav-section">学习模块</div> <div class="nav-item" data-page="cet"> <span class="nav-icon" data-icon="book-open"></span><span>四级备考</span> </div> <div class="nav-item" data-page="exam"> <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span> </div>
+      <div class="nav-item" onclick="location.href='申论刷题.html'" title="申论刷题（题目精练 / 阅读积累）">
+        <span class="nav-icon" data-icon="file-text"></span><span>申论刷题</span>
+      </div> <div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span> </div> <div class="nav-item" data-page="ppt"> <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon" data-icon="globe"></span><span>广场</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="book"></span><span>错题本</span> </div> <div class="nav-item" data-page="profile"> <span class="nav-icon" data-icon="user"></span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon" data-icon="settings"></span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak">🔥 连续打卡 0 天</div> </div> </div> </div> </nav>
 
   <div class="main">
 <header class="topbar">
@@ -241,16 +259,13 @@
   <!-- ==================== 加好友模态（A3，2026-09-11；批次二 2026-09-11h 移除弹窗内「旧页回退」入口） ====================
        搜索（300ms 防抖）→ imRenderFriendRows 统一渲染。
        注：好友申请.html 文件本身保留（直连 URL 仍可访问作为后门），但弹窗内不再提供跳转入口。 -->
-  <div class="im-overlay" id="imAddFriendModal" style="display:none" onclick="if(event.target===this)imCloseAddFriendModal()">
-    <div class="im-modal">
-      <div class="im-modal-head"><div style="font-size:var(--xt-font-md);font-weight:700">添加好友</div><div style="cursor:pointer;color:#999;font-size:var(--xt-font-2xl)" onclick="imCloseAddFriendModal()">✕</div></div>
-      <div class="im-group-body">
-        <div class="im-af-search">
-          <input id="imAfInput" placeholder="输入昵称或 @账号" maxlength="30" oninput="imAfSearch(this.value)" onkeydown="if(event.key==='Enter')imAfSearch(this.value)">
-        </div>
-        <div class="im-af-list" id="imAfResults"><div class="im-empty2">输入昵称或 @账号开始搜索</div></div>
-      </div>
+  <!-- 2026-09-15 批次八：拆掉 .im-overlay/.im-modal 外壳与标题栏/✕，改为真正的页面内区块（ADR-3：核心功能不走弹窗）
+       id 与 #imAfInput / #imAfResults 全部保留，chat-local.js 的 imOpenAddFriendModal / imAfSearch / imRenderFriendRows 按 id 照常命中，未改 JS -->
+  <div class="im-af-sec" id="imAddFriendModal" style="display:none">
+    <div class="im-af-search">
+      <input id="imAfInput" placeholder="输入昵称或 @账号" maxlength="30" oninput="imAfSearch(this.value)" onkeydown="if(event.key==='Enter')imAfSearch(this.value)">
     </div>
+    <div class="im-af-list" id="imAfResults"><div class="im-empty2">输入昵称或 @账号开始搜索</div></div>
   </div>
 
   <!-- Toast提示 -->
@@ -306,15 +321,15 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913o" defer></script>
-<script src="assets/xt-toast.js?v=20260913o" defer></script>
-<script src="assets/error-boundary.js?v=20260913o" defer></script>
-<script src="assets/app.js?v=20260914f" defer></script>
-<script src="assets/config.js?v=20260913o" defer></script>
-<script src="assets/emoji/manifest.js?v=20260913o" defer></script>
-<script src="assets/api.js?v=20260913o" defer></script>
-<script src="assets/chat-local.js?v=20260914f" defer></script>
-<script src="assets/admin-contact.js?v=20260914f" defer></script>
+<script src="assets/icon-map.js?v=20260915c" defer></script>
+<script src="assets/xt-toast.js?v=20260915c" defer></script>
+<script src="assets/error-boundary.js?v=20260915c" defer></script>
+<script src="assets/app.js?v=20260915c" defer></script>
+<script src="assets/config.js?v=20260915c" defer></script>
+<script src="assets/emoji/manifest.js?v=20260915c" defer></script>
+<script src="assets/api.js?v=20260915c" defer></script>
+<script src="assets/chat-local.js?v=20260915c" defer></script>
+<script src="assets/admin-contact.js?v=20260915c" defer></script>
 <style>
   /* R33（20260913r）：tab 视觉统一——去掉 .im-tab-add 的特殊填充/加粗与专属 hover，加好友与其余 4 个 tab 同享 .im-tab/.im-tab.active；“im-tab-add” 类保留在 DOM 仅作语义标记，无样式副作用 */
   .im-tab:not(.active):hover{border-color:var(--primary);color:var(--primary)}
@@ -327,6 +342,11 @@
   .im-panel-host.active{display:block}
   .im-panel-host .im-overlay{position:static;top:auto;left:auto;right:auto;bottom:auto;background:transparent;z-index:auto;align-items:stretch;justify-content:stretch;padding:10px}
   .im-panel-host .im-modal{width:100%;max-width:none;max-height:none;margin:auto;box-shadow:none;border:1px solid var(--border)}
+  /* 2026-09-15 批次八：「加好友」已拆掉弹窗外壳，改为页面内区块（ADR-3）；
+     与「我的好友/群聊」列表同一视觉：无卡片边框、无圆角、无遮罩，直接作为面板内容铺开 */
+  .im-af-sec{display:flex;flex-direction:column;padding:10px 14px;background:transparent}
+  .im-af-sec .im-af-search{padding:0;margin-bottom:10px}
+  .im-af-sec .im-af-list{background:transparent;border:0;padding:0}
 
   /* 需求01：联系管理员固定入口 + 会话浮层（仅本页，全部 .ac- 前缀，不影响既有私信样式） */
   /* R45（20260914e）：入口改为会话行同款（.im-sess 结构 + 圆形头像），仅保留必要的自身覆写：

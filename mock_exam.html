@@ -5,21 +5,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>真题模考 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260914f">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913o">
-<link rel="stylesheet" href="assets/states.css?v=20260913o">
-<script src="assets/icon-map.js?v=20260913o" defer></script>
-<script src="assets/xt-toast.js?v=20260913o" defer></script>
-<script src="assets/error-boundary.js?v=20260913o" defer></script>
-<script src="assets/app.js?v=20260914f" defer></script>
-<script src="data/mock-papers.js?v=20260913o" defer></script>
-<script src="assets/mock-engine.js?v=20260913o" defer></script>
+<link rel="stylesheet" href="assets/common.css?v=20260915c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260915c">
+<link rel="stylesheet" href="assets/states.css?v=20260915c">
+<script src="assets/icon-map.js?v=20260915c" defer></script>
+<script src="assets/xt-toast.js?v=20260915c" defer></script>
+<script src="assets/error-boundary.js?v=20260915c" defer></script>
+<script src="assets/app.js?v=20260915c" defer></script>
+<script src="data/mock-papers.js?v=20260915c" defer></script>
+<script src="assets/mock-engine.js?v=20260915c" defer></script>
 <!-- 【批次 20260913m】考试指南并入本页：guide 数据沿用 MINI_BANK（mini-cet.js 的 cet-guide / mini-exam.js 的 exam-guide） -->
-<script src="assets/mini-cet.js?v=20260913o" defer></script>
-<script src="assets/mini-exam.js?v=20260913o" defer></script>
+<script src="assets/mini-cet.js?v=20260915c" defer></script>
+<script src="assets/mini-exam.js?v=20260915c" defer></script>
 <style>
 /* mock_exam.html 页面专属样式（不走弹窗/不弹窗 mask） */
 body { background: var(--xt-bg); margin: 0; color: var(--xt-text); }
+
+/* 修复：common.css 第 68 行全局 `html, body { height: 100%; overflow: hidden; }` 会把本独立页锁死无法滚动。
+   本页内容（套卷列表/指南）直接挂在 <body> 下，不在 .app>.main>.page 滚动容器内，
+   故在此用更具体选择器放开 body 自身滚动（不动 common.css）。 */
+html { height: auto; overflow: auto; }
+body { height: auto; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .mock-shell { max-width: 880px; margin: 0 auto; padding: 0 var(--xt-space-4) var(--xt-space-8); }
 .mock-cd-row {
   background: var(--xt-bg-card);

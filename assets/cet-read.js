@@ -10,7 +10,7 @@
  * 约束：不调 saveData()；localStorage 键前缀 xtc:lib:cetread: 且经 lsKey() 包装（XTC.storage 内部处理）；
  *       图标全部走 data-icon（icon-map.js），每次 innerHTML 后补 XTC.renderIcons() / lucideAutoRender()；
  *       内容资产一律页内全屏视图承载，禁止弹窗（ADR-3）。
- * 版本戳：20260914e
+ * 版本戳：20260915b
  * ========================================================================== */
 (function () {
   'use strict';
@@ -88,9 +88,9 @@
 
   /* ------------------------------------------------------------------ 样式 */
   var CSS =
-    '.cr-wrap{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px 48px}' +
+    '.cr-wrap{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:14px 16px 72px}' +
     '.cr-wrap>div{margin-bottom:14px}' +
-    '.cr-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border,#E5E7EB);border-radius:10px;background:var(--card,transparent);font-size:13px;color:var(--text-secondary,#6B7280)}' +
+    '.cr-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border,#E5E7EB);border-radius:10px;background:var(--card,#fff);font-size:13px;color:var(--text-secondary,#6B7280);position:sticky;top:0;z-index:5;box-shadow:0 1px 0 var(--border,#E5E7EB)}' +
     '.cr-toolbar .cr-tk{display:inline-flex;align-items:center;gap:4px;color:var(--primary,#5B8DEF);font-weight:700}' +
     '.cr-toolbar .cr-sp{flex:1}' +
     '.cr-btn{border:1px solid var(--primary,#5B8DEF);background:var(--primary,#5B8DEF);color:#fff;padding:6px 14px;border-radius:8px;font-size:13px;cursor:pointer;line-height:1.5}' +
@@ -105,7 +105,7 @@
     '.cr-opt{display:inline-flex;align-items:baseline;gap:5px;padding:5px 9px;border:1px solid var(--border,#E5E7EB);border-radius:8px;font-size:13px;line-height:1.5;background:var(--card,transparent);color:var(--text,#1F2937)}' +
     '.cr-opt b{color:var(--primary,#5B8DEF);font-size:12px}' +
     '.cr-opt i{font-style:normal;font-size:12px;color:var(--text-secondary,#9CA3AF)}' +
-    '.cr-art{padding:14px 16px;border:1px solid var(--border,#E5E7EB);border-radius:12px;background:var(--card,transparent);font-size:14.5px;line-height:2.05;color:var(--text,#1F2937)}' +
+    '.cr-art{padding:14px 16px;border:1px solid var(--border,#E5E7EB);border-radius:var(--radius-sm,12px);background:var(--card,#fff);box-shadow:var(--shadow,0 2px 12px rgba(0,0,0,.06));font-size:14.5px;line-height:2.05;color:var(--text,#1F2937)}' +
     '.cr-art p{margin:0 0 12px}' +
     '.cr-art p:last-child{margin-bottom:0}' +
     '.cr-para{display:flex;gap:8px;margin:0 0 12px}' +
@@ -131,7 +131,21 @@
     '.cr-exp-i b{color:var(--text,#1F2937)}' +
     '.cr-exp-i .cr-k{display:inline-block;padding:1px 7px;border-radius:6px;font-size:12px;font-weight:700;margin-right:6px;background:var(--primary-light,rgba(91,141,239,.12));color:var(--primary,#5B8DEF)}' +
     '.cr-note{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--bg,#F9FAFB);font-size:13px;line-height:1.7;color:var(--text-secondary,#6B7280)}' +
-    '.cr-empty{padding:30px 0;text-align:center;font-size:14px;color:var(--text-secondary,#9CA3AF)}';
+    /* 分栏：窄屏单列，宽屏左右分栏；minmax(0,·) + min-width:0 双保险，杜绝横向溢出 */
+    '.cr-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}' +
+    '.cr-col{min-width:0;max-width:100%}' +
+    '.cr-col-art{min-width:0;max-width:100%}' +
+    '.cr-col-quiz{min-width:0;max-width:100%}' +
+    '.cr-quiz-card{border:1px solid var(--border,#E5E7EB);border-radius:var(--radius-sm,12px);background:var(--card,#fff);padding:12px 14px;box-shadow:var(--shadow,0 2px 12px rgba(0,0,0,.06))}' +
+    '.cr-empty{padding:30px 0;text-align:center;font-size:14px;color:var(--text-secondary,#9CA3AF)}' +
+    /* 宽屏：左栏（文章）自吸顶并**内部独立纵向滚动**，右栏（题目/解析）随页面流滚动。
+       ★ cr-has-topbar：当页面顶部还有一条 sticky 工具条时，左栏吸顶位置下移 52px 让位，
+         否则文章顶部约 30px 会被工具条盖住。 */
+    '@media(min-width:900px){' +
+      '.cr-grid{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);align-items:start;gap:20px}' +
+      '.cr-col-art{position:sticky;top:8px;max-height:calc(100vh - 110px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding-right:6px}' +
+      '.cr-grid.cr-has-topbar .cr-col-art{top:52px;max-height:calc(100vh - 154px)}' +
+    '}';
 
   function injectStyle() {
     try {
@@ -241,10 +255,16 @@
     host.innerHTML =
       '<div class="cr-h"><span class="cr-h-t">' + esc(p.title) + '</span><span class="cr-h-s">' + esc(p.sub) + '</span></div>' +
       toolbarHtml(p, '15 选 10') +
-      '<div class="cr-tip"><b>做法：</b>' + esc(p.tip) + '</div>' +
-      '<div class="cr-opts">' + optHtml + '</div>' +
-      '<div class="cr-art">' + artHtml + '</div>' +
-      '<div id="crRes"></div>';
+      '<div class="cr-grid cr-has-topbar">' +
+        '<div class="cr-col cr-col-art">' +
+          '<div class="cr-tip"><b>做法：</b>' + esc(p.tip) + '</div>' +
+          '<div class="cr-opts">' + optHtml + '</div>' +
+          '<div class="cr-art">' + artHtml + '</div>' +
+        '</div>' +
+        '<div class="cr-col cr-col-quiz">' +
+          '<div class="cr-quiz-card"><div id="crRes"></div></div>' +
+        '</div>' +
+      '</div>';
     icons(host);
 
     var timerEl = host.querySelector('#crTimer');
@@ -307,10 +327,15 @@
     host.innerHTML =
       '<div class="cr-h"><span class="cr-h-t">' + esc(p.title) + '</span><span class="cr-h-s">' + esc(p.sub) + '</span></div>' +
       toolbarHtml(p, '10 段匹配 10 题') +
-      '<div class="cr-tip"><b>做法：</b>' + esc(p.tip) + '</div>' +
-      '<div class="cr-art">' + artHtml + '</div>' +
-      '<div class="cr-stats">' + stHtml + '</div>' +
-      '<div id="crRes"></div>';
+      '<div class="cr-grid cr-has-topbar">' +
+        '<div class="cr-col cr-col-art">' +
+          '<div class="cr-tip"><b>做法：</b>' + esc(p.tip) + '</div>' +
+          '<div class="cr-art">' + artHtml + '</div>' +
+        '</div>' +
+        '<div class="cr-col cr-col-quiz">' +
+          '<div class="cr-quiz-card"><div class="cr-stats">' + stHtml + '</div><div id="crRes"></div></div>' +
+        '</div>' +
+      '</div>';
     icons(host);
 
     var timerEl = host.querySelector('#crTimer');
@@ -374,13 +399,19 @@
     for (i = 0; i < paras.length; i++) artHtml += '<p>' + esc(paras[i]) + '</p>';
 
     box.innerHTML =
-      '<div class="cr-h"><span class="cr-h-t">' + esc(cur.title) + '</span><span class="cr-h-s">' + esc(cur.sub) + '</span></div>' +
-      '<div class="cr-toolbar"><span class="cr-tk">' + icon('timer', 14) + '<span id="crTimer2">00:00</span></span>' +
-      '<span>建议 ' + esc(cur.minutes) + ' 分钟 · 5 题</span><span class="cr-sp"></span></div>' +
-      '<div class="cr-tip"><b>做法：</b>' + esc(cur.tip) + '</div>' +
-      '<div class="cr-art">' + artHtml + '</div>' +
-      '<div id="crQuizHost"></div>' +
-      '<div id="crQuizNote"></div>';
+      '<div class="cr-grid">' +
+        '<div class="cr-col cr-col-art">' +
+          '<div class="cr-h"><span class="cr-h-t">' + esc(cur.title) + '</span><span class="cr-h-s">' + esc(cur.sub) + '</span></div>' +
+          '<div class="cr-toolbar"><span class="cr-tk">' + icon('timer', 14) + '<span id="crTimer2">00:00</span></span>' +
+          '<span>建议 ' + esc(cur.minutes) + ' 分钟 · 5 题</span><span class="cr-sp"></span></div>' +
+          '<div class="cr-tip"><b>做法：</b>' + esc(cur.tip) + '</div>' +
+          '<div class="cr-art">' + artHtml + '</div>' +
+        '</div>' +
+        '<div class="cr-col cr-col-quiz">' +
+          '<div id="crQuizHost"></div>' +
+          '<div id="crQuizNote"></div>' +
+        '</div>' +
+      '</div>';
     icons(box);
 
     startTimer(box.querySelector('#crTimer2'));

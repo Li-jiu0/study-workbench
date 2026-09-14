@@ -5,18 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>真题模考 · 成绩单</title>
-<link rel="stylesheet" href="assets/common.css?v=20260914f">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913o">
-<link rel="stylesheet" href="assets/states.css?v=20260913o">
-<script src="assets/icon-map.js?v=20260913o" defer></script>
-<script src="assets/xt-toast.js?v=20260913o" defer></script>
-<script src="assets/error-boundary.js?v=20260913o" defer></script>
-<script src="assets/app.js?v=20260914f" defer></script>
-<script src="data/mock-papers.js?v=20260913o" defer></script>
-<script src="assets/mock-engine.js?v=20260913o" defer></script>
-<script src="assets/mock-result.js?v=20260913o" defer></script>
+<link rel="stylesheet" href="assets/common.css?v=20260915c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260915c">
+<link rel="stylesheet" href="assets/states.css?v=20260915c">
+<script src="assets/icon-map.js?v=20260915c" defer></script>
+<script src="assets/xt-toast.js?v=20260915c" defer></script>
+<script src="assets/error-boundary.js?v=20260915c" defer></script>
+<script src="assets/app.js?v=20260915c" defer></script>
+<script src="data/mock-papers.js?v=20260915c" defer></script>
+<script src="assets/mock-engine.js?v=20260915c" defer></script>
+<script src="assets/mock-result.js?v=20260915c" defer></script>
 <style>
 body { background: var(--xt-bg); margin: 0; color: var(--xt-text); }
+
+/* 修复：common.css 第 68 行全局 `html, body { height: 100%; overflow: hidden; }` 会把本独立页锁死无法滚动。
+   本页内容（成绩单/题目回顾）直接挂在 <body> 下，不在 .app>.main>.page 滚动容器内，
+   故在此用更具体选择器放开 body 自身滚动（不动 common.css）。 */
+html { height: auto; overflow: auto; }
+body { height: auto; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
 .result-shell {
   max-width: 880px;

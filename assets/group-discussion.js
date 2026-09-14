@@ -376,9 +376,11 @@
 
   // ========== 结束讨论 ==========
   function endDiscussion() {
-    if (!confirm('确定结束讨论吗？')) return;
-    isRunning = false;
-    document.getElementById('gdContent').innerHTML = renderSummary();
+    window.uiConfirm('确定结束讨论吗？', '结束').then(function (ok) {
+      if (!ok) return;
+      isRunning = false;
+      document.getElementById('gdContent').innerHTML = renderSummary();
+    });
   }
 
   // ========== 更新消息区域 ==========

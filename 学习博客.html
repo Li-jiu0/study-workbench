@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>广场 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260914f">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913o">
-<link rel="stylesheet" href="assets/states.css?v=20260913o">
-<link rel="stylesheet" href="assets/polish.css?v=20260913o">
+<link rel="stylesheet" href="assets/common.css?v=20260915c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260915c">
+<link rel="stylesheet" href="assets/states.css?v=20260915c">
+<link rel="stylesheet" href="assets/polish.css?v=20260915c">
 <style>
 /* =====================================================================
    批次 20260913K（kou-k-blog）：按钮栏固定到预览卡下方 + 评论区嵌套/折叠样式
@@ -100,6 +100,9 @@
       </div>
       <div class="nav-item" data-page="exam">
         <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span>
+      </div>
+      <div class="nav-item" onclick="location.href='申论刷题.html'" title="申论刷题（题目精练 / 阅读积累）">
+        <span class="nav-icon" data-icon="file-text"></span><span>申论刷题</span>
       </div>
       <div class="nav-item" data-page="comm">
         <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span>
@@ -419,12 +422,12 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913o" defer></script>
-<script src="assets/xt-toast.js?v=20260913o" defer></script>
-<script src="assets/error-boundary.js?v=20260913o" defer></script>
-<script src="assets/app.js?v=20260914f" defer></script>
-<script src="assets/config.js?v=20260913o" defer></script>
-<script src="assets/api.js?v=20260913o" defer></script>
+<script src="assets/icon-map.js?v=20260915c" defer></script>
+<script src="assets/xt-toast.js?v=20260915c" defer></script>
+<script src="assets/error-boundary.js?v=20260915c" defer></script>
+<script src="assets/app.js?v=20260915c" defer></script>
+<script src="assets/config.js?v=20260915c" defer></script>
+<script src="assets/api.js?v=20260915c" defer></script>
 <script>
 /* ===================================================================
    广场（发贴）编辑页增强：【字数统计 / 阅读时长 / 草稿自动保存 / 快速模板】
@@ -519,13 +522,20 @@
   window.edInsertTemplate = function (kind) {
     var ta = $('blogEditorInput'); if (!ta) return;
     var t = TPLS[kind] || ''; if (!t) return;
-    if ((ta.value || '').trim() && !confirm('编辑器里已有内容，模板将追加到末尾，继续吗？')) return;
-    ta.value = (ta.value || '').replace(/\s*$/, '') + ((ta.value || '').trim() ? '\n\n' : '') + t;
-    if (typeof updateEditorPreview === 'function') updateEditorPreview();
-    onInput(); saveDraft();
-    ta.focus();
-    ta.setSelectionRange(ta.value.length, ta.value.length);
-    if (typeof showToast === 'function') showToast('🚀 已插入模板，按需修改即可');
+    /* 全站禁用原生 confirm：改走 app.js 的 uiConfirm（轻量页内确认层） */
+    function doInsert() {
+      ta.value = (ta.value || '').replace(/\s*$/, '') + ((ta.value || '').trim() ? '\n\n' : '') + t;
+      if (typeof updateEditorPreview === 'function') updateEditorPreview();
+      onInput(); saveDraft();
+      ta.focus();
+      ta.setSelectionRange(ta.value.length, ta.value.length);
+      if (typeof showToast === 'function') showToast('已插入模板，按需修改即可');
+    }
+    if ((ta.value || '').trim() && typeof uiConfirm === 'function') {
+      uiConfirm('编辑器里已有内容，模板将追加到末尾，继续吗？', '继续').then(function (ok) { if (ok) doInsert(); });
+      return;
+    }
+    doInsert();
   };
 
   // ⑤ 叠加：保存 / 清空后自动清掉本地草稿

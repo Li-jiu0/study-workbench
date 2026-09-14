@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>商务礼仪及面试 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260914f">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913o">
-<link rel="stylesheet" href="assets/states.css?v=20260913o">
-<link rel="stylesheet" href="assets/polish.css?v=20260913o">
+<link rel="stylesheet" href="assets/common.css?v=20260915c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260915c">
+<link rel="stylesheet" href="assets/states.css?v=20260915c">
+<link rel="stylesheet" href="assets/polish.css?v=20260915c">
 </head>
 <body class="theme-interview">
 
@@ -31,6 +31,9 @@
       </div>
       <div class="nav-item" data-page="exam">
         <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span>
+      </div>
+      <div class="nav-item" onclick="location.href='申论刷题.html'" title="申论刷题（题目精练 / 阅读积累）">
+        <span class="nav-icon" data-icon="file-text"></span><span>申论刷题</span>
       </div>
       <div class="nav-item" data-page="comm">
         <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span>
@@ -458,14 +461,14 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913o" defer></script>
-<script src="assets/xt-toast.js?v=20260913o" defer></script>
-<script src="assets/error-boundary.js?v=20260913o" defer></script>
-<script src="assets/app.js?v=20260914f" defer></script>
-<script src="assets/config.js?v=20260913o" defer></script>
-<script src="assets/api.js?v=20260913o" defer></script>
+<script src="assets/icon-map.js?v=20260915c" defer></script>
+<script src="assets/xt-toast.js?v=20260915c" defer></script>
+<script src="assets/error-boundary.js?v=20260915c" defer></script>
+<script src="assets/app.js?v=20260915c" defer></script>
+<script src="assets/config.js?v=20260915c" defer></script>
+<script src="assets/api.js?v=20260915c" defer></script>
 
-<script src="assets/mini-interview.js?v=20260913o" defer></script>
+<script src="assets/mini-interview.js?v=20260915c" defer></script>
 <!-- ===== R48 第 3 批（A4 面试准备 / A5 面试后「做真内容」） =====
      顺序铁律：xt-content.js 必须在最前；两个 data-*.js 必须在 mini-interview.js **之后**
      （ADR-1 后置覆盖同名 key；旧 8 道准备题、旧 6 道复盘题由数据在覆盖前抢救，
@@ -473,14 +476,14 @@
      挂载点沿用既有 #ivPrepBody / #ivAfterBody，只链式包装 window.ivQuizMount，
      不碰 HTML 结构（ADR-2）；iv-group 不受影响，仍走原自测渲染器。
      回滚：删掉这五个 script 标签即可回到原来的选择题。 -->
-<script src="assets/xt-content.js?v=20260914f" defer></script>
-<script src="assets/data-iv-prep.js?v=20260914e" defer></script>
-<script src="assets/iv-prep.js?v=20260914e" defer></script>
-<script src="assets/data-iv-after.js?v=20260914e" defer></script>
-<script src="assets/iv-after.js?v=20260914e" defer></script>
-<script src="assets/mini.js?v=20260913o" defer></script>
-<script src="assets/group-discussion.js?v=20260913o" defer></script>
-<script src="assets/study-stats.js?v=20260913o" defer></script>
+<script src="assets/xt-content.js?v=20260915c" defer></script>
+<script src="assets/data-iv-prep.js?v=20260915c" defer></script>
+<script src="assets/iv-prep.js?v=20260915c" defer></script>
+<script src="assets/data-iv-after.js?v=20260915c" defer></script>
+<script src="assets/iv-after.js?v=20260915c" defer></script>
+<script src="assets/mini.js?v=20260915c" defer></script>
+<script src="assets/group-discussion.js?v=20260915c" defer></script>
+<script src="assets/study-stats.js?v=20260915c" defer></script>
 <script>
 /* ==================== T7 增量（P0-8/P0-12）：统计卡 + 四分类题库 + AI 模拟面试官 ==================== */
 (function () {
@@ -690,7 +693,7 @@
   var IV_AI = { history: [], provider: null };
 
   window.ivStartInterview = function () {
-    if (!tok()) { if (typeof showToast === 'function') showToast('模拟面试需联网后登录使用'); else alert('模拟面试需联网后登录使用'); return; }
+    if (!tok()) { showToast('模拟面试需联网后登录使用'); return; }
     var panel = $id('ivAiPanel');
     panel.style.display = 'block';
     $id('ivAiText').textContent = '面试官：请开始回答下面这道题：\n' + IV_BANK[IV.idx].q + '\n\n（直接在下方输入你的回答，我会逐条追问；回答完 3-4 轮后点「结束并总评」。）';

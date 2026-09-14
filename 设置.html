@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" data-page-node-id="ppAOS1DYQGgIIySlO2fdxi">
 <meta name="theme-color" content="#5B8DEF" data-page-node-id="EXvc7QppIKtHC8PUM71nFK">
 <title>设置 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260914f" data-page-node-id="oNplQZjsSu34O6b7wLTk3t">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913o">
-<link rel="stylesheet" href="assets/states.css?v=20260913o">
-<link rel="stylesheet" href="assets/polish.css?v=20260913o" data-page-node-id="gZ2lwtNBjEq5CgqQTlbjFi">
+<link rel="stylesheet" href="assets/common.css?v=20260915c" data-page-node-id="oNplQZjsSu34O6b7wLTk3t">
+<link rel="stylesheet" href="assets/page-head.css?v=20260915c">
+<link rel="stylesheet" href="assets/states.css?v=20260915c">
+<link rel="stylesheet" href="assets/polish.css?v=20260915c" data-page-node-id="gZ2lwtNBjEq5CgqQTlbjFi">
 </head>
 <body class="theme-home" data-page-node-id="wneJ1qXxVLXB9kpk29RxqH">
 
@@ -31,6 +31,13 @@
       </div>
       <div class="nav-item" data-page="exam" data-page-node-id="lYONZDS68eUbw26FjbMB8o">
         <span class="nav-icon" data-page-node-id="l21Y8gwnTQ3DloGLBCxsha" data-icon="pencil"></span><span data-page-node-id="AsoEegm27jKDAMOsMoA1jY">央国企笔试</span>
+      </div>
+      <div class="nav-item" onclick="location.href='申论刷题.html'" title="申论刷题（题目精练 / 阅读积累）">
+        <span class="nav-icon" data-icon="file-text"></span><span>申论刷题</span>
+      </div>
+      <!-- 【ADR-3 2026-09-15】时政热点：原 openHotNewsPanel() 弹窗已升级为独立页 时政热点.html -->
+      <div class="nav-item" onclick="location.href='时政热点.html'" title="时政热点（实时榜单 / 分类筛选 / 详情 / 收藏）">
+        <span class="nav-icon" data-icon="fire"></span><span>时政热点</span>
       </div>
       <div class="nav-item" data-page="comm" data-page-node-id="iEONKqpKBoGCi2BFamhVvE">
         <span class="nav-icon" data-page-node-id="PdaI8EaPDGDmFxyfbpCNRU" data-icon="message-square"></span><span data-page-node-id="3ViTi1o59ozHrPYr8eGjol">高情商表达</span>
@@ -965,15 +972,15 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913o" defer></script>
-<script src="assets/xt-toast.js?v=20260913o" defer></script>
-<script src="assets/error-boundary.js?v=20260913o" defer></script>
-<script src="assets/app.js?v=20260914f" defer></script>
-<script src="assets/config.js?v=20260913o" defer></script>
-<script src="assets/api.js?v=20260913o" defer></script>
-<script src="assets/subpage-router.js?v=20260913o" defer></script>
-<script src="assets/qbank.js?v=20260913o" defer></script>
-<script src="assets/importer.js?v=20260913o" defer></script>
+<script src="assets/icon-map.js?v=20260915c" defer></script>
+<script src="assets/xt-toast.js?v=20260915c" defer></script>
+<script src="assets/error-boundary.js?v=20260915c" defer></script>
+<script src="assets/app.js?v=20260915c" defer></script>
+<script src="assets/config.js?v=20260915c" defer></script>
+<script src="assets/api.js?v=20260915c" defer></script>
+<script src="assets/subpage-router.js?v=20260915c" defer></script>
+<script src="assets/qbank.js?v=20260915c" defer></script>
+<script src="assets/importer.js?v=20260915c" defer></script>
 <script>
 /* 单机离线版（如安卓 APK，未打包 assets/api.js）适配：
    ① 隐藏依赖后端的「本地发贴迁移」卡片；
@@ -1178,20 +1185,28 @@ function applyStudyReminder() {
 }
 
 /* ---------- 维护：清理缓存 / 重置外观 ---------- */
+/* 全站禁用原生 confirm/prompt/alert：统一走 app.js 的 uiConfirm / uiPrompt / uiAlert（轻量页内层） */
 function stClearCache() {
-  if (!confirm('将清理错误日志、未完成的发贴草稿、AI 悬浮球位置等临时数据。\n学习记录、发贴、错题等业务数据不会被删除。确定继续吗？')) return;
-  var keys = ['study_workbench_errors', 'study_workbench_editor_draft_v1', 'study_workbench_ai_fab_pos'];
-  var n = 0;
-  keys.forEach(function (k) {
-    try { if (localStorage.getItem(k) !== null) { localStorage.removeItem(k); n++; } } catch (e) { }
+  uiConfirm('将清理错误日志、未完成的发贴草稿、AI 悬浮球位置等临时数据。\n学习记录、发贴、错题等业务数据不会被删除。确定继续吗？', '清理').then(function (ok) {
+    if (!ok) return;
+    var keys = ['study_workbench_errors', 'study_workbench_editor_draft_v1', 'study_workbench_ai_fab_pos'];
+    var n = 0;
+    keys.forEach(function (k) {
+      try { if (localStorage.getItem(k) !== null) { localStorage.removeItem(k); n++; } } catch (e) { }
+    });
+    try { sessionStorage.clear(); } catch (e) { }
+    var bar = document.getElementById('edDraftBar'); if (bar) bar.style.display = 'none';
+    stRefreshOverview();
+    showToast('已清理 ' + n + ' 项临时数据');
   });
-  try { sessionStorage.clear(); } catch (e) { }
-  var bar = document.getElementById('edDraftBar'); if (bar) bar.style.display = 'none';
-  stRefreshOverview();
-  showToast('🧹 已清理 ' + n + ' 项临时数据');
 }
 function stResetAppearance() {
-  if (!confirm('将把主题、配色、字号、动效、紧凑模式等外观偏好恢复为默认值（不影响学习数据）。确定吗？')) return;
+  uiConfirm('将把主题、配色、字号、动效、紧凑模式等外观偏好恢复为默认值（不影响学习数据）。确定吗？', '恢复默认').then(function (ok) {
+    if (!ok) return;
+    resetAppearanceNow();
+  });
+}
+function resetAppearanceNow() {
   ['fontSize', 'readerFont', 'reduceMotion', 'compact'].forEach(function (k) {
     try { setSetting(k, DEFAULT_SETTINGS[k]); } catch (e) { }
   });
@@ -1205,7 +1220,7 @@ function stResetAppearance() {
   };
   apply('swReduceMotion', s2.reduceMotion);
   apply('swCompact', s2.compact);
-  showToast('↺ 外观与偏好已恢复默认');
+  showToast('外观与偏好已恢复默认');
 }
 
 /* ---------- 账号与安全 ---------- */
@@ -1293,18 +1308,22 @@ function stChangePassword() {
   var users = {};
   try { users = JSON.parse(localStorage.getItem('study_workbench_users') || '{}'); } catch (e) { users = {}; }
   if (!users[acct]) { showToast('⚠️ 本机未找到该账号记录'); return; }
-  var oldP = prompt('修改密码 · 请输入当前密码：');
-  if (oldP === null) return;
-  if (users[acct].pass !== stSimpleHash(oldP)) { showToast('❌ 当前密码不正确'); return; }
-  var np = prompt('请输入新密码（至少 8 位，且同时包含字母和数字）：');
-  if (np === null) return;
-  if (!stCheckNewPassword(np)) return;
-  var np2 = prompt('请再次输入新密码：');
-  if (np2 === null) return;
-  if (np !== np2) { showToast('⚠️ 两次输入不一致'); return; }
-  users[acct].pass = stSimpleHash(np);
-  try { localStorage.setItem('study_workbench_users', JSON.stringify(users)); } catch (e) { showToast('⚠️ 保存失败'); return; }
-  showToast('✅ 密码已修改，请牢记新密码');
+  /* 全站禁用原生 prompt：改用 uiPrompt（取消返回 null，与原生一致） */
+  uiPrompt('修改密码 · 请输入当前密码：', '').then(function (oldP) {
+    if (oldP === null) return;
+    if (users[acct].pass !== stSimpleHash(oldP)) { showToast('当前密码不正确'); return; }
+    uiPrompt('请输入新密码（至少 8 位，且同时包含字母和数字）：', '').then(function (np) {
+      if (np === null) return;
+      if (!stCheckNewPassword(np)) return;
+      uiPrompt('请再次输入新密码：', '').then(function (np2) {
+        if (np2 === null) return;
+        if (np !== np2) { showToast('两次输入不一致'); return; }
+        users[acct].pass = stSimpleHash(np);
+        try { localStorage.setItem('study_workbench_users', JSON.stringify(users)); } catch (e) { showToast('保存失败'); return; }
+        showToast('密码已修改，请牢记新密码');
+      });
+    });
+  });
 }
 
 /* ---------- A6：在线账号修改密码（前端表单 → POST /api/auth/change-password） ---------- */
@@ -1347,18 +1366,23 @@ function stDeleteAccount() {
   if (stIsOnline()) { showToast('ℹ️ 在线账号注销需后端接口支持（【后续扩展点】）'); return; }
   var acct = stCurAccount();
   if (!acct) { showToast('⚠️ 未获取到当前账号'); return; }
-  if (!confirm('确定注销本机账号「' + acct + '」吗？\n账号记录将被删除，学习数据仍保留在本机。')) return;
-  if (!confirm('再次确认：注销后需重新注册该账号才能登录。继续吗？')) return;
-  try {
-    var users = JSON.parse(localStorage.getItem('study_workbench_users') || '{}');
-    delete users[acct];
-    localStorage.setItem('study_workbench_users', JSON.stringify(users));
-  } catch (e) { }
-  showToast('🗑️ 本机账号已注销，即将返回登录页…');
-  setTimeout(function () {
-    try { localStorage.removeItem('study_workbench_auth'); } catch (e) { }
-    location.replace('登录.html');
-  }, 1200);
+  /* 全站禁用原生 confirm：两次确认均走 uiConfirm */
+  uiConfirm('确定注销本机账号「' + acct + '」吗？\n账号记录将被删除，学习数据仍保留在本机。', '注销').then(function (ok1) {
+    if (!ok1) return;
+    uiConfirm('再次确认：注销后需重新注册该账号才能登录。继续吗？', '确认注销').then(function (ok2) {
+      if (!ok2) return;
+      try {
+        var users = JSON.parse(localStorage.getItem('study_workbench_users') || '{}');
+        delete users[acct];
+        localStorage.setItem('study_workbench_users', JSON.stringify(users));
+      } catch (e) { }
+      showToast('本机账号已注销，即将返回登录页…');
+      setTimeout(function () {
+        try { localStorage.removeItem('study_workbench_auth'); } catch (e) { }
+        location.replace('登录.html');
+      }, 1200);
+    });
+  });
 }
 
 /* ---------- 隐私与安全 · 黑名单（T01 增量 2026-09-11） ----------
@@ -1416,7 +1440,7 @@ function stUnblock(uid) {
     })
     .catch(function (e) {
       if (typeof showToast === 'function') showToast('移出失败：' + (e.message || ''));
-      else alert('移出失败');
+      else if (typeof uiAlert === 'function') uiAlert('移出失败');
     });
 }
 /* ---------- 隐私与安全 · 可见性三控件（T05 接线 2026-09-11） ----------
@@ -1627,7 +1651,7 @@ if (typeof stInitAccount === 'function') {
 
   window.fbSubmit = function () {
     var content = (($id('fbContent') || {}).value || '').trim();
-    if (content.length < 10) { if (typeof showToast === 'function') showToast('反馈描述至少 10 个字'); else alert('反馈描述至少 10 个字'); return; }
+    if (content.length < 10) { if (typeof showToast === 'function') showToast('反馈描述至少 10 个字'); else if (typeof uiAlert === 'function') uiAlert('反馈描述至少 10 个字'); return; }
     var body = {
       type: ($id('fbType') || {}).value || 'other',
       content: content,
@@ -1656,7 +1680,7 @@ if (typeof stInitAccount === 'function') {
         localStorage.setItem(OUTBOX_KEY, JSON.stringify(box.slice(-10)));
       } catch (er) { }
       if (typeof showToast === 'function') showToast('反馈暂未送达，请稍后重试（已暂存本地）');
-      else alert('反馈暂未送达，请稍后重试：' + (e.message || ''));
+      else if (typeof uiAlert === 'function') uiAlert('反馈暂未送达，请稍后重试：' + (e.message || ''));
     })
     .finally(function () { if (btn) { btn.disabled = false; btn.textContent = '提交反馈'; } });
   };

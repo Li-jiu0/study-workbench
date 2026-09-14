@@ -1,7 +1,7 @@
 /*!
  * assets/subpage-router.js —— 批次五 T02（寇豆码，2026-09-12）
  * 文档：docs/增量架构设计-图标与交互-2026-09-12.md §3.1
- * 运行：作为 <script src="assets/subpage-router.js?v=20260912a"></script> 在
+ * 运行：作为 <script src="assets/subpage-router.js?v=20260915b"></script> 在
  *   app.js / config.js / api.js 之后加载（铁律 8）。
  * 暴露：window.SubpageRouter（init / navigate / back / getCurrent / getParams / onSubpageChange）
  * 铁律约束：

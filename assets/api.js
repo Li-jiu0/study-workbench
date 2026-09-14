@@ -360,8 +360,7 @@ function closeProfileEditor() {
 function doLogout() {
   var m = document.getElementById('logoutConfirmModal');
   if (m) { m.classList.add('active'); return; }
-  if (!confirm('确定要退出登录吗？')) return;
-  apiForceLogout();
+  uiConfirm('确定要退出登录吗？', '退出').then(function (ok) { if (ok) apiForceLogout(); });
 }
 function closeLogoutConfirm() {
   var m = document.getElementById('logoutConfirmModal'); if (m) m.classList.remove('active');
@@ -916,7 +915,10 @@ async function sendAiMsg() {
   }
 }
 
-async function editorAiAssist() {
+/* 注意：assets/app.js 里有同名 editorAiAssist（支持服务商直连 + 本地演示兜底，更完备）。
+   本函数曾因 api.js 后于 app.js 加载而覆盖掉它，导致无后端/无密钥时「AI 辅助写发贴」直接失败。
+   现改名保留为纯后端通道实现，不再抢占全局名；页面 onclick 会解析到 app.js 那版。 */
+async function editorAiAssistViaApi() {
   var title = document.getElementById('beTitle').value.trim() || '这篇发贴';
   var content = document.getElementById('blogEditorInput').value;
   var ta = document.getElementById('blogEditorInput');
@@ -1153,7 +1155,7 @@ async function migrateLocalNotes() {
     local = d.notes || [];
   } catch (e) { }
   if (!local.length) { showToast('本地没有可迁移的发贴'); return; }
-  if (!confirm('将把本机 localStorage 中的 ' + local.length + ' 篇发贴上传到服务器（当前账号名下）。\n已迁移过的发贴会自动跳过，确定继续吗？')) return;
+  if (!await uiConfirm('将把本机 localStorage 中的 ' + local.length + ' 篇发贴上传到服务器（当前账号名下）。\n已迁移过的发贴会自动跳过，确定继续吗？')) return;
   try {
     var r = await api('/api/migrate/notes', { method: 'POST', body: { notes: local } });
     showToast('📥 迁移完成：导入 ' + r.imported + ' 篇，跳过 ' + r.skipped + ' 篇');

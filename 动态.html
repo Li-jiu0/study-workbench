@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>动态 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260914f">
-<link rel="stylesheet" href="assets/page-head.css?v=20260913o">
-<link rel="stylesheet" href="assets/states.css?v=20260913o">
-<link rel="stylesheet" href="assets/polish.css?v=20260913o">
+<link rel="stylesheet" href="assets/common.css?v=20260915c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260915c">
+<link rel="stylesheet" href="assets/states.css?v=20260915c">
+<link rel="stylesheet" href="assets/polish.css?v=20260915c">
 <style>
   /* ===== 动态页（朋友圈式，2026-09-11 增量）===== */
   .mo-wrap{max-width:640px;margin:0 auto;padding:16px 14px 80px;width:100%}
@@ -52,13 +52,20 @@
   .mo-offline{background:#fff7ed;border:1px solid #fdba74;color:#c2410c;font-size:12px;border-radius:10px;padding:8px 12px;margin-top:10px}
   .mo-scope{font-size:12px;color:var(--primary);background:var(--primary-light);border-radius:20px;padding:3px 10px;cursor:pointer;white-space:nowrap;user-select:none}
   .mo-scope:hover{filter:brightness(.97)}
+  /* 查看他人动态时顶部提示条（feed-btn 2026-09-15） */
+  .mo-userbar{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--card);border-radius:16px;padding:12px 14px;box-shadow:var(--shadow);margin-bottom:14px}
+  .mo-userbar-info{font-size:14px;color:var(--text-secondary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mo-userbar-name{font-weight:600;color:var(--text)}
   @media (max-width:760px){ .mo-wrap{padding:12px 10px 80px} }
 </style>
 </head>
 <body class="theme-home">
 
 <div class="app">
-<nav class="sidebar"> <div class="logo"> <div class="logo-icon" data-icon="book-open"></div> <div> <div class="logo-text">星途</div> <div class="logo-sub">致追梦的人->修身</div> </div> </div> <div class="nav-list"> <div class="nav-item" data-page="home"> <span class="nav-icon" data-icon="home"></span><span>首页</span> </div> <div class="nav-section">学习模块</div> <div class="nav-item" data-page="cet"> <span class="nav-icon" data-icon="book-open"></span><span>四级备考</span> </div> <div class="nav-item" data-page="exam"> <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span> </div> <div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span> </div> <div class="nav-item" data-page="ppt"> <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon" data-icon="globe"></span><span>广场</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-page="moments" style="background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff;border-radius:10px"> <span class="nav-icon" data-icon="rss"></span><span>动态</span> </div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="book"></span><span>错题本</span> </div> <div class="nav-item" data-page="profile"> <span class="nav-icon" data-icon="user"></span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon" data-icon="settings"></span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak"><span data-icon="fire" data-icon-size="14" style="vertical-align:-2px"></span> 连续打卡 0 天</div> </div> </div> </div> </nav>
+<nav class="sidebar"> <div class="logo"> <div class="logo-icon" data-icon="book-open"></div> <div> <div class="logo-text">星途</div> <div class="logo-sub">致追梦的人->修身</div> </div> </div> <div class="nav-list"> <div class="nav-item" data-page="home"> <span class="nav-icon" data-icon="home"></span><span>首页</span> </div> <div class="nav-section">学习模块</div> <div class="nav-item" data-page="cet"> <span class="nav-icon" data-icon="book-open"></span><span>四级备考</span> </div> <div class="nav-item" data-page="exam"> <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span> </div>
+      <div class="nav-item" onclick="location.href='申论刷题.html'" title="申论刷题（题目精练 / 阅读积累）">
+        <span class="nav-icon" data-icon="file-text"></span><span>申论刷题</span>
+      </div> <div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span> </div> <div class="nav-item" data-page="ppt"> <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon" data-icon="globe"></span><span>广场</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-page="moments" style="background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff;border-radius:10px"> <span class="nav-icon" data-icon="rss"></span><span>动态</span> </div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="book"></span><span>错题本</span> </div> <div class="nav-item" data-page="profile"> <span class="nav-icon" data-icon="user"></span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon" data-icon="settings"></span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak"><span data-icon="fire" data-icon-size="14" style="vertical-align:-2px"></span> 连续打卡 0 天</div> </div> </div> </div> </nav>
 
   <div class="main">
 <header class="topbar">
@@ -74,6 +81,12 @@
     </header>
 <div class="page active" id="page-moments" style="display:flex;overflow-y:auto">
   <div class="mo-wrap">
+
+    <!-- 查看他人动态时顶部提示条（feed-btn 2026-09-15）：显示「正在看谁的动态」+ 返回全部动态 -->
+    <div class="mo-userbar" id="moUserBar" style="display:none">
+      <div class="mo-userbar-info"><span class="mo-userbar-name" id="moUserBarName"></span> 的动态</div>
+      <button class="btn btn-outline" type="button" onclick="location.href='动态.html'">查看全部动态</button>
+    </div>
 
     <!-- 发布卡 -->
     <div class="mo-publish" id="moPublish">
@@ -185,12 +198,12 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260913o" defer></script>
-<script src="assets/xt-toast.js?v=20260913o" defer></script>
-<script src="assets/error-boundary.js?v=20260913o" defer></script>
-<script src="assets/app.js?v=20260914f" defer></script>
-<script src="assets/config.js?v=20260913o" defer></script>
-<script src="assets/api.js?v=20260913o" defer></script>
+<script src="assets/icon-map.js?v=20260915c" defer></script>
+<script src="assets/xt-toast.js?v=20260915c" defer></script>
+<script src="assets/error-boundary.js?v=20260915c" defer></script>
+<script src="assets/app.js?v=20260915c" defer></script>
+<script src="assets/config.js?v=20260915c" defer></script>
+<script src="assets/api.js?v=20260915c" defer></script>
 <script>
 /* ==================== 动态页逻辑（T5 增量 2026-09-11） ====================
    好友动态流：发布（文字+≤9图，canvas 压缩后走 /api/uploads）→ /api/moments。
@@ -207,6 +220,8 @@
 
   var DRAFT_KEY = 'study_workbench_moment_draft';
   var MO = { items: [], nextBefore: 0, picked: [], online: !!tok() };
+  // feed-btn（2026-09-15）：?user=<uid> → 查看指定用户的动态，而非好友流
+  var VIEW_USER = (function () { try { var u = new URLSearchParams(location.search).get('user'); if (u && /^\d+$/.test(String(u).trim())) return String(u).trim(); } catch (e) {} return null; })();
 
   function fmtTime(t) {
     if (!t) return '';
@@ -330,7 +345,7 @@
         (c.canDelete ? '<span class="mo-cmt-del" onclick="window.moDelComment(' + m.id + ',' + c.id + ')">删除</span>' : '') + '</div>';
     }).join('');
     var more = m.canDelete
-      ? '<div class="mo-more" onclick="window.moDelMoment(' + m.id + ')">···</div>' : '';
+      ? '<div class="mo-more" onclick="window.moDelMoment(' + m.id + ', this)">···</div>' : '';
     return '<div class="mo-card">' +
       '<div class="mo-head">' +
         '<div class="mo-av" onclick="window.moOpenUser(' + m.author.id + ')">' + avatarHtml(m.author.avatarUrl, m.author.nickname) + '</div>' +
@@ -357,7 +372,8 @@
     if (!box) return;
     if (!append) box.innerHTML = '';
     if (MO.items.length === 0) {
-      box.innerHTML = '<div class="mo-empty">还没有动态，发布第一条打卡吧</div>';
+      if (VIEW_USER) box.innerHTML = '<div class="mo-empty">TA 还没有发布过动态～</div>';
+      else box.innerHTML = '<div class="mo-empty">还没有动态，发布第一条打卡吧</div>';
       $id('moMore').style.display = 'none';
       return;
     }
@@ -386,6 +402,37 @@
       });
   }
   window.moLoadMore = function () { loadFeed(true); };
+
+  /* ---------- 查看指定用户动态（feed-btn 2026-09-15）：走后端 /api/moments/user/{id} 服务端过滤 ---------- */
+  function loadUserFeed() {
+    if (!MO.online) {
+      $id('moFeed').innerHTML = '<div class="mo-empty">该用户的动态需联网查看<br><span style="font-size:var(--xt-font-sm)">后端不可用，请检查网络</span></div>';
+      return;
+    }
+    fetch(apiBase() + '/api/moments/user/' + VIEW_USER + '?limit=50', { headers: { 'Authorization': 'Bearer ' + tok() } })
+      .then(function (r) { if (!r.ok) throw new Error('load failed'); return r.json(); })
+      .then(function (d) {
+        var items = d.items || [];
+        // 取首条 author 昵称写入顶栏（后端若该端点不回带 author 则用 uid 兜底）
+        var firstAuthor = items.length ? (items[0].author || null) : null;
+        var name = (firstAuthor && firstAuthor.nickname) ? firstAuthor.nickname : ('用户 #' + VIEW_USER);
+        var barName = $id('moUserBarName'); if (barName) barName.textContent = name;
+        var tt = $id('topbarTitle'); if (tt) tt.textContent = name + ' 的动态';
+        // 回填空 author 字段，保证 momentCard 的点击/头像不报错（不臆造其它数据）
+        MO.items = items.map(function (m) {
+          if (!m.author) m.author = {};
+          if (!m.author.id) m.author.id = Number(VIEW_USER);
+          if (!m.author.nickname && firstAuthor && firstAuthor.nickname) m.author.nickname = firstAuthor.nickname;
+          return m;
+        });
+        MO.nextBefore = 0;
+        renderFeed(false);
+      })
+      .catch(function () {
+        $id('moFeed').innerHTML = '<div class="mo-empty">动态加载失败，请稍后重试</div>';
+      });
+  }
+  window.moLoadUserFeed = loadUserFeed;
 
   /* ---------- 互动 ---------- */
   window.moLike = function (mid) {
@@ -433,32 +480,37 @@
     .catch(function () { toastMsg('评论失败，请检查网络'); });
   };
 
+  /* 全站禁用原生 confirm/alert，改用 app.js 的 uiConfirm（轻量页内确认层） */
   window.moDelComment = function (mid, cid) {
-    if (!confirm('确定删除这条评论吗？')) return;
-    fetch(apiBase() + '/api/moments/comments/' + cid, {
-      method: 'DELETE', headers: { 'Authorization': 'Bearer ' + tok() }
-    })
-    .then(function (r) { if (!r.ok) throw new Error('删除失败'); return r.json(); })
-    .then(function () {
-      var m = MO.items.find(function (x) { return x.id === mid; });
-      if (m) m.comments = (m.comments || []).filter(function (c) { return c.id !== cid; });
-      renderFeed(false);
-    })
-    .catch(function (e) { toastMsg(e.message || '网络错误'); });
+    uiConfirm('确定删除这条评论吗？', '删除').then(function (ok) {
+      if (!ok) return;
+      fetch(apiBase() + '/api/moments/comments/' + cid, {
+        method: 'DELETE', headers: { 'Authorization': 'Bearer ' + tok() }
+      })
+      .then(function (r) { if (!r.ok) throw new Error('删除失败'); return r.json(); })
+      .then(function () {
+        var m = MO.items.find(function (x) { return x.id === mid; });
+        if (m) m.comments = (m.comments || []).filter(function (c) { return c.id !== cid; });
+        renderFeed(false);
+      })
+      .catch(function (e) { toastMsg(e.message || '网络错误'); });
+    });
   };
 
   window.moDelMoment = function (mid) {
-    if (!confirm('删除这条动态？点赞与评论会一并删除。')) return;
-    fetch(apiBase() + '/api/moments/' + mid, {
-      method: 'DELETE', headers: { 'Authorization': 'Bearer ' + tok() }
-    })
-    .then(function (r) { if (!r.ok) throw new Error('删除失败'); return r.json(); })
-    .then(function () {
-      MO.items = MO.items.filter(function (x) { return x.id !== mid; });
-      renderFeed(false);
-      toastMsg('已删除');
-    })
-    .catch(function (e) { toastMsg(e.message || '网络错误'); });
+    uiConfirm('删除这条动态？点赞与评论会一并删除。', '删除').then(function (ok) {
+      if (!ok) return;
+      fetch(apiBase() + '/api/moments/' + mid, {
+        method: 'DELETE', headers: { 'Authorization': 'Bearer ' + tok() }
+      })
+      .then(function (r) { if (!r.ok) throw new Error('删除失败'); return r.json(); })
+      .then(function () {
+        MO.items = MO.items.filter(function (x) { return x.id !== mid; });
+        renderFeed(false);
+        toastMsg('已删除');
+      })
+      .catch(function (e) { toastMsg(e.message || '网络错误'); });
+    });
   };
 
   window.moOpenUser = function (uid) { if (uid) location.href = '个人中心.html?user=' + uid; };
@@ -477,6 +529,14 @@
 
   /* ---------- 启动 ---------- */
   function boot() {
+    // feed-btn（2026-09-15）：查看他人动态模式——隐藏发布卡、显顶栏、拉取该用户动态
+    if (VIEW_USER) {
+      var pub = $id('moPublish'); if (pub) pub.style.display = 'none';
+      var off = $id('moOffline'); if (off) off.style.display = 'none';
+      var bar = $id('moUserBar'); if (bar) bar.style.display = 'flex';
+      loadUserFeed();
+      return;
+    }
     // 我的头像
     fetch(apiBase() + '/api/auth/me', { headers: { 'Authorization': 'Bearer ' + tok() } })
       .then(function (r) { return r.json(); })

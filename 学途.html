@@ -4,9 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>学途 · 个人学习中枢</title>
-<link rel="stylesheet" href="assets/common.css?v=20260914f">
+<link rel="stylesheet" href="assets/common.css?v=20260915c">
 <style>
 /* ================= 学途 · 个人学习中枢（v1.15） ================= */
+/* common.css 会锁 html/body 高度并隐藏滚动，本页为独立长页面，恢复滚动 */
+html{height:auto;overflow:auto}
+body{height:auto;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch}
 body { margin: 0; background: var(--bg); }
 .xt { max-width: 520px; margin: 0 auto; padding: 14px 14px 96px; box-sizing: border-box; }
 .xt-page { min-height: 70vh; }
@@ -167,10 +170,10 @@ body { margin: 0; background: var(--bg); }
   <div class="xt-tab" data-tab="me" onclick="xtSwitch('me')"><span class="ti" data-icon="user" data-icon-size="18"></span>我的</div>
 </nav>
 
-<script src="assets/app.js?v=20260914f"></script>
-<script src="assets/icon-map.js?v=20260913o"></script>
-<script src="assets/voiceplayer.js?v=20260913o"></script>
-<script src="assets/config.js?v=20260913o"></script>
+<script src="assets/app.js?v=20260915c"></script>
+<script src="assets/icon-map.js?v=20260915c"></script>
+<script src="assets/voiceplayer.js?v=20260915c"></script>
+<script src="assets/config.js?v=20260915c"></script>
 <script>
 /* ================= 学途 · 逻辑（v1.15） ================= */
 (function () {
@@ -349,17 +352,22 @@ body { margin: 0; background: var(--bg); }
       '<div class="xt-empty" style="font-size:12px">想学什么自己加：高数 / 专业课 / 考研政治 / Java…不用再改 App</div>';
     if (window.lucideAutoRender) window.lucideAutoRender(); // J 批次：动态 data-icon span 重渲染
   }
+  /* 全站禁用原生 prompt/confirm：改走 app.js 的 uiPrompt / uiConfirm（轻量页内输入层 / 确认层） */
   window.xtAddSubject = function () {
-    var name = prompt('学科名称（如：高数 / 考研政治）');
-    if (!name) return;
-    var url = prompt('学习页面地址（可留空，如：四级词汇.html）', '');
-    addSubject(name, url || '');
-    renderStudy();
+    uiPrompt('学科名称（如：高数 / 考研政治）', '').then(function (name) {
+      if (!name) return;
+      uiPrompt('学习页面地址（可留空，如：四级词汇.html）', '').then(function (url) {
+        addSubject(name, url || '');
+        renderStudy();
+      });
+    });
   };
   window.xtDelSubject = function (i) {
-    if (!confirm('删除该自定义学科？')) return;
-    removeSubject(i);
-    renderStudy();
+    uiConfirm('删除该自定义学科？', '删除').then(function (ok) {
+      if (!ok) return;
+      removeSubject(i);
+      renderStudy();
+    });
   };
 
   /* ---------- 刷题页 ---------- */
@@ -538,21 +546,26 @@ body { margin: 0; background: var(--bg); }
     if (window.lucideAutoRender) window.lucideAutoRender(); // J 批次：动态 data-icon span 重渲染
   }
   window.xtAddGoal = function () {
-    var name = prompt('目标名称（如：英语四级）');
-    if (!name) return;
-    var pr = prompt('当前进度（0-100）', '0');
-    addGoal(name, pr === null ? 0 : Number(pr) || 0);
-    renderMe();
+    uiPrompt('目标名称（如：英语四级）', '').then(function (name) {
+      if (!name) return;
+      uiPrompt('当前进度（0-100）', '0').then(function (pr) {
+        addGoal(name, pr === null ? 0 : Number(pr) || 0);
+        renderMe();
+      });
+    });
   };
   window.xtSetGoal = function (i) {
-    var pr = prompt('当前进度（0-100）', '0');
-    updateGoalProgress(i, pr === null ? 0 : Number(pr) || 0);
-    renderMe();
+    uiPrompt('当前进度（0-100）', '0').then(function (pr) {
+      updateGoalProgress(i, pr === null ? 0 : Number(pr) || 0);
+      renderMe();
+    });
   };
   window.xtDelGoal = function (i) {
-    if (!confirm('删除该目标？')) return;
-    removeGoal(i);
-    renderMe();
+    uiConfirm('删除该目标？', '删除').then(function (ok) {
+      if (!ok) return;
+      removeGoal(i);
+      renderMe();
+    });
   };
 
   /* ---------- 启动：结算上次会话并渲染首页 ---------- */
