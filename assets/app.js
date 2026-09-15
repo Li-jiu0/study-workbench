@@ -1308,8 +1308,9 @@ function navigateTo(page) {
     const insideContent = targetPage && targetPage.parentElement.classList.contains('content');
     contentEl.style.display = insideContent ? '' : 'none';
   }
-  // 更新顶部标题
-  document.getElementById('topbarTitle').textContent = pageTitles[page] || '首页';
+  // 更新顶部标题（部分页面无 #topbarTitle，未判空会抛错打断后续渲染）
+  var _tbt = document.getElementById('topbarTitle');
+  if (_tbt) _tbt.textContent = pageTitles[page] || '首页';
   // 更新导航激活状态
   document.querySelectorAll('.nav-item').forEach(item => {
     item.classList.toggle('active', item.dataset.page === page);
@@ -1336,16 +1337,22 @@ document.querySelectorAll('.nav-item[data-page], .bottom-nav-item[data-page]').f
 
 // ========== 更多面板 ==========
 function toggleMorePanel() {
-  document.getElementById('morePanel').classList.toggle('active');
-  document.querySelector('.more-overlay').classList.toggle('active');
+  // 【2026-09-15 空判修复】部分页面无 #morePanel / .more-overlay，未判空会抛错打断 navigateTo
+  var _mp = document.getElementById('morePanel');
+  var _mo = document.querySelector('.more-overlay');
+  if (_mp) _mp.classList.toggle('active');
+  if (_mo) _mo.classList.toggle('active');
 }
 function closeMorePanel() {
-  document.getElementById('morePanel').classList.remove('active');
-  document.querySelector('.more-overlay').classList.remove('active');
+  var _mp = document.getElementById('morePanel');
+  var _mo = document.querySelector('.more-overlay');
+  if (_mp) _mp.classList.remove('active');
+  if (_mo) _mo.classList.remove('active');
 }
 function toggleToolsPanel() {
   // 先关闭更多面板
-  document.getElementById('morePanel').classList.remove('active');
+  var _mp0 = document.getElementById('morePanel');
+  if (_mp0) _mp0.classList.remove('active');
   // 切换工具面板
   var panel = document.getElementById('toolsPanel');
   var overlay = document.getElementById('toolsOverlay');
@@ -1379,7 +1386,9 @@ function renderGreeting() {
   if (hour >= 12 && hour < 14) greeting = '中午好';
   else if (hour >= 14 && hour < 18) greeting = '下午好';
   else if (hour >= 18 || hour < 6) greeting = '晚上好';
-  document.getElementById('greetingText').textContent = greeting;
+  // 【2026-09-15 空判修复】仅首页有 #greetingText，其他页未判空会抛错打断 renderHome 后续渲染
+  var _gt = document.getElementById('greetingText');
+  if (_gt) _gt.textContent = greeting;
 }
 
 // ========== T16 倒计时日期规范化与天数计算（2026-09-12 P0-A） ==========
@@ -5118,13 +5127,13 @@ function renderEtiquette() {
     itemsHtml += `<div style="padding:30px;text-align:center;color:var(--text-muted);background:var(--bg);border-radius:10px;margin-bottom:16px">🎉 今日礼仪已学完！明天再来学新的吧~</div>`;
   }
   
-  const otherUnviewed = etiquetteFiltered.filter(e => !queue.ids.includes(e.id) && !appData.viewedContent.etiquette?.includes(e.id));
+  const otherUnviewed = etiquetteFiltered.filter(e => !queue.ids.includes(e.id) && !(appData.viewedContent.etiquette || []).includes(e.id));
   if (otherUnviewed.length > 0) {
     itemsHtml += `<div style="font-size:12px;color:var(--text-muted);margin:16px 0 8px;padding-left:8px;border-left:3px solid #ddd">更多内容（后续学习，${otherUnviewed.length}个）</div>`;
     itemsHtml += otherUnviewed.slice(0, 2).map(e => renderEtiquetteCard(e, false)).join('');
   }
   
-  const viewedItems = etiquetteFiltered.filter(e => appData.viewedContent.etiquette?.includes(e.id));
+  const viewedItems = etiquetteFiltered.filter(e => (appData.viewedContent.etiquette || []).includes(e.id));
   if (viewedItems.length > 0) {
     itemsHtml += `<div style="font-size:12px;color:var(--text-muted);margin:16px 0 8px;padding-left:8px;border-left:3px solid #ddd">已学完（${viewedItems.length}个）</div>`;
     itemsHtml += viewedItems.map(e => renderEtiquetteCard(e, true)).join('');
@@ -5185,13 +5194,13 @@ function renderIvQuestions() {
     itemsHtml += `<div style="padding:30px;text-align:center;color:var(--text-muted);background:var(--bg);border-radius:10px;margin-bottom:16px">🎉 今日面试题已学完！明天再来学新的吧~</div>`;
   }
   
-  const otherUnviewed = INTERVIEW_QUESTIONS.filter(q => !queue.ids.includes(q.id) && !appData.viewedContent.ivQuestions?.includes(q.id));
+  const otherUnviewed = INTERVIEW_QUESTIONS.filter(q => !queue.ids.includes(q.id) && !(appData.viewedContent.ivQuestions || []).includes(q.id));
   if (otherUnviewed.length > 0) {
     itemsHtml += `<div style="font-size:12px;color:var(--text-muted);margin:16px 0 8px;padding-left:8px;border-left:3px solid #ddd">更多题目（后续学习，${otherUnviewed.length}道）</div>`;
     itemsHtml += otherUnviewed.slice(0, 2).map(q => renderIvQuestionCard(q, false)).join('');
   }
   
-  const viewedItems = INTERVIEW_QUESTIONS.filter(q => appData.viewedContent.ivQuestions?.includes(q.id));
+  const viewedItems = INTERVIEW_QUESTIONS.filter(q => (appData.viewedContent.ivQuestions || []).includes(q.id));
   if (viewedItems.length > 0) {
     itemsHtml += `<div style="font-size:12px;color:var(--text-muted);margin:16px 0 8px;padding-left:8px;border-left:3px solid #ddd">已学完（${viewedItems.length}道）</div>`;
     itemsHtml += viewedItems.map(q => renderIvQuestionCard(q, true)).join('');
@@ -5266,13 +5275,13 @@ function renderLayouts() {
     itemsHtml += `<div style="grid-column:1/-1;padding:30px;text-align:center;color:var(--text-muted);background:var(--bg);border-radius:10px"><span class="nav-icon" data-icon="sparkles" data-icon-size="16"></span> 今日版式已学完！明天再来学新的吧~</div>`;
   }
   
-  const otherUnviewed = layoutFiltered.filter(l => !queue.ids.includes(l.id) && !appData.viewedContent.pptLayouts?.includes(l.id));
+  const otherUnviewed = layoutFiltered.filter(l => !queue.ids.includes(l.id) && !(appData.viewedContent.pptLayouts || []).includes(l.id));
   if (otherUnviewed.length > 0) {
     itemsHtml += `<div style="grid-column:1/-1;font-size:12px;color:var(--text-muted);margin:12px 0 4px;padding-left:8px;border-left:3px solid #ddd">更多版式（后续学习，${otherUnviewed.length}种）</div>`;
     itemsHtml += otherUnviewed.slice(0, 3).map(l => renderLayoutCard(l, false)).join('');
   }
   
-  const viewedItems = layoutFiltered.filter(l => appData.viewedContent.pptLayouts?.includes(l.id));
+  const viewedItems = layoutFiltered.filter(l => (appData.viewedContent.pptLayouts || []).includes(l.id));
   if (viewedItems.length > 0) {
     itemsHtml += `<div style="grid-column:1/-1;font-size:12px;color:var(--text-muted);margin:12px 0 4px;padding-left:8px;border-left:3px solid #ddd">已学完（${viewedItems.length}种）</div>`;
     itemsHtml += viewedItems.map(l => renderLayoutCard(l, true)).join('');
@@ -5378,14 +5387,14 @@ function renderCommScenes() {
   }
   
   // 更多未学内容（不在今日队列中的）
-  const otherUnviewed = catFiltered.filter(s => !queue.ids.includes(s.id) && !appData.viewedContent.commScenes?.includes(s.id));
+  const otherUnviewed = catFiltered.filter(s => !queue.ids.includes(s.id) && !(appData.viewedContent.commScenes || []).includes(s.id));
   if (otherUnviewed.length > 0) {
     itemsHtml += `<div style="font-size:12px;color:var(--text-muted);margin:16px 0 8px;padding-left:8px;border-left:3px solid #ddd">更多内容（后续学习，${otherUnviewed.length}个）</div>`;
     itemsHtml += otherUnviewed.slice(0, 3).map(s => renderCommSceneCard(s, false)).join('');
   }
   
   // 已学内容
-  const viewedItems = catFiltered.filter(s => appData.viewedContent.commScenes?.includes(s.id));
+  const viewedItems = catFiltered.filter(s => (appData.viewedContent.commScenes || []).includes(s.id));
   if (viewedItems.length > 0) {
     itemsHtml += `<div style="font-size:12px;color:var(--text-muted);margin:16px 0 8px;padding-left:8px;border-left:3px solid #ddd">已学完（${viewedItems.length}个）</div>`;
     itemsHtml += viewedItems.map(s => renderCommSceneCard(s, true)).join('');
@@ -5503,13 +5512,13 @@ function renderQuotes() {
     itemsHtml += `<div style="padding:30px;text-align:center;color:var(--text-muted);background:var(--bg);border-radius:10px;margin-bottom:16px"><span class="nav-icon" data-icon="sparkles" data-icon-size="16"></span> 今日金句已学完！明天再来学新的吧~</div>`;
   }
   
-  const otherUnviewed = catFiltered.filter(q => !queue.ids.includes(q.id) && !appData.viewedContent.commQuotes?.includes(q.id));
+  const otherUnviewed = catFiltered.filter(q => !queue.ids.includes(q.id) && !(appData.viewedContent.commQuotes || []).includes(q.id));
   if (otherUnviewed.length > 0) {
     itemsHtml += `<div style="font-size:12px;color:var(--text-muted);margin:16px 0 8px;padding-left:8px;border-left:3px solid #ddd">更多金句（后续学习，${otherUnviewed.length}句）</div>`;
     itemsHtml += otherUnviewed.slice(0, 2).map(q => renderQuoteCard(q, false)).join('');
   }
   
-  const viewedItems = catFiltered.filter(q => appData.viewedContent.commQuotes?.includes(q.id));
+  const viewedItems = catFiltered.filter(q => (appData.viewedContent.commQuotes || []).includes(q.id));
   if (viewedItems.length > 0) {
     itemsHtml += `<div style="font-size:12px;color:var(--text-muted);margin:16px 0 8px;padding-left:8px;border-left:3px solid #ddd">已学完（${viewedItems.length}句）</div>`;
     itemsHtml += viewedItems.map(q => renderQuoteCard(q, true)).join('');
@@ -5643,12 +5652,12 @@ function getDailyQueue(contentKey, allItems) {
     // 保留昨天没看完的内容
     let leftoverIds = [];
     if (queue && queue.ids) {
-      leftoverIds = queue.ids.filter(id => !appData.viewedContent[contentKey]?.includes(id));
+      leftoverIds = queue.ids.filter(id => !(appData.viewedContent[contentKey] || []).includes(id));
     }
     
     // 获取未查看的新内容
     const unviewedIds = allItems
-      .filter(item => !appData.viewedContent[contentKey]?.includes(item.id) && !leftoverIds.includes(item.id))
+      .filter(item => !(appData.viewedContent[contentKey] || []).includes(item.id) && !leftoverIds.includes(item.id))
       .map(item => item.id);
     
     // 随机打乱新内容
@@ -5673,7 +5682,7 @@ function getDailyQueue(contentKey, allItems) {
   }
   
   // 清理已经查看过的内容
-  queue.ids = queue.ids.filter(id => !appData.viewedContent[contentKey]?.includes(id));
+  queue.ids = queue.ids.filter(id => !(appData.viewedContent[contentKey] || []).includes(id));
   appData.dailyQueues[contentKey] = queue;
   saveData();
   
@@ -5704,7 +5713,7 @@ function removeTodayItem(contentKey, id) {
 // 获取每日队列统计
 function getDailyQueueStats(contentKey, allItems) {
   const queue = getDailyQueue(contentKey, allItems);
-  const totalViewed = appData.viewedContent[contentKey]?.length || 0;
+  const totalViewed = (appData.viewedContent[contentKey] || []).length || 0;
   return {
     todayCount: queue.ids.length,
     totalViewed: totalViewed,
@@ -5736,9 +5745,13 @@ function switchExamMode(mode) {
   examCurrentIndex = 0;
   examAnswered = {};
   
-  document.getElementById('examModeNew').className = mode === 'new' ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
-  document.getElementById('examModeReview').className = mode === 'review' ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
-  document.getElementById('examModeInfo').textContent = mode === 'new' ? '新题模式' : '复习模式';
+  // 【2026-09-15 空判修复】仅行测页有这三个节点，其他页调用会抛错
+  var _emn = document.getElementById('examModeNew');
+  if (_emn) _emn.className = mode === 'new' ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
+  var _emr = document.getElementById('examModeReview');
+  if (_emr) _emr.className = mode === 'review' ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
+  var _emi = document.getElementById('examModeInfo');
+  if (_emi) _emi.textContent = mode === 'new' ? '新题模式' : '复习模式';
   
   if (mode === 'new') {
     examModeList = getNewQuestions();
@@ -7015,6 +7028,8 @@ function deleteNote(id) {
 // ---- 编辑器 ----
 function loadBlogEditor() {
   const sel = document.getElementById('beCat');
+  // 【2026-09-15 空判修复】本函数只在博客编辑视图调用，非该视图页面元素不存在
+  if (!sel) return;
   sel.innerHTML = BLOG_CATS.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
   // 套用「设置 → 发贴默认偏好」（【9/11 新增】）
   sel.value = getSetting('blogCat') || 'cet';
@@ -7022,12 +7037,16 @@ function loadBlogEditor() {
   if (prv) prv.value = getSetting('blogPrivacy') || 'public';
   const tg = document.getElementById('beTags');
   if (tg && !tg.value) tg.value = getSetting('blogTags') || '';
-  document.getElementById('blogEditorInput').addEventListener('input', updateEditorPreview);
+  var _bei = document.getElementById('blogEditorInput');
+  if (_bei) _bei.addEventListener('input', updateEditorPreview);
   updateEditorPreview();
 }
 function updateEditorPreview() {
-  const v = document.getElementById('blogEditorInput').value;
-  document.getElementById('blogEditorPreview').innerHTML = v.trim() ? reactMarkdown(v) : '<span style="color:var(--text-secondary)">👁 实时预览：在左侧输入，这里会即时渲染效果（支持 Markdown）</span>';
+  const _inp = document.getElementById('blogEditorInput');
+  const _prv = document.getElementById('blogEditorPreview');
+  if (!_inp || !_prv) return;
+  const v = _inp.value;
+  _prv.innerHTML = v.trim() ? reactMarkdown(v) : '<span style="color:var(--text-secondary)">👁 实时预览：在左侧输入，这里会即时渲染效果（支持 Markdown）</span>';
 }
 function editorTool(kind) {
   const ta = document.getElementById('blogEditorInput');

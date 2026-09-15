@@ -67,6 +67,11 @@
     body.im-mobile .im-side{display:none}
     body.im-mobile .im-chat{display:flex}
   }
+  /* 2026-09-15 批次八（ADR-3）：群设置 / 联系管理员 —— 遮罩弹窗改为右侧会话区「页面内视图」。
+     两个节点搬进 #imChat，与 #imEmpty / #imConv 平级互斥占满右栏；无遮罩、无浮层、无 z-index。 */
+  .im-gs-view,.im-ac-view{flex:1;min-width:0;min-height:0;display:none;flex-direction:column;overflow:hidden;background:var(--bg)}
+  .im-gs-view .im-gs-head{background:var(--card);padding:10px 16px}
+  .im-gs-view .im-gs-body{background:transparent}
 
 </style>
 </head>
@@ -149,6 +154,42 @@
             <button class="im-icon" title="发送图片" onclick="imPickImage()"><span class="nav-icon" data-icon="image" data-icon-size="20"></span></button>
             <input type="file" id="imImgInput" accept="image/*" style="display:none" onchange="imSendImage(this)">
             <button class="im-send" onclick="imSendText()">发送</button>
+          </div>
+        </div>
+
+        <!-- ==================== 群设置（页面内视图 · ADR-3 2026-09-15 批次八） ====================
+             原 .im-overlay / .im-modal 遮罩外壳已移除，本节点作为右侧会话区的一个「视图」与
+             #imEmpty / #imConv 平级互斥显示：点会话头「⋯」切进来，返回箭头 / ✕ / Esc 切回会话。
+             id（#imGroupSettingsModal、#imGsBody）与内部控件 id 全部保留，
+             内容仍由 chat-local.js 的 imRenderGroupSettings() 渲染到 #imGsBody，成员管理 / 踢人 /
+             免打扰 / 群内昵称 / 退群解散 / 改群名公告 一个不删。 -->
+        <div class="im-gs-view" id="imGroupSettingsModal" style="display:none">
+          <div class="im-modal-head im-gs-head">
+            <button class="im-icon" onclick="imCloseGroupSettings()" title="返回会话">←</button>
+            <div style="flex:1;font-size:var(--xt-font-md);font-weight:700">群设置</div>
+            <div style="cursor:pointer;color:#999;font-size:var(--xt-font-2xl)" onclick="imCloseGroupSettings()" title="返回会话">✕</div>
+          </div>
+          <div class="im-gs-body" id="imGsBody">
+            <div class="im-empty2" style="padding:20px 0;text-align:center;color:#999;font-size:var(--xt-font-base)">加载中…</div>
+          </div>
+        </div>
+
+        <!-- 需求01：联系管理员会话（页面内视图 · ADR-3 2026-09-15 批次八）
+             原 .ac-overlay 遮罩与 .ac-panel 浮层外壳已移除，消息列表 #acMsgs + 输入框 #acInput 完整保留，
+             显隐仍由 admin-contact.js 的 xtOpenAdminChat() / acClose() 按 #acPanel 的 display 控制。 -->
+        <div class="im-ac-view" id="acPanel" style="display:none">
+          <div class="ac-head">
+            <div class="ac-avatar">🛡️</div>
+            <div style="flex:1;min-width:0">
+              <div class="ac-title">联系管理员</div>
+              <div class="ac-hint">管理员在线时会回复你</div>
+            </div>
+            <button class="ac-close" onclick="acClose()" title="返回" aria-label="返回">✕</button>
+          </div>
+          <div class="ac-msgs" id="acMsgs"></div>
+          <div class="ac-composer">
+            <textarea id="acInput" rows="1" placeholder="输入消息…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();acSend()}"></textarea>
+            <button class="ac-send" onclick="acSend()">发送</button>
           </div>
         </div>
       </section>
@@ -242,17 +283,7 @@
     </div>
   </div>
 
-  <!-- ==================== 群设置面板（T02 增量 2026-09-11）：D0 骨架 + D2 成员管理/踢人 + D3 免打扰 + D4 退群/解散 ====================
-       复用 .im-overlay/.im-modal 外壳；内容由 chat-local.js 的 imRenderGroupSettings() 动态渲染。
-       D1 改群名/群公告、D5 群内昵称：本轮为禁用占位（【后续扩展点：T04 接口就绪后接线】）。 -->
-  <div class="im-overlay" id="imGroupSettingsModal" style="display:none" onclick="if(event.target===this)imCloseGroupSettings()">
-    <div class="im-modal im-gs-modal">
-      <div class="im-modal-head"><div style="font-size:var(--xt-font-md);font-weight:700">群设置</div><div style="cursor:pointer;color:#999;font-size:var(--xt-font-2xl)" onclick="imCloseGroupSettings()">✕</div></div>
-      <div class="im-gs-body" id="imGsBody">
-        <div class="im-empty2" style="padding:20px 0;text-align:center;color:#999;font-size:var(--xt-font-base)">加载中…</div>
-      </div>
-    </div>
-  </div>
+  <!-- 群设置：已按 ADR-3 改为右侧会话区「页面内视图」，节点现位于 #imChat 内（#imGroupSettingsModal） -->
 
   <!-- ==================== 加好友模态（A3，2026-09-11；批次二 2026-09-11h 移除弹窗内「旧页回退」入口） ====================
        搜索（300ms 防抖）→ imRenderFriendRows 统一渲染。
@@ -296,33 +327,14 @@
     </div>
   </div>
 
-  <!-- 需求01：联系管理员会话浮层（assets/admin-contact.js 挂载；Esc 或遮罩点击关闭） -->
-  <div class="ac-overlay" id="acPanel" style="display:none" onclick="if(event.target===this){acClose()}">
-    <div class="ac-panel">
-      <div class="ac-head">
-        <div class="ac-avatar">🛡️</div>
-        <div style="flex:1;min-width:0">
-          <div class="ac-title">联系管理员</div>
-          <div class="ac-hint">管理员在线时会回复你</div>
-        </div>
-        <button class="ac-close" onclick="acClose()" title="关闭" aria-label="关闭">✕</button>
-      </div>
-      <div class="ac-msgs" id="acMsgs"></div>
-      <div class="ac-composer">
-        <textarea id="acInput" rows="1" placeholder="输入消息…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();acSend()}"></textarea>
-        <button class="ac-send" onclick="acSend()">发送</button>
-      </div>
-    </div>
-  </div>
-
-
+  <!-- 联系管理员：已按 ADR-3 改为右侧会话区「页面内视图」，节点现位于 #imChat 内（#acPanel） -->
 
 </div>
 
 <script src="assets/icon-map.js?v=20260915c" defer></script>
 <script src="assets/xt-toast.js?v=20260915c" defer></script>
 <script src="assets/error-boundary.js?v=20260915c" defer></script>
-<script src="assets/app.js?v=20260915c" defer></script>
+<script src="assets/app.js?v=20260915e" defer></script>
 <script src="assets/config.js?v=20260915c" defer></script>
 <script src="assets/emoji/manifest.js?v=20260915c" defer></script>
 <script src="assets/api.js?v=20260915c" defer></script>
@@ -357,9 +369,10 @@
   .ac-badge{position:absolute;top:-6px;right:-6px;min-width:17px;height:17px;line-height:17px;padding:0 4px;background:#ff5d5d;color:#fff;border-radius:9px;font-size:10px;font-weight:700;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.25);z-index:2}
   /* R45：入口变为会话行后，角标改到行内右侧（与好友行 .im-badge 同一位置），不再浮在行外右上角 */
   .ac-entry .ac-badge{position:static;display:inline-block;margin-left:auto;flex-shrink:0;box-shadow:none;font-size:11px;min-width:18px;height:18px;line-height:18px}
-  .ac-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
-  .ac-panel{background:var(--card);width:100%;max-width:460px;max-height:82vh;border-radius:16px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 12px 48px rgba(0,0,0,.25)}
-  .ac-head{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--card)}
+  /* ADR-3（2026-09-15 批次八）：.ac-overlay 遮罩与 .ac-panel 浮层外壳已删除，
+     #acPanel 改为右侧会话区内与 #imConv 平级的视图容器 .im-ac-view（布局样式见页首 <style>）。
+     以下 .ac-* 均为面板内部元素样式，原样保留（.ac-m / .ac-empty 由 admin-contact.js 生成的消息 HTML 使用）。 */
+  .ac-head{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--card);flex-shrink:0}
   .ac-avatar{width:36px;height:36px;border-radius:50%;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
   .ac-title{font-size:15px;font-weight:700;color:var(--text)}
   .ac-hint{font-size:11px;color:var(--text-secondary);margin-top:1px}
@@ -623,6 +636,107 @@
   window.__imRenderForwardCard = render;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render);
   else render();
+})();
+</script>
+<script>
+/* =====================================================================
+   2026-09-15 批次八（ADR-3）：群设置 / 联系管理员 —— 遮罩弹窗 → 右栏「页面内视图」
+   ---------------------------------------------------------------------
+   #imGroupSettingsModal 与 #acPanel 已搬进 #imChat，与 #imEmpty / #imConv 平级。
+   本脚本只做「视图互斥切换」的包装：原函数（imOpenGroupSettings / imCloseGroupSettings /
+   xtOpenAdminChat / acClose）函数名与内部逻辑全部保留，仅在打开后隐藏会话、关闭后还原会话。
+   id 与内部控件 id 一个未动，chat-local.js / admin-contact.js 按 id 照常命中，无死链。
+   ===================================================================== */
+(function () {
+  'use strict';
+
+  var BASE = ['imEmpty', 'imConv'];  // 右栏基础视图（空态 / 会话）
+  var cur = null;    // 当前激活视图 id（null = 基础视图在显示）
+  var saved = null;  // 进入视图前的基础视图 display 快照
+
+  function $id(x) { return document.getElementById(x); }
+
+  function hideBase() {
+    saved = { mobile: document.body.classList.contains('im-mobile') };
+    BASE.forEach(function (id) {
+      var el = $id(id);
+      saved[id] = el ? el.style.display : '';
+      if (el) el.style.display = 'none';
+    });
+  }
+
+  function restoreBase() {
+    if (!saved) return;
+    BASE.forEach(function (id) {
+      var el = $id(id);
+      if (el) el.style.display = saved[id];
+    });
+    if (saved.mobile) document.body.classList.add('im-mobile');
+    else document.body.classList.remove('im-mobile');
+    saved = null;
+  }
+
+  function showView(id) {
+    if (cur === id) return;
+    if (cur) { var prev = $id(cur); if (prev) prev.style.display = 'none'; }
+    else hideBase();
+    cur = id;
+    var v = $id(id);
+    if (v) v.style.display = 'flex';
+    /* 窄屏右栏默认隐藏（.im-chat{display:none}），切视图时确保可见 */
+    document.body.classList.add('im-mobile');
+  }
+
+  function hideView(id) {
+    var v = $id(id);
+    if (v) v.style.display = 'none';
+    if (cur === id) { cur = null; restoreBase(); }
+  }
+
+  /* 打开类：原函数跑完再判断是否真的打开了（失败路径只 toast 不改 display） */
+  function wrapAfter(name, after) {
+    if (typeof window[name] !== 'function' || window[name].__imViewPatched) return;
+    var fn = window[name];
+    var w = function () { var r = fn.apply(this, arguments); after(); return r; };
+    w.__imViewPatched = true;
+    window[name] = w;
+  }
+
+  /* 关闭类：先收起视图再让原函数走（顺序无关，统一放后面即可） */
+  function wrapBefore(name, before) {
+    if (typeof window[name] !== 'function' || window[name].__imViewPatched) return;
+    var fn = window[name];
+    var w = function () { before(); return fn.apply(this, arguments); };
+    w.__imViewPatched = true;
+    window[name] = w;
+  }
+
+  function init() {
+    wrapAfter('imOpenGroupSettings', function () {
+      var m = $id('imGroupSettingsModal');
+      if (m && m.style.display !== 'none') showView('imGroupSettingsModal');
+    });
+    wrapAfter('imCloseGroupSettings', function () { hideView('imGroupSettingsModal'); });
+
+    wrapAfter('xtOpenAdminChat', function () {
+      var p = $id('acPanel');
+      if (p && p.style.display !== 'none') showView('acPanel');
+    });
+    wrapAfter('acClose', function () { hideView('acPanel'); });
+
+    /* 在视图里点左侧会话 → 先收起视图，避免两个视图同时占位 */
+    wrapBefore('imOpenChat', function () { if (cur) hideView(cur); });
+    wrapBefore('imBackToList', function () { if (cur) hideView(cur); });
+
+    /* admin-contact.js 的 Esc 分支直接调内部 closePanel()（不走 window.acClose），
+       这里补一刀还原基础视图；其监听器注册在前，此时面板已 display:none。 */
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && cur === 'acPanel') hideView('acPanel');
+    });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
 })();
 </script>
 </body>
