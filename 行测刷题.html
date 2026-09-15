@@ -32,9 +32,6 @@
       <div class="nav-item" data-page="exam">
         <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span>
       </div>
-      <div class="nav-item" onclick="location.href='申论刷题.html'" title="申论刷题（题目精练 / 阅读积累）">
-        <span class="nav-icon" data-icon="file-text"></span><span>申论刷题</span>
-      </div>
       <div class="nav-item" data-page="comm">
         <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span>
       </div>
@@ -101,15 +98,20 @@
             <span class="tag tag-success" style="margin-left:6px" id="ecAccuracy">正确率 0%</span>
           </div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px" id="ecTypeFilter">
-          <span class="type-filter active" data-type="全部" onclick="filterExamType('全部')">全部</span>
-          <span class="type-filter" data-type="图形推理" onclick="filterExamType('图形推理')">图形推理</span>
-          <span class="type-filter" data-type="定义判断" onclick="filterExamType('定义判断')">定义判断</span>
-          <span class="type-filter" data-type="类比推理" onclick="filterExamType('类比推理')">类比推理</span>
-          <span class="type-filter" data-type="逻辑判断" onclick="filterExamType('逻辑判断')">逻辑判断</span>
-          <span class="type-filter" data-type="言语理解" onclick="filterExamType('言语理解')">言语理解</span>
-          <span class="type-filter" data-type="数量关系" onclick="filterExamType('数量关系')">数量关系</span>
-          <span class="type-filter" data-type="资料分析" onclick="filterExamType('资料分析')">资料分析</span>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px" id="ecTypeFilter">
+          <!-- 【2026-09-15 用户指令】题型筛选由两行标签压缩为一个下拉列表，节省纵向空间；
+               逻辑不变：仍调 filterExamType(type)（app.js L5763），页尾脚本负责让下拉框与筛选状态双向同步 -->
+          <select id="ecTypeSelect" onchange="filterExamType(this.value)" title="按题型筛选"
+            style="padding:8px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--card);color:var(--text);font-size:var(--xt-font-base);min-width:132px">
+            <option value="全部">全部题型</option>
+            <option value="图形推理">图形推理</option>
+            <option value="定义判断">定义判断</option>
+            <option value="类比推理">类比推理</option>
+            <option value="逻辑判断">逻辑判断</option>
+            <option value="言语理解">言语理解</option>
+            <option value="数量关系">数量关系</option>
+            <option value="资料分析">资料分析</option>
+          </select>
           <span class="type-filter" style="border:1.5px solid var(--primary);color:var(--primary);background:var(--primary-light)" onclick="openQBank('exam')" title="添加/导入/导出自己的题目"><span data-icon="brain" data-icon-size="16" style="vertical-align:-3px"></span> 我的题库</span>
           <span class="type-filter" style="background:var(--primary);color:#fff;border-color:var(--primary)" onclick="shuffleExamQuestions()"><span data-icon="shuffle" data-icon-size="16" style="vertical-align:-3px"></span> 随机刷题</span>
         </div>
@@ -258,5 +260,19 @@
 <script src="assets/config.js?v=20260915c" defer></script>
 <script src="assets/api.js?v=20260915c" defer></script>
 <script src="assets/qbank.js?v=20260915c" defer></script>
+<script>
+/* 【2026-09-15】下拉列表与筛选状态同步：
+   app.js 的 filterExamType 原来靠切换 .type-filter 标签的 active 高亮（标签已改下拉，那段循环变成空操作，无害）；
+   这里包一层，让任何代码路径调 filterExamType(type) 时下拉框选项跟着走。DOMContentLoaded 保证在 defer 的 app.js 之后执行。 */
+window.addEventListener('DOMContentLoaded', function () {
+  var orig = window.filterExamType;
+  if (typeof orig !== 'function') return;
+  window.filterExamType = function (type) {
+    var sel = document.getElementById('ecTypeSelect');
+    if (sel) sel.value = type;
+    orig(type);
+  };
+});
+</script>
 </body>
 </html>
