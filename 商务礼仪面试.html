@@ -99,23 +99,30 @@
         <!-- 【后续扩展点】T7 增量（P0-12）：面试题库四分类 + AI 模拟面试官（多轮追问，走 /api/ai/chat 中转）
              （独立题卡，不改原页面逻辑；断网时题库可用、AI 降级提示） -->
         <div class="qtab-card" id="ivQuizCard">
-          <div class="sprint-head"><span><span data-icon="mic" data-icon-size="16" style="vertical-align:-3px"></span> 面试题库 · 四分类</span>
-            <div class="qtab-tabs" style="margin:0" id="ivQuizTabs"></div>
+          <!-- 【批次 20260915】「面试题库 · 四分类」→「今日一题 · {分类}」可答题卡（答题框 + 提交 + 进度；AI 面板已无入口，保持隐藏） -->
+          <div class="sprint-head" style="flex-wrap:wrap;gap:8px">
+            <span><span data-icon="mic" data-icon-size="16" style="vertical-align:-3px"></span> 今日一题 · <span id="ivQuizCatName">全部</span></span>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+              <span id="ivQuizProgress" style="font-size:12px;font-weight:400;color:var(--text-secondary);white-space:nowrap">已答 0 / 0 题</span>
+              <div class="qtab-tabs" style="margin:0" id="ivQuizTabs"></div>
+            </div>
           </div>
           <div class="qtab-q" id="ivQuizQ">加载中…</div>
+          <textarea id="ivQuizAnswer" class="iv-quiz-answer" placeholder="在这里输入你的回答..."
+            style="width:100%;height:100px;min-height:100px;box-sizing:border-box;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.7;font-family:inherit;color:var(--text);background:var(--bg);resize:vertical;outline:none"></textarea>
           <div class="qtab-btns">
             <button class="btn btn-outline" onclick="ivQuizNext()"><span data-icon="shuffle" data-icon-size="16" style="vertical-align:-3px"></span> 换一题</button>
-            <button class="btn btn-outline" onclick="ivQuizShowTip()"><span data-icon="lightbulb" data-icon-size="16" style="vertical-align:-3px"></span> 查看答题要点</button>
-            <button class="btn btn-primary" id="ivAiBtn" onclick="ivStartInterview()"><span data-icon="play" data-icon-size="16" style="vertical-align:-3px"></span> 开始模拟面试</button>
+            <button class="btn btn-primary" id="ivQuizSubmitBtn" onclick="ivQuizSubmit()"><span data-icon="check" data-icon-size="16" style="vertical-align:-3px"></span> <span id="ivQuizSubmitTxt">提交回答</span></button>
+            <button class="btn btn-outline" id="ivQuizTipBtn" onclick="ivQuizShowTip()"><span data-icon="lightbulb" data-icon-size="16" style="vertical-align:-3px"></span> <span id="ivQuizTipTxt">查看答题要点</span></button>
           </div>
           <div class="qtab-verdict" id="ivQuizTip"></div>
-          <!-- 右下角 AI 面板（面试官人设多轮对话，结束后给总评） -->
-          <div class="qtab-ai" id="ivAiPanel">
+          <!-- 右下角 AI 面板（面试官人设多轮对话）：原入口按钮已下线，模拟面试改由下方功能卡进入；面板保持隐藏（保留 id 供兼容） -->
+          <div class="qtab-ai" id="ivAiPanel" style="display:none">
             <div style="display:flex;justify-content:space-between;align-items:center">
               <b style="font-size:13px"><span data-icon="bot" data-icon-size="16" style="vertical-align:-3px"></span> 模拟面试官</b>
               <span style="font-size:11px;color:var(--text-secondary);cursor:pointer" onclick="ivEndInterview()">结束并总评</span>
             </div>
-            <pre id="ivAiText">面试官待命…点击「开始模拟面试」后我将针对上方题目进行追问。</pre>
+            <pre id="ivAiText">面试官待命…请从下方「模拟面试」功能卡进入 AI 面试。</pre>
             <div style="display:flex;gap:8px">
               <input id="ivAiInput" class="fb-input" placeholder="输入你的回答…" style="flex:1"
                      onkeydown="if(event.key==='Enter'){event.preventDefault();ivAiSend()}">
@@ -236,7 +243,7 @@
             <div class="form-label">或输入文字回答：</div>
             <textarea class="form-input" rows="4" placeholder="输入你的自我介绍..." id="ivInput"></textarea>
           </div>
-          <button class="btn btn-primary btn-block" onclick="submitInterview()"><span data-icon="check" data-icon-size="16" style="vertical-align:-3px"></span> 提交回答</button>
+          <button class="btn btn-primary iv-submit-btn" onclick="submitInterview()"><span data-icon="check" data-icon-size="16" style="vertical-align:-3px"></span> 提交回答</button>
         </div>
         <div id="ivEval" style="display:none">
           <div class="eval-panel">
@@ -316,6 +323,10 @@
         .ivq-score .n{font-size:40px;font-weight:800;background:linear-gradient(135deg,var(--primary),var(--primary-dark));-webkit-background-clip:text;background-clip:text;color:transparent}
         .ivq-score .s{color:var(--text-secondary);margin-top:4px;font-size:13px}
         .ivq-tip{font-size:12px;color:var(--text-muted);text-align:center;padding:2px 0 10px}
+        /* 【N9-25 · 20260915】模拟面试页「提交回答」按钮改短：
+           原宽度来自共享 assets/common.css L494 的 .btn-block{width:100%}，导致通栏过宽。
+           此处仅在本页覆盖（不动 common.css，避免影响其余 30+ 页面）：改为内容自适应 + 居中。 */
+        .iv-submit-btn{display:flex;width:fit-content;min-width:160px;max-width:280px;margin:0 auto;padding:10px 24px;white-space:nowrap}
       </style>
 
       <div class="page" id="page-iv-prep">
@@ -461,9 +472,9 @@
 <script src="assets/icon-map.js?v=20260915c" defer></script>
 <script src="assets/xt-toast.js?v=20260915c" defer></script>
 <script src="assets/error-boundary.js?v=20260915c" defer></script>
-<script src="assets/app.js?v=20260915e" defer></script>
+<script src="assets/app.js?v=20260915f" defer></script>
 <script src="assets/config.js?v=20260915c" defer></script>
-<script src="assets/api.js?v=20260915c" defer></script>
+<script src="assets/api.js?v=20260915f" defer></script>
 
 <script src="assets/mini-interview.js?v=20260915c" defer></script>
 <!-- ===== R48 第 3 批（A4 面试准备 / A5 面试后「做真内容」） =====
@@ -655,6 +666,98 @@
   ];
   var IV_CATS = ['自我介绍', '简历深挖', '压力面', '礼仪细节'];
   var IV = { cat: '全部', idx: 0, order: [] };
+  var IV_ANS_KEY = 'interview_daily_answers';
+  var IV_STATE_KEY = 'interview_daily_state';
+  /* 题目稳定 id：用于「已提交」判定与进度去重计数 */
+  for (var _ivI = 0; _ivI < IV_BANK.length; _ivI++) { IV_BANK[_ivI].id = 'ivq-' + _ivI; }
+
+  /* ---------- 今日一题：答题记录（localStorage） ---------- */
+  function loadAnswers() {
+    try {
+      var a = JSON.parse(localStorage.getItem(IV_ANS_KEY));
+      return (a && a.length) ? a : [];
+    } catch (e) { return []; }
+  }
+  function upsertAnswer(rec) {
+    var list = loadAnswers(), hit = false;
+    for (var i = 0; i < list.length; i++) {
+      if (list[i] && list[i].questionId === rec.questionId) { list[i] = rec; hit = true; break; }
+    }
+    if (!hit) list.push(rec);
+    try { localStorage.setItem(IV_ANS_KEY, JSON.stringify(list)); } catch (e) { /* 存储不可用时静默 */ }
+  }
+  function findAnswer(qid) {
+    var list = loadAnswers();
+    for (var i = 0; i < list.length; i++) { if (list[i] && list[i].questionId === qid) return list[i]; }
+    return null;
+  }
+  function catPool(cat) {
+    return IV_BANK.map(function (q, i) { return i; })
+      .filter(function (i) { return cat === '全部' || IV_BANK[i].cat === cat; });
+  }
+  function saveState() {
+    try { localStorage.setItem(IV_STATE_KEY, JSON.stringify({ cat: IV.cat, idx: IV.idx })); } catch (e) { /* 静默 */ }
+  }
+  function loadState() {
+    try { return JSON.parse(localStorage.getItem(IV_STATE_KEY)) || null; } catch (e) { return null; }
+  }
+
+  /* 进度：当前分类「已答去重题数 / 该分类总题数」 */
+  function updateProgress() {
+    var el = $id('ivQuizProgress');
+    if (!el) return;
+    var pool = catPool(IV.cat), list = loadAnswers(), seen = {}, done = 0, i, j;
+    for (i = 0; i < list.length; i++) { if (list[i] && list[i].questionId) seen[list[i].questionId] = 1; }
+    for (j = 0; j < pool.length; j++) { if (seen[IV_BANK[pool[j]].id]) done++; }
+    el.textContent = '已答 ' + done + ' / ' + pool.length + ' 题';
+  }
+
+  function setSubmitState(submitted) {
+    var btn = $id('ivQuizSubmitBtn'), txt = $id('ivQuizSubmitTxt');
+    if (!btn || !txt) return;
+    txt.textContent = submitted ? '已提交' : '提交回答';
+    btn.disabled = !!submitted;
+    btn.className = submitted ? 'btn btn-outline' : 'btn btn-primary';
+    btn.style.opacity = submitted ? '.6' : '';
+    btn.style.cursor = submitted ? 'not-allowed' : '';
+  }
+  function setTipBtn(open) {
+    var t = $id('ivQuizTipTxt');
+    if (t) t.textContent = open ? '收起要点' : '查看答题要点';
+  }
+  function collapseTip() {
+    var tip = $id('ivQuizTip');
+    if (!tip) return;
+    tip.className = 'qtab-verdict';
+    tip.textContent = '';
+    setTipBtn(false);
+  }
+  function renderTip() {
+    var tip = $id('ivQuizTip');
+    if (!tip) return;
+    tip.className = 'qtab-verdict ok';
+    /* K 批：要点提示 emoji 前缀 → lucide lightbulb 图标（要点正文保持纯文本节点） */
+    tip.innerHTML = '<span data-icon="lightbulb" data-icon-size="14" style="vertical-align:-2px"></span> ';
+    tip.appendChild(document.createTextNode(IV_BANK[IV.idx].tip));
+    setTipBtn(true);
+  }
+  function tipOpen() {
+    var tip = $id('ivQuizTip');
+    return !!tip && tip.className.indexOf('ok') !== -1;
+  }
+  /* 应用某题：渲染题目/分类名 + 清空输入 + 收起要点 + 恢复「已提交」态 + 更新进度 */
+  function applyQuestion(i) {
+    IV.idx = i;
+    $id('ivQuizQ').textContent = IV_BANK[i].cat + ' ｜ ' + IV_BANK[i].q;
+    var cn = $id('ivQuizCatName');
+    if (cn) cn.textContent = IV_BANK[i].cat;
+    var ta = $id('ivQuizAnswer');
+    if (ta) ta.value = '';
+    collapseTip();
+    setSubmitState(!!findAnswer(IV_BANK[i].id));
+    updateProgress();
+    saveState();
+  }
 
   function renderTabs() {
     var tabs = ['全部'].concat(IV_CATS);
@@ -664,26 +767,28 @@
   }
 
   function pickQuestion() {
-    var pool = IV_BANK.map(function (_, i) { return i; })
-      .filter(function (i) { return IV.cat === '全部' || IV_BANK[i].cat === IV.cat; })
-      .filter(function (i) { return IV.order.indexOf(i) === -1; });
-    if (!pool.length) { IV.order = []; pool = IV_BANK.map(function (_, i) { return i; }).filter(function (i) { return IV.cat === '全部' || IV_BANK[i].cat === IV.cat; }); }
+    var pool = catPool(IV.cat).filter(function (i) { return IV.order.indexOf(i) === -1; });
+    if (!pool.length) { IV.order = []; pool = catPool(IV.cat); }
     var pick = pool[Math.floor(Math.random() * pool.length)];
     IV.order.push(pick);
-    IV.idx = pick;
-    $id('ivQuizQ').textContent = IV_BANK[pick].cat + ' ｜ ' + IV_BANK[pick].q;
-    var tip = $id('ivQuizTip');
-    tip.className = 'qtab-verdict'; tip.textContent = '';
+    applyQuestion(pick);
   }
 
   window.ivQuizCat = function (c) { IV.cat = c; IV.order = []; renderTabs(); pickQuestion(); };
   window.ivQuizNext = function () { pickQuestion(); };
-  window.ivQuizShowTip = function () {
-    var tip = $id('ivQuizTip');
-    tip.className = 'qtab-verdict ok';
-    /* K 批：要点提示 emoji 前缀 → lucide lightbulb 图标（要点正文保持纯文本节点） */
-    tip.innerHTML = '<span data-icon="lightbulb" data-icon-size="14" style="vertical-align:-2px"></span> ';
-    tip.appendChild(document.createTextNode(IV_BANK[IV.idx].tip));
+  /* 查看答题要点 → 展开/收起 toggle（未答题也可查看） */
+  window.ivQuizShowTip = function () { if (tipOpen()) collapseTip(); else renderTip(); };
+  /* 提交回答：空输入提示 → 非空则记录 + 展开要点 + 进度 +1 + 按钮置灰 */
+  window.ivQuizSubmit = function () {
+    var ta = $id('ivQuizAnswer');
+    var v = (ta && ta.value ? ta.value : '').trim();
+    if (!v) { if (typeof showToast === 'function') showToast('请先输入你的回答'); return; }
+    var q = IV_BANK[IV.idx];
+    upsertAnswer({ questionId: q.id, category: q.cat, answer: v, timestamp: new Date().toISOString() });
+    renderTip();
+    setSubmitState(true);
+    updateProgress();
+    if (typeof showToast === 'function') showToast('回答已提交，可对照要点自查');
   };
 
   /* ---------- AI 模拟面试官（多轮追问，结束后总评） ---------- */
@@ -774,7 +879,18 @@
   function boot() {
     if (window.StudyStats) StudyStats.render('ivStatsCard', 'etiquette');
     renderTabs();
-    pickQuestion();
+    /* 刷新恢复：还原上次分类与题目（分类/题目失效则随机一题） */
+    var st = loadState(), ok = false;
+    if (st && typeof st.idx === 'number' && IV_BANK[st.idx] &&
+        (st.cat === '全部' || IV_CATS.indexOf(st.cat) !== -1) &&
+        (st.cat === '全部' || IV_BANK[st.idx].cat === st.cat)) {
+      IV.cat = st.cat;
+      IV.order = [st.idx];
+      renderTabs();
+      applyQuestion(st.idx);
+      ok = true;
+    }
+    if (!ok) pickQuestion();
   }
 })();
 </script>

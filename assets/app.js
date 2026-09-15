@@ -2164,7 +2164,8 @@ function renderEmptyState(el, moduleKey) {
 const HOME_MODULE_COLLAPSED_COUNT = 6;
 var __homeModulesExpanded = false;
 
-// 单张模块卡 HTML：图标 | 名称…百分比 / 通栏进度条 / 通栏「已学 x/y · 正确率 r% · N 前」
+// 单张模块卡 HTML：卡内为纵向列表 = 行1 图标+名称+百分比 / 行2 通栏进度条 / 行3 明细逐项成行
+// 【2026-09-15 N9-25】明细不再用「·」拼成一行（会被 nowrap 截断），改为每项一个 .module-meta-item
 function homeModuleCardHtml(m) {
   const st = homeModuleState(m);
   const p = homeModulePercent(m);
@@ -2177,32 +2178,50 @@ function homeModuleCardHtml(m) {
 
   // 「已学/总量」：总量未知（异步题库未就位）时只显示已学数，不编造分母
   const totalTxt = (Number(m.total) || 0) > 0 ? (m.done + '/' + m.total) : (m.done + '/—');
-  const verb = st === 'empty' ? '共' : (m.unit === '词' ? '已背' : (m.unit === '题' ? '已练' : '已学'));
-  let meta = verb + ' ' + totalTxt + ' ' + m.unit;
+  // 明细各项：一项一行（列表显示），零信息丢失
+  var items = [];
+  if (st === 'empty') {
+    // 未开始：只给总量与状态，绝不给正确率（分母为 0，不编造）
+    if ((Number(m.total) || 0) > 0) {
+      items.push('共 ' + m.total + ' ' + m.unit);
+      items.push('未开始');
+    } else {
+      items.push('题库加载中');
+    }
+  } else {
+    var verb = (m.unit === '词' ? '已背' : (m.unit === '题' ? '已练' : '已学'));
+    var rate = homeModuleRate(m);
+    items.push(verb + ' ' + totalTxt + ' ' + m.unit);
+    if (rate !== null && st === 'ok') items.push('正确率 ' + rate + '%');
+    else if (m.id === 'shenlun' && Number(m.finished) > 0) items.push('已交卷 ' + m.finished + ' 篇');
+    if (st === 'few') items.push('刚开始，加油');
+    var rel = m.lastTs ? formatRelTime(m.lastTs) : '';
+    if (rel) items.push('最近学习 ' + rel);
+  }
 
-  const rate = homeModuleRate(m);
-  if (rate !== null && st === 'ok') meta += ' · 正确率 ' + rate + '%';
-  else if (m.id === 'shenlun' && Number(m.finished) > 0) meta += ' · 已交卷 ' + m.finished + ' 篇';
-  if (st === 'few') meta += ' · 刚开始，加油';
-  if (st === 'empty') meta = (Number(m.total) || 0) > 0 ? ('共 ' + m.total + ' ' + m.unit + ' · 未开始') : '题库加载中';
-
-  const rel = m.lastTs ? formatRelTime(m.lastTs) : '';
-  if (rel) meta += ' · ' + rel;
-
+  var metaHtml = '<div class="module-meta">';
+  for (var mi = 0; mi < items.length; mi++) {
+    metaHtml += '<div class="module-meta-item">' + items[mi] + '</div>';
+  }
   // 错题数（行测独有，来自 wrongQuestions 回表统计；0 不显示，避免噪音）
-  const wrongN = Number(m.wrong) || 0;
-  const wrongHtml = wrongN > 0
-    ? `<div class="module-wrong" title="该题型错题 ${wrongN} 道">错题 ${wrongN}</div>` : '';
+  // 作为明细列表的最后一行，保留 .module-wrong 胶囊样式与 title 提示
+  var wrongN = Number(m.wrong) || 0;
+  if (wrongN > 0) {
+    metaHtml += '<div class="module-meta-item">'
+      + '<span class="module-wrong" title="该题型错题 ' + wrongN + ' 道">错题 ' + wrongN + '</span></div>';
+  }
+  metaHtml += '</div>';
 
   const pctCls = 'module-percent' + muted;
   return `
       <div class="module-progress-card" data-module-id="${m.id}" onclick="navigateTo('${m.page}')">
-        <div class="module-icon" data-icon="${m.icon}" data-icon-size="18">${iconSvg}</div>
-        <div class="module-name">${m.name}</div>
-        <div class="${pctCls}">${pctTxt}</div>
+        <div class="module-card-head">
+          <div class="module-icon" data-icon="${m.icon}" data-icon-size="18">${iconSvg}</div>
+          <div class="module-name">${m.name}</div>
+          <div class="${pctCls}">${pctTxt}</div>
+        </div>
         <div class="module-bar"><div class="module-bar-fill" style="width:${p}%"></div></div>
-        <div class="module-meta">${meta}</div>
-        ${wrongHtml}
+        ${metaHtml}
       </div>
     `;
 }

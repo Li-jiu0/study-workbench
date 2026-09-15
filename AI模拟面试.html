@@ -498,7 +498,7 @@ body {
 
 <!-- 顶部栏 -->
 <div class="header">
-  <button class="header-back" onclick="goBack()"><span data-icon="close" data-icon-size="18" style="vertical-align:-3px"></span></button>
+  <button class="header-back" onclick="goBack()" title="返回" aria-label="返回"><span data-icon="arrow-left" data-icon-size="18" style="vertical-align:-3px"></span></button>
   <div class="header-title">AI模拟面试</div>
   <div class="header-status"><div class="rec-dot"></div>面试进行中</div>
 </div>
@@ -693,7 +693,7 @@ function startTimer(seconds) {
 function updateTimerDisplay() {
   const timerValue = document.getElementById('timerValue');
   const timerFill = document.getElementById('timerFill');
-  const totalTime = INTERVIEW_QUESTIONS[currentQuestion]?.time || 60;
+  const totalTime = (INTERVIEW_QUESTIONS[currentQuestion] || {}).time || 60;
   
   timerValue.textContent = timeLeft;
   timerFill.style.width = (timeLeft / totalTime * 100) + '%';
@@ -892,7 +892,14 @@ function handleKeyDown(e) {
   textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
 }
 
-function goBack() { location.href='学习工作台.html'; }
+/* N9-25（2026-09-15）：返回改为「智能返回」——有历史记录就回到跳转前页面
+   （从个人中心进来就回个人中心），无历史时兜底回首页。原实现硬跳首页，会丢失来处。 */
+function goBack() {
+  if (history.length > 1) { history.back(); return; }
+  var ref = document.referrer || '';
+  if (ref.indexOf('个人中心.html') >= 0) { location.href = '个人中心.html'; return; }
+  location.href = '学习工作台.html';
+}
 </script>
 
 </body>
