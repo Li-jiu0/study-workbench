@@ -22,6 +22,7 @@
   var STYLE_ID = 'dc-style-v2';
   var DEMO_TYPES = ['compare', 'swatch', 'type', 'none'];
   var TAB_FINAL = 3;
+  var TAB_CASES = 4;          /* 正反例浏览页签（P0-3：正反例做成可点入口） */
 
   /* ------------------------------------------------------ 极简 helper 区 */
   /* 不依赖 assets/xt-content.js（另一条线并行开发），全部内联并加 DC_ 前缀 */
@@ -121,6 +122,85 @@
     }
   }
 
+  /**
+   * P0-4 关键句高亮：hl 必须是 p 的原文子串，命中才加粗，未命中原样输出。
+   * 只做"包一层 <b>"，不改动、不截断任何一个原文字符。
+   */
+  function DC_highlight(p, hl) {
+    var text = (p === null || p === undefined) ? '' : String(p);
+    var key = (hl === null || hl === undefined) ? '' : String(hl);
+    if (!key) return DC_esc(text);
+    var i = text.indexOf(key);
+    if (i < 0) return DC_esc(text);
+    return DC_esc(text.slice(0, i)) +
+      '<b class="dc-hl">' + DC_esc(key) + '</b>' +
+      DC_esc(text.slice(i + key.length));
+  }
+
+  /** 找到真正产生滚动的祖先容器（面板是 #pptPanelBody，找不到则回退 window） */
+  function DC_findScroller(el) {
+    var p = el ? el.parentNode : null;
+    while (p && p.nodeType === 1 && p !== document.body) {
+      var oy = '';
+      try {
+        if (window.getComputedStyle) oy = window.getComputedStyle(p).overflowY || '';
+      } catch (e) { oy = ''; }
+      if ((oy === 'auto' || oy === 'scroll') && p.scrollHeight > p.clientHeight + 4) return p;
+      p = p.parentNode;
+    }
+    return null;
+  }
+
+  /* ---- P0-2 阅读进度：绑定 / 解绑（重绘前必须解绑，避免监听器堆积） ---- */
+  var DC_progOff = null;
+
+  function DC_unbindProgress() {
+    if (typeof DC_progOff === 'function') {
+      try { DC_progOff(); } catch (e) { /* 忽略 */ }
+    }
+    DC_progOff = null;
+  }
+
+  function DC_bindProgress(wrap) {
+    DC_unbindProgress();
+    if (!wrap) return;
+    var ticking = false;
+
+    function upd() {
+      ticking = false;
+      var w = document.getElementById('dc-wrap');
+      var bar = document.getElementById('dc-prog-i');
+      if (!w || !bar || !w.getBoundingClientRect) return;
+      var rect = w.getBoundingClientRect();
+      if (!rect || !rect.height) return;
+      var top = 0;
+      var sc = DC_findScroller(w);
+      if (sc && sc.getBoundingClientRect) top = sc.getBoundingClientRect().top;
+      var pct = (top - rect.top) / rect.height;
+      if (pct < 0) pct = 0;
+      if (pct > 1) pct = 1;
+      bar.style.width = Math.round(pct * 100) + '%';
+    }
+
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      window.setTimeout(upd, 30);
+    }
+
+    var target = DC_findScroller(wrap) || window;
+    if (target.addEventListener) target.addEventListener('scroll', onScroll, false);
+    else if (target.attachEvent) target.attachEvent('onscroll', onScroll);
+    if (window.addEventListener) window.addEventListener('resize', onScroll, false);
+
+    DC_progOff = function () {
+      if (target.removeEventListener) target.removeEventListener('scroll', onScroll, false);
+      else if (target.detachEvent) target.detachEvent('onscroll', onScroll);
+      if (window.removeEventListener) window.removeEventListener('resize', onScroll, false);
+    };
+    upd();
+  }
+
   /* ------------------------------------------------------------------ 样式 */
   var CSS =
     '.dc-wrap{width:100%;max-width:960px;margin:0 auto;color:var(--text,#1F2937);font-size:14px;line-height:1.7}' +
@@ -183,6 +263,25 @@
     '.dc-nav{display:flex;justify-content:space-between;gap:10px;margin-top:4px}' +
     '.dc-foot{font-size:12px;color:var(--text-secondary,#8A93A2);text-align:center;padding:8px 0 2px;line-height:1.7}' +
     '.dc-empty{padding:24px;text-align:center;color:var(--text-secondary,#8A93A2);font-size:13.5px}' +
+    /* ===== P0-2 顶部阅读进度条（随滚动更新，页内区块，非弹窗） ===== */
+    '.dc-prog{position:sticky;top:0;z-index:6;height:4px;border-radius:999px;background:var(--border,#E3E8EF);overflow:hidden;margin:0 0 10px}' +
+    '.dc-prog i{display:block;height:100%;width:0;background:#2E75B6;border-radius:999px}' +
+    /* ===== P0-3 可点入口：hero 上的计数 chip 变按钮 ===== */
+    '.dc-chip-lk{font-family:inherit;cursor:pointer}' +
+    '.dc-chip-lk:active{background:#fff;color:#1F4E79}' +
+    /* ===== P0-4 正文卡片化：小节可折叠卡片 + 要点小卡 + 关键句高亮 ===== */
+    '.dc-sec{border:1px solid var(--border,#E3E8EF);border-radius:12px;padding:12px 14px;background:var(--card,#fff)}' +
+    '.dc-h-btn{-webkit-appearance:none;appearance:none;width:100%;background:none;border:none;padding:0;margin:0;cursor:pointer;font-family:inherit;text-align:left;display:flex;align-items:flex-start;gap:8px}' +
+    '.dc-sec-b{margin-top:8px}' +
+    '.dc-sec.fold .dc-sec-b{display:none}' +
+    '.dc-p b.dc-hl{color:#1F4E79;background:#FFF3D6;padding:1px 3px;border-radius:3px}' +
+    '.dc-pt{display:flex;gap:7px;align-items:flex-start;background:var(--bg,#F7F9FC);border:1px solid var(--border,#E3E8EF);border-radius:10px;padding:8px 10px;margin-top:8px;font-size:13px;line-height:1.7;color:var(--text-secondary,#5A6472)}' +
+    '.dc-pt .nav-icon{flex:0 0 auto;margin-top:3px;color:#2E75B6}' +
+    /* ===== P0-3 正反例翻页浏览 ===== */
+    '.dc-case-m{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;font-size:13px;color:var(--text-secondary,#6B7280);margin-bottom:12px}' +
+    '.dc-case-m>span{display:inline-flex;align-items:center;gap:6px}' +
+    '.dc-case-m .nav-icon{color:#2E75B6}' +
+    '.dc-btn[disabled]{opacity:.45;cursor:default}' +
     '@media (max-width:560px){' +
     '.dc-blk{font-size:9px}' +
     '.dc-sw{height:54px}' +
@@ -422,6 +521,8 @@
     data: null,
     tab: 0,
     states: {},
+    folds: {},          /* P0-4 小节折叠态：key = tab:index，只存内存，不落 localStorage */
+    caseIdx: 0,         /* P0-3 正反例浏览：当前组序号 */
 
     /** 入口：由 PPTV2 注册表调用 */
     render: function (slotEl) {
@@ -450,7 +551,10 @@
       }
       var finalQuiz = d.finalQuiz || [];
 
-      var html = '<div class="dc-wrap">';
+      var html = '<div class="dc-wrap" id="dc-wrap">';
+
+      /* ⓪ P0-2 顶部阅读进度条（随滚动更新；位置固定在面板顶部） */
+      html += '<div class="dc-prog" id="dc-prog"><i id="dc-prog-i"></i></div>';
 
       /* ① hero */
       html += '<div class="dc-hero">';
@@ -459,8 +563,11 @@
       html += '<div class="dc-hero-m">';
       html += '<span class="dc-chip' + (learned === lessons.length && lessons.length ? ' on' : '') + '">' +
         DC_icon('badge-check', 14) + '已学 ' + learned + ' / ' + lessons.length + ' 节</span>';
-      html += '<span class="dc-chip">' + DC_icon('clipboard-list', 14) + '课后小测 ' + finalQuiz.length + ' 题</span>';
-      html += '<span class="dc-chip">' + DC_icon('presentation', 14) + '正反例 ' + DC_countGoodBad(lessons) + ' 组</span>';
+      /* P0-3：这两个计数不再是死标签，点一下直接进对应视图 */
+      html += '<button type="button" class="dc-chip dc-chip-lk" data-go="' + TAB_FINAL + '">' +
+        DC_icon('clipboard-list', 14) + '课后小测 ' + finalQuiz.length + ' 题</button>';
+      html += '<button type="button" class="dc-chip dc-chip-lk" data-go="' + TAB_CASES + '">' +
+        DC_icon('presentation', 14) + '正反例 ' + DC_countGoodBad(lessons) + ' 组</button>';
       html += '</div>';
       html += '</div>';
 
@@ -469,18 +576,23 @@
       for (i = 0; i < lessons.length; i++) {
         var ls = lessons[i];
         var on = (this.tab === i);
-        var done = DC_isLearned(ls.id) ? ' ★' : '';
+        /* 已学的章节标签打标记：全站 data-icon 体系，不用 emoji */
+        var done = DC_isLearned(ls.id) ? DC_icon('badge-check', 13) : '';
         html += '<button type="button" class="dc-tab' + (on ? ' on' : '') + '" data-tab="' + i + '">' +
-          DC_icon(ls.icon || 'book-open', 15) + '<span>第' + (i + 1) + '节 ' + DC_esc(ls.title) + done + '</span></button>';
+          DC_icon(ls.icon || 'book-open', 15) + '<span>第' + (i + 1) + '节 ' + DC_esc(ls.title) + '</span>' + done + '</button>';
       }
       html += '<button type="button" class="dc-tab' + (this.tab === TAB_FINAL ? ' on' : '') + '" data-tab="' + TAB_FINAL + '">' +
         DC_icon('clipboard-list', 15) + '<span>课后小测</span></button>';
+      html += '<button type="button" class="dc-tab' + (this.tab === TAB_CASES ? ' on' : '') + '" data-tab="' + TAB_CASES + '">' +
+        DC_icon('presentation', 15) + '<span>正反例</span></button>';
       html += '</div>';
 
       /* ③ 当前页内容 */
       html += '<div id="dc-body">';
       if (this.tab === TAB_FINAL) {
         html += this.renderFinalQuiz(finalQuiz);
+      } else if (this.tab === TAB_CASES) {
+        html += this.renderCases();
       } else {
         html += this.renderLesson(lessons[this.tab]);
       }
@@ -492,6 +604,7 @@
       slot.innerHTML = html;
       DC_hydrateIcons();
       this.bind();
+      DC_bindProgress(document.getElementById('dc-wrap'));
     },
 
     /** 渲染一节课：小节讲解 → 正反例 → 随堂测 */
@@ -514,16 +627,22 @@
         out += '<div class="dc-card">';
         for (i = 0; i < secs.length; i++) {
           var s = secs[i] || {};
-          out += '<div class="dc-sec">';
-          out += '<h4 class="dc-h">' + DC_icon('chevron-right', 15) + '<span>' + DC_esc(s.h || '') + '</span></h4>';
-          out += '<p class="dc-p">' + DC_esc(s.p || '') + '</p>';
+          var fkey = String(this.tab) + ':' + i;
+          var folded = this.isFolded(fkey, i);
+          /* P0-4：每个小节一张卡，标题行可点折叠（默认只展开第一个，其余折叠） */
+          out += '<div class="dc-sec' + (folded ? ' fold' : '') + '">';
+          out += '<button type="button" class="dc-h dc-h-btn" data-sec="' + i + '">' +
+            DC_icon(folded ? 'chevron-right' : 'chevron-down', 15) +
+            '<span>' + DC_esc(s.h || '') + '</span></button>';
+          out += '<div class="dc-sec-b">';
+          out += '<p class="dc-p">' + DC_highlight(s.p, s.hl) + '</p>';
           if (s.examples && s.examples.length) {
-            out += '<ul class="dc-eg">';
             for (var k = 0; k < s.examples.length; k++) {
-              out += '<li>' + DC_esc(s.examples[k]) + '</li>';
+              out += '<div class="dc-pt">' + DC_icon('check-circle', 13) +
+                '<span>' + DC_esc(s.examples[k]) + '</span></div>';
             }
-            out += '</ul>';
           }
+          out += '</div>';
           out += '</div>';
         }
         out += '</div>';
@@ -559,7 +678,7 @@
         out += '<span></span>';
       }
       out += '<button type="button" class="dc-btn' + (isDone ? ' done' : '') + '" data-learn="' + DC_esc(lesson.id) + '">' +
-        DC_iconRaw(isDone ? 'badge-check' : 'check', 15) + (isDone ? '本節已学完' : '标记本节已学') + '</button>';
+        DC_iconRaw(isDone ? 'badge-check' : 'check', 15) + (isDone ? '本节已学完' : '标记本节已学') + '</button>';
       if (this.tab < (this.data.lessons.length - 1)) {
         out += '<button type="button" class="dc-btn" data-go="' + (this.tab + 1) + '">下一节' +
           DC_iconRaw('chevron-right', 14) + '</button>';
@@ -591,6 +710,62 @@
       return out;
     },
 
+    /** P0-4：小节默认折叠（除本节第一个），展开过的按用户选择记在内存里 */
+    isFolded: function (key, idx) {
+      if (typeof this.folds[key] === 'boolean') return this.folds[key];
+      return idx > 0;
+    },
+
+    /** P0-3：把所有课的正反例摊平成一维数组，供翻页浏览 */
+    allCases: function () {
+      var list = [];
+      var lessons = (this.data && this.data.lessons) ? this.data.lessons : [];
+      for (var i = 0; i < lessons.length; i++) {
+        var gb = lessons[i].goodBad || [];
+        for (var j = 0; j < gb.length; j++) list.push({ item: gb[j], li: i, gi: j });
+      }
+      return list;
+    },
+
+    /** P0-3：正反例浏览视图 —— 一屏一组，上一组 / 下一组翻页（页内区块，非弹窗） */
+    renderCases: function () {
+      var list = this.allCases();
+      if (!list.length) return '<div class="dc-card dc-empty">暂无正反例。</div>';
+      if (this.caseIdx < 0) this.caseIdx = 0;
+      if (this.caseIdx > list.length - 1) this.caseIdx = list.length - 1;
+      var cur = list[this.caseIdx];
+      var lessons = (this.data && this.data.lessons) ? this.data.lessons : [];
+      var lesson = lessons[cur.li] || {};
+      var out = '<div class="dc-card">';
+      out += '<div class="dc-case-m">';
+      out += '<span>' + DC_icon('presentation', 15) + '<span>第 ' + (this.caseIdx + 1) + ' / ' + list.length +
+        ' 组　·　第 ' + (cur.li + 1) + ' 节 ' + DC_esc(lesson.title || '') + '</span></span>';
+      out += '<span>' + DC_icon('target', 14) + '<span>' + DC_esc(lesson.sub || '') + '</span></span>';
+      out += '</div>';
+      out += DC_renderGoodBad(cur.item);
+      out += '<div class="dc-nav">';
+      out += '<button type="button" class="dc-btn ghost" data-case="-1"' +
+        (this.caseIdx <= 0 ? ' disabled="disabled"' : '') + '>' + DC_iconRaw('chevron-left', 14) + '上一组</button>';
+      out += '<button type="button" class="dc-btn ghost" data-go="0">' + DC_iconRaw('book-open', 14) + '回到课程</button>';
+      out += '<button type="button" class="dc-btn" data-case="1"' +
+        (this.caseIdx >= list.length - 1 ? ' disabled="disabled"' : '') + '>下一组' +
+        DC_iconRaw('chevron-right', 14) + '</button>';
+      out += '</div>';
+      out += '</div>';
+      return out;
+    },
+
+    /** P0-3：翻页（不触发 go()，避免每次都 scrollIntoView 跳回顶部） */
+    caseStep: function (d) {
+      var list = this.allCases();
+      var n = this.caseIdx + (parseInt(d, 10) || 0);
+      if (n < 0) n = 0;
+      if (n > list.length - 1) n = list.length - 1;
+      if (n === this.caseIdx) return;
+      this.caseIdx = n;
+      this.paint();
+    },
+
     /** 取（或建）某一组的作答状态 */
     ensureState: function (qid) {
       if (!this.states[qid]) this.states[qid] = { answers: {} };
@@ -600,7 +775,8 @@
     /** 切换页签 */
     go: function (i) {
       var max = (this.data && this.data.lessons) ? this.data.lessons.length : 0;
-      if (i < 0 || i > TAB_FINAL || i > max) return;
+      if (isNaN(i) || i < 0 || i > TAB_CASES) return;
+      if (i !== TAB_CASES && i > max) return;
       this.tab = i;
       this.paint();
       if (this.slot && this.slot.scrollIntoView) {
@@ -637,6 +813,36 @@
             try { window.showToast('已标记本节学完'); } catch (e) { /* 忽略 */ }
           }
           self.paint();
+        });
+      });
+
+      /* P0-4：小节卡片折叠 / 展开（只切 class 与图标，不整页重绘） */
+      each('[data-sec]', function (el) {
+        el.addEventListener('click', function () {
+          var idx = parseInt(el.getAttribute('data-sec'), 10);
+          if (isNaN(idx)) return;
+          var key = String(self.tab) + ':' + idx;
+          var wasFolded = self.isFolded(key, idx);
+          self.folds[key] = !wasFolded;
+          var sec = el.parentNode;
+          if (!sec) return;
+          if (!wasFolded) sec.className = sec.className + ' fold';
+          else sec.className = String(sec.className).replace(/\bfold\b/g, '');
+          var ic = el.querySelector ? el.querySelector('[data-icon]') : null;
+          if (ic && typeof window.lucideIcon === 'function') {
+            try {
+              ic.innerHTML = window.lucideIcon(!wasFolded ? 'chevron-right' : 'chevron-down', 15);
+            } catch (e) { /* 忽略 */ }
+          }
+          DC_bindProgress(document.getElementById('dc-wrap'));
+        });
+      });
+
+      /* P0-3：正反例浏览翻页 */
+      each('[data-case]', function (el) {
+        el.addEventListener('click', function () {
+          if (el.getAttribute('disabled')) return;
+          self.caseStep(el.getAttribute('data-case'));
         });
       });
 

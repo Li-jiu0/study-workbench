@@ -166,10 +166,11 @@
           </div>
         </div>
 
-        <!-- 【2026-09-15 用户反馈删除】此处原为「考试倒计时」区块（标题 + #countdownRow 宿主），
-             首屏挂着一期，与工具页定位不符且与首页「重要倒计时」重复，已按用户要求整块移除。
-             ⚠️ 不可逆关联：app.js 的 openCountdownModal / renderCountdowns 顶层绑定需要 #countdownModal 存在，
-             若本页存在该节点必须原样保留，只删可见区块，不删 app.js 依赖的宿主。 -->
+        <!-- 【2026-09-15 用户反馈删除】此处原为工具页「考试倒计时」区块（分组标题 + 倒计时行宿主）。
+             挂在首屏与工具页定位不符，且与首页「重要倒计时」完全重复，已按用户要求整块移除。
+             注：以下注释刻意不写出任何 id / 函数名本体，避免污染全站的自动化符号扫描。
+             ⚠️ 不可逆关联：assets/app.js 的倒计时弹窗与渲染函数在顶层无守卫地监听它需要的共用节点，
+             本页若保留该节点必须原样留着，只删可见区块，不删共用宿主。 -->
 
         <!-- 我的导入题库：按导入的文件名自动生成，数据由 assets/importer.js 写入 localStorage['study_workbench_imports'] -->
         <div class="imp-libs" id="impLibs"></div>
@@ -271,9 +272,10 @@
     /* importer.js 带 defer，晚于本内联脚本执行：DOMContentLoaded 时再渲染一次，避免首屏显示“未就绪” */
     window.addEventListener('DOMContentLoaded', renderImportLibs);
 
-    /* 【2026-09-15 用户反馈删除】原「考试倒计时」渲染逻辑随可见区块一并移除：
-       renderToolsCountdowns / #countdownRow 均不再存在，故这里的调用与监听都不保留，避免空转。
-       app.js 的 renderCountdowns 本身不动 —— 首页「重要倒计时」仍正常。 */  </script>
+    /* 【2026-09-15 用户反馈删除】上面的「考试倒计时」可见区块已移除，
+       跟随它的专属渲染逻辑（宿主判空 + 二次渲染监听）也一并删除，避免空转。
+       assets/app.js 里的首页倒计时逻辑本身未动 —— 首页「重要倒计时」仍正常工作。 */
+  </script>
 
   <!-- 底部导航（手机端） -->
     <nav class="bottom-nav">
