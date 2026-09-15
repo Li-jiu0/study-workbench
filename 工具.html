@@ -166,11 +166,10 @@
           </div>
         </div>
 
-        <!-- 考试倒计时：完全复用首页那套已有逻辑（app.js 的 renderCountdowns / openCountdownModal / saveCountdown），本页不新增任何工具实现。
-             此前本页被要求强制保留 #countdownModal（app.js 顶层监听需要它存在），却没有 #countdownRow 宿主、也没有任何入口能打开它
-             ——属于「有弹层无入口」的空壳。W1-T4 补上宿主容器把已有能力挂出来。 -->
-        <div class="nav-section">考试倒计时</div>
-        <div class="countdown-row" id="countdownRow"></div>
+        <!-- 【2026-09-15 用户反馈删除】此处原为「考试倒计时」区块（标题 + #countdownRow 宿主），
+             首屏挂着一期，与工具页定位不符且与首页「重要倒计时」重复，已按用户要求整块移除。
+             ⚠️ 不可逆关联：app.js 的 openCountdownModal / renderCountdowns 顶层绑定需要 #countdownModal 存在，
+             若本页存在该节点必须原样保留，只删可见区块，不删 app.js 依赖的宿主。 -->
 
         <!-- 我的导入题库：按导入的文件名自动生成，数据由 assets/importer.js 写入 localStorage['study_workbench_imports'] -->
         <div class="imp-libs" id="impLibs"></div>
@@ -272,16 +271,9 @@
     /* importer.js 带 defer，晚于本内联脚本执行：DOMContentLoaded 时再渲染一次，避免首屏显示“未就绪” */
     window.addEventListener('DOMContentLoaded', renderImportLibs);
 
-    /* ---------- 考试倒计时（复用 app.js 的 renderCountdowns，本页只提供 #countdownRow 宿主） ----------
-       app.js 只在「首次初始化且倒计时为空」时自动渲染一次（见其 if (appData.countdowns.length === 0) 分支），
-       老用户数据非空时不会重渲染，所以这里在 DOMContentLoaded（defer 脚本已执行完）主动渲染一次。 */
-    function renderToolsCountdowns() {
-      if (!document.getElementById('countdownRow')) return;
-      if (typeof window.renderCountdowns === 'function') window.renderCountdowns();
-    }
-    renderToolsCountdowns();
-    window.addEventListener('DOMContentLoaded', renderToolsCountdowns);
-  </script>
+    /* 【2026-09-15 用户反馈删除】原「考试倒计时」渲染逻辑随可见区块一并移除：
+       renderToolsCountdowns / #countdownRow 均不再存在，故这里的调用与监听都不保留，避免空转。
+       app.js 的 renderCountdowns 本身不动 —— 首页「重要倒计时」仍正常。 */  </script>
 
   <!-- 底部导航（手机端） -->
     <nav class="bottom-nav">
