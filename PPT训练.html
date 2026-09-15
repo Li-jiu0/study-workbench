@@ -70,6 +70,21 @@
   .pw-v-desc{font-size:13px;line-height:1.8;color:var(--text-secondary);white-space:pre-wrap;margin-top:8px}
   .pw-v-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
   .pw-tag{font-size:11px;padding:2px 8px;border-radius:99px;border:1px solid var(--border);color:var(--text-secondary)}
+
+  /* ===== ADR-3（20260915adr3）：作品集「添加作品 / 作品详情」由遮罩弹窗改为页面内布局 =====
+     去掉 .app-modal-mask 遮罩外壳（无遮罩、不锁滚动），改为作品集卡片内的页面内区块；
+     显示态仍用 .active —— assets/ppt-works.js 的 openMask/closeMask 与 ← → 翻页都依赖该类名，勿改名。 */
+  .pw-inline{display:none;margin-top:14px}
+  .pw-inline.active{display:block}
+  .pw-inline-box{background:var(--card,var(--bg));border:1px solid var(--border);border-radius:14px;overflow:hidden}
+  .pw-inline-head{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border);font-size:15px;font-weight:700;color:var(--text)}
+  .pw-inline-x{margin-left:auto;border:none;background:transparent;color:var(--text-secondary);font-size:16px;line-height:1;padding:4px 6px;border-radius:8px;cursor:pointer}
+  .pw-inline-body{padding:16px}
+  .pw-inline-actions{display:flex;gap:10px;margin-top:18px}
+  .pw-inline-actions .btn{flex:1}
+  .pw-back{display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:8px;font-size:13px;cursor:pointer;line-height:1.4}
+  /* 详情页内布局：不再受弹窗 640px 宽度限制，铺满卡片 */
+  #pptWorkView .pw-viewer{max-width:100%}
 </style>
 </head>
 <body class="theme-ppt">
@@ -106,8 +121,86 @@
           <div class="sprint-head"><span><span class="nav-icon" data-icon="briefcase" data-icon-size="16"></span> 我的作品集</span>
             <button class="btn btn-primary" style="font-size:var(--xt-font-sm);padding:5px 14px" onclick="window.pptAddWork()">+ 添加作品</button>
           </div>
-          <div class="pptfolio-grid" id="pptFolioGrid"></div>
-          <!-- R58：多图上传（自动压缩 base64）+ 卡片缩略图 + 大图翻页预览已落地，见 assets/ppt-works.js -->
+          <!-- ===== 列表视图（ADR-3）：与下方「添加作品 / 作品详情」两个页面内区块互斥显示 ===== -->
+          <div id="pptWorkList">
+            <div class="pptfolio-grid" id="pptFolioGrid"></div>
+            <!-- R58：多图上传（自动压缩 base64）+ 卡片缩略图 + 大图翻页预览已落地，见 assets/ppt-works.js -->
+          </div>
+
+          <!-- ==================== R58 · 添加作品：页面内展开/收起表单（ADR-3 20260915adr3） ====================
+               原为 .app-modal-mask 遮罩弹窗，现改为作品集卡片内的页面内区块：
+               「+ 添加作品」展开 →「取消 / 保存 / 右上角 ✕ / ESC」收起。
+               字段与逻辑零删减（标题/类型/多图上传/设计说明/标签），业务全部在 assets/ppt-works.js。
+               容器 id=pptWorkModal 与内部控件 id（pwTitle/pwType/pwFiles/pwThumbs/pwDesc/pwTags）全部保留。 -->
+          <div class="pw-inline" id="pptWorkModal">
+            <div class="pw-inline-box">
+              <div class="pw-inline-head"><span class="nav-icon" data-icon="briefcase" data-icon-size="18"></span> 添加作品
+                <button class="pw-inline-x" onclick="window.pptWorksCloseAdd()" aria-label="收起">✕</button>
+              </div>
+              <div class="pw-inline-body">
+                <div class="form-group">
+                  <div class="form-label">标题</div>
+                  <input type="text" class="form-input" id="pwTitle" maxlength="40" placeholder="如：科技风封面仿写">
+                </div>
+                <div class="form-group">
+                  <div class="form-label">类型</div>
+                  <select class="form-input" id="pwType">
+                    <option>封面页</option>
+                    <option>目录页</option>
+                    <option>内容页</option>
+                    <option>数据页</option>
+                    <option>结束页</option>
+                    <option>整份稿件</option>
+                    <option>其他</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <div class="form-label">作品图片（可多选，最多 6 张，自动压缩后本地保存）</div>
+                  <input type="file" id="pwFiles" accept="image/*" multiple style="display:none" onchange="window.pptWorksPick(this)">
+                  <div class="pw-pick" onclick="document.getElementById('pwFiles').click()"><span class="nav-icon" data-icon="image" data-icon-size="14"></span> 选择图片</div>
+                  <div class="pw-thumbs" id="pwThumbs"></div>
+                </div>
+                <div class="form-group">
+                  <div class="form-label">设计说明</div>
+                  <textarea class="form-input" id="pwDesc" rows="3" maxlength="300" placeholder="配色 / 字体 / 版式思路…"></textarea>
+                </div>
+                <div class="form-group">
+                  <div class="form-label">标签（逗号或空格分隔，最多 6 个）</div>
+                  <input type="text" class="form-input" id="pwTags" maxlength="60" placeholder="如：左字右图 蓝橙撞色">
+                </div>
+                <div class="pw-inline-actions">
+                  <button class="btn btn-outline" onclick="window.pptWorksCloseAdd()">取消</button>
+                  <button class="btn btn-primary" onclick="window.pptWorksSave()">保存</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ==================== R58 · 作品详情：页面内视图切换（ADR-3 20260915adr3） ====================
+               原为 .app-modal-mask 遮罩弹窗，现改为页面内视图：点作品卡片 → 列表视图隐藏、详情视图显示，
+               点「← 返回列表」/ ESC 回到列表；多图左右翻页（← → 方向键）与设计说明、标签全部保留。
+               容器 id=pptWorkView 与内部控件 id（pwVImg/pwVCount/pwVTitle/pwVMeta/pwVDesc/pwVTags）全部保留。
+               【后续扩展点】P2 个人主页作品墙 / P3 他人可见·隐私·分享（isPublic/authorId/likes/views 字段已预留） -->
+          <div class="pw-inline" id="pptWorkView">
+            <div class="pw-inline-box pw-viewer">
+              <div class="pw-inline-head">
+                <button class="pw-back" onclick="window.pptWorksCloseView()"><span class="nav-icon" data-icon="arrow-left" data-icon-size="14"></span> 返回列表</button>
+                <span>作品详情</span>
+              </div>
+              <div class="pw-v-stage">
+                <img id="pwVImg" alt="作品预览">
+                <div class="pw-v-nav pw-v-prev" onclick="window.pptWorksNav(-1)" title="上一张"><span class="nav-icon" data-icon="chevron-left" data-icon-size="20"></span></div>
+                <div class="pw-v-nav pw-v-next" onclick="window.pptWorksNav(1)" title="下一张"><span class="nav-icon" data-icon="chevron-right" data-icon-size="20"></span></div>
+                <div class="pw-v-count" id="pwVCount">暂无图片</div>
+              </div>
+              <div class="pw-v-info">
+                <div class="pw-v-title" id="pwVTitle"></div>
+                <div class="pw-v-meta" id="pwVMeta"></div>
+                <div class="pw-v-desc" id="pwVDesc"></div>
+                <div class="pw-v-tags" id="pwVTags"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- 需求07（2026-09-13）：入口收拢 —— 「设计基础 / 实战模板库 / 技巧提升」
@@ -267,73 +360,8 @@
     </div>
   </div>
 
-  <!-- ==================== R58 · 添加作品弹窗（P0-1：取代原两步 prompt()） ====================
-       结构沿用 T19 统一弹窗约定（.app-modal-mask + .app-modal + .app-modal-close）：
-       ESC 关闭 / 点遮罩关闭 / 打开锁滚动均由 assets/app.js 基础设施承担，本页不重复实现。
-       逻辑全部在 assets/ppt-works.js。【后续扩展点：拖拽排序 / 图片裁剪】 -->
-  <div class="app-modal-mask" id="pptWorkModal">
-    <div class="app-modal">
-      <button class="app-modal-close" onclick="window.pptWorksCloseAdd()" aria-label="关闭">✕</button>
-      <div style="padding:18px 18px 14px">
-        <div class="pw-m-title"><span class="nav-icon" data-icon="briefcase" data-icon-size="18"></span> 添加作品</div>
-        <div class="form-group">
-          <div class="form-label">标题</div>
-          <input type="text" class="form-input" id="pwTitle" maxlength="40" placeholder="如：科技风封面仿写">
-        </div>
-        <div class="form-group">
-          <div class="form-label">类型</div>
-          <select class="form-input" id="pwType">
-            <option>封面页</option>
-            <option>目录页</option>
-            <option>内容页</option>
-            <option>数据页</option>
-            <option>结束页</option>
-            <option>整份稿件</option>
-            <option>其他</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <div class="form-label">作品图片（可多选，最多 6 张，自动压缩后本地保存）</div>
-          <input type="file" id="pwFiles" accept="image/*" multiple style="display:none" onchange="window.pptWorksPick(this)">
-          <div class="pw-pick" onclick="document.getElementById('pwFiles').click()"><span class="nav-icon" data-icon="image" data-icon-size="14"></span> 选择图片</div>
-          <div class="pw-thumbs" id="pwThumbs"></div>
-        </div>
-        <div class="form-group">
-          <div class="form-label">设计说明</div>
-          <textarea class="form-input" id="pwDesc" rows="3" maxlength="300" placeholder="配色 / 字体 / 版式思路…"></textarea>
-        </div>
-        <div class="form-group">
-          <div class="form-label">标签（逗号或空格分隔，最多 6 个）</div>
-          <input type="text" class="form-input" id="pwTags" maxlength="60" placeholder="如：左字右图 蓝橙撞色">
-        </div>
-        <div class="modal-actions">
-          <button class="btn btn-outline" onclick="window.pptWorksCloseAdd()">取消</button>
-          <button class="btn btn-primary" onclick="window.pptWorksSave()">保存</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== R58 · 作品大图预览（P1：多图左右翻页 + 设计说明 + 标签） ====================
-       同样走 .app-modal 基础设施；← → 方向键翻页见 assets/ppt-works.js。
-       【后续扩展点】P2 个人主页作品墙 / P3 他人可见·隐私·分享（isPublic/authorId/likes/views 字段已预留） -->
-  <div class="app-modal-mask" id="pptWorkView">
-    <div class="app-modal pw-viewer">
-      <button class="app-modal-close" onclick="window.pptWorksCloseView()" aria-label="关闭">✕</button>
-      <div class="pw-v-stage">
-        <img id="pwVImg" alt="作品预览">
-        <div class="pw-v-nav pw-v-prev" onclick="window.pptWorksNav(-1)" title="上一张"><span class="nav-icon" data-icon="chevron-left" data-icon-size="20"></span></div>
-        <div class="pw-v-nav pw-v-next" onclick="window.pptWorksNav(1)" title="下一张"><span class="nav-icon" data-icon="chevron-right" data-icon-size="20"></span></div>
-        <div class="pw-v-count" id="pwVCount">暂无图片</div>
-      </div>
-      <div class="pw-v-info">
-        <div class="pw-v-title" id="pwVTitle"></div>
-        <div class="pw-v-meta" id="pwVMeta"></div>
-        <div class="pw-v-desc" id="pwVDesc"></div>
-        <div class="pw-v-tags" id="pwVTags"></div>
-      </div>
-    </div>
-  </div>
+  <!-- （原「添加作品弹窗」与「作品大图预览弹窗」已按 ADR-3 上移为 #page-ppt 内页面内区块，
+        见上方「我的作品集」卡片内的 #pptWorkModal / #pptWorkView；id 与控件全部保留。） -->
 
   <!-- Toast提示 -->
   <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center"></div>
@@ -372,7 +400,7 @@
 <script src="assets/icon-map.js?v=20260915c" defer></script>
 <script src="assets/xt-toast.js?v=20260915c" defer></script>
 <script src="assets/error-boundary.js?v=20260915c" defer></script>
-<script src="assets/app.js?v=20260915c" defer></script>
+<script src="assets/app.js?v=20260915e" defer></script>
 <script src="assets/config.js?v=20260915c" defer></script>
 <script src="assets/api.js?v=20260915c" defer></script>
 
@@ -426,6 +454,56 @@
     var w = loadFolio()[idx];
     if (w && W()) W().del(w.id);
   };
+
+  /* ===== ADR-3（20260915adr3）：#pptWorkModal / #pptWorkView 由遮罩弹窗改为页面内布局 =====
+     assets/ppt-works.js（不可改）内部统一走 openMask/closeMask → window.openAppModal/closeAppModal，
+     而 app.js 的原实现只认 .app-modal-mask 且会锁 body 滚动，已不适用于页面内区块。
+     故在此对这两个 id 做拦截：仅切 .active 显隐（不锁滚动），其余弹窗仍透传给 app.js 原始实现。
+     .active 必须保留 —— ppt-works.js 的 ← → 翻页判活与 openMask 兜底分支都依赖该类名。 */
+  var PW_INLINE = { pptWorkModal: 1, pptWorkView: 1 };
+  var PW_LIST = 'pptWorkList';
+
+  function pwShowList() {
+    var l = $id(PW_LIST);
+    if (l) l.style.display = '';
+  }
+
+  function pwShow(id) {
+    var m = $id(id);
+    if (!m) return;
+    // 两个页面内区块互斥；展开添加表单时若停在详情视图则先回到列表
+    var v = $id('pptWorkView'), a = $id('pptWorkModal');
+    if (id === 'pptWorkView') { if (a) a.classList.remove('active'); }
+    else { if (v) v.classList.remove('active'); pwShowList(); }
+    m.classList.add('active');
+    if (id === 'pptWorkView') { var l = $id(PW_LIST); if (l) l.style.display = 'none'; }
+  }
+
+  function pwHide(id) {
+    var m = $id(id);
+    if (m) m.classList.remove('active');
+    pwShowList();
+  }
+
+  /** 必须在 app.js 之后执行（defer 脚本全部跑完即 DOMContentLoaded），否则会被其函数声明覆盖 */
+  function pwPatchAppModal() {
+    var oOpen = window.openAppModal, oClose = window.closeAppModal;
+    window.openAppModal = function (id) {
+      if (PW_INLINE[id]) { pwShow(id); return; }
+      if (typeof oOpen === 'function') oOpen(id);
+    };
+    window.closeAppModal = function (id) {
+      if (PW_INLINE[id]) { pwHide(id); return; }
+      if (typeof oClose === 'function') oClose(id);
+    };
+    // app.js 的全局 ESC 只收 .app-modal-mask，页面内区块在此自行接管
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape' && e.keyCode !== 27) return;
+      if ($id('pptWorkView') && $id('pptWorkView').classList.contains('active')) { if (W()) W().closeView(); return; }
+      if ($id('pptWorkModal') && $id('pptWorkModal').classList.contains('active')) { if (W()) W().closeAdd(); }
+    });
+  }
+  document.addEventListener('DOMContentLoaded', pwPatchAppModal);
 
   if (document.readyState !== 'loading') boot();
   else document.addEventListener('DOMContentLoaded', boot);

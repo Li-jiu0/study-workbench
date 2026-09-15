@@ -101,6 +101,40 @@
             <div class="card-action" onclick="openCountdownModal()" data-page-node-id="kFl4iJO94vjBC0roGi3ug2">+ 添加</div>
           </div>
           <div class="countdown-row" id="countdownRow" data-page-node-id="G2CE80WjcXJBMfYa8RC1tR"></div>
+          <!-- 添加/编辑倒计时：页面内表单区块（ADR-3：核心表单不走遮罩弹窗），由「+ 添加」切换展开/收起 -->
+          <div id="countdownModal" class="xt-inline-form" data-page-node-id="Mb24QgbVvPt1ZLBGQHsBC8">
+            <div class="xt-inline-form-inner">
+              <div class="modal-title" id="countdownModalTitle" data-page-node-id="R7xa8PEPQFtWQAzpCopVGt">添加倒计时</div>
+              <div class="form-group" data-page-node-id="72ZckLT4CMuQEWUdAuE9PW">
+                <div class="form-label" data-page-node-id="DaEiMX7v3G6b7uGmoSTSe4">名称</div>
+                <input type="text" class="form-input" id="cdName" placeholder="如：四级考试、秋招截止" data-page-node-id="omfDbdbrYcwanCUAeogsGF">
+              </div>
+              <div class="form-group" data-page-node-id="RHQBCnEPVq63b9XEDdrEWb">
+                <div class="form-label" data-page-node-id="BfD87mXYLUsrGiMvHx4Dkm">日期</div>
+                <input type="date" class="form-input" id="cdDate" data-page-node-id="WbShph3PEJzLpGLEfH0DTt">
+              </div>
+              <div class="form-group" data-page-node-id="1R2nHIeLlG1QAfLmQEBWjK">
+                <div class="form-label" data-page-node-id="V4284hSnz632Ng7QrVaFYG">颜色</div>
+                <div class="color-picker" id="cdColorPicker" data-page-node-id="FzugD75HFWQzyrEQDSLQxL">
+                  <div class="color-dot active" style="background:#5B8DEF" data-color="#5B8DEF" data-page-node-id="GIX9FuATUCF2vcYnBqCQJw"></div>
+                  <div class="color-dot" style="background:#E05040" data-color="#E05040" data-page-node-id="lwAzCOh27B0jcyP0RqZFdM"></div>
+                  <div class="color-dot" style="background:#9B6BD9" data-color="#9B6BD9" data-page-node-id="B0zBAsbzJVN35573XlrrC3"></div>
+                  <div class="color-dot" style="background:#D4A056" data-color="#D4A056" data-page-node-id="e0Sk8BM6P5zUY97AqDC6dx"></div>
+                  <div class="color-dot" style="background:#36CFC9" data-color="#36CFC9" data-page-node-id="No7bmCWBn4SFPofflH6AYV"></div>
+                  <div class="color-dot" style="background:#FF9F68" data-color="#FF9F68" data-page-node-id="EFNmr1j2td39v3Z2GL42np"></div>
+                </div>
+              </div>
+              <div class="form-group" data-page-node-id="JV8TjCjcOrMojQFvDIhaVE">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--xt-font-base);color:var(--text-secondary)" data-page-node-id="hGw4FSEzRjkR0kdJJzNH18">
+                  <input type="checkbox" id="cdPinned" data-page-node-id="p6fUEcvh6jqexVWLKrrP7a"> 置顶显示
+                </label>
+              </div>
+              <div class="modal-actions" data-page-node-id="BhGEHA0eVcB9yxbRmrK1PE">
+                <button class="btn btn-outline" onclick="closeCountdownModal()" data-page-node-id="6YORdPB3Geu8wIUn7Ijm6v">取消</button>
+                <button class="btn btn-primary" onclick="saveCountdown()" data-page-node-id="ZSBSzziueyeey3S3oYIg0i">保存</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- 学习数据轮播 -->
@@ -161,6 +195,24 @@
                 <div class="card-action" onclick="resetTasks()">重置</div>
               </div>
               <div class="task-list" id="taskList"></div>
+              <!-- 添加自定义任务：页面内表单区块（ADR-3），由「添加自定义任务」按钮切换展开/收起 -->
+              <div id="xtTaskModal" class="xt-inline-form">
+                <div class="xt-inline-form-inner">
+                  <div class="modal-title">添加自定义任务</div>
+                  <div class="form-group">
+                    <div class="form-label">任务名称</div>
+                    <input type="text" class="form-input" id="xtTaskName" maxlength="30" placeholder="如：四级词汇">
+                  </div>
+                  <div class="form-group">
+                    <div class="form-label">目标量（可选）</div>
+                    <input type="text" class="form-input" id="xtTaskTarget" maxlength="20" placeholder="如：500个">
+                  </div>
+                  <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="closeXtTaskModal()">取消</button>
+                    <button class="btn btn-primary" onclick="saveXtTask()">保存</button>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- 卡片3：各模块进度 -->
@@ -303,59 +355,6 @@
     </div>
   </div>
 
-  <!-- 添加倒计时弹窗 -->
-  <div class="modal-overlay" id="countdownModal" data-page-node-id="Mb24QgbVvPt1ZLBGQHsBC8">    <div class="modal" data-page-node-id="fiNdIVcY9NIjoZp4wfYngx">
-      <div class="modal-title" id="countdownModalTitle" data-page-node-id="R7xa8PEPQFtWQAzpCopVGt">添加倒计时</div>
-      <div class="form-group" data-page-node-id="72ZckLT4CMuQEWUdAuE9PW">
-        <div class="form-label" data-page-node-id="DaEiMX7v3G6b7uGmoSTSe4">名称</div>
-        <input type="text" class="form-input" id="cdName" placeholder="如：四级考试、秋招截止" data-page-node-id="omfDbdbrYcwanCUAeogsGF">
-      </div>
-      <div class="form-group" data-page-node-id="RHQBCnEPVq63b9XEDdrEWb">
-        <div class="form-label" data-page-node-id="BfD87mXYLUsrGiMvHx4Dkm">日期</div>
-        <input type="date" class="form-input" id="cdDate" data-page-node-id="WbShph3PEJzLpGLEfH0DTt">
-      </div>
-      <div class="form-group" data-page-node-id="1R2nHIeLlG1QAfLmQEBWjK">
-        <div class="form-label" data-page-node-id="V4284hSnz632Ng7QrVaFYG">颜色</div>
-        <div class="color-picker" id="cdColorPicker" data-page-node-id="FzugD75HFWQzyrEQDSLQxL">
-          <div class="color-dot active" style="background:#5B8DEF" data-color="#5B8DEF" data-page-node-id="GIX9FuATUCF2vcYnBqCQJw"></div>
-          <div class="color-dot" style="background:#E05040" data-color="#E05040" data-page-node-id="lwAzCOh27B0jcyP0RqZFdM"></div>
-          <div class="color-dot" style="background:#9B6BD9" data-color="#9B6BD9" data-page-node-id="B0zBAsbzJVN35573XlrrC3"></div>
-          <div class="color-dot" style="background:#D4A056" data-color="#D4A056" data-page-node-id="e0Sk8BM6P5zUY97AqDC6dx"></div>
-          <div class="color-dot" style="background:#36CFC9" data-color="#36CFC9" data-page-node-id="No7bmCWBn4SFPofflH6AYV"></div>
-          <div class="color-dot" style="background:#FF9F68" data-color="#FF9F68" data-page-node-id="EFNmr1j2td39v3Z2GL42np"></div>
-        </div>
-      </div>
-      <div class="form-group" data-page-node-id="JV8TjCjcOrMojQFvDIhaVE">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--xt-font-base);color:var(--text-secondary)" data-page-node-id="hGw4FSEzRjkR0kdJJzNH18">
-          <input type="checkbox" id="cdPinned" data-page-node-id="p6fUEcvh6jqexVWLKrrP7a"> 置顶显示
-        </label>
-      </div>
-      <div class="modal-actions" data-page-node-id="BhGEHA0eVcB9yxbRmrK1PE">
-        <button class="btn btn-outline" onclick="closeCountdownModal()" data-page-node-id="6YORdPB3Geu8wIUn7Ijm6v">取消</button>
-        <button class="btn btn-primary" onclick="saveCountdown()" data-page-node-id="ZSBSzziueyeey3S3oYIg0i">保存</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 添加自定义任务弹窗（kou-l-home 增量：复用全站 modal 体系，样式在页内 <style> 补充） -->
-  <div class="modal-overlay" id="xtTaskModal">
-    <div class="modal" style="width:min(320px,88vw)">
-      <div class="modal-title">添加自定义任务</div>
-      <div class="form-group">
-        <div class="form-label">任务名称</div>
-        <input type="text" class="form-input" id="xtTaskName" maxlength="30" placeholder="如：四级词汇">
-      </div>
-      <div class="form-group">
-        <div class="form-label">目标量（可选）</div>
-        <input type="text" class="form-input" id="xtTaskTarget" maxlength="20" placeholder="如：500个">
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-outline" onclick="closeXtTaskModal()">取消</button>
-        <button class="btn btn-primary" onclick="saveXtTask()">保存</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Toast提示 -->
   <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center" data-page-node-id="dQVVHWENF91NhnlPGe37Do"></div>
 
@@ -393,7 +392,7 @@
 <script src="assets/icon-map.js?v=20260915c" defer></script>
 <script src="assets/xt-toast.js?v=20260915c" defer></script>
 <script src="assets/error-boundary.js?v=20260915c" defer></script>
-<script src="assets/app.js?v=20260915c" defer></script>
+<script src="assets/app.js?v=20260915e" defer></script>
 <script src="assets/quest.js?v=20260915c" defer></script>
 <script src="assets/config.js?v=20260915c" defer></script>
 <script src="assets/api.js?v=20260915c" defer></script>
@@ -587,8 +586,25 @@
 .xt-custom-task.done .task-name { text-decoration: line-through; color: var(--text-muted); opacity: 0.6; }
 .xt-custom-task.done .task-meta { text-decoration: line-through; }
 
-/* —— 添加自定义任务弹窗微调 —— */
-#xtTaskModal .modal { width: min(320px, 88vw); }
+/* —— 页面内表单区块（ADR-3：倒计时/自定义任务表单不再用遮罩弹窗，改卡片内联展开） ——
+   复写 common.css 的 .modal-overlay 外壳：去掉 fixed 遮罩，只保留 .active 显隐语义
+   （app.js 的 openCountdownModal / closeCountdownModal 仍只切 .active，无需改动）。
+   外层不设 padding，点击落点永远在内层，避免误触发关闭。 */
+.xt-inline-form { display: none; margin-top: 12px; }
+.xt-inline-form.active { display: block; }
+.xt-inline-form-inner {
+  padding: 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.xt-inline-form .modal-title { font-size: var(--xt-font-md, 15px); margin-bottom: 14px; }
+.xt-inline-form .form-group { margin-bottom: 12px; }
+.xt-inline-form .form-input { background: var(--card); }
+.xt-inline-form .modal-actions { margin-top: 16px; }
+@media (max-width: 768px) {
+  .xt-inline-form-inner { padding: 12px; }
+}
 </style>
 
 <script id="xtHomeEnhanceJs">
@@ -598,7 +614,7 @@
       原渲染照旧 → 再向 #taskList 末尾追加自定义任务条与「＋添加」按钮；
    2) 自定义任务持久化到 localStorage（按账号隔离，key = lsKey('xt_custom_tasks_v1')），
       JSON 数组结构：{ id, name, target, done, createdAt }；
-   3) 勾选切换 / ✕ 删除走 #taskList 事件委托；弹层复用全站 .modal-overlay.active 体系。 */
+   3) 勾选切换 / ✕ 删除走 #taskList 事件委托；添加表单改为页面内区块（ADR-3）。 */
 (function () {
   'use strict';
   var STORE_KEY = 'xt_custom_tasks_v1';
@@ -703,16 +719,19 @@
     });
   }
 
-  /* —— 添加任务弹层（复用全站 modal 体系：.modal-overlay.active） —— */
+  /* —— 添加自定义任务：页面内区块（ADR-3），.active 切换显隐，字段与校验不变 —— */
   window.openXtTaskModal = function () {
     var modal = document.getElementById('xtTaskModal');
     if (!modal) return;
+    // 再次点击「添加自定义任务」= 收起
+    if (modal.classList.contains('active')) { window.closeXtTaskModal(); return; }
     var n = document.getElementById('xtTaskName');
     var g = document.getElementById('xtTaskTarget');
     if (n) n.value = '';
     if (g) g.value = '';
     modal.classList.add('active');
     if (n) setTimeout(function () { n.focus(); }, 50);
+    if (modal.scrollIntoView) modal.scrollIntoView({ block: 'nearest' });
   };
   window.closeXtTaskModal = function () {
     var modal = document.getElementById('xtTaskModal');
@@ -743,8 +762,28 @@
     if (ev.key === 'Escape') window.closeXtTaskModal();
   });
 
+  /* —— 倒计时区块：app.js 的 openCountdownModal 只做展开，这里补「再点收起」——
+     不改 assets/app.js（部署窗口期），仅在 app.js 加载后包一层（幂等）。 */
+  function patchCountdownToggle() {
+    if (typeof window.openCountdownModal !== 'function') return;
+    if (window.openCountdownModal.__xtPatched) return;
+    var orig = window.openCountdownModal;
+    var patched = function (id) {
+      var panel = document.getElementById('countdownModal');
+      // 无 id = 新增入口；已展开则收起（编辑态照旧展开，避免误关）
+      if (!id && panel && panel.classList.contains('active')) { window.closeCountdownModal(); return; }
+      orig.apply(this, arguments);
+      if (panel && panel.classList.contains('active') && panel.scrollIntoView) {
+        panel.scrollIntoView({ block: 'nearest' });
+      }
+    };
+    patched.__xtPatched = true;
+    window.openCountdownModal = patched;
+  }
+
   /* —— 挂载：等 app.js（defer）执行完再包一层 renderTasks；未就绪则短重试 —— */
   function mount() {
+    patchCountdownToggle();
     if (typeof window.renderTasks === 'function' && !window.renderTasks.__xtWrapped) {
       var original = window.renderTasks;
       var wrapped = function () {
@@ -763,8 +802,9 @@
     setTimeout(function () { mountWithRetry(tries - 1); }, 200);
   }
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { mountWithRetry(20); });
+    document.addEventListener('DOMContentLoaded', function () { patchCountdownToggle(); mountWithRetry(20); });
   } else {
+    patchCountdownToggle();
     mountWithRetry(20);
   }
 })();
