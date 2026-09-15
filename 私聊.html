@@ -44,11 +44,9 @@
   .im-m.ot{align-self:flex-start;background:var(--card);border:1px solid var(--border);border-bottom-left-radius:4px}
   .im-mt{font-size:10px;opacity:.75;margin-top:4px;text-align:right}
   .im-m.ot .im-mt{color:var(--text-secondary)}
-  /* 2026-09-15 批次八：消息撤回 —— 入口按钮 / 轻量确认气泡 / 已撤回系统提示 */
+  /* 2026-09-15 批次八：消息撤回 —— 轻量确认气泡 / 已撤回系统提示
+     （批次八原有的桌面 hover .im-recall-btn 入口已于批次九 N9-17 移除，撤回统一走消息菜单） */
   .im-m{position:relative}
-  .im-recall-btn{position:absolute;top:50%;left:-46px;transform:translateY(-50%);width:40px;height:22px;line-height:20px;text-align:center;font-size:11px;color:var(--text-secondary);background:var(--card);border:1px solid var(--border);border-radius:6px;cursor:pointer;user-select:none;white-space:nowrap;box-sizing:border-box;opacity:0;transition:opacity .15s}
-  .im-m:hover .im-recall-btn{opacity:1}
-  .im-recall-btn:hover{color:#fff;background:#ff5d5d;border-color:#ff5d5d}
   .im-recall-tip{align-self:center;max-width:80%;padding:4px 10px;font-size:12px;color:var(--text-secondary);background:var(--bg);border-radius:10px;text-align:center}
   .im-recall-confirm{position:fixed;z-index:10000;min-width:190px;padding:12px 14px;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.18)}
   .im-rc-txt{font-size:13px;color:var(--text);margin-bottom:10px}
@@ -56,9 +54,12 @@
   .im-rc-btns button{border:0;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;font-family:inherit}
   .im-rc-cancel{background:var(--bg);color:var(--text-secondary);border:1px solid var(--border)}
   .im-rc-ok{background:#ff5d5d;color:#fff}
-  @media (max-width:760px){
-    .im-recall-btn{position:static;display:inline-block;margin-top:4px;transform:none;opacity:.6}
-  }
+  /* 2026-09-15 批次九（N9-17）：微信式消息菜单 —— 长按 / 右键唤起的非模态浮层
+     ADR-3 合规：无遮罩、不锁 html/body 滚动，点外部 / Esc 关闭。 */
+  .im-msg-menu{position:fixed;z-index:10001;min-width:118px;padding:4px;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18)}
+  .im-msg-menu .im-menu-item{padding:9px 14px;font-size:14px;line-height:1.2;color:var(--text);border-radius:7px;cursor:pointer;user-select:none;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+  .im-msg-menu .im-menu-item:active{background:var(--bg)}
+  .im-msg-menu .im-menu-danger{color:var(--danger)}
   .im-empty2{text-align:center;padding:36px 16px;color:var(--text-secondary);font-size:13px}
   .im-composer{display:flex;gap:8px;align-items:flex-end;padding:10px 12px;background:var(--card);border-top:1px solid var(--border)}
   .im-composer textarea{flex:1;resize:none;height:44px;max-height:120px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;font-size:14px;outline:none;font-family:inherit;background:var(--bg);color:var(--text)}
@@ -342,7 +343,7 @@
 <script src="assets/config.js?v=20260915c" defer></script>
 <script src="assets/emoji/manifest.js?v=20260915c" defer></script>
 <script src="assets/api.js?v=20260915f" defer></script>
-<script src="assets/chat-local.js?v=20260915c" defer></script>
+<script src="assets/chat-local.js?v=20260915g" defer></script>
 <script src="assets/admin-contact.js?v=20260915c" defer></script>
 <style>
   /* R33（20260913r）：tab 视觉统一——去掉 .im-tab-add 的特殊填充/加粗与专属 hover，加好友与其余 4 个 tab 同享 .im-tab/.im-tab.active；“im-tab-add” 类保留在 DOM 仅作语义标记，无样式副作用 */

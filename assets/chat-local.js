@@ -479,34 +479,248 @@
     saveData(data);
   }
 
+  /* N9-17（2026-09-15 批次九）：「删除本端」独立持久化集合。
+     绝不能复用 data.recalled —— 撤回是双向语义（对方也看不到、时间线留「xx 撤回了一条消息」占位），
+     删除本端只是本机不显示这条，两者状态必须分开存，否则删除会被渲染成撤回提示。 */
+  function imIsDeleted(key, id) {
+    if (!key || id == null) return false;
+    var data = loadData();
+    return !!(data.deleted && data.deleted[key] && data.deleted[key][String(id)]);
+  }
+  function imMarkDeleted(key, id) {
+    var data = loadData();
+    if (!data.deleted) data.deleted = {};
+    if (!data.deleted[key]) data.deleted[key] = {};
+    data.deleted[key][String(id)] = 1;
+    saveData(data);
+  }
+
   /* 每条消息气泡带上定位属性 data-msg-id（稳定唯一 id）/ data-self（是否自己发的）；
-     自己发的消息挂载长按撤回手势（移动端真机场景）。 */
+     所有消息统一挂载长按手势 + 桌面右键，均指向同一个消息菜单（N9-17 微信式交互）。 */
   function imMsgAttrs(m, isMe) {
     var a = ' data-msg-id="' + esc(m.id) + '" data-self="' + (isMe ? '1' : '0') + '"';
-    if (isMe && !S.group) {
-      a += ' ontouchstart="imRecallPressStart(\'' + esc(m.id) + '\',event)" ontouchend="imRecallPressEnd()" ontouchmove="imRecallPressEnd()"';
-    }
+    a += ' ontouchstart="imRecallPressStart(\'' + esc(m.id) + '\',event,this)"' +
+      ' ontouchend="imRecallPressEnd()" ontouchmove="imRecallPressMove(event)"' +
+      ' oncontextmenu="return imContextMsg(event,\'' + esc(m.id) + '\',this)"';
     return a;
   }
 
-  /* 撤回入口：仅本人 2 分钟内的私聊消息显示（桌面 hover、移动长按共用此入口） */
-  function imRecallEntryHtml(m) {
-    if (m.senderId !== S.myId || S.group) return '';
-    if ((Date.now() - (m.time || 0)) > RECALL_MS) return '';
-    return '<div class="im-recall-btn" onclick="imAskRecall(\'' + esc(m.id) + '\')">撤回</div>';
+  /* N9-17：撤回资格的唯一判定入口 —— 菜单「撤回」项是否显露、imAskRecall 弹确认前、
+     imDoRecall 落库前三处共用同一套条件，避免判定散落各处导致菜单显了却撤不回。
+     条件：本人消息 + 非群聊 + 未超过 2 分钟 + 尚未撤回。 */
+  function imRecallEligible(m) {
+    if (!m) return false;
+    if (m.senderId !== S.myId) return false;
+    if (S.group) return false;
+    if ((Date.now() - (m.time || 0)) > RECALL_MS) return false;
+    if (imIsRecalled(imThreadKey(), m.id)) return false;
+    return true;
+  }
+
+  /* 不合格时的提示：只有「超时」才值得提示，其它情形（他人的消息 / 群聊 / 已撤回）静默 */
+  function imRecallDeny(m) {
+    if (!m || m.senderId !== S.myId || S.group) return;
+    if (imIsRecalled(imThreadKey(), m.id)) return;
+    if ((Date.now() - (m.time || 0)) > RECALL_MS) toast('消息已超过 2 分钟，无法撤回');
   }
 
   var _recallPress = null;
-  window.imRecallPressStart = function (id, e) {
-    if (_recallPress) clearTimeout(_recallPress);
+  var _pressOrigin = null;
+  var PRESS_MS = 500;       // 长按判定：500ms（与微信一致）
+  var PRESS_SLOP = 10;      // 容许抖动半径（px），超过视为滑动滚动 → 取消长按
+
+  function imClearPress() {
+    if (_recallPress) { clearTimeout(_recallPress); _recallPress = null; }
+    _pressOrigin = null;
+  }
+  window.imRecallPressStart = function (id, e, el) {
+    imClearPress();
+    var t = (e && e.touches && e.touches.length) ? e.touches[0] : null;
+    _pressOrigin = t ? { x: t.pageX, y: t.pageY } : { x: 0, y: 0 };
     _recallPress = setTimeout(function () {
       _recallPress = null;
+      _pressOrigin = null;
       window.__imRecallHandled = Date.now();
-      imAskRecall(id);
-    }, 500);
+      var anchor = el;
+      if (!anchor || !anchor.parentNode) {
+        anchor = document.querySelector('[data-msg-id="' + String(id).replace(/"/g, '\\"') + '"]');
+      }
+      imShowMsgMenu(imFindMsg(id), anchor);
+    }, PRESS_MS);
+  };
+  window.imRecallPressMove = function (e) {
+    if (!_recallPress) return;
+    var t = (e && e.touches && e.touches.length) ? e.touches[0] : null;
+    if (!t || !_pressOrigin) { imClearPress(); return; }
+    var dx = t.pageX - _pressOrigin.x;
+    var dy = t.pageY - _pressOrigin.y;
+    if (dx * dx + dy * dy > PRESS_SLOP * PRESS_SLOP) imClearPress();
   };
   window.imRecallPressEnd = function () {
     if (_recallPress) { clearTimeout(_recallPress); _recallPress = null; }
+    _pressOrigin = null;
+  };
+
+  /* 桌面右键 → 同一菜单（阻止系统右键菜单） */
+  window.imContextMsg = function (e, id, el) {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    imShowMsgMenu(imFindMsg(id), el || null);
+    return false;
+  };
+
+  function imFindMsg(id) {
+    var list = S.msgs || [];
+    for (var i = 0; i < list.length; i++) {
+      if (String(list[i].id) === String(id)) return list[i];
+    }
+    return null;
+  }
+
+  /* ==================== N9-17（2026-09-15 批次九）：微信式消息菜单 ====================
+     形态：气泡旁的非模态浮层（ADR-3 合规，无遮罩、不锁滚动），点外部 / Esc 关闭。
+     菜单项：撤回（仅本人 + 私聊 + 2 分钟内）/ 复制 / 删除本端；转发、收藏本次不做，故不显露。
+     撤回仍复用既有 imAskRecall → imDoRecall 链路（二次确认气泡保留），只换入口。 */
+  var MENU_ID = 'imMsgMenu';
+
+  window.imCloseMsgMenu = function () {
+    var el = document.getElementById(MENU_ID);
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+    imMenuUnbind();
+  };
+  function imMenuUnbind() {
+    document.removeEventListener('mousedown', imMenuDocClose, true);
+    document.removeEventListener('touchstart', imMenuDocClose, true);
+    document.removeEventListener('keydown', imMenuEscClose, true);
+  }
+  function imMenuDocClose(ev) {
+    var c = document.getElementById(MENU_ID);
+    if (!c) { imMenuUnbind(); return; }
+    var t = ev && ev.target;
+    if (!t || t === c || (c.contains && c.contains(t))) return;
+    imCloseMsgMenu();
+  }
+  function imMenuEscClose(ev) {
+    var k = (ev && (ev.keyCode || ev.which)) || 0;
+    if (k === 27) imCloseMsgMenu();
+  }
+  function imPlaceFloat(box, anchorEl) {
+    var bw = box.offsetWidth || 120;
+    var bh = box.offsetHeight || 60;
+    var vw = window.innerWidth || (document.documentElement && document.documentElement.clientWidth) || 320;
+    var vh = window.innerHeight || (document.documentElement && document.documentElement.clientHeight) || 480;
+    var left, top;
+    if (anchorEl && typeof anchorEl.getBoundingClientRect === 'function') {
+      var r = anchorEl.getBoundingClientRect();
+      left = r.left + r.width / 2 - bw / 2;
+      top = r.top - bh - 6;
+      if (top < 8) top = r.bottom + 6;
+    } else {
+      left = (vw - bw) / 2;
+      top = (vh - bh) / 2;
+    }
+    left = Math.max(8, Math.min(vw - bw - 8, left));
+    top = Math.max(8, Math.min(vh - bh - 8, top));
+    box.style.left = left + 'px';
+    box.style.top = top + 'px';
+  }
+
+  window.imShowMsgMenu = function (m, anchorEl) {
+    if (!m) return;
+    imCloseMsgMenu();
+    imCloseRecallConfirm();
+    var canRecall = imRecallEligible(m);
+    var txt = (m.kind === 'image' || m.kind === 'voice') ? '' : (m.content || '');
+    var html = '';
+    if (canRecall) html += '<div class="im-menu-item" onclick="imMenuRecall(\'' + esc(m.id) + '\')">撤回</div>';
+    if (txt) html += '<div class="im-menu-item" onclick="imMenuCopy(\'' + esc(m.id) + '\')">复制</div>';
+    html += '<div class="im-menu-item im-menu-danger" onclick="imMenuDelete(\'' + esc(m.id) + '\')">删除本端</div>';
+    var box = document.createElement('div');
+    box.id = MENU_ID;
+    box.className = 'im-msg-menu';
+    box.innerHTML = html;
+    document.body.appendChild(box);
+    imPlaceFloat(box, anchorEl);
+    // 延后一帧再挂监听，避免打开菜单的那一次触摸/点击立刻把它关掉
+    setTimeout(function () {
+      if (!document.getElementById(MENU_ID)) return;
+      document.addEventListener('mousedown', imMenuDocClose, true);
+      document.addEventListener('touchstart', imMenuDocClose, true);
+      document.addEventListener('keydown', imMenuEscClose, true);
+    }, 0);
+  };
+
+  window.imMenuRecall = function (id) {
+    imCloseMsgMenu();
+    imAskRecall(id);
+  };
+
+  /* 复制：优先 navigator.clipboard（可能不存在 / 非安全上下文），失败回退 textarea + execCommand */
+  function imCopyFallback(text) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', 'readonly');
+      ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;padding:0;border:0;';
+      document.body.appendChild(ta);
+      var ua = (window.navigator && window.navigator.userAgent) ? window.navigator.userAgent : '';
+      if (/iPad|iPhone|iPod/i.test(ua)) {
+        ta.contentEditable = 'true';
+        ta.setSelectionRange(0, 999999);
+      } else {
+        ta.select();
+      }
+      var done = false;
+      try { done = document.execCommand('copy'); } catch (e2) { done = false; }
+      if (ta.parentNode) ta.parentNode.removeChild(ta);
+      return !!done;
+    } catch (e) { return false; }
+  }
+  function imCopyText(text, cb) {
+    try {
+      if (window.navigator && window.navigator.clipboard && typeof window.navigator.clipboard.writeText === 'function') {
+        window.navigator.clipboard.writeText(text).then(function () { cb(true); }, function () { cb(imCopyFallback(text)); });
+        return;
+      }
+    } catch (e) { /* clipboard 不可用 / 抛异常 → 走兜底 */ }
+    cb(imCopyFallback(text));
+  }
+
+  window.imMenuCopy = function (id) {
+    imCloseMsgMenu();
+    var m = imFindMsg(id);
+    if (!m) return;
+    var txt = (m.kind === 'image' || m.kind === 'voice') ? '' : (m.content || '');
+    if (!txt) { toast('这条消息没有可复制的文字'); return; }
+    imCopyText(txt, function (ok) { toast(ok ? '已复制' : '复制失败'); });
+  };
+
+  window.imMenuDelete = function (id) {
+    imCloseMsgMenu();
+    var key = imThreadKey();
+    var m = imFindMsg(id);
+    if (!key || !m) return;
+    imMarkDeleted(key, id);
+    m.deleted = true;
+    // 会话列表预览同步剔除本条（否则删掉的消息还挂在列表最后一句）
+    var data = loadData();
+    var pid = S.peer ? S.peer.id : null;
+    if (pid != null && data.messages && data.messages[pid] && data.chats && data.chats[pid]) {
+      var dset = (data.deleted && data.deleted[key]) || {};
+      var arr = data.messages[pid] || [];
+      var lastReal = null;
+      for (var i = arr.length - 1; i >= 0; i--) {
+        var mm = arr[i];
+        if (dset[String(mm.id)] || imIsRecalled(key, mm.id)) continue;
+        lastReal = mm;
+        break;
+      }
+      data.chats[pid].last = lastReal
+        ? (lastReal.kind === 'image' ? '[图片]' : (lastReal.kind === 'voice' ? '[语音]' : (lastReal.content || '')))
+        : '';
+    }
+    saveData(data);
+    renderMsgs();
+    toast('已删除');
   };
 
   window.imCloseRecallConfirm = function () {
@@ -514,12 +728,11 @@
     if (el && el.parentNode) el.parentNode.removeChild(el);
   };
 
-  /* 轻量确认气泡（非全屏 modal，符合 ADR-3）："确定撤回这条消息？[取消][撤回]" */
+  /* 轻量确认气泡（非全屏 modal，符合 ADR-3）："确定撤回这条消息？[取消][撤回]"
+     本体与 imDoRecall 保持分离 —— 二次确认是 ADR-3 的防误触要求，不能合并掉。 */
   window.imAskRecall = function (id) {
-    var msg = (S.msgs || []).find(function (m) { return String(m.id) === String(id); });
-    if (!msg || msg.senderId !== S.myId) return;
-    if ((Date.now() - (msg.time || 0)) > RECALL_MS) { toast('消息已超过 2 分钟，无法撤回'); return; }
-    if (imIsRecalled(imThreadKey(), id)) return;
+    var msg = imFindMsg(id);
+    if (!imRecallEligible(msg)) { imRecallDeny(msg); return; }
     imCloseRecallConfirm();
     var box = document.createElement('div');
     box.id = 'imRecallConfirm';
@@ -554,14 +767,13 @@
     }, 0);
   };
 
-  /* 执行撤回：校验归属 + 2 分钟，标记撤回集合与本地占位，重渲染当前会话与会话列表 */
+  /* 执行撤回：走与 imAskRecall 同一个 imRecallEligible 判定，落库隐藏并刷新会话列表。
+     本体与 imAskRecall 保持分离：确认气泡负责防误触，本函数负责落库。 */
   window.imDoRecall = function (id) {
     imCloseRecallConfirm();
     var key = imThreadKey();
-    var msg = (S.msgs || []).find(function (m) { return String(m.id) === String(id); });
-    if (!msg || msg.senderId !== S.myId) return;
-    if ((Date.now() - (msg.time || 0)) > RECALL_MS) { toast('消息已超过 2 分钟，无法撤回'); return; }
-    if (imIsRecalled(key, id)) return;
+    var msg = imFindMsg(id);
+    if (!imRecallEligible(msg)) { imRecallDeny(msg); return; }
     imMarkRecalled(key, id);
     // 本地存储内对应消息标记占位（时间线不塌），并刷新会话列表预览
     var data = loadData();
@@ -1549,6 +1761,8 @@
       if (isMe && !isGroup && m.server) {
         readTag = '<div class="im-read' + (m.read ? ' ok' : '') + '">' + (m.read ? '✓✓ 已读' : '✓ 已发送') + '</div>';
       }
+      // N9-17：本端删除的消息直接从时间线移除（不占位，区别于撤回的灰色提示）
+      if (imIsDeleted(key, m.id)) return '';
       // 撤回：已撤回消息渲染为灰色居中系统提示（保留时间线占位）
       if (imIsRecalled(key, m.id)) {
         var rtip = (m.senderId === S.myId) ? '你撤回了一条消息' : '对方撤回了一条消息';
@@ -1571,7 +1785,9 @@
       } else {
         inner = renderContent(m.content) + '<div class="im-mt">' + timeStr + '</div>' + readTag;
       }
-      var body = '<div class="im-m ' + (isMe ? 'me' : 'ot') + '"' + imMsgAttrs(m, isMe) + ' data-mid="' + esc(m.id || '') + '">' + inner + imRecallEntryHtml(m) + '</div>';
+      /* N9-17：桌面 hover 的 .im-recall-btn 入口已删除（生成函数 imRecallEntryHtml 一并移除），
+         撤回统一走长按 / 右键唤起的 imShowMsgMenu 菜单。 */
+      var body = '<div class="im-m ' + (isMe ? 'me' : 'ot') + '"' + imMsgAttrs(m, isMe) + ' data-mid="' + esc(m.id || '') + '">' + inner + '</div>';
       // 群聊：他人消息左侧加发送者小头像 + 昵称（自己的消息保持右侧绿底）
       // 批次二 需求9（2026-09-11h）：头像/昵称点击 → 打开该用户公开主页（复用 api.js openUserHome，
       // 与私聊好友列表点头像行为一致；非好友主页只有「加为好友」，好友主页有「发消息」；
