@@ -138,6 +138,18 @@
     '.cr-col-quiz{min-width:0;max-width:100%}' +
     '.cr-quiz-card{border:1px solid var(--border,#E5E7EB);border-radius:var(--radius-sm,12px);background:var(--card,#fff);padding:12px 14px;box-shadow:var(--shadow,0 2px 12px rgba(0,0,0,.06))}' +
     '.cr-empty{padding:30px 0;text-align:center;font-size:14px;color:var(--text-secondary,#9CA3AF)}' +
+    /* 答题卡：作答前填充右栏，避免右栏出现空白卡片；作答后转为逐题对错一览 */
+    '.cr-card-h{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:var(--text,#1F2937);line-height:1.5}' +
+    '.cr-card-m{margin-top:6px;font-size:13px;line-height:1.7;color:var(--text-secondary,#6B7280)}' +
+    '.cr-card-m .cr-card-done{color:var(--primary,#5B8DEF);font-size:14px;font-weight:700}' +
+    '.cr-card-bar{margin-top:9px;height:8px;border-radius:99px;background:var(--bg,#F3F4F6);border:1px solid var(--border,#E5E7EB);overflow:hidden}' +
+    '.cr-card-bar i{display:block;height:100%;width:0;border-radius:99px;background:var(--primary,#5B8DEF)}' +
+    '.cr-card-nums{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}' +
+    '.cr-card-num{flex:none;min-width:26px;height:26px;padding:0 4px;line-height:26px;text-align:center;border:1px solid var(--border,#E5E7EB);border-radius:8px;font-size:12px;font-weight:700;color:var(--text-secondary,#9CA3AF);background:var(--card,#fff)}' +
+    '.cr-card-num.on{border-color:var(--primary,#5B8DEF);background:var(--primary-light,rgba(91,141,239,.12));color:var(--primary,#5B8DEF)}' +
+    '.cr-card-num.ok{border-color:var(--success,#2E7D32);background:rgba(46,125,50,.1);color:var(--success,#2E7D32)}' +
+    '.cr-card-num.bad{border-color:var(--danger,#E05040);background:rgba(224,80,64,.1);color:var(--danger,#E05040)}' +
+    '.cr-card-g{display:flex;gap:6px;align-items:flex-start;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border,#E5E7EB);font-size:12.5px;line-height:1.7;color:var(--text-secondary,#9CA3AF)}' +
     /* 宽屏：左栏（文章）自吸顶并**内部独立纵向滚动**，右栏（题目/解析）随页面流滚动。
        ★ cr-has-topbar：当页面顶部还有一条 sticky 工具条时，左栏吸顶位置下移 52px 让位，
          否则文章顶部约 30px 会被工具条盖住。 */
@@ -230,6 +242,49 @@
     return h;
   }
 
+  /* ------------------------------------------------------- 答题卡（右栏占位）
+   * 背景：右栏在作答前只有空的 #crRes，视觉上是一块空白卡片。
+   * 做法：三种题型统一在右栏顶部渲染答题卡（题号 / 进度 / 引导语），
+   *       作答后它转为逐题对错一览；#crRes 保持原有结果渲染行为。
+   * 状态读取交给调用方传入的 readFn(i) → '' | 'on'（已填未判）| 'ok' | 'bad'
+   */
+  function cardHtml(total, unit, guide) {
+    var n = parseInt(total, 10);
+    if (isNaN(n) || n < 0) n = 0;
+    var h = '<div class="cr-card-h">' + icon('check-circle', 15) +
+      '答题卡 · 共 ' + n + ' ' + esc(unit) + '</div>' +
+      '<div class="cr-card-m">已作答 <span class="cr-card-done">0</span> / ' + n + ' · 交卷后可逐题对照解析</div>' +
+      '<div class="cr-card-bar"><i></i></div>' +
+      '<div class="cr-card-nums">';
+    var i;
+    for (i = 0; i < n; i++) h += '<span class="cr-card-num" data-i="' + i + '">' + (i + 1) + '</span>';
+    h += '</div>' +
+      '<div class="cr-card-g">' + icon('book-open', 14) + '<span>' + esc(guide) + '</span></div>';
+    return h;
+  }
+
+  function bindCard(host, total, readFn) {
+    var card = host.querySelector('#crCard');
+    var n = parseInt(total, 10);
+    if (isNaN(n) || n < 0) n = 0;
+    if (!card) return function () { };
+    var doneEl = card.querySelector('.cr-card-done');
+    var bar = card.querySelector('.cr-card-bar i');
+    var nums = card.querySelectorAll('.cr-card-num');
+    function sync() {
+      var done = 0, i, st;
+      for (i = 0; i < n; i++) {
+        st = readFn(i);
+        if (st) done++;
+        if (nums[i]) nums[i].className = 'cr-card-num' + (st ? ' ' + st : '');
+      }
+      if (doneEl) doneEl.textContent = String(done);
+      if (bar) bar.style.width = (n ? Math.round(done * 100 / n) : 0) + '%';
+    }
+    sync();
+    return sync;
+  }
+
   /* --------------------------------------------------------- 选词填空渲染 */
   function renderCloze(host, p) {
     var i, j;
@@ -262,13 +317,27 @@
           '<div class="cr-art">' + artHtml + '</div>' +
         '</div>' +
         '<div class="cr-col cr-col-quiz">' +
-          '<div class="cr-quiz-card"><div id="crRes"></div></div>' +
+          '<div class="cr-quiz-card" id="crCard">' +
+            cardHtml(p.blanks.length, '空', '先通读左侧文章把握大意，再逐空判断词性与搭配，从上方 15 个选项中选词。') +
+          '</div>' +
+          '<div id="crRes"></div>' +
         '</div>' +
       '</div>';
     icons(host);
 
     var timerEl = host.querySelector('#crTimer');
     startTimer(timerEl);
+
+    var syncCard = bindCard(host, p.blanks.length, function (idx) {
+      var b = p.blanks[idx];
+      var node = b ? host.querySelector('.cr-blank[data-no="' + b.no + '"]') : null;
+      if (!node) return '';
+      if (node.className.indexOf('wrong') >= 0) return 'bad';
+      if (node.className.indexOf('ok') >= 0) return 'ok';
+      return node.value ? 'on' : '';
+    });
+    var blankNodes = host.querySelectorAll('.cr-blank');
+    for (i = 0; i < blankNodes.length; i++) blankNodes[i].addEventListener('change', syncCard);
 
     host.querySelector('#crSubmit').addEventListener('click', function () {
       var sels = host.querySelectorAll('.cr-blank');
@@ -296,6 +365,7 @@
       host.querySelector('#crSubmit').disabled = true;
       host.querySelector('#crRes').innerHTML = resultHtml(correct, p.blanks.length, timer.sec, p.minutes, items);
       icons(host);
+      syncCard();
       saveResult(p.id, correct, p.blanks.length, timer.sec);
       renderBar();
     });
@@ -333,13 +403,28 @@
           '<div class="cr-art">' + artHtml + '</div>' +
         '</div>' +
         '<div class="cr-col cr-col-quiz">' +
-          '<div class="cr-quiz-card"><div class="cr-stats">' + stHtml + '</div><div id="crRes"></div></div>' +
+          '<div class="cr-quiz-card" id="crCard">' +
+            cardHtml(p.stats.length, '题', '先浏览左侧各段抓主旨与关键词，再为右侧每条陈述匹配段号。') +
+          '</div>' +
+          '<div class="cr-quiz-card"><div class="cr-stats">' + stHtml + '</div></div>' +
+          '<div id="crRes"></div>' +
         '</div>' +
       '</div>';
     icons(host);
 
     var timerEl = host.querySelector('#crTimer');
     startTimer(timerEl);
+
+    var syncCard = bindCard(host, p.stats.length, function (idx) {
+      var st = p.stats[idx];
+      var node = st ? host.querySelector('.cr-sel[data-no="' + st.no + '"]') : null;
+      if (!node) return '';
+      if (node.className.indexOf('wrong') >= 0) return 'bad';
+      if (node.className.indexOf('ok') >= 0) return 'ok';
+      return node.value ? 'on' : '';
+    });
+    var selNodes = host.querySelectorAll('.cr-sel');
+    for (i = 0; i < selNodes.length; i++) selNodes[i].addEventListener('change', syncCard);
 
     host.querySelector('#crSubmit').addEventListener('click', function () {
       var correct = 0, items = [], k;
@@ -360,6 +445,7 @@
       host.querySelector('#crSubmit').disabled = true;
       host.querySelector('#crRes').innerHTML = resultHtml(correct, p.stats.length, timer.sec, p.minutes, items);
       icons(host);
+      syncCard();
       saveResult(p.id, correct, p.stats.length, timer.sec);
       renderBar();
     });
@@ -394,6 +480,7 @@
     }
 
     var box = host.querySelector('#crPass');
+    var qs = cur.qs || [];
     var paras = String(cur.body || '').split('\n\n');
     var artHtml = '';
     for (i = 0; i < paras.length; i++) artHtml += '<p>' + esc(paras[i]) + '</p>';
@@ -408,6 +495,9 @@
           '<div class="cr-art">' + artHtml + '</div>' +
         '</div>' +
         '<div class="cr-col cr-col-quiz">' +
+          '<div class="cr-quiz-card" id="crCard">' +
+            cardHtml(qs.length, '题', '先读左侧文章再作答；点选选项即判分并展开解析，5 题完成后给出本篇用时。') +
+          '</div>' +
           '<div id="crQuizHost"></div>' +
           '<div id="crQuizNote"></div>' +
         '</div>' +
@@ -416,13 +506,22 @@
 
     startTimer(box.querySelector('#crTimer2'));
 
-    var qs = cur.qs || [];
+    var syncCard = bindCard(box, qs.length, function (idx) {
+      var item = box.querySelector('.xt-quiz-item[data-qi="' + idx + '"]');
+      if (!item) return '';
+      if (item.getAttribute('data-done') !== '1') return '';
+      return item.querySelector('.xt-quiz-opt.wrong') ? 'bad' : 'ok';
+    });
+    var quizHost = box.querySelector('#crQuizHost');
+    if (quizHost) quizHost.addEventListener('click', syncCard);
+
     var opts = {
       title: '本篇 5 题（点选项即判分并展开解析）',
       showAnalysis: true,
       credit: '原创改编 · 非官方真题，按四级仔细阅读难度仿写',
       onDone: function (correct, total) {
         stopTimer();
+        syncCard();
         var note = box.querySelector('#crQuizNote');
         if (note) {
           note.innerHTML = '<div class="cr-note">' + icon('check-circle', 14) +

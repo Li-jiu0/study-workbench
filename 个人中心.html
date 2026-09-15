@@ -103,11 +103,9 @@
             <div class="sgc-main"><div class="sgc-title">学习偏好</div><div class="sgc-desc">每日新增、专注时长、朗读、提醒</div></div>
             <div class="sgc-arrow">›</div>
           </div>
-          <div class="subpage-group-card" onclick="SubpageRouter.navigate('local-data')">
-            <div class="sgc-icon" data-icon="chart-bar"></div>
-            <div class="sgc-main"><div class="sgc-title">本机数据</div><div class="sgc-desc">总学习时、刷题、错题、连续打卡</div></div>
-            <div class="sgc-arrow">›</div>
-          </div>
+          <!-- N9-25（2026-09-15）：原「本机数据」入口卡（navigate('local-data')）按需求删除。
+               section[data-subpage="local-data"] 与 #localStats 保留（renderProfileOverview() 依赖），
+               仍可通过 hash 直达：个人中心.html#local-data -->
         </div>
         <div class="module-hero" style="display:none" data-page-node-id="WZ2Br25aKXQMUO9oVEEFI0"><!-- v1.14 豆包风格：隐藏旧横幅，DOM 保留 -->
           <div class="module-hero-left" data-page-node-id="1U0Aepc037F7p7xu138z3J">
@@ -404,10 +402,10 @@
 <script src="assets/icon-map.js?v=20260915c" defer></script>
 <script src="assets/xt-toast.js?v=20260915c" defer></script>
 <script src="assets/error-boundary.js?v=20260915c" defer></script>
-<script src="assets/app.js?v=20260915e" defer></script>
+<script src="assets/app.js?v=20260915f" defer></script>
 <script src="assets/quest.js?v=20260915c" defer></script>
 <script src="assets/config.js?v=20260915c" defer></script>
-<script src="assets/api.js?v=20260915c" defer></script>
+<script src="assets/api.js?v=20260915f" defer></script>
 <script src="assets/subpage-router.js?v=20260915c" defer></script>
 
 <script>

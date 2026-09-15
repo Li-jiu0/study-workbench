@@ -758,9 +758,26 @@ async function deleteNote(id) {
 }
 
 /* ---------- 统计 / 导出 ---------- */
+/* 离线/未登录（或 CURRENT_USER 尚未拉取完成）时的本机统计兜底：
+   否则 api.js 版 renderBlogStats 会直接 return，统计视图只剩空壳（橙色空白）。 */
+function blogLocalStats() {
+  var ns = (typeof appData !== 'undefined' && appData && appData.notes) || [];
+  var pub = ns.filter(function (n) { return n.status === 'published'; });
+  var cat = {};
+  ns.forEach(function (n) { var id = noteCat(n.category).id; cat[id] = (cat[id] || 0) + 1; });
+  return {
+    published: pub.length,
+    draft: ns.filter(function (n) { return n.status === 'draft'; }).length,
+    archived: ns.filter(function (n) { return n.status === 'archived'; }).length,
+    likes: pub.reduce(function (a, n) { return a + (n.likes || 0); }, 0),
+    comments: pub.reduce(function (a, n) { return a + ((n.comments || []).length); }, 0),
+    views: pub.reduce(function (a, n) { return a + (n.views || 0); }, 0),
+    catCount: cat
+  };
+}
 function renderBlogStats() {
-  var box = document.getElementById('blogStatsBox'); if (!box || !CURRENT_USER) return;
-  var s = CURRENT_USER.stats || {};
+  var box = document.getElementById('blogStatsBox'); if (!box) return;
+  var s = CURRENT_USER ? (CURRENT_USER.stats || {}) : blogLocalStats();
   var catCount = s.catCount || {};
   var maxCat = Math.max(1, ...Object.values(catCount));
   var catBars = BLOG_CATS.filter(function (c) { return catCount[c.id]; }).map(function (c) {

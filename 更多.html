@@ -9,6 +9,26 @@
 <link rel="stylesheet" href="assets/page-head.css?v=20260915c">
 <link rel="stylesheet" href="assets/states.css?v=20260915c">
 <link rel="stylesheet" href="assets/polish.css?v=20260915c">
+<!-- W3-T1（2026-09-15）：分组收放样式。页内自足，不改 assets/ 共享文件；纯 CSS transform 旋转，老 WebView 可渲染。 -->
+<style>
+  /* 可点击的分组标题：沿用既有 .nav-section 视觉，右侧追加箭头 */
+  .mp-section-toggle{
+    display:flex;align-items:center;justify-content:space-between;
+    cursor:pointer;user-select:none;-webkit-user-select:none;
+  }
+  .mp-section-toggle:active{opacity:.6}
+  .mp-section-arrow{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:16px;height:16px;color:var(--text-muted);
+    transition:transform .18s ease;
+  }
+  .mp-section-arrow svg{display:block}
+  /* 收起态：箭头右旋 90°（chevron-down → 指向右） */
+  .mp-section-toggle.collapsed .mp-section-arrow{transform:rotate(-90deg)}
+  /* 分组卡片容器：展开为纵向 flex（与 .morepage-list 同 gap），收起整块隐藏 */
+  .mp-group-body{display:flex;flex-direction:column;gap:8px}
+  .mp-group-body.collapsed{display:none}
+</style>
 </head>
 <body class="theme-home">
 
@@ -97,40 +117,186 @@
           <div class="morepage-title">☰ 更多功能</div>
         </div>
 
-        <!-- 【A8】更多功能卡片纵向列表：与旧底部弹层「更多」同项同行为。T01 批次五（2026-09-12）#1.1：由 .morepage-grid 改为 .morepage-list 纵向排列（右侧 › 箭头为 CSS ::after） -->
+        <!-- 【A8】更多功能卡片纵向列表：与旧底部弹层「更多」同项同行为。T01 批次五（2026-09-12）#1.1：由 .morepage-grid 改为 .morepage-list 纵向排列（右侧 › 箭头为 CSS ::after）
+             W1-T5（2026-09-15）：内容填充 —— 分组标题复用 .nav-section（既有类，纯 CSS 无 JS 依赖）；
+             补充 5 个站内真实页面的直达入口（此前无任何入口，只能手敲地址）。
+             W3-T1（2026-09-15）：3 个分组改为可点击收放（常用默认展开，内容直达/系统默认收起），
+             并在「常用」组补「工具箱」入口（此前更多页无任何指向 工具.html 的卡片）；
+             展开状态写入 localStorage 持久化，存储不可用时静默回退到默认收放。 -->
         <div class="morepage-list">
+          <div class="nav-section mp-section-toggle" id="mpHeadCommon" onclick="toggleMoreGroup('mpGroupCommon', this)" role="button" tabindex="0" aria-expanded="true" title="展开 / 收起">
+            <span>常用</span>
+            <span class="mp-section-arrow"><span class="nav-icon" data-icon="chevron-down" data-icon-size="14"></span></span>
+          </div>
+          <div class="mp-group-body" id="mpGroupCommon">
           <div class="morepage-card morepage-list-item" onclick="openBlogStats()">
             <div class="mpc-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div>
             <div class="mpc-title">学习统计</div>
             <div class="mpc-desc">学习概况 · 本周报告</div>
           </div>
+          <!-- W3-T1（2026-09-15）：工具箱入口。此前更多页无任何指向 工具.html 的入口，只能走底部导航。 -->
+          <div class="morepage-card morepage-list-item" onclick="location.href='工具.html'">
+            <div class="mpc-icon"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span></div>
+            <div class="mpc-title">工具箱</div>
+            <div class="mpc-desc">导入题库 · PPT版式 · AI面试 · 倒计时</div>
+          </div>
           <div class="morepage-card morepage-list-item" onclick="gotoBlogMine()">
             <div class="mpc-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div>
             <div class="mpc-title">互动广场</div>
-            <div class="mpc-desc">我的发贴与广场</div>
+            <div class="mpc-desc">我的发贴 · 草稿 · 收藏</div>
           </div>
           <div class="morepage-card morepage-list-item" onclick="navigateTo('wrong-book')">
             <div class="mpc-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div>
             <div class="mpc-title">错题本</div>
-            <div class="mpc-desc">错题收藏与复盘</div>
+            <div class="mpc-desc">按模块与错因筛选，集中复盘重做</div>
           </div>
+          </div>
+
+          <div class="nav-section mp-section-toggle collapsed" id="mpHeadContent" onclick="toggleMoreGroup('mpGroupContent', this)" role="button" tabindex="0" aria-expanded="false" title="展开 / 收起">
+            <span>内容直达</span>
+            <span class="mp-section-arrow"><span class="nav-icon" data-icon="chevron-down" data-icon-size="14"></span></span>
+          </div>
+          <div class="mp-group-body collapsed" id="mpGroupContent">
+          <div class="morepage-card morepage-list-item" onclick="location.href='时政热点.html'">
+            <div class="mpc-icon"><span class="nav-icon" data-icon="fire" data-icon-size="20"></span></div>
+            <div class="mpc-title">时政热点</div>
+            <div class="mpc-desc">实时热点榜单，可收藏备查</div>
+          </div>
+          <div class="morepage-card morepage-list-item" onclick="location.href='企业定向库.html'">
+            <div class="mpc-icon"><span class="nav-icon" data-icon="building" data-icon-size="20"></span></div>
+            <div class="mpc-title">企业定向库</div>
+            <div class="mpc-desc">企业名片 · 笔试考情 · 考点自测</div>
+          </div>
+          <div class="morepage-card morepage-list-item" onclick="location.href='动态.html'">
+            <div class="mpc-icon"><span class="nav-icon" data-icon="rss" data-icon-size="20"></span></div>
+            <div class="mpc-title">学习动态</div>
+            <div class="mpc-desc">打卡动态流，与好友互相关注</div>
+          </div>
+          <div class="morepage-card morepage-list-item" onclick="location.href='PPT素材库.html'">
+            <div class="mpc-icon"><span class="nav-icon" data-icon="image" data-icon-size="20"></span></div>
+            <div class="mpc-title">PPT素材库</div>
+            <div class="mpc-desc">成品模板与免费素材站点推荐</div>
+          </div>
+          <div class="morepage-card morepage-list-item" onclick="navigateTo('ppt-cases')">
+            <div class="mpc-icon"><span class="nav-icon" data-icon="palette" data-icon-size="20"></span></div>
+            <div class="mpc-title">PPT案例拆解</div>
+            <div class="mpc-desc">优秀版式逐页拆解与改写思路</div>
+          </div>
+          </div>
+
+          <div class="nav-section mp-section-toggle collapsed" id="mpHeadSystem" onclick="toggleMoreGroup('mpGroupSystem', this)" role="button" tabindex="0" aria-expanded="false" title="展开 / 收起">
+            <span>系统</span>
+            <span class="mp-section-arrow"><span class="nav-icon" data-icon="chevron-down" data-icon-size="14"></span></span>
+          </div>
+          <!-- 注意：组内 #adminEntryCard 自带 style="display:none"，显隐由 assets/admin.js 控制；
+               本容器只整体收放，不读写卡片自身的 style.display，故不会破坏其逻辑。 -->
+          <div class="mp-group-body collapsed" id="mpGroupSystem">
           <div class="morepage-card morepage-list-item" onclick="navigateTo('settings')">
             <div class="mpc-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div>
             <div class="mpc-title">设置</div>
-            <div class="mpc-desc">主题 · 账号 · 隐私</div>
+            <div class="mpc-desc">主题外观 · 账号 · 隐私与数据备份</div>
           </div>
           <!-- 需求01：管理后台入口，仅 is_admin 为 true 时由 assets/admin.js 显示（默认隐藏） -->
           <div class="morepage-card morepage-list-item" id="adminEntryCard" style="display:none" onclick="location.href='管理员.html'">
-            <div class="mpc-icon"><span class="nav-icon" data-icon="shield" data-icon-size="20">🛡️</span></div>
+            <div class="mpc-icon"><span class="nav-icon" data-icon="shield" data-icon-size="20"></span></div>
             <div class="mpc-title">管理后台</div>
             <div class="mpc-desc">用户 · 在线 · 用户反馈</div>
           </div>
           <div class="morepage-card morepage-list-item" onclick="showAbout()">
             <div class="mpc-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div>
             <div class="mpc-title">关于</div>
-            <div class="mpc-desc">版本信息与说明</div>
+            <div class="mpc-desc">版本 · 功能清单与说明</div>
+          </div>
           </div>
         </div>
+
+        <!-- W3-T1（2026-09-15）：分组收放 + 展开状态持久化。
+             ES5 写法（var / 普通 function / className 字符串操作），
+             不用 classList.toggle / 箭头函数 / 可选链 / 空值合并，兼容老 Android WebView。
+             默认：常用展开，内容直达、系统收起（缓解 12 张卡的拥挤感）。
+             持久化：localStorage 单键存 JSON；file:// 或隐私模式下 localStorage 不可用时不抛错，
+             静默回退到上述默认状态（requirement: 绝不能因存储不可用打断脚本）。 -->
+        <script>
+        /* 三组定义：body / 标题 head / 存储字段名 / 默认是否收起 */
+        var MP_GROUPS = [
+          { key: 'common',  bodyId: 'mpGroupCommon',  headId: 'mpHeadCommon',  defCollapsed: false },
+          { key: 'content', bodyId: 'mpGroupContent', headId: 'mpHeadContent', defCollapsed: true  },
+          { key: 'system',  bodyId: 'mpGroupSystem',  headId: 'mpHeadSystem',  defCollapsed: true  }
+        ];
+        var MP_STORE_KEY = 'moreGroupState';
+
+        /* 读取已存状态；无记录或存储不可用 → 返回 null（由调用方回退默认值） */
+        function mpReadSavedState() {
+          try {
+            var raw = window.localStorage.getItem(MP_STORE_KEY);
+            if (!raw) return null;
+            var obj = JSON.parse(raw);
+            if (!obj || typeof obj !== 'object') return null;
+            return obj;
+          } catch (e) {
+            return null;
+          }
+        }
+
+        /* 写入状态；localStorage 不可用时静默跳过 */
+        function mpWriteSavedState(state) {
+          try {
+            window.localStorage.setItem(MP_STORE_KEY, JSON.stringify(state));
+          } catch (e) { /* 存储不可用：忽略，不影响页面 */ }
+        }
+
+        /* 按 DOM 当前 class 汇总三组的收放状态 */
+        function mpCollectState() {
+          var state = {};
+          for (var i = 0; i < MP_GROUPS.length; i++) {
+            var body = document.getElementById(MP_GROUPS[i].bodyId);
+            state[MP_GROUPS[i].key] = (body && body.className.indexOf('collapsed') >= 0) ? 1 : 0;
+          }
+          return state;
+        }
+
+        /* 应用某一组的收放状态（只切 class，不写存储） */
+        function mpApplyGroupState(group, isCollapsed) {
+          var body = document.getElementById(group.bodyId);
+          if (!body) return;
+          body.className = isCollapsed ? 'mp-group-body collapsed' : 'mp-group-body';
+          var head = document.getElementById(group.headId);
+          if (head) {
+            head.className = isCollapsed ? 'nav-section mp-section-toggle collapsed' : 'nav-section mp-section-toggle';
+            try { head.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true'); } catch (e) { /* 忽略 */ }
+          }
+        }
+
+        /* 初始化：有存档用存档，无存档（首次访问）保持默认 */
+        function restoreMoreGroups() {
+          var saved = mpReadSavedState();
+          for (var i = 0; i < MP_GROUPS.length; i++) {
+            var group = MP_GROUPS[i];
+            var isCollapsed = group.defCollapsed;
+            if (saved && typeof saved[group.key] !== 'undefined') {
+              isCollapsed = saved[group.key] ? true : false;
+            }
+            mpApplyGroupState(group, isCollapsed);
+          }
+        }
+
+        /* 点击标题切换；函数名与调用点保持原样，仅内部追加持久化 */
+        function toggleMoreGroup(groupId, headerEl) {
+          var target = null;
+          for (var i = 0; i < MP_GROUPS.length; i++) {
+            if (MP_GROUPS[i].bodyId === groupId) target = MP_GROUPS[i];
+          }
+          if (!target) return;
+          var body = document.getElementById(groupId);
+          if (!body) return;
+          var collapsed = body.className.indexOf('collapsed') >= 0;
+          mpApplyGroupState(target, !collapsed);
+          mpWriteSavedState(mpCollectState());
+        }
+
+        /* 本 script 位于 .morepage-list 之后，DOM 已就绪，可直接初始化 */
+        restoreMoreGroups();
+        </script>
 
         <!-- 【后续扩展点：更多功能自定义排序 / 快捷入口管理】本轮按固定顺序展示，后续可开放排序与增删。 -->
       </div>
@@ -265,10 +431,10 @@
 <script src="assets/icon-map.js?v=20260915c" defer></script>
 <script src="assets/xt-toast.js?v=20260915c" defer></script>
 <script src="assets/error-boundary.js?v=20260915c" defer></script>
-<script src="assets/app.js?v=20260915e" defer></script>
+<script src="assets/app.js?v=20260915f" defer></script>
 <script src="assets/quest.js?v=20260915c" defer></script>
 <script src="assets/config.js?v=20260915c" defer></script>
-<script src="assets/api.js?v=20260915c" defer></script>
+<script src="assets/api.js?v=20260915f" defer></script>
 <script src="assets/admin.js?v=20260915c" defer></script>
 <script src="assets/study-stats.js?v=20260915c" defer></script>
 </body>

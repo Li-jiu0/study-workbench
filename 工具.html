@@ -116,28 +116,35 @@
           <div class="morepage-title"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span> 工具</div>
         </div>
 
-        <!-- 【A8】工具卡片纵向列表：与旧底部弹层「工具」同项同行为；卡片可后续扩展。T01 批次五（2026-09-12）#1.0：由 .morepage-grid 改为 .morepage-list 纵向排列（右侧 › 箭头为 CSS ::after） -->
+        <!-- 【A8】工具卡片纵向列表：与旧底部弹层「工具」同项同行为；卡片可后续扩展。T01 批次五（2026-09-12）#1.0：由 .morepage-grid 改为 .morepage-list 纵向排列（右侧 › 箭头为 CSS ::after）
+             W1-T4（2026-09-15）：内容填充 —— 分组标题复用 .nav-section（既有类，纯 CSS 无 JS 依赖，与更多页一致写法）；
+             补 2 个站内真实页面直达入口（面试题库 / 四级词汇，此前本页无任何入口）。 -->
         <div class="morepage-list">
+          <div class="nav-section">效率工具</div>
           <div class="morepage-card morepage-list-item" onclick="openImporterView()">
             <div class="mpc-icon" data-icon="inbox" data-icon-size="20"></div>
             <div class="mpc-title">导入题库</div>
             <div class="mpc-desc">Excel/CSV 一键导入</div>
           </div>
           <!-- 功能删减 B4（2026-09-13）：「万能金句」「场景话术」两个重复入口已删除——同名功能在高情商表达页（万能金句库.html / 场景话术库.html）保留，此处入口与其重复 -->
+
+          <div class="nav-section">素材与经验</div>
           <div class="morepage-card morepage-list-item" onclick="location.href='PPT版式库.html'">
             <div class="mpc-icon" data-icon="chart-bar" data-icon-size="20"></div>
             <div class="mpc-title">PPT版式</div>
             <div class="mpc-desc">版式与案例素材</div>
           </div>
-          <div class="morepage-card morepage-list-item" onclick="location.href='AI模拟面试.html'">
-            <div class="mpc-icon" data-icon="mic" data-icon-size="20"></div>
-            <div class="mpc-title">AI面试</div>
-            <div class="mpc-desc">多轮追问模拟面试</div>
-          </div>
           <div class="morepage-card morepage-list-item" onclick="location.href='四级经验分享.html'">
             <div class="mpc-icon" data-icon="book-open" data-icon-size="20"></div>
             <div class="mpc-title">四级经验</div>
             <div class="mpc-desc">学霸备考方法</div>
+          </div>
+
+          <div class="nav-section">专项训练</div>
+          <div class="morepage-card morepage-list-item" onclick="location.href='AI模拟面试.html'">
+            <div class="mpc-icon" data-icon="mic" data-icon-size="20"></div>
+            <div class="mpc-title">AI面试</div>
+            <div class="mpc-desc">多轮追问模拟面试</div>
           </div>
           <!-- 【铁律】「穿越英语」入口必须保留可见：指向现有 quest.js 的 openQuest()（不可用时回退到首页的穿越英语卡）。内容升级属批次三。 -->
           <div class="morepage-card morepage-list-item" onclick="if(window.openQuest){openQuest()}else{location.href='学习工作台.html'}">
@@ -145,7 +152,25 @@
             <div class="mpc-title">穿越英语</div>
             <div class="mpc-desc">闯关式剧情学英语</div>
           </div>
+
+          <div class="nav-section">题库直达</div>
+          <div class="morepage-card morepage-list-item" onclick="location.href='面试题库.html'">
+            <div class="mpc-icon" data-icon="clipboard-list" data-icon-size="20"></div>
+            <div class="mpc-title">面试题库</div>
+            <div class="mpc-desc">高频真题与作答思路</div>
+          </div>
+          <div class="morepage-card morepage-list-item" onclick="location.href='四级词汇.html'">
+            <div class="mpc-icon" data-icon="languages" data-icon-size="20"></div>
+            <div class="mpc-title">四级词汇</div>
+            <div class="mpc-desc">核心词表随身背</div>
+          </div>
         </div>
+
+        <!-- 考试倒计时：完全复用首页那套已有逻辑（app.js 的 renderCountdowns / openCountdownModal / saveCountdown），本页不新增任何工具实现。
+             此前本页被要求强制保留 #countdownModal（app.js 顶层监听需要它存在），却没有 #countdownRow 宿主、也没有任何入口能打开它
+             ——属于「有弹层无入口」的空壳。W1-T4 补上宿主容器把已有能力挂出来。 -->
+        <div class="nav-section">考试倒计时</div>
+        <div class="countdown-row" id="countdownRow"></div>
 
         <!-- 我的导入题库：按导入的文件名自动生成，数据由 assets/importer.js 写入 localStorage['study_workbench_imports'] -->
         <div class="imp-libs" id="impLibs"></div>
@@ -246,6 +271,16 @@
     renderImportLibs();
     /* importer.js 带 defer，晚于本内联脚本执行：DOMContentLoaded 时再渲染一次，避免首屏显示“未就绪” */
     window.addEventListener('DOMContentLoaded', renderImportLibs);
+
+    /* ---------- 考试倒计时（复用 app.js 的 renderCountdowns，本页只提供 #countdownRow 宿主） ----------
+       app.js 只在「首次初始化且倒计时为空」时自动渲染一次（见其 if (appData.countdowns.length === 0) 分支），
+       老用户数据非空时不会重渲染，所以这里在 DOMContentLoaded（defer 脚本已执行完）主动渲染一次。 */
+    function renderToolsCountdowns() {
+      if (!document.getElementById('countdownRow')) return;
+      if (typeof window.renderCountdowns === 'function') window.renderCountdowns();
+    }
+    renderToolsCountdowns();
+    window.addEventListener('DOMContentLoaded', renderToolsCountdowns);
   </script>
 
   <!-- 底部导航（手机端） -->
@@ -374,10 +409,10 @@
 <script src="assets/icon-map.js?v=20260915c" defer></script>
 <script src="assets/xt-toast.js?v=20260915c" defer></script>
 <script src="assets/error-boundary.js?v=20260915c" defer></script>
-<script src="assets/app.js?v=20260915e" defer></script>
+<script src="assets/app.js?v=20260915f" defer></script>
 <script src="assets/quest.js?v=20260915c" defer></script>
 <script src="assets/config.js?v=20260915c" defer></script>
-<script src="assets/api.js?v=20260915c" defer></script>
+<script src="assets/api.js?v=20260915f" defer></script>
 <script src="assets/importer.js?v=20260915c" defer></script>
 <script src="assets/study-stats.js?v=20260915c" defer></script>
 </body>

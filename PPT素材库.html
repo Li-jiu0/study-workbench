@@ -611,7 +611,14 @@ body {
 <script src="assets/config.js?v=20260915c"></script>
 <script src="assets/icon-map.js?v=20260915c"></script>
 <script>
-function goBack() { location.href='学习工作台.html'; }
+/* N9-25（2026-09-15）：返回改为「智能返回」——有历史记录就回到跳转前页面
+   （从个人中心进来就回个人中心），无历史时兜底回首页。原实现硬跳首页，会丢失来处。 */
+function goBack() {
+  if (history.length > 1) { history.back(); return; }
+  var ref = document.referrer || '';
+  if (ref.indexOf('个人中心.html') >= 0) { location.href = '个人中心.html'; return; }
+  location.href = '学习工作台.html';
+}
 </script>
 
 </body>

@@ -392,10 +392,10 @@
 <script src="assets/icon-map.js?v=20260915c" defer></script>
 <script src="assets/xt-toast.js?v=20260915c" defer></script>
 <script src="assets/error-boundary.js?v=20260915c" defer></script>
-<script src="assets/app.js?v=20260915e" defer></script>
+<script src="assets/app.js?v=20260915f" defer></script>
 <script src="assets/quest.js?v=20260915c" defer></script>
 <script src="assets/config.js?v=20260915c" defer></script>
-<script src="assets/api.js?v=20260915c" defer></script>
+<script src="assets/api.js?v=20260915f" defer></script>
 <script src="assets/study-stats.js?v=20260915c" defer></script>
 <script>
 /* ==================== T7 增量（P0-14）：更多工具使用痕迹 + 按最近使用排序 ==================== */
@@ -493,50 +493,72 @@
   gap: 10px;
 }
 
-/* 错题徽标：右上角小胶囊，0 时由 JS 不渲染 */
+/* 错题徽标：明细列表里的一行（小胶囊），0 时由 JS 不渲染 */
 .module-wrong {
-  grid-area: wrong;
-  justify-self: start;
-  margin-top: 4px;
+  display: inline-block;
   padding: 1px 7px;
   font-size: 11px; font-weight: 600; line-height: 1.6;
   color: var(--danger, #e5484d);
   background: color-mix(in srgb, var(--danger, #e5484d) 10%, transparent);
   border-radius: 999px;
 }
-/* 卡片网格区域加入错题行 */
-.module-progress-card {
-  grid-template-areas:
-    "icon name percent"
-    "icon bar   bar"
-    "icon meta  meta"
-    "icon wrong wrong";
-}
 
-/* —— 各模块进度：两列整齐网格；卡内重排为「图标 | 名称…百分比 / 通栏进度条 / 通栏明细」 —— */
+/* —— 各模块进度：卡内改「纵向列表」呈现（2026-09-15 N9-25）——
+   行1：图标 + 名称 ………… 百分比
+   行2：通栏进度条
+   行3：明细列表 —— 已学 x/y、正确率 r%、最近学习、错题数 各占独立一行
+   （明细各项由 app.js 渲染成独立 .module-meta-item，不再拼成一行被 nowrap 截断） */
 .module-progress-card {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  column-gap: 10px;
-  row-gap: 4px;
+  display: block;
+  padding: 12px 14px;
   text-align: left;
-  padding: 14px;
 }
-.module-progress-card .module-icon { grid-area: icon; align-self: start; margin-bottom: 0; line-height: 0; padding-top: 2px; }
-.module-progress-card .module-name { grid-area: name; margin-bottom: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.module-progress-card .module-percent { grid-area: percent; font-size: var(--xt-font-md, 15px); }
+.module-progress-card .module-card-head {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+/* 用 margin 而非 gap 做间距：老 Android WebView 的 flex gap 支持不全 */
+.module-progress-card .module-icon { flex: 0 0 auto; margin: 0 8px 0 0; line-height: 0; }
+.module-progress-card .module-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-bottom: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.module-progress-card .module-percent { flex: 0 0 auto; font-size: var(--xt-font-md, 15px); }
 .module-progress-card .module-percent.muted { color: var(--text-muted); font-weight: 600; }
-.module-progress-card .module-bar { grid-area: bar; margin-top: 6px; }
-/* 明细行：已学 x/y · 正确率 r% · N 分钟前（小屏不换行，超出省略） */
+.module-progress-card .module-bar { margin: 0 0 8px; }
+/* 明细列表容器：上分隔线与卡片风格一致（var(--border)） */
 .module-progress-card .module-meta {
-  grid-area: meta;
+  display: block;
   margin-top: 2px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
   font-size: var(--xt-font-xs, 12px);
   color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+/* 明细每一项：独立一行，行首小圆点做列表标记，超出自动换行不截断 */
+.module-progress-card .module-meta-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 3px 0;
+  line-height: 1.45;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+.module-progress-card .module-meta-item::before {
+  content: '';
+  display: block;
+  flex: 0 0 auto;
+  width: 4px; height: 4px;
+  margin: 6px 6px 0 0;
+  border-radius: 50%;
+  background: var(--border);
 }
 /* 空态 / 展开收起按钮：横跨整行 */
 .module-progress-grid .empty-hint,
@@ -557,9 +579,9 @@
 @media (max-width: 768px) {
   /* 窄屏：组内自适应降到单列，明细允许换行（覆盖 common.css 的多列响应式） */
   .module-progress-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
-  .module-group-body { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
-  .module-progress-card { padding: 12px; }
-  .module-progress-card .module-meta { white-space: normal; line-height: 1.35; }
+  .module-group-body { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+  /* 窄屏（≤375px）组内降到单列：列表卡更整齐，且明细换行后不会挤成两列 */
+  .module-progress-card { padding: 10px 12px; }
   .module-summary { padding: 8px 12px; gap: 4px 14px; }
 }
 

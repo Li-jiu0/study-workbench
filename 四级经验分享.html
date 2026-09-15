@@ -589,8 +589,14 @@ function toggleArticle(id) {
   item.classList.toggle('open');
 }
 
-// 返回
-function goBack() { location.href='学习工作台.html'; }
+// 返回 —— N9-25（2026-09-15）：改为「智能返回」，有历史记录就回到跳转前页面
+// （从个人中心进来就回个人中心），无历史时兜底回首页。原实现硬跳首页，会丢失来处。
+function goBack() {
+  if (history.length > 1) { history.back(); return; }
+  var ref = document.referrer || '';
+  if (ref.indexOf('个人中心.html') >= 0) { location.href = '个人中心.html'; return; }
+  location.href = '学习工作台.html';
+}
 
 // 初始化
 renderArticles();
