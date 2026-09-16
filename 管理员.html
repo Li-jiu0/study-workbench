@@ -1,15 +1,17 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>管理后台 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260915c">
-<link rel="stylesheet" href="assets/page-head.css?v=20260915c">
-<link rel="stylesheet" href="assets/states.css?v=20260915c">
-<link rel="stylesheet" href="assets/polish.css?v=20260915c">
-<link rel="stylesheet" href="assets/admin.css?v=20260915c">
+<link rel="stylesheet" href="assets/common.css?v=20260916O">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<link rel="stylesheet" href="assets/polish.css?v=20260916O">
+<link rel="stylesheet" href="assets/admin.css?v=20260916O">
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
 </head>
 <body class="theme-home">
 
@@ -26,25 +28,28 @@
       <div class="nav-item" data-page="home">
         <span class="nav-icon" data-icon="home"></span><span>首页</span>
       </div>
+      <div class="nav-item" onclick="location.href='AI.html'">
+        <span class="nav-icon" data-icon="sparkles"></span><span>AI</span>
+      </div>
       <div class="nav-section">学习模块</div>
       <div class="nav-item" data-page="cet">
-        <span class="nav-icon" data-icon="book-open"></span><span>四级备考</span>
+        <span class="nav-icon" data-icon="book-open"></span><span>英语</span>
       </div>
       <div class="nav-item" data-page="exam">
-        <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span>
+        <span class="nav-icon" data-icon="pencil"></span><span>行测</span>
       </div>
       <div class="nav-item" data-page="comm">
-        <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span>
+        <span class="nav-icon" data-icon="message-square"></span><span>表达</span>
       </div>
       <div class="nav-item" data-page="interview">
-        <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span>
+        <span class="nav-icon" data-icon="handshake"></span><span>面测</span>
       </div>
       <div class="nav-item" data-page="ppt">
-        <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span>
+        <span class="nav-icon" data-icon="palette"></span><span>演示</span>
       </div>
       <div class="nav-section">创作</div>
       <div class="nav-item" data-page="blog">
-        <span class="nav-icon" data-icon="globe"></span><span>广场</span>
+        <span class="nav-icon" data-icon="globe"></span><span>社区</span>
       </div>
       <div class="nav-section">互动</div>
       <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
@@ -156,8 +161,8 @@
       </div>
       <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
       <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
-      <div class="bottom-nav-item" onclick="location.href='工具.html'"><div class="bn-icon"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span></div><div class="bn-label">工具</div></div>
-      <div class="bottom-nav-item" onclick="location.href='更多.html'">
+            <div class="bottom-nav-item" onclick="location.href='AI.html'"><div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div></div>
+            <div class="bottom-nav-item" onclick="location.href='更多.html'">
         <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
       </div>
     </div>
@@ -271,14 +276,17 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260915c" defer></script>
-<script src="assets/xt-toast.js?v=20260915c" defer></script>
-<script src="assets/error-boundary.js?v=20260915c" defer></script>
-<script src="assets/app.js?v=20260915f" defer></script>
-<script src="assets/quest.js?v=20260915c" defer></script>
-<script src="assets/config.js?v=20260915c" defer></script>
-<script src="assets/api.js?v=20260915f" defer></script>
-<script src="assets/admin.js?v=20260915c" defer></script>
-<script src="assets/study-stats.js?v=20260915c" defer></script>
+<script src="assets/icon-map.js?v=20260916O" defer></script>
+<script src="assets/xt-toast.js?v=20260916O" defer></script>
+<script src="assets/error-boundary.js?v=20260916O" defer></script>
+<script src="assets/app.js?v=20260916O" defer></script>
+<script src="assets/quest.js?v=20260916O" defer></script>
+<script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260916O" defer></script>
+<script src="assets/admin.js?v=20260916O" defer></script>
+<script src="assets/study-stats.js?v=20260916O" defer></script>
+<script src="assets/ai-config.js?v=20260916R"></script>
+<script src="assets/ai-presets.js?v=20260916O"></script>
+<script src="assets/ai-service.js?v=20260916R"></script>
 </body>
 </html>

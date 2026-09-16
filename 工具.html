@@ -1,14 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>工具 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260915c">
-<link rel="stylesheet" href="assets/page-head.css?v=20260915c">
-<link rel="stylesheet" href="assets/states.css?v=20260915c">
-<link rel="stylesheet" href="assets/polish.css?v=20260915c">
+<link rel="stylesheet" href="assets/common.css?v=20260916O">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<link rel="stylesheet" href="assets/polish.css?v=20260916O">
 <style>
   /* 【批次 20260913k】导入题库：由弹窗改为页面内全屏视图（复用 importer.js 向导逻辑，带返回） */
   .importer-view{position:fixed;inset:0;z-index:900;background:var(--bg);overflow-y:auto;display:none}
@@ -28,6 +28,8 @@
   .imp-lib.open .imp-lib-items{display:block}
   .imp-empty{font-size:12px;color:var(--text-muted);padding:8px 2px;line-height:1.7}
 </style>
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
 </head>
 <body class="theme-home">
 
@@ -44,25 +46,28 @@
       <div class="nav-item" data-page="home">
         <span class="nav-icon" data-icon="home"></span><span>首页</span>
       </div>
+      <div class="nav-item" onclick="location.href='AI.html'">
+        <span class="nav-icon" data-icon="sparkles"></span><span>AI</span>
+      </div>
       <div class="nav-section">学习模块</div>
       <div class="nav-item" data-page="cet">
-        <span class="nav-icon" data-icon="book-open"></span><span>四级备考</span>
+        <span class="nav-icon" data-icon="book-open"></span><span>英语</span>
       </div>
       <div class="nav-item" data-page="exam">
-        <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span>
+        <span class="nav-icon" data-icon="pencil"></span><span>行测</span>
       </div>
       <div class="nav-item" data-page="comm">
-        <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span>
+        <span class="nav-icon" data-icon="message-square"></span><span>表达</span>
       </div>
       <div class="nav-item" data-page="interview">
-        <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span>
+        <span class="nav-icon" data-icon="handshake"></span><span>面测</span>
       </div>
       <div class="nav-item" data-page="ppt">
-        <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span>
+        <span class="nav-icon" data-icon="palette"></span><span>演示</span>
       </div>
       <div class="nav-section">创作</div>
       <div class="nav-item" data-page="blog">
-        <span class="nav-icon" data-icon="globe"></span><span>广场</span>
+        <span class="nav-icon" data-icon="globe"></span><span>社区</span>
       </div>
       <div class="nav-section">互动</div>
       <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
@@ -116,53 +121,68 @@
           <div class="morepage-title"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span> 工具</div>
         </div>
 
-        <!-- 【A8】工具卡片纵向列表：与旧底部弹层「工具」同项同行为；卡片可后续扩展。T01 批次五（2026-09-12）#1.0：由 .morepage-grid 改为 .morepage-list 纵向排列（右侧 › 箭头为 CSS ::after）
-             W1-T4（2026-09-15）：内容填充 —— 分组标题复用 .nav-section（既有类，纯 CSS 无 JS 依赖，与更多页一致写法）；
-             补 2 个站内真实页面直达入口（面试题库 / 四级词汇，此前本页无任何入口）。 -->
+        <!-- 【20260916L】原为「无入口保留页」：导入题库 / AI面试 / 穿越英语 三张入口卡已迁移至「更多」页；
+             【N9-5（2026-09-16）】本页重新填充为「站内工具直达」列表：补入 9 张此前在工具页无任何入口的真实页面卡片，
+             导入向导依赖（<style> / #importerView / #impLibs / importer.js / 内联脚本）全部原样保留不动。
+             ⚠️ 图标统一用 span.nav-icon 嵌套写法（icon-map.js 扫描 data-icon 属性自动注入 svg）；
+             不要写成裸 div.mpc-icon 直接挂 data-icon（已知缺陷写法，图标不渲染）。 -->
         <div class="morepage-list">
-          <div class="nav-section">效率工具</div>
-          <div class="morepage-card morepage-list-item" onclick="openImporterView()">
-            <div class="mpc-icon" data-icon="inbox" data-icon-size="20"></div>
-            <div class="mpc-title">导入题库</div>
-            <div class="mpc-desc">Excel/CSV 一键导入</div>
-          </div>
-          <!-- 功能删减 B4（2026-09-13）：「万能金句」「场景话术」两个重复入口已删除——同名功能在高情商表达页（万能金句库.html / 场景话术库.html）保留，此处入口与其重复 -->
+          <!-- 功能删减 B4（2026-09-13）：「万能金句」「场景话术」两个重复入口已删除——同名功能在表达页（万能金句库.html / 场景话术库.html）保留，此处入口与其重复 -->
 
-          <div class="nav-section">素材与经验</div>
           <div class="morepage-card morepage-list-item" onclick="location.href='PPT版式库.html'">
-            <div class="mpc-icon" data-icon="chart-bar" data-icon-size="20"></div>
+            <div class="mpc-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div>
             <div class="mpc-title">PPT版式</div>
-            <div class="mpc-desc">版式与案例素材</div>
+            <div class="mpc-desc">常用版式与排版参考</div>
+          </div>
+          <div class="morepage-card morepage-list-item" onclick="location.href='PPT素材库.html'">
+            <div class="mpc-icon"><span class="nav-icon" data-icon="image" data-icon-size="20"></span></div>
+            <div class="mpc-title">PPT素材</div>
+            <div class="mpc-desc">图示 · 图标 · 配图素材</div>
+          </div>
+          <div class="morepage-card morepage-list-item" onclick="location.href='PPT案例拆解.html'">
+            <div class="mpc-icon"><span class="nav-icon" data-icon="puzzle" data-icon-size="20"></span></div>
+            <div class="mpc-title">案例拆解</div>
+            <div class="mpc-desc">拆解优秀演示的逻辑与结构</div>
           </div>
           <div class="morepage-card morepage-list-item" onclick="location.href='四级经验分享.html'">
-            <div class="mpc-icon" data-icon="book-open" data-icon-size="20"></div>
+            <div class="mpc-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div>
             <div class="mpc-title">四级经验</div>
-            <div class="mpc-desc">学霸备考方法</div>
+            <div class="mpc-desc">学霸备考方法与时间规划</div>
           </div>
-
-          <div class="nav-section">专项训练</div>
-          <div class="morepage-card morepage-list-item" onclick="location.href='AI模拟面试.html'">
-            <div class="mpc-icon" data-icon="mic" data-icon-size="20"></div>
-            <div class="mpc-title">AI面试</div>
-            <div class="mpc-desc">多轮追问模拟面试</div>
+          <div class="morepage-card morepage-list-item" onclick="location.href='四级词汇.html'">
+            <div class="mpc-icon"><span class="nav-icon" data-icon="languages" data-icon-size="20"></span></div>
+            <div class="mpc-title">四级词汇</div>
+            <div class="mpc-desc">核心词表背诵与自测</div>
           </div>
-          <!-- 【铁律】「穿越英语」入口必须保留可见：指向现有 quest.js 的 openQuest()（不可用时回退到首页的穿越英语卡）。内容升级属批次三。 -->
-          <div class="morepage-card morepage-list-item" onclick="if(window.openQuest){openQuest()}else{location.href='学习工作台.html'}">
-            <div class="mpc-icon" data-icon="zap" data-icon-size="20"></div>
-            <div class="mpc-title">穿越英语</div>
-            <div class="mpc-desc">闯关式剧情学英语</div>
-          </div>
-
-          <div class="nav-section">题库直达</div>
           <div class="morepage-card morepage-list-item" onclick="location.href='面试题库.html'">
-            <div class="mpc-icon" data-icon="clipboard-list" data-icon-size="20"></div>
+            <div class="mpc-icon"><span class="nav-icon" data-icon="clipboard-list" data-icon-size="20"></span></div>
             <div class="mpc-title">面试题库</div>
             <div class="mpc-desc">高频真题与作答思路</div>
           </div>
-          <div class="morepage-card morepage-list-item" onclick="location.href='四级词汇.html'">
-            <div class="mpc-icon" data-icon="languages" data-icon-size="20"></div>
-            <div class="mpc-title">四级词汇</div>
-            <div class="mpc-desc">核心词表随身背</div>
+          <div class="morepage-card morepage-list-item" onclick="location.href='商务礼仪.html'">
+            <div class="mpc-icon"><span class="nav-icon" data-icon="badge-check" data-icon-size="20"></span></div>
+            <div class="mpc-title">商务礼仪</div>
+            <div class="mpc-desc">职场形象与场合礼仪要点</div>
+          </div>
+          <div class="morepage-card morepage-list-item" onclick="location.href='行测刷题.html'">
+            <div class="mpc-icon"><span class="nav-icon" data-icon="calculator" data-icon-size="20"></span></div>
+            <div class="mpc-title">行测刷题</div>
+            <div class="mpc-desc">五大专项限时训练</div>
+          </div>
+          <div class="morepage-card morepage-list-item" onclick="location.href='申论刷题.html'">
+            <div class="mpc-icon"><span class="nav-icon" data-icon="file-text" data-icon-size="20"></span></div>
+            <div class="mpc-title">申论刷题</div>
+            <div class="mpc-desc">小题与大作文批改训练</div>
+          </div>
+          <div class="morepage-card morepage-list-item" onclick="location.href='时政热点.html'">
+            <div class="mpc-icon"><span class="nav-icon" data-icon="megaphone" data-icon-size="20"></span></div>
+            <div class="mpc-title">时政热点</div>
+            <div class="mpc-desc">申论与面试的素材积累</div>
+          </div>
+          <div class="morepage-card morepage-list-item" onclick="location.href='企业定向库.html'">
+            <div class="mpc-icon"><span class="nav-icon" data-icon="building" data-icon-size="20"></span></div>
+            <div class="mpc-title">企业定向</div>
+            <div class="mpc-desc">目标企业笔试面试情报</div>
           </div>
         </div>
 
@@ -285,7 +305,7 @@
       </div>
       <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-square" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
       <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
-      <div class="bottom-nav-item active" onclick="location.href='工具.html'"><div class="bn-icon"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span></div><div class="bn-label">工具</div></div>
+      <div class="bottom-nav-item" onclick="location.href='AI.html'"><div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div></div>
       <div class="bottom-nav-item" onclick="location.href='更多.html'">
         <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
       </div>
@@ -400,14 +420,17 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260915c" defer></script>
-<script src="assets/xt-toast.js?v=20260915c" defer></script>
-<script src="assets/error-boundary.js?v=20260915c" defer></script>
-<script src="assets/app.js?v=20260915f" defer></script>
-<script src="assets/quest.js?v=20260915c" defer></script>
-<script src="assets/config.js?v=20260915c" defer></script>
-<script src="assets/api.js?v=20260915f" defer></script>
-<script src="assets/importer.js?v=20260915c" defer></script>
-<script src="assets/study-stats.js?v=20260915c" defer></script>
+<script src="assets/icon-map.js?v=20260916O" defer></script>
+<script src="assets/xt-toast.js?v=20260916O" defer></script>
+<script src="assets/error-boundary.js?v=20260916O" defer></script>
+<script src="assets/app.js?v=20260916O" defer></script>
+<script src="assets/quest.js?v=20260916O" defer></script>
+<script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260916O" defer></script>
+<script src="assets/importer.js?v=20260916O" defer></script>
+<script src="assets/study-stats.js?v=20260916O" defer></script>
+<script src="assets/ai-config.js?v=20260916R"></script>
+<script src="assets/ai-presets.js?v=20260916O"></script>
+<script src="assets/ai-service.js?v=20260916R"></script>
 </body>
 </html>

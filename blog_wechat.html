@@ -1,16 +1,39 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>互动广场 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260915c">
-<link rel="stylesheet" href="assets/page-head.css?v=20260915c">
-<link rel="stylesheet" href="assets/states.css?v=20260915c">
-<link rel="stylesheet" href="assets/polish.css?v=20260915c">
+<link rel="stylesheet" href="assets/common.css?v=20260916O">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<link rel="stylesheet" href="assets/polish.css?v=20260916O">
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
 </head>
 <body class="theme-home">
+
+<!-- ===== B4（20260916）「我的文章」视图页内作用域样式 =====
+     为什么放页内而不是 common.css：common.css 是全站共享文件（本波仅 B4 持有），
+     本页改动一律走页内作用域（全部规则以 .blog-mine-scope 打头），零全站副作用、易回滚。
+     common.css 里同时只追加了 2 组【按 id 作用域】的兜底规则（供其它复用 .blog-mine-scope
+     的页面使用），见 common.css 末尾「B4」段注释。
+     ⚠️ 本页保留 <div class="app"> 外壳 → 具备「固定外壳 + 内部滚动」模型，滚动锁成立。 -->
+<style>
+/* B4-1 统计芯片行：独立成行、可横向滚动不换行（超 6 类时不被挤成多行） */
+.blog-mine-scope .blog-filters { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+.blog-mine-scope .blog-filters .chip { flex: 0 0 auto; white-space: nowrap; }
+/* B4-2 「我的文章」卡片网格：自适应列宽（窄屏 1 列 / 宽屏多列） */
+.blog-mine-scope .blog-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+/* B4-3 卡片：等高拉伸 + 删除/归档按钮行贴底对齐 */
+.blog-mine-scope .blog-grid .note-card { height: 100%; }
+.blog-mine-scope .note-body { justify-content: space-between; }
+/* B4-4 窄屏（≤480px）：单列铺满，避免卡片过窄 */
+@media (max-width: 480px) {
+  .blog-mine-scope .blog-grid { grid-template-columns: 1fr; gap: 12px; }
+}
+</style>
 
 <div class="app">
 <nav class="sidebar">
@@ -25,19 +48,22 @@
       <div class="nav-item" data-page="home">
         <span class="nav-icon" data-icon="home"></span><span>首页</span>
       </div>
+      <div class="nav-item" onclick="location.href='AI.html'">
+        <span class="nav-icon" data-icon="sparkles"></span><span>AI</span>
+      </div>
       <div class="nav-section">学习模块</div>
-      <div class="nav-item" data-page="cet"><span class="nav-icon" data-icon="book-open"></span><span>四级备考</span></div>
-      <div class="nav-item" data-page="exam"><span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span></div>
-      <div class="nav-item" data-page="comm"><span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span></div>
-      <div class="nav-item" data-page="interview"><span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span></div>
-      <div class="nav-item" data-page="ppt"><span class="nav-icon" data-icon="palette"></span><span>PPT训练</span></div>
+      <div class="nav-item" data-page="cet"><span class="nav-icon" data-icon="book-open"></span><span>英语</span></div>
+      <div class="nav-item" data-page="exam"><span class="nav-icon" data-icon="pencil"></span><span>行测</span></div>
+      <div class="nav-item" data-page="comm"><span class="nav-icon" data-icon="message-square"></span><span>表达</span></div>
+      <div class="nav-item" data-page="interview"><span class="nav-icon" data-icon="handshake"></span><span>面测</span></div>
+      <div class="nav-item" data-page="ppt"><span class="nav-icon" data-icon="palette"></span><span>演示</span></div>
 
       <div class="nav-section">学习模块</div>
-      <div class="nav-item" data-page="cet"><span class="nav-icon" data-icon="book-open"></span><span>四级备考</span></div>
-      <div class="nav-item" data-page="exam"><span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span></div>
-      <div class="nav-item" data-page="comm"><span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span></div>
-      <div class="nav-item" data-page="interview"><span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span></div>
-      <div class="nav-item" data-page="ppt"><span class="nav-icon" data-icon="palette"></span><span>PPT训练</span></div>
+      <div class="nav-item" data-page="cet"><span class="nav-icon" data-icon="book-open"></span><span>英语</span></div>
+      <div class="nav-item" data-page="exam"><span class="nav-icon" data-icon="pencil"></span><span>行测</span></div>
+      <div class="nav-item" data-page="comm"><span class="nav-icon" data-icon="message-square"></span><span>表达</span></div>
+      <div class="nav-item" data-page="interview"><span class="nav-icon" data-icon="handshake"></span><span>面测</span></div>
+      <div class="nav-item" data-page="ppt"><span class="nav-icon" data-icon="palette"></span><span>演示</span></div>
     <div class="nav-section">互动</div>
       <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友 · 好友申请（需在线模式）">
         <span class="nav-icon" data-icon="users"></span><span>好友</span>
@@ -46,7 +72,7 @@
         <span class="nav-icon" data-icon="messages-square"></span><span>互动广场</span>
       </div>
       <div class="nav-section">中心</div>
-      <div class="nav-item" data-page="blog"><span class="nav-icon" data-icon="globe"></span><span>广场</span></div>
+      <div class="nav-item" data-page="blog"><span class="nav-icon" data-icon="globe"></span><span>社区</span></div>
     <div class="sidebar-footer">
       <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心">
         <div class="user-avatar">学</div>
@@ -85,13 +111,13 @@
 
         <!-- 博客子导航 -->
         <div class="blog-subnav">
-          <div class="sb-tab active" id="blogTabList" onclick="showBlogView('list')"><span data-icon="book-open" data-icon-size="14" style="vertical-align:-3px"></span> 广场</div>
+          <div class="sb-tab active" id="blogTabList" onclick="showBlogView('list')"><span data-icon="book-open" data-icon-size="14" style="vertical-align:-3px"></span> 社区</div>
           <div class="sb-tab" id="blogTabMine" onclick="showBlogView('mine')"><span data-icon="user" data-icon-size="14" style="vertical-align:-3px"></span> 我的文章</div>
           <div class="sb-tab" id="blogTabEdit" onclick="showBlogView('edit')"><span data-icon="pen" data-icon-size="14" style="vertical-align:-3px"></span> 写发贴</div>
           <div class="sb-tab" id="blogTabStats" onclick="showBlogView('stats')"><span data-icon="chart-bar" data-icon-size="14" style="vertical-align:-3px"></span> 统计</div>
         </div>
 
-        <!-- ===== 视图：广场 ===== -->
+        <!-- ===== 视图：社区 ===== -->
         <div class="blog-wrap" id="blogViewList">
           <div class="blog-toolbar">
             <div class="blog-search-row">
@@ -106,7 +132,9 @@
         </div>
 
         <!-- ===== 视图：我的文章 ===== -->
-        <div class="blog-wrap" id="blogViewMine" style="display:none">
+        <!-- B4（20260916）：#blogViewMine 加「我的文章」布局作用域类。
+             结构 / DOM id / 全局函数名一律未变，仅新增 scope class + 页内作用域样式（见下方 <style>）。 -->
+        <div class="blog-wrap blog-mine-scope" id="blogViewMine" style="display:none">
           <div class="blog-toolbar">
             <div class="blog-filters" id="blogMineTabs"></div>
           </div>
@@ -211,8 +239,8 @@
       </div>
       <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
       <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
-      <div class="bottom-nav-item" onclick="toggleToolsPanel()"><div class="bn-icon"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span></div><div class="bn-label">工具</div></div>
-      <div class="bottom-nav-item" onclick="toggleMorePanel()">
+            <div class="bottom-nav-item" onclick="location.href='AI.html'"><div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div></div>
+            <div class="bottom-nav-item" onclick="toggleMorePanel()">
         <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
       </div>
     </div>
@@ -319,11 +347,11 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260915c" defer></script>
-<script src="assets/xt-toast.js?v=20260915c" defer></script>
-<script src="assets/error-boundary.js?v=20260915c" defer></script>
-<script src="assets/app.js?v=20260915f" defer></script>
-<script src="assets/api.js?v=20260915f" defer></script>
+<script src="assets/icon-map.js?v=20260916O" defer></script>
+<script src="assets/xt-toast.js?v=20260916O" defer></script>
+<script src="assets/error-boundary.js?v=20260916O" defer></script>
+<script src="assets/app.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260916O" defer></script>
 
   <!-- 工具面板遮罩 -->
   <div class="more-overlay" onclick="toggleToolsPanel()" id="toolsOverlay"></div>
@@ -347,5 +375,8 @@
     </div>
   </div>
   </div>
+<script src="assets/ai-config.js?v=20260916R"></script>
+<script src="assets/ai-presets.js?v=20260916O"></script>
+<script src="assets/ai-service.js?v=20260916R"></script>
 </body>
 </html>

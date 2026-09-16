@@ -1,14 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>申论学习 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260915c">
-<link rel="stylesheet" href="assets/page-head.css?v=20260915c">
-<link rel="stylesheet" href="assets/states.css?v=20260915c">
-<link rel="stylesheet" href="assets/polish.css?v=20260915c">
+<link rel="stylesheet" href="assets/common.css?v=20260916O">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<link rel="stylesheet" href="assets/polish.css?v=20260916O">
 <style>
 /* ===== 申论刷题页专用样式（复用 common.css 变量，不新增色板） ===== */
 .sl-tabs { display: flex; gap: 8px; padding: 14px 24px 0; }
@@ -51,6 +51,25 @@
 .sl-count { font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 10px; }
 .sl-saved { font-size: 12px; color: var(--success); opacity: 0; transition: opacity .3s; }
 .sl-saved.on { opacity: 1; }
+/* ===== C12 申论 AI 批改（本页新增；复用 common.css 变量，不引入新库） ===== */
+.sl-ai-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.sl-ai-hint { font-size: 12px; color: var(--text-muted); flex: 1; min-width: 120px; }
+.sl-aibox { display: none; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; margin-top: 12px; background: var(--card); }
+.sl-aibox.on { display: block; }
+.sl-ai-head { font-size: 14px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.sl-ai-head .sl-sp { flex: 1; }
+.sl-ai-body { font-size: 14px; line-height: 1.8; color: var(--text); white-space: pre-wrap; word-break: break-word; }
+.sl-ai-body ol, .sl-ai-body ul { margin: 8px 0 8px 20px; }
+.sl-ai-body li { margin-bottom: 4px; }
+.sl-ai-body b, .sl-ai-body strong { color: var(--text); }
+.sl-ai-err { border-color: var(--danger); }
+.sl-ai-err .sl-ai-head { color: var(--danger); }
+.sl-ai-thinking { font-size: 14px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+.sl-ai-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); animation: sl-ai-blink 1s infinite ease-in-out; }
+.sl-ai-dot:nth-child(2) { animation-delay: .2s; }
+.sl-ai-dot:nth-child(3) { animation-delay: .4s; }
+@keyframes sl-ai-blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+.sl-ai-meta { font-size: 12px; color: var(--text-muted); margin-top: 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 mark.sl-hl { background: #FFE9A8; color: inherit; }
 .sl-ke { background: linear-gradient(transparent 58%, #FFE08A 58%); cursor: pointer; font-weight: 600; }
 .sl-ke:hover { background: #FFD24D; }
@@ -108,6 +127,8 @@ mark.sl-hl { background: #FFE9A8; color: inherit; }
   .sl-body, .sl-tabs { padding-left: 12px; padding-right: 12px; }
 }
 </style>
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
 </head>
 <body class="theme-home">
 
@@ -124,25 +145,28 @@ mark.sl-hl { background: #FFE9A8; color: inherit; }
       <div class="nav-item" data-page="home">
         <span class="nav-icon" data-icon="home"></span><span>首页</span>
       </div>
+      <div class="nav-item" onclick="location.href='AI.html'">
+        <span class="nav-icon" data-icon="sparkles"></span><span>AI</span>
+      </div>
       <div class="nav-section">学习模块</div>
       <div class="nav-item" data-page="cet">
-        <span class="nav-icon" data-icon="book-open"></span><span>四级备考</span>
+        <span class="nav-icon" data-icon="book-open"></span><span>英语</span>
       </div>
       <div class="nav-item" data-page="exam">
-        <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span>
+        <span class="nav-icon" data-icon="pencil"></span><span>行测</span>
       </div>
       <div class="nav-item" data-page="comm">
-        <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span>
+        <span class="nav-icon" data-icon="message-square"></span><span>表达</span>
       </div>
       <div class="nav-item" data-page="interview">
-        <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span>
+        <span class="nav-icon" data-icon="handshake"></span><span>面测</span>
       </div>
       <div class="nav-item" data-page="ppt">
-        <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span>
+        <span class="nav-icon" data-icon="palette"></span><span>演示</span>
       </div>
       <div class="nav-section">创作</div>
       <div class="nav-item" data-page="blog">
-        <span class="nav-icon" data-icon="globe"></span><span>广场</span>
+        <span class="nav-icon" data-icon="globe"></span><span>社区</span>
       </div>
       <div class="nav-section">互动</div>
       <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
@@ -220,8 +244,8 @@ mark.sl-hl { background: #FFE9A8; color: inherit; }
       </div>
       <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
       <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
-      <div class="bottom-nav-item" onclick="location.href='工具.html'"><div class="bn-icon"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span></div><div class="bn-label">工具</div></div>
-      <div class="bottom-nav-item" onclick="location.href='更多.html'">
+            <div class="bottom-nav-item" onclick="location.href='AI.html'"><div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div></div>
+            <div class="bottom-nav-item" onclick="location.href='更多.html'">
         <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
       </div>
     </div>
@@ -342,14 +366,14 @@ mark.sl-hl { background: #FFE9A8; color: inherit; }
   </div>
 </div>
 
-<script src="assets/icon-map.js?v=20260915c" defer></script>
-<script src="assets/xt-toast.js?v=20260915c" defer></script>
-<script src="assets/error-boundary.js?v=20260915c" defer></script>
-<script src="assets/app.js?v=20260915f" defer></script>
-  <script src="assets/data/shenlun-inline.js?v=20260915c"></script>
-<script src="assets/config.js?v=20260915c" defer></script>
-<script src="assets/api.js?v=20260915f" defer></script>
-<script src="assets/qbank.js?v=20260915c" defer></script>
+<script src="assets/icon-map.js?v=20260916O" defer></script>
+<script src="assets/xt-toast.js?v=20260916O" defer></script>
+<script src="assets/error-boundary.js?v=20260916O" defer></script>
+<script src="assets/app.js?v=20260916O" defer></script>
+  <script src="assets/data/shenlun-inline.js?v=20260916O"></script>
+<script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260916O" defer></script>
+<script src="assets/qbank.js?v=20260916O" defer></script>
 
 <script>
 /* =====================================================================
@@ -758,11 +782,18 @@ function slRenderAnswer() {
     '<textarea class="sl-ta" id="slAnswerBox" placeholder="在此作答，输入后 2 秒自动保存…" data-act="answer-input">' + slEsc(a.answer || '') + '</textarea>' +
     '<div class="sl-count" id="slCountWrap">字数：<span id="slCount">0</span>' + (q.wordLimit ? ' / ' + slEsc(q.wordLimit) : '') +
     '<span class="sl-saved" id="slSavedTip">已保存</span></div>' +
-    '<div><button class="btn btn-primary btn-sm" type="button" data-act="a-submit">交卷查看答案</button></div>' +
+    '<div class="sl-ai-bar">' +
+    '<button class="btn btn-primary btn-sm" type="button" data-act="a-submit">交卷查看答案</button>' +
+    '<button class="btn btn-secondary btn-sm" type="button" data-act="a-ai" id="slAiBtn">' +
+    '<span class="nav-icon" data-icon="sparkles" data-icon-size="14" style="vertical-align:-2px"></span> AI 批改</button>' +
+    '<span class="sl-ai-hint">写完点「AI 批改」，AI 会按采分点给分并指出漏点（每次点击调用一次）</span>' +
+    '</div>' +
+    '<div class="sl-aibox" id="slAiBox"></div>' +
     '</div>' +
     '</div>';
   slApplyHL(document.getElementById('slMatBody'), slReadRec(q.id + '_material').highlights);
   slUpdateCount(a.answer || '', q);
+  slResetAiBox();
   slIcons();
 }
 function slUpdateCount(txt, q) {
@@ -1366,6 +1397,164 @@ function slSheetOk() {
   slToast(n ? '已加入 ' + n + ' 条表达' : '没有选择任何表达');
 }
 
+/* ---------------- C12 · AI 批改（接 assets/ai-service.js 的 window.callAI 底座） ----------------
+   口径：window.callAI(funcType, messages, opts)，前端直连；
+   funcType='longtext'（ai-config.js 中该档 desc 即「申论批改、面试报告」）。
+   限频：公共 Key 10 次/分钟 → 只在用户点击「AI 批改」时调用，绝不自动发问。
+   老 WebView（Chrome 50~58 / ES2017）：无可选链、无空值合并、无对象展开、无 replaceAll、无 Array.at。
+   ------------------------------------------------------------------------------------------ */
+var SL_AI = { running: false, timer: null };
+
+function slAiBox() { return document.getElementById('slAiBox'); }
+function slAiBtn() { return document.getElementById('slAiBtn'); }
+function slResetAiBox() {
+  clearTimeout(SL_AI.timer);
+  SL_AI.running = false;
+  var box = slAiBox();
+  if (box) { box.classList.remove('on', 'sl-ai-err'); box.innerHTML = ''; }
+  var btn = slAiBtn();
+  if (btn) { btn.disabled = false; btn.textContent = 'AI 批改'; }
+}
+function slAiSetRunning(on) {
+  SL_AI.running = !!on;
+  var btn = slAiBtn();
+  if (!btn) return;
+  btn.disabled = !!on;
+  btn.textContent = on ? 'AI 正在批改…' : 'AI 批改';
+}
+/* 组 prompt：题干（材料首段 + 作答要求）+ 用户作答 + 评分维度 */
+function slAiPrompt(q, answer) {
+  var mat = String(q.material || '');
+  if (mat.length > 1200) mat = mat.slice(0, 1200) + '…（材料较长已截断）';
+  var s = '';
+  s += '你是公务员考试申论阅卷老师，请批改下面这份作答。\n\n';
+  s += '【题目】' + String(q.source || '真题') + ' · ' + String(q.questionNo || '题目') + '\n';
+  s += '【题型】' + String(q.type || '') + (q.subType ? '·' + String(q.subType) : '') + '\n';
+  if (q.score) s += '【分值】' + String(q.score) + ' 分\n';
+  if (q.wordLimit) s += '【字数要求】不超过 ' + String(q.wordLimit) + ' 字\n';
+  if (mat) s += '【给定材料（节选）】\n' + mat + '\n';
+  s += '【作答要求】' + String(q.requirement || '（无）') + '\n\n';
+  s += '【考生作答】\n' + String(answer || '（空白）') + '\n\n';
+  s += '请按以下结构输出，简体中文，不要客套话：\n';
+  s += '1. 总分：给出 x/满分（分值未知则按 20 分制估分）与一句话定性。\n';
+  s += '2. 采分点对照：逐条列出「应写得分的要点 → 考生是否写到（写到/部分写到/漏掉）」，漏掉的要点用「漏：」标注。\n';
+  s += '3. 主要问题：最多 3 条，每条一句话，指出是「要点缺失 / 表述不规范 / 结构混乱 / 超字数」中的哪一类。\n';
+  s += '4. 提分建议：针对最该改的 2 条，各给一句可直接照做的改法。\n';
+  s += '总输出控制在 500 字以内。';
+  return s;
+}
+/* 极简 markdown → HTML（老内核，不用正则后行断言） */
+function slAiMd(text) {
+  var h = slEsc(text || '');
+  h = h.replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>');
+  h = h.replace(/^###?\s*(.+)$/gm, '<b>$1</b>');
+  return h;
+}
+function slAiRenderHtml(text) {
+  var lines = String(text || '').split('\n');
+  var out = [], i, ln, m;
+  for (i = 0; i < lines.length; i++) {
+    ln = lines[i];
+    m = ln.match(/^\s*(\d+)[\.、)]\s*(.+)$/);
+    if (m) { out.push((out.length ? '<br>' : '') + '<b>' + m[1] + '.</b> ' + slAiMd(m[2])); continue; }
+    m = ln.match(/^\s*[-*·]\s*(.+)$/);
+    if (m) { out.push((out.length ? '<br>' : '') + '· ' + slAiMd(m[1])); continue; }
+    if (!ln.replace(/\s/g, '')) { out.push('<br>'); continue; }
+    out.push((out.length ? '<br>' : '') + slAiMd(ln));
+  }
+  return out.join('');
+}
+function slAiFail(reason, tip) {
+  var box = slAiBox();
+  if (!box) return;
+  box.className = 'sl-aibox on sl-ai-err';
+  box.innerHTML =
+    '<div class="sl-ai-head"><span class="nav-icon" data-icon="alert-triangle" data-icon-size="16"></span>AI 暂时不可用<span class="sl-sp"></span>' +
+    '<span class="sl-mini-btn" data-act="a-ai">重试</span></div>' +
+    '<div class="sl-ai-body">' + slEsc(reason || '网络异常或 AI 服务不可用') + '</div>' +
+    '<div class="sl-ai-meta">' + slEsc(tip || '可以先自查：对照参考答案，把漏掉的要点标出来，再重新写一遍。') + '</div>';
+  slAiSetRunning(false);
+  slIcons();
+}
+function slAiGo() {
+  var q = slCur();
+  if (!q) { slToast('当前没有打开的题目'); return; }
+  var box = slAiBox();
+  if (!box) { slToast('批改区域未就绪，请刷新页面'); return; }
+  if (SL_AI.running) return;
+  var ta = document.getElementById('slAnswerBox');
+  var answer = ta ? String(ta.value || '') : String((slAns(q.id) || {}).answer || '');
+  if (!slCount(answer)) { slToast('先写点答案，再让 AI 批改'); return; }
+  if (typeof window.callAI !== 'function') {
+    slAiFail('AI 底座（assets/ai-service.js）尚未就绪', '请刷新页面后重试；页面其它功能不受影响。');
+    slToast('AI 暂时不可用，已给出本地提示');
+    return;
+  }
+  slAiSetRunning(true);
+  box.className = 'sl-aibox on';
+  box.innerHTML = '<div class="sl-ai-head"><span class="nav-icon" data-icon="sparkles" data-icon-size="16"></span>AI 批改<span class="sl-sp"></span></div>' +
+    '<div class="sl-ai-thinking"><span class="sl-ai-dot"></span><span class="sl-ai-dot"></span><span class="sl-ai-dot"></span> AI 正在批改…</div>';
+  slIcons();
+  var settled = false;
+  var buf = '';
+  // 软看门狗：25 秒还没结果就提示（不取消请求，用户可重试）
+  clearTimeout(SL_AI.timer);
+  SL_AI.timer = setTimeout(function () {
+    if (!settled) {
+      var b = slAiBox();
+      if (b) b.innerHTML = '<div class="sl-ai-head"><span class="nav-icon" data-icon="sparkles" data-icon-size="16"></span>AI 批改</div>' +
+        '<div class="sl-ai-thinking">响应较慢，仍在等待…（可稍后点「重试」）</div>';
+    }
+  }, 25000);
+  var opts = {};
+  if (typeof ReadableStream !== 'undefined' && typeof TextDecoder !== 'undefined') {
+    opts.onChunk = function (piece, full) {
+      var b = slAiBox();
+      if (!b) return;
+      if (full !== null && full !== undefined && full !== '') buf = String(full);
+      else buf += String(piece === null || piece === undefined ? '' : piece);
+      b.innerHTML = '<div class="sl-ai-head"><span class="nav-icon" data-icon="sparkles" data-icon-size="16"></span>AI 批改<span class="sl-sp"></span></div>' +
+        '<div class="sl-ai-body">' + slAiRenderHtml(buf) + '</div>';
+    };
+  }
+  var p = null;
+  try {
+    p = window.callAI('longtext', [{ role: 'user', content: slAiPrompt(q, answer) }], opts);
+  } catch (e) {
+    clearTimeout(SL_AI.timer);
+    settled = true;
+    slAiFail(e && e.message ? e.message : '调用失败', '页面其它功能不受影响，可稍后重试。');
+    return;
+  }
+  Promise.resolve(p).then(function (res) {
+    clearTimeout(SL_AI.timer);
+    if (settled) return;
+    settled = true;
+    var text = (res && (res.text || res.content)) ? String(res.text || res.content) : buf;
+    if (!text) { slAiFail('AI 返回了空内容', '可稍后重试，或先对照参考答案自查。'); return; }
+    var b = slAiBox();
+    if (!b) return;
+    var meta = '';
+    if (res && res.degraded) meta = '网络不佳或未配置 Key，以下为本地参考';
+    else if (res && res.modelUsedName) meta = '由 ' + String(res.modelUsedName) + ' 生成';
+    b.className = 'sl-aibox on';
+    b.innerHTML = '<div class="sl-ai-head"><span class="nav-icon" data-icon="sparkles" data-icon-size="16"></span>AI 批改结果<span class="sl-sp"></span>' +
+      '<span class="sl-mini-btn" data-act="a-ai">重新批改</span></div>' +
+      '<div class="sl-ai-body">' + slAiRenderHtml(text) + '</div>' +
+      (meta ? '<div class="sl-ai-meta">' + slEsc(meta) + ' · 仅供参考，以官方评分为准</div>' : '<div class="sl-ai-meta">仅供参考，以官方评分为准</div>');
+    slAiSetRunning(false);
+    slIcons();
+  }).catch(function (err) {
+    clearTimeout(SL_AI.timer);
+    if (settled) return;
+    settled = true;
+    var reason = '网络异常或 AI 服务不可用';
+    if (err && err.rateLimited) reason = '提问太频繁了（公共 Key 限 10 次/分钟），请休息 1 分钟再试';
+    else if (err && err.message) reason = String(err.message);
+    slAiFail(reason, '页面其它功能不受影响，可稍后重试。');
+  });
+}
+
 /* ---------------- 交互入口 ---------------- */
 function slGoQuestion(id) {
   SL.qid = id;
@@ -1451,6 +1640,8 @@ document.addEventListener('click', function (e) {
       slBackList(); break;
     case 'a-submit':
       slSubmit(); break;
+    case 'a-ai':
+      slAiGo(); break;
     case 'a-collapse':
       var col = document.getElementById('slMatCol'), btn = document.getElementById('slCollapseBtn');
       if (col) {
@@ -1630,5 +1821,8 @@ window.addEventListener('load', function () {
   if (!SL.data.length && slLoadData()) slRenderAll();
 });
 </script>
+<script src="assets/ai-config.js?v=20260916R"></script>
+<script src="assets/ai-presets.js?v=20260916O"></script>
+<script src="assets/ai-service.js?v=20260916R"></script>
 </body>
 </html>

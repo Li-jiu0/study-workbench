@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#ff8c00">
+<title>模型设置</title>
+<link rel="stylesheet" href="assets/common.css?v=20260916O">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<link rel="stylesheet" href="assets/polish.css?v=20260916O">
+<style>
+/* ============ 模型设置页（R64 五 Tab 重构，沿用 AI 同族设计变量） ============ */
+:root{
+  --ai-orange:#ff8c00;
+  --ai-orange-d:#e67e00;
+  --ai-blue:#3b6cf6;
+  --ai-bg:#f6f7f9;
+  --ai-card:#ffffff;
+  --ai-border:#e7e9ee;
+  --ai-text:#1f2329;
+  --ai-sub:#5a6068;
+  --ai-muted:#9aa0a8;
+  --ai-code-bg:#f3f4f6;
+  --ai-radius:24px;
+  --xt-warn:#faad14;
+  --xt-warn-bg:rgba(250,173,20,.12);
+  --xt-warn-border:rgba(250,173,20,.32);
+  --xt-warn-text:#8a6116;
+}
+body.dark{
+  --ai-bg:#16181d;
+  --ai-card:#1f2228;
+  --ai-border:#2c3038;
+  --ai-text:#e8eaed;
+  --ai-sub:#b4bac2;
+  --ai-muted:#7b828c;
+  --ai-code-bg:#262a31;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --ai-bg:#16181d;
+    --ai-card:#1f2228;
+    --ai-border:#2c3038;
+    --ai-text:#e8eaed;
+    --ai-sub:#b4bac2;
+    --ai-muted:#7b828c;
+    --ai-code-bg:#262a31;
+  }
+}
+
+/* —— R64 滚动修复：common.css 把 html/body 锁成 height:100% + overflow:hidden，
+      导致本页内容区无法滚动（R63 遗留 bug）。本页是独立全页，恢复自然滚动。 —— */
+html, body{
+  height:auto !important;
+  min-height:100%;
+  overflow:visible !important;
+  -webkit-overflow-scrolling:touch;
+}
+
+/* —— 页面骨架 —— */
+.xt-settings-page{
+  margin:0;background:var(--ai-bg);color:var(--ai-text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:14px;line-height:1.5;-webkit-text-size-adjust:100%;
+}
+.xt-set-top{
+  position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;
+  height:56px;padding:0 10px;background:var(--ai-card);border-bottom:1px solid var(--ai-border);
+}
+.xt-set-back{
+  display:inline-flex;align-items:center;justify-content:center;gap:4px;height:38px;padding:0 12px;
+  border:1px solid var(--ai-border);border-radius:10px;background:var(--ai-card);
+  color:var(--ai-sub);font-size:14px;font-weight:600;cursor:pointer;
+}
+.xt-set-back:hover{border-color:var(--ai-orange);color:var(--ai-orange);}
+.xt-set-back svg{width:16px;height:16px;}
+.xt-set-title{font-size:17px;font-weight:700;color:var(--ai-text);margin-left:2px;}
+
+.xt-set-tabs{
+  position:sticky;top:56px;z-index:19;display:flex;gap:8px;padding:10px 12px;
+  background:var(--ai-card);border-bottom:1px solid var(--ai-border);
+  overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
+}
+.xt-set-tab{
+  flex:0 0 auto;height:34px;padding:0 15px;border-radius:999px;border:1px solid var(--ai-border);
+  background:var(--ai-bg);color:var(--ai-sub);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;
+}
+.xt-set-tab.active{background:rgba(255,140,0,.1);border-color:var(--ai-orange);color:var(--ai-orange);}
+
+.xt-set-content{max-width:768px;margin:0 auto;padding:14px 12px 96px;box-sizing:border-box;}
+.xt-set-panel{display:none;}
+.xt-set-panel.active{display:block;}
+
+/* —— 工具条 —— */
+.xt-set-toolbar{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;}
+.xt-set-toolbar-btns{display:flex;flex-wrap:wrap;gap:8px;}
+.xt-set-input{
+  width:100%;box-sizing:border-box;height:40px;padding:0 13px;border:1px solid var(--ai-border);
+  border-radius:10px;background:var(--ai-card);color:var(--ai-text);font-size:14px;outline:none;
+  -webkit-appearance:none;appearance:none;
+}
+.xt-set-input:focus{border-color:var(--ai-blue);}
+.xt-set-btn{
+  height:36px;min-height:36px;padding:0 14px;border-radius:10px;border:1px solid var(--ai-border);
+  background:var(--ai-card);color:var(--ai-sub);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;
+}
+.xt-set-btn:hover{border-color:var(--ai-orange);color:var(--ai-orange);}
+.xt-set-btn.primary{background:var(--ai-orange);border-color:var(--ai-orange);color:#fff;}
+.xt-set-btn.primary:hover{background:var(--ai-orange-d);color:#fff;}
+.xt-set-btn.danger{color:#e0504d;border-color:rgba(224,80,77,.4);}
+.xt-set-btn.danger:hover{background:rgba(224,80,77,.1);color:#e0504d;}
+.xt-set-btn.sm{height:32px;min-height:32px;padding:0 11px;font-size:12.5px;margin-top:4px;}
+
+/* —— 分组 & 模型行 —— */
+.xt-set-group{margin-bottom:16px;}
+.xt-set-group-h{
+  display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--ai-sub);
+  padding:6px 2px;letter-spacing:.4px;
+}
+.xt-set-group-count{
+  display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;
+  border-radius:9px;background:var(--ai-bg);border:1px solid var(--ai-border);color:var(--ai-muted);
+  font-size:11px;font-weight:600;
+}
+.xt-set-row{
+  display:flex;align-items:center;gap:10px;padding:12px 12px;background:var(--ai-card);
+  border:1px solid var(--ai-border);border-radius:12px;margin-bottom:8px;cursor:pointer;
+}
+.xt-set-row-main{flex:1;min-width:0;}
+.xt-set-row-name{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font-size:14.5px;font-weight:600;color:var(--ai-text);}
+.xt-set-row-sub{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin-top:5px;font-size:12px;color:var(--ai-muted);}
+.xt-set-row-right{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:6px;flex-shrink:0;max-width:100%;}
+.xt-set-used{
+  font-size:11px;font-weight:700;color:var(--ai-orange);background:rgba(255,140,0,.1);
+  border:1px solid rgba(255,140,0,.28);border-radius:999px;padding:2px 8px;white-space:nowrap;
+}
+/* 当前行高亮（橙） */
+.xt-set-row.cur{
+  border-color:var(--ai-orange);background:rgba(255,140,0,.06);
+  box-shadow:inset 0 0 0 1px rgba(255,140,0,.25);
+}
+/* 停用 / 健康检查不可用：标灰但绝不隐藏 */
+.xt-set-row.off,.xt-set-row.unavail{opacity:.55;}
+.xt-set-row.flash{animation:xtFlash 1.6s ease;}
+@keyframes xtFlash{
+  0%{background:rgba(255,140,0,.22);}
+  60%{background:rgba(255,140,0,.16);}
+  100%{background:var(--ai-card);}
+}
+.xt-set-row.dragging{opacity:.35;}
+.xt-set-row.dropover{border-top:2px solid var(--ai-orange);}
+
+/* —— 拖拽手柄 & 行内按钮（≥36px 触控） —— */
+.xt-drag-handle{
+  flex-shrink:0;cursor:grab;color:var(--ai-muted);font-size:17px;line-height:1;
+  padding:8px 4px;-webkit-user-select:none;user-select:none;
+}
+.xt-ico-btn{
+  min-width:36px;min-height:36px;display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid var(--ai-border);border-radius:10px;background:var(--ai-card);
+  color:var(--ai-sub);font-size:14px;cursor:pointer;transition:all .15s;padding:0 8px;
+}
+.xt-ico-btn:hover{border-color:var(--ai-orange);color:var(--ai-orange);}
+.xt-ico-btn.del:hover{border-color:#e0504d;color:#e0504d;background:rgba(224,80,77,.08);}
+
+/* —— 星级（可点击修改） —— */
+.xt-stars{display:inline-flex;gap:1px;font-size:15px;line-height:1;color:#c9cdd4;cursor:pointer;flex-shrink:0;}
+.xt-stars .on{color:var(--ai-orange);}
+body.dark .xt-stars{color:#4a4f58;}
+.xt-star-note{font-size:11px;color:var(--ai-muted);margin-left:4px;}
+
+/* —— 健康状态点 —— */
+.xt-h-box{display:inline-flex;align-items:center;gap:4px;flex-shrink:0;}
+.xt-h-dot{width:9px;height:9px;border-radius:50%;display:inline-block;background:#c2c7cf;flex-shrink:0;}
+.xt-h-dot.ok{background:#2fbf71;}
+.xt-h-dot.fail{background:#e0504d;}
+.xt-h-txt{font-size:11px;color:var(--ai-muted);}
+.xt-h-txt.bad{color:#e0504d;}
+.xt-speed{font-size:11.5px;color:var(--ai-sub);}
+
+/* —— 通用 chip / 徽章 —— */
+.xt-set-chip{display:inline-block;font-size:11px;padding:2px 7px;border-radius:999px;background:rgba(59,108,246,.1);color:var(--ai-blue);font-weight:600;line-height:1.5;}
+.xt-set-chip.rate{background:var(--ai-bg);border:1px solid var(--ai-border);color:var(--ai-sub);}
+.xt-set-chip.type{background:rgba(255,140,0,.12);color:var(--ai-orange);}
+.xt-set-badge-vpn{
+  display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;
+  background:var(--xt-warn-bg);border:1px solid var(--xt-warn-border);color:var(--xt-warn-text);font-weight:600;line-height:1.5;
+}
+
+.xt-set-empty{text-align:center;color:var(--ai-muted);font-size:13px;padding:40px 0;}
+
+/* —— 启用/停用开关（0.2s 过渡） —— */
+.xt-set-switch{
+  position:relative;display:inline-block;width:44px;height:24px;border-radius:999px;background:#c9ccd2;
+  transition:background .2s;cursor:pointer;flex-shrink:0;
+}
+.xt-set-switch.on{background:var(--ai-orange);}
+.xt-set-knob{
+  position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;
+  transition:left .2s;box-shadow:0 1px 2px rgba(0,0,0,.25);
+}
+.xt-set-switch.on .xt-set-knob{left:23px;}
+
+/* —— 功能分类卡片 —— */
+.xt-set-card{background:var(--ai-card);border:1px solid var(--ai-border);border-radius:14px;padding:14px 15px;margin-bottom:12px;}
+.xt-set-card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.xt-set-card-t{font-size:15px;font-weight:700;color:var(--ai-text);}
+.xt-set-card-key{
+  font-size:11px;color:var(--ai-muted);font-family:"SFMono-Regular",Consolas,Menlo,monospace;
+  background:var(--ai-code-bg);padding:2px 7px;border-radius:6px;
+}
+.xt-set-card-desc{font-size:12.5px;color:var(--ai-sub);margin-top:4px;}
+.xt-set-kv{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;font-size:13px;margin-top:9px;}
+.xt-set-kv-k{color:var(--ai-sub);flex-shrink:0;}
+.xt-set-kv-v{color:var(--ai-text);font-weight:600;text-align:right;word-break:break-word;}
+.xt-set-field{margin-top:12px;padding-top:12px;border-top:1px dashed var(--ai-border);}
+.xt-set-field-label{font-size:12px;color:var(--ai-muted);font-weight:600;margin-bottom:6px;}
+.xt-set-select{
+  width:100%;box-sizing:border-box;height:40px;padding:0 12px;border:1px solid var(--ai-border);
+  border-radius:10px;background:var(--ai-bg);color:var(--ai-text);font-size:13.5px;outline:none;
+}
+.xt-set-select:focus{border-color:var(--ai-blue);}
+.xt-set-note{
+  margin-top:14px;font-size:12px;line-height:1.6;color:var(--xt-warn-text);background:var(--xt-warn-bg);
+  border:1px solid var(--xt-warn-border);border-radius:10px;padding:10px 12px;
+}
+.xt-set-addrow{display:none;gap:8px;margin-top:10px;}
+.xt-set-addrow .xt-set-input{flex:1;min-width:0;}
+
+/* —— 分类优先级链 —— */
+.xt-chain{margin-top:8px;}
+.xt-chain-item{
+  display:flex;align-items:center;gap:8px;padding:5px 8px;border:1px solid var(--ai-border);
+  border-radius:10px;margin-top:6px;background:var(--ai-bg);
+}
+.xt-chain-num{
+  min-width:20px;height:20px;border-radius:50%;background:var(--ai-orange);color:#fff;
+  font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.xt-chain-name{
+  flex:1;min-width:0;font-size:13.5px;font-weight:600;color:var(--ai-text);
+  overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+}
+.xt-cat-pool{display:flex;flex-wrap:wrap;gap:8px;}
+.xt-cat-addchip{
+  display:inline-flex;align-items:center;gap:4px;min-height:36px;padding:0 12px;
+  border:1px dashed var(--ai-border);border-radius:999px;background:var(--ai-card);
+  color:var(--ai-sub);font-size:12.5px;font-weight:600;cursor:pointer;
+}
+.xt-cat-addchip:hover{border-color:var(--ai-orange);color:var(--ai-orange);}
+
+/* —— 模型说明卡片 —— */
+.xt-set-intro-card{background:var(--ai-card);border:1px solid var(--ai-border);border-radius:14px;padding:14px 15px;margin-bottom:10px;}
+.xt-set-intro-h{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.xt-set-intro-name{font-size:15px;font-weight:700;color:var(--ai-text);}
+.xt-set-intro-badges{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+.xt-set-intro-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px;}
+.xt-set-intro-line{display:flex;gap:8px;font-size:12.5px;line-height:1.6;margin-top:8px;}
+.xt-set-intro-k{flex-shrink:0;color:var(--ai-muted);font-weight:600;min-width:52px;}
+.xt-set-intro-v{color:var(--ai-text);word-break:break-word;}
+.xt-set-intro-none{font-size:12.5px;color:var(--ai-muted);margin-top:8px;}
+.xt-set-intro-id{
+  margin-top:10px;padding-top:9px;border-top:1px dashed var(--ai-border);
+  font-family:"SFMono-Regular",Consolas,Menlo,monospace;font-size:11.5px;color:var(--ai-muted);word-break:break-all;
+}
+
+/* —— 添加/编辑模型表单 —— */
+.xt-form-card{background:var(--ai-card);border:1px solid var(--ai-border);border-radius:14px;padding:16px 15px;}
+.xt-form-row{margin-bottom:12px;}
+.xt-form-label{font-size:12.5px;font-weight:700;color:var(--ai-sub);margin-bottom:6px;display:block;}
+.xt-form-ta{
+  width:100%;box-sizing:border-box;min-height:70px;padding:9px 12px;border:1px solid var(--ai-border);
+  border-radius:10px;background:var(--ai-card);color:var(--ai-text);font-size:13.5px;
+  font-family:inherit;resize:vertical;outline:none;
+}
+.xt-form-ta:focus{border-color:var(--ai-blue);}
+.xt-type-checks{display:flex;flex-wrap:wrap;gap:8px;}
+.xt-type-check{
+  display:inline-flex;align-items:center;gap:5px;min-height:36px;padding:0 12px;
+  border:1px solid var(--ai-border);border-radius:999px;font-size:12.5px;font-weight:600;
+  color:var(--ai-sub);cursor:pointer;background:var(--ai-card);
+}
+.xt-type-check.on{border-color:var(--ai-orange);color:var(--ai-orange);background:rgba(255,140,0,.08);}
+.xt-star-pick{display:inline-flex;gap:4px;}
+.xt-star-pick button{
+  min-width:36px;min-height:36px;font-size:18px;border:1px solid var(--ai-border);
+  background:var(--ai-card);color:#c9cdd4;border-radius:10px;cursor:pointer;
+}
+.xt-star-pick button.on{color:var(--ai-orange);}
+
+/* —— 关于 Tab —— */
+.xt-about-grid{display:flex;flex-wrap:wrap;gap:10px;}
+.xt-about-item{
+  flex:1 1 40%;min-width:150px;box-sizing:border-box;background:var(--ai-card);
+  border:1px solid var(--ai-border);border-radius:14px;padding:14px 15px;
+}
+.xt-about-num{font-size:24px;font-weight:800;color:var(--ai-orange);}
+.xt-about-label{font-size:12px;color:var(--ai-sub);margin-top:2px;}
+.xt-about-ver{
+  margin-top:12px;background:var(--ai-card);border:1px solid var(--ai-border);
+  border-radius:14px;padding:14px 15px;font-size:13px;color:var(--ai-sub);line-height:1.7;
+}
+.xt-about-ver b{color:var(--ai-text);}
+
+/* —— R66：健康检测按钮（三态） —— */
+.xt-health-btn{
+  display:inline-flex;align-items:center;gap:4px;min-height:22px;padding:1px 8px;
+  border:1px solid var(--ai-border);border-radius:999px;background:var(--ai-card);
+  color:var(--ai-muted);font-size:11px;line-height:1.4;cursor:pointer;transition:all .15s;
+}
+.xt-health-btn:hover{border-color:var(--ai-orange);}
+.xt-health-btn:disabled{opacity:.55;cursor:default;}
+.xt-h-txt.ok{color:#2fbf71;}
+
+/* —— R66：Key 状态行 & 眼睛按钮 —— */
+.xt-key-wrap{position:relative;}
+.xt-key-wrap .xt-set-input{padding-right:46px;}
+.xt-key-eye{
+  position:absolute;right:5px;top:50%;transform:translateY(-50%);
+  width:34px;height:32px;border:none;background:transparent;color:var(--ai-sub);
+  font-size:16px;line-height:1;cursor:pointer;border-radius:8px;
+}
+.xt-key-eye:hover{color:var(--ai-orange);}
+.xt-key-state{
+  display:flex;align-items:center;flex-wrap:wrap;gap:8px;
+  margin-top:6px;font-size:12px;color:var(--ai-muted);
+}
+.xt-key-clear{
+  min-height:28px;padding:0 10px;border-radius:8px;border:1px solid rgba(224,80,77,.4);
+  background:transparent;color:#e0504d;font-size:12px;font-weight:600;cursor:pointer;
+}
+.xt-key-clear:hover{background:rgba(224,80,77,.08);}
+
+/* —— R66：检测结果轻量弹窗 —— */
+.xt-modal-mask{
+  position:fixed;left:0;top:0;right:0;bottom:0;z-index:900;
+  background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px;
+}
+.xt-modal-box{
+  max-width:340px;width:100%;background:var(--ai-card);border:1px solid var(--ai-border);
+  border-radius:14px;padding:18px;box-shadow:0 8px 30px rgba(0,0,0,.2);
+}
+.xt-modal-title{font-size:15px;font-weight:700;color:var(--ai-text);margin-bottom:10px;word-break:break-word;}
+.xt-modal-title.ok{color:#2fbf71;}
+.xt-modal-title.bad{color:#e0504d;}
+.xt-modal-body{
+  font-size:13.5px;line-height:1.65;color:var(--ai-sub);white-space:pre-wrap;
+  word-break:break-word;margin-bottom:16px;
+}
+.xt-modal-btns{display:flex;justify-content:flex-end;}
+
+/* —— R66：记忆管理区块 —— */
+.xt-about-block{margin-top:14px;background:var(--ai-card);border:1px solid var(--ai-border);border-radius:14px;padding:14px 15px;}
+.xt-about-block-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;}
+.xt-about-block-t{font-size:14px;font-weight:700;color:var(--ai-text);}
+.xt-mem-item{
+  display:flex;align-items:center;gap:8px;padding:7px 0;
+  border-bottom:1px solid rgba(128,128,128,.15);
+}
+.xt-mem-item:last-child{border-bottom:none;}
+.xt-mem-txt{
+  flex:1;min-width:0;font-size:12.5px;line-height:1.5;color:var(--ai-text);
+  overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+}
+
+/* —— R67：服务商分组下拉标注 & 高级设置折叠 —— */
+.xt-form-note{
+  margin-top:6px;font-size:12px;line-height:1.6;color:var(--xt-warn-text);background:var(--xt-warn-bg);
+  border:1px solid var(--xt-warn-border);border-radius:8px;padding:6px 10px;word-break:break-word;
+}
+.xt-adv-toggle{
+  display:inline-flex;align-items:center;gap:4px;min-height:34px;padding:0 12px;margin-top:2px;
+  border:1px dashed var(--ai-border);border-radius:10px;background:var(--ai-card);
+  color:var(--ai-sub);font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s;
+}
+.xt-adv-toggle:hover{border-color:var(--ai-orange);color:var(--ai-orange);}
+
+/* —— R67：内联 SVG 图标（统一替换 emoji，对齐与折叠箭头旋转） —— */
+.xt-set-btn svg{vertical-align:-2px;margin-right:3px;}
+.xt-ico-btn svg{display:block;}
+.xt-drag-handle svg{display:block;}
+.xt-stars span{display:inline-flex;align-items:center;}
+.xt-stars svg{display:block;}
+.xt-star-pick button{display:inline-flex;align-items:center;justify-content:center;}
+.xt-h-txt svg{vertical-align:-2px;margin-right:2px;}
+.xt-key-state-txt svg{vertical-align:-2px;margin-right:2px;}
+.xt-about-block-t svg{vertical-align:-2px;margin-right:4px;}
+.xt-key-eye{display:inline-flex;align-items:center;justify-content:center;}
+.xt-adv-toggle .xt-adv-arrow{transition:transform .15s;}
+.xt-adv-toggle.open .xt-adv-arrow{transform:rotate(180deg);}
+
+/* —— 底部说明条 —— */
+.xt-set-foot{
+  position:fixed;left:0;right:0;bottom:0;z-index:15;padding:9px 14px;text-align:center;
+  font-size:11.5px;color:var(--ai-muted);background:var(--ai-card);border-top:1px solid var(--ai-border);
+}
+.xt-set-error{
+  margin:60px auto;max-width:320px;text-align:center;font-size:14px;line-height:1.6;color:#e0504d;
+  background:rgba(224,80,77,.08);border:1px solid rgba(224,80,77,.25);border-radius:12px;padding:18px;
+}
+
+/* —— 兜底 toast —— */
+#setToast{
+  position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:400;
+  background:rgba(0,0,0,.82);color:#fff;font-size:13.5px;padding:10px 18px;border-radius:10px;
+  display:none;max-width:80vw;text-align:center;
+}
+
+/* —— 移动端适配 —— */
+@media (max-width:640px){
+  .xt-set-content{padding:12px 10px 96px;}
+  .xt-set-row{padding:10px;gap:8px;}
+  .xt-set-row-right{gap:6px;}
+  .xt-set-tabs{padding:8px 10px;}
+}
+</style>
+</head>
+<body class="xt-settings-page">
+
+<header class="xt-set-top">
+  <button class="xt-set-back" id="setBackBtn" onclick="if (history.length > 1) { history.back(); } else { location.href='AI.html'; }">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    返回
+  </button>
+  <div class="xt-set-title">模型设置</div>
+</header>
+
+<nav class="xt-set-tabs" role="tablist">
+  <button class="xt-set-tab active" id="setTabModels" role="tab">模型列表</button>
+  <button class="xt-set-tab" id="setTabFunc" role="tab">功能分类</button>
+  <button class="xt-set-tab" id="setTabIntro" role="tab">模型说明</button>
+  <button class="xt-set-tab" id="setTabAdd" role="tab">添加模型</button>
+  <button class="xt-set-tab" id="setTabAbout" role="tab">关于</button>
+</nav>
+
+<main class="xt-set-content">
+
+  <div id="setConfigError" style="display:none"></div>
+
+  <!-- ===== Tab 1：模型列表 ===== -->
+  <section class="xt-set-panel active" id="setPanelModels">
+    <div class="xt-set-toolbar">
+      <input class="xt-set-input" id="setModelSearch" type="text" placeholder="搜索模型名 / 平台">
+      <div class="xt-set-toolbar-btns">
+        <button class="xt-set-btn" id="setEnableAll">全部启用</button>
+        <button class="xt-set-btn" id="setDisableAll">全部停用</button>
+        <button class="xt-set-btn" id="setBatchHealth"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22v-4"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M6 8h12v2a6 6 0 0 1-12 0Z"/></svg><span id="setBatchHealthTxt">批量检测</span></button>
+        <button class="xt-set-btn danger" id="setRestoreDefault">恢复默认排序/设置</button>
+      </div>
+    </div>
+    <div id="setModelList"></div>
+  </section>
+
+  <!-- ===== Tab 2：功能分类 ===== -->
+  <section class="xt-set-panel" id="setPanelFunc">
+    <div id="setFuncList"></div>
+    <button class="xt-set-btn" id="setAddTypeBtn">＋ 添加分类</button>
+    <div class="xt-set-addrow" id="setAddTypeRow">
+      <input class="xt-set-input" id="setNewTypeName" type="text" placeholder="输入新分类名称，如：作文批改">
+      <button class="xt-set-btn primary" id="setNewTypeOk">确定</button>
+      <button class="xt-set-btn" id="setNewTypeCancel">取消</button>
+    </div>
+  </section>
+
+  <!-- ===== Tab 3：模型说明 ===== -->
+  <section class="xt-set-panel" id="setPanelIntro">
+    <div class="xt-set-toolbar">
+      <input class="xt-set-input" id="setIntroSearch" type="text" placeholder="搜索模型名 / 平台">
+    </div>
+    <div id="setIntroList"></div>
+  </section>
+
+  <!-- ===== Tab 4：添加 / 编辑模型 ===== -->
+  <section class="xt-set-panel" id="setPanelAdd">
+    <div class="xt-form-card">
+      <div class="xt-set-card-t" id="setFmTitle" style="margin-bottom:4px;">添加模型</div>
+      <div class="xt-set-card-desc" id="setFmEditNote" style="display:none;margin-bottom:10px;"></div>
+      <div class="xt-form-row">
+        <label class="xt-form-label" for="setFmProvider">服务商 *</label>
+        <select class="xt-set-select" id="setFmProvider">
+          <option value="">（选择服务商）</option>
+        </select>
+        <div class="xt-form-note" id="setFmProviderNote" style="display:none;"></div>
+      </div>
+      <div class="xt-form-row">
+        <label class="xt-form-label" for="setFmUrl">API 端点 *</label>
+        <input class="xt-set-input" id="setFmUrl" type="text" placeholder="https://api.example.com/v1/chat/completions">
+      </div>
+      <div class="xt-form-row" id="setFmIdRow">
+        <label class="xt-form-label" for="setFmModelId">模型 ID *</label>
+        <select class="xt-set-select" id="setFmModelIdSel" style="display:none;"></select>
+        <input class="xt-set-input" id="setFmModelId" type="text" placeholder="如：gpt-4o-mini / gemini-2.0-flash">
+      </div>
+      <div class="xt-form-row">
+        <label class="xt-form-label" for="setFmName">模型名称 *</label>
+        <input class="xt-set-input" id="setFmName" type="text" placeholder="如：我的私有模型（选择模型后自动填）">
+      </div>
+      <div class="xt-form-row">
+        <label class="xt-form-label" for="setFmKey">API Key</label>
+        <div class="xt-key-wrap">
+          <input class="xt-set-input" id="setFmKey" type="password" placeholder="sk-..." autocomplete="off">
+          <button type="button" class="xt-key-eye" id="setFmKeyEye" title="显示 / 隐藏密钥" aria-label="显示或隐藏密钥"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        </div>
+        <div class="xt-key-state" id="setFmKeyState"></div>
+      </div>
+      <button type="button" class="xt-adv-toggle" id="setFmAdvToggle"><span>高级设置</span><svg class="xt-adv-arrow" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button>
+      <div id="setFmAdv" style="display:none;">
+        <div class="xt-form-row" style="margin-top:12px;">
+          <label class="xt-form-label" for="setFmFormat">API 格式（默认按 OpenAI 兼容提交）</label>
+          <select class="xt-set-select" id="setFmFormat">
+            <option value="openai">OpenAI 兼容</option>
+            <option value="gemini">Gemini</option>
+            <option value="custom">自定义（OpenAI 兼容 + 自定义请求头）</option>
+          </select>
+        </div>
+      </div>
+      <div class="xt-form-row">
+        <label class="xt-form-label" for="setFmHeaders">额外请求头（每行一个，格式 Key: Value）</label>
+        <textarea class="xt-form-ta" id="setFmHeaders" placeholder="HTTP-Referer: http://example.com&#10;X-Title: MyApp"></textarea>
+      </div>
+      <div class="xt-form-row">
+        <span class="xt-form-label">能力标签（多选）</span>
+        <div class="xt-type-checks" id="setFmTypes"></div>
+      </div>
+      <div class="xt-form-row">
+        <span class="xt-form-label">星级评分</span>
+        <div class="xt-star-pick" id="setFmStars"></div>
+      </div>
+      <div class="xt-form-row">
+        <label class="xt-form-label" for="setFmTemp">温度（0-2，留空用默认）</label>
+        <input class="xt-set-input" id="setFmTemp" type="text" inputmode="decimal" placeholder="0.7">
+      </div>
+      <div class="xt-form-row">
+        <label class="xt-form-label" for="setFmMax">最大 Token（留空用默认）</label>
+        <input class="xt-set-input" id="setFmMax" type="text" inputmode="numeric" placeholder="1000">
+      </div>
+      <div class="xt-form-row">
+        <label class="xt-form-label" for="setFmRate">速率</label>
+        <input class="xt-set-input" id="setFmRate" type="text" placeholder="如：1x">
+      </div>
+      <div class="xt-form-row">
+        <label class="xt-form-label" for="setFmFallback">降级模型</label>
+        <select class="xt-set-select" id="setFmFallback"><option value="">（无）</option></select>
+      </div>
+      <div class="xt-form-row">
+        <label class="xt-form-label" for="setFmDesc">模型说明</label>
+        <textarea class="xt-form-ta" id="setFmDesc" placeholder="这个模型的特点、适用场景…"></textarea>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:14px;">
+        <button class="xt-set-btn primary" id="setFmSave" style="flex:1;">保存</button>
+        <button class="xt-set-btn" id="setFmTest" style="flex:1;">检测连接</button>
+        <button class="xt-set-btn" id="setFmCancel" style="flex:1;">取消</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Tab 5：关于 ===== -->
+  <section class="xt-set-panel" id="setPanelAbout">
+    <div id="setAboutList"></div>
+    <div class="xt-set-toolbar" style="margin-top:14px;margin-bottom:0;">
+      <div class="xt-set-toolbar-btns">
+        <button class="xt-set-btn" id="setRedetectAll"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg><span>重新检测全部模型</span></button>
+      </div>
+    </div>
+    <div class="xt-about-block">
+      <div class="xt-about-block-h">
+        <div class="xt-about-block-t"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M4 9h3"/><path d="M4 15h3"/><path d="M17 9h3"/><path d="M17 15h3"/><path d="M9 4v3"/><path d="M15 4v3"/><path d="M9 17v3"/><path d="M15 17v3"/></svg>记忆管理</div>
+        <button class="xt-set-btn sm" id="setMemClear">清空全部</button>
+      </div>
+      <div style="font-size:12px;color:var(--ai-muted);margin-bottom:6px;">共 <span id="setMemCount">0</span> 条 · 单条 ≤200 字，上限 50 条，超出自动丢弃最早的</div>
+      <div id="setMemList"></div>
+    </div>
+  </section>
+
+</main>
+
+<div class="xt-set-foot">设置只保存在本机浏览器，不会上传服务器</div>
+
+<div id="setToast"></div>
+
+<!-- ===== 脚本（引用保持既有版本戳不变，主理人波末统一处理） ===== -->
+<script src="assets/icon-map.js?v=20260916O" defer></script>
+<script src="assets/xt-toast.js?v=20260916O" defer></script>
+<script src="assets/error-boundary.js?v=20260916O" defer></script>
+<script src="assets/app.js?v=20260916O" defer></script>
+<script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260916O" defer></script>
+<script src="assets/ai-config.js?v=20260916R" defer></script>
+<script src="assets/ai-settings.js?v=20260916R" defer></script>
+</body>
+</html>

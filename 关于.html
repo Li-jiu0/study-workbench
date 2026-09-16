@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#5B8DEF">
+<title>关于 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260916O">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<link rel="stylesheet" href="assets/polish.css?v=20260916O">
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
+<style>
+/* ===== 关于页局部样式（不外溢到其它页面，全部以 .ab- 前缀限定） ===== */
+.ab-wrap{max-width:720px;margin:0 auto;padding-bottom:24px;}
+.ab-hero{display:-webkit-box;display:flex;-webkit-box-align:center;align-items:center;gap:14px;}
+.ab-hero-icon{width:52px;height:52px;border-radius:14px;background:var(--primary-soft,#EDF3FF);color:var(--primary,#2F6BFF);
+  display:-webkit-box;display:flex;-webkit-box-align:center;align-items:center;-webkit-box-pack:center;justify-content:center;flex:0 0 52px;}
+.ab-hero-icon svg{display:block;}
+.ab-hero-name{font-size:20px;font-weight:800;color:var(--text,#1a1b1c);line-height:1.2;}
+.ab-hero-sub{font-size:13px;color:var(--text-secondary,#6b7280);margin-top:4px;}
+.ab-ver{display:inline-block;margin-top:8px;font-size:12px;font-weight:700;color:var(--primary,#2F6BFF);
+  background:var(--primary-soft,#EDF3FF);border-radius:10px;padding:2px 10px;}
+.ab-desc{font-size:var(--xt-font-base,14px);color:var(--text-secondary,#4b5563);line-height:1.8;margin-top:14px;}
+.ab-card{background:var(--card,#fff);border:1px solid var(--border,#e5e7eb);border-radius:14px;padding:16px;margin-top:14px;}
+.ab-card-title{display:-webkit-box;display:flex;-webkit-box-align:center;align-items:center;gap:8px;
+  font-size:15px;font-weight:800;color:var(--text,#1a1b1c);margin-bottom:10px;}
+.ab-card-title .ab-ti{width:24px;height:24px;border-radius:8px;background:var(--bg-sub,#f3f4f6);
+  display:-webkit-box;display:flex;-webkit-box-align:center;align-items:center;-webkit-box-pack:center;justify-content:center;flex:0 0 24px;}
+.ab-card-title .ab-ti svg{display:block;}
+.ab-text{font-size:13px;color:var(--text-secondary,#4b5563);line-height:1.8;}
+.ab-grid{display:-webkit-box;display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;}
+.ab-chip{font-size:12px;color:var(--text-secondary,#4b5563);background:var(--bg-sub,#f3f4f6);
+  border-radius:12px;padding:6px 10px;line-height:1.4;}
+.ab-row{display:-webkit-box;display:flex;-webkit-box-align:center;align-items:center;gap:10px;
+  padding:12px 2px;border-top:1px solid var(--border,#e5e7eb);cursor:pointer;}
+.ab-row:first-child{border-top:none;}
+.ab-row-ic{width:26px;height:26px;flex:0 0 26px;color:var(--text-secondary,#6b7280);
+  display:-webkit-box;display:flex;-webkit-box-align:center;align-items:center;-webkit-box-pack:center;justify-content:center;}
+.ab-row-ic svg{display:block;}
+.ab-row-tx{-webkit-box-flex:1;flex:1;font-size:var(--xt-font-base,14px);color:var(--text,#1a1b1c);}
+.ab-row-st{font-size:12px;color:var(--text-secondary,#9ca3af);}
+.ab-row-ar{color:var(--text-secondary,#9ca3af);font-size:16px;}
+.ab-log{font-size:12px;color:var(--text-secondary,#6b7280);line-height:1.9;
+  border-top:1px dashed var(--border,#e4e3dd);padding-top:10px;margin-top:12px;}
+.ab-note{font-size:12px;color:var(--text-secondary,#9ca3af);line-height:1.8;margin-top:8px;}
+.ab-sign{margin-top:14px;text-align:right;font-style:italic;color:var(--text-secondary,#6b7280);font-size:13px;}
+@media (max-width:640px){
+  .ab-hero-icon{width:44px;height:44px;flex:0 0 44px;}
+  .ab-hero-name{font-size:18px;}
+}
+/* 【修复】#countdownModal 的隐藏类 .xt-inline-form 只在「学习工作台.html」的
+   局部 <style> 里定义（.xt-inline-form{display:none}），任何共享 CSS 都没有它。
+   关于页复用了同一个全站共用 DOM（app.js 顶层无守卫地监听它，必须保留节点），
+   但在本页该类无定义 → 表单默认可见，像一张多余的「添加倒计时」卡片挂在页面上。
+   这里补一条本页局部规则把它默认隐藏，行为与首页一致（.active 展开），
+   仅隐藏、不删节点，app.js 的 openCountdownModal/closeCountdownModal 逻辑不受影响。
+   注：display:none / .active{display:block} 两条显示规则现已由 assets/common.css
+   统一提供（全站唯一权威定义）；本页保留属历史冗余，唯一不可删的是页面专属间距
+   margin-top:12px（删了关于页表单与卡片的间距会变）。 */
+.xt-inline-form{display:none;margin-top:12px;}
+.xt-inline-form.active{display:block;}
+.xt-inline-form-inner{padding:16px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);}
+.xt-inline-form .modal-title{font-size:var(--xt-font-md,15px);margin-bottom:14px;}
+.xt-inline-form .form-group{margin-bottom:12px;}
+.xt-inline-form .form-input{background:var(--card);}
+.xt-inline-form .modal-actions{margin-top:16px;}
+</style>
+</head>
+<body class="theme-home">
+
+<div class="app">
+<nav class="sidebar">
+    <div class="logo">
+      <div class="logo-icon" data-icon="book-open"></div>
+      <div>
+        <div class="logo-text">星途</div>
+        <div class="logo-sub">致追梦的人->修身</div>
+      </div>
+    </div>
+    <div class="nav-list">
+      <div class="nav-item" onclick="location.href='学习工作台.html'">
+        <span class="nav-icon" data-icon="home"></span><span>首页</span>
+      </div>
+      <div class="nav-item" onclick="location.href='AI.html'">
+        <span class="nav-icon" data-icon="sparkles"></span><span>AI</span>
+      </div>
+      <div class="nav-section">学习模块</div>
+      <div class="nav-item" onclick="location.href='英语.html'">
+        <span class="nav-icon" data-icon="book-open"></span><span>英语</span>
+      </div>
+      <div class="nav-item" onclick="location.href='行测.html'">
+        <span class="nav-icon" data-icon="pencil"></span><span>行测</span>
+      </div>
+      <div class="nav-item" onclick="location.href='表达.html'">
+        <span class="nav-icon" data-icon="message-square"></span><span>表达</span>
+      </div>
+      <div class="nav-item" onclick="location.href='面测.html'">
+        <span class="nav-icon" data-icon="handshake"></span><span>面测</span>
+      </div>
+      <div class="nav-item" onclick="location.href='演示.html'">
+        <span class="nav-icon" data-icon="palette"></span><span>演示</span>
+      </div>
+      <div class="nav-section">创作</div>
+      <div class="nav-item" onclick="location.href='社区.html'">
+        <span class="nav-icon" data-icon="globe"></span><span>社区</span>
+      </div>
+      <div class="nav-section">互动</div>
+      <div class="nav-item" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+        <span class="nav-icon" data-icon="users"></span><span>好友</span>
+      </div>
+      <div class="nav-section">中心</div>
+      <div class="nav-item" onclick="location.href='错题本.html'">
+        <span class="nav-icon" data-icon="book"></span><span>错题本</span>
+      </div>
+      <div class="nav-item" onclick="location.href='个人中心.html'">
+        <span class="nav-icon" data-icon="user"></span><span>个人中心</span>
+      </div>
+      <div class="nav-section">系统</div>
+      <div class="nav-item" onclick="location.href='设置.html'">
+        <span class="nav-icon" data-icon="settings"></span><span>设置</span>
+      </div>
+      <div class="nav-item active" onclick="location.href='更多.html'">
+        <span class="nav-icon" data-icon="menu"></span><span>更多</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心">
+        <div class="user-avatar">学</div>
+        <div class="user-info">
+          <div class="user-name">同学</div>
+          <div class="user-streak"><span data-icon="fire" data-icon-size="14" style="vertical-align:-2px"></span> 连续打卡 0 天</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-title" id="topbarTitle">关于</div>
+      <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
+      <div class="gs-wrap" id="gsWrap">
+        <input type="text" class="gs-input" id="gsInput" placeholder="搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <div class="gs-dropdown" id="gsDropdown"></div>
+      </div>
+      <div class="topbar-stats">
+        <div class="stat-item"><span class="stat-icon" data-icon="fire"></span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="clock"></span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+      </div>
+      <div class="topbar-date" id="topbarDate"></div>
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="16"></span></div>
+    </header>
+    <div class="content">
+      <div class="page active" id="page-about">
+        <!-- 顶部返回（独立页，history.back 回上一页；无历史时回更多页） -->
+        <div class="morepage-head">
+          <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='更多.html'}" title="返回" aria-label="返回">←</button>
+          <div class="morepage-title"><span class="nav-icon" data-icon="info" data-icon-size="18"></span> 关于</div>
+        </div>
+
+        <div class="ab-wrap">
+          <!-- ===== 平台名称与简介 ===== -->
+          <div class="ab-card">
+            <div class="ab-hero">
+              <div class="ab-hero-icon"><span class="nav-icon" data-icon="rocket" data-icon-size="26"></span></div>
+              <div>
+                <div class="ab-hero-name">星途</div>
+                <div class="ab-hero-sub">给上班族的备考搭子 · 学得下去、问得明白</div>
+                <span class="ab-ver" id="aboutVersion">v2.2</span>
+              </div>
+            </div>
+            <div class="ab-desc">白天上班、晚上备考，最怕的是工具散、计划断、没人答疑。星途把这一路要用的东西收在一处：能刷题背词、能写申论做 PPT，还有一个随叫随到的 AI —— 不会就问，问完就能接着学。</div>
+          </div>
+
+          <!-- ===== 核心功能 ===== -->
+          <div class="ab-card">
+            <div class="ab-card-title"><span class="ab-ti"><span class="nav-icon" data-icon="book-open" data-icon-size="16"></span></span>学习模块</div>
+            <div class="ab-grid">
+              <span class="ab-chip">英语（词汇 + 听说）</span>
+              <span class="ab-chip">行测刷题</span>
+              <span class="ab-chip">申论刷题</span>
+              <span class="ab-chip">错题本</span>
+              <span class="ab-chip">央国企定向库</span>
+              <span class="ab-chip">面试题库</span>
+              <span class="ab-chip">AI 模拟面试</span>
+              <span class="ab-chip">时政热点</span>
+              <span class="ab-chip">表达</span>
+              <span class="ab-chip">商务礼仪</span>
+              <span class="ab-chip">演示</span>
+              <span class="ab-chip">万能金句 / 场景话术</span>
+              <span class="ab-chip">动态社区</span>
+              <span class="ab-chip">好友私信</span>
+            </div>
+          </div>
+
+          <div class="ab-card">
+            <div class="ab-card-title"><span class="ab-ti"><span class="nav-icon" data-icon="sparkles" data-icon-size="16"></span></span>AI 怎么用</div>
+            <div class="ab-text">
+              <b>AI 问答</b>：底部导航点「AI」进入。默认「自动（推荐）」会按题型挑模型——数学推理走 DeepSeek-R1、英语翻译走混元、发图提问走视觉模型；也能手动指定模型（首页小助手与 AI 页共用同一份模型选择）。开 <b>MAX 模式</b>输出更长（适合申论批改、长文讲解），开 <b>深度思考</b>会先推导再给结论。
+            </div>
+            <div class="ab-text" style="margin-top:8px">
+              <b>AI 伙伴</b>：两位常驻——<b>小助手</b>覆盖行测、申论、四级、面试、PPT、备考规划，给的是结论 + 可执行动作；<b>暖心学伴</b>学不动的时候先稳住你，再拆一个「现在就能开始」的小任务。首页右下角悬浮球打开即可聊，也可以在「AI」页展开完整对话。
+            </div>
+          </div>
+
+          <div class="ab-card">
+            <div class="ab-card-title"><span class="ab-ti"><span class="nav-icon" data-icon="wrench" data-icon-size="16"></span></span>顺手的工具</div>
+            <div class="ab-text">导入自己的题库 · 专注计时 · 外观主题 · 发贴与回收站 · Markdown 导出 · 数据备份</div>
+          </div>
+
+          <!-- ===== 关于数据 ===== -->
+          <div class="ab-card">
+            <div class="ab-card-title"><span class="ab-ti"><span class="nav-icon" data-icon="locked" data-icon-size="16"></span></span>关于数据</div>
+            <div class="ab-text">不登录也能用，数据存在你本机浏览器里；登录后发贴、私信、AI 记录会跟着账号走，换设备也能接着学。AI 服务商密钥（如果配置了）同样只保存在本机 localStorage，不会上传到任何第三方。</div>
+            <div class="ab-note">清理浏览器数据会一并清掉本地学习记录，重要内容建议先在「设置 → 导出数据备份」导出一份。</div>
+          </div>
+
+          <!-- ===== 反馈入口 ===== -->
+          <div class="ab-card" style="padding:6px 16px">
+            <div class="ab-row" onclick="location.href='社区.html'">
+              <span class="ab-row-ic"><span class="nav-icon" data-icon="globe" data-icon-size="18"></span></span>
+              <span class="ab-row-tx">意见反馈 / 提需求</span>
+              <span class="ab-row-st">去社区发贴</span>
+              <span class="ab-row-ar">›</span>
+            </div>
+            <div class="ab-row" onclick="location.href='设置.html'">
+              <span class="ab-row-ic"><span class="nav-icon" data-icon="settings" data-icon-size="18"></span></span>
+              <span class="ab-row-tx">设置与数据管理</span>
+              <span class="ab-row-st">备份 / 导入</span>
+              <span class="ab-row-ar">›</span>
+            </div>
+            <div class="ab-row" onclick="location.href='更多.html'">
+              <span class="ab-row-ic"><span class="nav-icon" data-icon="menu" data-icon-size="18"></span></span>
+              <span class="ab-row-tx">返回更多页</span>
+              <span class="ab-row-st">全部入口</span>
+              <span class="ab-row-ar">›</span>
+            </div>
+          </div>
+
+          <!-- ===== 免责声明 ===== -->
+          <div class="ab-card">
+            <div class="ab-card-title"><span class="ab-ti"><span class="nav-icon" data-icon="alert-triangle" data-icon-size="16"></span></span>说明与免责</div>
+            <div class="ab-text">1. 本站题库、范文、知识点等内容由公开资料整理与用户共建，仅供学习参考，不保证与最新考纲或官方标准答案完全一致，请以官方发布为准。</div>
+            <div class="ab-text" style="margin-top:6px">2. AI 回答由大模型生成，可能存在不准确或过时之处；涉及报考条件、政策条款、成绩与录取等关键事项，请务必以官方文件为准，AI 结果不作为决策依据。</div>
+            <div class="ab-text" style="margin-top:6px">3. 本站不收集与学习无关的个人信息，也不出售任何数据；账号相关数据的使用范围仅限为你提供同步与备份服务。</div>
+            <div class="ab-text" style="margin-top:6px">4. 请勿在本站发布违反法律法规或侵犯他人权益的内容，违规内容会被移除。</div>
+          </div>
+
+          <!-- ===== 更新日志 ===== -->
+          <div class="ab-card">
+            <div class="ab-card-title"><span class="ab-ti"><span class="nav-icon" data-icon="clock" data-icon-size="16"></span></span>更新日志</div>
+            <div class="ab-text">v2.2 更新：AI 问答页上线（模型列表面板 · 倍率 · MAX 模式 · 深度思考 · 上下文长度）· AI 伙伴改版为小助手与暖心学伴，接入全站统一 AI 底座 ·「关于」改为独立页面 · 全站导航接入 AI · 多处界面细节打磨</div>
+            <div class="ab-log">v2.1：错题本按模块与错因筛选 · 学习数据轮播 · 倒计时置顶<br>v2.0：学习工作台改版 · 底部导航统一为 首页 / 互动 / 我的 / AI / 更多</div>
+          </div>
+
+          <div class="ab-sign">—— 小叶子</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部导航（手机端）：首页 → 互动 → 我的 → AI → 更多 -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-list">
+      <div class="bottom-nav-item" onclick="location.href='学习工作台.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
+      </div>
+      <div class="bottom-nav-item" onclick="gotoChat()">
+        <div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div>
+      </div>
+      <div class="bottom-nav-item" onclick="openBlogProfile()">
+        <div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div>
+      </div>
+      <div class="bottom-nav-item" onclick="location.href='AI.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div>
+      </div>
+      <div class="bottom-nav-item active" onclick="location.href='更多.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 更多面板遮罩（全站共用 DOM） -->
+  <div class="more-overlay" onclick="toggleMorePanel()"></div>
+
+  <!-- 更多面板（全站共用 DOM） -->
+  <div class="bottom-more-panel" id="morePanel">
+    <div class="bottom-more-title">更多功能</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="openBlogStats()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
+      </div>
+      <div class="bottom-more-item" onclick="gotoBlogMine()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div><div class="bm-label">互动广场</div>
+      </div>
+      <div class="bottom-more-item" onclick="location.href='错题本.html';toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div><div class="bm-label">错题本</div>
+      </div>
+      <div class="bottom-more-item" onclick="location.href='设置.html';toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div><div class="bm-label">设置</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 工具面板遮罩 + 工具面板（全站共用 DOM，app.js 的 toggleToolsPanel 需要它们存在） -->
+  <div class="more-overlay" onclick="toggleToolsPanel()" id="toolsOverlay"></div>
+  <div class="bottom-more-panel" id="toolsPanel">
+    <div class="bottom-more-title">更多工具</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="location.href='AI模拟面试.html';toggleToolsPanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="mic" data-icon-size="20"></span></div><div class="bm-label">AI面试</div>
+      </div>
+      <div class="bottom-more-item" onclick="location.href='PPT版式库.html';toggleToolsPanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">PPT版式</div>
+      </div>
+      <div class="bottom-more-item" onclick="location.href='四级经验分享.html';toggleToolsPanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div><div class="bm-label">四级经验</div>
+      </div>
+      <div class="bottom-more-item" onclick="if(window.openQuest){openQuest()}else{location.href='工具.html'};toggleToolsPanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="zap" data-icon-size="20"></span></div><div class="bm-label">穿越英语</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加倒计时表单（全站共用 DOM，app.js 顶层无守卫监听它，必须存在） -->
+  <div id="countdownModal" class="xt-inline-form">
+    <div class="xt-inline-form-inner">
+      <div class="modal-title" id="countdownModalTitle">添加倒计时</div>
+      <div class="form-group">
+        <div class="form-label">名称</div>
+        <input type="text" class="form-input" id="cdName" placeholder="如：四级考试、秋招截止">
+      </div>
+      <div class="form-group">
+        <div class="form-label">日期</div>
+        <input type="date" class="form-input" id="cdDate">
+      </div>
+      <div class="form-group">
+        <div class="form-label">颜色</div>
+        <div class="color-picker" id="cdColorPicker">
+          <div class="color-dot active" style="background:#5B8DEF" data-color="#5B8DEF"></div>
+          <div class="color-dot" style="background:#E05040" data-color="#E05040"></div>
+          <div class="color-dot" style="background:#9B6BD9" data-color="#9B6BD9"></div>
+          <div class="color-dot" style="background:#D4A056" data-color="#D4A056"></div>
+          <div class="color-dot" style="background:#36CFC9" data-color="#36CFC9"></div>
+          <div class="color-dot" style="background:#FF9F68" data-color="#FF9F68"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--xt-font-base);color:var(--text-secondary)">
+          <input type="checkbox" id="cdPinned"> 置顶显示
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeCountdownModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveCountdown()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast提示 -->
+  <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center"></div>
+
+  <!-- ==================== AI学习助手（悬浮聊天窗口） ====================
+       首页小助手与 AI 页共用同一套 AI 底座（assets/ai-service.js 的 window.callAI），
+       同一份模型选择（ai_selected_model）与同一份对话历史（ai_chat_history）。 -->
+  <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">
+    <span class="nav-icon" data-icon="sparkles" data-icon-size="22"></span><span class="ai-mode-badge" id="aiModeBadge">AI</span>
+  </div>
+  <div class="ai-panel" id="aiPanel">
+    <div class="ai-panel-header">
+      <div class="ai-avatar"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div>
+      <div style="flex:1">
+        <div class="ai-title">AI伙伴 · 小助手</div>
+        <div class="ai-subtitle" id="aiSubtitle">已接入 AI · 模型：自动（推荐）</div>
+      </div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录" aria-label="清空聊天记录" role="button" tabindex="0"><span class="nav-icon" data-icon="delete" data-icon-size="16"></span></div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板" aria-label="收起AI面板" role="button" tabindex="0"><span class="nav-icon" data-icon="close" data-icon-size="16"></span></div>
+    </div>
+    <div class="ai-messages" id="aiMessages"></div>
+    <div class="ai-input-row">
+      <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()"><span data-icon="arrow-right" data-icon-size="18"></span></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="assets/icon-map.js?v=20260916O" defer></script>
+<script src="assets/xt-toast.js?v=20260916O" defer></script>
+<script src="assets/error-boundary.js?v=20260916O" defer></script>
+<script src="assets/app.js?v=20260916O" defer></script>
+<script src="assets/quest.js?v=20260916O" defer></script>
+<script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260916O" defer></script>
+<script src="assets/study-stats.js?v=20260916O" defer></script>
+<script src="assets/ai-config.js?v=20260916R"></script>
+<script src="assets/ai-presets.js?v=20260916O"></script>
+<script src="assets/ai-service.js?v=20260916R"></script>
+<script>
+/* 关于页：把版本号写回页面（与 app.js 的 showAbout 口径保持一致） */
+(function () {
+  'use strict';
+  var el = document.getElementById('aboutVersion');
+  if (el) el.textContent = 'v2.2';
+})();
+</script>
+</body>
+</html>

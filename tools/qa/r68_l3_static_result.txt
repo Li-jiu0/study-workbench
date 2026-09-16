@@ -1,0 +1,41 @@
+[PASS] BOM 前3字节 EF BB BF
+[PASS] loneLF=0
+[PASS] loneCR=0
+[PASS] CRLF 行数级别一致(差值=删除块行数)  old=419 new=354
+[PASS] 禁用串 0 命中: impLibs  hits=0
+[PASS] 禁用串 0 命中: renderImportLibs  hits=0
+[PASS] 禁用串 0 命中: removeImportLib  hits=0
+[PASS] 禁用串 0 命中: __impAfterImport  hits=0
+[PASS] 禁用串 0 命中: impItemText  hits=0
+[PASS] 禁用串 0 命中: escImp  hits=0
+[PASS] 禁用串 0 命中: imp-libs-t  hits=0
+[PASS] 禁用串 0 命中: 我的导入题库  hits=0
+[PASS] 禁用串 0 命中: 导入向导尚未就绪  hits=0
+[PASS] 禁用串 0 命中: imp-lib  hits=0
+[PASS] 禁用串 0 命中: imp-empty  hits=0
+[PASS] 禁用串 0 命中: __impBanks  hits=0
+[PASS] 禁用串 0 命中: __impDelBank  hits=0
+[PASS] 保留项仍在: id="importerView"
+[PASS] 保留项仍在: openImporterView
+[PASS] 保留项仍在: closeImporterView
+[PASS] 保留项仍在: window.openImporterView = openImporterView;
+[PASS] 保留项仍在: window.closeImporterView = closeImporterView;
+[PASS] 保留项仍在: onclick="openImporterView()"
+[PASS] 保留项仍在: >导入题库</div>
+[PASS] 保留项仍在: id="aiFab"
+[PASS] 保留项仍在: id="countdownModal"
+[PASS] 保留项仍在: id="morePanel"
+[PASS] 保留项仍在: id="toolsPanel"
+[PASS] 保留项仍在: class="bottom-nav"
+[PASS] 保留项仍在: importer-view{
+[PASS] 保留项仍在: importer-view-body
+[PASS] 保留项仍在: id="impBody"
+[PASS] 保留项仍在: location.href = '设置.html'
+[PASS] 底部导航 5 项  new=5 old=5
+[PASS] 入口卡数量与备份一致  new=8 old=8
+[PASS] div 开标签自身配对  open=161 close=161
+[PASS] div 开/闭删除量相等（删除块为平衡片段，含 JS 模板里的 div 字符串）  delta open=10 close=10
+[PASS] 版本戳 ?v=20260916O 数量不变
+[PASS] 版本戳 ?v=20260916Q 数量不变
+
+===== R68 线3 静态自测汇总: FAIL=0 =====
