@@ -552,17 +552,21 @@ body.dark .ai-warn-bar{background:rgba(250,173,20,.1);border-color:rgba(250,173,
 .ai-intro-empty{text-align:center;color:var(--ai-muted);font-size:13px;padding:30px 0;}
 
 /* R66/N4-N5 + R67/A/B：窄屏输入区与模型面板防溢出（≤420px 收紧按钮宽度、圆环间距与百分比字号、右侧组间距；折行时发送按钮仍右对齐可见） */
-/* R69 v2 移动端对话框防挤压（断点 560px 覆盖全部手机宽度）：右侧控件组独占一行，不再与左侧 chip 互相压缩；模型钥在剩余空间内弹性增长（上限 180px）；圆环恢复舒适间距 */
+/* R69 v3 模型钮尺寸规则（根因修正）：内容自适应 + 上限 160px + 省略号，撤掉 v2 的 flex:1 拉伸（短名被撑成宽条）；仅保留「控件组独占一行」的防挤压结构 */
 @media (max-width:560px){
   .ai-input-foot{row-gap:10px;}
   .ai-foot-right{flex:1 1 100%;justify-content:flex-end;gap:8px;min-width:0;}
   .ai-foot-left{flex:1 1 auto;min-width:0;}
-  .ai-model-btn{flex:1 1 auto;min-width:0;max-width:180px;}
-  .ai-model-btn .ai-model-label{flex:0 1 auto;min-width:0;}
+  .ai-model-btn{flex:0 1 auto;min-width:72px;}
+  .ai-model-btn .ai-model-label{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .ai-ctx-usage{gap:4px;margin-right:0;}
   .ai-ctx-pct{font-size:10px;}
   .ai-bubble{overflow-wrap:anywhere;}
   .ai-bubble img.ai-msg-img{max-width:100%;height:auto;}
+}
+/* 极窄屏：模型钮再收一档，防与圆环/发送挤压 */
+@media (max-width:380px){
+  .ai-model-btn{max-width:38vw;min-width:64px;}
 }
 </style>
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
