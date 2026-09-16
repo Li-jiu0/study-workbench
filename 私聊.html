@@ -1,14 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>私信 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260915c">
-<link rel="stylesheet" href="assets/page-head.css?v=20260915c">
-<link rel="stylesheet" href="assets/states.css?v=20260915c">
-<link rel="stylesheet" href="assets/polish.css?v=20260915c">
+<link rel="stylesheet" href="assets/common.css?v=20260916O">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<link rel="stylesheet" href="assets/polish.css?v=20260916O">
 <style>
 
   /* ===== 私信页（嵌在应用外壳内）===== */
@@ -18,11 +18,14 @@
   .im-search{display:flex;gap:6px;margin-bottom:8px}
   .im-search input{flex:1;min-width:0}
   .im-tabs{display:flex;gap:6px}
-  .im-tab{flex:1;text-align:center;padding:6px 0;font-size:13px;border:1px solid var(--border);background:var(--bg);color:var(--text-secondary);border-radius:8px;cursor:pointer}
-  .im-tab.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+  /* 【本轮修复·收敛定义】.im-tab 原本散落 4 处（本行 + 第25行 + 第355行 + 第371行），层叠混乱，
+     最终生效的是第371行 R33 规则：flex:1 1 0 + white-space:nowrap + overflow:hidden + text-overflow:ellipsis。
+     5 个 tab 五等分后每格仅几十 px（320px 屏约 60px），"💬 会话" 这类 emoji+空格+双字中文被整体截成空白。
+     现收敛为本文件末尾「IM-TAB 唯一权威定义区」的一份基础规则 + 一份窄屏媒体查询，本处只留结构标记注释。 */
+  /* .im-tab 见文件末尾唯一权威定义（本轮收敛） */
   /* W1-T3（2026-09-15 批次九）：联系管理员入口 #acEntry 收窄为仅在「好友」tab 可见，
      未读角标同步镜像到「好友」tab 标签上的 #acTabBadge（避免入口收起后未读提醒一起消失）。 */
-  .im-tab{position:relative}
+  /* .im-tab 定义已收敛到文件末尾唯一权威定义区，position:relative（未读角标锚点）也在那里统一声明 */
   .im-tab-badge{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;line-height:16px;padding:0 4px;background:#ff5d5d;color:#fff;border-radius:8px;font-size:10px;font-weight:700;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.25);box-sizing:border-box;z-index:2;pointer-events:none}
   .im-list{flex:1;overflow-y:auto}
   .im-sess{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer}
@@ -79,12 +82,14 @@
   .im-gs-view .im-gs-body{background:transparent}
 
 </style>
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
 </head>
 <body class="theme-home">
 
 <div class="app">
-<nav class="sidebar"> <div class="logo"> <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div> <div> <div class="logo-text">星途</div> <div class="logo-sub">致追梦的人->修身</div> </div> </div> <div class="nav-list"> <div class="nav-item" data-page="home"> <span class="nav-icon" data-icon="home"></span><span>首页</span> </div> <div class="nav-section">学习模块</div> <div class="nav-item" data-page="cet"> <span class="nav-icon" data-icon="book-open"></span><span>四级备考</span> </div> <div class="nav-item" data-page="exam"> <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span> </div>
-<div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span> </div> <div class="nav-item" data-page="ppt"> <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon" data-icon="globe"></span><span>广场</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="book"></span><span>错题本</span> </div> <div class="nav-item" data-page="profile"> <span class="nav-icon" data-icon="user"></span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon" data-icon="settings"></span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak">🔥 连续打卡 0 天</div> </div> </div> </div> </nav>
+<nav class="sidebar"> <div class="logo"> <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div> <div> <div class="logo-text">星途</div> <div class="logo-sub">致追梦的人->修身</div> </div> </div> <div class="nav-list"> <div class="nav-item" data-page="home"> <span class="nav-icon" data-icon="home"></span><span>首页</span> </div> <div class="nav-section">学习模块</div> <div class="nav-item" data-page="cet"> <span class="nav-icon" data-icon="book-open"></span><span>英语</span> </div> <div class="nav-item" data-page="exam"> <span class="nav-icon" data-icon="pencil"></span><span>行测</span> </div>
+<div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>面测</span> </div> <div class="nav-item" data-page="ppt"> <span class="nav-icon" data-icon="palette"></span><span>演示</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon" data-icon="globe"></span><span>社区</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="book"></span><span>错题本</span> </div> <div class="nav-item" data-page="profile"> <span class="nav-icon" data-icon="user"></span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon" data-icon="settings"></span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak">🔥 连续打卡 0 天</div> </div> </div> </div> </nav>
 
   <div class="main">
 <header class="topbar">
@@ -106,17 +111,20 @@
 <div class="page active" id="page-im" style="display:flex;overflow:hidden">
       <aside class="im-side">
         <div class="im-head">
-          <div class="im-search">
-            <input id="imSearch" class="form-input" placeholder="搜用户名/昵称找人…">
-            <button class="btn btn-outline" onclick="imDoSearch()" style="white-space:nowrap"><span class="nav-icon" data-icon="search" data-icon-size="16"></span></button>
+          <div class="im-head-row">
+            <div class="im-title">私聊</div>
+            <div class="im-search">
+              <input id="imSearch" class="form-input" placeholder="搜用户名/昵称找人…">
+              <button class="btn btn-outline" onclick="imDoSearch()" style="white-space:nowrap"><span class="nav-icon" data-icon="search" data-icon-size="16"></span></button>
+            </div>
           </div>
           <div class="im-tabs">
             <!-- C1 20260913k：五 tab 顺序不变（会话→好友→群聊→申请→加好友）；「群聊」「加好友」由弹窗改为 tab 页面视图（onclick 改 imSwitchTab，原弹窗函数保留供面板复用） -->
-            <button class="im-tab active" data-tab="chats" onclick="imSwitchTab('chats')">💬 会话</button>
-            <button class="im-tab" data-tab="friends" onclick="imSwitchTab('friends')">👥 好友</button>
-            <button class="im-tab" data-tab="groups" onclick="imSwitchTab('groups')" title="我的群聊 · 发起新群聊">👥 群聊</button>
+            <button class="im-tab active" data-tab="chats" onclick="imSwitchTab('chats')">会话</button>
+            <button class="im-tab" data-tab="friends" onclick="imSwitchTab('friends')">好友</button>
+            <button class="im-tab" data-tab="groups" onclick="imSwitchTab('groups')" title="我的群聊 · 发起新群聊">群聊</button>
             <!-- 【后续扩展点】发起群聊（T4 增量）：多选好友建群，本地模式提示「群聊需要联网」 -->
-            <button class="im-tab" data-tab="requests" onclick="imSwitchTab('requests')">📩 申请</button>
+            <button class="im-tab" data-tab="requests" onclick="imSwitchTab('requests')">申请</button>
             <button class="im-tab im-tab-add" data-tab="addfriend" onclick="imSwitchTab('addfriend')" title="搜索用户名/昵称添加好友">加好友</button>
           </div>
         </div>
@@ -209,10 +217,10 @@
       <div class="bottom-nav-item" data-page="home">
         <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
       </div>
-      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+      <div class="bottom-nav-item active" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
       <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
-      <div class="bottom-nav-item" onclick="location.href='工具.html'"><div class="bn-icon"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span></div><div class="bn-label">工具</div></div>
-      <div class="bottom-nav-item" onclick="location.href='更多.html'">
+            <div class="bottom-nav-item" onclick="location.href='AI.html'"><div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div></div>
+            <div class="bottom-nav-item" onclick="location.href='更多.html'">
         <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
       </div>
     </div>
@@ -336,22 +344,37 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260915c" defer></script>
-<script src="assets/xt-toast.js?v=20260915c" defer></script>
-<script src="assets/error-boundary.js?v=20260915c" defer></script>
-<script src="assets/app.js?v=20260915f" defer></script>
-<script src="assets/config.js?v=20260915c" defer></script>
-<script src="assets/emoji/manifest.js?v=20260915c" defer></script>
-<script src="assets/api.js?v=20260915f" defer></script>
-<script src="assets/chat-local.js?v=20260915g" defer></script>
-<script src="assets/admin-contact.js?v=20260915c" defer></script>
+<script src="assets/icon-map.js?v=20260916O" defer></script>
+<script src="assets/xt-toast.js?v=20260916O" defer></script>
+<script src="assets/error-boundary.js?v=20260916O" defer></script>
+<script src="assets/app.js?v=20260916O" defer></script>
+<script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/emoji/manifest.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260916O" defer></script>
+<script src="assets/chat-local.js?v=20260916O" defer></script>
+<script src="assets/admin-contact.js?v=20260916O" defer></script>
 <style>
   /* R33（20260913r）：tab 视觉统一——去掉 .im-tab-add 的特殊填充/加粗与专属 hover，加好友与其余 4 个 tab 同享 .im-tab/.im-tab.active；“im-tab-add” 类保留在 DOM 仅作语义标记，无样式副作用 */
   .im-tab:not(.active):hover{border-color:var(--primary);color:var(--primary)}
   /* tab 按钮 + 头像的未读角标 */
-  .im-tab{position:relative}
+  /* .im-tab{position:relative} 已并入文件末尾唯一权威定义区（未读角标锚点，必须保留，见 .tab-badge/.im-tab-badge） */
   .tab-badge{position:absolute;top:-7px;right:-4px;min-width:17px;height:17px;line-height:17px;padding:0 4px;background:#ff5d5d;color:#fff;border-radius:9px;font-size:10px;font-weight:700;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.25);z-index:2}
   .im-av-badge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;line-height:16px;padding:0 4px;background:#ff5d5d;color:#fff;border-radius:9px;font-size:11px;font-weight:700;text-align:center;border:2px solid #fff;box-sizing:border-box;z-index:2}
+  /* 2026-09-16 头部重排（本页私有，不改 common.css）：
+     ① 侧栏顶部：标题左 + 搜索框 flex:1 合成一条工具行，控件统一 36px 高；
+     ② tab 五等分、等高 36px、间距 8，激活态沿用全站主色 .im-tab.active；
+     ③ 顶栏：标题收为自适应宽、全局搜索框 flex:1，两者同高对齐；间距统一 8/12/16。 */
+  .im-head{padding:12px}
+  .im-head-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .im-title{flex:0 0 auto;margin:0;font-size:16px;font-weight:700;line-height:36px;white-space:nowrap}
+  .im-search{flex:1 1 auto;display:flex;gap:8px;margin-bottom:0}
+  .im-search input{flex:1 1 auto;min-width:0;height:36px;box-sizing:border-box}
+  .im-search .btn{height:36px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .im-tabs{display:flex;gap:8px}
+  /* .im-tab 的 flex/height/font-size 等已收敛到文件末尾唯一权威定义区（本轮修复：原第371行 R33 规则会造成 5 等分文字截断） */
+  .topbar-title{flex:0 0 auto;max-width:38vw;font-size:17px;line-height:36px}
+  .topbar .gs-wrap{flex:1 1 auto;min-width:0;max-width:420px}
+  .topbar .gs-input{height:36px;padding-top:0;padding-bottom:0;box-sizing:border-box}
   /* C1 20260913k：「群聊」「加好友」tab 页面视图——弹窗节点搬入侧栏面板宿主后取消浮层定位，随 tab 显隐 */
   .im-panel-host{display:none;flex:1;overflow-y:auto;border-top:1px solid var(--border)}
   .im-panel-host.active{display:block}
@@ -394,6 +417,31 @@
   .ac-composer textarea{flex:1;resize:none;height:44px;max-height:120px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;font-size:14px;outline:none;font-family:inherit;background:var(--bg);color:var(--text)}
   .ac-composer textarea:focus{border-color:var(--primary)}
   .ac-send{height:44px;padding:0 18px;border:none;border-radius:12px;background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff;cursor:pointer;flex-shrink:0}
+
+  /* ============================================================
+     IM-TAB 唯一权威定义区（本轮修复·收敛）
+     ------------------------------------------------------------
+     本轮收敛了 R01/R33 遗留的 4 处 .im-tab 定义：
+       ① 页首第21行 基础（flex:1 / padding:6px 0 / font-size:13px）
+       ② 页首第25行 position:relative（未读角标锚点）
+       ③ 第357行   position:relative（重复）
+       ④ 第371行   R33 视觉统一（flex:1 1 0 + 5 等分 + nowrap + overflow:hidden + ellipsis）
+     最终生效规则 = 本区块这一份（唯一）。
+     【根因】原第④条把 5 个 tab 五等分（每格约 60px@320px）后又加 white-space:nowrap +
+       overflow:hidden + text-overflow:ellipsis，"💬 会话 / 👥 好友 / 📩 申请" 这类
+       emoji+空格+双字中文被整体截断成空白，故用户看到「四个按钮文字显示不出来」。
+     【修法】改用 flex:1 1 auto + 内容自适应宽度，短文案（加好友）不再被拉宽，
+       长文案优先拿到像素；去掉 ellipsis，窄屏下允许折行换行；tab 栏本身可横向滚动兜底，
+       emoji 一并去除（历史遗留 emoji 不再新增，去除属于布局修复，不影响激活态底色/圆角）。
+     【必须保留】position:relative —— .im-tab-badge/.tab-badge 未读红点依赖它为定位锚点。
+     ============================================================ */
+  .im-tab{position:relative;flex:1 1 auto;min-width:0;height:36px;line-height:34px;padding:0 2px;font-size:12px;box-sizing:border-box;text-align:center;border:1px solid var(--border);background:var(--bg);color:var(--text-secondary);border-radius:8px;cursor:pointer;white-space:normal;word-break:break-all;overflow:visible}
+  .im-tab.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+  /* 窄屏（安卓老机 320px 常见）：tab 栏横向滚动，每个 tab 保底可读宽度，文字完整不截断 */
+  @media (max-width:480px){
+    .im-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
+    .im-tab{flex:0 0 auto;min-width:56px;padding:0 6px;line-height:32px;height:34px;font-size:12px}
+  }
 </style>
 <script>
 /* 本页顶栏搜索框专用：只搜索聊天记录（好友昵称 + 本地/服务器消息内容），不搜发贴模块 */
@@ -631,7 +679,7 @@
 </script>
 <script>
 /* R55（2026-09-14）：帖子分享「接收侧」—— 读 study_workbench_share_forward_v1 渲染转发卡片。
-   数据由广场帖子分享（线4）写入 localStorage；本页只在打开时读一次并渲染预览。
+   数据由社区帖子分享（线4）写入 localStorage；本页只在打开时读一次并渲染预览。
    发送时由 chat-local.js 的 imSendText 调 window.__imConsumeForward() 取出深链拼到正文；
    取消即移除。键缺失 / JSON 非法 / id 为空 → 不渲染、不抛错（零侵入）。
    2026-09-14 修：兼容发送侧的 excerpt 摘要字段与字符串 id（原 Number(id) 会把 'n_001' 判为无效）。 */
@@ -643,7 +691,7 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
-  /* 发送侧（学习博客.html R55）实际写入契约（只读核对，不改发送侧）：
+  /* 发送侧（社区.html R55）实际写入契约（只读核对，不改发送侧）：
        {v:1, type:'note', id:String, title:String, excerpt:String, cover:String, url:'…#note=<id>', ts:Number}
      两条兼容要点（2026-09-14 修）：
        1) 摘要字段是 **excerpt**，不是 summary → 两者都兼容（优先 summary，兼容历史/他处写法）；
@@ -798,5 +846,8 @@
   else init();
 })();
 </script>
+<script src="assets/ai-config.js?v=20260916R"></script>
+<script src="assets/ai-presets.js?v=20260916O"></script>
+<script src="assets/ai-service.js?v=20260916R"></script>
 </body>
 </html>

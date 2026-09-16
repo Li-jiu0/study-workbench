@@ -1,0 +1,26 @@
+[PASS] 加载: console 无错误
+[PASS] 文案: 不含「导入向导尚未就绪」
+[PASS] 文案: 不含「我的导入题库」
+[PASS] DOM: #impLibs 已删除
+[PASS] DOM: 无任何 .imp-libs 节点
+[PASS] 入口: morepage-card 数量与备份一致  new=8 old=8
+[PASS] 入口: 「导入题库」入口卡仍在且挂 openImporterView
+[PASS] 结构: #importerView 全屏视图仍在
+[PASS] 结构: #impBody 向导宿主仍在
+[PASS] 结构: 底部导航 5 项
+[PASS] 结构: AI 悬浮窗 #aiFab 仍在
+[PASS] 结构: 倒计时弹窗 #countdownModal 仍在
+[PASS] 结构: 更多面板 #morePanel / 工具面板 #toolsPanel 仍在
+[PASS] 函数: openImporterView 仍为函数
+[PASS] 函数: closeImporterView 仍为函数
+[PASS] 函数: renderImportLibs 已卸载
+[PASS] 函数: removeImportLib 已卸载
+[PASS] 函数: __impAfterImport 已卸载
+[PASS] 行为: openImporter 缺失时回退调用无异常抛出
+[PASS] 行为: 视图打开加 .open
+[PASS] 行为: #impBody 仍在视图内
+[PASS] 行为: 视图关闭移除 .open
+[PASS] 行为: 开/关视图全程无异常
+[PASS] console: 除回退导航告警外无任何错误  navNoise=1 real=
+
+===== R68 线3 jsdom 行为断言汇总: PASS=24 FAIL=0 =====

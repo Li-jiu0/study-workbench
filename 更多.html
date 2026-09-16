@@ -1,15 +1,25 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>更多功能 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260915c">
-<link rel="stylesheet" href="assets/page-head.css?v=20260915c">
-<link rel="stylesheet" href="assets/states.css?v=20260915c">
-<link rel="stylesheet" href="assets/polish.css?v=20260915c">
+<link rel="stylesheet" href="assets/common.css?v=20260916O">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<link rel="stylesheet" href="assets/polish.css?v=20260916O">
 <!-- 2026-09-15 用户反馈：分组收放撤除，恢复直接平铺 -->
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
+<style>
+  /* 【批次 20260913k】导入题库：由弹窗改为页面内全屏视图（复用 importer.js 向导逻辑，带返回） */
+  .importer-view{position:fixed;inset:0;z-index:900;background:var(--bg);overflow-y:auto;display:none}
+  .importer-view.open{display:block}
+  .importer-view-inner{max-width:760px;margin:0 auto;padding:16px 16px 32px}
+  .importer-view-body{background:var(--card);color:var(--text);border-radius:18px;padding:16px;box-shadow:0 10px 30px -18px rgba(0,0,0,.25)}
+  .importer-view-body .imp-body{overflow:visible;padding:0}
+</style>
 </head>
 <body class="theme-home">
 
@@ -28,23 +38,23 @@
       </div>
       <div class="nav-section">学习模块</div>
       <div class="nav-item" data-page="cet">
-        <span class="nav-icon" data-icon="book-open"></span><span>四级备考</span>
+        <span class="nav-icon" data-icon="book-open"></span><span>英语</span>
       </div>
       <div class="nav-item" data-page="exam">
-        <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span>
+        <span class="nav-icon" data-icon="pencil"></span><span>行测</span>
       </div>
       <div class="nav-item" data-page="comm">
-        <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span>
+        <span class="nav-icon" data-icon="message-square"></span><span>表达</span>
       </div>
       <div class="nav-item" data-page="interview">
-        <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span>
+        <span class="nav-icon" data-icon="handshake"></span><span>面测</span>
       </div>
       <div class="nav-item" data-page="ppt">
-        <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span>
+        <span class="nav-icon" data-icon="palette"></span><span>演示</span>
       </div>
       <div class="nav-section">创作</div>
       <div class="nav-item" data-page="blog">
-        <span class="nav-icon" data-icon="globe"></span><span>广场</span>
+        <span class="nav-icon" data-icon="globe"></span><span>社区</span>
       </div>
       <div class="nav-section">互动</div>
       <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
@@ -102,20 +112,10 @@
              W1-T5（2026-09-15）：内容填充 —— 分组标题复用 .nav-section（既有类，纯 CSS 无 JS 依赖）；
              补充 5 个站内真实页面的直达入口（此前无任何入口，只能手敲地址）。
              W3-T1（2026-09-15）：在「常用」组补「工具箱」入口（此前更多页无任何指向 工具.html 的卡片）。
-             2026-09-15 用户反馈：分组收放撤除，恢复直接平铺 -->
+             2026-09-15 用户反馈：分组收放撤除，恢复直接平铺；
+             2026-09-16 用户反馈：分组小标题删除，卡片直接平铺（与个人中心页一致） -->
         <div class="morepage-list">
-          <div class="nav-section">常用</div>
-          <div class="morepage-card morepage-list-item" onclick="openBlogStats()">
-            <div class="mpc-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div>
-            <div class="mpc-title">学习统计</div>
-            <div class="mpc-desc">学习概况 · 本周报告</div>
-          </div>
-          <!-- W3-T1（2026-09-15）：工具箱入口。此前更多页无任何指向 工具.html 的入口，只能走底部导航。 -->
-          <div class="morepage-card morepage-list-item" onclick="location.href='工具.html'">
-            <div class="mpc-icon"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span></div>
-            <div class="mpc-title">工具箱</div>
-            <div class="mpc-desc">导入题库 · PPT版式 · AI面试 · 倒计时</div>
-          </div>
+          <!-- 2026-09-16 用户反馈：学习统计入口卡删除（openBlogStats 不再从更多页直达）。 -->
           <div class="morepage-card morepage-list-item" onclick="gotoBlogMine()">
             <div class="mpc-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div>
             <div class="mpc-title">互动广场</div>
@@ -127,15 +127,8 @@
             <div class="mpc-desc">按模块与错因筛选，集中复盘重做</div>
           </div>
 
-          <div class="nav-section">内容直达</div>
-          <!-- 2026-09-15 用户反馈：内容直达仅保留学习动态，其余 4 张入口卡删除（页面文件保留不删）。 -->
-          <div class="morepage-card morepage-list-item" onclick="location.href='动态.html'">
-            <div class="mpc-icon"><span class="nav-icon" data-icon="rss" data-icon-size="20"></span></div>
-            <div class="mpc-title">学习动态</div>
-            <div class="mpc-desc">打卡动态流，与好友互相关注</div>
-          </div>
+          <!-- 2026-09-16 用户反馈：「学习动态」改名「动态」。 -->
 
-          <div class="nav-section">系统</div>
           <!-- 注意：#adminEntryCard 自带 style="display:none"，显隐由 assets/admin.js 控制。 -->
           <div class="morepage-card morepage-list-item" onclick="navigateTo('settings')">
             <div class="mpc-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div>
@@ -153,6 +146,21 @@
             <div class="mpc-title">关于</div>
             <div class="mpc-desc">版本 · 功能清单与说明</div>
           </div>
+          <div class="morepage-card morepage-list-item" onclick="openImporterView()">
+            <div class="mpc-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div>
+            <div class="mpc-title">导入题库</div>
+            <div class="mpc-desc">Excel/CSV 一键导入</div>
+          </div>
+          <div class="morepage-card morepage-list-item" onclick="location.href='AI模拟面试.html'">
+            <div class="mpc-icon"><span class="nav-icon" data-icon="mic" data-icon-size="20"></span></div>
+            <div class="mpc-title">AI面试</div>
+            <div class="mpc-desc">多轮追问模拟面试</div>
+          </div>
+          <div class="morepage-card morepage-list-item" onclick="if(window.openQuest){openQuest()}else{location.href='学习工作台.html'}">
+            <div class="mpc-icon"><span class="nav-icon" data-icon="zap" data-icon-size="20"></span></div>
+            <div class="mpc-title">穿越英语</div>
+            <div class="mpc-desc">闯关式剧情学英语</div>
+          </div>
         </div>
 
         <!-- 2026-09-15 用户反馈：分组收放撤除，恢复直接平铺 -->
@@ -164,6 +172,52 @@
 
 
 
+  <div class="importer-view" id="importerView" role="dialog" aria-label="导入题库">
+    <div class="importer-view-inner">
+      <div class="morepage-head">
+        <button class="morepage-back" onclick="closeImporterView()" title="返回" aria-label="返回"><span data-icon="arrow-left" data-icon-size="18"></span></button>
+        <div class="morepage-title">导入题库</div>
+      </div>
+      <!-- importer.js 的 shell()/fileStep()/targetStep() 按 id=impBody 定位并渲染步骤内容 -->
+      <div class="importer-view-body"><div class="imp-body" id="impBody"></div></div>
+    </div>
+  </div>
+
+<script>
+(function(){
+    /* 打开导入题库全屏视图：先由 importer.js 的 openImporter() 初始化向导状态/样式/步骤 DOM，
+       再把向导主体 #impBody 从弹层外壳搬进本视图并移除弹层外壳（不改动 importer.js 任何函数）。 */
+    function openImporterView() {
+      if (!window.openImporter) { location.href = '设置.html'; return; }
+      window.openImporter();
+      var mask = document.getElementById('impMask');
+      var body = document.getElementById('impBody');
+      var host = document.getElementById('importerView');
+      if (mask && body && host) {
+        var wrap = host.querySelector('.importer-view-body');
+        // 清掉上一次遗留的 #impBody，避免重复 id 让向导渲染进已被替换的旧节点（表现为点了没反应）
+        var olds = wrap.querySelectorAll('#impBody');
+        for (var oi = 0; oi < olds.length; oi++) { if (olds[oi] !== body && olds[oi].parentNode) olds[oi].parentNode.removeChild(olds[oi]); }
+        wrap.appendChild(body);
+        mask.parentNode.removeChild(mask);
+      }
+      if (host) host.classList.add('open');
+    }
+    /* 关闭视图并复位向导状态（__impClose 由 importer.js 暴露，负责清空内部状态 S） */
+    function closeImporterView() {
+      if (typeof window.__impClose === 'function') window.__impClose();
+      var host = document.getElementById('importerView');
+      if (host) host.classList.remove('open');
+    }
+    window.openImporterView = openImporterView;
+    window.closeImporterView = closeImporterView;
+
+
+    /* 【2026-09-15 用户反馈删除】上面的「考试倒计时」可见区块已移除，
+       跟随它的专属渲染逻辑（宿主判空 + 二次渲染监听）也一并删除，避免空转。
+       assets/app.js 里的首页倒计时逻辑本身未动 —— 首页「重要倒计时」仍正常工作。 */
+})();
+</script>
   <!-- 底部导航（手机端） -->
     <nav class="bottom-nav">
     <div class="bottom-nav-list">
@@ -172,8 +226,8 @@
       </div>
       <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
       <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
-      <div class="bottom-nav-item" onclick="location.href='工具.html'"><div class="bn-icon"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span></div><div class="bn-label">工具</div></div>
-      <div class="bottom-nav-item active" onclick="location.href='更多.html'">
+            <div class="bottom-nav-item" onclick="location.href='AI.html'"><div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div></div>
+            <div class="bottom-nav-item active" onclick="location.href='更多.html'">
         <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
       </div>
     </div>
@@ -186,9 +240,6 @@
   <div class="bottom-more-panel" id="morePanel">
     <div class="bottom-more-title">更多功能</div>
     <div class="bottom-more-grid">
-      <div class="bottom-more-item" onclick="openBlogStats()">
-        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
-      </div>
       <div class="bottom-more-item" onclick="gotoBlogMine()">
         <div class="bm-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div><div class="bm-label">互动广场</div>
       </div>
@@ -287,14 +338,17 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260915c" defer></script>
-<script src="assets/xt-toast.js?v=20260915c" defer></script>
-<script src="assets/error-boundary.js?v=20260915c" defer></script>
-<script src="assets/app.js?v=20260915f" defer></script>
-<script src="assets/quest.js?v=20260915c" defer></script>
-<script src="assets/config.js?v=20260915c" defer></script>
-<script src="assets/api.js?v=20260915f" defer></script>
-<script src="assets/admin.js?v=20260915c" defer></script>
-<script src="assets/study-stats.js?v=20260915c" defer></script>
+<script src="assets/icon-map.js?v=20260916O" defer></script>
+<script src="assets/xt-toast.js?v=20260916O" defer></script>
+<script src="assets/error-boundary.js?v=20260916O" defer></script>
+<script src="assets/app.js?v=20260916O" defer></script>
+<script src="assets/quest.js?v=20260916O" defer></script>
+<script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260916O" defer></script>
+<script src="assets/admin.js?v=20260916O" defer></script>
+<script src="assets/study-stats.js?v=20260916O" defer></script>
+<script src="assets/ai-config.js?v=20260916R"></script>
+<script src="assets/ai-presets.js?v=20260916O"></script>
+<script src="assets/ai-service.js?v=20260916R"></script>
 </body>
 </html>

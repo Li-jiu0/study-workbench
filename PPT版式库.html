@@ -1,14 +1,16 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>PPT版式库 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260915c">
-<link rel="stylesheet" href="assets/page-head.css?v=20260915c">
-<link rel="stylesheet" href="assets/states.css?v=20260915c">
-<link rel="stylesheet" href="assets/polish.css?v=20260915c">
+<link rel="stylesheet" href="assets/common.css?v=20260916O">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<link rel="stylesheet" href="assets/polish.css?v=20260916O">
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
 </head>
 <body class="theme-home">
 
@@ -25,25 +27,28 @@
       <div class="nav-item" data-page="home">
         <span class="nav-icon" data-icon="home"></span><span>首页</span>
       </div>
+      <div class="nav-item" onclick="location.href='AI.html'">
+        <span class="nav-icon" data-icon="sparkles"></span><span>AI</span>
+      </div>
       <div class="nav-section">学习模块</div>
       <div class="nav-item" data-page="cet">
-        <span class="nav-icon" data-icon="book-open"></span><span>四级备考</span>
+        <span class="nav-icon" data-icon="book-open"></span><span>英语</span>
       </div>
       <div class="nav-item" data-page="exam">
-        <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span>
+        <span class="nav-icon" data-icon="pencil"></span><span>行测</span>
       </div>
       <div class="nav-item" data-page="comm">
-        <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span>
+        <span class="nav-icon" data-icon="message-square"></span><span>表达</span>
       </div>
       <div class="nav-item" data-page="interview">
-        <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span>
+        <span class="nav-icon" data-icon="handshake"></span><span>面测</span>
       </div>
       <div class="nav-item" data-page="ppt">
-        <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span>
+        <span class="nav-icon" data-icon="palette"></span><span>演示</span>
       </div>
       <div class="nav-section">创作</div>
       <div class="nav-item" data-page="blog">
-        <span class="nav-icon" data-icon="globe"></span><span>广场</span>
+        <span class="nav-icon" data-icon="globe"></span><span>社区</span>
       </div>
       <div class="nav-section">互动</div>
       <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
@@ -90,16 +95,28 @@
       <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="16"></span></div>
     </header>
 <div class="page active" id="page-ppt-layouts">
+      <!-- ==================== B2 / N9-12 版式库（新） ====================
+           数据：assets/data-ppt-templates.js 的 window.MINI_BANK['ppt-layout-lib']
+           渲染：assets/tpl-preview.js 注册的 window.XtPptLib.mount()
+           结构：搜索框 + 分类页签（含 ⭐我的收藏）+ 卡片网格 + 预览遮罩层
+           说明：预览图目录 assets/images/ppt-templates/ 暂缺，一律走内联 SVG 占位骨架，
+                 零外链图片、零 404；补真图时只需给数据的 previewImage 填路径。
+           下方 #layoutFilter / #layoutList 为旧「15 种常用版式速览」，保留不动。 -->
       <div class="card">
         <div class="card-header">
           <div class="card-title"><span class="title-icon" data-icon="ruler"></span>PPT版式库</div>
+          <span class="tag tag-primary">封面 / 目录 / 过渡 / 内容</span>
+        </div>
+        <div id="pptLibMount"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="title-icon" data-icon="layers"></span>经典版式速览</div>
           <span class="tag tag-primary">15种常用版式</span>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px" id="layoutFilter">
-          <span class="type-filter active" data-cat="全部" onclick="filterLayouts('全部')">全部</span>
-          <span class="type-filter" data-cat="结构页" onclick="filterLayouts('结构页')">结构页</span>
-          <span class="type-filter" data-cat="内容页" onclick="filterLayouts('内容页')">内容页</span>
-        </div>
+        <!-- 标签筛选：由 assets/app.js 的 renderLayoutFilter() 按数据 category 分组并收放渲染 -->
+        <div id="layoutFilter"></div>
         <div id="layoutList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px"></div>
       </div>
     </div>
@@ -115,8 +132,8 @@
       </div>
       <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
       <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
-      <div class="bottom-nav-item" onclick="location.href='工具.html'"><div class="bn-icon"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span></div><div class="bn-label">工具</div></div>
-      <div class="bottom-nav-item" onclick="location.href='更多.html'">
+            <div class="bottom-nav-item" onclick="location.href='AI.html'"><div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div></div>
+            <div class="bottom-nav-item" onclick="location.href='更多.html'">
         <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
       </div>
     </div>
@@ -215,13 +232,53 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260915c" defer></script>
-<script src="assets/xt-toast.js?v=20260915c" defer></script>
-<script src="assets/error-boundary.js?v=20260915c" defer></script>
-<script src="assets/app.js?v=20260915f" defer></script>
-<script src="assets/config.js?v=20260915c" defer></script>
-<script src="assets/api.js?v=20260915f" defer></script>
+<script src="assets/icon-map.js?v=20260916O" defer></script>
+<script src="assets/xt-toast.js?v=20260916O" defer></script>
+<script src="assets/error-boundary.js?v=20260916O" defer></script>
+<script src="assets/app.js?v=20260916O" defer></script>
+<script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260916O" defer></script>
 
-<script src="assets/qbank.js?v=20260915c" defer></script>
+<script src="assets/qbank.js?v=20260916O" defer></script>
+<script src="assets/ai-config.js?v=20260916R"></script>
+<script src="assets/ai-presets.js?v=20260916O"></script>
+<script src="assets/ai-service.js?v=20260916R"></script>
+
+<!-- ==================== B2 / N9-12 版式库脚本 ====================
+     加载顺序要求：data-ppt-templates.js（数据）必须在 tpl-preview.js（渲染器）之前，
+     且两者都必须晚于 assets/app.js（渲染器要复用 app.js 提供的 window.lsKey / xtToast）。
+     两文件均用 defer，保证 DOM 解析完毕后再执行，mount 时容器必然已存在。 -->
+<script src="assets/data-ppt-templates.js?v=20260916O" defer></script>
+<script src="assets/tpl-preview.js?v=20260916O" defer></script>
+<script>
+/* B2 版式库挂载引导：defer 脚本按声明顺序执行，此内联脚本排在它们之后，
+   因此执行时 window.XtPptLib 已就绪。多路兜底（DOMContentLoaded / load / 立即）
+   只为兼容老 WebView（Chrome 50~58）下 defer 时序的差异，重复调用由 mounted 标志去重。 */
+(function () {
+  'use strict';
+  var mounted = false;
+  function mountLib() {
+    if (mounted) return;
+    var host = document.getElementById('pptLibMount');
+    if (!host) return;
+    if (window.XtPptLib && typeof window.XtPptLib.mount === 'function') {
+      try {
+        window.XtPptLib.mount(host);
+        mounted = true;
+      } catch (e) {
+        /* 渲染失败时不留白屏：给出可见提示，绝不 alert */
+        host.innerHTML = '<div style="padding:30px;text-align:center;color:#8A949E;font-size:13px">' +
+          '版式库渲染出错，请刷新重试（' + (e && e.message ? String(e.message) : 'unknown') + '）</div>';
+      }
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mountLib);
+  } else {
+    mountLib();
+  }
+  window.addEventListener('load', mountLib);
+})();
+</script>
 </body>
 </html>

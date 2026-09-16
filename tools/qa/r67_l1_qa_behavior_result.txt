@@ -1,0 +1,69 @@
+[PASS] 启动: window.xtAiSettings 暴露（getState/refresh/switchTab）
+[PASS] 启动: 模型列表已渲染  rows=24
+[PASS] B组: #setAddCustom 按钮已删除
+[PASS] B组: 空态文案不再指向已删按钮
+[PASS] B组: 恢复配置后列表还原
+[PASS] 缺陷: healthReason(no_endpoint) -> 未配置接口地址  title=点击重新检测（上次失败：未配置接口地址）
+[PASS] 缺陷: healthReason(no_key) -> 未配置密钥  title=点击重新检测（上次失败：未配置密钥）
+[PASS] C组: 服务商下拉存在（#setFmProvider）
+[PASS] C组: 13 组服务商 + 1 占位项  options=14
+[PASS] C组: 三层 optgroup（内置Key/需自备Key/手动）
+[PASS] C组: 选智谱AI -> API 端点自动回填
+[PASS] C组: 智谱组 -> 模型 ID 切为下拉（输入框隐藏）
+[PASS] C组: 智谱组候选 5 个模型  options=6
+[PASS] C组: 内置组无 needKey 标注
+[PASS] C组: 切模型 ID -> 隐藏输入框同步
+[PASS] C组: 切模型 ID -> 名称自动预填
+[PASS] C组: 切模型 ID -> 能力标签预填 image+general  on=general,image
+[PASS] C组: 自定义组 -> 模型 ID 切回文本输入框
+[PASS] C组: 自定义组 -> 端点清空
+[PASS] C组: 自定义组 -> note 提示可见
+[PASS] C组: API 格式默认隐藏（高级设置折叠）
+[PASS] C组: 格式选择器仍在 DOM（可展开）
+[PASS] C组(R67设计): 旧名称 datalist 已移除
+[PASS] C组: needKey 组显示标注「需自备 Key」  note=需自备 Key，端点未经本项目实测
+[PASS] C组: DeepSeek 端点回填
+[PASS] C组: needKey 组候选模型可选（deepseek 2 个）
+[PASS] C组: Claude apiUrl 为空 -> 端点清空不冒充
+[PASS] C组: Claude 协议不兼容标注  note=协议非 OpenAI 兼容，需经自定义格式/网关；需自备 Key，端点未经本项目实测
+[PASS] C组: Claude(custom 协议) -> 高级设置自动展开 + 格式 custom
+[PASS] C组: Gemini -> 高级设置自动展开 + 格式 gemini
+[PASS] C组: Gemini 端点回填（{model} 模板保留）
+[PASS] C组: 隐藏态提交按 openai  apiFormat=openai
+[PASS] C组: 端点/名称/能力随保存落地
+[PASS] C组: 高级设置可展开
+[PASS] C组: 展开态提交保留所选协议（gemini）  apiFormat=gemini
+[PASS] C组: 高级设置可再折叠
+[PASS] C组: 折叠态提交强制 openai（展开时选过 gemini 也不冒充）  apiFormat=openai
+[PASS] 回归: 点行选中写 ai_selected_model
+[PASS] 回归: 当前行橙框高亮 cur
+[PASS] 回归: 启停开关写 disabled
+[PASS] 回归: 星级点击写 stars
+[PASS] 回归: 上移排序生效  glm-4.7-flash>glm-4.5-flash => glm-4.5-flash>glm-4.7-flash
+[PASS] 回归: order 已持久化
+[PASS] 回归: 编辑内置打开表单
+[PASS] 回归: 密钥不回填（内置）
+[PASS] 回归: Key 状态提示「已自定义密钥」
+[PASS] 回归: 内置编辑隐藏模型 ID 行
+[PASS] 回归: 编辑内置回填服务商分组=智谱AI
+[PASS] 回归: 编辑回填覆盖端点
+[PASS] 回归: 空保存保持原 key（空=保持原值）
+[PASS] 回归: 编辑自定义 -> 模型 ID 行可见
+[PASS] 回归: 编辑自定义 -> 按 apiUrl+ID 匹配到 deepseek 分组
+[PASS] 回归: 编辑自定义 -> 模型 ID 下拉选中当前值
+[PASS] 回归: 密钥不回填（自定义）
+[PASS] 回归: 删除自定义模型生效
+[PASS] 回归: 恢复默认清空 disabled/order/overrides/stars
+[PASS] 回归: 功能分类渲染内置 4 类
+[PASS] 回归: 新建分类写入 categories
+[PASS] 回归: 记忆条数展示
+[PASS] 回归: 逐条删除记忆
+[PASS] 回归: Key 默认密文
+[PASS] 回归: 眼睛按钮切换明文
+[PASS] 回归: 健康队列后台自动启动（~1.5s 延迟、串行不烧限频）  bgCalls=1 首个=glm-4-flash
+[PASS] C组: 「检测连接」按钮触发一次检测  calls=1
+[PASS] C组: 第二参数=表单当前未保存值（url/key/format/modelId）  cfg={"apiUrl":"https://open.bigmodel.cn/api/paas/v4/chat/completions","apiKey":"sk-form-tmp","apiFormat":"openai","extraHeaders":{},"modelId":"glm-4-flash"}
+[PASS] C组: 检测不落盘（已存 settings / 自定义模型均未变）
+[PASS] 密钥: localStorage 全量 dump 不含 6 平台密钥明文
+
+===== R67 线1 行为测试汇总: PASS=67 FAIL=0 =====

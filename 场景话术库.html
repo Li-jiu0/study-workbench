@@ -1,14 +1,85 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>场景话术库 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260915c">
-<link rel="stylesheet" href="assets/page-head.css?v=20260915c">
-<link rel="stylesheet" href="assets/states.css?v=20260915c">
-<link rel="stylesheet" href="assets/polish.css?v=20260915c">
+<link rel="stylesheet" href="assets/common.css?v=20260916O">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<link rel="stylesheet" href="assets/polish.css?v=20260916O">
+<style>
+/* ============================================================
+   场景话术库 · 布局重排（只动布局与样式，不动任何 id / onclick / 渲染逻辑）
+   间距体系：8 / 12 / 16（--xt-space-2 / 3 / 4）
+   ============================================================ */
+
+/* —— 页面容器：与 .content 同级页保持一致的留白 —— */
+#page-comm-scenes { padding: 24px; }
+#page-comm-scenes > .card { padding: 16px; margin-bottom: 0; }
+
+/* —— 页头：标题 + 数量标签，换行时仍保持 8/16 节奏 —— */
+#page-comm-scenes .card-header { margin-bottom: 16px; gap: 8px; flex-wrap: wrap; }
+#page-comm-scenes .card-header .card-title { font-size: 16px; gap: 8px; min-width: 0; }
+#page-comm-scenes .card-header .card-title .title-icon { display: inline-flex; align-items: center; }
+#page-comm-scenes .card-header .tag { flex-shrink: 0; }
+
+/* —— 分类 tab 行：与卡片网格左对齐，间距 8 —— */
+#commFilter { gap: 8px !important; margin-bottom: 16px !important; }
+#commFilter .type-filter { line-height: 1.4; }
+
+/* —— 内容区：卡片网格，同行等高 —— */
+#commSceneList {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(520px, 1fr));
+  gap: 16px !important;
+  align-items: stretch;
+}
+/* 统计条 / 分类小标题 / 空态：独占整行 */
+#commSceneList > .cs-stats,
+#commSceneList > .cs-section,
+#commSceneList > .cs-empty { grid-column: 1 / -1; }
+
+#commSceneList > .cs-stats { padding: 12px 16px !important; margin-bottom: 0 !important; gap: 12px !important; border-radius: 12px !important; }
+/* 13px = 3px 竖线 + 与卡片内边距 16px 对齐 */
+#commSceneList > .cs-section { margin: 4px 0 0 !important; padding-left: 13px !important; }
+#commSceneList > .cs-empty { padding: 32px 16px !important; margin-bottom: 0 !important; border-radius: 12px !important; }
+
+/* —— 场景卡：图标 + 标题 + 描述层次统一，hover 与全站 .card 一致 —— */
+#commSceneList > .cs-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 16px !important;
+  margin-bottom: 0 !important;
+  border-radius: 12px !important;
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+#commSceneList > .cs-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+/* 1 图标+标题行 / 2 场景 / 3 低·高情商对比 / 4 沟通要点 */
+#commSceneList > .cs-card > div:nth-child(1) { gap: 8px !important; margin-bottom: 12px !important; flex-wrap: wrap; }
+#commSceneList > .cs-card > div:nth-child(1) > span:first-child { display: inline-flex; align-items: center; line-height: 1; }
+#commSceneList > .cs-card > div:nth-child(1) > .btn:first-of-type { margin-left: auto; }
+#commSceneList > .cs-card > div:nth-child(2) { padding: 12px !important; margin-bottom: 12px !important; border-radius: 12px !important; }
+#commSceneList > .cs-card > div:nth-child(3) { gap: 12px !important; margin-bottom: 12px !important; }
+#commSceneList > .cs-card > div:nth-child(3) > div { padding: 12px !important; border-radius: 12px !important; }
+#commSceneList > .cs-card > div:nth-child(4) { margin-top: auto; }
+
+/* —— 窄屏/中屏：单列（低于 2 列所需宽度 520*2+16+侧栏 220+留白 48） —— */
+@media (max-width: 1323px) {
+  #commSceneList { grid-template-columns: 1fr; }
+}
+/* —— 手机：留白收紧 + 对比块纵向排列 —— */
+@media (max-width: 768px) {
+  #page-comm-scenes { padding: 16px; padding-bottom: calc(var(--bottom-nav-height) + 20px); }
+  #commSceneList { grid-template-columns: 1fr; }
+  #commSceneList > .cs-card > div:nth-child(3) { grid-template-columns: 1fr !important; }
+}
+</style>
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
 </head>
 <body class="theme-home">
 
@@ -25,25 +96,28 @@
       <div class="nav-item" data-page="home">
         <span class="nav-icon" data-icon="home"></span><span>首页</span>
       </div>
+      <div class="nav-item" onclick="location.href='AI.html'">
+        <span class="nav-icon" data-icon="sparkles"></span><span>AI</span>
+      </div>
       <div class="nav-section">学习模块</div>
       <div class="nav-item" data-page="cet">
-        <span class="nav-icon" data-icon="book-open"></span><span>四级备考</span>
+        <span class="nav-icon" data-icon="book-open"></span><span>英语</span>
       </div>
       <div class="nav-item" data-page="exam">
-        <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span>
+        <span class="nav-icon" data-icon="pencil"></span><span>行测</span>
       </div>
       <div class="nav-item" data-page="comm">
-        <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span>
+        <span class="nav-icon" data-icon="message-square"></span><span>表达</span>
       </div>
       <div class="nav-item" data-page="interview">
-        <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span>
+        <span class="nav-icon" data-icon="handshake"></span><span>面测</span>
       </div>
       <div class="nav-item" data-page="ppt">
-        <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span>
+        <span class="nav-icon" data-icon="palette"></span><span>演示</span>
       </div>
       <div class="nav-section">创作</div>
       <div class="nav-item" data-page="blog">
-        <span class="nav-icon" data-icon="globe"></span><span>广场</span>
+        <span class="nav-icon" data-icon="globe"></span><span>社区</span>
       </div>
       <div class="nav-section">互动</div>
       <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
@@ -118,8 +192,8 @@
       </div>
       <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
       <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
-      <div class="bottom-nav-item" onclick="location.href='工具.html'"><div class="bn-icon"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span></div><div class="bn-label">工具</div></div>
-      <div class="bottom-nav-item" onclick="location.href='更多.html'">
+            <div class="bottom-nav-item" onclick="location.href='AI.html'"><div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div></div>
+            <div class="bottom-nav-item" onclick="location.href='更多.html'">
         <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
       </div>
     </div>
@@ -218,13 +292,39 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260915c" defer></script>
-<script src="assets/xt-toast.js?v=20260915c" defer></script>
-<script src="assets/error-boundary.js?v=20260915c" defer></script>
-<script src="assets/app.js?v=20260915f" defer></script>
-<script src="assets/config.js?v=20260915c" defer></script>
-<script src="assets/api.js?v=20260915f" defer></script>
+<script src="assets/icon-map.js?v=20260916O" defer></script>
+<script src="assets/xt-toast.js?v=20260916O" defer></script>
+<script src="assets/error-boundary.js?v=20260916O" defer></script>
+<script src="assets/app.js?v=20260916O" defer></script>
+<script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260916O" defer></script>
 
-<script src="assets/qbank.js?v=20260915c" defer></script>
+<script src="assets/qbank.js?v=20260916O" defer></script>
+<script>
+/* 场景话术库：为动态渲染的子节点补样式钩子（只加 class，不改数据与交互） */
+(function () {
+  function tagCommScenes() {
+    var list = document.getElementById('commSceneList');
+    if (!list) return;
+    var kids = list.children;
+    for (var i = 0; i < kids.length; i++) {
+      var el = kids[i];
+      if (el.style.borderRadius === '14px') el.className = 'cs-card';
+      else if (el.style.borderLeftWidth === '3px') el.className = 'cs-section';
+      else if (el.style.textAlign === 'center') el.className = 'cs-empty';
+      else el.className = 'cs-stats';
+    }
+  }
+  tagCommScenes();
+  document.addEventListener('DOMContentLoaded', tagCommScenes);
+  var list = document.getElementById('commSceneList');
+  if (window.MutationObserver && list) {
+    new MutationObserver(tagCommScenes).observe(list, { childList: true });
+  }
+})();
+</script>
+<script src="assets/ai-config.js?v=20260916R"></script>
+<script src="assets/ai-presets.js?v=20260916O"></script>
+<script src="assets/ai-service.js?v=20260916R"></script>
 </body>
 </html>
