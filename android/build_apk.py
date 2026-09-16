@@ -41,16 +41,22 @@ def run(cmd, **kw):
         raise RuntimeError(f"Command failed: {cmd}")
     return r
 
-# ---- 1) 整理站点文件（剔除 api.js 引用） ----
+# ---- 1) 整理站点文件（R70：二进制整页复制，保留 api.js 与行尾） ----
+#   ⚠️ 历史坑（2026-09-17 修）：此处曾做两件事，都致命 ——
+#   ① 正则剔除 <script src="assets/api.js">  → APK 失去全部联网能力
+#      （好友私信 / 留言板 / 社区互动 / 语音 / 题库扩展均失效，只剩静态壳）
+#   ② 文本模式读写（newline 归一化）    → LF 文件被静默改成 CRLF
+#   现在：纯二进制复制，一个字节不改。
 import re
 html_count = 0
 for f in glob.glob(os.path.join(ROOT, "*.html")):
-    with open(f, "r", encoding="utf-8") as fh:
-        content = fh.read()
-    content = re.sub(r'(?m)^.*<script src="assets/api\.js.*$\n?', '', content)
-    out_path = os.path.join(STAGE, os.path.basename(f))
-    with open(out_path, "w", encoding="utf-8") as fh:
-        fh.write(content)
+    name = os.path.basename(f)
+    if ".bak" in name.lower() or name.startswith("_"):
+        continue
+    with open(f, "rb") as fh:
+        data = fh.read()
+    with open(os.path.join(STAGE, name), "wb") as fh:
+        fh.write(data)
     html_count += 1
 
 # ---- 1a) APK 资源白名单（项目铁律「代码修好 ≠ 包里有」）：缺失即中止打包 ----
@@ -83,6 +89,21 @@ REQUIRED_ASSETS = [
     "mini-exam.js",
     "mini-interview.js",
     "mini-ppt.js",
+    # --- R70 新增：联网能力必需（缺 api.js = 所有在线功能变静态壳） ---
+    "api.js",
+    # --- R70 新增：AI 三件套 + 设置页（缺一即 AI 功能/检测不可用） ---
+    "ai-config.js",
+    "ai-presets.js",
+    "ai-service.js",
+    "ai-page.js",
+    "ai-settings.js",
+    # --- R70 新增：启动期基础设施 ---
+    "xt-polyfill.js",
+    "xt-toast.js",
+    "error-boundary.js",
+    "admin.js",
+    "page-head.css",
+    "states.css",
     # --- 子目录资源（build-apk.sh 早期版本用 cp 不带 -r 会静默漏掉） ---
     "emoji/manifest.js",
 ]
@@ -131,6 +152,16 @@ _missing_data_stage = [a for a in REQUIRED_DATA_ASSETS
 if _missing_data_stage:
     raise SystemExit("✖ APK 数据资源白名单缺失（打包暂存区 stage/data/）：" + ", ".join(_missing_data_stage))
 
+# ---- 1b) 联网能力硬断言：入口页必须仍引用 api.js（防「剔除逻辑」复活） ----
+ENTRY = os.path.join(STAGE, "学习工作台.html")
+if not os.path.exists(ENTRY):
+    raise SystemExit("✖ 入口页缺失：学习工作台.html")
+entry_bytes = open(ENTRY, "rb").read()
+if b'assets/api.js' not in entry_bytes:
+    raise SystemExit("✖ 入口页未引用 assets/api.js —— APK 将失去全部联网功能")
+if b'assets/config.js' not in entry_bytes:
+    raise SystemExit("✖ 入口页未引用 assets/config.js —— file:// 场景拿不到 API 绝对地址")
+print("✓ 联网能力断言通过（入口页含 api.js + config.js）")
 print(f"站点文件已就绪（{html_count} 个 html + assets/ + data/）")
 print(f"✓ APK 资源白名单校验通过（{len(REQUIRED_ASSETS)} 项，含批次五 icon-map.js / subpage-router.js）")
 print(f"✓ APK 数据资源白名单校验通过（{len(REQUIRED_DATA_ASSETS)} 项：data/mock-papers.js）")
