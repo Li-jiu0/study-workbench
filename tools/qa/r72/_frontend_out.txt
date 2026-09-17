@@ -1,0 +1,30 @@
+R72 前端运行时独立测试
+============================================================
+[PASS] chat-local 加载无异常(window.__IM_TEST__存在)  IM=ok
+[PASS] imDisplayName-备注(原名)  老王（王小明）
+[PASS] imDisplayName-无备注=原名
+[PASS] imDisplayName-备注==原名=原名
+[PASS] lsK-账号前缀键  acct1:x
+[PASS] getAiConfig-前缀键可读  {"model":"m1","apiKey":"k","baseUrl":"u"}
+[PASS] getAiConfig-裸键兼容可读  {"model":"m2","apiKey":"k2","baseUrl":"u2"}
+[PASS] imBuild-服务端会话写入本地  srv={"id":10005,"serverId":5,"isServer":true,"nickname":"对端五","avatar":"a.png","last":"最后一条消息","unread":0,"time":1789610400000,"peerRemark":"备注X"}
+[PASS] imBuild-字段映射 id=10000+peerId
+[PASS] imBuild-字段映射 serverId=peerId
+[PASS] imBuild-字段映射 peerRemark
+[PASS] imBuild-字段映射 last=lastMessage.content
+[PASS] imBuild-字段映射 isServer=true
+[PASS] imBuild-实时列表unread=2(字段映射unreadCount)  live.unread=2
+[PASS] loadChats-写入前缀键(非裸键)  pref=true bare=false
+[PASS] loadChats-对端会话写入本地(字段映射)  {"id":10007,"serverId":7,"isServer":true,"nickname":"对端七","avatar":"","last":"hi","unread":0,"time":1789606800000,"peerRemark":""}
+[PASS] loadChats-fetch失败回落本地不抛错
+[PASS] imOfflineFallback-含[离线兜底]  你好呀！很高兴和你聊天😊
+
+（离线兜底回复：未接入 AI 
+[PASS] migrate-裸键study_workbench_data仍存在(不删)
+[PASS] migrate-目标前缀键acct1:study_workbench_data已写
+[PASS] migrate-前缀键acct1:study_workbench_ai_chat_abc已写
+[PASS] migrate-未删除裸键ai_chat_abc
+[PASS] migrate-幂等:裸键仍存在
+[PASS] migrate-幂等:无removeItem(裸键计数不变)  keys=4
+============================================================
+前端用例 PASS=24 FAIL=0

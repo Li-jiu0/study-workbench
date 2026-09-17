@@ -1306,11 +1306,15 @@
       responseTimeout: (opts.responseTimeout != null) ? opts.responseTimeout : TIMEOUT_RESPONSE
     };
 
-    // 1. 预设优先（省额度，不消耗限频）
-    var preset = presetMatch(userText);
-    if (preset) {
-      if (opts.onChunk) opts.onChunk(preset, preset);
-      return { text: preset, fromPreset: true, degraded: false, model: null };
+    // R72-Bug4：预设不再默认抢跑（旧逻辑命中极宽子串即短路，UI 看不出是内置 -> 「偶尔误触发」）。
+    // 仅当调用方显式 opts.allowPreset === true 时才走前置预设（省额度、不消耗限频的老路径）；
+    // 默认路径下，预设降级为「全部模型失败后的兜底」（见下方第 4 段，fromPreset:true + degraded:true）。
+    if (opts.allowPreset === true) {
+      var preset = presetMatch(userText);
+      if (preset) {
+        if (opts.onChunk) opts.onChunk(preset, preset);
+        return { text: preset, fromPreset: true, degraded: false, model: null };
+      }
     }
 
     // 2. 服务端中转优先（无图 + 已登录时）：不存在跨域问题，密钥在服务端
@@ -1485,7 +1489,8 @@
       throw skipErr;
     }
 
-    // 4. 全部失败 -> 本地兜底
+    // 4. 全部失败 -> 本地兜底（R72-Bug4：这里才是预设作为「内置参考」出现的唯一入口）
+    //    语义：fromPreset:true + degraded:true，调用方据此区分「内置参考」与真实模型回答。
     var fbText = presetMatch(userText) || genericFallback();
     var result = { text: fbText, fromPreset: true, degraded: true, model: null, error: lastErr };
     var invalidList = [];

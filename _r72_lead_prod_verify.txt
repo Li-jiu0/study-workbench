@@ -1,0 +1,55 @@
+credential: OK (host=110.42.134.62)
+plink rc=0
+--- service ---
+is_active= active
+nrestarts= 0
+journal_errors= 0
+--- stamps (web/*.html) ---
+html_total= 50
+   ?v=20260916O             464
+   ?v=20260916k             109
+   ?v=20260916S             106
+   ?v=20260916R             36
+   ?v=20260915c             32
+double_suffix= 0
+--- endpoints (curl codes) ---
+   root_html              200
+   api_health             200
+   conversations_noauth   401
+   friends_noauth         401
+   groups_noauth          401
+--- new pages ---
+   我的文件.html        code=200 bytes=53338
+   导入题库.html        code=200 bytes=22052
+   演示.html          code=200 bytes=16045
+   个人中心.html        code=200 bytes=75501
+   登录.html          code=200 bytes=27585
+--- db ---
+users= 16
+friends= 5
+messages= 143
+friend_remarks_table= 1
+friend_remarks_rows= 0
+ddl= CREATE TABLE friend_remarks ( id INTEGER NOT NULL, owner_id INTEGER NOT NULL, peer_id INTEGER NOT NULL, remark VARCHAR(20) NOT NULL, updated_at VARCHAR(19) NOT NULL, PRIMARY KEY (id), CONSTRAINT uq_friend_remark UNIQUE (owner_id, peer_id), FOREIGN KEY(owner_id) REFERENCES users (id) ON DELETE CASCADE, FOREIGN KEY(peer_id) REFERENCES users (id) ON DELETE CASCADE )
+r72_tmp_accounts= 0
+users_maxid= 17
+--- server files md5 ---
+   database.py            dd6f43a977b2f5cc4c7f1eba5aa33565
+   schemas.py             689feab7a3dd77c44e97849991fef56e
+   routers/chat.py        df9bf6ad04274a12336673b10bdfa398
+   routers/friends.py     fa1deb06e1674a7d73cabb1128ce48cd
+   routers/groups.py      8d3763e9cd2ab3233db8911c2a1f807d
+--- content probes (production bodies) ---
+   chat_local_conversations= 2
+   app_androidbridge= 2
+   importer_register= 3
+   myfiles_xtFilesRender= 2
+   more_chuanyue= 0
+   profile_xtFolio= 0
+   login_wish= 2
+--- local md5 (对照) ---
+   server/database.py       dd6f43a977b2f5cc4c7f1eba5aa33565
+   server/schemas.py        689feab7a3dd77c44e97849991fef56e
+   server/routers/chat.py   df9bf6ad04274a12336673b10bdfa398
+   server/routers/friends.py fa1deb06e1674a7d73cabb1128ce48cd
+   server/routers/groups.py 8d3763e9cd2ab3233db8911c2a1f807d

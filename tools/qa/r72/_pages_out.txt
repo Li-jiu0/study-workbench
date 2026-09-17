@@ -1,0 +1,30 @@
+R72 页域+数据流独立源码契约（项12/13）
+======================================================================
+[PASS] 12a1-导入题库.html存在  
+[PASS] 12a2-导入题库.html<script>平衡  open=16 close=16
+[PASS] 12a3-导入题库.html<style>平衡  open=1 close=1
+[PASS] 12a4-导入题库.html引用资源均在盘  缺失=无
+[PASS] 12a5-导入题库.html含我的文件入口  
+[PASS] 12a6-导入题库.html含importerView容器  
+[PASS] 12a7-导入题库.html复用assets/importer.js  
+[PASS] 12b1-我的文件.html存在  
+[PASS] 12b2-我的文件.html定义xtFilesRegister  
+[PASS] 12b3-我的文件.html挂载window.xtFilesRegister  
+[PASS] 12b4-我的文件.html三大数据键  
+[PASS] 12b5-我的文件.html<script>平衡  open=14 close=14
+[PASS] 12b6-我的文件.html<style>平衡  open=1 close=1
+[PASS] 12b7-我的文件.html引用资源均在盘  缺失=无
+[PASS] 13a1-importer.js定义IMPORTS_KEY=study_workbench_imports  
+[PASS] 13a2-importer.js有upsertImportBank写盘  
+[PASS] 13a3-importer.js调用window.xtFilesRegister(typeof守卫)  
+[PASS] 13a4-importer.js登记失败不影响主流程(try/catch)  
+[PASS] 13b1-importer.js收尾调用__impAfterImport  
+[PASS] 13b2-importer.js收尾closeImporterView  
+[PASS] 13c1-我的文件.html聚合读作品集(KEY_WORKS)  
+[PASS] 13c2-我的文件.html聚合读导入库(KEY_IMPORTS)  
+[PASS] 13c3-我的文件.html聚合读登记(KEY_REGISTRY)  
+[PASS] 13c4-我的文件.htmlbuildEntries三源合并  
+[PASS] 13d-xtFilesRegister幂等(同id覆盖不重复)  
+[PASS] 13e-我的文件.html删除清理study_workbench_imports  
+======================================================================
+页域/数据流用例 PASS=26 FAIL=0

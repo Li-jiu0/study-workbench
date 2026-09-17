@@ -99,8 +99,8 @@
       <div class="nav-item" onclick="location.href='面测.html'">
         <span class="nav-icon" data-icon="handshake"></span><span>面测</span>
       </div>
-      <div class="nav-item" onclick="location.href='演示.html'">
-        <span class="nav-icon" data-icon="palette"></span><span>演示</span>
+      <div class="nav-item" onclick="location.href='我的文件.html'">
+        <span class="nav-icon" data-icon="folder"></span><span>我的文件</span>
       </div>
       <div class="nav-section">创作</div>
       <div class="nav-item" onclick="location.href='社区.html'">
@@ -167,7 +167,7 @@
               <div>
                 <div class="ab-hero-name">星途</div>
                 <div class="ab-hero-sub">给上班族的备考搭子 · 学得下去、问得明白</div>
-                <span class="ab-ver" id="aboutVersion">v2.2</span>
+                <span class="ab-ver" id="aboutVersion">v2.3</span>
               </div>
             </div>
             <div class="ab-desc">白天上班、晚上备考，最怕的是工具散、计划断、没人答疑。星途把这一路要用的东西收在一处：能刷题背词、能写申论做 PPT，还有一个随叫随到的 AI —— 不会就问，问完就能接着学。</div>
@@ -187,7 +187,7 @@
               <span class="ab-chip">时政热点</span>
               <span class="ab-chip">表达</span>
               <span class="ab-chip">商务礼仪</span>
-              <span class="ab-chip">演示</span>
+              <span class="ab-chip">我的文件</span>
               <span class="ab-chip">万能金句 / 场景话术</span>
               <span class="ab-chip">动态社区</span>
               <span class="ab-chip">好友私信</span>
@@ -206,7 +206,7 @@
 
           <div class="ab-card">
             <div class="ab-card-title"><span class="ab-ti"><span class="nav-icon" data-icon="wrench" data-icon-size="16"></span></span>顺手的工具</div>
-            <div class="ab-text">导入自己的题库 · 专注计时 · 外观主题 · 发贴与回收站 · Markdown 导出 · 数据备份</div>
+            <div class="ab-text">我的文件（题库 / 作品归档） · 导入自己的题库 · 专注计时 · 外观主题 · 发贴与回收站 · Markdown 导出 · 数据备份</div>
           </div>
 
           <!-- ===== 关于数据 ===== -->
@@ -250,8 +250,8 @@
           <!-- ===== 更新日志 ===== -->
           <div class="ab-card">
             <div class="ab-card-title"><span class="ab-ti"><span class="nav-icon" data-icon="clock" data-icon-size="16"></span></span>更新日志</div>
-            <div class="ab-text">v2.2 更新：AI 问答页上线（模型列表面板 · 倍率 · MAX 模式 · 深度思考 · 上下文长度）· AI 伙伴改版为小助手与暖心学伴，接入全站统一 AI 底座 ·「关于」改为独立页面 · 全站导航接入 AI · 多处界面细节打磨</div>
-            <div class="ab-log">v2.1：错题本按模块与错因筛选 · 学习数据轮播 · 倒计时置顶<br>v2.0：学习工作台改版 · 底部导航统一为 首页 / 互动 / 我的 / AI / 更多</div>
+            <div class="ab-text">v2.3 更新：全新「我的文件」页上线，统一归集题库 / 作品 / 笔记 ·「演示」功能下线，作品集迁入「我的文件」 · 导入题库独立成页，导入即同步登记 · 会话通知接入原生桥、模型设置优化 · 其他界面细节打磨</div>
+            <div class="ab-log">v2.2：AI 问答页上线（模型列表面板 · 倍率 · MAX 模式 · 深度思考 · 上下文长度）· AI 伙伴改版为小助手与暖心学伴，接入全站统一 AI 底座 ·「关于」改为独立页面 · 全站导航接入 AI<br>v2.1：错题本按模块与错因筛选 · 学习数据轮播 · 倒计时置顶<br>v2.0：学习工作台改版 · 底部导航统一为 首页 / 互动 / 我的 / AI / 更多</div>
           </div>
 
           <div class="ab-sign">—— 小叶子</div>
@@ -389,20 +389,20 @@
 <script src="assets/icon-map.js?v=20260916O" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260916O" defer></script>
+<script src="assets/app.js?v=20260916S" defer></script>
 <script src="assets/quest.js?v=20260916O" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260916S" defer></script>
 <script src="assets/study-stats.js?v=20260916O" defer></script>
 <script src="assets/ai-config.js?v=20260916R"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260916R"></script>
+<script src="assets/ai-service.js?v=20260916S"></script>
 <script>
 /* 关于页：把版本号写回页面（与 app.js 的 showAbout 口径保持一致） */
 (function () {
   'use strict';
   var el = document.getElementById('aboutVersion');
-  if (el) el.textContent = 'v2.2';
+  if (el) el.textContent = 'v2.3';
 })();
 </script>
 </body>

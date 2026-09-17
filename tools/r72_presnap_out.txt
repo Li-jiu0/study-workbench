@@ -1,0 +1,7 @@
+RC=0
+PRESNAP changed=43 new=2 unchanged=3
+CHANGED=web/AI.html|web/AI模拟面试.html|web/PPT案例拆解.html|web/PPT版式库.html|web/ai-settings.html|web/assets/ai-service.js|web/assets/ai-settings.js|web/assets/api.js|web/assets/app.js|web/assets/chat-local.js|web/assets/importer.js|web/assets/notify.js|web/mock_exam.html|web/mock_exam_result.html|web/mock_exam_run.html|web/万能金句库.html|web/个人中心.html|web/企业定向库.html|web/关于.html|web/动态.html|web/商务礼仪.html|web/四级词汇.html|web/场景话术库.html|web/学习工作台.html|web/学习概括.html|web/学途.html|web/工具.html|web/时政热点.html|web/更多.html|web/演示.html|web/申论刷题.html|web/登录.html|web/社区.html|web/私聊.html|web/管理员.html|web/英语.html|web/行测.html|web/行测刷题.html|web/表达.html|web/设置.html|web/错题本.html|web/面测.html|web/面试题库.html
+NEW=web/导入题库.html|web/我的文件.html
+UNCHANGED=web/PPT素材库.html|web/四级经验分享.html|web/好友申请.html
+
+[STDERR] 

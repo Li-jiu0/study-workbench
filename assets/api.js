@@ -19,6 +19,53 @@ function apiGetToken() { return localStorage.getItem(API_TOKEN_KEY) || ''; }
 function apiRefreshToken() { return localStorage.getItem(API_REFRESH_KEY) || ''; }
 function apiFileUrl(u) { return (!u || /^(https?:|data:)/.test(u)) ? u : (window.API_BASE + u); }
 
+/* ---------- 头像统一取值 / 渲染工具（2026-09-16 修复「头像加载不出来」） ----------
+   背景：在线模式头像早已改为文件上传 URL（字段 avatarUrl），本地模式仍是 base64（字段 avatarImg）。
+        过去各判据一律用 /^data:image\// 一票否决 → 在线模式必然回退首字头像。
+        现统一：先取 avatarUrl、再取 avatarImg；src 一律过 apiFileUrl()；<img> 统一带 onerror 兜底；
+        data: 开头的本地 base64 会被 apiFileUrl 原样返回，本地模式行为不变。
+        全部走 window.xxx + typeof 守卫，避免与其它文件顶层声明冲突。 */
+if (typeof window.apiAvatarText !== 'function') {
+  window.apiAvatarText = function (s) {
+    var t = (s === null || s === undefined) ? '' : String(s);
+    if (typeof window.esc === 'function') return window.esc(t);
+    return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  };
+}
+if (typeof window.apiAvatarSrcOf !== 'function') {
+  /* 统一取值：有头像则返回已过 apiFileUrl 的地址，无头像返回空串（调用方回退首字） */
+  window.apiAvatarSrcOf = function (obj) {
+    var o = obj || {};
+    var raw = (o.avatarUrl && typeof o.avatarUrl === 'string') ? o.avatarUrl
+      : ((o.avatarImg && typeof o.avatarImg === 'string') ? o.avatarImg : '');
+    if (!raw) return '';
+    if (/^(javascript:|vbscript:)/i.test(raw)) return '';
+    try { return (typeof window.apiFileUrl === 'function') ? (window.apiFileUrl(raw) || '') : raw; } catch (e) { return raw; }
+  };
+}
+if (typeof window.apiAvatarFallback !== 'function') {
+  /* <img onerror> 兜底：图片 404 / 解码失败时把容器还原成昵称首字，避免留裂图 */
+  window.apiAvatarFallback = function (img, letter) {
+    try {
+      if (!img) return;
+      var box = img.parentNode;
+      if (!box) return;
+      box.innerHTML = '';
+      box.textContent = (letter && String(letter).length) ? String(letter) : '学';
+    } catch (e) { }
+  };
+}
+if (typeof window.apiAvatarHtml !== 'function') {
+  /* 头像 HTML：有头像 → <img src="apiFileUrl(...)" onerror=回退首字>；无头像 → 转义后的首字文本 */
+  window.apiAvatarHtml = function (obj, fallbackText, extraAttr) {
+    var src = window.apiAvatarSrcOf(obj);
+    var fb = (fallbackText === null || fallbackText === undefined || fallbackText === '') ? '学' : String(fallbackText);
+    if (!src) return window.apiAvatarText(fb);
+    var letter = fb.replace(/['"\\\r\n]/g, '').slice(0, 4);
+    return '<img src="' + window.apiAvatarText(src) + '" alt="头像"' + (extraAttr ? ' ' + extraAttr : '') + ' onerror="window.apiAvatarFallback(this, \'' + window.apiAvatarText(letter) + '\')">';
+  };
+}
+
 /* ---- 静默续期：用 refresh 换新 access（成功即一起轮换 refresh）。并发 401 共享同一次刷新 ---- */
 var _refreshBusy = null;
 function _doRefresh() {
@@ -102,7 +149,7 @@ function gotoChat() {
   }
   location.href = '私聊.html';
 }
-function gotoBlogMine() { location.href = '学习博客.html#mine'; }
+function gotoBlogMine() { location.href = '社区.html#mine'; }
 function renderHomeOnlineNav() {
   var el = document.getElementById('homeOnlineNav'); if (!el) return;
   if (!isOnlineSession()) { el.style.display = 'none'; return; }
@@ -113,9 +160,9 @@ function renderHomeOnlineNav() {
     '<span style="font-size:11px;color:var(--text-secondary)">多人在线（好友私信 / 博客 / AI）</span></div>' +
     '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
     '<a class="chip" href="私聊.html" style="text-decoration:none"><span class="nav-icon" data-icon="message-square" data-icon-size="12"></span> 好友私信</a>' +
-    '<a class="chip" href="学习博客.html#mine" style="text-decoration:none"><span class="nav-icon" data-icon="inbox" data-icon-size="12"></span> 我的发贴·回收站</a>' +
-    '<a class="chip" href="学习博客.html#favorite" style="text-decoration:none"><span class="nav-icon" data-icon="bookmark" data-icon-size="12"></span> 我的收藏</a>' +
-    '<a class="chip" href="学习博客.html" style="text-decoration:none"><span class="nav-icon" data-icon="globe" data-icon-size="12"></span> 广场</a>' +
+    '<a class="chip" href="社区.html#mine" style="text-decoration:none"><span class="nav-icon" data-icon="inbox" data-icon-size="12"></span> 我的发贴·回收站</a>' +
+    '<a class="chip" href="社区.html#favorite" style="text-decoration:none"><span class="nav-icon" data-icon="bookmark" data-icon-size="12"></span> 我的收藏</a>' +
+    '<a class="chip" href="社区.html" style="text-decoration:none"><span class="nav-icon" data-icon="globe" data-icon-size="12"></span> 社区</a>' +
     '</div>';
   if (window.lucideAutoRender) window.lucideAutoRender(); // K6：动态插入的 data-icon 图标重渲染
 }
@@ -164,7 +211,7 @@ function updateProfileUI() {
   var u = CURRENT_USER; if (!u) return;
   var av = document.querySelector('.user-card .user-avatar');
   if (av) {
-    if (u.avatarUrl) av.innerHTML = '<img src="' + apiFileUrl(u.avatarUrl) + '" alt="头像">';
+    if (window.apiAvatarSrcOf(u)) av.innerHTML = window.apiAvatarHtml(u, (u.nickname || u.username || '学').slice(0, 1));
     else av.textContent = (u.nickname || u.username || '学').slice(0, 1);
   }
   var nm = document.querySelector('.user-card .user-name'); if (nm) nm.textContent = u.nickname || u.username;
@@ -188,7 +235,7 @@ async function renderProfilePage() {
   box.innerHTML = `
     <div class="card"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="user" data-icon-size="18"></span></span>个人资料</div><div class="card-action">@${esc(u.username)}</div></div>
       <div style="display:flex;align-items:center;gap:16px;padding:6px 0;flex-wrap:wrap">
-        <div class="profile-avatar-lg">${u.avatarUrl ? '<img src="' + apiFileUrl(u.avatarUrl) + '" alt="头像">' : esc((u.nickname || '学').slice(0, 1))}</div>
+        <div class="profile-avatar-lg">${window.apiAvatarHtml(u, (u.nickname || '学').slice(0, 1))}</div>
         <div style="flex:1;min-width:180px"><div style="font-size:18px;font-weight:800;color:var(--text)">${esc(u.nickname)}</div><div style="font-size:13px;color:var(--text-secondary);margin-top:4px">${esc(u.motto || '')}</div></div>
         <button class="btn btn-outline" onclick="editProfile()"><span class="nav-icon" data-icon="pen" data-icon-size="14"></span> 编辑资料</button>
         <button class="btn btn-danger" onclick="doLogout()"><span class="nav-icon" data-icon="logout" data-icon-size="14"></span> 退出登录</button>
@@ -241,12 +288,13 @@ async function renderUserHome(userId, box) {
   
   box.innerHTML =
     '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="user" data-icon-size="18"></span></span>TA 的主页</div><div class="card-action">公开发贴 ' + u.notes.length + ' 篇</div></div>' +
-      '<div style="display:flex;align-items:center;gap:16px;padding:6px 0;flex-wrap:wrap">' +
-        '<div class="profile-avatar-lg">' + (u.avatarUrl ? '<img src="' + apiFileUrl(u.avatarUrl) + '" alt="头像">' : esc((u.nickname || '学').slice(0, 1))) + '</div>' +
-        '<div style="flex:1;min-width:180px">' +
-          '<div style="font-size:18px;font-weight:800;color:var(--text)">' + esc(u.nickname) + '</div>' +
-          '<div style="font-size:13px;color:var(--text-secondary);margin-top:4px">' + esc(u.motto || '这个人很懒，什么都没写~') + '</div>' +
-          (u.bio ? '<div style="font-size:13px;color:var(--text);margin-top:6px;line-height:1.6">' + esc(u.bio) + '</div>' : '') +
+      '<div style="display:flex;align-items:flex-start;gap:16px;padding:6px 0;flex-wrap:nowrap">' +
+        '<div class="profile-avatar-lg" style="flex-shrink:0">' + window.apiAvatarHtml(u, (u.nickname || '学').slice(0, 1)) + '</div>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="font-size:18px;font-weight:800;color:var(--text);word-break:break-word">' + esc(u.nickname) + '</div>' +
+          '<div style="font-size:13px;color:var(--text-secondary);margin-top:4px">@' + esc(u.username) + '</div>' +
+          '<div style="font-size:13px;color:var(--text-secondary);margin-top:6px;line-height:1.5">' + esc(u.motto || '这个人很懒，什么都没写~') + '</div>' +
+          (u.bio ? '<div style="font-size:13px;color:var(--text);margin-top:8px;line-height:1.7">' + esc(u.bio) + '</div>' : '') +
           // 批次二 需求6：公开主页响应自带 presence 白名单字段（lastSeenAt/online），有则显示相对时间；无后端/字段缺失时整行不渲染
           ((u.lastSeenAt || u.online) && typeof formatPresence === 'function'
             ? '<div style="font-size:12px;margin-top:6px;display:inline-flex;align-items:center;gap:5px"' + (u.online ? ' class="presence-line on"' : ' class="presence-line"') + '><span class="presence-dot' + (u.online ? ' on' : '') + '"></span>' + esc(formatPresence(u.lastSeenAt, u.online)) + '</div>'
@@ -255,7 +303,7 @@ async function renderUserHome(userId, box) {
           (u.createdAt ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:6px">📅 加入于 ' + esc(String(u.createdAt).slice(0, 10)) + '</div>' : '') +
           _tagChips(u.tags) + _goalLine(u.goal) +
         '</div>' +
-        '<div style="display:flex;gap:8px;flex-wrap:wrap">' + actionBtns + '</div>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0">' + actionBtns + '</div>' +
       '</div>' +
       '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">🔒 出于隐私保护：性别 / 生日不对外展示；草稿、私密、归档发贴不可见。</div>' +
     '</div>' +
@@ -318,7 +366,7 @@ function editProfile() {
 function renderPeAvatarPreview() {
   var el = document.getElementById('peAvatarPreview'); if (!el) return;
   var u = CURRENT_USER || {};
-  if (apiAvatarTemp && /^(https?:|\/uploads\/|data:)/.test(apiAvatarTemp)) el.innerHTML = '<img src="' + apiFileUrl(apiAvatarTemp) + '" alt="头像预览">';
+  if (window.apiAvatarSrcOf({ avatarUrl: apiAvatarTemp })) el.innerHTML = window.apiAvatarHtml({ avatarUrl: apiAvatarTemp }, ((u.nickname || u.username || '学') || '学').slice(0, 1));
   else el.textContent = ((u.nickname || u.username || '学') || '学').slice(0, 1);
 }
 async function onProfileAvatarFile(input) {
@@ -403,7 +451,7 @@ function noteCardHtml(n, opts) {
     '</div></div>';
 }
 
-/* ---------- 广场 / 我的文章 ---------- */
+/* ---------- 社区 / 我的文章 ---------- */
 var blogFeed = { list: [], page: 0, hasMore: true, loading: false };
 var blogObs = null;
 async function renderBlogList(reset) {
@@ -433,7 +481,7 @@ async function renderBlogList(reset) {
   } catch (e) {
     grid.innerHTML = '';
     var empty2 = document.getElementById('blogListEmpty'); if (empty2) empty2.style.display = 'block';
-    showToast('⚠️ 广场加载失败：' + e.message);
+    showToast('⚠️ 社区加载失败：' + e.message);
   }
   blogFeed.loading = false;
 }
@@ -859,7 +907,7 @@ function globalSearch(kw) {
       var ctx = (n.excerpt || (n.tags || []).join(' / ') || '');
       var hitIdx = (n.excerpt || '').toLowerCase().indexOf(kw);
       var desc = ctx + (n.author ? ' · 👤 ' + n.author.nickname : '');
-      return { icon: '<span class="nav-icon" data-icon="pen" data-icon-size="16"></span>', title: n.title, desc: desc, action: "if(document.getElementById('page-blog')){closeGsDropdown();openBlogDetail(" + n.id + ");}else{location.href='学习博客.html#note=" + n.id + "';}" };
+      return { icon: '<span class="nav-icon" data-icon="pen" data-icon-size="16"></span>', title: n.title, desc: desc, action: "if(document.getElementById('page-blog')){closeGsDropdown();openBlogDetail(" + n.id + ");}else{location.href='社区.html#note=" + n.id + "';}" };
     });
     var noteCount = results.length;
     MODULE_INDEX.forEach(function (m) {
@@ -997,24 +1045,35 @@ function quickSelectModel(modelId) {
     }
   }
   
+  // 注意：aip* 表单由 app.js 动态渲染，当前页面未必存在，必须判空否则直接 TypeError
+  var elSelect = document.getElementById('aipSelect');
+  var elModel = document.getElementById('aipModel');
+  var elBaseUrl = document.getElementById('aipBaseUrl');
+
   if (matchedProvider) {
-    document.getElementById('aipSelect').value = matchedProvider.id;
-    document.getElementById('aipModel').value = modelId;
-    document.getElementById('aipBaseUrl').value = matchedProvider.baseUrl;
+    if (elSelect) elSelect.value = matchedProvider.id;
+    if (elModel) elModel.value = modelId;
+    if (elBaseUrl) elBaseUrl.value = matchedProvider.baseUrl;
     if (typeof onAiProviderChange === 'function') onAiProviderChange();
     showToast('✅ 已选择 ' + modelId + '，请填写API Key');
   } else {
-    document.getElementById('aipModel').value = modelId;
+    if (elModel) elModel.value = modelId;
     showToast('✅ 已选择 ' + modelId + '，请填写接口地址和API Key');
   }
 }
 
 // 保存前端直连配置
 function saveAiProviderFormLocal() {
-  var provider = document.getElementById('aipSelect').value;
-  var model = document.getElementById('aipModel').value;
-  var baseUrl = document.getElementById('aipBaseUrl').value;
-  var apiKey = document.getElementById('aipKey').value;
+  // 同上：节点可能不存在（面板动态渲染），缺失时静默跳过，不抛错
+  var elSelect = document.getElementById('aipSelect');
+  var elModel = document.getElementById('aipModel');
+  var elBaseUrl = document.getElementById('aipBaseUrl');
+  var elKey = document.getElementById('aipKey');
+  if (!elModel || !elBaseUrl || !elKey) return;
+  var provider = elSelect ? elSelect.value : '';
+  var model = elModel.value;
+  var baseUrl = elBaseUrl.value;
+  var apiKey = elKey.value;
   
   if (typeof saveAiProviderConfig === 'function') {
     saveAiProviderConfig({ provider: provider, model: model, baseUrl: baseUrl, apiKey: apiKey });
@@ -1103,7 +1162,7 @@ function openNotifyNote(noteId) {
   var panel = document.getElementById('notifyPanel'); if (panel) panel.classList.remove('open');
   if (!noteId) return;
   if (document.getElementById('page-blog')) { openBlogDetail(noteId); }
-  else location.href = '学习博客.html#note=' + noteId;
+  else location.href = '社区.html#note=' + noteId;
 }
 async function markAllRead() {
   try { await api('/api/notifications/read-all', { method: 'POST' }); await loadNotifications(true); showToast('✅ 已全部标记为已读'); }
@@ -1129,6 +1188,23 @@ function renderChatBadge(n) {
 }
 var chatUnread = 0;
 var chatUnreadPrev = -1;
+
+/* ---------- R72（Bug1/Bug3）：好友私信 —— 会话列表 / 好友备注封装 ----------
+   与上面的 api() 同一套封装：自动带 Bearer、401 静默刷新一次、非 2xx 抛 Error(detail)。
+   chat-local.js 优先调用这些封装，拿不到时自行 fetch 兜底（本文件未加载 / 老缓存场景）。 */
+async function apiGetChatConversations(limit) {
+  var q = (limit != null) ? ('?limit=' + encodeURIComponent(limit)) : '';
+  return api('/api/chat/conversations' + q);
+}
+async function apiSetFriendRemark(peerId, remark) {
+  return api('/api/friends/' + Number(peerId) + '/remark', {
+    method: 'PUT',
+    body: { remark: (remark == null ? '' : String(remark)) }
+  });
+}
+window.apiGetChatConversations = apiGetChatConversations;
+window.apiSetFriendRemark = apiSetFriendRemark;
+
 async function loadChatUnread() {
   if (!apiGetToken()) return;
   try {
@@ -1262,20 +1338,27 @@ function renderProfilePage() {
 
 function _renderProfileLocal(box, p) {
   p = p || {};
-  var avatar = (p.avatarImg && /^data:image\//.test(p.avatarImg))
-    ? '<img src="' + p.avatarImg + '" alt="头像">' : esc((p.avatar || '学').slice(0, 1));
+  // 2026-09-15 用户反馈：资料卡布局重构，头像信息左右结构 + 操作区分层
+  var avatar = window.apiAvatarHtml(p, (p.avatar || '学').slice(0, 1));
+  /* 2026-09-16：头像渲染已统一到 window.apiAvatarHtml（avatarUrl / avatarImg 双兼容 + apiFileUrl 转换 + onerror 兜底），不再用 /^data:image\// 一票否决 */
+  var metaParts = [_genderSym(p.gender), _ageOf(p.birthday), (p.city || '').trim(), (p.goal || '').trim() ? '目标 ' + p.goal.trim() : ''].filter(function (x) { return x; });
+  var metaHtml = metaParts.length ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:8px;line-height:1.6">' + esc(metaParts.join(' · ')) + '</div>' : '';
   box.innerHTML =
     '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="user" data-icon-size="18"></span></span>个人资料</div><div class="card-action">本地单机</div></div>' +
-    '<div style="display:flex;align-items:center;gap:16px;padding:6px 0;flex-wrap:wrap">' +
-    '<div class="profile-avatar-lg">' + avatar + '</div>' +
-    '<div style="flex:1;min-width:180px"><div style="font-size:18px;font-weight:800;color:var(--text)">' + esc(p.name || '同学') + '</div>' +
-    '<div style="font-size:13px;color:var(--text-secondary);margin-top:2px">' + esc(p.motto || '') + '</div>' +
-    (p.bio ? '<div style="font-size:13px;color:var(--text);margin-top:6px;line-height:1.6">' + esc(p.bio) + '</div>' : '') + _profileMeta(p.gender, p.birthday, p.city) +
-    _tagChips(p.tags) + _goalLine(p.goal) +
+    '<div style="display:flex;align-items:flex-start;gap:16px;padding:6px 0;flex-wrap:nowrap">' +
+    '<div class="profile-avatar-lg" style="flex-shrink:0">' + avatar + '</div>' +
+    '<div style="flex:1;min-width:0">' +
+    '<div style="font-size:18px;font-weight:800;color:var(--text);word-break:break-word">' + esc(p.name || '同学') + '</div>' +
+    (p.motto ? '<div style="font-size:13px;color:var(--text-secondary);margin-top:6px;line-height:1.5">' + esc(p.motto) + '</div>' : '') +
+    (p.bio ? '<div style="font-size:13px;color:var(--text);margin-top:8px;line-height:1.7">' + esc(p.bio) + '</div>' : '') +
+    metaHtml + _tagChips(p.tags) +
+    '</div></div>' +
+    // 操作区分层：编辑资料主按钮（本地模式不显示「我的动态」）
+    '<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap"><button class="btn btn-primary" onclick="editProfile()"><span class="nav-icon" data-icon="pen" data-icon-size="14"></span> 编辑资料</button></div>' +
+    '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">📱 当前为本地单机模式，资料保存在本机浏览器。在线登录后资料/发贴会存到服务器并可多端同步。</div>' +
+    // 退出登录降级为卡片底部文本链接（确认逻辑沿用 doLogout）
+    '<div style="margin-top:12px"><a href="javascript:void(0)" onclick="doLogout()" style="font-size:13px;color:var(--danger);text-decoration:none"><span class="nav-icon" data-icon="logout" data-icon-size="13" style="vertical-align:-1px"></span> 退出登录</a></div>' +
     '</div>' +
-    '<button class="btn btn-outline" onclick="editProfile()"><span class="nav-icon" data-icon="pen" data-icon-size="14"></span> 编辑资料</button>' +
-    '<button class="btn btn-danger" onclick="doLogout()"><span class="nav-icon" data-icon="logout" data-icon-size="14"></span> 退出登录</button></div>' +
-    '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">📱 当前为本地单机模式，资料保存在本机浏览器。在线登录后资料/发贴会存到服务器并可多端同步。</div></div>' +
     _localNotesCard();
   if (window.lucideAutoRender) window.lucideAutoRender(); // J 批次：动态 data-icon span 重渲染
 }
@@ -1295,7 +1378,7 @@ function _localNotesCard() {
     }).join('') + '</div>' +
     '<div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">' +
     '<button class="btn btn-outline" onclick="exportAllNotesMd()"><span class="nav-icon" data-icon="download" data-icon-size="14"></span> 导出全部 Markdown</button>' +
-    '<button class="btn btn-outline" onclick="location.href=' + "'学习博客.html'" + '"><span class="nav-icon" data-icon="pen" data-icon-size="14"></span> 去写发贴</button></div></div>' +
+    '<button class="btn btn-outline" onclick="location.href=' + "'社区.html'" + '"><span class="nav-icon" data-icon="pen" data-icon-size="14"></span> 去写发贴</button></div></div>' +
 
     // ===== 今日学习时长（本机计时，与设置页上限联动）=====
     (function () {
@@ -1334,7 +1417,7 @@ function _localNotesCard() {
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">' +
     '<div onclick="location.href=' + "'错题本.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px"><span class="nav-icon" data-icon="book" data-icon-size="22"></span></div><div style="font-size:12px;margin-top:4px">错题本</div></div>' +
     '<div onclick="location.href=' + "'四级词汇.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px"><span class="nav-icon" data-icon="book-open" data-icon-size="22"></span></div><div style="font-size:12px;margin-top:4px">四级词汇</div></div>' +
-    '<div onclick="location.href=' + "'央国企笔试.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px"><span class="nav-icon" data-icon="pen" data-icon-size="22"></span></div><div style="font-size:12px;margin-top:4px">行测刷题</div></div>' +
+    '<div onclick="location.href=' + "'行测.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px"><span class="nav-icon" data-icon="pen" data-icon-size="22"></span></div><div style="font-size:12px;margin-top:4px">行测刷题</div></div>' +
     '</div></div>';
   if (window.lucideAutoRender) window.lucideAutoRender(); // J 批次：动态 data-icon span 重渲染
 }
@@ -1353,20 +1436,29 @@ function _renderProfileOnline(box, u) {
       '<div style="flex:1;height:14px;background:var(--bg);border-radius:7px;overflow:hidden"><div style="height:100%;width:' + Math.round(catCount[c.id] / maxCat * 100) + '%;background:linear-gradient(90deg,' + cols[0] + ',' + cols[1] + ')"></div></div>' +
       '<span style="width:60px;font-size:12px;color:var(--text-secondary)">' + catCount[c.id] + ' 篇</span></div>';
   }).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有发贴，去「学习博客 → ✍️ 写发贴」试试吧</div>';
+  // 2026-09-15 用户反馈：资料卡布局重构，头像信息左右结构 + 操作区分层
+  var metaParts = [(u.city || '').trim(), (u.goal || '').trim() ? '目标 ' + u.goal.trim() : '', u.createdAt ? '加入于 ' + u.createdAt : ''].filter(function (x) { return x; });
+  var metaHtml = metaParts.length ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:8px;line-height:1.6">' + esc(metaParts.join(' · ')) + '</div>' : '';
   box.innerHTML =
     '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="user" data-icon-size="18"></span></span>个人资料</div><div class="card-action">@' + esc(u.username) + '</div></div>' +
-    '<div style="display:flex;align-items:center;gap:16px;padding:6px 0;flex-wrap:wrap">' +
-    '<div class="profile-avatar-lg">' + (u.avatarUrl ? '<img src="' + apiFileUrl(u.avatarUrl) + '" alt="头像">' : esc((u.nickname || '学').slice(0, 1))) + '</div>' +
-    '<div style="flex:1;min-width:180px"><div style="font-size:18px;font-weight:800;color:var(--text)">' + esc(u.nickname) + '</div>' +
-    '<div style="font-size:13px;color:var(--text-secondary);margin-top:2px">' + esc(u.motto || '') + '</div>' +
+    '<div style="display:flex;align-items:flex-start;gap:16px;padding:6px 0;flex-wrap:nowrap">' +
+    '<div class="profile-avatar-lg" style="flex-shrink:0">' + window.apiAvatarHtml(u, (u.nickname || '学').slice(0, 1)) + '</div>' +
+    '<div style="flex:1;min-width:0">' +
+    '<div style="font-size:18px;font-weight:800;color:var(--text);word-break:break-word">' + esc(u.nickname) + '</div>' +
+    '<div style="font-size:13px;color:var(--text-secondary);margin-top:2px">@' + esc(u.username) + '</div>' +
+    (u.motto ? '<div style="font-size:13px;color:var(--text-secondary);margin-top:6px;line-height:1.5">' + esc(u.motto) + '</div>' : '') +
     // 公开主页：性别/生日一律不传（即使服务端异常返回也不展示），只展示城市
-    (u.bio ? '<div style="font-size:13px;color:var(--text);margin-top:6px;line-height:1.6">' + esc(u.bio) + '</div>' : '') + _profileMeta('', '', u.city) +
-    _tagChips(u.tags) + _goalLine(u.goal) +
-    (u.createdAt ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:6px">📅 加入于 ' + esc(u.createdAt) + '</div>' : '') +
+    (u.bio ? '<div style="font-size:13px;color:var(--text);margin-top:8px;line-height:1.7">' + esc(u.bio) + '</div>' : '') +
+    metaHtml + _tagChips(u.tags) +
+    '</div></div>' +
+    // 操作区分层：编辑资料主按钮 + 我的动态次按钮（自视角，跳动态页）
+    '<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">' +
+    '<button class="btn btn-primary" onclick="editProfile()"><span class="nav-icon" data-icon="pen" data-icon-size="14"></span> 编辑资料</button>' +
+    '<button class="btn btn-outline" onclick="location.href=' + "'动态.html?user=" + u.id + "'" + '"><span class="nav-icon" data-icon="rss" data-icon-size="14"></span> 我的动态</button></div>' +
+    '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">✅ 多人在线：资料保存在服务器数据库，头像为文件上传。</div>' +
+    // 退出登录降级为卡片底部文本链接（确认逻辑沿用 doLogout）
+    '<div style="margin-top:12px"><a href="javascript:void(0)" onclick="doLogout()" style="font-size:13px;color:var(--danger);text-decoration:none"><span class="nav-icon" data-icon="logout" data-icon-size="13" style="vertical-align:-1px"></span> 退出登录</a></div>' +
     '</div>' +
-    '<button class="btn btn-outline" onclick="editProfile()"><span class="nav-icon" data-icon="pen" data-icon-size="14"></span> 编辑资料</button>' +
-    '<button class="btn btn-danger" onclick="doLogout()"><span class="nav-icon" data-icon="logout" data-icon-size="14"></span> 退出登录</button></div>' +
-    '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">✅ 多人在线：资料保存在服务器数据库，头像为文件上传。</div></div>' +
     '<div class="card"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="18"></span></span>发贴统计</div></div>' +
     '<div class="profile-grid">' +
     [['pen', s.published || 0, '已发布'], ['save', s.draft || 0, '草稿'], ['inbox', s.archived || 0, '归档'], ['thumbs-up', s.likes || 0, '总点赞'], ['message-square', s.comments || 0, '评论'], ['eye', s.views || 0, '阅读']].map(function (x) {
@@ -1375,7 +1467,7 @@ function _renderProfileOnline(box, u) {
     '<div style="margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px"><span class="nav-icon" data-icon="book-open" data-icon-size="14"></span> 发贴分类分布</div>' + catBars + '</div>' +
     '<div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">' +
     '<button class="btn btn-outline" onclick="exportAllNotesMd()"><span class="nav-icon" data-icon="download" data-icon-size="14"></span> 导出全部 Markdown</button>' +
-    '<button class="btn btn-outline" onclick="location.href=' + "'学习博客.html'" + '"><span class="nav-icon" data-icon="pen" data-icon-size="14"></span> 去写发贴</button></div></div>' +
+    '<button class="btn btn-outline" onclick="location.href=' + "'社区.html'" + '"><span class="nav-icon" data-icon="pen" data-icon-size="14"></span> 去写发贴</button></div></div>' +
 
     // ===== 今日学习时长（本机计时，与设置页上限联动）=====
     (function () {
@@ -1414,7 +1506,7 @@ function _renderProfileOnline(box, u) {
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">' +
     '<div onclick="location.href=' + "'错题本.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px"><span class="nav-icon" data-icon="book" data-icon-size="22"></span></div><div style="font-size:12px;margin-top:4px">错题本</div></div>' +
     '<div onclick="location.href=' + "'四级词汇.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px"><span class="nav-icon" data-icon="book-open" data-icon-size="22"></span></div><div style="font-size:12px;margin-top:4px">四级词汇</div></div>' +
-    '<div onclick="location.href=' + "'央国企笔试.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px"><span class="nav-icon" data-icon="pen" data-icon-size="22"></span></div><div style="font-size:12px;margin-top:4px">行测刷题</div></div>' +
+    '<div onclick="location.href=' + "'行测.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"><div style="font-size:24px"><span class="nav-icon" data-icon="pen" data-icon-size="22"></span></div><div style="font-size:12px;margin-top:4px">行测刷题</div></div>' +
     '</div></div>';
   if (window.lucideAutoRender) window.lucideAutoRender(); // J 批次：动态 data-icon span 重渲染
 }
@@ -1437,7 +1529,7 @@ function editProfile() {
     if (tagEl) tagEl.value = src.u.tags || '';
     if (goalEl) goalEl.value = src.u.goal || '';
   } else {
-    apiAvatarTemp = (src.p.avatarImg && /^data:image\//.test(src.p.avatarImg)) ? src.p.avatarImg : null;
+    apiAvatarTemp = window.apiAvatarSrcOf(src.p) || null;
     if (nameEl) nameEl.value = src.p.name || '';
     if (mottoEl) mottoEl.value = src.p.motto || '';
     if (bioEl) bioEl.value = src.p.bio || '';
@@ -1457,7 +1549,7 @@ function renderPeAvatarPreview() {
   var el = document.getElementById('peAvatarPreview'); if (!el) return;
   var src = _peSource();
   var letter = src.online ? ((src.u.nickname || '学').slice(0, 1)) : (((src.p.name || src.p.avatar) || '学').slice(0, 1));
-  if (apiAvatarTemp && /^(https?:|\/uploads\/|data:)/.test(apiAvatarTemp)) el.innerHTML = '<img src="' + apiFileUrl(apiAvatarTemp) + '" alt="头像预览">';
+  if (window.apiAvatarSrcOf({ avatarImg: apiAvatarTemp })) el.innerHTML = window.apiAvatarHtml({ avatarImg: apiAvatarTemp }, letter);
   else el.textContent = letter;
 }
 
@@ -1524,12 +1616,12 @@ function saveProfileEditor() {
     var p = src.p;
     p.name = name || p.name; p.motto = motto; p.bio = bio; p.gender = gender; p.birthday = birthday; p.city = city;
     p.tags = tags; p.goal = goal;
-    if (apiAvatarTemp) { p.avatarImg = apiAvatarTemp; } else { delete p.avatarImg; }
+    if (apiAvatarTemp && typeof apiAvatarTemp === 'string') { p.avatarImg = apiAvatarTemp; } else { delete p.avatarImg; }   // 2026-09-16：临时头像可能是服务端 URL，不再限定 base64
     if (typeof saveData === 'function') saveData();
     try {
       var nm = document.querySelector('.user-card .user-name'); if (nm) nm.textContent = p.name;
       var av = document.querySelector('.user-card .user-avatar');
-      if (av) { av.innerHTML = (p.avatarImg && /^data:image\//.test(p.avatarImg)) ? '<img src="' + p.avatarImg + '" alt="头像">' : esc(((p.avatar || '学')).slice(0, 1)); }
+      if (av) { av.innerHTML = window.apiAvatarHtml(p, ((p.avatar || '学')).slice(0, 1)); }
     } catch (e2) { }
     finish('👤 个人资料已更新');
   }

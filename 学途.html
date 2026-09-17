@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>学途 · 个人学习中枢</title>
-<link rel="stylesheet" href="assets/common.css?v=20260915c">
+<link rel="stylesheet" href="assets/common.css?v=20260916O">
 <style>
 /* ================= 学途 · 个人学习中枢（v1.15） ================= */
 /* common.css 会锁 html/body 高度并隐藏滚动，本页为独立长页面，恢复滚动 */
@@ -128,6 +128,8 @@ body { margin: 0; background: var(--bg); }
 .xt-me-row .mr-tx { flex: 1; font-size: 14px; color: var(--text); }
 .xt-me-row .mr-ar { color: var(--text-muted); }
 </style>
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
 </head>
 <body>
 
@@ -170,22 +172,22 @@ body { margin: 0; background: var(--bg); }
   <div class="xt-tab" data-tab="me" onclick="xtSwitch('me')"><span class="ti" data-icon="user" data-icon-size="18"></span>我的</div>
 </nav>
 
-<script src="assets/app.js?v=20260915f"></script>
-<script src="assets/icon-map.js?v=20260915c"></script>
-<script src="assets/voiceplayer.js?v=20260915g"></script>
-<script src="assets/config.js?v=20260915c"></script>
+<script src="assets/app.js?v=20260916S"></script>
+<script src="assets/icon-map.js?v=20260916O"></script>
+<script src="assets/voiceplayer.js?v=20260916O"></script>
+<script src="assets/config.js?v=20260916O"></script>
 <script>
 /* ================= 学途 · 逻辑（v1.15） ================= */
 (function () {
   var TAB = 'home';
   var MODULE_URLS = {
     vocab: '四级词汇.html',
-    reading: '四级备考.html',
-    writing: '四级备考.html',
-    translate: '四级备考.html',
+    reading: '英语.html',
+    writing: '英语.html',
+    translate: '英语.html',
     exam: '行测刷题.html',
     iv: '面试题库.html',
-    blog: '学习博客.html'
+    blog: '社区.html'
   };
 
   /* ---------- 通用 ---------- */
@@ -345,7 +347,7 @@ body { margin: 0; background: var(--bg); }
       '<div class="xt-mod" onclick="location.href=\'' + MODULE_URLS.translate + '\'"><span class="m-ic"><span class="nav-icon" data-icon="languages" data-icon-size="18"></span></span><div class="m-tx"><div class="m-name">四级翻译</div><div class="m-meta">汉译英翻译练习</div></div><span class="m-ar">›</span></div>' +
       '<div class="xt-group-title">🎯 公考</div>' +
       '<div class="xt-mod" onclick="goStudy(\'exam\',\'' + MODULE_URLS.exam + '\')"><span class="m-ic"><span class="nav-icon" data-icon="chart-bar" data-icon-size="18"></span></span><div class="m-tx"><div class="m-name">行测</div><div class="m-meta">图形推理 · 数量关系 · 资料分析等</div></div><span class="m-ar">›</span></div>' +
-      '<div class="xt-mod" onclick="location.href=\'央国企笔试.html\'"><span class="m-ic"><span class="nav-icon" data-icon="pen" data-icon-size="18"></span></span><div class="m-tx"><div class="m-name">申论 / 综合</div><div class="m-meta">央国企笔试备考</div></div><span class="m-ar">›</span></div>' +
+      '<div class="xt-mod" onclick="location.href=\'行测.html\'"><span class="m-ic"><span class="nav-icon" data-icon="pen" data-icon-size="18"></span></span><div class="m-tx"><div class="m-name">申论 / 综合</div><div class="m-meta">行测备考</div></div><span class="m-ar">›</span></div>' +
       '<div class="xt-mod" onclick="location.href=\'' + MODULE_URLS.iv + '\'"><span class="m-ic"><span class="nav-icon" data-icon="mic" data-icon-size="18"></span></span><div class="m-tx"><div class="m-name">面试</div><div class="m-meta">面试题库 · 高频问题</div></div><span class="m-ar">›</span></div>' +
       '<div class="xt-group-title">📖 自定义学科</div>' + subHtml +
       '<button class="xt-btn ghost" style="width:100%" onclick="xtAddSubject()">＋ 添加自定义学科</button>' +
@@ -457,7 +459,7 @@ body { margin: 0; background: var(--bg); }
     for (var ri = 0; ri < recent.length; ri++) {
       var rn = recent[ri];
       var rc = (typeof noteCat === 'function') ? noteCat(rn.category) : { icon: '📝', name: '其他' };
-      recentHtml += '<div class="xt-note" onclick="location.href=\'学习博客.html\'"><span class="no-ic">' + (rc.icon || '<span class="nav-icon" data-icon="pen" data-icon-size="16"></span>') + '</span><div class="no-tx"><div class="no-title">' + esc(rn.title || '无标题') + '</div><div class="no-meta">' + esc((rc.name || '其他') + ' · 最近编辑') + '</div></div></div>';
+      recentHtml += '<div class="xt-note" onclick="location.href=\'社区.html\'"><span class="no-ic">' + (rc.icon || '<span class="nav-icon" data-icon="pen" data-icon-size="16"></span>') + '</span><div class="no-tx"><div class="no-title">' + esc(rn.title || '无标题') + '</div><div class="no-meta">' + esc((rc.name || '其他') + ' · 最近编辑') + '</div></div></div>';
     }
     if (!recentHtml) recentHtml = '<div class="xt-empty">还没有笔记</div>';
     var list = notes.filter(function (n) {
@@ -469,7 +471,7 @@ body { margin: 0; background: var(--bg); }
     for (var li = 0; li < list.length; li++) {
       var n = list[li];
       var lc = (typeof noteCat === 'function') ? noteCat(n.category) : { icon: '📝', name: '其他' };
-      listHtml += '<div class="xt-note" onclick="location.href=\'学习博客.html\'"><span class="no-ic">' + (lc.icon || '<span class="nav-icon" data-icon="pen" data-icon-size="16"></span>') + '</span><div class="no-tx"><div class="no-title">' + esc(n.title || '无标题') + '</div><div class="no-meta">' + esc(lc.name || '其他') + ' · ' + ((n.status === 'draft') ? '草稿' : (n.status === 'archived' ? '归档' : '已发布')) + '</div></div></div>';
+      listHtml += '<div class="xt-note" onclick="location.href=\'社区.html\'"><span class="no-ic">' + (lc.icon || '<span class="nav-icon" data-icon="pen" data-icon-size="16"></span>') + '</span><div class="no-tx"><div class="no-title">' + esc(n.title || '无标题') + '</div><div class="no-meta">' + esc(lc.name || '其他') + ' · ' + ((n.status === 'draft') ? '草稿' : (n.status === 'archived' ? '归档' : '已发布')) + '</div></div></div>';
     }
     if (!listHtml) listHtml = '<div class="xt-empty">没有匹配的笔记</div>';
     el('tab-notes').innerHTML =
@@ -479,7 +481,7 @@ body { margin: 0; background: var(--bg); }
       '<div class="xt-card"><div class="xt-card-title">📁 我的笔记本</div><div class="xt-chip-row">' + chipHtml + '</div></div>' +
       '<div class="xt-card"><div class="xt-card-title">📌 最近使用</div>' + recentHtml + '</div>' +
       '<div class="xt-card"><div class="xt-card-title">🗂 笔记列表<span class="more">' + list.length + ' 篇</span></div>' + listHtml +
-        '<button class="xt-btn" style="width:100%;margin-top:10px" onclick="location.href=\'学习博客.html\'">✍️ 写笔记</button>' +
+        '<button class="xt-btn" style="width:100%;margin-top:10px" onclick="location.href=\'社区.html\'">✍️ 写笔记</button>' +
       '</div>';
     if (window.lucideAutoRender) window.lucideAutoRender(); // J 批次：动态 data-icon span 重渲染
   }
@@ -542,7 +544,7 @@ body { margin: 0; background: var(--bg); }
       '<div class="xt-card"><div class="xt-card-title">📅 学习日历<span class="more">近 7 天</span></div><div class="xt-cal">' + calHtml + '</div></div>' +
       '<div class="xt-card"><div class="xt-card-title">🎯 我的目标<button class="xt-btn sm ghost" onclick="xtAddGoal()">＋</button></div>' + goalHtml + '</div>' +
       '<div class="xt-me-row" onclick="location.href=\'学习工作台.html\'"><span class="mr-ic"><span class="nav-icon" data-icon="menu" data-icon-size="18"></span></span><span class="mr-tx">全部功能（旧版入口）</span><span class="mr-ar">›</span></div>' +
-      '<div class="xt-me-row" onclick="location.href=\'学习博客.html\'"><span class="mr-ic"><span class="nav-icon" data-icon="pen" data-icon-size="18"></span></span><span class="mr-tx">笔记广场</span><span class="mr-ar">›</span></div>';
+      '<div class="xt-me-row" onclick="location.href=\'社区.html\'"><span class="mr-ic"><span class="nav-icon" data-icon="pen" data-icon-size="18"></span></span><span class="mr-tx">笔记广场</span><span class="mr-ar">›</span></div>';
     if (window.lucideAutoRender) window.lucideAutoRender(); // J 批次：动态 data-icon span 重渲染
   }
   window.xtAddGoal = function () {

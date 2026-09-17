@@ -1,0 +1,50 @@
+R72 源码契约+静态独立检查（项6/8/9/10/11/12死链/14/15a-c）
+======================================================================
+[PASS] 6a-allowPreset守卫存在  
+[PASS] 6b-默认路径守卫前不短路(无presetMatch抢跑)  守卫行=1311 守卫前调用数=0
+[PASS] 6c-短路返回fromPreset:true+degraded:false  
+[PASS] 6d-兜底fromPreset:true+degraded:true  出现次数(应>=1)=2
+[PASS] 8a-BATCH_CONCURRENCY=3  
+[PASS] 8b-实际并发lanes=min(BATCH_CONCURRENCY,ids.length)  
+[PASS] 8c-收尾判定done===ids.length(不早退)  
+[PASS] 8d-pumpHealth批量期间暂停(不叠加)  
+[PASS] 9a-媒体查询存在  
+[PASS] 9b-模型卡main容器移动端flex-basis:100%  
+[PASS] 9c-(近似)模型列表卡片main容器宽度约束存在  jsdom无真实排版，源码级近似
+[PASS] 10a-#setRestoreDefault打开弹窗  
+[PASS] 10b-恢复默认弹窗元素存在  
+[PASS] 10c-按可用排序(ok优先/ms升序)逻辑存在  源码含 sort/ok/ms 关键字
+[PASS] 10d-映射写ai_model_settings.order  
+[PASS] 10e-overrides[id].name写入  
+[PASS] 10f-映射保留apiUrl/apiKey/apiFormat(数据安全)  
+[PASS] 10g-恢复默认保留清理语义  
+[PASS] 11a-分类恰3类(文本/识图/推理)标签存在  
+[PASS] 11b-FUNC_TYPES.translate仍在(ai-config未改)  
+[PASS] 11c-vision键名未改名(ai-service硬编码保留)  
+[PASS] 11d-存量迁移清translate保general  
+[PASS] 11e-迁移幂等(跑两次一致)  
+[PASS] 12d-死链data-page="ppt"=0  命中=0
+[PASS] 12e-死链location.href='演示.html'=0  命中=0
+[PASS] 12f-个人中心xtFolio*=0  xtFolio命中=0
+[PASS] 12g-更多.html穿越英语=0  穿越英语命中=0
+[PASS] 12h-演示.html含我的文件入口(已转为下线跳转)  
+[PASS] 12i-关于.html含版本2.3  匹配=3
+[PASS] 12i2-app.js showAboutDialog含v2.3  
+[PASS] 12i3-关于.html chips更新  
+[PASS] 14a-notify.js调用桥notify(title,text)  调用串=.notify(t, x)
+[PASS] 14b-app.js调用AndroidBridge.notify(title,text)  调用串=.notify(nTitle, nText)
+[PASS] 14c-两处方法名notify+参数形态(title,text)一致  notify=.notify(t, x) | app=.notify(nTitle, nText)
+[PASS] 14d-MainActivity@JavascriptInterface notify(String,String)  
+[PASS] 14e-POST_NOTIFICATIONS在manifest  
+[PASS] 14f-通知渠道ID(xt_msg)Java侧定义+两处引用一致  定义=True 创建=True Builder=True
+[PASS] 14g-PendingIntent FLAG_IMMUTABLE  
+[PASS] 14h-notify.js无桥时回落(存在性判断)  
+[PASS] 15a-ic_launcher.png 432x432  size=432x432 colortype=8
+[PASS] 15b-make_icon.py py_compile通过  
+[PASS] 15c-make_icon无系统字体路径依赖  命中系统字体路径=False
+[PASS] 7a-chat-local定义getActiveAiFriends  
+[PASS] 7b-预设AI好友含AI助手(星途,id=8)  
+[PASS] 7c-会话构建并入AI好友(getActiveAiFriends.forEach)  
+[PASS] 7d-AI在线标记仅配置服务商时显示(守卫)  
+======================================================================
+契约/静态用例 PASS=46 FAIL=0

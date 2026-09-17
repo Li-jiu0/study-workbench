@@ -1,0 +1,23 @@
+根 HTML 数 = 42
+戳分布: {'20260916O': 459, '20260916S': 109, '20260916R': 35}
+裸路径数 = 0  []
+本批 7 资产戳值:
+   app.js           {'20260916S': 37}
+   api.js           {'20260916S': 33}
+   chat-local.js    {'20260916S': 1}
+   importer.js      {'20260916S': 3}
+   notify.js        NO REFERENCE
+   ai-service.js    {'20260916S': 34}
+   ai-settings.js   {'20260916S': 1}
+   ai-config.js     {'20260916R': 34}
+   ai-page.js       {'20260916R': 1}
+.js.js?v= = 0
+.css.css?v= = 0
+20260916Q = 0
+全树引用 notify.js 的文件: ['assets\\notify.js']
+AndroidBridge.notify 调用点: app.js=2 | notify.js=1 | chat-local.js=0 | api.js=0
+ai-settings.html     CRLF=0     loneLF=638  mtime=09-17 16:02:45
+我的文件.html            CRLF=1146  loneLF=0    mtime=09-17 16:02:45
+导入题库.html            CRLF=373   loneLF=0    mtime=09-17 16:02:45
+学习工作台.html           CRLF=890   loneLF=0    mtime=09-17 16:02:45
+assets/notify.js     CRLF=0     loneLF=574  mtime=09-17 14:16:54

@@ -163,3 +163,17 @@ CREATE TABLE IF NOT EXISTS study_logs (
   created_at TEXT    NOT NULL
 );
 CREATE INDEX IF NOT EXISTS ix_study_user_module ON study_logs(user_id, module, created_at);
+
+-- ============================================================
+-- R72（2026-09-17）增量：好友备注（Bug3）
+-- 好友备注表：owner 对 peer 的私有备注名，仅本人可见；同一对 (owner_id, peer_id) 只存一条。
+-- 空串/去空格后为空 = 无备注（路由层删除该行）；备注与好友关系解耦，不改 friends 表结构。
+-- ============================================================
+CREATE TABLE IF NOT EXISTS friend_remarks (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  owner_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,  -- 备注归属人
+  peer_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,  -- 被备注的好友
+  remark     TEXT    NOT NULL DEFAULT '',                              -- 备注名（≤20 字；空串=无备注，等同清空）
+  updated_at TEXT    NOT NULL,                                         -- 'YYYY-MM-DD HH:MM:SS'
+  UNIQUE (owner_id, peer_id)
+);

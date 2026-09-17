@@ -77,20 +77,19 @@
   };
   var ALL_TYPE_KEYS = ['general', 'reasoning', 'math', 'image', 'translate', 'longtext', 'creative', 'interview'];
 
-  // 原始能力标签 -> 4 个内置能力分类（C5 映射）
+  // R72-15：原始能力标签 -> 3 个内置能力分类（C5 映射；translate 停用后并入 general）
   var CAT_OF_TYPE = {
-    general: 'general', longtext: 'general', creative: 'general', interview: 'general',
+    general: 'general', longtext: 'general', creative: 'general', interview: 'general', translate: 'general',
     math: 'reasoning', reasoning: 'reasoning',
-    image: 'vision',
-    translate: 'translate'
+    image: 'vision'
   };
 
-  // 内置 4 个能力分类（只按能力分类，不带任何场景字样）
+  // R72-15：内置能力分类收敛为 3 类（文本 / 识图 / 推理），停用「翻译」分类。
+  // 注意：vision 的 key 不能改名（ai-service.js 硬编码依赖），仅 label 改「识图」。
   var BUILTIN_CATS = [
     { key: 'general', label: '文本' },
-    { key: 'reasoning', label: '推理' },
-    { key: 'vision', label: '视觉·识图' },
-    { key: 'translate', label: '翻译' }
+    { key: 'vision', label: '识图' },
+    { key: 'reasoning', label: '推理' }
   ];
 
   // 健康检查错误码 -> 用户可读文案（err==='cors' 如实区分，不误导）
@@ -346,6 +345,17 @@
           if (n >= 1 && n <= 5) { s.stars[k] = n; }
         }
       }
+    }
+    // R72-15 存量数据清洗（幂等）：停用「翻译」分类 -> 清 catModels.translate，
+    // 并过滤掉用户自建里 key 为 translate 的分类项（不误伤其它自定义分类）。
+    if (s.catModels && hasOwn(s.catModels, 'translate')) { delete s.catModels.translate; }
+    if (isArray(s.categories)) {
+      var keptCats = [];
+      for (var ci = 0; ci < s.categories.length; ci++) {
+        if (s.categories[ci] && s.categories[ci].key === 'translate') { continue; }
+        keptCats.push(s.categories[ci]);
+      }
+      s.categories = keptCats;
     }
     return s;
   }
@@ -875,7 +885,12 @@
     }
   }
 
-  /* 批量检测：全部模型，串行，每个之间间隔 HEALTH_STEP（~6.5s，守 10 次/分钟限频） */
+  /* R72-12：批量检测并发化（worker pool，并发上限 BATCH_CONCURRENCY=3）。
+     健康检查底层 aiHealthCheckImpl 直调 requestModel、不经 callAI、不 recordCall，
+     本就不受 10 次/分钟限频约束；原串行实现的「6.5s/个」只是为对上游温和。
+     故改为 3 路并发：提速约 3 倍，同时对上游仍温和。
+     HEALTH_STEP 常量保留（后台队列 pumpHealth 仍在用），此处不再作为主节流。 */
+  var BATCH_CONCURRENCY = 3;   // 批量检测并发上限（同一时刻最多 3 个在飞）
   function batchHealthCheck() {
     if (batchRunning) { return; }
     if (typeof window.aiHealthCheck !== 'function') { toast('warning', '当前环境不支持连通性检测'); return; }
@@ -889,7 +904,8 @@
     var done = 0;
     var good = 0;
     var bad = 0;
-    var idx = 0;
+    var cursor = 0;                                       // 共享取号游标（单线程，取号即自增，天然安全）
+    var lanes = Math.min(BATCH_CONCURRENCY, ids.length);  // 实际并发路数
 
     function setProgress() {
       if (btn) {
@@ -903,7 +919,7 @@
       if (btn) {
         btn.disabled = false;
         var t2 = $('setBatchHealthTxt');
-        if (t2) { t2.textContent = '批量检测'; }
+        if (t2) { t2.textContent = '批量检测（并发 3）'; }
       }
       toast('success', '批量检测完成：正常 ' + good + ' / 失败 ' + bad);
     }
@@ -913,24 +929,33 @@
       if (r && r.ok) { good++; } else { bad++; }
       done++;
       setProgress();
-      if (idx >= ids.length) { finishAll(); return; }
-      setTimeout(step, HEALTH_STEP);
+      // 并发下必须用 done===ids.length 判定收尾（旧的 idx>=ids.length 会提前结束）
+      if (done === ids.length) { finishAll(); }
     }
-    function step() {
-      if (idx >= ids.length) { finishAll(); return; }
-      var id = ids[idx];
-      idx++;
+    function one(id) {
       setTesting(id, true);
       var p;
       try { p = window.aiHealthCheck(id); } catch (e) { p = null; }
       if (p && typeof p.then === 'function') {
-        p.then(function (r) { after(id, r); }, function () { after(id, { ok: false, ms: 0, err: 'network' }); });
-      } else {
-        after(id, { ok: false, ms: 0, err: 'network' });
+        return p.then(function (r) { after(id, r); }, function () { after(id, { ok: false, ms: 0, err: 'network' }); });
       }
+      after(id, { ok: false, ms: 0, err: 'network' });
+      return null;
+    }
+    /* 每个 worker 顺序取号执行；一个完成后再取下一个（保证同时在飞 <= lanes） */
+    function worker() {
+      if (cursor >= ids.length) { return null; }
+      var id = ids[cursor];
+      cursor++;
+      var p = one(id);
+      if (p && typeof p.then === 'function') {
+        return p.then(worker, worker);
+      }
+      return worker();
     }
     setProgress();
-    step();
+    var w;
+    for (w = 0; w < lanes; w++) { worker(); }
   }
 
   /* 重新检测全部：清空 health 全部条目后启动批量队列 */
@@ -1027,10 +1052,14 @@
     return '<span class="xt-set-badge-vpn">需自备网络</span>';
   }
 
+  /* R72-15：列表/说明卡片的类型 chip 隐藏「翻译」（该分类已停用）；
+     能力标签本身（TYPE_LABELS / ALL_TYPE_KEYS / 表单多选）保持不变，避免存量数据丢失。 */
+  var CHIP_HIDDEN_TYPE = { translate: true };
   function typeChipsOf(model) {
     var t = typeKeysOf(model);
     var out = '';
     for (var i = 0; i < t.length; i++) {
+      if (CHIP_HIDDEN_TYPE[t[i]]) { continue; }
       out += '<span class="xt-set-chip type">' + esc(TYPE_LABELS[t[i]] || t[i]) + '</span>';
     }
     if (!out) { out = '<span>未标注类型</span>'; }
@@ -1195,7 +1224,158 @@
       saveSettings();
       renderModels();
       renderAbout();
+      renderSortPreview();
       toast('success', '已恢复默认设置');
+    });
+  }
+
+  /* ---------------- R72-14：恢复默认 -> 弹窗（排序 / 映射到 AI 页下拉） ---------------- */
+  /* 「可用模型」= 未停用（enabled）的模型，按当前展示顺序排列 */
+  function availableIds() {
+    var list = orderedModels();
+    var out = [];
+    for (var i = 0; i < list.length; i++) {
+      if (!isDisabled(list[i].id)) { out.push(list[i].id); }
+    }
+    return out;
+  }
+
+  /* 速率 -> 粗排等级（快 1 / 中 2 / 慢 3 / 待检测 4） */
+  function speedRank(id, model) {
+    var sp = String(effSpeed(id, model) || '');
+    if (sp.indexOf('快') !== -1) { return 1; }
+    if (sp.indexOf('中') !== -1) { return 2; }
+    if (sp.indexOf('慢') !== -1) { return 3; }
+    return 4;
+  }
+
+  function healthOk(id) {
+    var h = healthOf(id);
+    return !!(h && h.ok === true);
+  }
+
+  function healthMs(id) {
+    var h = healthOf(id);
+    if (h && h.ok && typeof h.ms === 'number' && h.ms > 0) { return h.ms; }
+    return 999999;
+  }
+
+  /* (1) 按可用模型排序：健康正常在前（按实测 ms 升序），未测/失败在后（按 ms 升序） */
+  function sortByAvailability() {
+    var ids = availableIds();
+    ids.sort(function (a, b) {
+      var oa = healthOk(a) ? 0 : 1;
+      var ob = healthOk(b) ? 0 : 1;
+      if (oa !== ob) { return oa - ob; }
+      return healthMs(a) - healthMs(b);
+    });
+    getSettings().order = ids;
+    saveSettings();
+    renderModels();
+    renderSortPreview();
+    toast('success', '已按可用模型排序（' + ids.length + ' 个）');
+  }
+
+  /* (2) 按速率排序：快 > 中 > 慢 > 待检测；同档按健康实测 ms 升序 */
+  function sortBySpeed() {
+    var ids = availableIds();
+    ids.sort(function (a, b) {
+      var ra = speedRank(a, findAnyModel(a));
+      var rb = speedRank(b, findAnyModel(b));
+      if (ra !== rb) { return ra - rb; }
+      return healthMs(a) - healthMs(b);
+    });
+    getSettings().order = ids;
+    saveSettings();
+    renderModels();
+    renderSortPreview();
+    toast('success', '已按速率排序（' + ids.length + ' 个）');
+  }
+
+  /* (3) 映射到 AI 页模型下拉：写 ai_model_settings.order + overrides[id].name，
+        并对「健康可用」的模型清掉 disabled（让其在 AI 页下拉出现）。
+        注意：只改 overrides[id].name 子字段，apiUrl/apiKey/apiFormat 等原样保留。 */
+  function mapToAiList() {
+    var s = getSettings();
+    var ids = availableIds();
+    var all = fullOrderIds();
+    var mapped = [];
+    var i, id, m, nm, ov;
+    // order：可用模型按当前排序在前，其余（被停用的）保留在尾部，顺序不丢
+    for (i = 0; i < ids.length; i++) { mapped.push(ids[i]); }
+    for (i = 0; i < all.length; i++) { if (mapped.indexOf(all[i]) === -1) { mapped.push(all[i]); } }
+    s.order = mapped;
+    for (i = 0; i < mapped.length; i++) {
+      id = mapped[i];
+      m = findAnyModel(id);
+      nm = displayName(id, m);
+      if (nm) {
+        ov = s.overrides[id];
+        if (ov && typeof ov === 'object') {
+          ov.name = nm;                                  // 仅写 name 子字段，其余字段原样保留
+        } else {
+          s.overrides[id] = { name: nm };
+        }
+      }
+      if (healthOk(id)) { delete s.disabled[id]; }        // 健康可用的模型确保出现在下拉
+    }
+    saveSettings();
+    renderModels();
+    renderSortPreview();
+    toast('success', '已映射到 AI 页模型下拉（' + ids.length + ' 个名称与顺序）');
+  }
+
+  /* 排序预览（只读）：显示当前顺序、启用态与健康态 */
+  function sortPreviewItemHtml(id, idx) {
+    var m = findAnyModel(id);
+    var name = displayName(id, m);
+    var off = isDisabled(id);
+    var badge = healthOk(id) ? '正常' : (healthOf(id) ? '失败' : '待检测');
+    var h = '<div class="xt-sort-item' + (off ? ' off' : '') + '">';
+    h += '<span class="xt-sort-idx">' + (idx + 1) + '</span>';
+    h += '<span class="xt-sort-name">' + esc(name) + '</span>';
+    h += '<span class="xt-sort-tag">' + (off ? '已停用' : '已启用') + '</span>';
+    h += '<span class="xt-sort-tag">' + esc(badge) + '</span>';
+    h += '</div>';
+    return h;
+  }
+
+  function renderSortPreview() {
+    var host = $('setSortPreview');
+    if (!host) { return; }
+    var ids = fullOrderIds();
+    if (!ids.length) { host.innerHTML = '<div class="xt-set-empty" style="padding:16px 0;">暂无模型</div>'; return; }
+    var html = '';
+    for (var i = 0; i < ids.length; i++) { html += sortPreviewItemHtml(ids[i], i); }
+    host.innerHTML = html;
+  }
+
+  function openSortModal() {
+    var mask = $('setSortModal');
+    if (!mask) { restoreDefaults(); return; }   // 兜底：无弹窗 DOM 时退回原确认流程
+    renderSortPreview();
+    mask.style.display = 'flex';
+  }
+
+  function closeSortModal() {
+    var mask = $('setSortModal');
+    if (mask) { mask.style.display = 'none'; }
+  }
+
+  /* 弹窗交互（事件委托，无内联 onclick，与设置页既有写法一致） */
+  function bindSortModalEvents() {
+    var mask = $('setSortModal');
+    if (!mask || !mask.addEventListener) { return; }
+    mask.addEventListener('click', function (e) {
+      if (e.target === mask) { closeSortModal(); return; }   // 点遮罩关闭
+      var el = closestAttr(e.target, 'data-sort-act', mask);
+      if (!el) { return; }
+      var act = el.getAttribute('data-sort-act');
+      if (act === 'avail') { sortByAvailability(); }
+      else if (act === 'speed') { sortBySpeed(); }
+      else if (act === 'map') { mapToAiList(); }
+      else if (act === 'reset') { restoreDefaults(); }
+      else if (act === 'close') { closeSortModal(); }
     });
   }
 
@@ -1418,7 +1598,7 @@
     var cats = allCategories();
     var html = '';
     for (var i = 0; i < cats.length; i++) { html += catCardHtml(cats[i]); }
-    html += '<div class="xt-set-note">内置 4 类按能力划分；「代码」等更多分类可自行新建，新建分类即新的功能路由槽。</div>';
+    html += '<div class="xt-set-note">内置 3 类按能力划分：文本 / 识图 / 推理；「代码」等更多分类可自行新建，新建分类即新的功能路由槽。</div>';
     host.innerHTML = html;
   }
 
@@ -2213,7 +2393,7 @@
     on('setModelSearch', 'input', function () { renderModels(); });
     on('setEnableAll', 'click', function () { enableAll(); });
     on('setDisableAll', 'click', function () { disableAll(); });
-    on('setRestoreDefault', 'click', function () { restoreDefaults(); });
+    on('setRestoreDefault', 'click', function () { openSortModal(); });
     on('setBatchHealth', 'click', function () { batchHealthCheck(); });
     var host = $('setModelList');
     if (host && host.addEventListener) {
@@ -2368,6 +2548,7 @@
     bindIntroEvents();
     bindFormEvents();
     bindAboutEvents();
+    bindSortModalEvents();
     applyHash();   // 先落默认 Tab / hash 直达，避免视觉空白
     waitConfig(0);
   }

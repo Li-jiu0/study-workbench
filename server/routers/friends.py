@@ -9,10 +9,11 @@ from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 from typing import Optional
 
-from database import (Friend, FriendRequest, User, UserBlock, friend_pair,
-                      get_db, is_admin_user, is_friend, now_iso)
+from database import (Friend, FriendRemark, FriendRequest, User, UserBlock,
+                      can_message, friend_pair, get_db, is_admin_user, is_friend,
+                      now_iso)
 from rate_limit import rate_limit
-from schemas import user_brief
+from schemas import FriendRemarkIn, user_brief
 from security import get_current_user
 
 router = APIRouter(prefix="/api/friends", tags=["friends"])
@@ -253,13 +254,19 @@ def list_friends(user: User = Depends(get_current_user), db: Session = Depends(g
     rows = db.query(Friend).filter(
         or_(Friend.user_a == user.id, Friend.user_b == user.id)
     ).all()
+    # Bug3（R72）：一次性取出「我对各好友的备注」，避免逐行查询（只回请求者自己的备注）。
+    remarks = {
+        r.peer_id: (r.remark or "")
+        for r in db.query(FriendRemark).filter(FriendRemark.owner_id == user.id).all()
+    }
     out = []
     for f in rows:
         peer_id = f.user_b if f.user_a == user.id else f.user_a
         # 需求01：管理员不出现在好友列表里
         peer = _visible_peer(db, peer_id)
         if peer:
-            out.append({**_peer_brief(peer), "since": f.created_at})
+            out.append({**_peer_brief(peer), "since": f.created_at,
+                        "peerRemark": remarks.get(peer_id, "")})
     out.sort(key=lambda x: x["nickname"])
     return {"items": out, "total": len(out)}
 
@@ -273,6 +280,40 @@ def remove_friend(peer_id: int, user: User = Depends(get_current_user), db: Sess
     db.delete(f)
     db.commit()
     return {"ok": True}
+
+
+@router.put("/{peer_id}/remark")
+def set_friend_remark(peer_id: int, body: FriendRemarkIn,
+                      user: User = Depends(get_current_user),
+                      db: Session = Depends(get_db)):
+    """设置 / 清除对某人的备注（Bug3，R72）。
+
+    - body.remark 去空格后为空 = 删除该备注（回退显示对方昵称）；
+    - 长度截断到 20 字；
+    - 校验对象必须是「我可对话的对端」：好友，或管理员↔任意用户（can_message 放行）；
+    - 备注是**请求者私有**数据，只有本人能读写，绝不回显给他人。
+    """
+    if peer_id == user.id:
+        raise HTTPException(400, "不能给自己设置备注")
+    if not can_message(db, user.id, peer_id):
+        raise HTTPException(403, "只能给好友设置备注")
+    remark = (body.remark or "").strip()[:20]
+    row = db.query(FriendRemark).filter(
+        FriendRemark.owner_id == user.id, FriendRemark.peer_id == peer_id
+    ).first()
+    if not remark:
+        if row:
+            db.delete(row)
+            db.commit()
+        return {"ok": True, "peerId": peer_id, "peerRemark": ""}
+    if row:
+        row.remark = remark
+        row.updated_at = now_iso()
+    else:
+        db.add(FriendRemark(owner_id=user.id, peer_id=peer_id,
+                            remark=remark, updated_at=now_iso()))
+    db.commit()
+    return {"ok": True, "peerId": peer_id, "peerRemark": remark}
 
 
 # ---------- 黑名单：拉黑后对方不能发好友申请、不能发消息（is_blocked 已在申请/聊天入口校验） ----------

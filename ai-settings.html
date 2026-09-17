@@ -350,6 +350,23 @@ body.dark .xt-stars{color:#4a4f58;}
 }
 .xt-modal-btns{display:flex;justify-content:flex-end;}
 
+/* —— R72-14：恢复默认 / 排序弹窗 —— */
+.xt-sort-box{max-width:440px;}
+.xt-sort-actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+.xt-sort-actions .xt-set-btn{flex:1 1 auto;min-width:130px;}
+.xt-sort-preview-label{font-size:12px;color:var(--ai-muted);font-weight:600;margin-bottom:6px;}
+.xt-sort-preview{
+  max-height:220px;overflow:auto;-webkit-overflow-scrolling:touch;
+  border:1px solid var(--ai-border);border-radius:10px;background:var(--ai-bg);padding:6px 8px;
+}
+.xt-sort-item{display:flex;align-items:center;gap:8px;padding:6px 2px;font-size:12.5px;border-bottom:1px solid rgba(128,128,128,.12);}
+.xt-sort-item:last-child{border-bottom:none;}
+.xt-sort-item.off{opacity:.55;}
+.xt-sort-idx{min-width:20px;height:20px;border-radius:50%;background:var(--ai-orange);color:#fff;
+  font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
+.xt-sort-name{flex:1;min-width:0;color:var(--ai-text);font-weight:600;word-break:break-word;}
+.xt-sort-tag{flex-shrink:0;font-size:11px;color:var(--ai-muted);}
+
 /* —— R66：记忆管理区块 —— */
 .xt-about-block{margin-top:14px;background:var(--ai-card);border:1px solid var(--ai-border);border-radius:14px;padding:14px 15px;}
 .xt-about-block-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;}
@@ -410,8 +427,13 @@ body.dark .xt-stars{color:#4a4f58;}
 /* —— 移动端适配 —— */
 @media (max-width:640px){
   .xt-set-content{padding:12px 10px 96px;}
-  .xt-set-row{padding:10px;gap:8px;}
-  .xt-set-row-right{gap:6px;}
+  /* R72-13 移动端不挤压：模型行改为可换行，操作区独占次行，名称行恢复满宽 */
+  .xt-set-row{padding:10px;gap:8px;flex-wrap:wrap;}
+  .xt-set-row-main{flex:1 1 auto;min-width:0;}
+  .xt-set-row-name{word-break:break-word;}
+  .xt-set-row-sub{align-items:flex-start;}
+  /* 操作区独占次行、左对齐、允许自行换行（放不下则换行，绝不挤压名称） */
+  .xt-set-row-right{flex-shrink:1;flex-basis:100%;justify-content:flex-start;gap:6px;}
   .xt-set-tabs{padding:8px 10px;}
 }
 </style>
@@ -445,7 +467,7 @@ body.dark .xt-stars{color:#4a4f58;}
       <div class="xt-set-toolbar-btns">
         <button class="xt-set-btn" id="setEnableAll">全部启用</button>
         <button class="xt-set-btn" id="setDisableAll">全部停用</button>
-        <button class="xt-set-btn" id="setBatchHealth"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22v-4"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M6 8h12v2a6 6 0 0 1-12 0Z"/></svg><span id="setBatchHealthTxt">批量检测</span></button>
+        <button class="xt-set-btn" id="setBatchHealth"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22v-4"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M6 8h12v2a6 6 0 0 1-12 0Z"/></svg><span id="setBatchHealthTxt">批量检测（并发 3）</span></button>
         <button class="xt-set-btn danger" id="setRestoreDefault">恢复默认排序/设置</button>
       </div>
     </div>
@@ -577,20 +599,40 @@ body.dark .xt-stars{color:#4a4f58;}
 
 <div class="xt-set-foot">设置只保存在本机浏览器，不会上传服务器</div>
 
+<!-- ===== R72-14：恢复默认 / 排序弹窗（复用 .xt-modal-mask / .xt-modal-box） ===== -->
+<div class="xt-modal-mask" id="setSortModal" style="display:none;">
+  <div class="xt-modal-box xt-sort-box">
+    <div class="xt-modal-title">恢复默认 / 排序</div>
+    <div class="xt-modal-body" style="margin-bottom:12px;">选择排序方式，或把当前排序映射到 AI 页对话框的模型下拉。
+AI 页对话框的模型下拉顺序与名称将按此更新。</div>
+    <div class="xt-sort-actions">
+      <button type="button" class="xt-set-btn" data-sort-act="avail">按可用模型排序</button>
+      <button type="button" class="xt-set-btn" data-sort-act="speed">按速率排序</button>
+      <button type="button" class="xt-set-btn primary" data-sort-act="map">映射到 AI 页模型下拉</button>
+      <button type="button" class="xt-set-btn danger" data-sort-act="reset">恢复默认设置</button>
+    </div>
+    <div class="xt-sort-preview-label">排序预览（只读）</div>
+    <div class="xt-sort-preview" id="setSortPreview"></div>
+    <div class="xt-modal-btns" style="margin-top:12px;">
+      <button type="button" class="xt-set-btn" data-sort-act="close">关闭</button>
+    </div>
+  </div>
+</div>
+
 <div id="setToast"></div>
 
 <!-- ===== 脚本（引用保持既有版本戳不变，主理人波末统一处理） ===== -->
 <script src="assets/icon-map.js?v=20260916O" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260916O" defer></script>
+<script src="assets/app.js?v=20260916S" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260916S" defer></script>
 <script src="assets/ai-config.js?v=20260916R" defer></script>
   <!-- R70：连通性检测依赖 ai-service.js 导出的 window.aiHealthCheck。
        该页此前未加载底座 → typeof window.aiHealthCheck !== 'function'
        → 弹出「当前环境不支持连通性检测」。补上底座引用即可。 -->
-  <script src="assets/ai-service.js?v=20260916R" defer></script>
-<script src="assets/ai-settings.js?v=20260916R" defer></script>
+  <script src="assets/ai-service.js?v=20260916S" defer></script>
+<script src="assets/ai-settings.js?v=20260916S" defer></script>
 </body>
 </html>

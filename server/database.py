@@ -177,6 +177,22 @@ class UserBlock(Base):
     created_at = Column(String(19), nullable=False)
 
 
+class FriendRemark(Base):
+    """好友备注（Bug3，R72）：owner 对 peer 的私有备注名，仅本人可见。
+
+    - 空串/去空格后为空 = 无备注（路由层删除该行）；
+    - 唯一约束 (owner_id, peer_id)：同一人对同一好友只存一条；
+    - 不改 friends 表结构（历史库零迁移），备注属「本人私有」，与好友关系解耦。
+    """
+    __tablename__ = "friend_remarks"
+    __table_args__ = (UniqueConstraint("owner_id", "peer_id", name="uq_friend_remark"),)
+    id = Column(Integer, primary_key=True)
+    owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    peer_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    remark = Column(String(20), nullable=False, default="")
+    updated_at = Column(String(19), nullable=False)
+
+
 class Message(Base):
     """聊天消息。kind: text / image。content: 文本内容或图片 URL。read_at NULL=对方未读。
     group_id NULL=私聊（按 sender/receiver 查询）；group_id 非空=群消息（receiver_id 恒为 0）。"""

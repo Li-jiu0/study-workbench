@@ -168,6 +168,18 @@ class GroupMeIn(BaseModel):
     groupNickname: str | None = None
 
 
+class FriendRemarkIn(BaseModel):
+    """好友备注（Bug3，R72）：PUT /api/friends/{peer_id}/remark 请求体。
+
+    - 空串 / 去空格后为空 = 删除该备注（回退显示对方昵称）；
+    - 长度由路由层截断到 20 字（此处不设 max_length，避免超长直接 422，
+      统一走「截断」语义，与群名片 groupNickname 的处理风格一致）。
+    - 警告：不要把备注塞进 schemas.user_brief()：它被 notes/moments/social 多处复用，
+      塞进去会污染公开契约。
+    """
+    remark: str | None = None
+
+
 class GroupTransferIn(BaseModel):
     """群主转让（R54，2026-09-14）：仅群主可把群主身份转给某个现有成员。"""
     userId: int
