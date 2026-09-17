@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0b1026">
 <title>登录 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260916O">
+<link rel="stylesheet" href="assets/common.css?v=20260917b">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <style>
@@ -100,6 +100,24 @@
   }
   .err-box.show{display:block}
   a{color:var(--primary)}
+
+  /* R73：忘记密码 / 找回账号 */
+  .login-links{text-align:right;margin:10px 2px 0}
+  .login-links a{font-size:12px;color:var(--text-dim);text-decoration:none}
+  .login-links a:hover{color:var(--primary)}
+  .modal-mask{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(6,9,24,.72);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+  .modal-mask.show{display:flex}
+  .modal-card{width:100%;max-width:380px;max-height:92vh;overflow-y:auto;background:rgba(20,26,62,.98);border:1px solid var(--card-border);border-radius:18px;padding:22px 20px;box-shadow:0 24px 70px rgba(0,0,0,.55)}
+  .modal-title{font-size:18px;font-weight:800;margin-bottom:6px}
+  .modal-sub{font-size:12px;color:var(--text-dim);line-height:1.7;margin-bottom:14px}
+  .find-code-row{display:flex;gap:8px;align-items:stretch}
+  .find-code-row .form-input{flex:1;min-width:0;padding-right:14px}
+  .btn-code{flex:none;padding:0 14px;border:1px solid var(--primary);background:rgba(91,141,239,.14);color:#cdd8ff;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+  .btn-code:disabled{opacity:.55;cursor:not-allowed}
+  .btn-ghost{width:100%;margin-top:8px;padding:11px 0;border:1px solid var(--card-border);background:none;color:var(--text-dim);border-radius:12px;font-size:14px;cursor:pointer}
+  .btn-ghost:hover{color:var(--text);border-color:rgba(255,255,255,.3)}
+  .find-result{margin-top:12px;font-size:13px;line-height:1.8;color:#bfe9d4;word-break:break-all}
+  @media (max-width:360px){ .modal-card{padding:18px 14px} .find-code-row{flex-wrap:wrap} .btn-code{width:100%;padding:11px 0} }
 </style>
 </head>
 <body>
@@ -123,9 +141,9 @@
   <div class="err-box" id="errBox"></div>
 
   <div class="form-group">
-    <div class="form-label">账号</div>
+    <div class="form-label">账号 / 绑定邮箱</div>
     <div class="field">
-      <input type="text" class="form-input" id="loginAccount" placeholder="3-20位字母 / 数字 / 中文 / 下划线" autocomplete="username" maxlength="20">
+      <input type="text" class="form-input" id="loginAccount" placeholder="用户名 或 绑定邮箱" autocomplete="username" maxlength="128">
     </div>
   </div>
 
@@ -158,7 +176,43 @@
 
   <button class="btn-primary" id="loginSubmitBtn" onclick="submitLogin()" aria-label="登录">登录</button>
 
+  <!-- R73：忘记密码 / 找回账号入口（仅在线模式可用） -->
+  <div class="login-links">
+    <a href="javascript:void(0)" id="findAccountLink" onclick="openFindAccount()">忘记密码 / 找回账号</a>
+  </div>
+
   <div class="login-notice" id="loginNotice">💡 正在检测运行模式……</div>
+</div>
+
+<!-- R73：找回账号 / 重置密码 弹层 -->
+<div class="modal-mask" id="findModal">
+  <div class="modal-card">
+    <div class="modal-title">找回账号 / 重置密码</div>
+    <div class="modal-sub" id="findSub">输入已绑定的邮箱，获取验证码后即可找回账号；填写新密码可一并重置。</div>
+    <div class="err-box" id="findErr"></div>
+    <div class="form-group">
+      <div class="form-label">绑定邮箱</div>
+      <div class="field">
+        <input type="text" class="form-input" id="findEmail" placeholder="example@mail.com" autocomplete="email" maxlength="128">
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">邮箱验证码</div>
+      <div class="find-code-row">
+        <input type="text" class="form-input" id="findCode" placeholder="6 位数字验证码" inputmode="numeric" maxlength="6">
+        <button type="button" class="btn-code" id="findSendBtn" onclick="sendFindCode()">获取验证码</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">新密码（可选，填写即重置）</div>
+      <div class="field">
+        <input type="password" class="form-input" id="findNewPass" placeholder="不填则仅找回账号" autocomplete="new-password" maxlength="64">
+      </div>
+    </div>
+    <button class="btn-primary" id="findSubmitBtn" onclick="submitFindAccount()">找回账号</button>
+    <button type="button" class="btn-ghost" onclick="closeFindAccount()">取消</button>
+    <div id="findResult"></div>
+  </div>
 </div>
 
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
@@ -271,6 +325,8 @@ function escHtml(s) { return String(s).replace(/[&<>"']/g, function (c) { return
 
 /* ---------- 表单交互增强 ---------- */
 var USERNAME_RE = /^[A-Za-z0-9_\u4e00-\u9fa5]{3,20}$/;
+/* R73：绑定邮箱登录 —— 邮箱格式正则（与服务端 schemas._EMAIL_RE 对齐，仅基础格式校验） */
+var EMAIL_RE_LOGIN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 function showErr(msg) {
   var box = document.getElementById('errBox');
   box.innerHTML = '⚠️ ' + escHtml(msg);
@@ -418,8 +474,11 @@ function localLogin(account, pass) {
 
 /* ---------- 统一前端校验 ---------- */
 function validate(account, pass) {
-  if (!account) { showErr('请输入账号'); markInput('loginAccount', true); return false; }
-  if (!USERNAME_RE.test(account)) { showErr('账号需为 3-20 位字母 / 数字 / 中文 / 下划线'); markInput('loginAccount', true); return false; }
+  if (!account) { showErr('请输入账号或绑定邮箱'); markInput('loginAccount', true); return false; }
+  /* R73：登录标识放宽——含 @ 视为邮箱，否则按用户名规则校验。 */
+  if (account.indexOf('@') >= 0) {
+    if (!EMAIL_RE_LOGIN.test(account)) { showErr('邮箱格式不正确'); markInput('loginAccount', true); return false; }
+  } else if (!USERNAME_RE.test(account)) { showErr('账号需为 3-20 位字母 / 数字 / 中文 / 下划线'); markInput('loginAccount', true); return false; }
   if (!pass) { showErr('请输入密码'); markInput('loginPass', true); return false; }
   if (pass.length > 64) { showErr('密码最多 64 位'); markInput('loginPass', true); return false; }
   if (loginMode === 'register') {
@@ -470,7 +529,9 @@ function submitLogin() {
     body = { username: account, password: pass, nickname: document.getElementById('loginNickname').value.trim() };
   } else {
     path = '/api/auth/login';
-    body = { username: account, password: pass };
+    /* R73：登录标识兼容「用户名」与「绑定邮箱」——同时带 username 与 account：
+       新后端优先读 account（用户名或邮箱），旧后端仍能读 username（向后兼容）。 */
+    body = { username: account, account: account, password: pass };
   }
 
   fetch(API_BASE + path, {
@@ -519,6 +580,108 @@ function showOnlineRetry(account, pass, btn, btnText) {
     }).catch(function () { showErr('网络异常，请稍后再试'); btn.disabled = false; btn.textContent = btnText; });
   });
 }
+
+/* ==================== R73：找回账号 / 重置密码 ==================== */
+var _findTimer = null;
+
+/** 提取后端错误文案：detail 可能是字符串，也可能是 pydantic 422 的错误数组。 */
+function apiDetail(data) {
+  if (!data) return '';
+  var d = data.detail;
+  if (typeof d === 'string') return d;
+  if (d && d.length && d[0]) { return String(d[0].msg || '').replace(/^Value error,\s*/, ''); }
+  return '';
+}
+/** 把 HTTP 状态码映射为用户可读中文提示（带回退）。 */
+function emailErrMsg(status, data) {
+  var d = apiDetail(data);
+  if (status === 503) return d || '邮件服务未配置，请联系管理员';
+  if (status === 502) return d || '验证码发送失败，请稍后重试';
+  if (status === 429) return d || '操作过于频繁，请稍后再试';
+  if (status === 410) return d || '验证码已过期，请重新获取';
+  if (status === 409) return d || '该邮箱已被其他账号绑定';
+  if (status === 404) return d || '该邮箱未绑定任何账号';
+  if (status === 401) return d || '登录已过期，请重新登录';
+  if (status === 422) return d || '输入格式不正确';
+  if (status === 400) return d || '请求有误，请检查后重试';
+  return d || '操作失败，请稍后再试';
+}
+function showFindErr(msg) { var b = document.getElementById('findErr'); b.innerHTML = '⚠️ ' + escHtml(msg); b.classList.add('show'); }
+function clearFindErr() { var b = document.getElementById('findErr'); b.classList.remove('show'); b.innerHTML = ''; }
+function openFindAccount() {
+  if (!ONLINE) { showErr('离线模式下无法找回账号，请先连接后端服务器'); return; }
+  clearFindErr();
+  document.getElementById('findResult').innerHTML = '';
+  document.getElementById('findModal').classList.add('show');
+}
+function closeFindAccount() {
+  document.getElementById('findModal').classList.remove('show');
+  if (_findTimer) { clearInterval(_findTimer); _findTimer = null; }
+  var sb = document.getElementById('findSendBtn'); sb.disabled = false; sb.textContent = '获取验证码';
+}
+/** 发送验证码 60 秒倒计时（ES2017 安全写法，无 ?. / ?? 等）。 */
+function startFindCountdown(sec) {
+  var btn = document.getElementById('findSendBtn');
+  var left = sec;
+  btn.disabled = true; btn.textContent = left + 's 后重发';
+  if (_findTimer) { clearInterval(_findTimer); }
+  _findTimer = setInterval(function () {
+    left--;
+    if (left <= 0) { clearInterval(_findTimer); _findTimer = null; btn.disabled = false; btn.textContent = '获取验证码'; return; }
+    btn.textContent = left + 's 后重发';
+  }, 1000);
+}
+function sendFindCode() {
+  var email = (document.getElementById('findEmail').value || '').trim();
+  if (!EMAIL_RE_LOGIN.test(email)) { showFindErr('请输入正确的邮箱地址'); return; }
+  var btn = document.getElementById('findSendBtn');
+  if (btn.disabled) return;
+  btn.disabled = true; btn.textContent = '发送中…';
+  fetch(API_BASE + '/api/auth/email/send-code', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email, purpose: 'reset' })
+  }).then(function (res) {
+    return res.json().then(function (d) { return { ok: res.ok, status: res.status, data: d }; });
+  }).then(function (r) {
+    if (!r.ok) { showFindErr(emailErrMsg(r.status, r.data)); btn.disabled = false; btn.textContent = '获取验证码'; return; }
+    clearFindErr();
+    startFindCountdown(60);
+  }).catch(function () { showFindErr('网络异常，请稍后再试'); btn.disabled = false; btn.textContent = '获取验证码'; });
+}
+function submitFindAccount() {
+  var email = (document.getElementById('findEmail').value || '').trim();
+  var code = (document.getElementById('findCode').value || '').trim();
+  var np = document.getElementById('findNewPass').value || '';
+  if (!EMAIL_RE_LOGIN.test(email)) { showFindErr('请输入正确的邮箱地址'); return; }
+  if (!/^\d{4,8}$/.test(code)) { showFindErr('请输入收到的邮箱验证码'); return; }
+  if (np) {
+    if (!pwStrongEnough(np)) { showFindErr('密码强度不足：需至少 8 位，且同时包含字母和数字'); return; }
+    if (pwTooCommon(np)) { showFindErr('该密码过于常见，请更换为更复杂的密码'); return; }
+  }
+  var btn = document.getElementById('findSubmitBtn');
+  var t = btn.textContent;
+  btn.disabled = true; btn.textContent = '⏳ 处理中…';
+  var payload = { email: email, code: code };
+  if (np) payload.newPassword = np;
+  fetch(API_BASE + '/api/auth/find-account', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).then(function (res) {
+    return res.json().then(function (d) { return { ok: res.ok, status: res.status, data: d }; });
+  }).then(function (r) {
+    btn.disabled = false; btn.textContent = t;
+    if (!r.ok) { showFindErr(emailErrMsg(r.status, r.data)); return; }
+    clearFindErr();
+    var html = '<div class="find-result">✅ 找回成功！<br>账号：<b>' + escHtml(r.data.username) + '</b>';
+    if (r.data.passwordReset) { html += '<br>密码已重置，请用新密码登录。'; }
+    html += '</div>';
+    document.getElementById('findResult').innerHTML = html;
+    document.getElementById('loginAccount').value = r.data.username || email;
+  }).catch(function () { btn.disabled = false; btn.textContent = t; showFindErr('网络异常，请稍后再试'); });
+}
+/* 弹层交互：点击遮罩关闭、Esc 关闭 */
+document.getElementById('findModal').addEventListener('click', function (e) { if (e.target === this) closeFindAccount(); });
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeFindAccount(); });
 </script>
 </body>
 </html>

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" data-page-node-id="scAqzajn3bTDCBBENuGZj0">
 <meta name="theme-color" content="#5B8DEF" data-page-node-id="xcIilqbK544vSHAWBPyO4w">
 <title>个人中心 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260916O" data-page-node-id="tBLcp6JxdB6dWCmMCCx7F8">
+<link rel="stylesheet" href="assets/common.css?v=20260917b" data-page-node-id="tBLcp6JxdB6dWCmMCCx7F8">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O" data-page-node-id="uqByqsnHV08jClPBpI9G16">
@@ -104,12 +104,22 @@
 /* 作品集弹窗沿用本页 .modal 观感（--card 底色），与 #logoutConfirmModal / #countdownModal 保持一致 */
 .xtf-mask .app-modal { background: var(--card); color: var(--text); }
 @media (max-width: 560px) { .xtf-grid { grid-template-columns: repeat(2, 1fr); } }
+
+/* ==================== R73 需求15 / 需求20-B 文字专项（A9–A11） ====================
+   分组卡（.subpage-group-card = icon + main + arrow）在窄屏 + 长文案下：
+   ① 文本侧 min-width:0，避免被 flex 挤压成「一行一个字」（A10）；
+   ② 标题/描述单行省略，长昵称/长签名不窜到箭头或图标下方（A9/A11）。 */
+.subpage-list .sgc-main { min-width: 0; }
+.subpage-list .sgc-title,
+.subpage-list .sgc-desc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.subpage-list .sgc-icon,
+.subpage-list .sgc-arrow { flex: 0 0 auto; }
 </style>
 <body class="theme-home" data-page-node-id="YOxnETeT4z4J4WFn6FB0qJ">
 
 <div class="app" data-page-node-id="rC7PFhhDSQoJOtAFwVAjO6">
 <nav class="sidebar"> <div class="logo"> <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div> <div> <div class="logo-text">星途</div> <div class="logo-sub">致追梦的人->修身</div> </div> </div> <div class="nav-list"> <div class="nav-item" data-page="home"> <span class="nav-icon" data-icon="home"></span><span>首页</span> </div>  <div class="nav-item" onclick="location.href='AI.html'"> <span class="nav-icon" data-icon="sparkles"></span><span>AI</span> </div> <div class="nav-section">学习模块</div> <div class="nav-item" data-page="cet"> <span class="nav-icon" data-icon="book-open"></span><span>英语</span> </div> <div class="nav-item" data-page="exam"> <span class="nav-icon" data-icon="pencil"></span><span>行测</span> </div>
-<div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>面测</span> </div> <div class="nav-item" data-page="files"> <span class="nav-icon" data-icon="folder"></span><span>我的文件</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon" data-icon="globe"></span><span>社区</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="book"></span><span>错题本</span> </div> <div class="nav-item active" data-page="profile"> <span class="nav-icon" data-icon="user"></span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon" data-icon="settings"></span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak"><span data-icon="fire" data-icon-size="14" style="vertical-align:-2px"></span> 连续打卡 0 天</div> </div> </div> </div> </nav>
+<div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>面测</span> </div> <div class="nav-item" data-page="files"> <span class="nav-icon" data-icon="folder"></span><span>我的文件</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon" data-icon="globe"></span><span>社区</span> </div> <div class="nav-item" data-page="moments"> <span class="nav-icon" data-icon="rss"></span><span>动态空间</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="book"></span><span>错题本</span> </div> <div class="nav-item active" data-page="profile"> <span class="nav-icon" data-icon="user"></span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon" data-icon="settings"></span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak"><span data-icon="fire" data-icon-size="14" style="vertical-align:-2px"></span> 连续打卡 0 天</div> </div> </div> </div> </nav>
 
   <div class="main" data-page-node-id="9bopuDa08t6vS7NC3NKjd2">
 <header class="topbar" data-page-node-id="qJPc52dgEhqzp4JZlJYJfQ">
@@ -132,9 +142,11 @@
         <!-- T02 批次五 hash 路由：面包屑（router 维护）+ 第一层分组卡列表（默认显示） -->
         <div class="subpage-header"></div>
         <div class="subpage-list">
-          <div class="subpage-group-card" onclick="SubpageRouter.navigate('profile')">
+          <!-- R73 需求15：进入资料页的入口改接全新「个人资料」页（等级 / 徽章墙 / 数据总览 / 设置区）。
+               原页内 #profileBox 子页（SubpageRouter.navigate('profile')）保留，可经 hash 直达。 -->
+          <div class="subpage-group-card" onclick="location.href='个人资料.html'">
             <div class="sgc-icon" data-icon="user"></div>
-            <div class="sgc-main"><div class="sgc-title">个人资料</div><div class="sgc-desc">头像、昵称、签名、城市、生日等</div></div>
+            <div class="sgc-main"><div class="sgc-title">个人资料</div><div class="sgc-desc">头像昵称签名 · 学习等级 · 徽章墙 · 数据总览</div></div>
             <div class="sgc-arrow">›</div>
           </div>
           <div class="subpage-group-card" onclick="SubpageRouter.navigate('posts')">
@@ -142,9 +154,10 @@
             <div class="sgc-main"><div class="sgc-title">发贴统计</div><div class="sgc-desc">发贴数、点赞、评论等数据</div></div>
             <div class="sgc-arrow">›</div>
           </div>
-          <div class="subpage-group-card" onclick="SubpageRouter.navigate('moments')">
-            <div class="sgc-icon" data-icon="globe"></div>
-            <div class="sgc-main"><div class="sgc-title">我的动态</div><div class="sgc-desc">本人发布的动态列表（含删除）</div></div>
+          <!-- R74：原「我的动态」入口卡改为「动态空间」直达入口（页内我的动态子页仍可经 hash #moments 直达） -->
+          <div class="subpage-group-card" onclick="location.href='动态空间.html'">
+            <div class="sgc-icon" data-icon="rss"></div>
+            <div class="sgc-main"><div class="sgc-title">动态空间</div><div class="sgc-desc">朋友圈信息流 · 我的动态 · 发布打卡</div></div>
             <div class="sgc-arrow">›</div>
           </div>
           <div class="subpage-group-card" onclick="SubpageRouter.navigate('prefs')">
@@ -309,7 +322,7 @@
         <div class="card" id="myMomentsCard">
           <div class="card-header">
             <div class="card-title"><span class="title-icon" data-icon="globe"></span>我的动态</div>
-            <div class="card-action" onclick="location.href='动态.html'">去发布 <span data-icon="arrow-right" data-icon-size="14" style="vertical-align:-3px"></span></div>
+            <div class="card-action" onclick="location.href='动态空间.html'">去发布 <span data-icon="arrow-right" data-icon-size="14" style="vertical-align:-3px"></span></div>
           </div>
           <div id="myMomentsBody" style="font-size:var(--xt-font-base);padding:12px 16px;color:var(--text-secondary)">加载中…</div>
         </div>
@@ -367,6 +380,9 @@
   <div class="bottom-more-panel" id="morePanel">
     <div class="bottom-more-title">更多功能</div>
     <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="navigateTo('moments');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="rss" data-icon-size="20"></span></div><div class="bm-label">动态空间</div>
+      </div>
       <div class="bottom-more-item" onclick="openBlogStats()">
         <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
       </div>
@@ -472,11 +488,11 @@
 <script src="assets/icon-map.js?v=20260916O" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260916S" defer></script>
+<script src="assets/app.js?v=20260917b" defer></script>
 <script src="assets/quest.js?v=20260916O" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260916S" defer></script>
-<script src="assets/subpage-router.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260917b" defer></script>
+<script src="assets/subpage-router.js?v=20260917b" defer></script>
 
 <script>
 function overviewGo(key) {
@@ -759,7 +775,7 @@ window.addEventListener('load', function() {
   function loadMyMoments() {
     var box = $id('myMomentsBody');
     if (!box) return;
-    if (!tok()) { box.innerHTML = '登录后可查看和发布动态（<a href="动态.html">去动态页</a>）'; return; }
+    if (!tok()) { box.innerHTML = '登录后可查看和发布动态（<a href="动态空间.html">去动态页</a>）'; return; }
     fetch(apiBase() + '/api/auth/me', { headers: { 'Authorization': 'Bearer ' + tok() } })
       .then(function (r) { return r.json(); })
       .then(function (me) {
@@ -769,7 +785,7 @@ window.addEventListener('load', function() {
       })
       .then(function (d) {
         var items = d.items || [];
-        if (!items.length) { box.innerHTML = '还没有动态，<a href="动态.html">去发布第一条打卡</a>'; return; }
+        if (!items.length) { box.innerHTML = '还没有动态，<a href="动态空间.html">去发布第一条打卡</a>'; return; }
         box.innerHTML = items.map(function (m) {
           var imgCount = (m.images || []).length;
           return '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">' +
@@ -912,7 +928,7 @@ window.peBirthdayOnBlur = function () {
 <script>
 /* feed-btn（2026-09-15 建，B1 2026-09-16 挪位）：个人资料页「查看动态」按钮逻辑。
    约定（沿用项目既有）：他人视角 ?user=<uid> → 文案「查看 TA 的动态」；
-   自视角（无 user 参数）→ 文案「我的动态」。点击统一跳 动态.html?user=<uid>。
+   自视角（无 user 参数）→ 文案「我的动态」。点击统一跳 动态空间.html?user=<uid>。
 
    【B1 挪位】用户 2026-09-15 23:13 截图反馈：原来它是资料卡上方的「大橙钮」（btn-primary），
    视觉权重过高。改动（全部页内，不碰 assets/app.js、assets/api.js）：
@@ -931,7 +947,7 @@ window.peBirthdayOnBlur = function () {
   function tok() { try { return localStorage.getItem('study_workbench_token') || ''; } catch (e) { return ''; } }
   function viewUid() { try { var u = new URLSearchParams(location.search).get('user'); if (u && /^\d+$/.test(String(u).trim())) return String(u).trim(); } catch (e) {} return null; }
 
-  window.gotoUserMoments = function (uid) { if (uid) location.href = '动态.html?user=' + encodeURIComponent(uid); };
+  window.gotoUserMoments = function (uid) { if (uid) location.href = '动态空间.html?user=' + encodeURIComponent(uid); };
 
   function renderBtn() {
     if (typeof window.lucideAutoRender === 'function') window.lucideAutoRender();
@@ -1091,8 +1107,8 @@ window.peBirthdayOnBlur = function () {
   });
 })();
 </script>
-<script src="assets/ai-config.js?v=20260916R"></script>
+<script src="assets/ai-config.js?v=20260917b"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260916S"></script>
+<script src="assets/ai-service.js?v=20260917b"></script>
 </body>
 </html>

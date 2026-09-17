@@ -560,6 +560,9 @@
     _pressOrigin = null;
   }
   window.imRecallPressStart = function (id, e, el) {
+    /* R73 需求3（2026-09-15）：图片气泡不参与长按菜单 —— 否则慢点一下会被吞成「撤回/删除本端」菜单
+       而非打开图片预览（需求3 的次因）。命中 img 直接不启动长按计时。 */
+    if (e && e.target && String(e.target.tagName || '').toUpperCase() === 'IMG') return;
     imClearPress();
     var t = (e && e.touches && e.touches.length) ? e.touches[0] : null;
     _pressOrigin = t ? { x: t.pageX, y: t.pageY } : { x: 0, y: 0 };
@@ -1080,9 +1083,11 @@
     var chatHtml = chatList.map(function (c) {
       var ck = threadKeyOfChat(c);
       var active = S.peer && S.peer.id === c.id;
-      // A2 加固：头像点击不再直接跳对方主页（避免误触），改为提示；点整行才进入会话
+      // 缺口3修复（2026-09-17）：私聊会话列表点对方头像 → 直接进入对方公开主页（openUserHome →
+      // 个人资料.html?user=<id>）。openUserHome 未加载时（极少数轻量页）由 imOpenPeerHome 兜底跳转，
+      // 仍无 serverId 时回退到原提示，绝不留死链。
       var avClick = c.isServer && c.serverId
-        ? 'event.stopPropagation();imShowPeerHint(' + c.serverId + ')'
+        ? 'event.stopPropagation();imOpenPeerHome(' + c.serverId + ')'
         : 'event.stopPropagation()';
       // 批次二 需求6：会话列表右侧在线状态。仅服务器会话且 presence 缓存命中时显示（值来自服务端 lastSeenAt）；
       // 无后端 / file:// / 字段缺失时整段为空字符串，绝不显示假时间。
@@ -1100,7 +1105,10 @@
         (c.unread > 0 ? '<div class="im-badge">' + (c.unread > 99 ? '99+' : c.unread) + '</div>' : '') +
         '</div>' + imSwipeActionsHtml(ck, prefs[ck] || {}) + '</div>';
     }).join('');
+    /* R73 需求19：会话列表同缺陷 —— innerHTML 重建会重置滚动位置，先记后恢复（避免轮询时列表弹回顶部）。 */
+    var prevListTop = box.scrollTop;
     box.innerHTML = groupHtml + chatHtml;
+    box.scrollTop = prevListTop;
     // BUG-1（QA Round1，2026-09-11h）：innerHTML 重建后左滑展开态的 DOM（transform/.open）已随旧节点销毁，
     // 但 S.swipeOpen 若残留，捕获阶段 click 监听器会误判「有展开态」→ stopPropagation 吞掉第一次点击。
     // 这里必须显式清空：重渲染即视为收起（每 5s 未读轮询都会重渲染，重放展开态反而会让操作栏常挂）。
@@ -1224,11 +1232,21 @@
     }, true);
   }
 
-  /* A2：点会话头像时的提示（不再误跳对方主页） */
+  /* A2：点会话头像时的提示（缺口3修复后仅作为 openUserHome 缺失 / serverId 非法时的兜底） */
   window.imShowPeerHint = function (serverId) {
     var f = (SERVER_FRIENDS || []).find(function (x) { return x.serverId === serverId; });
     if (!f) f = (S.chats || []).find(function (x) { return x.isServer && x.serverId === serverId; });
     toast('「' + (f ? f.nickname : '好友') + '」点整行开始聊天 · 查看资料请到好友列表');
+  };
+
+  /* 缺口3修复（2026-09-17）：会话列表点对方头像 → 打开其公开主页。
+     优先用 api.js 的 openUserHome（私聊.html 已按顺序加载 api.js）；缺失时同义兜底跳转；
+     serverId 非法（0/空）才回退到 imShowPeerHint 提示，绝不留死链。 */
+  window.imOpenPeerHome = function (serverId) {
+    var uid = Number(serverId);
+    if (uid && typeof window.openUserHome === 'function') { window.openUserHome(uid); return; }
+    if (uid) { location.href = '个人资料.html?user=' + encodeURIComponent(uid); return; }
+    window.imShowPeerHint(serverId);
   };
 
   // 服务器好友列表缓存
@@ -1723,6 +1741,7 @@
     var friend = getFriend(friendId);
     if (!friend) return;
     S.peer = friend;
+    imResetMsgPaging(); // R73 需求19：切换会话重置分页 / 签名状态
     // R60：告诉 app.js 当前会话对象（本地/AI 好友没有 serverId → null，避免误报）
     xtSetChatUser(S.peer.isServer ? S.peer.serverId : null);
     getOrCreateChat(friendId);
@@ -1754,6 +1773,7 @@
       .then(function (r) { return r.json(); })
       .then(function (d) {
         var items = d.items || [];
+        imHasMore = !!d.hasMore; // R73 需求19：记录是否还有更早历史，供滚动加载更多
         if (items.length > 0) {
           S.msgs = items.map(function (m) {
             return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read };
@@ -1818,6 +1838,31 @@
   };
 
   // 渲染聊天头部（适配当前 HTML：操作 imCAv/imCName/imBack 元素）
+  /* R73 需求18③（2026-09-15）：普通用户可达的备注入口（聊天头部「✎」按钮）。
+     复用既有 imOpenRemarkEditor，不另写弹窗；保存后由 imSaveRemark 刷新头部 + 列表。 */
+  function imEnsureRemarkBtn(show) {
+    var nameEl = $id('imCName');
+    if (!nameEl || !nameEl.parentNode) return;
+    var btn = $id('imRemarkBtn');
+    if (!show) { if (btn) btn.style.display = 'none'; return; }
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.id = 'imRemarkBtn';
+      btn.className = 'im-icon';
+      btn.type = 'button';
+      btn.title = '设置备注';
+      btn.textContent = '✎';
+      btn.onclick = function () { imOpenRemarkForCurrentChat(); };
+      nameEl.parentNode.insertBefore(btn, nameEl.nextSibling);
+    }
+    btn.style.display = 'block';
+  }
+  function imOpenRemarkForCurrentChat() {
+    if (S.group) return;                                   // 群聊无备注
+    if (!S.peer || !S.peer.isServer) { toast('仅服务器好友支持设置备注'); return; }
+    window.imOpenRemarkEditor(S.peer.serverId, S.peer.nickname || '');
+  }
+
   function renderChatHeader() {
     var avEl = $id('imCAv');
     var nameEl = $id('imCName');
@@ -1831,6 +1876,7 @@
       if (gsBtnG) gsBtnG.style.display = 'block';
       var backBtn = $id('imBack');
       if (backBtn) backBtn.style.display = window.innerWidth <= 760 ? 'block' : 'none';
+      imEnsureRemarkBtn(false); // R73 需求18③：群聊不显示备注入口
       return;
     }
     if (avEl) avEl.innerHTML = renderAvatar(S.peer.avatar, S.peer.nickname);
@@ -1842,8 +1888,13 @@
       var tag = aiCfg && aiCfg.apiKey
         ? '<span style="font-size:10px;color:#4caf50;background:#E8F5E9;padding:1px 6px;border-radius:4px;margin-left:6px;font-weight:400">AI在线</span>'
         : '';
-      nameEl.innerHTML = esc(S.peer.nickname) + tag;
+      /* R73 需求18③：头部标题按「备注名（原名）」渲染，保存备注后即时反映。 */
+      var dispName = (S.peer && S.peer.isServer)
+        ? imDisplayName(imRemarkOf(S.peer.serverId), S.peer.nickname)
+        : S.peer.nickname;
+      nameEl.innerHTML = esc(dispName) + tag;
     }
+    imEnsureRemarkBtn(!!(S.peer && S.peer.isServer)); // R73 需求18③：服务器好友显示「✎」备注入口
     // T02 增量：私聊会话隐藏「⋯」群设置入口
     var gsBtnP = $id('imGSBtn');
     if (gsBtnP) gsBtnP.style.display = 'none';
@@ -1857,6 +1908,7 @@
     document.body.classList.remove('im-mobile');
     S.peer = null;
     S.group = null; // T4 增量：退出群会话状态
+    imResetMsgPaging(); // R73 需求19：退出会话一并重置分页 / 签名状态
     xtSetChatUser(null); // R60：离开会话 → 清掉当前会话对象
     var conv = $id('imConv');
     if (conv) conv.style.display = 'none';
@@ -1885,6 +1937,11 @@
     }
     var isGroup = !!S.group;
     var key = imThreadKey();
+    /* R73 需求19（2026-09-15）：整表重建前先记录滚动位置，重建后据「贴底与否」决定回滚策略，
+       避免 2s 轮询 / 服务端回包每次把用户从历史翻阅处甩回底部。 */
+    var prevTop = box.scrollTop;
+    var prevH = box.scrollHeight;
+    var atBottom = (prevH - prevTop - box.clientHeight) < 24;
     box.innerHTML = S.msgs.map(function (m) {
       var isMe = m.senderId === S.myId;
       var time = new Date(m.time);
@@ -1934,7 +1991,13 @@
       }
       return body;
     }).join('');
-    box.scrollTop = box.scrollHeight;
+    /* R73 需求19：贴底时保持贴底（原行为不变）；否则按重建前后的高度差平移 scrollTop，保住可视位置。
+       「向上加载更多」prepend 更早历史后，prevTop 较小 → atBottom=false → scrollTop 自动加上新增长度，视口不跳动。 */
+    if (atBottom) {
+      box.scrollTop = box.scrollHeight;
+    } else {
+      box.scrollTop = prevTop + (box.scrollHeight - prevH);
+    }
   }
 
   /* 【后续扩展点：群消息逐人已读回执】群内只保证自己未读数准确（last_read_msg_id 游标），不渲染逐条已读。 */
@@ -2060,15 +2123,102 @@
     inp.click();
   };
 
-  // 点击图片气泡 → 全屏预览（点任意处关闭）
-  window.imPreviewImage = function (src) {
+  /* R73 需求3（2026-09-15）：图片全屏预览 —— 单例查看器（重写）。
+     旧实现每次点击都新建浮层 + 「点任意处关闭」，且没有放大/缩小/✕/Esc（用户诉求「无法放大查看」）。
+     现改为：只创建一次浮层节点并复用；✕ 按钮 / Esc 键 / 点击背景三种方式关闭；
+     点击图片本体不关闭（避免与拖动平移冲突）；＋/－ 按钮 + 滚轮 + 双击缩放（0.5×–4×）；
+     放大后可鼠标/触摸拖动平移。全部 ES2017 祖先语法（var/function），样式随脚本在 boot() 注入。 */
+  var _IV = null; // 单例查看器状态：{ ov, img, scale, tx, ty, dragging }
+  function imClosePreview() {
+    if (_IV && _IV.ov && _IV.ov.parentNode) _IV.ov.parentNode.removeChild(_IV.ov);
+  }
+  window.imClosePreview = imClosePreview;
+
+  function imPreviewImage(src) {
     if (!src) return;
+    if (!_IV) imIvBuild();
+    _IV.img.setAttribute('src', src);
+    _IV.scale = 1; _IV.tx = 0; _IV.ty = 0; _IV.applyT();
+    if (!_IV.ov.parentNode) document.body.appendChild(_IV.ov);
+  }
+  window.imPreviewImage = imPreviewImage;
+
+  function imIvBuild() {
     var ov = document.createElement('div');
-    ov.className = 'im-img-preview';
-    ov.innerHTML = '<img src="' + esc(src) + '" alt="图片预览">';
-    ov.onclick = function () { if (ov.parentNode) ov.parentNode.removeChild(ov); };
-    document.body.appendChild(ov);
-  };
+    ov.className = 'im-img-preview im-iv';
+    ov.innerHTML = '<div class="im-iv-tools">' +
+      '<span class="im-iv-btn" data-act="out">－</span>' +
+      '<span class="im-iv-btn" data-act="in">＋</span>' +
+      '<span class="im-iv-btn" data-act="close">✕</span>' +
+      '</div>' +
+      '<img class="im-iv-img" alt="图片预览">';
+    var img = ov.querySelector('.im-iv-img');
+    var st = { ov: ov, img: img, scale: 1, tx: 0, ty: 0, dragging: false, sx: 0, sy: 0 };
+    st.applyT = function () {
+      img.style.transform = 'translate(' + st.tx + 'px,' + st.ty + 'px) scale(' + st.scale + ')';
+      if (st.scale > 1.001) ov.classList.add('im-iv-zoomed');
+      else ov.classList.remove('im-iv-zoomed');
+    };
+    st.setScale = function (next) {
+      var s = Math.max(0.5, Math.min(4, next));
+      if (s === st.scale) return;
+      st.scale = s;
+      if (s <= 1.001) { st.tx = 0; st.ty = 0; }
+      st.applyT();
+    };
+    // ＋ / － / ✕ 工具条
+    ov.querySelector('.im-iv-tools').addEventListener('click', function (e) {
+      if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+      var t = e && e.target;
+      var act = (t && t.getAttribute) ? t.getAttribute('data-act') : '';
+      if (act === 'in') st.setScale(st.scale * 1.25);
+      else if (act === 'out') st.setScale(st.scale / 1.25);
+      else if (act === 'close') imClosePreview();
+    });
+    // 点击背景关闭；点图片本体不关闭
+    ov.addEventListener('click', function (e) { if (e.target === ov) imClosePreview(); });
+    // 滚轮缩放
+    ov.addEventListener('wheel', function (e) {
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      st.setScale((e && e.deltaY > 0) ? st.scale / 1.15 : st.scale * 1.15);
+    }, { passive: false });
+    // 双击在 1× / 2× 间切换
+    img.addEventListener('dblclick', function (e) {
+      if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+      st.setScale(st.scale > 1.001 ? 1 : 2);
+    });
+    // 鼠标拖动平移（仅放大后）
+    img.addEventListener('mousedown', function (e) {
+      if (st.scale <= 1.001) return;
+      st.dragging = true; st.sx = e.clientX - st.tx; st.sy = e.clientY - st.ty;
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+    });
+    document.addEventListener('mousemove', function (e) {
+      if (!st.dragging) return;
+      st.tx = e.clientX - st.sx; st.ty = e.clientY - st.sy; st.applyT();
+    });
+    document.addEventListener('mouseup', function () { st.dragging = false; });
+    // 触摸拖动平移
+    img.addEventListener('touchstart', function (e) {
+      if (st.scale <= 1.001 || !e.touches || !e.touches.length) return;
+      st.dragging = true; st.sx = e.touches[0].clientX - st.tx; st.sy = e.touches[0].clientY - st.ty;
+    }, { passive: true });
+    img.addEventListener('touchmove', function (e) {
+      if (!st.dragging || !e.touches || !e.touches.length) return;
+      st.tx = e.touches[0].clientX - st.sx; st.ty = e.touches[0].clientY - st.sy; st.applyT();
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+    }, { passive: false });
+    img.addEventListener('touchend', function () { st.dragging = false; });
+    // 键盘：Esc 关闭，＋/－ 缩放
+    document.addEventListener('keydown', function (e) {
+      if (!_IV || !_IV.ov || !_IV.ov.parentNode) return;
+      var k = e && e.key;
+      if (k === 'Escape' || k === 'Esc') imClosePreview();
+      else if (k === '+' || k === '=') st.setScale(st.scale * 1.25);
+      else if (k === '-') st.setScale(st.scale / 1.25);
+    });
+    _IV = st;
+  }
 
   /* T03 增量（2026-09-12）+ R51（2026-09-14）：粘贴板图片
      - 旧行为：拦截 + toast「暂不支持图片消息」
@@ -2585,21 +2735,106 @@
 
   /* ==================== T4 增量（2026-09-11）：群聊 / 表情包 / 已读同步 / 在线状态 ==================== */
 
-  // —— 会话消息拉取（轮询主干；拉取即已读，后端 markRead 默认开启） ——
+  /* R73 需求19（2026-09-15）：消息列表快照签名 —— id 序列 + 条数 + 发送者 + kind + 已读 + content 首尾。
+     轮询结果与上次渲染完全一致时早退，消掉「每 2s 无条件整表重建」
+     （既是需求19 滚动被回滚的帮凶，也是需求3 图片气泡被反复 detach 的竞态主因）。 */
+  function imMsgsSig(list) {
+    var arr = list || [];
+    var out = 'n' + arr.length;
+    for (var i = 0; i < arr.length; i++) {
+      var m = arr[i] || {};
+      var c = String(m.content == null ? '' : m.content);
+      out += '#' + m.id + ':' + m.senderId + ':' + m.kind + ':' + (m.read ? 1 : 0) + ':' + c.length + ':' + c.slice(0, 16) + ':' + c.slice(-16);
+    }
+    return out;
+  }
+
+  /* R73 需求19：服务端只返回最新 50 条 —— 把本地已 prepend 的更早历史（id 更小）保留下来，
+     否则「向上加载更多」拉回的旧消息会被下一轮轮询抹掉。id 游标天然有序，无重叠。 */
+  function imMergeOlderMsgs(cur, fresh) {
+    fresh = fresh || [];
+    var oldest = fresh.length ? Number(fresh[0].id) : 0;
+    if (!oldest) return fresh;
+    var older = [];
+    for (var i = 0; i < (cur || []).length; i++) {
+      var m = cur[i];
+      var mid = Number(m && m.id);
+      if (mid && mid < oldest) older.push(m);
+    }
+    return older.length ? older.concat(fresh) : fresh;
+  }
+
+  var lastMsgsSig = '';        // 当前会话消息列表快照签名（无变化 → 不整表重建）
+  var imHasMore = false;       // 当前会话是否还有更早历史（服务端 hasMore）
+  var imLoadingMore = false;   // 「向上加载更多」在途标志（同一时刻只允许一个请求）
+
+  /* 切换会话时重置分页 / 签名状态（避免上一会话残留影响新会话） */
+  function imResetMsgPaging() { lastMsgsSig = ''; imHasMore = false; imLoadingMore = false; }
+
+  /* 加载更多（需求19 最后一公里）：滚动到顶且 hasMore 为真时，用 id 游标向前翻页。
+     ⚠️ 必须显式 mark_read=0：chat.py 的 mark_read 默认为 1（拉取即已读），
+     向上翻历史页若按默认会把「更早的一页」当成最新页推进已读水位线，造成未读丢失。 */
+  function imLoadMoreMsgs() {
+    if (imLoadingMore || !imHasMore) return;
+    if (!S.msgs || !S.msgs.length) return;
+    if (!getToken()) return;
+    var firstId = Number(S.msgs[0].id);
+    if (!firstId) return;
+    var url, mapper;
+    if (S.group) {
+      url = apiBase() + '/api/groups/' + S.group.id + '/messages?before_id=' + firstId + '&limit=30&mark_read=0';
+      mapper = function (m) { return { id: m.id, senderId: m.senderId, senderNickname: m.senderNickname, senderAvatar: m.senderAvatar, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true }; };
+    } else if (S.peer && S.peer.isServer) {
+      url = apiBase() + '/api/chat/' + S.peer.serverId + '/messages?before_id=' + firstId + '&limit=30&mark_read=0';
+      mapper = function (m) { return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read }; };
+    } else {
+      return;
+    }
+    imLoadingMore = true;
+    fetch(url, { headers: { 'Authorization': 'Bearer ' + getToken() } })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      var items = (d && d.items) || [];
+      var known = {};
+      for (var i = 0; i < S.msgs.length; i++) known[String(S.msgs[i].id)] = true;
+      var older = items.map(mapper).filter(function (m) { return !known[String(m.id)]; });
+      imHasMore = !!(d && d.hasMore);
+      if (older.length) {
+        S.msgs = older.concat(S.msgs); // prepend 更早历史
+        renderMsgs();                  // renderMsgs 内按高度差补偿 scrollTop → 视口不跳动
+        lastMsgsSig = (S.group ? 'g' + S.group.id : 'p' + (S.peer ? S.peer.serverId : 0)) + '|' + imMsgsSig(S.msgs);
+      }
+      imLoadingMore = false;
+    })
+    .catch(function () { imLoadingMore = false; /* 失败静默：下次滚动到顶再试 */ });
+  }
+
+  // —— 会话消息拉取（轮询主干；拉取即已读，后端 mark_read 默认开启） ——
   function fetchPeerMsgs(silent) {
     if (!S.peer || !S.peer.isServer || !getToken()) return;
+    var want = S.peer.serverId; // R73 需求19孪生：记录本次请求的目标会话（防快速切换串会话）
     fetch(apiBase() + '/api/chat/' + S.peer.serverId + '/messages?limit=50&markRead=1', {
       headers: { 'Authorization': 'Bearer ' + getToken() }
     })
     .then(function (r) { return r.json(); })
     .then(function (d) {
+      /* R73（2026-09-15）：快速连点两个好友时，先发起的响应可能后到；
+         若此时已切走会话，直接丢弃，避免「头部显示 B、消息列表却是 A」。 */
+      if (!S.peer || S.peer.serverId !== want) return;
       var items = d.items || [];
       if (!items.length && silent) return;
-      var hadTyping = !!document.getElementById('typingIndicator');
-      S.msgs = items.map(function (m) {
+      var list = items.map(function (m) {
         return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read };
       });
-      if (hadTyping) return; // AI 正在输入时不整表重绘
+      // 保留已 prepend 的更早历史，避免被「最新 50 条」覆盖
+      var merged = imMergeOlderMsgs(S.msgs, list);
+      imHasMore = !!d.hasMore;
+      var hadTyping = !!document.getElementById('typingIndicator');
+      if (hadTyping) { S.msgs = merged; return; } // AI 正在输入时不整表重绘
+      var sig = 'p' + S.peer.serverId + '|' + imMsgsSig(merged);
+      if (sig === lastMsgsSig) return;            // 无变化：不重建 → 保住 scrollTop（需求19）
+      lastMsgsSig = sig;
+      S.msgs = merged;
       renderMsgs();
       if (!silent) renderList();
     })
@@ -2608,14 +2843,22 @@
 
   function fetchGroupMsgs(silent) {
     if (!S.group || !getToken()) return;
+    var want = S.group.id; // R73 需求19孪生：记录目标群（防快速切换串会话）
     fetch(apiBase() + '/api/groups/' + S.group.id + '/messages?limit=50&markRead=1', {
       headers: { 'Authorization': 'Bearer ' + getToken() }
     })
     .then(function (r) { return r.json(); })
     .then(function (d) {
-      S.msgs = (d.items || []).map(function (m) {
+      if (!S.group || S.group.id !== want) return; // R73：切走后丢弃迟到响应
+      var list = (d.items || []).map(function (m) {
         return { id: m.id, senderId: m.senderId, senderNickname: m.senderNickname, senderAvatar: m.senderAvatar, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true };
       });
+      var merged = imMergeOlderMsgs(S.msgs, list);
+      imHasMore = !!d.hasMore;
+      var sig = 'g' + S.group.id + '|' + imMsgsSig(merged);
+      if (sig === lastMsgsSig) return; // 无变化：不重建
+      lastMsgsSig = sig;
+      S.msgs = merged;
       S.group.memberCount = S.group.memberCount || 0;
       renderMsgs();
       if (!silent) renderList();
@@ -2697,6 +2940,7 @@
     if (conv) conv.style.display = 'flex';
     document.body.classList.add('im-mobile');
     renderChatHeader();
+    imResetMsgPaging(); // R73 需求19：切换会话重置分页 / 签名状态
     S.msgs = [];
     renderMsgs();
     renderList();
@@ -2932,8 +3176,10 @@
   };
 
   /* R42（2026-09-14）：管理员在「全部用户」列表点用户头像/昵称 → 在私聊页内弹资料卡，
-     数据源 GET /api/admin/users/{userId}（后端 server/routers/admin.py 已就绪）。
-     注：不再跳 openUserHome（个人中心.html 不解析 ?user=，会显示登录者自己的资料）。 */
+     数据源优先 GET /api/admin/users/{userId}（后端 server/routers/admin.py 已就绪）；
+     普通用户对该接口 403/401 → 自动回退公开接口 GET /api/users/{userId}（缺口4，2026-09-17）。
+     注：原注释「个人中心.html 不解析 ?user=，会显示登录者自己的资料」与事实相反 —— 该限制
+     已于 2026-09-15 修复（个人中心.html:914-917 自动跳 profile 子页 + api.js renderProfilePage 解析 ?user=）。 */
   window.imShowUserProfile = function (userId) {
     var uid = Number(userId);
     if (!uid) return;
@@ -2958,8 +3204,30 @@
     var rmkBtnInit = ov.querySelector('#imUserProfileRemarkBtn');
     if (rmkBtnInit) rmkBtnInit.onclick = function () { window.imOpenRemarkEditor(uid, ''); };
 
-    fetch(apiBase() + '/api/admin/users/' + uid, { headers: { 'Authorization': 'Bearer ' + getToken() } })
-      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+    // 缺口4修复（2026-09-17）：先试管理员接口；403/401（普通用户无权限）时自动回退公开接口
+    // GET /api/users/{uid}（server/routers/users.py:156）。公开响应不含 phone/gender/birthday，
+    // 下方渲染逻辑也从不渲染这些字段，故回退不会有隐私泄漏。
+    function _imFetchProfile(url) {
+      return fetch(url, { headers: { 'Authorization': 'Bearer ' + getToken() } })
+        .then(function (r) {
+          return r.json().then(function (d) { return { ok: r.ok, status: r.status, d: d }; },
+                              function () { return { ok: r.ok, status: r.status, d: null }; });
+        });
+    }
+    _imFetchProfile(apiBase() + '/api/admin/users/' + uid)
+      .then(function (res) {
+        var u = res.d || {};
+        if (res.ok && u && (u.id || u.username || u.nickname)) return { ok: true, d: u };
+        if (res.status === 403 || res.status === 401) {
+          // 普通用户无权访问管理员接口 → 回退公开资料接口
+          return _imFetchProfile(apiBase() + '/api/users/' + uid).then(function (res2) {
+            var u2 = res2.d || {};
+            if (res2.ok && u2 && (u2.id || u2.username || u2.nickname)) return { ok: true, d: u2 };
+            return { ok: false, d: {} };
+          });
+        }
+        return { ok: false, d: {} };
+      })
       .then(function (res) {
         var body = $id('imUserProfileBody');
         if (!body) return;
@@ -3084,6 +3352,9 @@
       imApplyRemarkLocal(uid, remark);
       window.imCloseRemarkEditor();
       toast(remark ? '✅ 备注已保存' : '✅ 已清除备注');
+      /* R73 需求18③：保存后即时刷新头部标题 + 会话列表条目（loadChats 为异步，先同步刷一遍） */
+      if (!S.group && S.peer && S.peer.isServer && Number(S.peer.serverId) === uid) renderChatHeader();
+      if (S.tab === 'chats') renderList();
       if (S.tab === 'friends' && !S.isAdmin) renderFriends($id('imList'));
       loadChats();
     };
@@ -3587,6 +3858,14 @@
       '.im-img{max-width:200px;max-height:260px;border-radius:8px;display:block;cursor:zoom-in;object-fit:cover}' +
       '.im-img-preview{position:fixed;left:0;top:0;right:0;bottom:0;z-index:3000;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box}' +
       '.im-img-preview img{max-width:100%;max-height:100%;border-radius:8px}' +
+      /* R73 需求3（2026-09-15）：单例图片查看器（缩放 + 工具条）。样式随脚本注入，不改 common.css。 */
+      '.im-img-preview.im-iv{padding:0;overflow:hidden;touch-action:none}' +
+      '.im-img-preview .im-iv-img{max-width:96vw;max-height:88vh;border-radius:8px;transform-origin:center center;transition:transform .12s ease;will-change:transform;user-select:none;-webkit-user-select:none;touch-action:none}' +
+      '.im-iv-zoomed .im-iv-img{cursor:grab;transition:none}' +
+      '.im-iv-zoomed .im-iv-img:active{cursor:grabbing}' +
+      '.im-iv-tools{position:absolute;top:16px;right:16px;display:flex;gap:10px;z-index:2}' +
+      '.im-iv-btn{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.16);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;cursor:pointer;user-select:none;-webkit-user-select:none}' +
+      '.im-iv-btn:active{background:rgba(255,255,255,.34)}' +
       '.im-gs-av-pick{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}' +
       '.im-gs-av-opt{width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;border:1px solid var(--border);background:var(--bg-secondary,#f5f5f5)}' +
       '.im-gs-av-opt:active{transform:scale(.92)}' +
@@ -3630,6 +3909,24 @@
 
     // 批次二 需求2：会话列表左滑 / 右键操作（事件委托，只绑一次）
     imBindSwipeGestures();
+
+    /* R73 需求19/3（2026-09-15）：消息区只绑一次的两类监听（事件委托，innerHTML 重建不影响）。
+       (1) 向上滚动到顶 → 加载更早历史；
+       (2) 点击图片气泡 → 打开单例查看器（此前仅靠内联 onclick，重建竞态下移动端会丢合成 click）。 */
+    var msgsBox = $id('imMsgs');
+    if (msgsBox) {
+      msgsBox.addEventListener('scroll', function () {
+        if (msgsBox.scrollTop < 48) imLoadMoreMsgs();
+      });
+      msgsBox.addEventListener('click', function (e) {
+        var t = e && e.target;
+        if (!t || !t.tagName) return;
+        if (String(t.tagName).toUpperCase() !== 'IMG') return;
+        if (!t.className || String(t.className).indexOf('im-img') < 0) return;
+        var s = t.getAttribute('src');
+        if (s) imPreviewImage(s);
+      });
+    }
 
     // 先获取当前用户ID（用于区分消息左右），再加载会话和好友
     var token = getToken();
@@ -3858,6 +4155,21 @@
     imRemarkOf: imRemarkOf,
     lsK: lsK,
     imOfflineFallback: imOfflineFallback,
+    /* R73 需求3/19（2026-09-15）：图片查看器 / 分页加载 / 消息快照签名 校验钩子（仅测试引用） */
+    imClosePreview: window.imClosePreview,
+    imPreviewImageFn: imPreviewImage,
+    getPreviewEl: function () { return _IV ? _IV.ov : null; },
+    imLoadMoreMsgs: imLoadMoreMsgs,
+    imMsgsSig: imMsgsSig,
+    imMergeOlderMsgs: imMergeOlderMsgs,
+    getImHasMore: function () { return imHasMore; },
+    setImHasMore: function (v) { imHasMore = !!v; },
+    getLastMsgsSig: function () { return lastMsgsSig; },
+    /* R73 追加（2026-09-15）：会话切换守卫 / 备注入口 校验钩子（仅测试引用） */
+    fetchPeerMsgs: fetchPeerMsgs,
+    fetchGroupMsgs: fetchGroupMsgs,
+    renderChatHeader: renderChatHeader,
+    imEnsureRemarkBtn: imEnsureRemarkBtn,
     getAiConfig: getAiConfig
   };
 

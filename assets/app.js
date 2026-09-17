@@ -1446,7 +1446,7 @@ const pageTitles = {
   comm: '表达', interview: '面测', ppt: '我的文件',
   'speaking-demo': '情景式口语', 'exam-demo': '行测刷题',
   'roleplay-demo': '角色扮演', 'interview-demo': '模拟面试',
-  'exam-center': '行测刷题中心', shenlun: '申论刷题', 'wrong-book': '错题本', 'cet-vocab': '四级词汇', 'etiquette': '商务礼仪', 'iv-questions': '面试题库', 'ppt-layouts': 'PPT版式库', 'ppt-cases': 'PPT案例拆解', 'comm-scenes': '场景话术库', 'comm-quotes': '万能金句库', 'settings': '设置', 'blog': '社区', 'profile': '个人中心'
+  'exam-center': '行测刷题中心', shenlun: '申论刷题', 'wrong-book': '错题本', 'cet-vocab': '四级词汇', 'etiquette': '商务礼仪', 'iv-questions': '面试题库', 'ppt-layouts': 'PPT版式库', 'ppt-cases': 'PPT案例拆解', 'comm-scenes': '场景话术库', 'comm-quotes': '万能金句库', 'settings': '设置', 'blog': '社区', 'profile': '个人中心', moments: '动态空间'
 };
 
 // ========== 多页面版：各模块独立网页的文件映射 ==========
@@ -1474,6 +1474,7 @@ const PAGE_FILES = {
   'comm-scenes': '场景话术库.html',
   'comm-quotes': '万能金句库.html',
   profile: '个人中心.html',
+  moments: '动态空间.html',
   settings: '设置.html'
 };
 
@@ -1680,7 +1681,7 @@ function toggleTask(id) {
     saveData();
     renderTasks();
     updateTopbarStats();
-    updateGoalProgress();
+    updateHomeGoalRing();
     if (task.done) {
       // T18②：完成首页任务也算一次「学习动作」，推进全局连续打卡
       try { window.Streak && window.Streak.bump(); } catch (e) { /* 静默 */ }
@@ -1741,7 +1742,7 @@ function renderStats() {
   if (hint) hint.style.display = hasData ? 'none' : 'block';
 
   renderWeekChart(summ);
-  updateGoalProgress();
+  updateHomeGoalRing();
 }
 
 /* 读取本地学习统计（study-stats.js）。不可用时返回 null（file:// 未加载该文件时降级）。 */
@@ -1757,7 +1758,7 @@ function setStatText(id, value) {
   if (el) el.textContent = value;
 }
 
-function updateGoalProgress() {
+function updateHomeGoalRing() {
   const doneCount = appData.tasks.filter(t => t.done).length;
   const total = appData.tasks.length;
   const percent = total > 0 ? Math.round(doneCount / total * 100) : 0;
@@ -8084,7 +8085,7 @@ function renderBlogStats() {
   if (!statsBox) return; // 当前页面没有统计容器（如个人中心页）时静默跳过
   // J 批次：六宫格 📝/💾/📁/👍/💬/👁 → pencil/bookmark/inbox/thumbs-up/message-circle/eye
   statsBox.innerHTML = `
-    <div class="card"><div class="card-header"><div class="card-title"><span class="title-icon" data-icon="chart-bar"></span>博客数据统计</div></div>
+    <div class="card"><div class="card-header"><div class="card-title"><span class="title-icon" data-icon="chart-bar"></span>帖子数据统计</div></div>
       <div class="blog-grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">
         ${[['pencil', pub.length, '已发布'], ['bookmark', draft.length, '草稿'], ['inbox', arch.length, '已归档'], ['thumbs-up', totalLikes, '总点赞'], ['message-circle', totalComments, '总评论'], ['eye', totalViews, '总阅读']].map(([ic, num, lb]) =>
           `<div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center"><div style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:22px;font-weight:800;color:var(--text)">${icSpan(ic, 20)} ${num}</div><div style="font-size:12px;color:var(--text-secondary);margin-top:4px">${lb}</div></div>`).join('')}
@@ -9441,6 +9442,23 @@ window.seedStudyLimitUI = seedStudyLimitUI;
     item.timer = setTimeout(function () { closeToast(item); }, item.remaining);
   }
 
+  /* 头像渲染（R73 需求18-② 修复）：入站通知的 avatar 可能是图片 URL（http(s) / /uploads 相对路径 / data:），
+     也可能是纯字符（emoji / 单字，如 AI 搭子的 '⭐'）。旧实现无条件塞进 <img src>，导致 emoji 变裂图、
+     相对路径不经 apiFileUrl 补域名而 404，且无 onerror 兜底 —— 即「对方头像加载不出来」的根因。
+     现统一：URL 走 <img>（过 apiFileUrl + onerror 回落首字），纯字符走文本；口径与 chat-local.js renderAvatar 一致。 */
+  function xtToastAvatarHtml(raw, title) {
+    var letter = xtEsc((title || '新').slice(0, 1));
+    var a = (raw == null ? '' : String(raw)).trim();
+    if (!a) return '<span class="msg-toast-av msg-toast-av-txt">' + letter + '</span>';
+    if (!/^(https?:|\/|data:|blob:|\.\/|\.\.\/)/i.test(a)) {
+      return '<span class="msg-toast-av msg-toast-av-txt">' + xtEsc(a.slice(0, 2)) + '</span>';
+    }
+    var url = a;
+    try { if (typeof window.apiFileUrl === 'function') url = window.apiFileUrl(a) || a; } catch (eU) { url = a; }
+    return '<img class="msg-toast-av" src="' + xtEsc(url) + '" alt="头像" onerror="this.style.display=\'none\';if(this.nextElementSibling)this.nextElementSibling.style.display=\'flex\';">' +
+      '<span class="msg-toast-av msg-toast-av-txt" style="display:none">' + letter + '</span>';
+  }
+
   function mountToast(item) {
     var host = ensureWrap();
     var el = document.createElement('div');
@@ -9448,9 +9466,7 @@ window.seedStudyLimitUI = seedStudyLimitUI;
     el.setAttribute('role', 'alert');
     var title = xtEsc(item.title || '新消息');
     var text = xtEsc(item.text || '');
-    var avatar = item.avatar
-      ? '<img class="msg-toast-av" src="' + xtEsc(item.avatar) + '" alt="">'
-      : '<span class="msg-toast-av msg-toast-av-txt">' + xtEsc((item.title || '新').slice(0, 1)) + '</span>';
+    var avatar = xtToastAvatarHtml(item.avatar, item.title);
     el.innerHTML =
       avatar +
       '<span class="msg-toast-body">' +

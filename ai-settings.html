@@ -2,10 +2,10 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#ff8c00">
 <title>模型设置</title>
-<link rel="stylesheet" href="assets/common.css?v=20260916O">
+<link rel="stylesheet" href="assets/common.css?v=20260917b">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O">
@@ -351,7 +351,9 @@ body.dark .xt-stars{color:#4a4f58;}
 .xt-modal-btns{display:flex;justify-content:flex-end;}
 
 /* —— R72-14：恢复默认 / 排序弹窗 —— */
-.xt-sort-box{max-width:440px;}
+.xt-sort-box{max-width:calc(100vw - 48px);max-height:calc(100vh - 48px);overflow-y:auto;}
+/* R73-2：窄屏自适应；≥488px 恢复 440px 上限（不依赖 CSS 数学函数，兼容旧内核） */
+@media (min-width:488px){.xt-sort-box{max-width:440px;}}
 .xt-sort-actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
 .xt-sort-actions .xt-set-btn{flex:1 1 auto;min-width:130px;}
 .xt-sort-preview-label{font-size:12px;color:var(--ai-muted);font-weight:600;margin-bottom:6px;}
@@ -429,12 +431,43 @@ body.dark .xt-stars{color:#4a4f58;}
   .xt-set-content{padding:12px 10px 96px;}
   /* R72-13 移动端不挤压：模型行改为可换行，操作区独占次行，名称行恢复满宽 */
   .xt-set-row{padding:10px;gap:8px;flex-wrap:wrap;}
-  .xt-set-row-main{flex:1 1 auto;min-width:0;}
+  .xt-set-row-main{flex:1 1 0;min-width:0;}
   .xt-set-row-name{word-break:break-word;}
   .xt-set-row-sub{align-items:flex-start;}
   /* 操作区独占次行、左对齐、允许自行换行（放不下则换行，绝不挤压名称） */
-  .xt-set-row-right{flex-shrink:1;flex-basis:100%;justify-content:flex-start;gap:6px;}
+  .xt-set-row-right{flex-shrink:0;flex-basis:auto;justify-content:flex-end;gap:6px;}
   .xt-set-tabs{padding:8px 10px;}
+  /* R73-1：移动端模型列表精简（以下选择器在桌面端 >640px 一律不命中） */
+  .xt-set-row .xt-h-txt{display:none;}          /* 检测结果只留圆点：隐藏对号/错号/沙漏与「正常/失败」文字 */
+  .xt-speed-tag{display:none;}                  /* 速率只留数值：隐藏「· 实测」「待检测」字词 */
+  .xt-set-row .xt-stars{display:none;}          /* 隐藏模型行内星级区 */
+  .xt-set-row-right [data-up],
+  .xt-set-row-right [data-down]{display:none;}  /* 隐藏模型行上移/下移按钮 */
+  .xt-set-row .xt-set-used{display:none;}       /* R73-事D：窄屏隐藏「当前使用」徽章（桌面保留） */
+  .xt-set-switch::after{content:"";position:absolute;left:0;right:0;top:50%;height:32px;transform:translateY(-50%);}  /* R73-事E：开关触控高度补足 32px（不改可见轨道） */
+}
+/* —— R73-事E：≤400 窄屏——控件/字号随视口缩放（仅 px 媒体查询，兼容老 WebView） —— */
+@media (max-width:400px){
+  .xt-set-content{padding:10px 8px 96px;}
+  .xt-set-row{padding:9px;gap:7px;}
+  .xt-set-row-name{font-size:13.5px;}
+  .xt-set-row-right{gap:5px;}
+  .xt-ico-btn{min-width:34px;min-height:34px;padding:0 7px;font-size:13px;}
+  .xt-set-switch{width:40px;height:22px;}
+  .xt-set-knob{width:16px;height:16px;top:3px;left:3px;}
+  .xt-set-switch.on .xt-set-knob{left:21px;}
+}
+
+/* —— R73-事E：≤360 最窄屏 —— */
+@media (max-width:360px){
+  .xt-set-row{padding:8px;gap:6px;}
+  .xt-set-row-name{font-size:13px;}
+  .xt-set-row-right{gap:4px;}
+  .xt-ico-btn{min-width:32px;min-height:32px;padding:0 6px;font-size:12.5px;}
+  .xt-set-switch{width:38px;height:20px;}
+  .xt-set-knob{width:15px;height:15px;top:2.5px;left:3px;}
+  .xt-set-switch.on .xt-set-knob{left:20px;}
+  .xt-drag-handle{padding:6px 3px;}
 }
 </style>
 </head>
@@ -465,10 +498,10 @@ body.dark .xt-stars{color:#4a4f58;}
     <div class="xt-set-toolbar">
       <input class="xt-set-input" id="setModelSearch" type="text" placeholder="搜索模型名 / 平台">
       <div class="xt-set-toolbar-btns">
-        <button class="xt-set-btn" id="setEnableAll">全部启用</button>
-        <button class="xt-set-btn" id="setDisableAll">全部停用</button>
-        <button class="xt-set-btn" id="setBatchHealth"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22v-4"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M6 8h12v2a6 6 0 0 1-12 0Z"/></svg><span id="setBatchHealthTxt">批量检测（并发 3）</span></button>
-        <button class="xt-set-btn danger" id="setRestoreDefault">恢复默认排序/设置</button>
+        <button class="xt-set-btn" id="setEnableAll">全启</button>
+        <button class="xt-set-btn" id="setDisableAll">全停</button>
+        <button class="xt-set-btn" id="setBatchHealth"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22v-4"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M6 8h12v2a6 6 0 0 1-12 0Z"/></svg><span id="setBatchHealthTxt">批量检测</span></button>
+        <button class="xt-set-btn danger" id="setRestoreDefault">排序</button>
       </div>
     </div>
     <div id="setModelList"></div>
@@ -603,13 +636,11 @@ body.dark .xt-stars{color:#4a4f58;}
 <div class="xt-modal-mask" id="setSortModal" style="display:none;">
   <div class="xt-modal-box xt-sort-box">
     <div class="xt-modal-title">恢复默认 / 排序</div>
-    <div class="xt-modal-body" style="margin-bottom:12px;">选择排序方式，或把当前排序映射到 AI 页对话框的模型下拉。
-AI 页对话框的模型下拉顺序与名称将按此更新。</div>
     <div class="xt-sort-actions">
-      <button type="button" class="xt-set-btn" data-sort-act="avail">按可用模型排序</button>
-      <button type="button" class="xt-set-btn" data-sort-act="speed">按速率排序</button>
-      <button type="button" class="xt-set-btn primary" data-sort-act="map">映射到 AI 页模型下拉</button>
-      <button type="button" class="xt-set-btn danger" data-sort-act="reset">恢复默认设置</button>
+      <button type="button" class="xt-set-btn" data-sort-act="avail">有效排序</button>
+      <button type="button" class="xt-set-btn" data-sort-act="speed">速率排序</button>
+      <button type="button" class="xt-set-btn primary" data-sort-act="map">映射</button>
+      <button type="button" class="xt-set-btn danger" data-sort-act="reset">恢复默认</button>
     </div>
     <div class="xt-sort-preview-label">排序预览（只读）</div>
     <div class="xt-sort-preview" id="setSortPreview"></div>
@@ -625,14 +656,14 @@ AI 页对话框的模型下拉顺序与名称将按此更新。</div>
 <script src="assets/icon-map.js?v=20260916O" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260916S" defer></script>
+<script src="assets/app.js?v=20260917b" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260916S" defer></script>
-<script src="assets/ai-config.js?v=20260916R" defer></script>
+<script src="assets/api.js?v=20260917b" defer></script>
+<script src="assets/ai-config.js?v=20260917b" defer></script>
   <!-- R70：连通性检测依赖 ai-service.js 导出的 window.aiHealthCheck。
        该页此前未加载底座 → typeof window.aiHealthCheck !== 'function'
        → 弹出「当前环境不支持连通性检测」。补上底座引用即可。 -->
-  <script src="assets/ai-service.js?v=20260916S" defer></script>
-<script src="assets/ai-settings.js?v=20260916S" defer></script>
+  <script src="assets/ai-service.js?v=20260917b" defer></script>
+<script src="assets/ai-settings.js?v=20260917b" defer></script>
 </body>
 </html>

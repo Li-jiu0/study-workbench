@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>错题本 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260916O">
+<link rel="stylesheet" href="assets/common.css?v=20260917b">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O">
@@ -49,6 +49,9 @@
       <div class="nav-section">创作</div>
       <div class="nav-item" data-page="blog">
         <span class="nav-icon" data-icon="globe"></span><span>社区</span>
+      </div>
+      <div class="nav-item" data-page="moments">
+        <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
       </div>
       <div class="nav-section">互动</div>
       <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
@@ -138,7 +141,7 @@
             <select id="wbAiModuleSel" class="wb-ai-sel" aria-label="选择要分析的模块"></select>
             <button type="button" class="btn btn-primary btn-sm" onclick="xtWbAnalyzeModule()">分析本模块</button>
           </div>
-          <div class="wb-ai-tip">模块级：输出该模块最该补的 3 个考点。单题级：点列表里每道题的「AI 分析」，输出错因 / 考点 / 避坑 / 变式题。公共 Key 限 10 次/分钟，分析结果会本地缓存。</div>
+          <div class="wb-ai-tip">公共 Key 限 10 次/分钟。</div>
           <div id="wbAiModuleOut" class="wb-ai-out" style="display:none"></div>
         </div>
         <div id="wrongList" style="display:flex;flex-direction:column;gap:12px"></div>
@@ -176,6 +179,9 @@
   <div class="bottom-more-panel" id="morePanel">
     <div class="bottom-more-title">更多功能</div>
     <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="navigateTo('moments');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="rss" data-icon-size="20"></span></div><div class="bm-label">动态空间</div>
+      </div>
       <div class="bottom-more-item" onclick="openBlogStats()">
         <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
       </div>
@@ -265,12 +271,12 @@
 <script src="assets/icon-map.js?v=20260916O" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260916S" defer></script>
+<script src="assets/app.js?v=20260917b" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260916S" defer></script>
-<script src="assets/ai-config.js?v=20260916R"></script>
+<script src="assets/api.js?v=20260917b" defer></script>
+<script src="assets/ai-config.js?v=20260917b"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260916S"></script>
+<script src="assets/ai-service.js?v=20260917b"></script>
 <script>
 /* ============ C18 · 错题本 AI 分析（接 assets/ai-service.js 的 window.callAI） ============
  * 数据来源：localStorage 真实错题（study_workbench_data@账号 的 wrongQuestions 只存题 id，

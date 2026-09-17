@@ -15,10 +15,12 @@
     POST /api/admin/feedback/{id}/reply   → 回复某条反馈
 
 启动初始化：ensure_admin_user() —— 保证管理员账号存在且 is_admin=1；
-密码取自环境变量 ADMIN_PASSWORD（未设置时用内置默认密码并打印一次警告，
-警告不含任何密码内容）。
+密码取自环境变量 ADMIN_PASSWORD；账号已存在时绝不修改其密码；未配置
+ADMIN_PASSWORD 且账号不存在时，生成一次性随机强口令创建账号，并仅在服务端
+日志打印一次（源码内无任何硬编码默认口令）。
 """
 import datetime as _dt
+import secrets
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -29,7 +31,7 @@ import config
 from database import (Feedback, Note, SessionLocal, StudyLog, User, get_db,
                       is_admin_user, now_iso, now_str)
 from routers import feedback_public
-from security import get_current_user, hash_password, verify_password
+from security import get_current_user, hash_password
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -40,57 +42,46 @@ ONLINE_WINDOW_SECONDS = 10 * 60
 
 _TS_FORMAT = "%Y-%m-%d %H:%M:%S"
 
-# 未设置环境变量时的兜底密码（仅首次创建账号时写入；不写进文档，日志不打印其值）
-_ADMIN_DEFAULT_PASSWORD = "Admin@2026"
-_admin_password_warned = False
-
 
 # ---------------- 启动初始化 ----------------
 def ensure_admin_user() -> None:
     """保证管理员账号存在且 is_admin=1（幂等，可重复调用）。
 
-    密码策略：
-      - 设置了环境变量 ADMIN_PASSWORD → 每次启动与库内密码比对，不一致则同步
-        （支持运维直接改环境变量轮换密码）；
-      - 未设置 → 仅在该账号首次创建时使用内置默认密码，已存在则保持原密码不变，
-        并打印一次警告（只提示未配置，不输出密码）。
+    安全策略（源码内不再有任何硬编码默认口令）：
+      - 账号**已存在** → 仅确保 is_admin=1，**绝不修改其密码**，随后直接返回；
+      - 账号**不存在** 且配置了 ADMIN_PASSWORD → 用该口令创建；
+      - 账号**不存在** 且未配置 ADMIN_PASSWORD → 生成一次性随机强口令创建账号，
+        仅在服务端日志打印一次（明确提示「请立即登录并修改密码」）。
     """
-    global _admin_password_warned
     username = (config.ADMIN_USERNAME or "").strip() or "管理员"
     env_pwd = (config.ADMIN_PASSWORD or "").strip()
-    use_default = not env_pwd
-    pwd = env_pwd or _ADMIN_DEFAULT_PASSWORD
 
     db = SessionLocal()
     try:
         u = db.query(User).filter(User.username == username).first()
-        if u is None:
-            u = User(
-                username=username,
-                password_hash=hash_password(pwd),
-                nickname=username,
-                motto="",
-                avatar=None,
-                created_at=now_str(),
-                is_admin=True,
-            )
-            db.add(u)
-            db.commit()
-            db.refresh(u)
-        else:
-            changed = False
+        if u is not None:
+            # 已存在：只补管理员标记，绝不触碰密码（杜绝每次启动被重置为固定口令）。
             if not is_admin_user(u):
                 u.is_admin = True
-                changed = True
-            if not use_default and not verify_password(pwd, u.password_hash):
-                u.password_hash = hash_password(pwd)
-                changed = True
-            if changed:
                 db.commit()
-        if use_default and not _admin_password_warned:
-            _admin_password_warned = True
-            print("[WARN] 未设置环境变量 ADMIN_PASSWORD，管理员账号沿用内置默认密码，"
-                  "请尽快在服务器环境变量中配置 ADMIN_PASSWORD 并重启服务。")
+            return
+        # 不存在：创建账号。未配置 ADMIN_PASSWORD 时用一次性随机强口令，杜绝公开口令。
+        generated = not env_pwd
+        pwd = env_pwd or secrets.token_urlsafe(12)
+        db.add(User(
+            username=username,
+            password_hash=hash_password(pwd),
+            nickname=username,
+            motto="",
+            avatar=None,
+            created_at=now_str(),
+            is_admin=True,
+        ))
+        db.commit()
+        if generated:
+            print("[WARN] 未配置环境变量 ADMIN_PASSWORD，已为管理员账号生成一次性随机初始密码："
+                  f"{pwd} —— 请立即登录并修改密码，并在服务器环境变量中配置 "
+                  "ADMIN_PASSWORD 后重启服务。")
     finally:
         db.close()
 

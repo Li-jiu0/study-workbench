@@ -721,6 +721,62 @@
     return s || '未知错误';
   }
 
+  /* R81：该模型所属平台是否需要代理（AI_CONFIG.providers[x].needProxy） */
+  function needProxyModel(id) {
+    var m = findAnyModel(id);
+    var cfg = (typeof window !== 'undefined' && window.AI_CONFIG) ? window.AI_CONFIG : null;
+    if (m && m.provider && cfg && cfg.providers && cfg.providers[m.provider]) {
+      return cfg.providers[m.provider].needProxy === true || cfg.providers[m.provider].needVPN === true;
+    }
+    return false;
+  }
+
+  /* R83：平台显示名（用于「X 需要梯子访问」文案，不写死 Gemini） */
+  function providerNameOf(id) {
+    var m = findAnyModel(id);
+    var cfg = (typeof window !== 'undefined' && window.AI_CONFIG) ? window.AI_CONFIG : null;
+    if (m && m.provider && cfg && cfg.providers && cfg.providers[m.provider] &&
+        cfg.providers[m.provider].name) {
+      return cfg.providers[m.provider].name;
+    }
+    return (m && m.provider) ? String(m.provider) : '该平台';
+  }
+
+  /* R81：auto 模式探测离线的海外平台（与 ai-service isProviderOffline 同一套判定） */
+  function offshoreOffline(id) {
+    if (!needProxyModel(id)) { return false; }
+    var m = findAnyModel(id);
+    if (!m || !m.provider) { return false; }
+    try {
+      if (window.AI_SERVICE && typeof window.AI_SERVICE.isProviderOffline === 'function') {
+        return window.AI_SERVICE.isProviderOffline(m.provider) === true;
+      }
+    } catch (e) { /* 探测不可用时按未离线处理 */ }
+    return false;
+  }
+
+  /* R81：图片生成模型（检测走 images/generations，最长 60s） */
+  function isImageGenId(id) {
+    var m = findAnyModel(id);
+    return !!(m && m.types && isArray(m.types) && m.types.indexOf('imagegen') >= 0);
+  }
+
+  /* R81：失败文案分场景——需代理网络类 / Key 失效 / 模型 ID 无效 / 其他 */
+  function healthReasonEx(id, err) {
+    var s = String(err === null || typeof err === 'undefined' ? '' : err);
+    if (s === 'http_429') { return '当前模型额度已用完/被限流，已自动降级'; }
+    if (s === 'network' || s === 'cors' || s === 'timeout' || s === 'empty') {
+      if (needProxyModel(id)) {
+        return providerNameOf(id) + ' 需要梯子访问，请检查网络或切换到国内模型';
+      }
+      if (s === 'timeout' || s === 'empty') { return '请求超时，无响应'; }
+      return '网络不可达';
+    }
+    if (s === 'http_401' || s === 'http_403') { return 'Key 无效/过期'; }
+    if (s === 'http_404') { return '模型 ID 无效'; }
+    return healthReason(err);
+  }
+
   /* 三态：'none' 待检测 / 'ok' 正常 / 'fail' 失败 */
   function healthStateOf(id) {
     var h = healthOf(id);
@@ -735,6 +791,10 @@
       return '<span class="xt-h-dot ok"></span><span class="xt-h-txt ok">' + ICONS.check + ' 正常</span>';
     }
     if (st === 'fail') {
+      if (offshoreOffline(id)) {
+        return '<span class="xt-h-dot fail"></span><span class="xt-h-txt bad">' + ICONS.cross +
+          ' 离线·自动降级国内链</span>';
+      }
       return '<span class="xt-h-dot fail"></span><span class="xt-h-txt bad">' + ICONS.cross + ' 失败</span>';
     }
     return '<span class="xt-h-dot"></span><span class="xt-h-txt">' + ICONS.hourglass + ' 待检测</span>';
@@ -749,7 +809,7 @@
     }
     if (st === 'fail') {
       var h2 = healthOf(id);
-      return '点击重新检测（上次失败：' + healthReason(h2 ? h2.err : '') + '）';
+      return '点击重新检测（上次失败：' + healthReasonEx(id, h2 ? h2.err : '') + '）';
     }
     return '点击测试接口连通性';
   }
@@ -857,7 +917,7 @@
       var ms = (r && typeof r.ms === 'number') ? r.ms : 0;
       return '检测成功，接口可用\n耗时 ' + (ms / 1000).toFixed(1) + 's';
     }
-    return '检测失败\n原因：' + healthReason(r ? r.err : '');
+    return '检测失败\n原因：' + healthReasonEx(id, r ? r.err : '');
   }
 
   function showHealthResult(id, r) {
@@ -875,7 +935,7 @@
       for (i = 0; i < btns.length; i++) {
         if (btns[i].getAttribute('data-test') === id) {
           btns[i].disabled = !!flag;
-          btns[i].textContent = flag ? '检测中…' : '检测';
+          btns[i].textContent = flag ? (isImageGenId(id) ? '检测中(60s)' : '检测中…') : '检测';
         }
       }
       var hb = host.querySelectorAll('[data-health]');
@@ -919,7 +979,7 @@
       if (btn) {
         btn.disabled = false;
         var t2 = $('setBatchHealthTxt');
-        if (t2) { t2.textContent = '批量检测（并发 3）'; }
+        if (t2) { t2.textContent = '批量检测'; }
       }
       toast('success', '批量检测完成：正常 ' + good + ' / 失败 ' + bad);
     }
@@ -1047,9 +1107,15 @@
   }
 
   /* ---------------- 公共 HTML 片段 ---------------- */
+  /* R83：平台级 needProxy（如 openrouter）也属需梯子，与 needVPN 一并标记 */
+  function providerNeedProxy(model) {
+    if (!model || !model.provider) { return false; }
+    var pp = providers();
+    return !!(pp[model.provider] && pp[model.provider].needProxy === true);
+  }
   function vpnBadge(model) {
-    if (!isNeedVPN(model)) { return ''; }
-    return '<span class="xt-set-badge-vpn">需自备网络</span>';
+    if (!isNeedVPN(model) && !providerNeedProxy(model)) { return ''; }
+    return '<span class="xt-set-badge-vpn">需梯子</span>';
   }
 
   /* R72-15：列表/说明卡片的类型 chip 隐藏「翻译」（该分类已停用）；
@@ -1082,6 +1148,18 @@
     var h = healthOf(id);
     if (h && h.ok && typeof h.ms === 'number') { return sp + ' · 实测' + h.ms + 'ms'; }
     return sp;
+  }
+
+  /* R73-2：模型列表速率展示。桌面端输出与 speedText 完全一致；
+     移动端（≤640px）通过 .xt-speed-tag{display:none} 隐藏「· 实测」/「待检测」字词，仅保留实测数值。 */
+  function speedHtml(id, model) {
+    var sp = effSpeed(id, model);
+    var h = healthOf(id);
+    if (h && h.ok && typeof h.ms === 'number') {
+      return '<span class="xt-speed-tag">' + esc(sp) + ' · 实测</span>' + h.ms + 'ms';
+    }
+    if (sp !== '待检测') { return esc(sp); }
+    return '<span class="xt-speed-tag">' + esc(sp) + '</span>';
   }
 
   /* ---------------- Tab 切换 ---------------- */
@@ -1139,14 +1217,13 @@
     html += rateChipOf(id, model) + vpnBadge(model);
     if (used) { html += ' <span class="xt-set-used">当前使用</span>'; }
     html += '</div>';
-    html += '<div class="xt-set-row-sub">' + typeChipsOf(model) +
-      '<span class="xt-speed">' + esc(speedText(id, model)) + '</span>' + healthBoxHtml(id) + '</div>';
+    html += '<div class="xt-set-row-sub">' +
+      '<span class="xt-speed">' + speedHtml(id, model) + '</span>' + healthBoxHtml(id) + '</div>';
     html += '</div>';
     html += '<div class="xt-set-row-right">';
     html += starsHtmlOf(id, effStars(id, model));
     html += '<span class="xt-set-switch' + (off ? '' : ' on') + '" data-toggle="' + esc(id) +
       '" role="switch" aria-checked="' + (off ? 'false' : 'true') + '"><span class="xt-set-knob"></span></span>';
-    html += '<button type="button" class="xt-ico-btn" data-edit="' + esc(id) + '" title="编辑">' + ICONS.edit + '</button>';
     html += '<button type="button" class="xt-ico-btn" data-test="' + esc(id) + '" title="检测接口连通性">检测</button>';
     if (custom) {
       html += '<button type="button" class="xt-ico-btn del" data-del="' + esc(id) + '" title="删除">' + ICONS.del + '</button>';
@@ -2295,6 +2372,133 @@
     html += '</div>';
     host.innerHTML = html;
     renderMemory();
+    renderProxySection();
+  }
+
+  /* ---------------- R77：海外平台代理访问设置（openrouter / gemini） ---------------- */
+  var PROXY_LS_KEY = 'ai_proxy_settings';
+  var PROXY_STATUS_KEY = 'ai_proxy_status';
+  var PROXY_LABEL = { openrouter: 'OpenRouter', gemini: 'Google Gemini' };
+
+  function getProxyCfg() {
+    var def = { mode: 'auto', relayUrl: '' };
+    try {
+      var raw = localStorage.getItem(PROXY_LS_KEY);
+      if (raw) {
+        var v = JSON.parse(raw);
+        if (v && typeof v === 'object') {
+          if (v.mode === 'auto' || v.mode === 'relay' || v.mode === 'direct') { def.mode = v.mode; }
+          if (typeof v.relayUrl === 'string') { def.relayUrl = v.relayUrl; }
+        }
+      }
+    } catch (e) { /* 损坏 JSON 用默认值 */ }
+    return def;
+  }
+
+  function saveProxyCfg(mode, relayUrl) {
+    try {
+      localStorage.setItem(PROXY_LS_KEY, JSON.stringify({ mode: mode, relayUrl: relayUrl }));
+      return true;
+    } catch (e) {
+      warnStorage();
+      return false;
+    }
+  }
+
+  function proxyProviderNames() {
+    var cfg = (typeof window !== 'undefined' && window.AI_CONFIG) ? window.AI_CONFIG : null;
+    var out = [];
+    if (cfg && cfg.providers) {
+      for (var k in cfg.providers) {
+        if (hasOwn(cfg.providers, k) && cfg.providers[k] && cfg.providers[k].needProxy === true) { out.push(k); }
+      }
+    }
+    return out;
+  }
+
+  function proxyStatusEntry(name) {
+    try {
+      var raw = localStorage.getItem(PROXY_STATUS_KEY);
+      if (!raw) { return null; }
+      var v = JSON.parse(raw);
+      if (v && typeof v === 'object' && v[name]) { return v[name]; }
+    } catch (e) { /* 忽略损坏 JSON */ }
+    return null;
+  }
+
+  function proxyStatusLabel(name) {
+    var e = proxyStatusEntry(name);
+    if (!e || typeof e !== 'object') { return '<span style="color:var(--ai-sub,#5a6068);">未检测</span>'; }
+    if (e.ok === true) { return '<span style="color:#2e9e5b;">可达（' + (e.ms || 0) + 'ms）</span>'; }
+    return '<span style="color:#d64545;font-weight:600;">不可达（离线，自动降级国内链）</span>';
+  }
+
+  function proxyStatusRowsHtml() {
+    var names = proxyProviderNames();
+    var html = '';
+    for (var i = 0; i < names.length; i++) {
+      html += '<div>' + esc(PROXY_LABEL[names[i]] || names[i]) + '：' + proxyStatusLabel(names[i]) + '</div>';
+    }
+    return html || '<div style="color:var(--ai-sub,#5a6068);">无需要代理的平台</div>';
+  }
+
+  /* 「关于」面板内注入代理设置区（每次 renderAbout 重建，事件随节点重绑） */
+  function renderProxySection() {
+    var host = $('setAboutList');
+    if (!host) { return; }
+    var cfg = getProxyCfg();
+    var box = document.createElement('div');
+    box.id = 'setProxyBox';
+    box.style.cssText = 'margin-top:18px;padding:14px;border:1px solid var(--ai-border,#e7e9ee);' +
+      'border-radius:12px;text-align:left;';
+    var html = '';
+    html += '<div style="font-size:14px;font-weight:700;margin-bottom:8px;">海外平台代理访问</div>';
+    html += '<div style="font-size:12.5px;color:var(--ai-sub,#5a6068);line-height:1.6;margin-bottom:10px;">' +
+      'OpenRouter / Gemini 需自备网络。auto=自动探测，不可达平台离线、调用自动降级国内链；' +
+      'relay=请求改走自建中转；direct=始终直连。' +
+      '中转约定：中转地址前缀 + encodeURIComponent(目标完整URL)，body/headers 原样透传。</div>';
+    html += '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">' +
+      '<label style="font-size:13px;">模式</label>' +
+      '<select id="setProxyMode" style="min-height:34px;border-radius:8px;border:1px solid var(--ai-border,#e7e9ee);padding:0 8px;background:var(--ai-card,#fff);color:var(--ai-text,#1f2329);">' +
+      '<option value="auto"' + (cfg.mode === 'auto' ? ' selected' : '') + '>auto 自动探测降级</option>' +
+      '<option value="relay"' + (cfg.mode === 'relay' ? ' selected' : '') + '>relay 自定义中转</option>' +
+      '<option value="direct"' + (cfg.mode === 'direct' ? ' selected' : '') + '>direct 始终直连</option>' +
+      '</select></div>';
+    html += '<input id="setProxyRelay" type="text" placeholder="中转地址前缀，如 https://your-worker.workers.dev/?url=" value="' + esc(cfg.relayUrl) + '"' +
+      ' style="width:100%;box-sizing:border-box;min-height:36px;border-radius:8px;border:1px solid var(--ai-border,#e7e9ee);padding:0 10px;background:var(--ai-card,#fff);color:var(--ai-text,#1f2329);margin-bottom:10px;">';
+    html += '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">' +
+      '<button type="button" id="setProxySave" style="min-height:36px;padding:0 16px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600;border:1px solid var(--ai-orange,#ff8c00);background:var(--ai-orange,#ff8c00);color:#fff;">保存</button>' +
+      '<button type="button" id="setProxyTest" style="min-height:36px;padding:0 16px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600;border:1px solid var(--ai-border,#e7e9ee);background:transparent;color:var(--ai-text,#1f2329);">测试连通性</button></div>';
+    html += '<div id="setProxyStatus" style="font-size:12.5px;line-height:1.7;">' + proxyStatusRowsHtml() + '</div>';
+    box.innerHTML = html;
+    host.appendChild(box);
+    on('setProxySave', 'click', function () {
+      var modeEl = $('setProxyMode');
+      var relayEl = $('setProxyRelay');
+      var mode = modeEl ? String(modeEl.value || 'auto') : 'auto';
+      var relayUrl = relayEl ? String(relayEl.value || '').trim() : '';
+      if (mode === 'relay' && !relayUrl) {
+        toast('warning', 'relay 模式需填写中转地址');
+        return;
+      }
+      if (saveProxyCfg(mode, relayUrl)) { toast('success', '代理设置已保存'); }
+    });
+    on('setProxyTest', 'click', function () {
+      var stEl = $('setProxyStatus');
+      if (stEl) { stEl.textContent = '探测中…（最长 8 秒）'; }
+      if (window.AI_SERVICE && typeof window.AI_SERVICE.probeProxyPlatforms === 'function') {
+        window.AI_SERVICE.probeProxyPlatforms().then(function () { renderProxyStatusOnly(); },
+          function () { renderProxyStatusOnly(); });
+      } else {
+        renderProxyStatusOnly();
+      }
+    });
+  }
+
+  function renderProxyStatusOnly() {
+    var stEl = $('setProxyStatus');
+    if (!stEl) { return; }
+    stEl.innerHTML = proxyStatusRowsHtml();
   }
 
   /* ---------------- 全量渲染 ---------------- */

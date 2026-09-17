@@ -77,6 +77,8 @@ REQUIRED_ASSETS = [
     "qbank.js",
     "study-stats.js",
     "voiceplayer.js",
+    # --- R73 新增：安卓壳注入的桥接胶水（缺它则退后台通知拿不到 base/token） ---
+    "xt-android.js",
     "mini.js",
     "importer.js",
     "quest.js",

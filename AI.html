@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#ff8c00">
 <title>AI</title>
-<link rel="stylesheet" href="assets/common.css?v=20260916O">
+<link rel="stylesheet" href="assets/common.css?v=20260917b">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O">
@@ -181,8 +181,8 @@ body.dark{
 .ai-avatar-user{background:var(--ai-orange);overflow:hidden;}
 .ai-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;}
 .ai-bubble{
-  padding:11px 15px;border-radius:14px;font-size:15px;line-height:1.65;word-break:break-word;
-  max-width:85%;overflow:hidden;
+  padding:11px 15px;border-radius:14px;font-size:15px;line-height:1.65;word-break:break-word;overflow-wrap:anywhere;
+  max-width:85%;overflow:hidden;min-width:0;
 }
 .ai-msg-user .ai-bubble{background:var(--ai-orange);color:#fff;border-bottom-right-radius:4px;}
 .ai-msg-ai .ai-bubble{background:var(--ai-card);border:1px solid var(--ai-border);border-bottom-left-radius:4px;color:var(--ai-text);}
@@ -313,7 +313,7 @@ body.dark{
 .ai-ctx-ring{display:block;flex:none;}
 .ai-ctx-ring-bg{stroke:var(--ai-border);}
 .ai-ctx-ring-fg{stroke:var(--ai-blue);transition:stroke .15s;}
-.ai-ctx-pct{font-size:10px;color:var(--ai-muted);white-space:nowrap;flex:none;}
+.ai-ctx-pct{font-size:11px;color:var(--ai-muted);white-space:nowrap;flex:none;}
 .ai-ctx-usage.warn .ai-ctx-ring-fg{stroke:#e8890c;}
 .ai-ctx-usage.warn .ai-ctx-pct{color:#e8890c;}
 .ai-ctx-usage.hot .ai-ctx-ring-fg{stroke:#e0504d;}
@@ -623,6 +623,9 @@ body.dark .ai-warn-bar{background:rgba(250,173,20,.1);border-color:rgba(250,173,
       <div class="nav-section">创作</div>
       <div class="nav-item" data-page="blog">
         <span class="nav-icon" data-icon="globe"></span><span>社区</span>
+      </div>
+      <div class="nav-item" data-page="moments">
+        <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
       </div>
       <div class="nav-section">互动</div>
       <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
@@ -948,14 +951,14 @@ body.dark .ai-warn-bar{background:rgba(250,173,20,.1);border-color:rgba(250,173,
 <script src="assets/icon-map.js?v=20260916O" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260916S" defer></script>
+<script src="assets/app.js?v=20260917b" defer></script>
 <script src="assets/quest.js?v=20260916O" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260916S" defer></script>
+<script src="assets/api.js?v=20260917b" defer></script>
 <script src="assets/study-stats.js?v=20260916O" defer></script>
-<script src="assets/ai-config.js?v=20260916R" defer></script>
+<script src="assets/ai-config.js?v=20260917b" defer></script>
 <script src="assets/ai-presets.js?v=20260916O" defer></script>
-<script src="assets/ai-service.js?v=20260916S" defer></script>
-<script src="assets/ai-page.js?v=20260916R" defer></script>
+<script src="assets/ai-service.js?v=20260917b" defer></script>
+<script src="assets/ai-page.js?v=20260917b" defer></script>
 </body>
 </html>

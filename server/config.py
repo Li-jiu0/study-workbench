@@ -81,3 +81,23 @@ AI_PROVIDERS = {
 def configured_providers() -> dict:
     """返回已配置密钥的服务商 {id: cfg}。"""
     return {k: v for k, v in AI_PROVIDERS.items() if v["api_key"]}
+
+
+# ---- 邮箱 SMTP 配置（R73 邮箱绑定：发送验证码）----
+# 真实发信需要邮件服务授权码（如 QQ 邮箱 / 163 邮箱的 SMTP 授权码），
+# 一律从 server/.env 注入，代码内不内置任何默认凭据。
+# 未配置（缺 SMTP_HOST / SMTP_USER / SMTP_PASS 任一）时，send-code 接口返回 503，
+# 绝不静默假成功（见 routers/auth.py send_email_code）。
+SMTP_HOST = _get("SMTP_HOST")                 # SMTP 服务器，如 smtp.qq.com
+SMTP_PORT = int(_get("SMTP_PORT", "465") or 465)
+SMTP_USER = _get("SMTP_USER")                 # 发信邮箱账号
+SMTP_PASS = _get("SMTP_PASS")                 # 邮箱 SMTP 授权码（非登录密码）
+SMTP_FROM = _get("SMTP_FROM") or SMTP_USER    # 发件人地址，默认取 SMTP_USER
+# SMTP_TLS 默认 true：具体分支在 mailer.py 按端口判断
+# （端口 465 → 隐式 SSL / SMTP_SSL；其余端口 → 明文 + STARTTLS）。
+SMTP_TLS = _get("SMTP_TLS", "true").lower() in ("1", "true", "yes", "on")
+
+
+def smtp_configured() -> bool:
+    """邮箱发送是否已配置（host / user / pass 三者齐全才算配置好）。"""
+    return bool(SMTP_HOST and SMTP_USER and SMTP_PASS)

@@ -1,0 +1,128 @@
+════════════════════════════════════════════════════════════
+星途（原「学习工作台」）· 接手 AI 开场指令 · 2026-09-17g
+════════════════════════════════════════════════════════════
+
+你是本项目的新一任执行 AI（主理人）。上一轮已于 2026-09-17 20:41 收尾。
+**代码层全部落盘，无欠账；未做的是"发布链路"与"验收链路"。**
+
+【第一步 · 先读这三份文件，不要凭记忆开工】
+1. D:\下载的文件\学习工作台\交接文档-20260917g-第五批执行现状与对接.md   ← 主入口，先读 §0（30 秒速览）与 §4（即办清单）
+2. D:\下载的文件\学习工作台\更新日志-20260917-第五批-R73.md             ← §七 数据契约、§八 踩坑、§九 未完成权威清单
+3. D:\下载的文件\学习工作台\用户需求与决策总账.md                        ← 需求编号口径（R68/R70/R73 备忘待你补记）
+
+【项目铁律（违反＝返工，逐条照办）】
+· 唯一可写代码树 = D:\下载的文件\学习工作台。⛔ 绝不改 C:\Users\ATM\WorkBuddy\Worktrees\学习工作台\main-*
+  （那是停在 R70 的过期空壳；本批已发生过一次"跑错树导致整批结论作废"的事故）。
+· 行尾：ai-settings.html（根目录）/ assets/ai-settings.js / assets/ai-page.js / assets/ai-service.js 是 LF；
+  其余根 HTML 与 assets/*.js、*.css 是 CRLF。改文件一律二进制读写（open(p,'rb') → 替换 → open(p,'wb')），
+  改完自测：CRLF 文件 bareLF=0，LF 文件 CR=0。
+· ES2017 语法上限（安卓老 WebView）：禁 ?. ?? 对象展开 {...obj} 对象剩余解构 .replaceAll(
+  Object.fromEntries .at( 正则后行断言 (?<= (?<! 指数 ** 可选 catch 绑定。node --check 抓不到，必须 Grep 逐项自查 0 命中。
+· CSS 另禁 clamp()/min()/max()（老 WebView 不支持），一律固定值 + @media 分级。
+· 顶层禁重复声明已有全局名（本项目「AI 功能集体失效」的历史元凶）；新增全局写 typeof 守卫。
+· 禁原生 alert/confirm/prompt（用 uiConfirm / toast）；不删现有功能、保留既有 DOM id 与全局函数名。
+· 改文件先备份：xxx.bak-pre-rNN-日期。
+· 本机 bash 缺 coreutils（ls/grep/tail/head/cp/env 全没有）→ 一律 Write 落盘 .py/.js 再执行；
+  含中文/反引号的代码绝不内联给 bash（会被吞）。统计结果写 UTF-8 文件再 Read（PowerShell 的 stdout 常被吞成空）。
+  python = C:/Users/ATM/.workbuddy/binaries/python/versions/3.13.12/python.exe
+  node   = C:/Users/ATM/.workbuddy/binaries/node/versions/22.22.2-3/node.exe
+  jsdom  = C:/Users/ATM/node_modules/jsdom（jsdom 30，不导出 ResourceLoader → 把页面真实源码内联后执行；
+           localStorage 需 http origin，起临时 127.0.0.1 静态服务；location 只读，抓跳转要用作用域遮蔽）
+· 批量脚本注意：Node 脚本里写中文字符串字面量会因编码不一致而损坏（曾产出乱码路径 ENOENT）→ 优先 python + 显式 encoding='utf-8'。
+· 批量脚本注意：学习工作台.html / 设置.html 的 .bottom-more-grid 带 data-page-node-id，按纯类名扫描会漏判。
+· 同一条消息里对同一文件发多个 Edit 会 last-write-wins（只有最后一处生效）→ 逐条串行改。
+· assets/app.js 第 665 行是一条约 2.7 MB 的超长行，任何批量脚本都不要碰它。
+· 版本戳：全部验证通过后才打；当前是混合态（20260916O×504 / R×39 / S×122 / 20260917×6 / 20260917a×6），
+  下一版用 **20260917b**（不得复用旧戳）。打戳必须 ① 锚定 src=/href= 属性 ② 只 bump 内容真改过的资产
+  ③ 捕获组不得带后缀（曾产出 xxx.js.js）④ 二进制读写保行尾 ⑤ 用与替换不同的独立 pattern 做终态复验
+  ⑥ 显式扫 \.js\.js\?v= 必须 0。
+· git：工作树有大量 M 漂移（含 server/ 多个文件），属常态——判断"改了什么"用 mtime/内容对照备份，不要用 git status。
+  ⚠️ 两个提交红线：① **必须先 git add 我的动态.html**（它是未跟踪文件，漏加会导致远端死链）；
+  ② `git rm --cached 学习工作台-安卓App.apk`（96 MB 二进制已被跟踪，勿推远端）。
+  git push 需走动态代理（第一优先读环境变量 HTTP_PROXY/HTTPS_PROXY，备选 127.0.0.1:7897）。
+· 生产操作（删用户数据 / 改 nginx / 部署上线）必须先问用户。
+
+【第二步 · 当前待办（按优先级）】
+
+P0（阻断上线，必须做）
+1. 🔴 **打版本戳 → 20260917b**。全站混合旧戳，本批改过的资产一个都没 bump，
+   浏览器与 APK WebView 都会命中旧缓存。
+2. 🔴 **填 SMTP 凭证**（服务端 .env）。不填则需求 6 邮箱功能在真机上只会回报发送失败。
+3. 🔴 **git 提交**：先 `git add 我的动态.html`，再 `git rm --cached 学习工作台-安卓App.apk`，push 走代理。
+4. 🔴 **部署上线**到 110.42.134.62 的 /opt/study-workbench/（先问用户）。
+
+P1（质量验收欠账）
+5. 🟡 **APK 真机验收**。当前包：D:\下载的文件\学习工作台\学习工作台-安卓App.apk，
+   96,290,713 B（91.8 MB），2026-09-17 17:35:29，manifest **versionCode="20" / versionName="1.19"**。
+   已开 INTERNET / RECORD_AUDIO / POST_NOTIFICATIONS / FOREGROUND_SERVICE / FOREGROUND_SERVICE_DATA_SYNC /
+   REQUEST_IGNORE_BATTERY_OPTIMIZATIONS，usesCleartextTraffic=true，配套 android/java/com/study/workbench/MsgPollService.java。
+   待真机验证：连接服务器 / 好友私信 / 留言板 / 社区互动 / 语音 / 题库加载 / **后台通知**。
+   异常时先查 android/build_apk.py 的打包断言与资源白名单，不要瞎猜网络问题。
+6. 🟡 **重跑任务二十三 断言报告**。其工装 tools\_r73_qa23_verify.js **自身编码损坏**（中文字符串字面量被按 GBK 写出
+   → Node 读到乱码路径 → ENOENT），baseline/result 报告均未产出。改用 tools\_r73_qa23_verify.py（15440 B）
+   + 显式 encoding='utf-8'，产出 tools\_r73_qa23_result.txt。
+   ✅ tools\_r73_qa23_baseline.json（5849 B）是**有效的改动前基准**（PAGE_FILES 全键值 + pageTitles 全键 + BOM + CRLF），直接拿来比对。
+   重点断言：app.js moments=2 且分别落在两个区块内（区间截取匹配，不要全文 grep）；32 页计数=1；
+   **插入位置断言**（落在「社区」项之后、下一个 nav-section/nav-item 之前，不跨 </aside>/</nav>/</body>/id="morePanel"）；
+   E1 回归护栏（PAGE_FILES 原 20 键 + pageTitles 原键一个不丢、值不变）。
+7. 🟡 R67 遗留：AI_CONFIG.providerGroups 第二层厂商模型展示名与设置页下拉文案对齐。
+
+P2（小尾巴）
+8. ⚪ assets/api.js:354-355 是空壳 if（两分支内容相同），无害待清。
+9. ⚪ 工具.html 也有 .morepage-list，本批只给 更多.html 补了动态空间卡片 → 口径未裁定，问用户。
+10. ⚪ 用户需求与决策总账.md（CRLF，98 KB）补记 R68 / R70 / R73。
+11. ⚪ 用户侧：ai.hub.camera 端点已死需换；ADMIN_PASSWORD、6 个平台 AI Key 轮换。
+
+【本批核心成果（背景知识，别重复做）】
+· **动态空间上线**：根因不是改名没做，是入口本来就是死的 —— app.js 的 PAGE_FILES/pageTitles 从来没有 `moments` 键
+  （全 7MB app.js 里 moments 出现 0 次），而侧栏写的是 data-page="moments" → 点击只 console.warn 原地不动；
+  且全站 36 个带侧栏页面里只有那 4 个动态页自己有入口。已补：app.js 两处 + 32 页侧栏 + 31 页移动端更多面板 + 更多.html 卡片。
+  ⚠️ 曾有一版「朋友圈.html→动态空间.html、动态.html 删除」的改名计划**已作废**：动态.html 就是动态空间落地主页
+  （:91-103 注释明写"需求11 增量：动态空间入口"），删它等于拆掉动态空间本身。朋友圈.html 文件名不动。
+  只有「我的朋友圈.html → 我的动态.html」这一项改名被执行。
+· **查看他人资料（TA 视角）**：不是没做，是**做在旧页** —— 旧链路 个人中心.html?user=<uid> → api.js:1327 renderProfilePage
+  → api.js:261 renderUserHome 一直是通的；而后建的 个人资料.html 里一行他人视角都没有。
+  已把 TA 视角补进 个人资料.html?user=<uid>，并把全站 5 个入口统一切过去；旧链路保留为兜底（renderUserHome 未删）。
+  同时修掉 4 个真实缺口：① 未登录/离线点别人头像会落到**自己的**资料（api.js:1263 让 apiBoot 提前返回）——
+  这是用户报"没做"的真实原因；② 好友申请页头像完全没绑 onclick（且该页不加载 api.js）；
+  ③ 私聊会话列表只弹 toast；④ 管理员「全部用户」tab 对普通用户必 403。
+  安全：TA 页绝不渲染 phone/email/gender/birthday/username/privacy；后端 users.py:174-194 用**显式白名单**构造，双重脱敏。
+· **个人资料页**：滚动修复 / 删成就徽章 / 改名 / 头像裁剪优化（舞台 340、环 0.86、滑杆 500、双指+滚轮+双击、
+  JPEG 0.92）/ 删错题本+导入题库入口 / 视觉升级（560-400-340 三档 + 深色 token）/ 内联 JS 清零（改走 data-act 委托）。
+· **需求 20-A 安全**：限流 XFF 绕过（rate_limit.py）与管理员硬编码口令（admin.py）已修；
+  moments.py 的 _can_view 重复定义致命 bug（第二次定义覆盖第一次且调用未定义函数）已修。
+· **需求 20-B 移动端**：common.css 6 处窄屏根治；ai-settings.html viewport + 开关/检测同行贴右（当前使用**仅窄屏隐藏**，
+  桌面保留）+ 全启/全停 + 400/360 两档断点 + 倍率胶囊缩放。
+· **需求 6 邮箱绑定**：server/mailer.py 新建（SMTP 封装）+ auth.py/schemas.py/database.py/config.py 配套 + 登录.html 入口。
+
+【派活口径（本项目验证有效，照抄）】
+· 多线并行，派活前先列**独占文件清单**保证零重叠；共享文件（app.js / api.js / common.css）同一时刻只许一条线改。
+· 子代理类型：工程师线用 software-engineer（**有 Bash**）；**QA 线必须用 general-purpose**
+  （software-qa-engineer 类型没有 Bash，拉起 6 秒即挂），name 仍可写 software-qa-engineer。
+· 429/配额耗尽时 spawn 指定 model: "lite" 可立刻恢复（UI 切模型对子代理无效）。
+· 每份任务书必须自带：唯一可写树 + 独占文件 + 逐文件行尾要求 + ES2017 禁令清单 + 全局名守卫 + 不 bump 戳
+  + 备份命名 + 跨线契约（结构/签名一字不改）+ 自测清单（node --check / 行尾 / ES2017 Grep / 全局名交集 /
+  jsdom 行为断言）+「直接给结论、不反复验证」的工作风格。
+· **成员自述 ≠ 事实**：收工前务必实测落盘状态（mtime + 内容签名 + 计数对照备份）。
+  本批发生过 3 次虚假/超前汇报：任务八跑错工作树、任务二十一拿改动前文件属性当写入证据、
+  任务二十声称内联 JS 清零三次而磁盘三次未动（mtime 不变）。
+  **对策已制度化：所有改动汇报必须附 mtime + 关键行回读原文；主理人对关键文件做计数/mtime 抽验。**
+· 主理人这一轮 turn 被取消时，**所有后台成员会立刻变为 paused**。所以：一轮只推一条线、做完就汇报，把长链条切短；
+  恢复时用 SendMessage 按稳定名 resume；任务标记 completed 但对话里没有最终汇报时，要求它"复述已保留结果或只补缺失步骤"，
+  **不得仅凭旧 task status 声称它还在跑**。
+
+【禁止事项】
+· 不要把「开发自测通过」写成「已验证通过」；APK 目前只有打包侧验证，**真机功能验收未做**。
+· 不要把平台密钥说成"已保密"——6 个平台的 Key 明文硬编码在 assets/ai-config.js 里，前端直连架构下无法真保密；
+  已交付的只是「UI 不回填 + 不复制进 localStorage + 清洗存量副本」。
+· 不要顺手刷新未改动资源的版本戳（项目审计靠 mtime，无谓改动会被误判）。
+· 不要清理任何 .bak-pre-r* 备份（回滚要用）。
+· 不要执行已被作废的「朋友圈.html→动态空间.html / 动态.html 删除」改名计划。
+
+【完成标准】
+· 每件活的汇报格式：TL;DR 一句 → 交付文件与行号 → 逐项自测/验证结果（X/X PASS）→ 已知遗留 → 是否可打戳。
+· 打戳后必须给：戳值、改动页数/处数、裸路径 0、旧戳残留 0、行尾零变化、escheck DONE 0。
+
+一句话：**代码与 APK 包全部就绪；先打 20260917b 戳 + 填 SMTP + git add 我的动态.html + 部署，再陪用户跑 APK 真机验收，
+最后补任务二十三 断言报告与 R68/R70/R73 台账。**
+════════════════════════════════════════════════════════════

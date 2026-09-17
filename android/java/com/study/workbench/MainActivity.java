@@ -23,6 +23,8 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -60,6 +62,7 @@ public class MainActivity extends Activity {
     private static final int REQ_NOTIFY_PERM = 2003;
     private volatile String pendingNotifyTitle = null;
     private volatile String pendingNotifyText = null;
+    private volatile String xtAndroidJs = null;   // R73：桥接胶水 assets/xt-android.js 内容缓存（注入前读一次）
 
     // ---- 原生 TTS（朗读发音）----
     private TextToSpeech tts;
@@ -82,6 +85,8 @@ public class MainActivity extends Activity {
 
         // 【原生 TTS】先试系统默认引擎，失败自动切换本机其他引擎（见 initTts/nextEngineOrGiveUp）
         initTts();
+        // R73-18①：启动即申请一次通知权限（退后台新消息横幅必需；拒绝也不影响其它功能）
+        maybeRequestNotifyPermission();
 
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);            // 全站逻辑为原生 JS
@@ -99,6 +104,21 @@ public class MainActivity extends Activity {
         s.setUseWideViewPort(true);
         // https 页面下允许访问 http://localhost:8000(登录页探测后端/将来连局域网后端)，单机无后端时立即失败并降级本地
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
+
+        // R73-20B（需求20-B「文字显示」）：刻意【不调用】WebSettings.setTextZoom()。
+        //   Chromium 明确：未调用 setTextZoom 时，WebView 等价于 setTextZoom(android_font_scale_factor)，
+        //   即【跟随系统字体缩放】（系统大字 1.3× → 页面文字同步放大 1.3×，断言 A13）。
+        //   若在此写死 setTextZoom(100) 反而会禁用系统字号跟随、破坏无障碍大字模式 —— 故保持默认跟随系统。
+        //   页面侧须自行保证 1.3× 下不截断 / 不串行（属任务八及各页归属线）。
+        // 刘海 / 挖孔屏：显式声明「内容不进入摄像头区域」（API 28+），保证顶部栏不被遮挡。
+        if (Build.VERSION.SDK_INT >= 28) {
+            try {
+                android.view.WindowManager.LayoutParams lp = getWindow().getAttributes();
+                lp.layoutInDisplayCutoutMode =
+                        android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER;
+                getWindow().setAttributes(lp);
+            } catch (Throwable e) { /* 设置失败：沿用系统默认（非全屏窗默认亦不进入挖孔区） */ }
+        }
 
         // 【原生桥】必须在 loadUrl 之前注入，确保页面 JS 执行时 window.AndroidBridge / AndroidTTS 已存在
         // （若在 loadUrl 之后注入，部分 WebView 版本当前页拿不到对象，isNativeApp() 误判为 false，
@@ -164,6 +184,62 @@ public class MainActivity extends Activity {
                 try {
                     showNotify(title, text);
                 } catch (Throwable e) { /* 通知失败绝不影响页面 */ }
+            }
+
+            /** 【R73-18①】把「后端地址 + 登录 token」交给 MsgPollService，
+             *  由它在原生侧轮询未读消息（WebView 退后台后 JS 停摆，只能原生轮询）。
+             *  前端契约：AndroidBridge.setNotifyConfig(base, token)；token 为空则停服。
+             *  任何异常都不得影响 WebView，故全程 try/catch。 */
+            @JavascriptInterface
+            public void setNotifyConfig(final String base, final String token) {
+                try {
+                    final String b = (base == null) ? "" : base.trim();
+                    final String tk = (token == null) ? "" : token.trim();
+                    android.content.SharedPreferences sp = getSharedPreferences(
+                            MsgPollService.PREFS, android.content.Context.MODE_PRIVATE);
+                    sp.edit().putString(MsgPollService.KEY_BASE, b)
+                             .putString(MsgPollService.KEY_TOKEN, tk).apply();
+                    runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            try {
+                                Intent svc = new Intent(MainActivity.this, MsgPollService.class);
+                                if (tk.isEmpty()) {
+                                    stopService(svc);
+                                } else if (Build.VERSION.SDK_INT >= 26) {
+                                    startForegroundService(svc);
+                                } else {
+                                    startService(svc);
+                                }
+                            } catch (Throwable e) { /* 启停服务失败：静默，不影响网页 */ }
+                        }
+                    });
+                } catch (Throwable e) { /* 配置写入失败：静默 */ }
+            }
+
+            /** 【R73-18①】引导用户把本应用加入电池优化白名单（可选，降低被系统冻结概率）。 */
+            @JavascriptInterface
+            public void requestIgnoreBatteryOptimizations() {
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        try {
+                            if (Build.VERSION.SDK_INT >= 23) {
+                                Intent i = new Intent(
+                                        android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                                i.setData(Uri.parse("package:" + getPackageName()));
+                                startActivity(i);
+                            } else {
+                                toast("当前系统无需手动设置电池优化");
+                            }
+                        } catch (Throwable e) {
+                            try {
+                                startActivity(new Intent(
+                                        android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
+                            } catch (Throwable e2) {
+                                toast("请在 系统设置→电池 中允许本应用后台运行");
+                            }
+                        }
+                    }
+                });
             }
         }, "AndroidBridge");
 
@@ -439,7 +515,15 @@ public class MainActivity extends Activity {
 
         // 经典 file:// 加载：入口页(asset 根目录的学习工作台.html；未登录会自动跳 登录.html)
         // 中文文件名用 Uri.encode 保证 Android WebView 能正确定位到 asset 文件。
-        web.setWebViewClient(new WebViewClient());
+        // R73：自定义 WebViewClient，在每个页面 onPageFinished 注入壳桥接胶水
+        // assets/xt-android.js（避免改动任何 html 页面 —— 页面归属其它线路）。
+        web.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                injectXtAndroid(view);
+            }
+        });
         web.loadUrl("file:///android_asset/" + Uri.encode("学习工作台.html"));
 
         // alert/confirm/prompt 由默认实现弹出；此处扩展文件选择器（头像/插图上传）
@@ -598,6 +682,54 @@ public class MainActivity extends Activity {
         });
     }
 
+    /* ================= R73：壳桥接胶水注入（不改任何 html 页面） ================= */
+
+    /** 把 assets/xt-android.js 注入当前页面（读文件放子线程，evaluateJavascript 回主线程）。 */
+    private void injectXtAndroid(final WebView view) {
+        if (view == null) return;
+        final String cached = xtAndroidJs;
+        if (cached != null) {
+            if (!cached.isEmpty()) {
+                uiHandler.post(new Runnable() {
+                    @Override public void run() { evalJs(view, cached); }
+                });
+            }
+            return;
+        }
+        new Thread(new Runnable() {
+            @Override public void run() {
+                final String js = readAssetText("assets/xt-android.js");
+                xtAndroidJs = (js == null ? "" : js);
+                if (!xtAndroidJs.isEmpty()) {
+                    uiHandler.post(new Runnable() {
+                        @Override public void run() { evalJs(view, xtAndroidJs); }
+                    });
+                }
+            }
+        }).start();
+    }
+
+    private void evalJs(WebView view, String js) {
+        try { view.evaluateJavascript(js, null); } catch (Throwable e) { /* 注入失败：静默 */ }
+    }
+
+    /** 读取 assets 下的文本资源（UTF-8）；失败返回 null。 */
+    private String readAssetText(String name) {
+        InputStream in = null;
+        try {
+            in = getAssets().open(name);
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            byte[] buf = new byte[4096];
+            int n;
+            while ((n = in.read(buf)) > 0) bos.write(buf, 0, n);
+            return new String(bos.toByteArray(), "UTF-8");
+        } catch (Throwable e) {
+            return null;
+        } finally {
+            if (in != null) { try { in.close(); } catch (Exception e) { } }
+        }
+    }
+
     /* ================= 通用 ================= */
 
     private void toast(final String s) {
@@ -673,6 +805,16 @@ public class MainActivity extends Activity {
             if (Build.VERSION.SDK_INT < 33) return;
             requestPermissions(new String[] { android.Manifest.permission.POST_NOTIFICATIONS }, REQ_NOTIFY_PERM);
         } catch (Throwable e) { /* 申请失败：静默 */ }
+    }
+
+    /** R73-18①：启动时即申请通知权限（未授权则退后台的新消息横幅不会显示）。 */
+    private void maybeRequestNotifyPermission() {
+        try {
+            if (Build.VERSION.SDK_INT < 33) return;
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                    == android.content.pm.PackageManager.PERMISSION_GRANTED) return;
+            requestPermissions(new String[] { android.Manifest.permission.POST_NOTIFICATIONS }, REQ_NOTIFY_PERM);
+        } catch (Throwable e) { /* 静默 */ }
     }
 
     // 原生 TTS 播放完成 → 回调网页 window.__nativeTtsDone(utteranceId)，让依赖 onend 的流程继续
@@ -789,6 +931,19 @@ public class MainActivity extends Activity {
             return true;
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    // R73-18①：前台/后台状态 → 供 MsgPollService 判断是否由自己弹通知（前台交给 JS，避免重复）
+    @Override
+    protected void onResume() {
+        super.onResume();
+        MsgPollService.appForeground = true;
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        MsgPollService.appForeground = false;
     }
 
     @Override

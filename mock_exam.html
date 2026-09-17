@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>真题模考 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260916O">
+<link rel="stylesheet" href="assets/common.css?v=20260917b">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
@@ -13,7 +13,7 @@
 <script src="assets/icon-map.js?v=20260916O" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260916S" defer></script>
+<script src="assets/app.js?v=20260917b" defer></script>
 <script src="data/mock-papers.js?v=20260916O" defer></script>
 <script src="assets/mock-engine.js?v=20260916O" defer></script>
 <!-- 【批次 20260913m】考试指南并入本页：guide 数据沿用 MINI_BANK（mini-cet.js 的 cet-guide / mini-exam.js 的 exam-guide） -->
@@ -200,6 +200,17 @@ body { height: auto; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scro
   font-size: var(--xt-font-sm);
   color: var(--xt-text-dim);
   line-height: 1.7;
+}
+/* ===== R73 需求20-B 移动端适配（≤768px）=====
+   仅作用于窄屏；桌面端(>768px)渲染零影响（本块整体位于媒体查询内）。
+   1) 内嵌媒体兜底 max-width，防 JS 注入内容/未来素材撑破窄屏；
+   2) 宽表格窄屏内横向滚动，避免整页横向溢出（需求20-B #2）；
+   3) 字号下限兜底：common.css 的 .bn-label(10px)/.ai-mode-badge(9px)/
+      .study-stats-bar b(9px) 低于 A7 辅助≥11px，页内窄屏提升到 11px（不改共享 common.css）。 */
+@media (max-width: 768px) {
+  img, video, canvas, iframe { max-width: 100%; height: auto; }
+  table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bottom-nav-item .bn-label, .ai-mode-badge, .study-stats-bar b { font-size: 11px; }
 }
 </style>
 </head>

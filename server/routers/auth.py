@@ -1,12 +1,18 @@
-"""认证：注册 / 登录 / 刷新令牌（JWT）。"""
+"""认证：注册 / 登录 / 刷新令牌（JWT）+ 邮箱绑定 / 验证码 / 找回账号（R73）。"""
 import re
+import secrets
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from database import User, get_db, is_admin_user, now_str
+from config import smtp_configured
+from database import EmailCode, User, get_db, is_admin_user, now_str
+from mailer import EmailNotConfigured, EmailSendError, send_code_email
 from rate_limit import rate_limit
-from schemas import ChangePasswordIn, LoginIn, RefreshIn, RegisterIn, privacy_of
+from schemas import (ChangePasswordIn, EmailBindIn, EmailSendCodeIn,
+                     EmailVerifyIn, FindAccountIn, LoginIn, RefreshIn,
+                     RegisterIn, privacy_of)
 from security import (TYPE_ACCESS, TYPE_REFRESH, create_token,
                       get_current_user, hash_password, verify_password,
                       verify_refresh_token)
@@ -58,7 +64,18 @@ def register(body: RegisterIn, db: Session = Depends(get_db), _rl: None = Depend
 
 @router.post("/login")
 def login(body: LoginIn, db: Session = Depends(get_db), _rl: None = Depends(rate_limit("auth"))):
-    user = db.query(User).filter(User.username == body.username.strip()).first()
+    """登录：登录标识兼容「用户名」与「绑定邮箱」（R73）。
+
+    - account 优先、username 兜底（老前端只发 username，向后兼容）；
+    - 先按用户名精确匹配，未命中且含 @ 时再按邮箱（小写）匹配；
+    - 命中后再校验密码，账号不存在与密码错误返回同一文案，避免账号枚举。
+    """
+    ident = (body.account or body.username or "").strip()
+    if not ident:
+        raise HTTPException(400, "请输入账号或邮箱")
+    user = db.query(User).filter(User.username == ident).first()
+    if not user and "@" in ident:
+        user = db.query(User).filter(User.email == ident.lower()).first()
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(400, "账号或密码错误")
     return _auth_payload(user)
@@ -100,6 +117,9 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         "birthday": user.birthday or "",
         "city": user.city or "",
         "phone": user.phone or "",
+        # R73（邮箱绑定）：本人可见的绑定邮箱与验证状态（供「设置页 → 账号与安全」展示绑定状态）
+        "email": user.email or "",
+        "emailVerified": bool(user.email_verified_at),
         "goal": user.goal or "",
         "tags": user.tags or "",
         # T03：隐私三项仅本人接口返回（公开主页 GET /api/users/{id} 绝不返回）
@@ -144,3 +164,176 @@ def change_password(body: ChangePasswordIn, user: User = Depends(get_current_use
     user.password_hash = hash_password(body.newPassword)
     db.commit()
     return {"ok": True}
+
+
+# =====================================================================
+# R73 邮箱绑定：验证码发送 / 校验 / 绑定 / 解绑 / 找回账号
+# =====================================================================
+_CODE_TTL_SECONDS = 600        # 验证码有效期：10 分钟
+_CODE_RESEND_INTERVAL = 60     # 同邮箱发送间隔：60 秒 1 次
+_CODE_HOURLY_LIMIT = 5         # 同邮箱每小时的发送上限
+_CODE_MAX_ATTEMPTS = 5         # 单码最多尝试次数
+_VALID_PURPOSES = ("bind", "reset")
+
+
+def _gen_code() -> str:
+    """生成 6 位数字验证码（首位可为 0，不足补零）。"""
+    return "%06d" % secrets.randbelow(1000000)
+
+
+def _consume_email_code(db: Session, email: str, purpose: str, code: str) -> None:
+    """校验并一次性消费最新一枚验证码；成功即置 used。
+
+    异常语义（见任务异常矩阵）：
+      - 无可用记录            → 400「请先获取验证码」
+      - 已用过 / 已过期 / 超限 → 410「验证码已过期，请重新获取」
+      - 验证码错误            → 400，detail 带剩余可试次数
+      - 错误且用满 5 次        → 429「尝试次数过多，请重新获取」并作废
+    """
+    row = (db.query(EmailCode)
+             .filter(EmailCode.email == email, EmailCode.purpose == purpose)
+             .order_by(EmailCode.id.desc())
+             .first())
+    if not row:
+        raise HTTPException(400, "请先获取验证码")
+    if row.used or row.expires_at < datetime.now():
+        row.used = True
+        db.commit()
+        raise HTTPException(410, "验证码已过期，请重新获取")
+    if row.attempts >= _CODE_MAX_ATTEMPTS:
+        row.used = True
+        db.commit()
+        raise HTTPException(429, "尝试次数过多，请重新获取")
+    if not verify_password(code, row.code_hash):
+        row.attempts += 1
+        remain = _CODE_MAX_ATTEMPTS - row.attempts
+        if remain <= 0:
+            row.used = True
+            db.commit()
+            raise HTTPException(429, "尝试次数过多，请重新获取")
+        db.commit()
+        raise HTTPException(400, "验证码错误，还可尝试 %d 次" % remain)
+    row.used = True  # 一次性消费
+    db.commit()
+
+
+@router.post("/email/send-code")
+def send_email_code(body: EmailSendCodeIn, db: Session = Depends(get_db)):
+    """发送邮箱验证码。
+
+    状态码语义：503 邮件服务未配置 / 502 发送失败 / 429 限频 / 404 找回时邮箱未绑定 /
+    400 用途非法 / 200 成功。绝不静默假成功。
+    """
+    email = body.email  # 已由 schema 规范化为小写去空格
+    purpose = (body.purpose or "bind").strip().lower()
+    if purpose not in _VALID_PURPOSES:
+        raise HTTPException(400, "验证码用途不合法")
+    # 找回账号：邮箱必须已绑定，避免向未绑定邮箱发码
+    if purpose == "reset":
+        if not db.query(User).filter(User.email == email).first():
+            raise HTTPException(404, "该邮箱未绑定任何账号")
+    # SMTP 未配置：明确 503（在写库之前拦截，不产生脏记录）
+    if not smtp_configured():
+        raise HTTPException(503, "邮件服务未配置，请联系管理员")
+    now = datetime.now()
+    # 限频 1：同邮箱 60 秒 1 次
+    recent = db.query(EmailCode).filter(
+        EmailCode.email == email,
+        EmailCode.created_at >= now - timedelta(seconds=_CODE_RESEND_INTERVAL),
+    ).count()
+    if recent >= 1:
+        raise HTTPException(429, "验证码发送过于频繁，请 60 秒后再试")
+    # 限频 2：同邮箱每小时 5 次
+    hourly = db.query(EmailCode).filter(
+        EmailCode.email == email,
+        EmailCode.created_at >= now - timedelta(hours=1),
+    ).count()
+    if hourly >= _CODE_HOURLY_LIMIT:
+        raise HTTPException(429, "该邮箱 1 小时内请求过于频繁，请稍后再试")
+
+    code = _gen_code()
+    row = EmailCode(
+        email=email,
+        code_hash=hash_password(code),
+        purpose=purpose,
+        user_id=None,
+        expires_at=now + timedelta(seconds=_CODE_TTL_SECONDS),
+        used=False,
+        attempts=0,
+        created_at=now,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    # 发送：失败则作废刚写入的记录，避免脏数据
+    try:
+        send_code_email(email, code, purpose)
+    except EmailNotConfigured:
+        row.used = True
+        db.commit()
+        raise HTTPException(503, "邮件服务未配置，请联系管理员")
+    except EmailSendError:
+        row.used = True
+        db.commit()
+        raise HTTPException(502, "验证码发送失败，请稍后重试")
+    return {"ok": True, "email": email, "purpose": purpose, "expiresIn": _CODE_TTL_SECONDS}
+
+
+@router.post("/email/verify")
+def verify_email_code(body: EmailVerifyIn, db: Session = Depends(get_db)):
+    """校验邮箱验证码（不改变用户邮箱，仅验证）。"""
+    purpose = (body.purpose or "bind").strip().lower()
+    if purpose not in _VALID_PURPOSES:
+        raise HTTPException(400, "验证码用途不合法")
+    _consume_email_code(db, body.email, purpose, body.code)
+    return {"ok": True, "verified": True}
+
+
+@router.post("/email/bind")
+def bind_email(body: EmailBindIn, user: User = Depends(get_current_user),
+               db: Session = Depends(get_db)):
+    """绑定邮箱（需登录）。邮箱被他人占用 → 409；成功后写 email + email_verified_at。"""
+    email = body.email  # 已规范化
+    occupied = db.query(User).filter(User.email == email, User.id != user.id).first()
+    if occupied:
+        raise HTTPException(409, "该邮箱已被其他账号绑定")
+    _consume_email_code(db, email, "bind", body.code)
+    user.email = email
+    user.email_verified_at = datetime.now()
+    db.commit()
+    return {"ok": True, "email": email}
+
+
+@router.post("/email/unbind")
+def unbind_email(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """解绑邮箱（需登录）：清空 email 与 email_verified_at。"""
+    user.email = None
+    user.email_verified_at = None
+    db.commit()
+    return {"ok": True}
+
+
+@router.post("/find-account")
+def find_account(body: FindAccountIn, db: Session = Depends(get_db)):
+    """通过已验证邮箱找回账号（可选重置密码）。
+
+    - 邮箱未绑定 → 404「该邮箱未绑定任何账号」；
+    - 验证码走 reset 用途（过期 410 / 错误 400 / 超限 429）；
+    - 传入 newPassword 时复用 security.hash_password 重置密码。
+    """
+    email = body.email
+    target = db.query(User).filter(User.email == email).first()
+    if not target:
+        raise HTTPException(404, "该邮箱未绑定任何账号")
+    _consume_email_code(db, email, "reset", body.code)
+    password_reset = False
+    if body.newPassword:
+        target.password_hash = hash_password(body.newPassword)
+        db.commit()
+        password_reset = True
+    return {
+        "ok": True,
+        "username": target.username,
+        "nickname": target.nickname,
+        "passwordReset": password_reset,
+    }

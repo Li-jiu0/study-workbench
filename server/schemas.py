@@ -36,6 +36,27 @@ def check_password_strength(pw: str) -> str:
     return pw
 
 
+# ---------- 邮箱格式（R73 邮箱绑定） ----------
+# 基础格式校验：含 @ 且域名部分含点（不做 MX 探测，仅拦截明显非法输入）。
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def normalize_email(email: str) -> str:
+    """规范化邮箱：去空格 + 统一小写（邮箱大小写不敏感）。"""
+    return (email or "").strip().lower()
+
+
+def check_email_format(email: str) -> str:
+    """基础邮箱格式校验（含 @ 与域名点），非法抛 ValueError（→ pydantic 422）。
+
+    返回值恒为规范化后的邮箱（小写去空格），供路由层直接落库/比对。
+    """
+    e = normalize_email(email)
+    if not _EMAIL_RE.match(e):
+        raise ValueError("邮箱格式不正确")
+    return e
+
+
 # ---------- 请求 ----------
 class RegisterIn(BaseModel):
     username: str = Field(min_length=3, max_length=20)
@@ -50,7 +71,13 @@ class RegisterIn(BaseModel):
 
 
 class LoginIn(BaseModel):
-    username: str
+    """登录：登录标识兼容「用户名」与「绑定邮箱」。
+
+    向后兼容：老前端仍发 username；新前端可发 account（用户名或邮箱）。
+    路由层取 account 优先、username 兜底，两者皆空则 400。
+    """
+    username: str = ""
+    account: str = ""
     password: str
 
 
@@ -67,6 +94,59 @@ class ChangePasswordIn(BaseModel):
     @field_validator("newPassword")
     @classmethod
     def _check_new_password(cls, v: str) -> str:
+        return check_password_strength(v)
+
+
+class EmailSendCodeIn(BaseModel):
+    """POST /api/auth/email/send-code：发送邮箱验证码。purpose: bind / reset。"""
+    email: str = Field(min_length=3, max_length=128)
+    purpose: str = Field(default="bind")
+
+    @field_validator("email")
+    @classmethod
+    def _check_email(cls, v: str) -> str:
+        return check_email_format(v)
+
+
+class EmailVerifyIn(BaseModel):
+    """POST /api/auth/email/verify：校验邮箱验证码。"""
+    email: str = Field(min_length=3, max_length=128)
+    code: str = Field(min_length=4, max_length=8)
+    purpose: str = Field(default="bind")
+
+    @field_validator("email")
+    @classmethod
+    def _check_email(cls, v: str) -> str:
+        return check_email_format(v)
+
+
+class EmailBindIn(BaseModel):
+    """POST /api/auth/email/bind：绑定邮箱（需登录）。"""
+    email: str = Field(min_length=3, max_length=128)
+    code: str = Field(min_length=4, max_length=8)
+
+    @field_validator("email")
+    @classmethod
+    def _check_email(cls, v: str) -> str:
+        return check_email_format(v)
+
+
+class FindAccountIn(BaseModel):
+    """POST /api/auth/find-account：用已验证邮箱找回账号（可选重置密码）。"""
+    email: str = Field(min_length=3, max_length=128)
+    code: str = Field(min_length=4, max_length=8)
+    newPassword: str | None = Field(default=None, max_length=64)
+
+    @field_validator("email")
+    @classmethod
+    def _check_email(cls, v: str) -> str:
+        return check_email_format(v)
+
+    @field_validator("newPassword")
+    @classmethod
+    def _check_new_password(cls, v):
+        if v is None:
+            return v
         return check_password_strength(v)
 
 

@@ -4,7 +4,7 @@
 <meta charset="UTF-8" data-page-node-id="Dm3mxT6LpVN8XXkKxiV3Zr">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="EX5g2ip0isH3SdQKFF3fnn">
 <title>加好友 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260916O" data-page-node-id="c7p5rq1mDkvvJq2cCDe855">
+<link rel="stylesheet" href="assets/common.css?v=20260917b" data-page-node-id="c7p5rq1mDkvvJq2cCDe855">
 <style>
   /* common.css 会锁 html/body 高度并隐藏滚动，本页为独立长页面（好友申请列表），恢复滚动 */
   html{height:auto;overflow:auto}
@@ -112,8 +112,8 @@
       if (u.isFriend) act = '<button class="af-btn" onclick="afOpenChat(' + u.id + ')">💬 发消息</button>';
       else if (u.blockedMe) act = '<button class="af-btn gray">不可添加</button>';
       else act = '<button class="af-btn" onclick="addFriend(' + u.id + ',' + i + ')" id="addBtn' + i + '">➕ 加好友</button>';
-      return '<div class="af-row"><div class="af-av">' + avatar(u) + '</div>' +
-        '<div class="af-info"><div class="af-name">' + esc(u.nickname) + '</div><div class="af-sub">@' + esc(u.username) + (u.motto ? ' · ' + esc(u.motto) : '') + '</div></div>' +
+      return '<div class="af-row"><div class="af-av" style="cursor:pointer" onclick="openUserHome(' + u.id + ')">' + avatar(u) + '</div>' +
+        '<div class="af-info"><div class="af-name" style="cursor:pointer" onclick="openUserHome(' + u.id + ')">' + esc(u.nickname) + '</div><div class="af-sub">@' + esc(u.username) + (u.motto ? ' · ' + esc(u.motto) : '') + '</div></div>' +
         '<div class="af-act">' + act + '</div></div>';
     }).join('');
   }
@@ -136,8 +136,8 @@
         var inc = d.incoming || [];
         if (!inc.length) { box.innerHTML = '<div class="af-empty">暂无收到的好友申请</div>'; return; }
         box.innerHTML = inc.map(function (r) {
-          return '<div class="af-row"><div class="af-av">' + avatar(r.user) + '</div>' +
-            '<div class="af-info"><div class="af-name">' + esc(r.user.nickname) + '</div><div class="af-sub">@' + esc(r.user.username) + '</div></div>' +
+          return '<div class="af-row"><div class="af-av" style="cursor:pointer" onclick="openUserHome(' + r.user.id + ')">' + avatar(r.user) + '</div>' +
+            '<div class="af-info"><div class="af-name" style="cursor:pointer" onclick="openUserHome(' + r.user.id + ')">' + esc(r.user.nickname) + '</div><div class="af-sub">@' + esc(r.user.username) + '</div></div>' +
             '<div class="af-act"><button class="af-mini ok" onclick="actRequest(' + r.id + ',1,this)">同意</button>' +
             '<button class="af-mini no" onclick="actRequest(' + r.id + ',0,this)">拒绝</button></div></div>';
         }).join('');
@@ -155,6 +155,13 @@
      删除好友的正式入口在对方公开主页（api.js renderUserHome，uiConfirm 二次确认）。 */
   window.afOpenChat = function (uid) {
     location.href = '私聊.html?uid=' + uid;
+  };
+  /* 缺口2修复（2026-09-17）：本页不加载 assets/api.js —— 实测加载后 api.js 的 apiBoot 会在有 token 时
+     额外发起 /api/auth/me、/api/notifications、/api/chat/unread 并启动 30s/60s 轮询，与本页无关。
+     故在页内实现最小同义函数 openUserHome（语义与 api.js openUserHome 完全一致：跳对方公开主页）。 */
+  window.openUserHome = function (uid) {
+    if (!uid) return;
+    location.href = '个人资料.html?user=' + encodeURIComponent(uid);
   };
   /* 全站禁用原生 confirm：改走 app.js 的 uiConfirm（轻量页内确认层）。删除好友的正式入口在对方公开主页（api.js renderUserHome）。 */
   window.afRemoveFriend = function (uid) {

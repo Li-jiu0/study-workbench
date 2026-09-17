@@ -149,8 +149,14 @@
         '<div class="ac-m-time">' + esc(fmtTime(m.createdAt || m.time || '')) + '</div>' +
         '</div>';
     }
+    /* R73 需求19（2026-09-15）：同源缺陷 —— 重建前记录位置；贴底才保持贴底，否则按高度差补偿，
+       避免 2s 轮询 / 拉取把用户从历史翻阅处甩回底部。 */
+    var prevTop = box.scrollTop;
+    var prevH = box.scrollHeight;
+    var atBottom = (prevH - prevTop - box.clientHeight) < 24;
     box.innerHTML = html;
-    box.scrollTop = box.scrollHeight;
+    if (atBottom) box.scrollTop = box.scrollHeight;
+    else box.scrollTop = prevTop + (box.scrollHeight - prevH);
     updateEntrySub();   // R45：入口行副标题跟随最新一条消息
   }
 

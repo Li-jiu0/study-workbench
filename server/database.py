@@ -1,8 +1,8 @@
 """数据库：SQLAlchemy ORM 模型（表结构见 建表SQL.sql）。"""
 from datetime import datetime
 
-from sqlalchemy import (Boolean, Column, ForeignKey, Integer, String, Text,
-                        UniqueConstraint, create_engine, or_, text)
+from sqlalchemy import (Boolean, Column, DateTime, ForeignKey, Integer, String,
+                        Text, UniqueConstraint, create_engine, or_, text)
 from sqlalchemy.orm import DeclarativeBase, Session, relationship, sessionmaker
 
 from config import DB_URL
@@ -63,6 +63,10 @@ class User(Base):
     # 注：用户活跃时间复用同表 last_seen_at（security._touch_last_seen 已在每次
     # 鉴权请求节流刷新，60s 粒度），不另建 last_active 列，避免双份数据不一致。
     is_admin = Column(Boolean, nullable=False, default=False)
+    # R73（邮箱绑定）：email 唯一（可空；SQLite 唯一索引允许并存多个 NULL，存量用户不冲突），
+    # email_verified_at 记录验证通过时间（未验证为 NULL）。
+    email = Column(String(128), unique=True, nullable=True, index=True)
+    email_verified_at = Column(DateTime, nullable=True)
     created_at = Column(String(16), nullable=False)
 
     notes = relationship("Note", back_populates="author", cascade="all, delete-orphan")
@@ -347,6 +351,27 @@ class AiLog(Base):
     created_at = Column(String(19), nullable=False)
 
 
+class EmailCode(Base):
+    """邮箱验证码（R73 邮箱绑定）。
+
+    - code_hash：仅存哈希（复用 security.hash_password），绝不落明文；
+    - purpose  ：bind（绑定）/ reset（找回账号 / 重置密码）；
+    - user_id  ：可空（预留审计用途）；
+    - used     ：一次性消费后置 1；attempts：错误累计，达到上限即作废；
+    - expires_at：10 分钟有效期。
+    """
+    __tablename__ = "email_codes"
+    id = Column(Integer, primary_key=True)
+    email = Column(String(128), nullable=False, index=True)
+    code_hash = Column(Text, nullable=False)
+    purpose = Column(String(16), nullable=False, default="bind")  # bind / reset
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
+    expires_at = Column(DateTime, nullable=False)
+    used = Column(Boolean, nullable=False, default=False)
+    attempts = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime, nullable=False)
+
+
 def friend_pair(a: int, b: int) -> tuple[int, int]:
     """好友表里一律存小号在前，保证 (A,B) 与 (B,A) 是同一行。"""
     return (a, b) if a < b else (b, a)
@@ -480,6 +505,18 @@ def _upgrade_legacy_schema() -> None:
     if "chat_group_members" in names and "group_nickname" not in _table_columns("chat_group_members"):
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE chat_group_members ADD COLUMN group_nickname TEXT NOT NULL DEFAULT ''"))
+    # R73（邮箱绑定）：users 补 email / email_verified_at（守卫式、幂等、无损）。
+    # SQLite 无 ADD COLUMN IF NOT EXISTS，故先 PRAGMA 判断列是否存在再 ALTER。
+    # 唯一索引 ix_users_email：NULL 互不冲突，存量用户 email 全为 NULL 不受影响。
+    if "users" in names:
+        ucols = _table_columns("users")
+        with engine.begin() as conn:
+            if "email" not in ucols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN email TEXT"))
+            if "email_verified_at" not in ucols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN email_verified_at DATETIME"))
+        with engine.begin() as conn:
+            conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email ON users(email)"))
 
 
 def init_db() -> None:
