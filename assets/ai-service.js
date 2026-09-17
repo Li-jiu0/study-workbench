@@ -16,16 +16,17 @@
   // ---------- 超时与降级策略常量 ----------
   // 首字超时：15 秒内没有吐出第一个 token -> 视为慢，切下一个模型
   var TIMEOUT_FIRST_TOKEN = 15000;
-  // 响应头超时：15 秒内连 HTTP 响应头都没回来 -> 视为超时（等价于「所有 AI 请求超时 15 秒」）
-  var TIMEOUT_RESPONSE = 15000;
-  // 单次请求总时长上限：防止流式读到一半永久挂起（不截断正常长回答）
+  // 响应头超时：R83 按文档 §四「正常调用超时 30 秒」统一为 30 秒，超时立即降级、不等待
+  var TIMEOUT_RESPONSE = 30000;
+  // 单次请求总时长上限：兜底防挂死（不截断正常长回答）；
+  // R83b：文档 §四的「30 秒」指首响应超时（TIMEOUT_RESPONSE），总时长回归 90 秒，避免长回答被判超时降级
   var TIMEOUT_TOTAL = 90000;
-  // 慢模型：仅用户手动选择时进入链路，自动降级链里排除
-  var SLOW_MODEL_IDS = ["qwen3-8b", "qwen3.5-4b"];
+  // 慢模型黑名单：仅用户手动选择时进入链路，自动降级链里排除（现役 16 模型均无慢速黑名单需求，置空）
+  var SLOW_MODEL_IDS = [];
   // 连续多少次 429 后，本次会话内跳过该模型
   var RATE_LIMIT_SKIP = 2;
   // 遭遇 429 后的备选首选模型（快模型）
-  var RATE_LIMIT_RESCUE = ["glm-4.5-flash", "qwen2.5-7b"];
+  var RATE_LIMIT_RESCUE = ["ark-v4-flash", "ark-doubao-mini", "qf-ernie-32k"];
   // 不降级、直接抛给上层的 HTTP 状态（请求本身有问题，换模型没用）
   var NO_FALLBACK_STATUS = [400, 403, 404, 422];
 
@@ -54,6 +55,130 @@
     } catch (e) {
       return fallback;
     }
+  }
+
+  // ---------- R77：海外平台代理访问（needProxy 平台：openrouter / gemini） ----------
+  // 模式（localStorage ai_proxy_settings 优先于 AI_CONFIG.proxy 出厂默认）：
+  //   auto   连通性探测；不可达平台视为离线：模型不进降级链（手动选中除外），调用自然降级国内链；
+  //   relay  needProxy 平台请求 URL 改走 relayUrl 中转（约定：relayUrl 前缀 + encodeURIComponent(目标完整URL)，body/headers 原样透传）；
+  //   direct 始终直连（R77 之前的行为）。
+  var PROXY_LS_CONFIG = "ai_proxy_settings";
+  var PROXY_LS_STATUS = "ai_proxy_status";
+  var PROXY_STATUS_TTL = 10 * 60 * 1000;  // 探测结果有效期：10 分钟
+  var PROXY_PROBE_TIMEOUT = 5000;         // R83：auto 启动探测超时同步为 5 秒（文档 §四）
+
+  function getProxyConfig() {
+    var out = { mode: "auto", relayUrl: "" };
+    var cfg = getConfig();
+    if (cfg && cfg.proxy && typeof cfg.proxy === "object") {
+      if (cfg.proxy.mode === "relay" || cfg.proxy.mode === "direct") out.mode = cfg.proxy.mode;
+      if (typeof cfg.proxy.relayUrl === "string") out.relayUrl = cfg.proxy.relayUrl;
+    }
+    var s = readJSONKey(PROXY_LS_CONFIG, null);
+    if (s && typeof s === "object") {
+      if (s.mode === "auto" || s.mode === "relay" || s.mode === "direct") out.mode = s.mode;
+      if (typeof s.relayUrl === "string") out.relayUrl = s.relayUrl;
+    }
+    return out;
+  }
+
+  function providerNeedProxy(name) {
+    if (!name) return false;
+    var cfg = getConfig();
+    return !!(cfg && cfg.providers && cfg.providers[name] && cfg.providers[name].needProxy === true);
+  }
+
+  function needProxyProviders() {
+    var cfg = getConfig();
+    var out = [];
+    if (cfg && cfg.providers) {
+      for (var k in cfg.providers) {
+        if (Object.prototype.hasOwnProperty.call(cfg.providers, k) &&
+            cfg.providers[k] && cfg.providers[k].needProxy === true) out.push(k);
+      }
+    }
+    return out;
+  }
+
+  // relay 模式：needProxy 平台的最终请求 URL（含 Gemini ?key= 查询串）改走中转前缀
+  function proxyWrapUrl(url, providerName) {
+    var pc = getProxyConfig();
+    if (pc.mode !== "relay" || !pc.relayUrl || !providerNeedProxy(providerName)) return url;
+    return pc.relayUrl + encodeURIComponent(url);
+  }
+
+  // 取平台 apiUrl 的源（scheme + host）：探测打源地址，避开 Gemini apiUrl 里的 {model} 占位符
+  function providerOriginUrl(url) {
+    var m = /^([a-zA-Z][a-zA-Z0-9+.-]*:\/\/[^\/]+)/.exec(String(url || ""));
+    return m ? m[1] : null;
+  }
+
+  // 单平台探测：GET 源地址（relay 模式下连探测也走中转，测的是实际调用路径）。
+  // 8 秒内拿到任意 HTTP 响应（含 4xx/5xx）= 可达；网络层失败或超时 = 不可达。
+  function probeProviderOnce(name) {
+    return new Promise(function (resolve) {
+      var cfg = getConfig();
+      var p = (cfg && cfg.providers) ? cfg.providers[name] : null;
+      var origin = p ? providerOriginUrl(p.apiUrl) : null;
+      if (!origin) { resolve({ ok: false, ms: 0, err: "no_endpoint" }); return; }
+      var target = proxyWrapUrl(origin, name);
+      var startedAt = Date.now();
+      var done = false;
+      var timer = setTimeout(function () {
+        if (done) return;
+        done = true;
+        resolve({ ok: false, ms: Date.now() - startedAt, err: "timeout" });
+      }, PROXY_PROBE_TIMEOUT);
+      fetch(target, { method: "GET", cache: "no-store" }).then(function () {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        resolve({ ok: true, ms: Date.now() - startedAt, err: null });
+      }, function () {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        resolve({ ok: false, ms: Date.now() - startedAt, err: "network" });
+      });
+    });
+  }
+
+  // 批量探测所有 needProxy 平台并落盘（内存 + localStorage ai_proxy_status）
+  var _proxyStatusMem = null;
+  function readProxyStatus() {
+    if (_proxyStatusMem) return _proxyStatusMem;
+    _proxyStatusMem = readJSONKey(PROXY_LS_STATUS, {});
+    return _proxyStatusMem;
+  }
+  function writeProxyStatus(st) {
+    _proxyStatusMem = st;
+    try { localStorage.setItem(PROXY_LS_STATUS, JSON.stringify(st)); } catch (e) { /* 存储不可用则仅内存态 */ }
+  }
+  function probeProxyPlatforms() {
+    var names = needProxyProviders();
+    var st = {};
+    var tasks = [];
+    for (var i = 0; i < names.length; i++) {
+      (function (nm) {
+        tasks.push(probeProviderOnce(nm).then(function (r) {
+          st[nm] = { ok: r.ok, ms: r.ms, err: r.err, ts: Date.now() };
+        }));
+      })(names[i]);
+    }
+    return Promise.all(tasks).then(function () {
+      writeProxyStatus(st);
+      return st;
+    });
+  }
+
+  // auto 模式判定平台离线：探测结果 10 分钟内且 ok!==true 才算离线（无结果/已过期一律视为在线，不误伤）
+  function isProviderOffline(name) {
+    var pc = getProxyConfig();
+    if (pc.mode !== "auto" || !providerNeedProxy(name)) return false;
+    var e = readProxyStatus()[name];
+    if (!e || typeof e !== "object") return false;
+    if (Date.now() - (e.ts || 0) > PROXY_STATUS_TTL) return false;
+    return e.ok !== true;
   }
 
   // ---------- R66 N1：存量平台密钥副本清洗（幂等，仅首次读取时执行一次） ----------
@@ -268,6 +393,15 @@
 
   function sleep(ms) {
     return new Promise(function (resolve) { setTimeout(resolve, ms); });
+  }
+
+  // 需求12：创建 AbortController 用于超时/失败时主动中止在途请求。
+  // 老 WebView（无 AbortController）返回 null，调用方必须判空后再使用。
+  function makeAbortController() {
+    try {
+      if (typeof AbortController === "function") return new AbortController();
+    } catch (e) { /* 老内核无此 API，忽略 */ }
+    return null;
   }
   // 说明：429 不再「原地等 2 秒重试同一个模型」（越限越等越慢），
   // 改为直接沿降级链切换；sleep 保留给将来的退避策略使用。
@@ -616,6 +750,11 @@
       seen[id] = true;
       // N3：被禁用的模型不进链（含手动选中，置首处已判，此处兜底）
       if (isModelDisabled(settings, id)) continue;
+      // R77：auto 模式下探测离线的 needProxy 平台模型不进链（手动/全局选中除外，失败仍会自然降级）
+      if (id !== manual && id !== selected) {
+        var omc = findModel(id);
+        if (omc && omc.provider && isProviderOffline(omc.provider)) continue;
+      }
       // 需求 D-3：慢模型只在用户手动选择时进入链路（catModels / 模式链为用户或配置显式编排，不剔除）
       if (!viaCat && !viaMode && inList(SLOW_MODEL_IDS, id) && id !== manual && id !== selected) continue;
       var mc = applyOverrides(findModel(id));
@@ -758,7 +897,8 @@
         }
       }
       if (resp.ok) {
-        var d = await resp.json();
+        // R72：改走 safeRespJson —— 网关返回 HTML 时不抛裸 SyntaxError（外层 try 仍会兜底不缓存）
+        var d = await safeRespJson(resp);
         var models = (d && d.models) ? d.models : [];
         for (var i = 0; i < models.length; i++) {
           list.push({ id: models[i].id, name: models[i].name });
@@ -802,6 +942,64 @@
     return Promise.reject(makeError("当前环境不支持读取响应内容", 0, "NO_BODY_READER"));
   }
 
+  // ---------- R72：非 JSON 响应体收敛（网关/CDN 返回 HTML 错误页） ----------
+  // 背景：自定义端点填错或服务不可用时，对方常返回 HTML 错误页（如 <!DOCTYPE html>...）。
+  // 此时 resp.json() 会抛裸 SyntaxError（"Unexpected token '<', \"<!DOCTYPE \"... is not valid JSON"），
+  // 直接冒泡到聊天界面，用户看到的是天书。这里统一「先读文本再 JSON.parse」，
+  // 失败时抛人类可读的 Error（含 HTTP 状态 / content-type / 响应体前 80 字符），便于排查。
+  function respStatus(resp) {
+    return (resp && resp.status != null) ? resp.status : 0;
+  }
+
+  function respCtype(resp) {
+    try {
+      if (resp && resp.headers && typeof resp.headers.get === "function") {
+        return resp.headers.get("content-type") || "";
+      }
+    } catch (e) { /* 忽略 */ }
+    return "";
+  }
+
+  // 判定「一眼可辨的非 JSON 内容」（HTML 错误页）：去首部空白后以 "<" 起头，
+  // 且带 HTML 特征标签。合法答案要么是 SSE（data: 起头）、要么是 JSON（{ 起头），
+  // 因此不会误伤正常回答；同时避免把模型偶发的 "<x>" 数学写法误判为 HTML。
+  function looksLikeHtml(text) {
+    var s = String(text == null ? "" : text).replace(/^[\s\r\n]+/, "");
+    if (!s || s.charAt(0) !== "<") return false;
+    var head = s.slice(0, 200).toLowerCase();
+    if (head.indexOf("<!doctype") === 0) return true;
+    if (head.indexOf("<html") === 0) return true;
+    if (head.indexOf("<?xml") === 0) return true;
+    if (head.indexOf("<head") === 0) return true;
+    if (head.indexOf("<body") === 0) return true;
+    if (head.indexOf("<title") === 0) return true;
+    if (head.indexOf("<html") !== -1) return true;
+    if (head.indexOf("<head") !== -1) return true;
+    if (head.indexOf("<body") !== -1) return true;
+    if (head.indexOf("<title") !== -1) return true;
+    return false;
+  }
+
+  // 构造「非 JSON 响应」的人类可读提示：HTTP 状态 + content-type + 响应体前 80 字符。
+  function nonJsonMessage(status, ctype, body) {
+    var head = String(body == null ? "" : body).replace(/\s+/g, " ").replace(/^ +| +$/g, "");
+    if (head.length > 80) head = head.slice(0, 80) + "…";
+    return "接口返回了非 JSON 内容（HTTP " + status + " " + (ctype || "未知类型") + "），" +
+           "API 地址可能填错或服务不可用" + (head ? "。响应开头：" + head : "");
+  }
+
+  // 统一安全读取响应为 JSON：非 JSON（HTML 错误页等）时抛人类可读 Error，绝不抛裸 SyntaxError。
+  async function safeRespJson(resp) {
+    var raw = "";
+    try { raw = await readResponseText(resp); } catch (eRead) { raw = ""; }
+    var s = String(raw == null ? "" : raw);
+    try {
+      return JSON.parse(s);
+    } catch (eParse) {
+      throw makeError(nonJsonMessage(respStatus(resp), respCtype(resp), s), respStatus(resp), "NON_JSON");
+    }
+  }
+
   // 解析一行 SSE，返回 { content, reasoning }；遇到流内 error 直接抛（1305 走降级）
   // reasoning：推理型模型的思维链增量（reasoning_content / reasoning），content 为空时用于兜底。
   function consumeLine(line) {
@@ -837,7 +1035,16 @@
     var buffer = "";
     var full = "";
     var reasoning = "";
+    var lineSeen = false;
     function handleLine(line) {
+      // R72：流式读到 HTML（网关/CDN 错误页）时，首个非空行即可判定，直接抛人类可读错误；
+      // consumeLine 对非 data: 行本就返回空，这里再加显式兜底，确保 HTML 不按 SSE 逐块泄漏。
+      if (!lineSeen && String(line == null ? "" : line).replace(/^[\s\r\n]+|[\s\r\n]+$/g, "") !== "") {
+        lineSeen = true;
+        if (looksLikeHtml(line)) {
+          throw makeError(nonJsonMessage(respStatus(resp), respCtype(resp), line), respStatus(resp), "NON_JSON");
+        }
+      }
       var pr = consumeLine(line);
       if (pr.reasoning) {
         reasoning += pr.reasoning;
@@ -973,12 +1180,17 @@
         if (!resp.ok) {
           var errText = "";
           try { errText = await readResponseText(resp); } catch (e2) {}
-          lastErr = makeError("中转HTTP " + resp.status + " " + (errText || "").slice(0, 120), resp.status, null);
+          // R72：错误体若是 HTML 错误页，收敛成人类可读提示，不把整段 HTML 塞进 message
+          var relayMsg = String(errText || "").replace(/\s+/g, " ").replace(/^ +| +$/g, "").slice(0, 120);
+          if (looksLikeHtml(errText)) relayMsg = nonJsonMessage(resp.status, respCtype(resp), errText);
+          lastErr = makeError("中转HTTP " + resp.status + " " + relayMsg, resp.status, null);
           break;
         }
         // 服务端返回 text/plain 纯文本流（每段为增量文本，非 SSE）
         var firstChunkAt = 0;
+        var relayLive = true;   // 需求12：超时后丢弃迟到增量，避免污染已切换的界面
         var emit = function (piece, full) {
+          if (!relayLive) return;
           if (!firstChunkAt) firstChunkAt = Date.now();
           if (onChunk) onChunk(piece, full);
         };
@@ -1002,6 +1214,7 @@
         lastErr = makeError("中转空回复", 0, "EMPTY");
       } catch (e) {
         lastErr = e;
+        relayLive = false;   // 需求12：停止接收迟到增量
         // 超时不重试同一个 provider（越等越久），直接换下一个
         if (e && e.timedOut) break;
       }
@@ -1017,20 +1230,41 @@
       var decoder = new TextDecoder("utf-8");
       var full = "";
       var count = 0;
+      var htmlChecked = false;   // 是否已排除「HTML 错误页」
+      var GUARD_LEN = 64;        // 前缀判定窗口：攒够这么多字符仍非 HTML 才放心逐块吐出
       while (true) {
         var r = await reader.read();
         if (r.done) break;
         var piece = decoder.decode(r.value, { stream: true });
-        if (piece) {
-          full += piece;
-          count++;
-          emit(piece, full);
+        if (!piece) continue;
+        full += piece;
+        count++;   // 与改造前一致：按实际分块计数（供上层判断是否需要本地分段）
+        // R72：中转端返回 HTML 错误页时，绝不按流逐块当答案吐出（否则界面出现 <!DOCTYPE html> 乱码）。
+        // 先攒够一个小前缀再判定，避免首块被切成半截 "<!DO" 而漏判；判定窗口内暂不 emit。
+        if (!htmlChecked) {
+          if (looksLikeHtml(full)) {
+            throw makeError(nonJsonMessage(respStatus(resp), respCtype(resp), full), respStatus(resp), "NON_JSON");
+          }
+          if (full.length < GUARD_LEN) continue;
+          htmlChecked = true;
         }
+        emit(piece, full);
+      }
+      if (!htmlChecked) {
+        // 响应体不足判定窗口：收尾时再判定一次；短文本正常吐出，HTML 则抛错
+        if (looksLikeHtml(full)) {
+          throw makeError(nonJsonMessage(respStatus(resp), respCtype(resp), full), respStatus(resp), "NON_JSON");
+        }
+        if (full) emit(full, full);
       }
       return { text: full, count: count };
     }
     var whole = await readResponseText(resp);
     var text = String(whole == null ? "" : whole);
+    // R72：整段读取到 HTML 错误页时同样不当作答案文本
+    if (looksLikeHtml(text)) {
+      throw makeError(nonJsonMessage(respStatus(resp), respCtype(resp), text), respStatus(resp), "NON_JSON");
+    }
     if (text && emit) emit(text, text);
     return { text: text, count: text ? 1 : 0 };
   }
@@ -1053,6 +1287,132 @@
     return parts.join("\n\n");
   }
 
+  // ---------- R81：图片生成专用链路（types 含 imagegen 的模型，绝不走 chat/completions） ----------
+  // 端点：provider.apiUrl（arkimage = .../images/generations）
+  // 请求体：{ model, prompt, size:"1024x1024", response_format:"url" }；响应取 data[0].url
+  // 超时：Seedream-5-Pro 实测约 35s，图片生成给足 60s，不沿用文本模型的 15s 短超时。
+  var IMAGE_TIMEOUT_RESPONSE = 60000;
+  var IMAGE_TIMEOUT_TOTAL = 90000;
+  var IMAGE_TIMEOUT_HEALTH = 60000;
+  var IMAGE_SIZE = "1024x1024";
+
+  function isImageGenModel(mc) {
+    return !!(mc && mc.types && Object.prototype.toString.call(mc.types) === "[object Array]" &&
+      mc.types.indexOf("imagegen") >= 0);
+  }
+
+  // 取最后一条用户消息作 prompt（兼容 content 为字符串或数组两种形态）
+  function collectImagePrompt(messages) {
+    var txt = "";
+    if (Object.prototype.toString.call(messages) === "[object Array]") {
+      for (var i = messages.length - 1; i >= 0; i--) {
+        var m = messages[i];
+        if (!m || m.role !== "user") continue;
+        var c = m.content;
+        if (typeof c === "string" && c) { txt = c; break; }
+        if (Object.prototype.toString.call(c) === "[object Array]") {
+          var buf = [];
+          for (var j = 0; j < c.length; j++) {
+            if (c[j] && c[j].type === "text" && typeof c[j].text === "string") buf.push(c[j].text);
+          }
+          if (buf.length) { txt = buf.join(" "); break; }
+        }
+      }
+    }
+    txt = String(txt || "").trim();
+    if (!txt) txt = "a red apple";
+    return txt.slice(0, 2000);
+  }
+
+  async function requestImageGeneration(modelConfig, messages, onChunk, signal, options) {
+    var cfg = getConfig();
+    var provider = (modelConfig.provider && cfg && cfg.providers) ? cfg.providers[modelConfig.provider] : null;
+    var apiKey = (typeof modelConfig.apiKey === "string" && modelConfig.apiKey)
+      ? modelConfig.apiKey : (provider ? provider.apiKey : null);
+    var apiUrl = (typeof modelConfig.apiUrl === "string" && modelConfig.apiUrl)
+      ? modelConfig.apiUrl : (provider ? provider.apiUrl : null);
+    if (!apiUrl) {
+      var eNoUrl = makeError("图片生成缺少接口地址:" + modelConfig.id, 0, "NO_ENDPOINT");
+      eNoUrl.modelId = modelConfig.id;
+      eNoUrl.modelName = modelConfig.name;
+      throw eNoUrl;
+    }
+    if (!apiKey) {
+      var eNoKey = makeError("图片生成缺少 API Key:" + modelConfig.id, 0, "NO_KEY");
+      eNoKey.modelId = modelConfig.id;
+      eNoKey.modelName = modelConfig.name;
+      throw eNoKey;
+    }
+    var opt = options || {};
+    var respMs = (opt.responseTimeout != null) ? opt.responseTimeout : IMAGE_TIMEOUT_RESPONSE;
+    var totalMs = (opt.totalTimeout != null) ? opt.totalTimeout : IMAGE_TIMEOUT_TOTAL;
+    var prompt = (opt.prompt != null && opt.prompt !== "") ? String(opt.prompt) : collectImagePrompt(messages);
+
+    var body = { model: modelConfig.model, prompt: prompt, size: IMAGE_SIZE, response_format: "url" };
+    var headers = { "Content-Type": "application/json", "Authorization": "Bearer " + apiKey };
+    if (provider && provider.extraHeaders) {
+      for (var hk in provider.extraHeaders) {
+        if (Object.prototype.hasOwnProperty.call(provider.extraHeaders, hk)) headers[hk] = provider.extraHeaders[hk];
+      }
+    }
+    var fetchOpts = { method: "POST", headers: headers, body: JSON.stringify(body) };
+    var ctrl = signal ? null : makeAbortController();
+    var effSignal = signal || (ctrl ? ctrl.signal : null);
+    if (effSignal) fetchOpts.signal = effSignal;
+    var reqUrl = proxyWrapUrl(apiUrl, modelConfig.provider);
+
+    var resp = null;
+    try {
+      resp = await raceTimeout(fetch(reqUrl, fetchOpts), respMs, null,
+        "图片生成响应超时（" + respMs + "ms 未返回）", "TIMEOUT_RESPONSE");
+    } catch (e) {
+      e.modelId = modelConfig.id;
+      e.modelName = modelConfig.name;
+      if (ctrl) { try { ctrl.abort(); } catch (eA) { /* 忽略 */ } }
+      throw e;
+    }
+    var raw = "";
+    try {
+      raw = await raceTimeout(readResponseText(resp), totalMs, null,
+        "图片生成读取超时（总时长 " + totalMs + "ms）", "TIMEOUT_TOTAL");
+    } catch (e2) {
+      e2.modelId = modelConfig.id;
+      e2.modelName = modelConfig.name;
+      if (ctrl) { try { ctrl.abort(); } catch (eA2) { /* 忽略 */ } }
+      throw e2;
+    }
+    if (!resp.ok) {
+      var emsg = raw ? String(raw).replace(/\s+/g, " ").slice(0, 200) : ("HTTP " + resp.status);
+      var iErr = makeError("图片生成失败:" + resp.status + " " + emsg, resp.status, null);
+      iErr.apiMessage = emsg;
+      iErr.modelId = modelConfig.id;
+      iErr.modelName = modelConfig.name;
+      throw iErr;
+    }
+    var imgUrl = "";
+    try {
+      var j = JSON.parse(raw);
+      if (j && j.data && j.data[0]) {
+        if (typeof j.data[0].url === "string" && j.data[0].url) imgUrl = j.data[0].url;
+        else if (typeof j.data[0].b64_json === "string" && j.data[0].b64_json) {
+          imgUrl = "data:image/png;base64," + j.data[0].b64_json;
+        }
+      }
+    } catch (e3) { imgUrl = ""; }
+    if (!imgUrl) {
+      var eEmpty = makeError("图片生成返回空结果", 0, "EMPTY");
+      eEmpty.modelId = modelConfig.id;
+      eEmpty.modelName = modelConfig.name;
+      throw eEmpty;
+    }
+    // 与现有渲染衔接：返回 Markdown 图片串，由 ai-page.js renderMarkdown 渲染成 <img>
+    var out = "![" + prompt.slice(0, 40) + "](" + imgUrl + ")";
+    if (onChunk) {
+      try { onChunk(out, out); } catch (e4) { /* 渲染失败不影响结果 */ }
+    }
+    return out;
+  }
+
   // ---------- 核心请求 ----------
   async function requestModel(modelConfig, messages, onChunk, signal, options) {
     var cfg = getConfig();
@@ -1071,6 +1431,10 @@
     var firstTokenMs = (opt.firstTokenTimeout != null) ? opt.firstTokenTimeout : TIMEOUT_FIRST_TOKEN;
     var totalMs = (opt.totalTimeout != null) ? opt.totalTimeout : TIMEOUT_TOTAL;
     var respMs = (opt.responseTimeout != null) ? opt.responseTimeout : TIMEOUT_RESPONSE;
+    // R81：图片生成模型（types 含 imagegen）走 images/generations，绝不进 chat/completions
+    if (isImageGenModel(modelConfig)) {
+      return await requestImageGeneration(modelConfig, messages, onChunk, signal, opt);
+    }
 
     var userKey = null;
     if (modelConfig.provider) {
@@ -1151,7 +1515,14 @@
       headers: headers,
       body: JSON.stringify(body)
     };
-    if (signal) fetchOpts.signal = signal;
+    // 需求12：超时/失败时主动中止在途请求，避免「卡住」与资源泄漏（老内核无 AbortController 时自动降级）。
+    // 调用方自带 signal（如健康检查）时沿用其 signal，不覆盖，保证外部取消能力不丢失。
+    var _ctrl = signal ? null : makeAbortController();
+    var _effSignal = signal || (_ctrl ? _ctrl.signal : null);
+    if (_effSignal) fetchOpts.signal = _effSignal;
+    function abortInFlight() {
+      if (_ctrl) { try { _ctrl.abort(); } catch (eAb) { /* 忽略 */ } }
+    }
 
     // 失败时打点的请求体关键信息（不含图片 base64 正文，只含形态）
     var debugInfo = {
@@ -1179,6 +1550,8 @@
       throw gErr;
     }
 
+    // R77：relay 模式下 needProxy 平台请求改走中转前缀（body/headers 原样透传）
+    reqUrl = proxyWrapUrl(reqUrl, modelConfig.provider);
     var resp = null;
     try {
       resp = await raceTimeout(fetch(reqUrl, fetchOpts), respMs, null,
@@ -1188,19 +1561,32 @@
       e.modelId = modelConfig.id;
       e.modelName = modelConfig.name;
       warn("[ai-service] 请求失败/超时", debugInfo, e && e.message);
+      abortInFlight();   // 需求12：响应头超时/网络失败时中止在途请求
       throw e;
     }
 
     if (!resp.ok) {
+      // R72：错误响应体改为「一次性文本读取 + 安全解析」，避免 resp.json() 的裸 SyntaxError
+      // 冒泡到聊天界面；同时把网关/CDN 的 HTML 错误页收敛成人类可读提示（不再把整段 HTML 塞进 message）。
+      // 语义不变：apiErr.status 仍取 resp.status，降级链行为与改造前完全一致。
       var errBody = null;
-      try { errBody = await resp.json(); } catch (e2) {
-        try {
-          var rawText = await readResponseText(resp);
-          if (rawText) errBody = { error: { message: String(rawText).slice(0, 200) } };
-        } catch (e3) { /* 忽略 */ }
+      var errRaw = "";
+      try { errRaw = await readResponseText(resp); } catch (e2) { errRaw = ""; }
+      if (errRaw) {
+        try { errBody = JSON.parse(errRaw); } catch (e3) { errBody = null; }
       }
       var ecode = (errBody && errBody.error && errBody.error.code) ? errBody.error.code : null;
-      var emsg = (errBody && errBody.error && errBody.error.message) ? errBody.error.message : ("HTTP " + resp.status);
+      var emsg;
+      if (errBody && errBody.error && errBody.error.message) {
+        emsg = errBody.error.message;
+      } else if (errRaw && looksLikeHtml(errRaw)) {
+        // 非 JSON 的 HTML 错误页：给人类可读提示，不泄漏裸 SyntaxError / 大段 HTML
+        emsg = nonJsonMessage(resp.status, respCtype(resp), errRaw);
+      } else if (errRaw) {
+        emsg = String(errRaw).replace(/\s+/g, " ").replace(/^ +| +$/g, "").slice(0, 200);
+      } else {
+        emsg = "HTTP " + resp.status;
+      }
       // 需求 D-5：status / code / 后端 message 全部带足，400 必须有 error.message
       var apiErr = makeError("API错误:" + resp.status + " " + emsg, resp.status, ecode);
       apiErr.apiMessage = emsg;
@@ -1218,7 +1604,12 @@
     }
 
     var firstChunkAt = 0;
+    // 需求12：uiLive 标记本次流式/整段读取是否仍在有效期内。
+    // 超时或失败后（raceTimeout 已 reject）底层仍可能继续吐出增量，
+    // 届时必须丢弃这些「迟到增量」，否则会污染已切换到下一个模型的同一界面元素。
+    var uiLive = true;
     function emit(delta, full) {
+      if (!uiLive) return;
       if (!firstChunkAt) firstChunkAt = Date.now();
       if (onChunk) onChunk(delta, full);
     }
@@ -1239,6 +1630,8 @@
         e4.modelId = modelConfig.id;
         e4.modelName = modelConfig.name;
         warn("[ai-service] 流式读取失败", debugInfo, e4 && e4.message);
+        uiLive = false;       // 需求12：停止接收迟到增量
+        abortInFlight();      // 需求12：中止在途请求，避免「永远卡着」
         throw e4;
       }
       if (streamResult) {
@@ -1260,7 +1653,17 @@
         e5.requestInfo = debugInfo;
         e5.modelId = modelConfig.id;
         e5.modelName = modelConfig.name;
+        abortInFlight();   // 需求12：整段读取超时，中止在途请求
         throw e5;
+      }
+      // R72：整段读取到 HTML（网关/CDN 错误页）时，直接给人类可读错误，绝不当作答案渲染
+      if (looksLikeHtml(whole)) {
+        var njErr = makeError(nonJsonMessage(resp.status, respCtype(resp), whole), resp.status, "NON_JSON");
+        njErr.requestInfo = debugInfo;
+        njErr.modelId = modelConfig.id;
+        njErr.modelName = modelConfig.name;
+        abortInFlight();
+        throw njErr;
       }
       try {
         fullText = extractContent(String(whole), null);
@@ -1268,6 +1671,7 @@
         e6.requestInfo = debugInfo;
         e6.modelId = modelConfig.id;
         e6.modelName = modelConfig.name;
+        abortInFlight();   // 需求12：解析失败同样中止在途请求
         throw e6;
       }
       if (fullText && onChunk && fullText.length > 24) {
@@ -1283,10 +1687,25 @@
       emptyErr.modelId = modelConfig.id;
       emptyErr.modelName = modelConfig.name;
       warn("[ai-service] 模型返回空内容", debugInfo);
+      abortInFlight();   // 需求12：空回复同样中止在途请求，随后交给上层降级
       throw emptyErr;
     }
 
     return fullText;
+  }
+
+  // ---------- R83：需梯子平台判定与降级提示（依据 providers[x].needVPN / needProxy） ----------
+  function providerDisplayName(pname) {
+    var cfg = getConfig();
+    if (pname && cfg && cfg.providers && cfg.providers[pname] && cfg.providers[pname].name) {
+      return cfg.providers[pname].name;
+    }
+    return pname ? String(pname) : "该平台";
+  }
+  function platformNeedsLadder(pname) {
+    var cfg = getConfig();
+    var p = (pname && cfg && cfg.providers) ? cfg.providers[pname] : null;
+    return !!(p && (p.needVPN === true || p.needProxy === true));
   }
 
   // ---------- 统一调用入口 ----------
@@ -1390,6 +1809,7 @@
     var lastErr = null;
     var attempted = 0;
     var degradeReason = "";
+    var lastFailed = null;
 
     // 实际使用的模型回传：先按链路首节点通知一次（页面可即时显示「由 XXX 回答」）
     function notifyModel(m) {
@@ -1398,9 +1818,20 @@
       }
     }
 
-    // 需求 D-2 / D-3：降级提示。响应慢与繁忙用不同措辞。
-    function notifyFallback(m, reason) {
-      var msg = (reason === "slow") ? ("响应较慢，已切换模型：" + m.name) : ("已切换到 " + m.name + " 模型");
+    // 需求 D-2 / D-3 + R83：降级提示分场景（需梯子 / 限流 / 慢 / 其他），不静默失败。
+    function notifyFallback(m, reason, prev) {
+      var msg;
+      var prevProvider = prev ? prev.provider : null;
+      if (reason === "ratelimit") {
+        msg = "当前模型额度已用完/被限流，已自动降级";
+      } else if ((reason === "network" || reason === "slow" || reason === "error") &&
+                 platformNeedsLadder(prevProvider)) {
+        msg = providerDisplayName(prevProvider) + " 需要梯子访问，请检查网络或切换到国内模型";
+      } else if (reason === "slow") {
+        msg = "响应较慢，已切换模型：" + m.name;
+      } else {
+        msg = "已切换到 " + m.name + " 模型";
+      }
       if (opts.onFallback) {
         try { opts.onFallback(m.name, m.id, msg, reason); } catch (e) { /* 忽略 */ }
         return;
@@ -1416,9 +1847,11 @@
       var m = chain[i];
       // 需求 D-4：连续 2 次 429 的模型，本次会话内直接跳过
       if (rateSkip[m.id]) continue;
+      // R83：海外平台已判离线（auto 探测失败）-> 直接跳过国内链前不等待超时/429
+      if (isProviderOffline(m.provider)) { continue; }
 
       try {
-        if (attempted > 0) notifyFallback(m, degradeReason);
+        if (attempted > 0) notifyFallback(m, degradeReason, lastFailed);
         attempted++;
         notifyModel(m);
         var full = await requestModel(m, finalMessages, opts.onChunk, opts.signal, reqOpts);
@@ -1429,6 +1862,7 @@
         };
       } catch (e) {
         lastErr = e;
+        lastFailed = m;
         var st = (e && e.status != null) ? e.status : 0;
         var cd = (e && e.code != null) ? e.code : null;
 
@@ -1476,8 +1910,9 @@
           continue;
         }
 
-        // 5xx / 网络错误 / 空回复 -> 走下一个模型
-        degradeReason = "error";
+        // R83：区分「网络不可达」（无 HTTP 状态且非超时）与 5xx/空回复，便于给出「需梯子」提示
+        if (!st && !(e && e.timedOut)) { degradeReason = "network"; }
+        else { degradeReason = "error"; }
         continue;
       }
     }
@@ -1502,7 +1937,7 @@
   }
 
   // ---------- R64 N4：健康检查（跨线契约 C2；直接复用 requestModel，绝不计入限频） ----------
-  var HEALTH_TIMEOUT = 12000;
+  var HEALTH_TIMEOUT = 5000;
 
   // err 分类如实：http_<code> / cors / network / timeout / empty
   function classifyHealthErr(e) {
@@ -1544,6 +1979,8 @@
   // - 不传时：行为与改造前完全一致（走 overrides 合并后的模型配置）。
   // - 保持：maxTokens=1、12s 超时、绝不触发 recordCall / 不计入限频；err 值域不变
   //   （http_XXX / cors / network / timeout / empty）并新增两个值：no_endpoint / no_key。
+  //   R83：连通性检测超时统一 5 秒（文档 §四），超时即判不可用并降级，不长时间等待；
+  //   图片生成模型改走 images/generations 专用检测，超时 60s（Seedream-5-Pro 实测约 35s）。
   function aiHealthCheckImpl(modelId, cfgOverride) {
     return new Promise(function (resolve) {
       var startedAt = Date.now();
@@ -1580,8 +2017,25 @@
       var eff = resolveEffectiveEndpointKey(ping);
       if (!eff.apiUrl) { resolve({ ok: false, ms: 0, err: "no_endpoint" }); return; }
       if (!eff.apiKey) { resolve({ ok: false, ms: 0, err: "no_key" }); return; }
+      // R81：图片生成模型走 images/generations 专用检测（最小 prompt），不用文本聊天接口误报失败
+      if (isImageGenModel(ping)) {
+        var iCtrl = (typeof AbortController === "function") ? new AbortController() : null;
+        var iTimer = iCtrl ? setTimeout(function () {
+          try { iCtrl.abort(); } catch (eIA) { /* 忽略 */ }
+        }, IMAGE_TIMEOUT_HEALTH) : null;
+        requestImageGeneration(ping, [], null, iCtrl ? iCtrl.signal : null,
+          { prompt: "a red apple", responseTimeout: IMAGE_TIMEOUT_HEALTH, totalTimeout: IMAGE_TIMEOUT_HEALTH })
+          .then(function (out) {
+            if (iTimer) clearTimeout(iTimer);
+            finish({ ok: !!out, ms: Date.now() - startedAt, err: out ? null : "empty" });
+          }, function (eImg) {
+            if (iTimer) clearTimeout(iTimer);
+            finish({ ok: false, ms: Date.now() - startedAt, err: classifyHealthErr(eImg) });
+          });
+        return;
+      }
 
-      // 总超时 12s：复用 raceTimeout（老 WebView 兼容）；有 AbortController 时再加一层硬中止
+      // 总超时 5s（R83）：复用 raceTimeout（老 WebView 兼容）；有 AbortController 时再加一层硬中止
       var ctrl = null;
       var timer = null;
       if (typeof AbortController === "function") {
@@ -1627,6 +2081,13 @@
     }
   } catch (eSelf) { /* 自检绝不影响主流程 */ }
 
+  // ---------- R77：auto 模式启动探测（后台静默，结果缓存 10 分钟供降级链与设置页使用） ----------
+  try {
+    if (getProxyConfig().mode === "auto" && typeof fetch === "function" && needProxyProviders().length) {
+      probeProxyPlatforms();
+    }
+  } catch (eProbe) { /* 探测绝不影响主流程 */ }
+
   // ---------- 暴露接口 ----------
   var AI_SERVICE = {
     callAI: callAI,
@@ -1640,7 +2101,12 @@
     resetModelSkip: resetModelSkip,
     getModelSettings: aiGetModelSettingsImpl,
     saveModelSettings: aiSaveModelSettingsImpl,
-    healthCheck: aiHealthCheckImpl
+    healthCheck: aiHealthCheckImpl,
+    // R77：海外平台代理访问
+    getProxyConfig: getProxyConfig,
+    probeProxyPlatforms: probeProxyPlatforms,
+    isProviderOffline: isProviderOffline,
+    proxyWrapUrl: proxyWrapUrl
   };
 
   if (typeof window !== "undefined") {

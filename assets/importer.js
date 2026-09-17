@@ -16,7 +16,7 @@
 
   function ensureCss() {
     if (document.getElementById('impStyle')) return;
-    var css = '.imp-mask{position:fixed;inset:0;background:rgba(15,18,30,.5);backdrop-filter:blur(3px);z-index:2300;display:flex;align-items:center;justify-content:center;padding:16px}.imp-box{background:var(--card);color:var(--text);width:min(680px,100%);max-height:90vh;border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px -18px rgba(0,0,0,.4)}.imp-head{display:flex;align-items:center;gap:8px;padding:12px 16px;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff}.imp-head b{flex:1}.imp-x{background:rgba(255,255,255,.18);border:none;color:#fff;width:28px;height:28px;border-radius:8px;cursor:pointer}.imp-body{overflow-y:auto;padding:16px;flex:1}.imp-step{font-size:12px;color:var(--text-secondary);margin-bottom:10px}.imp-file{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.imp-note{font-size:12px;color:var(--text-muted);margin-top:8px;line-height:1.7}.imp-tg{display:flex;gap:10px;flex-wrap:wrap}.imp-tg .imp-t{flex:1;min-width:170px;border:1.5px solid var(--border);border-radius:14px;padding:14px;cursor:pointer;background:var(--card)}.imp-tg .imp-t.on{border-color:var(--primary);background:var(--primary-light)}.imp-tg .imp-t .ic{font-size:22px}.imp-tg .imp-t .nm{font-weight:700;font-size:14px;margin:4px 0 2px}.imp-tg .imp-t .ds{font-size:12px;color:var(--text-secondary)}.imp-pv{border:1px solid var(--border);border-radius:12px;background:var(--bg);max-height:180px;overflow:auto;padding:10px;font-size:12px;line-height:1.7;white-space:pre-wrap;color:var(--text-secondary);margin-bottom:12px}.imp-res{display:flex;gap:8px;align-items:center;font-size:13px;margin-bottom:8px}.imp-acts{display:flex;gap:10px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--border)}';
+    var css = '.imp-mask{position:fixed;inset:0;background:rgba(15,18,30,.5);backdrop-filter:blur(3px);z-index:2300;display:flex;align-items:center;justify-content:center;padding:16px}.imp-box{background:var(--card);color:var(--text);width:100%;max-width:680px;max-height:90vh;border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px -18px rgba(0,0,0,.4)}.imp-head{display:flex;align-items:center;gap:8px;padding:12px 16px;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff}.imp-head b{flex:1}.imp-x{background:rgba(255,255,255,.18);border:none;color:#fff;width:28px;height:28px;border-radius:8px;cursor:pointer}.imp-body{overflow-y:auto;padding:16px;flex:1}.imp-step{font-size:12px;color:var(--text-secondary);margin-bottom:10px}.imp-file{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.imp-note{font-size:12px;color:var(--text-muted);margin-top:8px;line-height:1.7}.imp-tg{display:flex;gap:10px;flex-wrap:wrap}.imp-tg .imp-t{flex:1;min-width:170px;border:1.5px solid var(--border);border-radius:14px;padding:14px;cursor:pointer;background:var(--card)}.imp-tg .imp-t.on{border-color:var(--primary);background:var(--primary-light)}.imp-tg .imp-t .ic{font-size:22px}.imp-tg .imp-t .nm{font-weight:700;font-size:14px;margin:4px 0 2px}.imp-tg .imp-t .ds{font-size:12px;color:var(--text-secondary)}.imp-pv{border:1px solid var(--border);border-radius:12px;background:var(--bg);max-height:180px;overflow:auto;padding:10px;font-size:12px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;color:var(--text-secondary);margin-bottom:12px}.imp-res{display:flex;gap:8px;align-items:center;font-size:13px;margin-bottom:8px}.imp-acts{display:flex;gap:10px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--border)}@media (max-width:560px){.imp-tg .imp-t{min-width:0;flex:1 1 100%}.imp-box{max-height:92vh}.imp-head b{white-space:normal}.imp-note,.imp-step{word-break:break-word}}';
     var st = document.createElement('style'); st.id = 'impStyle'; st.textContent = css; (document.head || document.documentElement).appendChild(st);
   }
 
@@ -51,9 +51,18 @@
   }
   function loadImportBanks() { try { return JSON.parse(localStorage.getItem(IMPORTS_KEY)) || {}; } catch (e) { return {}; } }
   function saveImportBanks(m) { try { localStorage.setItem(IMPORTS_KEY, JSON.stringify(m)); } catch (e) { } }
-  function upsertImportBank(name, type, items) {
+  function upsertImportBank(name, type, items, module) {
     var m = loadImportBanks();
-    m[name] = { label: name, type: type, items: (items || []).slice(), updatedAt: new Date().toISOString().slice(0, 10) };
+    var prev = m[name] || {};
+    /* 需求13：记录「归属分组」——导入到内置题库时取该库名（如「四级词汇 / 行测刷题 / 面试题库」），
+       仅存为自定义题库时归入「题库」；我的文件.html 读取该字段做模块分组展示。 */
+    m[name] = {
+      label: name,
+      type: type,
+      items: (items || []).slice(),
+      updatedAt: new Date().toISOString().slice(0, 10),
+      module: module || prev.module || '题库'
+    };
     saveImportBanks(m);
     return (items || []).length;
   }
@@ -489,10 +498,12 @@
         }
       }
 
-      /* ② 自定义题库：按文件名自动建库，写 localStorage['study_workbench_imports'] */
+      /* ② 自定义题库：按文件名自动建库，写 localStorage['study_workbench_imports']。
+         需求13：内置目标时把该题库名写入 module（归属分组），我的文件.html 据此分组展示卡片。 */
+      var curModule = toBuiltin ? labelOf(S.target) : '题库';
       if (toBuiltin || S.target === curName || !banks[S.target]) {
         // 同一文件重复导入 → 整体替换（避免每次新建一个同名库）
-        upsertImportBank(curName, curType, items);
+        upsertImportBank(curName, curType, items, curModule);
         if (!toBuiltin) extra = '到自定义题库「' + curName + '」（' + items.length + ' 条，' + (banks[curName] ? '已覆盖更新' : '已新建') + '）';
       } else {
         // 目标为其它已存在的自定义库 → 追加并按内容去重
@@ -500,8 +511,8 @@
         var seen = {};
         old.forEach(function (x) { var k = itemKey(x); if (k) seen[k] = 1; });
         var add = items.filter(function (it) { var k = itemKey(it); if (!k || seen[k]) return false; seen[k] = 1; return true; });
-        upsertImportBank(S.target, banks[S.target].type || curType, old.concat(add));
-        upsertImportBank(curName, curType, items);
+        upsertImportBank(S.target, banks[S.target].type || curType, old.concat(add), banks[S.target].module || '题库');
+        upsertImportBank(curName, curType, items, curModule);
         extra = '到自定义题库「' + S.target + '」（新增 ' + add.length + ' 条，跳过 ' + (items.length - add.length) + ' 条重复）';
       }
 

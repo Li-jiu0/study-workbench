@@ -7,12 +7,20 @@
 // FUNC_TYPES desc 能力化（去场景字样）；新增 modelModes 三模式链（AI 页 快速/均衡/极致）。
 
 var AI_CONFIG = {
+  // ---------- R77（2026-09-17）海外平台代理访问 ----------
+  // auto=自动探测（不可达平台视为离线、调用降级国内链）/ relay=自定义中转 / direct=直连。
+  // 运行时以 localStorage ai_proxy_settings（设置页）优先，此处为出厂默认值。
+  proxy: {
+    mode: "auto",
+    relayUrl: ""
+  },
+
   // 两个平台的内置公共 Key（用户没填自己的 Key 时用这个）
   providers: {
     zhipu: {
       name: "智谱AI",
       apiUrl: "https://open.bigmodel.cn/api/paas/v4/chat/completions",
-      apiKey: "f5aa78850e7a4575a1c4d119b03c3019.Uvg73xeMhVdN7crs"
+      apiKey: "339ab396568541d0b7c0be4a577e5e53.VM5HxadQcgew1JdB"
     },
     siliconflow: {
       name: "硅基流动",
@@ -30,22 +38,30 @@ var AI_CONFIG = {
       apiUrl: "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
       apiKey: "ark-e725e1de-7d62-4b4a-aebb-a5def4f05ba7-c22bf"
     },
+    // 火山方舟图片生成（seedream 系列专用：images/generations 接口，Key 与 ark 相同）
+    arkimage: {
+      name: "火山方舟·图片生成",
+      apiUrl: "https://ark.cn-beijing.volces.com/api/v3/images/generations",
+      apiKey: "ark-e725e1de-7d62-4b4a-aebb-a5def4f05ba7-c22bf"
+    },
     openrouter: {
       name: "OpenRouter",
       apiUrl: "https://openrouter.ai/api/v1/chat/completions",
-      apiKey: "***REMOVED-BY-R2C***",
+      apiKey: "****REDACTED-KEY(full-key-kept-local-only)****",
       extraHeaders: {
         "HTTP-Referer": "http://110.42.134.62",
         "X-Title": "Xingtu Learning"
-      }
+      },
+      needProxy: true
     },
     gemini: {
       name: "Google Gemini",
       apiUrl: "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
-      apiKey: "AQ.Ab8RN6IO7WLjJiQmQsgs3dk473fqX3kngQNt-6KAFO38U_S3tw",
+      apiKey: "****REDACTED-KEY(full-key-kept-local-only)****",
       apiFormat: "gemini",
       keyInQuery: true,
-      needVPN: true
+      needVPN: true,
+      needProxy: true
     }
   },
 
@@ -63,11 +79,9 @@ var AI_CONFIG = {
       needKey: false,
       note: "",
       models: [
-        { id: "glm-4.7-flash", name: "GLM-4.7-Flash", types: ["general"] },
-        { id: "glm-4.5-flash", name: "GLM-4.5-Flash", types: ["general"] },
-        { id: "glm-4-flash", name: "GLM-4-Flash", types: ["general"] },
-        { id: "glm-4.6v-flash", name: "GLM-4.6V-Flash", types: ["image", "general"] },
-        { id: "glm-4v-flash", name: "GLM-4V-Flash", types: ["image"] }
+        { id: "glm-4.7", name: "GLM-4.7", types: ["general"] },
+        { id: "glm-4v-flash", name: "GLM-4V-Flash", types: ["image"] },
+        { id: "glm-4.6v-flash", name: "GLM-4.6V-Flash", types: ["image", "general"] }
       ]
     },
     {
@@ -78,14 +92,7 @@ var AI_CONFIG = {
       apiFormat: "openai",
       needKey: false,
       note: "",
-      models: [
-        { id: "qwen2.5-7b", name: "Qwen2.5-7B", types: ["general"] },
-        { id: "qwen3-8b", name: "Qwen3-8B", types: ["general", "math"] },
-        { id: "qwen3.5-4b", name: "Qwen3.5-4B", types: ["general"] },
-        { id: "deepseek-r1-8b", name: "DeepSeek-R1-8B", types: ["math", "reasoning"] },
-        { id: "glm-4-9b", name: "GLM-4-9B", types: ["general"] },
-        { id: "hunyuan-mt-7b", name: "Hunyuan-MT-7B", types: ["translate", "general"] }
-      ]
+      models: [],
     },
     {
       key: "ark",
@@ -101,7 +108,16 @@ var AI_CONFIG = {
         { id: "ark-v4-1-flash", name: "DeepSeek-V4.1-Flash", types: ["general","math"] },
         { id: "ark-v4-pro", name: "DeepSeek-V4-Pro", types: ["general","reasoning"] },
         { id: "ark-doubao-pro", name: "Doubao-Pro", types: ["general","creative","longtext"] },
-        { id: "ark-glm-flash", name: "GLM-5.3-Flash", types: ["general"] }
+        { id: "ark-glm-flash", name: "GLM-5.3-Flash", types: ["general"] },
+        { id: "ark-turbo-260628", name: "Doubao-Turbo", types: ["general"] },
+        { id: "ark-lite-260428", name: "Doubao-Lite", types: ["general"] },
+        { id: "ark-evolving", name: "Doubao-Evolving", types: ["general","reasoning"] },
+        { id: "ark-glm-5.2", name: "GLM-5.2", types: ["general"] },
+        { id: "ark-character-260628", name: "Doubao-Character（新版）", types: ["general","creative"] },
+        { id: "ark-character-251128", name: "Doubao-Character（旧版）", types: ["general","creative"] },
+        { id: "ark-code-preview", name: "Doubao-Code-Preview", types: ["general"] },
+        { id: "ark-v4-pro-260425", name: "DeepSeek-V4-Pro（旧版）", types: ["general","reasoning"] },
+        { id: "ark-lite-260215", name: "Doubao-Lite（旧版）", types: ["general"] }
       ]
     },
     {
@@ -239,146 +255,15 @@ var AI_CONFIG = {
   // 系统提示词（可配）
   systemPrompt: "你是星途学习助手，回答简洁务实、条理清晰，结合用户当前的学习场景给出可操作建议。",
 
-  // 自动模式选择器里的“自动（推荐）”占位项（不计入内置模型 24 个）
+  // 自动模式选择器里的“自动（推荐）”占位项（不计入内置模型 28 个）
   autoOption: { id: "auto", name: "自动（推荐）" },
 
   // MAX 模式：开启后提升输出上限，回答更详细（按 funcType 的 maxTokens 放大，不低于此下限）
   maxMode: { maxTokens: 4000, temperatureDelta: -0.1 },
 
-  // 内置免费模型列表（24 个，全部永久免费，含 fallback 链）
+  // 内置免费模型列表（28 个，含 fallback 链；顺序即模型下拉分组顺序：火山方舟 → 智谱 → 百度千帆 → OpenRouter → Gemini → 图片生成）
+  // 硅基流动全部模型 402 欠费已清空，provider 配置保留，待换 key 后恢复；seedream 图片模型走 arkimage（images/generations），调用链路待评估。
   builtinModels: [
-    {
-      id: "glm-4.7-flash",
-      name: "GLM-4.7-Flash",
-      provider: "zhipu",
-      model: "glm-4.7-flash",
-      types: ["general"],
-      tag: "免费",
-      rate: "1x",
-      temperature: 0.7,
-      maxTokens: 1000,
-      fallback: "glm-4.5-flash"
-    },
-    {
-      id: "glm-4.5-flash",
-      name: "GLM-4.5-Flash",
-      provider: "zhipu",
-      model: "glm-4.5-flash",
-      types: ["general"],
-      tag: "免费",
-      rate: "1x",
-      temperature: 0.7,
-      maxTokens: 1000,
-      fallback: "qwen2.5-7b"
-    },
-    {
-      id: "glm-4-flash",
-      name: "GLM-4-Flash",
-      provider: "zhipu",
-      model: "glm-4-flash",
-      types: ["general"],
-      tag: "免费",
-      rate: "0.8x",
-      temperature: 0.7,
-      maxTokens: 1000,
-      fallback: null
-    },
-    {
-      id: "glm-4.6v-flash",
-      name: "GLM-4.6V-Flash",
-      provider: "zhipu",
-      model: "glm-4.6v-flash",
-      types: ["image", "general"],
-      tag: "免费",
-      rate: "1.2x",
-      temperature: 0.5,
-      maxTokens: 1500,
-      fallback: "glm-4v-flash"
-    },
-    {
-      id: "glm-4v-flash",
-      name: "GLM-4V-Flash",
-      provider: "zhipu",
-      model: "glm-4v-flash",
-      types: ["image"],
-      tag: "免费",
-      rate: "1x",
-      temperature: 0.5,
-      maxTokens: 1500,
-      fallback: null
-    },
-    {
-      id: "qwen2.5-7b",
-      name: "Qwen2.5-7B",
-      provider: "siliconflow",
-      model: "Qwen/Qwen2.5-7B-Instruct",
-      types: ["general"],
-      tag: "免费",
-      rate: "1x",
-      temperature: 0.7,
-      maxTokens: 1000,
-      fallback: "glm-4-flash"
-    },
-    {
-      id: "qwen3-8b",
-      name: "Qwen3-8B",
-      provider: "siliconflow",
-      model: "Qwen/Qwen3-8B",
-      types: ["general", "math"],
-      tag: "免费",
-      rate: "1.2x",
-      temperature: 0.5,
-      maxTokens: 1200,
-      fallback: "qwen2.5-7b"
-    },
-    {
-      id: "qwen3.5-4b",
-      name: "Qwen3.5-4B",
-      provider: "siliconflow",
-      model: "Qwen/Qwen3.5-4B",
-      types: ["general"],
-      tag: "免费",
-      rate: "0.5x",
-      temperature: 0.7,
-      maxTokens: 800,
-      fallback: "qwen2.5-7b"
-    },
-    {
-      id: "deepseek-r1-8b",
-      name: "DeepSeek-R1-8B",
-      provider: "siliconflow",
-      model: "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
-      types: ["math", "reasoning"],
-      tag: "免费",
-      rate: "2x",
-      temperature: 0.1,
-      maxTokens: 2000,
-      fallback: "glm-4.7-flash"
-    },
-    {
-      id: "glm-4-9b",
-      name: "GLM-4-9B",
-      provider: "siliconflow",
-      model: "THUDM/GLM-4-9B-0414",
-      types: ["general"],
-      tag: "免费",
-      rate: "1.2x",
-      temperature: 0.7,
-      maxTokens: 1000,
-      fallback: "qwen2.5-7b"
-    },
-    {
-      id: "hunyuan-mt-7b",
-      name: "Hunyuan-MT-7B",
-      provider: "siliconflow",
-      model: "tencent/Hunyuan-MT-7B",
-      types: ["translate", "general"],
-      tag: "免费",
-      rate: "1x",
-      temperature: 0.5,
-      maxTokens: 1000,
-      fallback: "glm-4.7-flash"
-    },
     {
       id: "ark-v4-flash",
       name: "DeepSeek-V4-Flash",
@@ -389,7 +274,7 @@ var AI_CONFIG = {
       rate: "0.8x",
       temperature: 0.7,
       maxTokens: 1200,
-      fallback: "glm-4.5-flash"
+      fallback: "ark-doubao-mini"
     },
     {
       id: "ark-doubao-mini",
@@ -401,7 +286,7 @@ var AI_CONFIG = {
       rate: "0.8x",
       temperature: 0.7,
       maxTokens: 1200,
-      fallback: "glm-4.5-flash"
+      fallback: "glm-4.7"
     },
     {
       id: "ark-v4-1-flash",
@@ -449,7 +334,175 @@ var AI_CONFIG = {
       rate: "1x",
       temperature: 0.7,
       maxTokens: 1200,
-      fallback: "glm-4.5-flash"
+      fallback: "ark-v4-flash"
+    },
+    {
+      id: "ark-turbo-260628",
+      name: "Doubao-Turbo",
+      provider: "ark",
+      model: "doubao-seed-2-1-turbo-260628",
+      types: ["general"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.5,
+      maxTokens: 2000,
+      fallback: "ark-v4-1-flash"
+    },
+    {
+      id: "ark-lite-260428",
+      name: "Doubao-Lite",
+      provider: "ark",
+      model: "doubao-seed-2-0-lite-260428",
+      types: ["general"],
+      tag: "免费",
+      rate: "0.5x",
+      temperature: 0.7,
+      maxTokens: 800,
+      fallback: "ark-doubao-mini"
+    },
+    {
+      id: "ark-evolving",
+      name: "Doubao-Evolving",
+      provider: "ark",
+      model: "doubao-seed-evolving",
+      types: ["general","reasoning"],
+      tag: "免费",
+      rate: "1.5x",
+      temperature: 0.4,
+      maxTokens: 2500,
+      fallback: "ark-v4-pro"
+    },
+    {
+      id: "ark-glm-5.2",
+      name: "GLM-5.2",
+      provider: "ark",
+      model: "glm-5-2-260617",
+      types: ["general"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.7,
+      maxTokens: 1500,
+      fallback: "ark-glm-flash"
+    },
+    {
+      id: "ark-character-260628",
+      name: "Doubao-Character（新版）",
+      provider: "ark",
+      model: "doubao-seed-character-260628",
+      types: ["general","creative"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.8,
+      maxTokens: 1500,
+      fallback: "ark-doubao-pro"
+    },
+    {
+      id: "ark-character-251128",
+      name: "Doubao-Character（旧版）",
+      provider: "ark",
+      model: "doubao-seed-character-251128",
+      types: ["general","creative"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.8,
+      maxTokens: 1500,
+      fallback: "ark-character-260628"
+    },
+    {
+      id: "ark-code-preview",
+      name: "Doubao-Code-Preview",
+      provider: "ark",
+      model: "doubao-seed-2-0-code-preview-260215",
+      types: ["general"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.3,
+      maxTokens: 2000,
+      fallback: "ark-doubao-pro"
+    },
+    {
+      id: "ark-v4-pro-260425",
+      name: "DeepSeek-V4-Pro（旧版）",
+      provider: "ark",
+      model: "deepseek-v4-pro-260425",
+      types: ["general","reasoning"],
+      tag: "免费",
+      rate: "1.5x",
+      temperature: 0.3,
+      maxTokens: 2500,
+      fallback: "ark-v4-pro"
+    },
+    {
+      id: "ark-lite-260215",
+      name: "Doubao-Lite（旧版）",
+      provider: "ark",
+      model: "doubao-seed-2-0-lite-260215",
+      types: ["general"],
+      tag: "免费",
+      rate: "0.5x",
+      temperature: 0.7,
+      maxTokens: 800,
+      fallback: "ark-doubao-mini"
+    },
+    {
+      id: "glm-4.7",
+      name: "GLM-4.7",
+      provider: "zhipu",
+      model: "glm-4.7",
+      types: ["general"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.7,
+      maxTokens: 1000,
+      fallback: "ark-v4-flash"
+    },
+    {
+      id: "glm-4v-flash",
+      name: "GLM-4V-Flash",
+      provider: "zhipu",
+      model: "glm-4v-flash",
+      types: ["image"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.5,
+      maxTokens: 1500,
+      fallback: null
+    },
+    {
+      id: "glm-4.6v-flash",
+      name: "GLM-4.6V-Flash",
+      provider: "zhipu",
+      model: "glm-4.6v-flash",
+      types: ["image","general"],
+      tag: "免费",
+      rate: "1.2x",
+      temperature: 0.5,
+      maxTokens: 1500,
+      fallback: "glm-4v-flash"
+    },
+    {
+      id: "qf-ernie-32k",
+      name: "ERNIE-4.5-Turbo",
+      provider: "qianfan",
+      model: "ernie-4.5-turbo-32k",
+      types: ["general"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.7,
+      maxTokens: 1200,
+      fallback: "qf-ernie-128k"
+    },
+    {
+      id: "qf-ernie-128k",
+      name: "ERNIE-4.5-Turbo-128K",
+      provider: "qianfan",
+      model: "ernie-4.5-turbo-128k",
+      types: ["general","longtext"],
+      tag: "免费",
+      rate: "1.2x",
+      temperature: 0.5,
+      maxTokens: 2000,
+      fallback: "ark-v4-flash"
     },
     {
       id: "or-auto",
@@ -488,30 +541,6 @@ var AI_CONFIG = {
       fallback: "ark-v4-pro"
     },
     {
-      id: "qf-ernie-32k",
-      name: "ERNIE-4.5-Turbo",
-      provider: "qianfan",
-      model: "ernie-4.5-turbo-32k",
-      types: ["general"],
-      tag: "免费",
-      rate: "1x",
-      temperature: 0.7,
-      maxTokens: 1200,
-      fallback: "qf-ernie-128k"
-    },
-    {
-      id: "qf-ernie-128k",
-      name: "ERNIE-4.5-Turbo-128K",
-      provider: "qianfan",
-      model: "ernie-4.5-turbo-128k",
-      types: ["general","longtext"],
-      tag: "免费",
-      rate: "1.2x",
-      temperature: 0.5,
-      maxTokens: 2000,
-      fallback: "glm-4-flash"
-    },
-    {
       id: "gm-flash-lite",
       name: "Gemini-3.5-Flash-Lite",
       provider: "gemini",
@@ -536,6 +565,42 @@ var AI_CONFIG = {
       maxTokens: 2500,
       fallback: "ark-v4-pro",
       needVPN: true
+    },
+    {
+      id: "ark-seedream-4-0415",
+      name: "Seedream-4.0",
+      provider: "arkimage",
+      model: "doubao-seedream-4-0-20260415",
+      types: ["imagegen"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.7,
+      maxTokens: 1000,
+      fallback: "ark-v4-flash"
+    },
+    {
+      id: "ark-seedream-4-0828",
+      name: "Seedream-4.0-Fast",
+      provider: "arkimage",
+      model: "doubao-seedream-4-0-250828",
+      types: ["imagegen"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.7,
+      maxTokens: 1000,
+      fallback: "ark-v4-flash"
+    },
+    {
+      id: "ark-seedream-5-pro",
+      name: "Seedream-5-Pro",
+      provider: "arkimage",
+      model: "doubao-seedream-5-0-pro-260628",
+      types: ["imagegen"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.7,
+      maxTokens: 1000,
+      fallback: "ark-v4-flash"
     }
   ],
 
@@ -543,46 +608,50 @@ var AI_CONFIG = {
   // ===== 模型说明（设置页「模型说明」Tab 的数据源；与 builtinModels 同增同减）=====
   // stars = 参考评分（1-5 整数，可编辑，UI 标注「综合参考评分」）；speed = 响应速度（R63 实测回填，旧模型待健康检查后回填）。
   modelDetails: {
-    "glm-4.7-flash": { platform: "智谱AI", params: "30B", type: "通用文本", stars: 5, speed: "待检测", recommend: "日常问答首选", advantage: "智谱最新免费模型，30B 大参数，中文理解能力强，上下文 200K", applicable: "日常学习问答、方法咨询、文案生成、面试模拟" },
-    "glm-4.5-flash": { platform: "智谱AI", params: "", type: "通用文本", stars: 4, speed: "待检测", advantage: "上一代免费模型，稳定性好，响应快", applicable: "4.7 拥堵时自动降级，日常问答" },
-    "glm-4-flash": { platform: "智谱AI", params: "", type: "通用文本", stars: 3, speed: "待检测", advantage: "最稳定，几乎不拥堵，效果稍弱", applicable: "其他模型都拥堵时的最终兜底" },
-    "glm-4.6v-flash": { platform: "智谱AI", params: "", type: "多模态（图片+文本）", stars: 5, speed: "待检测", advantage: "免费支持图片理解，识别题目截图、PPT 截图", applicable: "图片理解、题目与课件截图解读" },
-    "glm-4v-flash": { platform: "智谱AI", params: "", type: "视觉理解", stars: 3, speed: "待检测", advantage: "老版视觉模型，稳定", applicable: "4.6V 拥堵时备用" },
-    "qwen2.5-7b": { platform: "硅基流动", params: "7B", type: "通用文本", stars: 3, speed: "待检测", advantage: "阿里通义千问开源模型，中文好，速度快", applicable: "日常问答、简单文案" },
-    "qwen3-8b": { platform: "硅基流动", params: "8B", type: "通用文本", stars: 4, speed: "待检测", advantage: "Qwen 第三代，推理更强，支持工具调用", applicable: "日常问答、逻辑推理、简单数学" },
-    "qwen3.5-4b": { platform: "硅基流动", params: "4B", type: "通用文本", stars: 2, speed: "待检测", advantage: "小参数，响应极快", applicable: "极简单问答、分类，复杂问题不推荐" },
-    "deepseek-r1-8b": { platform: "硅基流动", params: "8B", type: "推理专用", stars: 4, speed: "待检测", advantage: "专门优化逻辑推理和数学计算，解行测题比通用模型准", applicable: "数量关系、资料分析、判断推理" },
-    "glm-4-9b": { platform: "硅基流动", params: "9B", type: "通用文本", stars: 3, speed: "待检测", advantage: "智谱开源 9B，中文不错", applicable: "通用对话备用" },
-    "hunyuan-mt-7b": { platform: "硅基流动", params: "7B", type: "通用文本（多语言）", stars: 3, speed: "待检测", advantage: "腾讯混元开源，多语言强，翻译好", applicable: "英语翻译、英语、多语言问答" },
     "ark-v4-flash": { platform: "火山方舟", params: "", type: "通用对话", stars: 3, speed: "快", advantage: "响应快，额度每天 200 万 token", applicable: "日常问答、快速解题" },
     "ark-doubao-mini": { platform: "火山方舟", params: "", type: "通用对话", stars: 3, speed: "快", advantage: "豆包轻量模型，响应快，额度每天 200 万 token", applicable: "日常问答、快速解题" },
     "ark-v4-1-flash": { platform: "火山方舟", params: "", type: "通用对话（推理型）", stars: 4, speed: "快", advantage: "推理型，maxTokens 需 ≥2000；额度每天 200 万 token", applicable: "需要推理的问答、数学题" },
     "ark-v4-pro": { platform: "火山方舟", params: "", type: "推理增强", stars: 5, speed: "中", advantage: "推理能力更强，额度每天 200 万 token", applicable: "复杂推理、长链思考" },
     "ark-doubao-pro": { platform: "火山方舟", params: "", type: "通用对话（创作/长文本）", stars: 5, speed: "中", advantage: "创作与长文本能力较强，额度每天 200 万 token", applicable: "文案创作、长文本处理" },
     "ark-glm-flash": { platform: "火山方舟", params: "", type: "通用对话", stars: 4, speed: "中", advantage: "GLM 最新代免费模型，额度每天 200 万 token", applicable: "日常问答" },
-    "or-auto": { platform: "OpenRouter", params: "", type: "自动路由", stars: 3, speed: "中", advantage: "自动选择合适的免费模型；免费额度 50 次/天、20 次/分钟", applicable: "不确定用哪个模型时的日常问答" },
-    "or-nemotron-super": { platform: "OpenRouter", params: "", type: "通用对话", stars: 4, speed: "中", advantage: "免费额度 50 次/天、20 次/分钟", applicable: "日常问答" },
-    "or-nemotron-ultra": { platform: "OpenRouter", params: "", type: "深度推理", stars: 4, speed: "慢", advantage: "深度推理、较慢（实测 10.9s）；免费额度 50 次/天、20 次/分钟", applicable: "复杂推理问题" },
-    "qf-ernie-32k": { platform: "百度千帆", params: "", type: "通用对话", stars: 3, speed: "快", advantage: "百度文心 ERNIE 系列", applicable: "通用中文问答" },
-    "qf-ernie-128k": { platform: "百度千帆", params: "", type: "通用对话（大上下文）", stars: 3, speed: "中", advantage: "百度文心 ERNIE 系列，128K 大上下文", applicable: "长文本、长上下文问答" },
-    "gm-flash-lite": { platform: "Google Gemini", params: "", type: "通用对话（轻量）", stars: 3, speed: "快", advantage: "超快轻量；需自备网络", applicable: "日常轻量问答" },
-    "gm-flash": { platform: "Google Gemini", params: "", type: "通用对话（推理）", stars: 4, speed: "慢", advantage: "通用能力强；需自备网络", applicable: "日常问答、推理" }
+    "ark-turbo-260628": { platform: "火山方舟", params: "", type: "通用对话（turbo）", stars: 4, speed: "快", advantage: "速度与质量兼顾的 turbo 版；额度每天 200 万 token", applicable: "日常问答、均衡场景" },
+    "ark-lite-260428": { platform: "火山方舟", params: "", type: "轻量对话（新版）", stars: 3, speed: "快", advantage: "最新轻量模型，响应极快；额度每天 200 万 token", applicable: "极简单问答、快速分类" },
+    "ark-evolving": { platform: "火山方舟", params: "", type: "通用对话（持续进化）", stars: 5, speed: "中", advantage: "持续进化的最新模型，能力随版本增强；额度每天 200 万 token", applicable: "复杂问答、长链思考" },
+    "ark-glm-5.2": { platform: "火山方舟", params: "", type: "通用对话", stars: 4, speed: "中", advantage: "智谱 GLM-5.2（火山方舟免费通道），中文能力强；额度每天 200 万 token", applicable: "日常问答" },
+    "ark-character-260628": { platform: "火山方舟", params: "", type: "角色扮演（新版）", stars: 4, speed: "中", advantage: "角色扮演与人设对话优化；额度每天 200 万 token", applicable: "角色扮演、情景对话、面试模拟陪练" },
+    "ark-character-251128": { platform: "火山方舟", params: "", type: "角色扮演（旧版）", stars: 3, speed: "中", advantage: "旧版角色模型；建议优先使用新版", applicable: "角色扮演（旧版兼容）" },
+    "ark-code-preview": { platform: "火山方舟", params: "", type: "代码专用（预览版）", stars: 4, speed: "中", advantage: "代码理解与生成专用预览版；额度每天 200 万 token", applicable: "编程、代码解释、纠错" },
+    "ark-v4-pro-260425": { platform: "火山方舟", params: "", type: "推理增强（旧版）", stars: 4, speed: "中", advantage: "旧版 V4 Pro；建议优先使用新版 DeepSeek-V4-Pro", applicable: "复杂推理（旧版兼容）" },
+    "ark-lite-260215": { platform: "火山方舟", params: "", type: "轻量对话（旧版）", stars: 2, speed: "快", advantage: "旧版轻量模型；建议优先使用新版 Doubao-Lite", applicable: "极简单问答（旧版兼容）" },
+    "glm-4.7": { platform: "智谱AI", params: "30B", type: "通用文本", stars: 5, speed: "中", recommend: "日常问答首选", advantage: "智谱免费模型，中文理解能力强，实测约 5.5 秒", applicable: "日常学习问答、方法咨询、文案生成、面试模拟" },
+    "glm-4v-flash": { platform: "智谱AI", params: "", type: "视觉理解", stars: 4, speed: "快", advantage: "免费视觉模型，实测约 1 秒，适合拍题", applicable: "拍题识图、题目与课件截图解读" },
+    "glm-4.6v-flash": { platform: "智谱AI", params: "", type: "多模态（图片+文本）", stars: 4, speed: "限流中", advantage: "免费支持图片理解；当前访问量过大被限流，失败自动降级 GLM-4V-Flash", applicable: "图片理解、题目与课件截图解读" },
+    "qf-ernie-32k": { platform: "百度千帆", params: "", type: "通用对话", stars: 3, speed: "快", advantage: "百度文心 ERNIE 系列，实测约 2 秒", applicable: "通用中文问答" },
+    "qf-ernie-128k": { platform: "百度千帆", params: "", type: "通用对话（大上下文）", stars: 3, speed: "快", advantage: "百度文心 ERNIE 系列，128K 大上下文，实测约 1.8 秒", applicable: "长文本、长上下文问答" },
+    "or-auto": { platform: "OpenRouter", params: "", type: "自动路由", stars: 4, speed: "快", advantage: "自动选择合适的免费模型，实测约 1.8 秒；免费额度 50 次/天、20 次/分钟；需自备网络", applicable: "不确定用哪个模型时的日常问答" },
+    "or-nemotron-super": { platform: "OpenRouter", params: "", type: "通用对话", stars: 4, speed: "快", advantage: "实测约 1.2 秒；免费额度 50 次/天、20 次/分钟；需自备网络", applicable: "日常问答" },
+    "or-nemotron-ultra": { platform: "OpenRouter", params: "", type: "深度推理", stars: 5, speed: "中", advantage: "深度推理（实测约 3.3 秒）；免费额度 50 次/天、20 次/分钟；需自备网络", applicable: "复杂推理问题" },
+    "gm-flash-lite": { platform: "Google Gemini", params: "", type: "通用对话（轻量）", stars: 3, speed: "快", advantage: "超快轻量（实测约 1 秒）；需自备网络", applicable: "日常轻量问答" },
+    "gm-flash": { platform: "Google Gemini", params: "", type: "通用对话（推理）", stars: 4, speed: "中", advantage: "通用能力强（实测约 2.9 秒）；需自备网络", applicable: "日常问答、推理" },
+    "ark-seedream-4-0415": { platform: "火山方舟·图片生成", params: "", type: "图片生成", stars: 4, speed: "中", advantage: "文生图；走 images/generations 接口，调用链路待评估", applicable: "文生图（v4 初版）" },
+    "ark-seedream-4-0828": { platform: "火山方舟·图片生成", params: "", type: "图片生成（最快）", stars: 4, speed: "快", advantage: "文生图最快版（实测 4.2 秒）；走 images/generations 接口，调用链路待评估", applicable: "文生图（速度优先）" },
+    "ark-seedream-5-pro": { platform: "火山方舟·图片生成", params: "", type: "图片生成（质量最好）", stars: 5, speed: "慢", advantage: "文生图最新版，质量最好；走 images/generations 接口，调用链路待评估", applicable: "文生图（质量优先）" }
   },
 
-  // ===== R65 三模式链（AI 对话页「快速/均衡/极致」；链内模型按序尝试，均不可用回退默认链）=====
-  // 名单按 R63 实测响应速度与参考星级挑选；Gemini 两个「需自备网络」模型不进任何链。
+  // ===== 三模式链（AI 对话页「快速/均衡/极致」；链内模型按序尝试，均不可用回退默认链）=====
+  // 国内平台优先，海外模型（OpenRouter / Gemini，需自备网络）排链尾兜底；图片模型不进链。
   modelModes: {
-    fast: { label: "⚡快速模式", chain: ["ark-v4-flash", "ark-v4-1-flash", "ark-doubao-mini", "qf-ernie-32k"] },
-    balanced: { label: "⚖均衡模式", chain: ["ark-v4-1-flash", "or-nemotron-super", "qf-ernie-128k", "or-auto"] },
-    ultimate: { label: "🏆极致模式", chain: ["ark-v4-pro", "ark-doubao-pro", "ark-glm-flash", "or-nemotron-ultra"] }
+    fast: { label: "⚡快速模式", chain: ["ark-v4-flash", "ark-doubao-mini", "ark-lite-260428", "glm-4.7", "qf-ernie-32k", "gm-flash-lite", "or-auto"] },
+    balanced: { label: "⚖均衡模式", chain: ["ark-v4-pro", "ark-turbo-260628", "glm-4.7", "qf-ernie-128k", "gm-flash", "or-nemotron-super"] },
+    ultimate: { label: "🏆极致模式", chain: ["ark-doubao-pro", "ark-evolving", "or-nemotron-ultra", "ark-v4-pro", "ark-glm-5.2", "gm-flash", "qf-ernie-128k"] }
   },
 
   // 自动模式：问题类型 -> 首选模型
   autoRoute: {
     image: "glm-4.6v-flash",
-    math: "deepseek-r1-8b",
-    translate: "hunyuan-mt-7b",
-    general: "glm-4.7-flash"
+    math: "ark-v4-1-flash",
+    translate: "glm-4.7",
+    general: "glm-4.7"
   },
 
   // 数学题关键词（自动判断用推理模型）
@@ -598,20 +667,20 @@ var AI_CONFIG = {
   rateLimit: { maxCalls: 10, perSeconds: 60 },
 
   // ========== funcType -> 模型分工表（并入需求工单 §三） ==========
-  // 7 类功能，各自声明首选模型、降级链、temperature、maxTokens、说明。
+  // 8 类功能，各自声明首选模型、降级链、temperature、maxTokens、说明。
   // 数值严格按工单表格。
   FUNC_TYPES: {
     general: {
       desc: "文本对话",
-      primary: "glm-4.7-flash",
-      fallback: ["glm-4.5-flash", "ark-v4-flash", "qwen2.5-7b"],
+      primary: "glm-4.7",
+      fallback: ["ark-v4-flash", "qf-ernie-32k"],
       temperature: 0.7,
       maxTokens: 1000
     },
     reasoning: {
       desc: "深度推理",
-      primary: "deepseek-r1-8b",
-      fallback: ["ark-v4-pro", "glm-4.7-flash"],
+      primary: "ark-v4-pro",
+      fallback: ["ark-doubao-pro", "ark-evolving", "or-nemotron-ultra"],
       temperature: 0.1,
       maxTokens: 2000
     },
@@ -624,22 +693,22 @@ var AI_CONFIG = {
     },
     translate: {
       desc: "机器翻译",
-      primary: "hunyuan-mt-7b",
-      fallback: ["glm-4.7-flash"],
+      primary: "glm-4.7",
+      fallback: ["ark-v4-flash"],
       temperature: 0.3,
       maxTokens: 1200
     },
     longtext: {
       desc: "长文本理解",
-      primary: "glm-4.7-flash",
-      fallback: ["ark-v4-1-flash", "qwen3-8b"],
+      primary: "glm-4.7",
+      fallback: ["ark-v4-1-flash", "qf-ernie-128k"],
       temperature: 0.4,
       maxTokens: 2500
     },
     interview: {
       desc: "文本生成",
-      primary: "glm-4.7-flash",
-      fallback: ["qwen3-8b"],
+      primary: "glm-4.7",
+      fallback: ["ark-doubao-pro"],
       temperature: 0.8,
       maxTokens: 300,
       // 子类型：出题与点评使用不同参数
@@ -650,10 +719,18 @@ var AI_CONFIG = {
     },
     creative: {
       desc: "文本创作",
-      primary: "glm-4.7-flash",
-      fallback: ["ark-doubao-pro", "qwen2.5-7b"],
+      primary: "glm-4.7",
+      fallback: ["ark-doubao-pro", "ark-character-260628", "ark-glm-flash"],
       temperature: 0.9,
       maxTokens: 800
+    },
+    imagegen: {
+      desc: "图片生成",
+      // 配置层登记：seedream 走 images/generations 接口，调用链路待评估（chat 调用会失败并按 fallback 降级）
+      primary: "ark-seedream-4-0828",
+      fallback: ["ark-seedream-5-pro", "ark-seedream-4-0415"],
+      temperature: 0.8,
+      maxTokens: 1000
     }
   }
 };
@@ -697,14 +774,14 @@ var AI_CONFIG = {
       zhipu: {
         name: "智谱AI",
         apiUrl: "https://open.bigmodel.cn/api/paas/v4/chat/completions",
-        apiKey: "f5aa78850e7a4575a1c4d119b03c3019.Uvg73xeMhVdN7crs"
+        apiKey: "339ab396568541d0b7c0be4a577e5e53.VM5HxadQcgew1JdB"
       }
     };
     AI_CONFIG.builtinModels = [
-      { id: "glm-flash", name: "GLM-Flash", provider: "zhipu", model: "glm-4-flash", types: ["general"], tag: "免费", rate: "1x", temperature: 0.7, maxTokens: 1000, fallback: null }
+      { id: "glm-4.7", name: "GLM-4.7", provider: "zhipu", model: "glm-4.7", types: ["general"], tag: "免费", rate: "1x", temperature: 0.7, maxTokens: 1000, fallback: null }
     ];
     AI_CONFIG.FUNC_TYPES = {
-      general: { desc: "文本对话", primary: "glm-flash", fallback: [], temperature: 0.7, maxTokens: 1000 }
+      general: { desc: "文本对话", primary: "glm-4.7", fallback: [], temperature: 0.7, maxTokens: 1000 }
     };
     if (typeof console !== "undefined" && console.error) {
       console.error("[ai-config] 配置结构校验失败，已回退内置最小默认配置");

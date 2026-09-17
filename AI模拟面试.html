@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>AI模拟面试 - 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260916O">
+<link rel="stylesheet" href="assets/common.css?v=20260917b">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 /* common.css 会锁 html/body 高度并隐藏滚动，本页为独立长页面，恢复滚动 */
@@ -573,6 +573,20 @@ body.theme-interview { --primary: #1A73E8; --primary-light: #E8F0FE; --primary-d
 .eval-btn:hover { background: var(--primary-dark); }
 
 .hidden { display: none !important; }
+/* ===== R73 需求20-B 移动端适配（≤768px）=====
+   仅作用于窄屏；桌面端(>768px)渲染零影响（本块整体位于媒体查询内）。
+   1) 内嵌媒体兜底 max-width，防 JS 注入内容/未来素材撑破窄屏；
+   2) 宽表格窄屏内横向滚动，避免整页横向溢出（需求20-B #2）；
+   3) 字号下限兜底：common.css 的 .bn-label(10px)/.ai-mode-badge(9px)/
+      .study-stats-bar b(9px) 低于 A7 辅助≥11px，页内窄屏提升到 11px（不改共享 common.css）。 */
+@media (max-width: 768px) {
+  img, video, canvas, iframe { max-width: 100%; height: auto; }
+  table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bottom-nav-item .bn-label, .ai-mode-badge, .study-stats-bar b { font-size: 11px; }
+  /* 五段状态条：窄屏允许换行，避免 5 段 nowrap 段撑破（#4 定点收敛） */
+  .stage-bar { flex-wrap: wrap; row-gap: 6px; }
+  .stage-seg { white-space: normal; }
+}
 </style>
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
 <script>window.__XT_PROD__=true;</script>
@@ -1674,8 +1688,8 @@ else ivInit();
 
 </script>
 
-<script src="assets/ai-config.js?v=20260916R"></script>
+<script src="assets/ai-config.js?v=20260917b"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260916S"></script>
+<script src="assets/ai-service.js?v=20260917b"></script>
 </body>
 </html>

@@ -349,8 +349,10 @@ function chatWithUser(userId, name) {
   location.href = '私聊.html?uid=' + userId + '&name=' + encodeURIComponent(name);
 }
 function openUserHome(uid) {
-  if (document.getElementById('page-profile')) { location.href = '个人中心.html?user=' + uid; }
-  else location.href = '个人中心.html?user=' + uid;
+  /* 任务二十六·续（2026-09-17）：全站「看他人资料」入口统一到 个人资料.html?user=<uid>。
+     旧的 个人中心.html?user= 作为兜底仍可用（renderUserHome，见本文件 261 行），一行可回退。 */
+  if (document.getElementById('page-profile')) { location.href = '个人资料.html?user=' + uid; }
+  else location.href = '个人资料.html?user=' + uid;
 }
 
 /* ---------- 编辑资料弹窗（头像走服务器文件上传） ---------- */
@@ -835,7 +837,7 @@ function renderBlogStats() {
       '<span style="width:60px;font-size:12px;color:var(--text-secondary)">' + catCount[c.id] + ' 篇</span></div>';
   }).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有发贴，去“✍️ 写发贴”试试吧</div>';
   box.innerHTML = `
-    <div class="card"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="18"></span></span>博客数据统计</div></div>
+    <div class="card"><div class="card-header"><div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="18"></span></span>帖子数据统计</div></div>
       <div class="blog-grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">
         ${[['pen', s.published || 0, '已发布'], ['save', s.draft || 0, '草稿'], ['inbox', s.archived || 0, '已归档'], ['thumbs-up', s.likes || 0, '总点赞'], ['message-square', s.comments || 0, '总评论'], ['eye', s.views || 0, '总阅读']].map(function (x) {
           return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center"><div style="font-size:22px;font-weight:800;color:var(--text)"><span class="nav-icon" data-icon="' + x[0] + '" data-icon-size="16"></span> ' + x[1] + '</div><div style="font-size:12px;color:var(--text-secondary);margin-top:4px">' + x[2] + '</div></div>';
@@ -1330,7 +1332,21 @@ function renderProfilePage() {
   // 处理?user=参数：查看他人主页
   var params = new URLSearchParams(location.search);
   var otherId = params.get('user');
-  if (otherId && CURRENT_USER && Number(otherId) !== CURRENT_USER.id) { renderUserHome(Number(otherId), box); return; }
+  /* 缺口1修复（2026-09-17）：把「看他人主页」与「当前是否登录」拆开判定，
+     否则未登录/离线时点别人头像会落到 _renderProfileLocal → 显示本机（自己）资料。
+     顺序铁律：① 合法 user 参数但未登录 → 需登录空态；② 已登录且非本人 → renderUserHome；
+     ③ 其余（无 user 参数，或 user 就是自己）→ 本人视角，行为完全不变。 */
+  var okOther = !!otherId && /^\d+$/.test(String(otherId).trim());
+  if (okOther && !CURRENT_USER) {
+    box.innerHTML =
+      '<div class="card" style="text-align:center;padding:40px 20px">' +
+      '<div style="font-size:16px;font-weight:700;color:var(--text)">需登录后查看 TA 的主页</div>' +
+      '<div style="font-size:13px;color:var(--text-secondary);margin-top:8px;line-height:1.7">登录后即可查看对方的公开资料与发贴（性别、生日等隐私信息不会对外展示）。</div>' +
+      '<div style="margin-top:16px"><a class="btn btn-primary" href="登录.html">去登录</a></div>' +
+      '</div>';
+    return;
+  }
+  if (okOther && CURRENT_USER && Number(otherId) !== CURRENT_USER.id) { renderUserHome(Number(otherId), box); return; }
   var src = _peSource();
   if (src.online) { _renderProfileOnline(box, src.u); return; }
   _renderProfileLocal(box, src.p);
@@ -1391,7 +1407,7 @@ function _localNotesCard() {
         '<span id="pcStudyTime" style="font-size:26px;font-weight:800;color:var(--primary)">' + txt + '</span>' +
         '<span id="pcStudyTimeTip" style="font-size:12px;color:var(--text-secondary)"></span></div>' +
         '<div class="pc-studytime-bar"><i id="pcStudyTimeBar"></i></div>' +
-        '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.6"><span class="nav-icon" data-icon="lightbulb" data-icon-size="14" style="vertical-align:-2px"></span> 打开任意页面即开始计时，切到后台自动暂停；到上限只友好提醒，不打断学习。可在 <a href="设置.html" style="color:var(--primary);text-decoration:none;font-weight:600">设置</a> 修改。</div></div>';
+        '</div>';
     })() +
 
     // ===== 学习数据概览（本机设备数据） =====
@@ -1454,8 +1470,7 @@ function _renderProfileOnline(box, u) {
     // 操作区分层：编辑资料主按钮 + 我的动态次按钮（自视角，跳动态页）
     '<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">' +
     '<button class="btn btn-primary" onclick="editProfile()"><span class="nav-icon" data-icon="pen" data-icon-size="14"></span> 编辑资料</button>' +
-    '<button class="btn btn-outline" onclick="location.href=' + "'动态.html?user=" + u.id + "'" + '"><span class="nav-icon" data-icon="rss" data-icon-size="14"></span> 我的动态</button></div>' +
-    '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">✅ 多人在线：资料保存在服务器数据库，头像为文件上传。</div>' +
+    '<button class="btn btn-outline" onclick="location.href=' + "'动态空间.html?user=" + u.id + "'" + '"><span class="nav-icon" data-icon="rss" data-icon-size="14"></span> 我的动态</button></div>' +
     // 退出登录降级为卡片底部文本链接（确认逻辑沿用 doLogout）
     '<div style="margin-top:12px"><a href="javascript:void(0)" onclick="doLogout()" style="font-size:13px;color:var(--danger);text-decoration:none"><span class="nav-icon" data-icon="logout" data-icon-size="13" style="vertical-align:-1px"></span> 退出登录</a></div>' +
     '</div>' +
@@ -1480,7 +1495,7 @@ function _renderProfileOnline(box, u) {
         '<span id="pcStudyTime" style="font-size:26px;font-weight:800;color:var(--primary)">' + txt + '</span>' +
         '<span id="pcStudyTimeTip" style="font-size:12px;color:var(--text-secondary)"></span></div>' +
         '<div class="pc-studytime-bar"><i id="pcStudyTimeBar"></i></div>' +
-        '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.6"><span class="nav-icon" data-icon="lightbulb" data-icon-size="14" style="vertical-align:-2px"></span> 打开任意页面即开始计时，切到后台自动暂停；到上限只友好提醒，不打断学习。可在 <a href="设置.html" style="color:var(--primary);text-decoration:none;font-weight:600">设置</a> 修改。</div></div>';
+        '</div>';
     })() +
 
     // ===== 学习数据概览（本机设备数据） =====

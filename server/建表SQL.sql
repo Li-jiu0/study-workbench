@@ -177,3 +177,27 @@ CREATE TABLE IF NOT EXISTS friend_remarks (
   updated_at TEXT    NOT NULL,                                         -- 'YYYY-MM-DD HH:MM:SS'
   UNIQUE (owner_id, peer_id)
 );
+
+-- ============================================================
+-- R73（2026-09-18）增量：邮箱绑定 / 验证码 / 找回账号
+-- 说明：
+--   * email_codes 为新表，由 SQLAlchemy create_all 自动创建，此处为同步 DDL；
+--   * users 为既有表，SQLite 无「ADD COLUMN IF NOT EXISTS」，运行时由
+--     database._upgrade_legacy_schema() 守卫式补列（幂等、无损）。
+--     手工初始化旧库时按需执行（列已存在则忽略报错）：
+--       ALTER TABLE users ADD COLUMN email TEXT;
+--       ALTER TABLE users ADD COLUMN email_verified_at DATETIME;
+--       CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email ON users(email);
+-- ============================================================
+CREATE TABLE IF NOT EXISTS email_codes (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  email      TEXT    NOT NULL,                          -- 目标邮箱（小写去空格）
+  code_hash  TEXT    NOT NULL,                          -- 验证码哈希（PBKDF2，绝不存明文）
+  purpose    TEXT    NOT NULL DEFAULT 'bind',           -- bind（绑定）/ reset（找回）
+  user_id    INTEGER REFERENCES users(id) ON DELETE CASCADE,  -- 可空（审计用途）
+  expires_at DATETIME NOT NULL,                         -- 过期时间（10 分钟有效）
+  used       INTEGER NOT NULL DEFAULT 0,                -- 一次性消费：0 未用 / 1 已用
+  attempts   INTEGER NOT NULL DEFAULT 0,                -- 错误尝试累计（上限 5）
+  created_at DATETIME NOT NULL                          -- 发送时间（限频依据）
+);
+CREATE INDEX IF NOT EXISTS ix_email_codes_email ON email_codes(email);

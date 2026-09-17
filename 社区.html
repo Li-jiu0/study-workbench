@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>社区 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260916O">
+<link rel="stylesheet" href="assets/common.css?v=20260917b">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O">
@@ -77,6 +77,16 @@
   font-size: 13px; font-weight: 600; text-align: left; cursor: pointer;
 }
 .xt-share-item:hover { background: var(--bg-sub); color: var(--primary); }
+/* ===== R73 文字专项（需求20-B · A9/A10/A11）：本页局部加固，不改 common.css =====
+   ① 评论头行（头像+昵称+时间）允许换行：长昵称不再把时间挤成一列/压盖；
+   ② 正文/摘要/评论内的长英文、URL、连续数字可断行，不撑破卡片。 */
+.bc-item .bc-body { min-width: 0; }
+.bc-item .bc-head { flex-wrap: wrap; }
+.bc-item .bc-head > span:first-child { min-width: 0; overflow-wrap: break-word; }
+.note-body .nc-title,
+.note-body .nc-excerpt,
+.note-detail-box .nd-content,
+.bc-item .bc-text { word-break: break-word; overflow-wrap: break-word; }
 </style>
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
 <script>window.__XT_PROD__=true;</script>
@@ -118,6 +128,9 @@
       <div class="nav-section">创作</div>
       <div class="nav-item active" data-page="blog">
         <span class="nav-icon" data-icon="globe"></span><span>社区</span>
+      </div>
+      <div class="nav-item" data-page="moments">
+        <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
       </div>
       <div class="nav-section">互动</div>
       <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
@@ -280,7 +293,7 @@
               <div class="editor-panes">
                 <div class="editor-pane-box">
                   <div class="pane-label"><span><span class="nav-icon" data-icon="pencil" data-icon-size="14"></span> 编辑</span><span class="pane-hint">支持 Markdown</span></div>
-                  <textarea id="blogEditorInput" placeholder="写下你的知识点总结、错题记录、复习提纲…&#10;&#10;支持语法：# 标题 · **加粗** · *斜体* · `行内代码` · 行首 ``` 代码块 · $公式$ · 行首 - 列表 / - [ ] 待办 / &gt; 引用&#10;&#10;也可以点上方「快速模板」一键插入骨架。"></textarea>
+                  <textarea id="blogEditorInput" placeholder="请编辑....."></textarea>
                 </div>
                 <div class="editor-pane-box">
                   <div class="pane-label"><span><span class="nav-icon" data-icon="eye" data-icon-size="14"></span> 实时预览</span><span class="pane-hint" id="edPreviewHint"></span></div>
@@ -292,7 +305,6 @@
               <div class="editor-actions ed-actions-bar">
                 <button class="btn btn-primary" onclick="saveBlogNote('published')"><span class="nav-icon" data-icon="upload" data-icon-size="16"></span> 发布</button>
                 <button class="btn btn-outline" onclick="saveBlogNote('draft')"><span class="nav-icon" data-icon="save" data-icon-size="16"></span> 存草稿</button>
-                <button class="btn btn-outline" onclick="editorAiAssist()"><span class="nav-icon" data-icon="bot" data-icon-size="16"></span> AI 辅助写发贴</button>
                 <button class="btn btn-outline" onclick="resetBlogEditor()"><span class="nav-icon" data-icon="rotate-ccw" data-icon-size="16"></span> 清空</button>
                 <div class="spacer"></div>
                 <span id="blogEditStatus" style="font-size:var(--xt-font-sm);color:var(--text-secondary)"></span>
@@ -338,6 +350,9 @@
   <div class="bottom-more-panel" id="morePanel">
     <div class="bottom-more-title">更多功能</div>
     <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="navigateTo('moments');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="rss" data-icon-size="20"></span></div><div class="bm-label">动态空间</div>
+      </div>
       <div class="bottom-more-item" onclick="openBlogStats()">
         <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
       </div>
@@ -427,9 +442,9 @@
 <script src="assets/icon-map.js?v=20260916O" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260916S" defer></script>
+<script src="assets/app.js?v=20260917b" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260916S" defer></script>
+<script src="assets/api.js?v=20260917b" defer></script>
 <script>
 /* ===================================================================
    社区（发贴）编辑页增强：【字数统计 / 阅读时长 / 草稿自动保存 / 快速模板】
@@ -763,8 +778,8 @@
   else initShare();
 })();
 </script>
-<script src="assets/ai-config.js?v=20260916R"></script>
+<script src="assets/ai-config.js?v=20260917b"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260916S"></script>
+<script src="assets/ai-service.js?v=20260917b"></script>
 </body>
 </html>

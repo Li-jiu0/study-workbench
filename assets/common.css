@@ -2848,3 +2848,21 @@ body.reduce-motion .msg-toast { transition: none; }
 @media (max-width: 480px) {
   #blogViewMine .blog-grid { grid-template-columns: 1fr; gap: 12px; }
 }
+/* ===== R73 需求20-B 根因根治（common.css · 仅窄屏生效；桌面 >768px 渲染零影响）=====
+   1) 字号下限：.bn-label(10px)/.ai-mode-badge(9px)/.study-stats-bar b(9px) -> 11px；
+   2) .nc-actions 补 flex-wrap，窄屏操作按钮不再挤行；
+   3) .nc-title/.nc-excerpt/.nd-content 补 word-break，长串/中英混排不撑破。 */
+@media (max-width: 768px) {
+  .bottom-nav-item .bn-label { font-size: 11px; }
+  .ai-mode-badge { font-size: 11px; }
+  .study-stats-bar b { font-size: 11px; }
+  .note-body .nc-actions { flex-wrap: wrap; }
+  .note-body .nc-title, .note-body .nc-excerpt, .note-detail-box .nd-content { word-break: break-word; overflow-wrap: anywhere; }
+}
+/* 4) .morepage-list 入口卡（工具页/更多页）：窄屏标题/描述可换行、长文本不撑破
+      （与 更多.html 页内规则同值，供其它复用 .morepage-list 的页面兜底）。 */
+@media (max-width: 480px) {
+  .morepage-list .morepage-card { flex-wrap: wrap; }
+  .morepage-list .morepage-card .mpc-title { flex: 1 1 auto; min-width: 0; }
+  .morepage-list .morepage-card .mpc-desc { flex: 1 1 100%; min-width: 0; margin-top: 2px; }
+}

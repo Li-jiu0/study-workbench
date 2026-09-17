@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" data-page-node-id="OlgAXTFaD9mAg3AFsfpeiy">
 <meta name="theme-color" content="#5B8DEF" data-page-node-id="XIP3tSfjex43vTn5HPKTvm">
 <title>首页 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260916O" data-page-node-id="cG8803QAoDbKSd7v8tsEs9">
+<link rel="stylesheet" href="assets/common.css?v=20260917b" data-page-node-id="cG8803QAoDbKSd7v8tsEs9">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O" data-page-node-id="">
 <link rel="stylesheet" href="assets/states.css?v=20260916O" data-page-node-id="">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O" data-page-node-id="lkxFYcwbHH3N6LYB00qIeL">
@@ -49,6 +49,9 @@
       <div class="nav-section" data-page-node-id="9uc7Z9hnFDsncuOeRjob6T">创作</div>
       <div class="nav-item" data-page="blog" data-page-node-id="QFEBGr9BdTPZ5bECf9bODp">
         <span class="nav-icon" data-page-node-id="3CmxJCNr3G8EkqNzNhAGkt" data-icon="globe"></span><span data-page-node-id="wQEBNlEU9Um1jcZBOoPglO">社区</span>
+      </div>
+      <div class="nav-item" data-page="moments">
+        <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
       </div>
       <div class="nav-section" data-page-node-id="6WVHwBWcaEj3ETcHLKg6bG">互动</div>
       <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）" data-page-node-id="MkwQOoDzG0iWIoaH2QdDsX">
@@ -165,24 +168,7 @@
                 <div class="week-chart" id="weekChart"></div>
               </div>
               <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;gap:12px;align-items:center">
-                <div class="home-goal-ring" style="flex-shrink:0;position:relative">
-                  <svg viewBox="0 0 70 70" width="100%" height="100%" style="display:block">
-                    <circle cx="35" cy="35" r="28" fill="none" stroke="var(--border)" stroke-width="7"/>
-                    <circle id="goalRing" cx="35" cy="35" r="28" fill="none" stroke="url(#goalGradient)" stroke-width="7" stroke-linecap="round" stroke-dasharray="176" stroke-dashoffset="176" transform="rotate(-90 35 35)"/>
-                    <defs>
-                      <linearGradient id="goalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="var(--primary)"/>
-                        <stop offset="100%" stop-color="var(--accent)"/>
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center">
-                    <div id="goalPercent" style="font-size:var(--xt-font-base);font-weight:800;color:var(--primary)">0%</div>
-                  </div>
-                </div>
                 <div style="flex:1;min-width:0">
-                  <div style="font-size:var(--xt-font-base);font-weight:600;color:var(--text);margin-bottom:4px">今日目标完成率</div>
-                  <div style="font-size:var(--xt-font-xs);color:var(--text-muted);margin-bottom:8px" id="goalText">已完成 0/5 个任务</div>
                   <div style="display:flex;gap:6px;flex-wrap:wrap">
                     <span class="achievement-badge" id="badge1" title="首次登录"><span data-icon="sparkles" data-icon-size="14" style="vertical-align:-3px"></span> 新手</span>
                     <span class="achievement-badge locked" id="badge2" title="连续打卡3天"><span data-icon="fire" data-icon-size="14" style="vertical-align:-3px"></span> 3连击</span>
@@ -257,7 +243,7 @@
           .home-cards-carousel .stats-grid { gap: 8px; }
           .home-cards-carousel .stat-card { padding: 8px 6px; }
           .home-cards-carousel .stat-card .stat-num { font-size: 18px; }
-          .home-cards-carousel .stat-card .stat-label { font-size: 10px; }
+          .home-cards-carousel .stat-card .stat-label { font-size: 11px; }
           /* 【本轮修复·空态去重】首页「学习数据」卡片只保留一处整卡级空态提示 #statsEmptyHint（见 HTML 第159行，
              由 app.js renderStats() 依 hasData 控制显隐）。assets/common.css 的 .week-chart-empty 是「覆盖在柱图上」的
              第二处同文案空态（common.css 第710~719行），在首页 58px/48px 压缩高度下会与 #statsEmptyHint 同时出现并叠字，
@@ -276,7 +262,6 @@
           .home-cards-carousel .recent-item { padding: 8px 10px; gap: 8px; }
           .home-cards-carousel .recent-icon { width: 30px; height: 30px; font-size: 16px; border-radius: 8px; }
           .home-cards-carousel .xt-inline-form-inner { padding: 12px; }
-          .home-goal-ring { width: 54px; height: 54px; }
           #carouselDots { gap: 5px; margin-top: 10px; margin-bottom: 12px; }
           /* 窄屏：再缩一档，卡片宽度用百分比自适应，避免固定 px 溢出 */
           @media (max-width: 480px) {
@@ -296,7 +281,6 @@
             .home-cards-carousel .weak-item,
             .home-cards-carousel .recent-item { padding: 7px 8px; gap: 6px; }
             .home-cards-carousel .recent-icon { width: 26px; height: 26px; font-size: 14px; }
-            .home-goal-ring { width: 44px; height: 44px; }
             #carouselDots { margin-top: 8px; margin-bottom: 10px; }
           }
         </style>
@@ -385,6 +369,9 @@
   <div class="bottom-more-panel" id="morePanel" data-page-node-id="66LP6UzsnQiHyHrKP1q48S">
     <div class="bottom-more-title" data-page-node-id="X5qMIU32T7iLb9toN78JHY">更多功能</div>
     <div class="bottom-more-grid" data-page-node-id="EDSeD2xfP8NbP4nXoOJQXE">
+      <div class="bottom-more-item" onclick="navigateTo('moments');toggleMorePanel()">
+        <div class="bm-icon" data-icon="rss"></div><div class="bm-label">动态空间</div>
+      </div>
       <div class="bottom-more-item" onclick="openBlogStats()" data-page-node-id="zl3NMu4HgAVAtbOuzFoucR">
         <div class="bm-icon" data-page-node-id="ZAhBRyFaL137V4VJLAgQy9" data-icon="chart-bar"></div><div class="bm-label" data-page-node-id="saAb9IkJyZG06IJmgbULJS">学习统计</div>
       </div>
@@ -440,10 +427,10 @@
 <script src="assets/icon-map.js?v=20260916O" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260916S" defer></script>
+<script src="assets/app.js?v=20260917b" defer></script>
 <script src="assets/quest.js?v=20260916O" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260916S" defer></script>
+<script src="assets/api.js?v=20260917b" defer></script>
 <script src="assets/study-stats.js?v=20260916O" defer></script>
 <script>
 /* ==================== T7 增量（P0-14）：更多工具使用痕迹 + 按最近使用排序 ==================== */
@@ -883,8 +870,8 @@
   }
 })();
 </script>
-<script src="assets/ai-config.js?v=20260916R"></script>
+<script src="assets/ai-config.js?v=20260917b"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260916S"></script>
+<script src="assets/ai-service.js?v=20260917b"></script>
 </body>
 </html>

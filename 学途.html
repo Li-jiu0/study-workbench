@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>学途 · 个人学习中枢</title>
-<link rel="stylesheet" href="assets/common.css?v=20260916O">
+<link rel="stylesheet" href="assets/common.css?v=20260917b">
 <style>
 /* ================= 学途 · 个人学习中枢（v1.15） ================= */
 /* common.css 会锁 html/body 高度并隐藏滚动，本页为独立长页面，恢复滚动 */
@@ -127,6 +127,17 @@ body { margin: 0; background: var(--bg); }
 .xt-me-row .mr-ic { font-size: 19px; width: 28px; text-align: center; }
 .xt-me-row .mr-tx { flex: 1; font-size: 14px; color: var(--text); }
 .xt-me-row .mr-ar { color: var(--text-muted); }
+/* ===== R73 需求20-B 移动端适配（≤768px）=====
+   仅作用于窄屏；桌面端(>768px)渲染零影响（本块整体位于媒体查询内）。
+   1) 内嵌媒体兜底 max-width，防 JS 注入内容/未来素材撑破窄屏；
+   2) 宽表格窄屏内横向滚动，避免整页横向溢出（需求20-B #2）；
+   3) 字号下限兜底：common.css 的 .bn-label(10px)/.ai-mode-badge(9px)/
+      .study-stats-bar b(9px) 低于 A7 辅助≥11px，页内窄屏提升到 11px（不改共享 common.css）。 */
+@media (max-width: 768px) {
+  img, video, canvas, iframe { max-width: 100%; height: auto; }
+  table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bottom-nav-item .bn-label, .ai-mode-badge, .study-stats-bar b { font-size: 11px; }
+}
 </style>
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
 <script>window.__XT_PROD__=true;</script>
@@ -172,9 +183,9 @@ body { margin: 0; background: var(--bg); }
   <div class="xt-tab" data-tab="me" onclick="xtSwitch('me')"><span class="ti" data-icon="user" data-icon-size="18"></span>我的</div>
 </nav>
 
-<script src="assets/app.js?v=20260916S"></script>
+<script src="assets/app.js?v=20260917b"></script>
 <script src="assets/icon-map.js?v=20260916O"></script>
-<script src="assets/voiceplayer.js?v=20260916O"></script>
+<script src="assets/voiceplayer.js?v=20260917b"></script>
 <script src="assets/config.js?v=20260916O"></script>
 <script>
 /* ================= 学途 · 逻辑（v1.15） ================= */
@@ -375,6 +386,7 @@ body { margin: 0; background: var(--bg); }
   /* ---------- 刷题页 ---------- */
   function renderExam() {
     var wq = (appData.wrongQuestions || []).length;
+    var due = 0; try { due = (typeof getReviewQuestions === 'function') ? getReviewQuestions().length : 0; } catch (e) { due = 0; }
     var fav = (appData.favoriteQuestions || []).length;
     var wrongs = []; try { wrongs = getWrongDetails(10); } catch (e) { }
     var stats = null; try { stats = getWrongReasonStats(30); } catch (e) { }
@@ -429,7 +441,7 @@ body { margin: 0; background: var(--bg); }
       '<div class="xt-group-title">📚 我的题库</div>' + catHtml +
       '<div class="xt-group-title">📒 错题本（自动收录）</div>' +
       '<div class="xt-card">' +
-        '<div class="xt-card-title">🔴 ' + wq + ' 道待复习<span class="more" onclick="goStudy(\'exam\',\'' + MODULE_URLS.exam + '\')">去刷题 →</span></div>' +
+        '<div class="xt-card-title">🔴 ' + wq + ' 道错题' + (due > 0 ? ' · ' + due + ' 道待复习' : '') + '<span class="more" onclick="goStudy(\'exam\',\'' + MODULE_URLS.exam + '\')">去刷题 →</span></div>' +
         statsHtml + wrongHtml +
       '</div>' +
       '<div style="display:flex;gap:10px;margin-bottom:16px">' +

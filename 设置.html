@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" data-page-node-id="ppAOS1DYQGgIIySlO2fdxi">
 <meta name="theme-color" content="#5B8DEF" data-page-node-id="EXvc7QppIKtHC8PUM71nFK">
 <title>设置 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260916O" data-page-node-id="oNplQZjsSu34O6b7wLTk3t">
+<link rel="stylesheet" href="assets/common.css?v=20260917b" data-page-node-id="oNplQZjsSu34O6b7wLTk3t">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O" data-page-node-id="gZ2lwtNBjEq5CgqQTlbjFi">
@@ -54,6 +54,9 @@
       <div class="nav-section" data-page-node-id="MTHcLZXShESY9uypWnfuWH">创作</div>
       <div class="nav-item" data-page="blog" data-page-node-id="DZFZQABtRTNDfpMidIwfuZ">
         <span class="nav-icon" data-page-node-id="S7J9mnuXIauEdFtXjfGLqP" data-icon="globe"></span><span data-page-node-id="gAx8X58sva5egzFjqHvc7l">社区</span>
+      </div>
+      <div class="nav-item" data-page="moments">
+        <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
       </div>
       <div class="nav-section" data-page-node-id="62IraBitJHEEuHbz3ikLXg">互动</div>
       <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）" data-page-node-id="aRHuZziE37CzDXzVSpuzLp">
@@ -813,9 +816,10 @@
         </div>
         </section>
 
-        <!-- 隐私与安全（T01 增量 2026-09-11）：① 黑名单管理（走 /api/friends/block* 接口）
-             ② 隐私说明文案 ③「动态可见范围 / 谁可加我好友 / 能否被搜索到」三项可见性控件（本轮禁用占位，
-             待后端 T03 接口就绪后接线，见脚本 stSetMomentScope / stSetFriendPolicy / stSetSearchable）。 -->
+        <!-- 隐私与安全（T01 增量 2026-09-11；需求9 20260917 精简文案）：① 黑名单管理（真实走
+             GET /api/friends/blocked 读取、DELETE /api/friends/block/{id} 移出，非本地假成功）
+             ②「动态可见范围 / 谁可加我好友 / 能否被搜索到」三项可见性控件（读取 GET /api/auth/me，
+             保存 PUT /api/users/me/privacy，见脚本 stSetMomentScope / stSetFriendPolicy / stSetSearchable）。 -->
         <section data-subpage="privacy">
         <div class="card privacy-card" id="privacyCard">
           <div class="card-header">
@@ -825,14 +829,9 @@
 
           <!-- ① 黑名单管理 -->
           <div class="privacy-sec-title"><span class="nav-icon" data-icon="ban" data-icon-size="16"></span> 黑名单</div>
-          <div class="privacy-desc">被拉黑的用户无法向你发送好友申请或私信；移出后恢复正常。</div>
           <div class="privacy-list" id="stBlockedList">
             <div class="privacy-empty">加载中…</div>
           </div>
-
-          <!-- ② 隐私说明 -->
-          <div class="privacy-sec-title"><span class="nav-icon" data-icon="locked" data-icon-size="16"></span> 隐私说明</div>
-          <div class="privacy-note">性别、生日、手机号仅自己可见（公开主页不展示）；城市、简介、标签、学习目标会展示。关闭「可被搜索」只影响搜索，不影响已是好友和同群成员看到你。</div>
 
           <!-- ③ 可见性控件（T05 接线 2026-09-11：读取 GET /api/auth/me、保存 PUT /api/users/me/privacy） -->
           <div class="privacy-sec-title"><span class="nav-icon" data-icon="eye" data-icon-size="16"></span> 可见性</div>
@@ -866,7 +865,7 @@
           <div class="privacy-row" id="privacySearchableRow">
             <div class="privacy-row-main">
               <div class="privacy-row-name">能否被搜索到</div>
-              <div class="privacy-row-sub">关闭后其他用户无法通过昵称搜索到你（不影响已是好友和同群成员看到你）</div>
+              <div class="privacy-row-sub">关闭后其他用户无法通过昵称搜索到你</div>
             </div>
             <div class="privacy-row-ctrl">
               <div class="privacy-seg" id="stSearchableSeg">
@@ -923,6 +922,9 @@
   <div class="bottom-more-panel" id="morePanel" data-page-node-id="fDG9Ixim5VoggdQ5Zwg8eZ">
     <div class="bottom-more-title" data-page-node-id="WPXsZzVA6ZBonbftPllUgE">更多功能</div>
     <div class="bottom-more-grid" data-page-node-id="IFgMyrjq11TpyJr6Bqu44G">
+      <div class="bottom-more-item" onclick="navigateTo('moments');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="rss" data-icon-size="20"></span></div><div class="bm-label">动态空间</div>
+      </div>
       <div class="bottom-more-item" onclick="openBlogStats()" data-page-node-id="LUZNCaeXMtlQtPLBh4GfSE">
         <div class="bm-icon" data-page-node-id="A0V3GIvVU1w4bAYHSfQ2p2"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label" data-page-node-id="HX2aG0Qdd0sOwRiRFMAAfi">学习统计</div>
       </div>
@@ -1012,12 +1014,12 @@
 <script src="assets/icon-map.js?v=20260916O" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260916S" defer></script>
+<script src="assets/app.js?v=20260917b" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260916S" defer></script>
-<script src="assets/subpage-router.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260917b" defer></script>
+<script src="assets/subpage-router.js?v=20260917b" defer></script>
 <script src="assets/qbank.js?v=20260916O" defer></script>
-<script src="assets/importer.js?v=20260916S" defer></script>
+<script src="assets/importer.js?v=20260917b" defer></script>
 <script>
 /* 设置页兜底实现（只在本页内联，不改动 app.js）：
    本页的内联脚本在「解析期」同步执行，而 app.js 是 defer 加载的，此刻
@@ -1363,6 +1365,8 @@ function stInitAccount() {
     : '未获取到登录账号（可能为访客状态）';
   /* 任务 E：同步刷新绑定与认证状态（真实反映本机数据，不停留占位文案） */
   try { if (typeof stRenderBindings === 'function') stRenderBindings(); } catch (e) { }
+  /* 在线模式：再向服务端拉一次已绑定邮箱，保证显示的是服务器真实状态 */
+  try { if (typeof stLoadBindingsRemote === 'function') stLoadBindingsRemote(); } catch (e2) { }
 }
 function stSimpleHash(s) {
   var h = 5381;
@@ -1505,7 +1509,7 @@ function stDeleteAccount() {
    ADR-3：一律使用页面内可展开区块（#stBindPanel.active），不使用任何遮罩弹窗。
    三项绑定：手机号 / 微信号 / 邮箱号，各自显示「未绑定」或脱敏值，每行一个操作按钮。
 
-   数据源与接口契约（前端不写死任何后端假设）：
+   数据源与接口契约（前端只对接后端「已实现」的真实路由，不写死任何后端假设）：
      ① 本地单机模式（stIsOnline() === false）：
         - 绑定状态存本机 localStorage，键名 'study_workbench_bindings'（经 window.lsKey 前缀化）。
         - 结构（JSON 字符串）：
@@ -1513,18 +1517,17 @@ function stDeleteAccount() {
               "email": { "value": "ab@qq.com",     "at": 1710000000000 },
               "wechat":{ "value": "alex_wx",        "at": 1710000000000 } }
           未绑定的项字段缺失或 value 为空串。
-        - 验证码为本地模拟：固定 6 位数字规则，任意 6 位数字即视为通过（注释已注明）。
-     ② 在线模式（stIsOnline() === true）：
-        - 约定接口（后端尚未实现，失败时 UI 明确提示为「后续扩展点」，绝不静默失败/假装成功）：
-            发送验证码  POST /api/auth/bind/send-code
-                        body: { "channel": "phone" | "email", "target": "<号码或邮箱>" }
-                        resp: { "ok": true, "ttl": 60 }
-            提交绑定    POST /api/auth/bind
-                        body: { "channel": "phone" | "email" | "wechat", "target": "<值>", "code": "<验证码，wechat 可空>" }
-                        resp: { "ok": true, "channel": "phone", "masked": "138****5678" }
-            查询绑定    GET  /api/auth/bindings
-                        resp: { "items": { "phone": {"masked":"138****5678"}, "email": {...}, "wechat": {...} } }
-        - 请求统一走全站封装 api('/api/...', { method, body })（assets/api.js），401 由其内部自动刷新。
+        - 验证码为本地模拟：任意 6 位数字即视为通过（注释已注明）。
+     ② 在线模式（stIsOnline() === true）—— 邮箱号对接 server/routers/auth.py（前缀 /api/auth）真实路由：
+            发送验证码  POST /api/auth/email/send-code   body { email, purpose:"bind" }
+                        200 {ok,email,purpose,expiresIn} / 503 邮件服务未配置 / 502 发送失败 / 429 限频 / 400 用途非法
+            校验并绑定  POST /api/auth/email/bind        body { email, code }（需登录）
+                        200 {ok,email} / 409 该邮箱已被其他账号绑定 / 410 验证码已过期 / 400 验证码错误（detail 带剩余次数）/ 429 尝试过多
+            解绑        POST /api/auth/email/unbind      （需登录）200 {ok}
+            查询绑定    GET  /api/auth/me                → email / emailVerified
+        - 手机号 / 微信号：后端未提供任何接口 → 在线模式明确提示「暂未开放」，绝不静默失败/假装成功。
+        - 请求统一走全站封装 api('/api/...', { method, body })（assets/api.js）：非 2xx 抛 Error(detail)，
+          后端四类异常文案（发送失败 / 过期 / 错误 / 邮箱被占用）与「邮件服务未配置」均可如实展示；401 由其内部自动刷新。
    ============================================================================ */
 
 var ST_BIND_CHANNELS = ['phone', 'wechat', 'email'];
@@ -1537,6 +1540,9 @@ var ST_BIND_META = {
 var stBindEditing = null;
 /* 验证码倒计时句柄：全局唯一，保证任何时刻最多一个 timer，幂等可清理 */
 var stBindCodeTimer = null;
+/* 在线模式：服务端已绑定邮箱缓存（null=未知；'' = 未绑定；其它 = 已绑定邮箱）。stRemoteEmailLoaded 标记是否已拉到。 */
+var stRemoteEmail = null;
+var stRemoteEmailLoaded = false;
 
 /** 统一读取本机绑定表（键名 study_workbench_bindings，经 lsKey 前缀化）。 */
 function stBindReadLocal() {
@@ -1608,12 +1614,15 @@ function stRenderBindings() {
   var list = document.getElementById('stBindList');
   if (!list) return;
   var local = stBindReadLocal();
+  var online = stIsOnline();
   var html = '';
   for (var i = 0; i < ST_BIND_CHANNELS.length; i++) {
     var ch = ST_BIND_CHANNELS[i];
     var meta = ST_BIND_META[ch];
     var rec = local[ch];
     var val = (rec && rec.value) ? String(rec.value) : '';
+    /* 邮箱号：在线模式以服务端为准（stLoadBindingsRemote 已拉到才覆盖，避免误显示未绑定） */
+    if (ch === 'email' && online && stRemoteEmailLoaded) val = stRemoteEmail || '';
     var shown = val ? stBindMask(ch, val) : '未绑定';
     var valCls = val ? 'st-bind-item-val' : 'st-bind-item-val none';
     var actions = val
@@ -1632,6 +1641,20 @@ function stRenderBindings() {
   }
   list.innerHTML = html;
   if (typeof window.renderIcons === 'function') { try { window.renderIcons(list); } catch (e) { } }
+}
+
+/** 在线模式：从服务端读取已绑定邮箱（GET /api/auth/me → email / emailVerified）并刷新列表。
+    失败静默保留本地展示，不阻塞页面；仅在在线（有 token）时调用。 */
+function stLoadBindingsRemote() {
+  if (!stIsOnline()) return;
+  var doReq = (typeof api === 'function')
+    ? api('/api/auth/me', { method: 'GET' })
+    : Promise.reject(new Error('接口不可用（assets/api.js 未加载）'));
+  doReq.then(function (me) {
+    stRemoteEmail = (me && me.email) ? String(me.email) : '';
+    stRemoteEmailLoaded = true;
+    stRenderBindings();
+  }).catch(function () { /* 读取失败：保持本地展示 */ });
 }
 
 /** 清理验证码倒计时句柄（幂等，可重复调用）。 */
@@ -1729,7 +1752,10 @@ function stCloseBindPanel() {
 }
 
 /**
- * 发送验证码（手机号/邮箱）：先做前端格式校验，再走本地模拟或约定接口。
+ * 发送验证码（手机号/邮箱）：先做前端格式校验，再走本地模拟或真实接口。
+ * 邮箱（在线）：POST /api/auth/email/send-code，body { email, purpose:"bind" }。
+ *   后端异常（503 邮件服务未配置 / 502 发送失败 / 429 限频 / 400 用途非法）经 assets/api.js 的
+ *   api() 抛成 Error(detail)，此处如实展示，绝不吞成「操作失败」。
  * 幂等：倒计时期间按钮禁用，不会叠加多个 timer。
  */
 function stSendBindCode() {
@@ -1742,27 +1768,35 @@ function stSendBindCode() {
     return;
   }
   var btn = document.getElementById('stBindCodeBtn');
-  /* 立即进入倒计时，重复点击无效（按钮已禁用 + 幂等清理） */
-  stBindStartCountdown(btn);
 
+  /* 本地单机模式：本地模拟发码（任意 6 位数字通过），立即进入倒计时 */
   if (!stIsOnline()) {
-    /* 本地模拟：不发真实短信/邮件，仅提示；验证码规则为任意 6 位数字 */
+    stBindStartCountdown(btn);
     showToast('📱 验证码已发送（本地模拟，任意 6 位数字均可通过）');
     return;
   }
-  /* 在线模式：调用约定接口，失败明确告知「后续扩展点」，不静默失败、不假装成功 */
-  var doReq = (typeof api === 'function')
-    ? api('/api/auth/bind/send-code', { method: 'POST', body: { channel: ch, target: target } })
-    : Promise.reject(new Error('接口不可用（assets/api.js 未加载）'));
-  doReq.then(function () {
-    showToast('✅ 验证码已发送，请查收');
-  }).catch(function (e) {
-    /* 失败即恢复按钮，避免用户被错误锁在倒计时里 */
-    stBindClearTimer();
-    stBindResetCodeBtn();
-    var msg = (e && e.message) ? String(e.message) : '';
-    showToast('❌ 发送失败：' + (msg || '该功能需要后端接口支持，已记录为后续扩展点'));
-  });
+
+  /* 在线模式：邮箱走真实接口 */
+  if (ch === 'email') {
+    stBindStartCountdown(btn);
+    var doReq = (typeof api === 'function')
+      ? api('/api/auth/email/send-code', { method: 'POST', body: { email: target, purpose: 'bind' } })
+      : Promise.reject(new Error('接口不可用（assets/api.js 未加载）'));
+    doReq.then(function () {
+      showToast('✅ 验证码已发送至 ' + target + '，请查收（10 分钟内有效）');
+    }).catch(function (e) {
+      /* 发送失败即恢复按钮，避免用户被错误锁在倒计时里；错误文案如实展示 */
+      stBindClearTimer();
+      stBindResetCodeBtn();
+      showToast('❌ ' + ((e && e.message) ? String(e.message) : '验证码发送失败，请稍后重试'));
+    });
+    return;
+  }
+
+  /* 在线模式：手机号 —— 后端未提供短信接口，明确告知，不假装成功 */
+  stBindClearTimer();
+  stBindResetCodeBtn();
+  showToast('⚠️ 手机号绑定暂未开放（后端未提供短信接口），请改用邮箱绑定');
 }
 
 /**
@@ -1807,20 +1841,32 @@ function stSubmitBind() {
   var finishFail = function (e) {
     if (btn) { btn.disabled = false; btn.textContent = '确认绑定'; }
     var msg = (e && e.message) ? String(e.message) : '';
-    showToast('❌ 绑定失败：' + (msg || '该功能需要后端接口支持，已记录为后续扩展点'));
+    showToast('❌ ' + (msg || '绑定失败，请稍后重试'));
   };
 
+  /* 本地单机模式：直接写本机存储 */
   if (!stIsOnline()) {
-    /* 本地模式：直接写本机存储 */
     finishOk(ch, target);
     return;
   }
-  var doReq = (typeof api === 'function')
-    ? api('/api/auth/bind', { method: 'POST', body: { channel: ch, target: target, code: code } })
-    : Promise.reject(new Error('接口不可用（assets/api.js 未加载）'));
-  doReq.then(function () {
-    finishOk(ch, target);
-  }).catch(finishFail);
+
+  /* 在线模式：邮箱走真实绑定接口 POST /api/auth/email/bind（body { email, code }）
+     后端异常：409 该邮箱已被其他账号绑定 / 410 验证码已过期 / 400 验证码错误 / 429 尝试过多，均由 finishFail 如实展示。 */
+  if (ch === 'email') {
+    var doReq = (typeof api === 'function')
+      ? api('/api/auth/email/bind', { method: 'POST', body: { email: target, code: code } })
+      : Promise.reject(new Error('接口不可用（assets/api.js 未加载）'));
+    doReq.then(function (d) {
+      stRemoteEmail = (d && d.email) ? String(d.email) : target;
+      stRemoteEmailLoaded = true;
+      finishOk(ch, target);
+    }).catch(finishFail);
+    return;
+  }
+
+  /* 在线模式：手机号 / 微信号 —— 后端未提供接口，明确告知，不假装成功 */
+  if (btn) { btn.disabled = false; btn.textContent = '确认绑定'; }
+  showToast('⚠️ ' + ST_BIND_META[ch].name + '绑定暂未开放（后端未提供接口），请改用邮箱绑定');
 }
 
 /** 解绑某一渠道（二次确认，走 uiConfirm）。 */
@@ -1829,12 +1875,28 @@ function stUnbind(channel) {
   var meta = ST_BIND_META[channel];
   uiConfirm('确定解绑' + meta.name + '吗？解绑后将无法用其找回账号。', '解绑').then(function (ok) {
     if (!ok) return;
-    var local = stBindReadLocal();
-    delete local[channel];
-    var saved = stBindWriteLocal(local);
-    if (stBindEditing === channel) stCloseBindPanel();
-    stRenderBindings();
-    showToast(saved ? ('已解绑' + meta.name) : '⚠️ 解绑未能保存，请重试');
+    var removeLocal = function () {
+      var local = stBindReadLocal();
+      delete local[channel];
+      var saved = stBindWriteLocal(local);
+      if (stBindEditing === channel) stCloseBindPanel();
+      stRenderBindings();
+      showToast(saved ? ('已解绑' + meta.name) : '⚠️ 解绑未能保存，请重试');
+    };
+    /* 在线模式：邮箱走真实解绑接口 POST /api/auth/email/unbind */
+    if (stIsOnline() && channel === 'email') {
+      var doReq = (typeof api === 'function')
+        ? api('/api/auth/email/unbind', { method: 'POST' })
+        : Promise.reject(new Error('接口不可用（assets/api.js 未加载）'));
+      doReq.then(function () {
+        stRemoteEmail = ''; stRemoteEmailLoaded = true;
+        removeLocal();
+      }).catch(function (e) {
+        showToast('❌ 解绑失败：' + ((e && e.message) ? String(e.message) : '网络错误'));
+      });
+      return;
+    }
+    removeLocal();
   });
 }
 
@@ -1883,7 +1945,7 @@ function stLoadBlocked() {
           '</div>';
       }).join('');
     })
-    .catch(function () { box.innerHTML = '<div class="privacy-empty">黑名单需联网查看（后端暂不可用）</div>'; });
+    .catch(function () { box.innerHTML = '<div class="privacy-empty">加载失败，请稍后重试</div>'; });
 }
 function stUnblock(uid) {
   if (!uid) return;
@@ -2382,6 +2444,19 @@ if (typeof stInitAccount === 'function') {
   .st-bind-panel .setting-actions .btn{flex:1;justify-content:center}
   .st-bind-item{flex-wrap:wrap}
 }
+
+/* ==================== 需求20-B（2026-09-17）：窄屏文字 / 布局加固 ====================
+   设置项行（.setting-row/.setting-info/.setting-actions）的窄屏换行、min-width:0、flex-shrink:0
+   已由 assets/common.css 的 ≤560px 规则保证（说明文字占满整行、控件换行到下一行，不与文字重叠）。
+   这里只补本页特有的两处窄屏风险：字号分段控件（.seg）与快捷入口磁贴（.st-quick）在 320~380 下
+   不被挤压成逐字断行、不撑破页面；并保证长说明文字可断行（A10/A11）。 */
+@media (max-width:380px){
+  .setting-actions{width:100%}
+  .setting-actions .seg{flex-wrap:wrap;justify-content:flex-start;max-width:100%}
+  .setting-actions .seg button{padding:6px 10px}
+  .st-quick{grid-template-columns:1fr}
+  .setting-name,.setting-desc,.card-title{overflow-wrap:anywhere;word-break:break-word}
+}
 </style>
 <script>
 /* T02 批次五（寇豆码 2026-09-12）：hash 路由初始化 */
@@ -2397,6 +2472,10 @@ if (typeof stInitAccount === 'function') {
       rootHref: '设置.html'
     });
     SubpageRouter.onSubpageChange(function (key, params) {
+      /* 需求20-B：子页切换后滚动位置归零，避免停留在上一子页的滚动位置（错位观感） */
+      try { window.scrollTo(0, 0); } catch (e0) { }
+      var sc = document.querySelector('.content');
+      if (sc) { try { sc.scrollTop = 0; } catch (e1) { } }
       // privacy 子页面激活时拉取隐私三控件（批次四 T05 落地，stLoadPrivacy 保留）
       if (key === 'privacy') {
         try { if (typeof stLoadPrivacy === 'function') stLoadPrivacy(); } catch (e) { if (window.console) console.warn('stLoadPrivacy error', e); }
@@ -2407,6 +2486,8 @@ if (typeof stInitAccount === 'function') {
         try { if (typeof stInitAccount === 'function') stInitAccount(); } catch (e) { if (window.console) console.warn('stInitAccount error', e); }
         /* 任务 E：进入「账号与安全」时刷新绑定状态（真实反映数据，不停留占位文案） */
         try { if (typeof stRenderBindings === 'function') stRenderBindings(); } catch (e) { if (window.console) console.warn('stRenderBindings error', e); }
+        /* 在线模式：从服务端拉取已绑定邮箱，避免只显示本地缓存 */
+        try { if (typeof stLoadBindingsRemote === 'function') stLoadBindingsRemote(); } catch (e2) { if (window.console) console.warn('stLoadBindingsRemote error', e2); }
       }
     });
   }
@@ -2414,8 +2495,8 @@ if (typeof stInitAccount === 'function') {
   else bootSubpage();
 })();
 </script>
-<script src="assets/ai-config.js?v=20260916R"></script>
+<script src="assets/ai-config.js?v=20260917b"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260916S"></script>
+<script src="assets/ai-service.js?v=20260917b"></script>
 </body>
 </html>

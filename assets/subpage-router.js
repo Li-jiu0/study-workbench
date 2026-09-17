@@ -207,8 +207,20 @@
     }
     bc.style.display = '';
     var label = this._groupLabel(key);
+    /* 缺口6修复（2026-09-17）：面包屑回到根页时保留 ?user=<uid>。
+       仅当当前 location.search 含「合法数字 user 参数」时才把参数拼回 href，
+       其它页面（无该参数）行为与改动前完全一致 —— 本文件为多页共用，务必零副作用。 */
+    var crumbHref = st.rootHref;
+    try {
+      if (typeof location !== 'undefined' && location.search) {
+        var _uc = new URLSearchParams(location.search).get('user');
+        if (_uc && /^\d+$/.test(String(_uc).trim())) {
+          crumbHref = st.rootHref + (st.rootHref.indexOf('?') >= 0 ? '&' : '?') + 'user=' + encodeURIComponent(String(_uc).trim());
+        }
+      }
+    } catch (e) { crumbHref = st.rootHref; /* URLSearchParams 不可用 → 保持原行为 */ }
     bc.innerHTML =
-      '<a class="subpage-crumb" href="' + escHtml(st.rootHref) + '" onclick="event.preventDefault();SubpageRouter.navigate(\'list\');return false;">' + escHtml(st.pageTitle) + '</a>' +
+      '<a class="subpage-crumb" href="' + escHtml(crumbHref) + '" onclick="event.preventDefault();SubpageRouter.navigate(\'list\');return false;">' + escHtml(st.pageTitle) + '</a>' +
       '<span class="subpage-sep">›</span>' +
       '<span class="subpage-crumb current">' + escHtml(label) + '</span>';
   };

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>我的文件 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260916O">
+<link rel="stylesheet" href="assets/common.css?v=20260917b">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O">
@@ -31,7 +31,7 @@
 .mf-acts .btn{flex:1;font-size:12px;padding:5px 8px;min-width:0}
 .mf-empty{grid-column:1/-1;padding:30px 12px;text-align:center;color:var(--text-muted);font-size:13px;line-height:1.8}
 .mf-tip{padding:12px 2px 0;font-size:12px;color:var(--text-muted);line-height:1.7}
-@media (max-width:560px){ .mf-list{grid-template-columns:1fr} }
+@media (max-width:560px){ .mf-list{grid-template-columns:1fr} .mf-bar .mf-select{min-width:0;flex:1 1 100%} .mf-bar .btn{flex:1 1 auto} }
 
 /* ==================== 作品集样式（原个人中心 N9-4，.xtf- 前缀整体迁移） ==================== */
 .xtf-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 0 0 12px; }
@@ -95,6 +95,9 @@
       <div class="nav-section">创作</div>
       <div class="nav-item" data-page="blog">
         <span class="nav-icon" data-icon="globe"></span><span>社区</span>
+      </div>
+      <div class="nav-item" data-page="moments">
+        <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
       </div>
       <div class="nav-section">互动</div>
       <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
@@ -185,6 +188,9 @@
   <div class="bottom-more-panel" id="morePanel">
     <div class="bottom-more-title">更多功能</div>
     <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="navigateTo('moments');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="rss" data-icon-size="20"></span></div><div class="bm-label">动态空间</div>
+      </div>
       <div class="bottom-more-item" onclick="openBlogStats()">
         <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
       </div>
@@ -349,14 +355,14 @@
 <script src="assets/icon-map.js?v=20260916O" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260916S" defer></script>
+<script src="assets/app.js?v=20260917b" defer></script>
 <script src="assets/quest.js?v=20260916O" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260916S" defer></script>
+<script src="assets/api.js?v=20260917b" defer></script>
 <script src="assets/study-stats.js?v=20260916O" defer></script>
-<script src="assets/ai-config.js?v=20260916R"></script>
+<script src="assets/ai-config.js?v=20260917b"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260916S"></script>
+<script src="assets/ai-service.js?v=20260917b"></script>
 <script>
 /* ==================== R72-6/9（20260917）：我的文件 ====================
    范围：**纯前端 localStorage**，本批不新增后端。把三类本地数据汇总到一处：
@@ -382,7 +388,7 @@
   var MAX_IMAGES = 4;
   var MAX_EDGE = 1000;          // 封面图长边压缩上限
   var KEEP_BELOW = 300 * 1024;  // 小于该体积且无需缩放时保留原图
-  var MOD_ORDER = ['题库', 'PPT作品', '笔记', '其他'];
+  var MOD_ORDER = ['题库', '四级词汇', '行测刷题', '面试题库', '万能金句', '场景话术', '商务礼仪', 'PPT版式', 'PPT案例', 'PPT作品', '笔记', '其他'];
 
   var pending = [];     // 添加弹窗里待保存的封面图 base64
   var curId = '';       // 查看弹窗当前条目 id
@@ -540,7 +546,7 @@
         out.push({
           id: 'imp:' + names[i],
           title: String(b.label || names[i]),
-          kind: 'bank', module: '题库', source: 'import',
+          kind: 'bank', module: String(b.module || '题库'), source: 'import',
           items: items, size: 0,
           createdAt: b.updatedAt || '', payload: b
         });

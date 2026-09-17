@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>关于 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260916O">
+<link rel="stylesheet" href="assets/common.css?v=20260917b">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O">
@@ -106,6 +106,9 @@
       <div class="nav-item" onclick="location.href='社区.html'">
         <span class="nav-icon" data-icon="globe"></span><span>社区</span>
       </div>
+      <div class="nav-item" data-page="moments">
+        <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
+      </div>
       <div class="nav-section">互动</div>
       <div class="nav-item" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
         <span class="nav-icon" data-icon="users"></span><span>好友</span>
@@ -166,11 +169,11 @@
               <div class="ab-hero-icon"><span class="nav-icon" data-icon="rocket" data-icon-size="26"></span></div>
               <div>
                 <div class="ab-hero-name">星途</div>
-                <div class="ab-hero-sub">给上班族的备考搭子 · 学得下去、问得明白</div>
+                <div class="ab-hero-sub">思多乱其智，实干出真知-->修身</div>
                 <span class="ab-ver" id="aboutVersion">v2.3</span>
               </div>
             </div>
-            <div class="ab-desc">白天上班、晚上备考，最怕的是工具散、计划断、没人答疑。星途把这一路要用的东西收在一处：能刷题背词、能写申论做 PPT，还有一个随叫随到的 AI —— 不会就问，问完就能接着学。</div>
+            <div class="ab-desc">人的一生，大多数的时候，见的都是没必要的人，说的也是没必要的话!譬如昨日死 譬如今日生,人生很长记得开心！</div>
           </div>
 
           <!-- ===== 核心功能 ===== -->
@@ -197,10 +200,13 @@
           <div class="ab-card">
             <div class="ab-card-title"><span class="ab-ti"><span class="nav-icon" data-icon="sparkles" data-icon-size="16"></span></span>AI 怎么用</div>
             <div class="ab-text">
-              <b>AI 问答</b>：底部导航点「AI」进入。默认「自动（推荐）」会按题型挑模型——数学推理走 DeepSeek-R1、英语翻译走混元、发图提问走视觉模型；也能手动指定模型（首页小助手与 AI 页共用同一份模型选择）。开 <b>MAX 模式</b>输出更长（适合申论批改、长文讲解），开 <b>深度思考</b>会先推导再给结论。
+              <b>用途</b>：这张卡片说明 AI 功能能帮你做什么、该怎么用。它是全站的学习搭子——不会的题可以问，写不出的申论可以改，学不动的时候还能陪你聊两句，把「不会就问、问完接着学」落到每一次学习里。
             </div>
             <div class="ab-text" style="margin-top:8px">
-              <b>AI 伙伴</b>：两位常驻——<b>小助手</b>覆盖行测、申论、四级、面试、PPT、备考规划，给的是结论 + 可执行动作；<b>暖心学伴</b>学不动的时候先稳住你，再拆一个「现在就能开始」的小任务。首页右下角悬浮球打开即可聊，也可以在「AI」页展开完整对话。
+              <b>使用步骤</b>：① 从底部导航点「AI」进入 AI 页，或点首页右下角的悬浮球快速打开对话；② 在输入框里直接描述你的问题（题目、作文、知识点都可以，也能发图片提问）；③ 想让回答更长更细就打开 <b>MAX 模式</b>，想让它一步步推理就打开 <b>深度思考</b>，模型默认「自动（推荐）」会按题型帮你挑，也能手动指定；④ 看完答复继续追问或换话题即可，对话历史会自动保存。
+            </div>
+            <div class="ab-text" style="margin-top:8px">
+              <b>适用场景</b>：行测 / 申论解题讲解、四级词汇与翻译、面试模拟与答题思路、PPT 大纲与文案、备考计划拆解，以及学不动时找人帮你稳住节奏——这些都可以交给 AI。涉及报考条件、政策条款等关键信息时，仍请以官方文件为准。
             </div>
           </div>
 
@@ -254,7 +260,7 @@
             <div class="ab-log">v2.2：AI 问答页上线（模型列表面板 · 倍率 · MAX 模式 · 深度思考 · 上下文长度）· AI 伙伴改版为小助手与暖心学伴，接入全站统一 AI 底座 ·「关于」改为独立页面 · 全站导航接入 AI<br>v2.1：错题本按模块与错因筛选 · 学习数据轮播 · 倒计时置顶<br>v2.0：学习工作台改版 · 底部导航统一为 首页 / 互动 / 我的 / AI / 更多</div>
           </div>
 
-          <div class="ab-sign">—— 小叶子</div>
+          <div class="ab-sign">——树枝子</div>
         </div>
       </div>
     </div>
@@ -288,6 +294,9 @@
   <div class="bottom-more-panel" id="morePanel">
     <div class="bottom-more-title">更多功能</div>
     <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="navigateTo('moments');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="rss" data-icon-size="20"></span></div><div class="bm-label">动态空间</div>
+      </div>
       <div class="bottom-more-item" onclick="openBlogStats()">
         <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
       </div>
@@ -389,14 +398,14 @@
 <script src="assets/icon-map.js?v=20260916O" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260916S" defer></script>
+<script src="assets/app.js?v=20260917b" defer></script>
 <script src="assets/quest.js?v=20260916O" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260916S" defer></script>
+<script src="assets/api.js?v=20260917b" defer></script>
 <script src="assets/study-stats.js?v=20260916O" defer></script>
-<script src="assets/ai-config.js?v=20260916R"></script>
+<script src="assets/ai-config.js?v=20260917b"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260916S"></script>
+<script src="assets/ai-service.js?v=20260917b"></script>
 <script>
 /* 关于页：把版本号写回页面（与 app.js 的 showAbout 口径保持一致） */
 (function () {

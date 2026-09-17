@@ -42,48 +42,99 @@
      待 eng-ai-base 给每个模型加 rate 字段后，优先读配置） */
   var RATE_FALLBACK = {
     'auto': '自适应',
-    'glm-4.7-flash': '1x',
-    'glm-4.5-flash': '1x',
-    'glm-4-flash': '0.8x',
-    'glm-4.6v-flash': '1.2x',
+    'ark-v4-flash': '0.8x',
+    'ark-doubao-mini': '0.8x',
+    'ark-v4-1-flash': '1x',
+    'ark-v4-pro': '1.5x',
+    'ark-doubao-pro': '1.5x',
+    'ark-glm-flash': '1x',
+    'ark-turbo-260628': '1x',
+    'ark-lite-260428': '0.5x',
+    'ark-evolving': '1.5x',
+    'ark-glm-5.2': '1x',
+    'ark-character-260628': '1x',
+    'ark-character-251128': '1x',
+    'ark-code-preview': '1x',
+    'ark-v4-pro-260425': '1.5x',
+    'ark-lite-260215': '0.5x',
+    'glm-4.7': '1x',
     'glm-4v-flash': '1x',
-    'qwen2.5-7b': '1x',
-    'qwen3-8b': '1.2x',
-    'qwen3.5-4b': '0.5x',
-    'deepseek-r1-8b': '2x',
-    'glm-4-9b': '1.2x',
-    'hunyuan-mt-7b': '1x'
+    'glm-4.6v-flash': '1.2x',
+    'qf-ernie-32k': '1x',
+    'qf-ernie-128k': '1.2x',
+    'or-auto': '1x',
+    'or-nemotron-super': '1x',
+    'or-nemotron-ultra': '2x',
+    'gm-flash-lite': '0.8x',
+    'gm-flash': '1.2x',
+    'ark-seedream-4-0415': '1x',
+    'ark-seedream-4-0828': '1x',
+    'ark-seedream-5-pro': '1x'
   };
 
   /* 模型说明兜底（与开发文档 §7.3 一致）；若 AI_CONFIG 提供更全则用 AI_CONFIG。 */
   var MODEL_DETAILS = {
-    'glm-4.7-flash': { platform: '智谱AI', type: '通用文本', params: '30B', stars: '★★★★★', recommend: '日常问答首选', advantage: '智谱最新免费模型，30B 大参数，中文理解能力强，上下文 200K', applicable: '日常学习问答、方法咨询、文案生成、面试模拟' },
-    'glm-4.5-flash': { platform: '智谱AI', type: '通用文本', stars: '★★★★', advantage: '上一代免费模型，稳定性好，响应快', applicable: '4.7 拥堵时自动降级，日常问答' },
-    'glm-4-flash': { platform: '智谱AI', type: '通用文本', stars: '★★★', advantage: '最稳定，几乎不拥堵，效果稍弱', applicable: '其他模型都拥堵时的最终兜底' },
-    'glm-4.6v-flash': { platform: '智谱AI', type: '多模态（图片+文本）', stars: '★★★★★', advantage: '免费支持图片理解，识别题目截图、PPT 截图', applicable: '拍题讲题、图片识别、PPT 截图分析' },
-    'glm-4v-flash': { platform: '智谱AI', type: '视觉理解', stars: '★★★', advantage: '老版视觉模型，稳定', applicable: '4.6V 拥堵时备用' },
-    'qwen2.5-7b': { platform: '硅基流动', type: '通用文本', params: '7B', stars: '★★★★', advantage: '阿里通义千问开源模型，中文好，速度快', applicable: '日常问答、学习方法、简单文案' },
-    'qwen3-8b': { platform: '硅基流动', type: '通用文本', params: '8B', stars: '★★★★', advantage: 'Qwen 第三代，推理更强，支持工具调用', applicable: '日常问答、逻辑推理、简单数学' },
-    'qwen3.5-4b': { platform: '硅基流动', type: '通用文本', params: '4B', stars: '★★', advantage: '小参数，响应极快', applicable: '极简单问答、分类，复杂问题不推荐' },
-    'deepseek-r1-8b': { platform: '硅基流动', type: '推理专用', params: '8B', stars: '★★★★★', advantage: '专门优化逻辑推理和数学计算，解行测题比通用模型准', applicable: '数量关系、资料分析、判断推理' },
-    'glm-4-9b': { platform: '硅基流动', type: '通用文本', params: '9B', stars: '★★★', advantage: '智谱开源 9B，中文不错', applicable: '通用问答备用' },
-    'hunyuan-mt-7b': { platform: '硅基流动', type: '通用文本（多语言）', params: '7B', stars: '★★★', advantage: '腾讯混元开源，多语言强，翻译好', applicable: '英语翻译、英语、多语言问答' }
+    'ark-v4-flash': { platform: "火山方舟", params: "", type: "通用对话", stars: '★★★', speed: "快", advantage: "响应快，额度每天 200 万 token", applicable: "日常问答、快速解题" },
+    'ark-doubao-mini': { platform: "火山方舟", params: "", type: "通用对话", stars: '★★★', speed: "快", advantage: "豆包轻量模型，响应快，额度每天 200 万 token", applicable: "日常问答、快速解题" },
+    'ark-v4-1-flash': { platform: "火山方舟", params: "", type: "通用对话（推理型）", stars: '★★★★', speed: "快", advantage: "推理型，maxTokens 需 ≥2000；额度每天 200 万 token", applicable: "需要推理的问答、数学题" },
+    'ark-v4-pro': { platform: "火山方舟", params: "", type: "推理增强", stars: '★★★★★', speed: "中", advantage: "推理能力更强，额度每天 200 万 token", applicable: "复杂推理、长链思考" },
+    'ark-doubao-pro': { platform: "火山方舟", params: "", type: "通用对话（创作/长文本）", stars: '★★★★★', speed: "中", advantage: "创作与长文本能力较强，额度每天 200 万 token", applicable: "文案创作、长文本处理" },
+    'ark-glm-flash': { platform: "火山方舟", params: "", type: "通用对话", stars: '★★★★', speed: "中", advantage: "GLM 最新代免费模型，额度每天 200 万 token", applicable: "日常问答" },
+    'ark-turbo-260628': { platform: "火山方舟", params: "", type: "通用对话（turbo）", stars: '★★★★', speed: "快", advantage: "速度与质量兼顾的 turbo 版；额度每天 200 万 token", applicable: "日常问答、均衡场景" },
+    'ark-lite-260428': { platform: "火山方舟", params: "", type: "轻量对话（新版）", stars: '★★★', speed: "快", advantage: "最新轻量模型，响应极快；额度每天 200 万 token", applicable: "极简单问答、快速分类" },
+    'ark-evolving': { platform: "火山方舟", params: "", type: "通用对话（持续进化）", stars: '★★★★★', speed: "中", advantage: "持续进化的最新模型，能力随版本增强；额度每天 200 万 token", applicable: "复杂问答、长链思考" },
+    'ark-glm-5.2': { platform: "火山方舟", params: "", type: "通用对话", stars: '★★★★', speed: "中", advantage: "智谱 GLM-5.2（火山方舟免费通道），中文能力强；额度每天 200 万 token", applicable: "日常问答" },
+    'ark-character-260628': { platform: "火山方舟", params: "", type: "角色扮演（新版）", stars: '★★★★', speed: "中", advantage: "角色扮演与人设对话优化；额度每天 200 万 token", applicable: "角色扮演、情景对话、面试模拟陪练" },
+    'ark-character-251128': { platform: "火山方舟", params: "", type: "角色扮演（旧版）", stars: '★★★', speed: "中", advantage: "旧版角色模型；建议优先使用新版", applicable: "角色扮演（旧版兼容）" },
+    'ark-code-preview': { platform: "火山方舟", params: "", type: "代码专用（预览版）", stars: '★★★★', speed: "中", advantage: "代码理解与生成专用预览版；额度每天 200 万 token", applicable: "编程、代码解释、纠错" },
+    'ark-v4-pro-260425': { platform: "火山方舟", params: "", type: "推理增强（旧版）", stars: '★★★★', speed: "中", advantage: "旧版 V4 Pro；建议优先使用新版 DeepSeek-V4-Pro", applicable: "复杂推理（旧版兼容）" },
+    'ark-lite-260215': { platform: "火山方舟", params: "", type: "轻量对话（旧版）", stars: '★★', speed: "快", advantage: "旧版轻量模型；建议优先使用新版 Doubao-Lite", applicable: "极简单问答（旧版兼容）" },
+    'glm-4.7': { platform: "智谱AI", params: "30B", type: "通用文本", stars: '★★★★★', speed: "中", recommend: "日常问答首选", advantage: "智谱免费模型，中文理解能力强，实测约 5.5 秒", applicable: "日常学习问答、方法咨询、文案生成、面试模拟" },
+    'glm-4v-flash': { platform: "智谱AI", params: "", type: "视觉理解", stars: '★★★★', speed: "快", advantage: "免费视觉模型，实测约 1 秒，适合拍题", applicable: "拍题识图、题目与课件截图解读" },
+    'glm-4.6v-flash': { platform: "智谱AI", params: "", type: "多模态（图片+文本）", stars: '★★★★', speed: "限流中", advantage: "免费支持图片理解；当前访问量过大被限流，失败自动降级 GLM-4V-Flash", applicable: "图片理解、题目与课件截图解读" },
+    'qf-ernie-32k': { platform: "百度千帆", params: "", type: "通用对话", stars: '★★★', speed: "快", advantage: "百度文心 ERNIE 系列，实测约 2 秒", applicable: "通用中文问答" },
+    'qf-ernie-128k': { platform: "百度千帆", params: "", type: "通用对话（大上下文）", stars: '★★★', speed: "快", advantage: "百度文心 ERNIE 系列，128K 大上下文，实测约 1.8 秒", applicable: "长文本、长上下文问答" },
+    'or-auto': { platform: "OpenRouter", params: "", type: "自动路由", stars: '★★★★', speed: "快", advantage: "自动选择合适的免费模型，实测约 1.8 秒；免费额度 50 次/天、20 次/分钟；需自备网络", applicable: "不确定用哪个模型时的日常问答" },
+    'or-nemotron-super': { platform: "OpenRouter", params: "", type: "通用对话", stars: '★★★★', speed: "快", advantage: "实测约 1.2 秒；免费额度 50 次/天、20 次/分钟；需自备网络", applicable: "日常问答" },
+    'or-nemotron-ultra': { platform: "OpenRouter", params: "", type: "深度推理", stars: '★★★★★', speed: "中", advantage: "深度推理（实测约 3.3 秒）；免费额度 50 次/天、20 次/分钟；需自备网络", applicable: "复杂推理问题" },
+    'gm-flash-lite': { platform: "Google Gemini", params: "", type: "通用对话（轻量）", stars: '★★★', speed: "快", advantage: "超快轻量（实测约 1 秒）；需自备网络", applicable: "日常轻量问答" },
+    'gm-flash': { platform: "Google Gemini", params: "", type: "通用对话（推理）", stars: '★★★★', speed: "中", advantage: "通用能力强（实测约 2.9 秒）；需自备网络", applicable: "日常问答、推理" },
+    'ark-seedream-4-0415': { platform: "火山方舟·图片生成", params: "", type: "图片生成", stars: '★★★★', speed: "中", advantage: "文生图；走 images/generations 接口，调用链路待评估", applicable: "文生图（v4 初版）" },
+    'ark-seedream-4-0828': { platform: "火山方舟·图片生成", params: "", type: "图片生成（最快）", stars: '★★★★', speed: "快", advantage: "文生图最快版（实测 4.2 秒）；走 images/generations 接口，调用链路待评估", applicable: "文生图（速度优先）" },
+    'ark-seedream-5-pro': { platform: "火山方舟·图片生成", params: "", type: "图片生成（质量最好）", stars: '★★★★★', speed: "慢", advantage: "文生图最新版，质量最好；走 images/generations 接口，调用链路待评估", applicable: "文生图（质量优先）" }
   };
 
   /* 内置模型兜底（与 AI_CONFIG.builtinModels 对齐） */
   var FALLBACK_MODELS = [
     { id: 'auto', name: '自动（推荐）', provider: null, model: null, types: ['general', 'math', 'image', 'translate'], tag: null, fallback: null },
-    { id: 'glm-4.7-flash', name: 'GLM-4.7-Flash', provider: 'zhipu', model: 'glm-4.7-flash', types: ['general'], tag: null, fallback: 'glm-4.5-flash' },
-    { id: 'glm-4.5-flash', name: 'GLM-4.5-Flash', provider: 'zhipu', model: 'glm-4.5-flash', types: ['general'], tag: null, fallback: 'qwen2.5-7b' },
-    { id: 'glm-4-flash', name: 'GLM-4-Flash', provider: 'zhipu', model: 'glm-4-flash', types: ['general'], tag: null, fallback: null },
-    { id: 'glm-4.6v-flash', name: 'GLM-4.6V-Flash', provider: 'zhipu', model: 'glm-4.6v-flash', types: ['image', 'general'], tag: null, fallback: 'glm-4v-flash' },
+    { id: 'ark-v4-flash', name: 'DeepSeek-V4-Flash', provider: 'ark', model: 'deepseek-v4-flash-ga-260731', types: ['general'], tag: null, fallback: 'ark-doubao-mini' },
+    { id: 'ark-doubao-mini', name: 'Doubao-Mini', provider: 'ark', model: 'doubao-seed-2-0-mini-260428', types: ['general'], tag: null, fallback: 'glm-4.7' },
+    { id: 'ark-v4-1-flash', name: 'DeepSeek-V4.1-Flash', provider: 'ark', model: 'deepseek-v4-1-flash-260910', types: ['general','math'], tag: null, fallback: 'ark-v4-flash' },
+    { id: 'ark-v4-pro', name: 'DeepSeek-V4-Pro', provider: 'ark', model: 'deepseek-v4-pro-ga-260813', types: ['general','reasoning'], tag: null, fallback: 'ark-v4-1-flash' },
+    { id: 'ark-doubao-pro', name: 'Doubao-Pro', provider: 'ark', model: 'doubao-seed-2-1-pro-260915', types: ['general','creative','longtext'], tag: null, fallback: 'ark-v4-flash' },
+    { id: 'ark-glm-flash', name: 'GLM-5.3-Flash', provider: 'ark', model: 'glm-5-3-flash-260828', types: ['general'], tag: null, fallback: 'ark-v4-flash' },
+    { id: 'ark-turbo-260628', name: 'Doubao-Turbo', provider: 'ark', model: 'doubao-seed-2-1-turbo-260628', types: ['general'], tag: null, fallback: 'ark-v4-1-flash' },
+    { id: 'ark-lite-260428', name: 'Doubao-Lite', provider: 'ark', model: 'doubao-seed-2-0-lite-260428', types: ['general'], tag: null, fallback: 'ark-doubao-mini' },
+    { id: 'ark-evolving', name: 'Doubao-Evolving', provider: 'ark', model: 'doubao-seed-evolving', types: ['general','reasoning'], tag: null, fallback: 'ark-v4-pro' },
+    { id: 'ark-glm-5.2', name: 'GLM-5.2', provider: 'ark', model: 'glm-5-2-260617', types: ['general'], tag: null, fallback: 'ark-glm-flash' },
+    { id: 'ark-character-260628', name: 'Doubao-Character（新版）', provider: 'ark', model: 'doubao-seed-character-260628', types: ['general','creative'], tag: null, fallback: 'ark-doubao-pro' },
+    { id: 'ark-character-251128', name: 'Doubao-Character（旧版）', provider: 'ark', model: 'doubao-seed-character-251128', types: ['general','creative'], tag: null, fallback: 'ark-character-260628' },
+    { id: 'ark-code-preview', name: 'Doubao-Code-Preview', provider: 'ark', model: 'doubao-seed-2-0-code-preview-260215', types: ['general'], tag: null, fallback: 'ark-doubao-pro' },
+    { id: 'ark-v4-pro-260425', name: 'DeepSeek-V4-Pro（旧版）', provider: 'ark', model: 'deepseek-v4-pro-260425', types: ['general','reasoning'], tag: null, fallback: 'ark-v4-pro' },
+    { id: 'ark-lite-260215', name: 'Doubao-Lite（旧版）', provider: 'ark', model: 'doubao-seed-2-0-lite-260215', types: ['general'], tag: null, fallback: 'ark-doubao-mini' },
+    { id: 'glm-4.7', name: 'GLM-4.7', provider: 'zhipu', model: 'glm-4.7', types: ['general'], tag: null, fallback: 'ark-v4-flash' },
     { id: 'glm-4v-flash', name: 'GLM-4V-Flash', provider: 'zhipu', model: 'glm-4v-flash', types: ['image'], tag: null, fallback: null },
-    { id: 'qwen2.5-7b', name: 'Qwen2.5-7B', provider: 'siliconflow', model: 'Qwen/Qwen2.5-7B-Instruct', types: ['general'], tag: null, fallback: 'glm-4-flash' },
-    { id: 'qwen3-8b', name: 'Qwen3-8B', provider: 'siliconflow', model: 'Qwen/Qwen3-8B', types: ['general', 'math'], tag: null, fallback: 'qwen2.5-7b' },
-    { id: 'qwen3.5-4b', name: 'Qwen3.5-4B', provider: 'siliconflow', model: 'Qwen/Qwen3.5-4B', types: ['general'], tag: null, fallback: 'qwen2.5-7b' },
-    { id: 'deepseek-r1-8b', name: 'DeepSeek-R1-8B', provider: 'siliconflow', model: 'deepseek-ai/DeepSeek-R1-0528-Qwen3-8B', types: ['math', 'reasoning'], tag: null, fallback: 'glm-4.7-flash' },
-    { id: 'glm-4-9b', name: 'GLM-4-9B', provider: 'siliconflow', model: 'THUDM/GLM-4-9B-0414', types: ['general'], tag: null, fallback: 'qwen2.5-7b' },
-    { id: 'hunyuan-mt-7b', name: 'Hunyuan-MT-7B', provider: 'siliconflow', model: 'tencent/Hunyuan-MT-7B', types: ['translate', 'general'], tag: null, fallback: 'glm-4.7-flash' }
+    { id: 'glm-4.6v-flash', name: 'GLM-4.6V-Flash', provider: 'zhipu', model: 'glm-4.6v-flash', types: ['image','general'], tag: null, fallback: 'glm-4v-flash' },
+    { id: 'qf-ernie-32k', name: 'ERNIE-4.5-Turbo', provider: 'qianfan', model: 'ernie-4.5-turbo-32k', types: ['general'], tag: null, fallback: 'qf-ernie-128k' },
+    { id: 'qf-ernie-128k', name: 'ERNIE-4.5-Turbo-128K', provider: 'qianfan', model: 'ernie-4.5-turbo-128k', types: ['general','longtext'], tag: null, fallback: 'ark-v4-flash' },
+    { id: 'or-auto', name: 'OR-Auto', provider: 'openrouter', model: 'openrouter/free', types: ['general'], tag: null, fallback: 'ark-v4-flash' },
+    { id: 'or-nemotron-super', name: 'Nemotron-Super', provider: 'openrouter', model: 'nvidia/nemotron-3-super-120b-a12b:free', types: ['general'], tag: null, fallback: 'ark-v4-flash' },
+    { id: 'or-nemotron-ultra', name: 'Nemotron-Ultra', provider: 'openrouter', model: 'nvidia/nemotron-3-ultra-550b-a55b:free', types: ['general','reasoning'], tag: null, fallback: 'ark-v4-pro' },
+    { id: 'gm-flash-lite', name: 'Gemini-3.5-Flash-Lite', provider: 'gemini', model: 'gemini-3.5-flash-lite', types: ['general'], tag: null, fallback: 'ark-v4-flash' },
+    { id: 'gm-flash', name: 'Gemini-3.5-Flash', provider: 'gemini', model: 'gemini-3.5-flash', types: ['general','reasoning'], tag: null, fallback: 'ark-v4-pro' },
+    { id: 'ark-seedream-4-0415', name: 'Seedream-4.0', provider: 'arkimage', model: 'doubao-seedream-4-0-20260415', types: ['imagegen'], tag: null, fallback: 'ark-v4-flash' },
+    { id: 'ark-seedream-4-0828', name: 'Seedream-4.0-Fast', provider: 'arkimage', model: 'doubao-seedream-4-0-250828', types: ['imagegen'], tag: null, fallback: 'ark-v4-flash' },
+    { id: 'ark-seedream-5-pro', name: 'Seedream-5-Pro', provider: 'arkimage', model: 'doubao-seedream-5-0-pro-260628', types: ['imagegen'], tag: null, fallback: 'ark-v4-flash' }
   ];
 
   /* 自定义模型：服务商预设（选择后自动填 API 地址 + 切换模型 ID 下拉选项）
@@ -100,9 +151,9 @@
       { id: 'deepseek-reasoner', name: 'deepseek-reasoner' }
     ]},
     { key: 'zhipu', label: '智谱', url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions', models: [
-      { id: 'glm-4-flash', name: 'GLM-4-Flash' },
-      { id: 'glm-4-plus', name: 'GLM-4-Plus' },
-      { id: 'glm-4.7-flash', name: 'GLM-4.7-Flash' }
+      { id: 'glm-4.7', name: 'GLM-4.7' },
+      { id: 'glm-4v-flash', name: 'GLM-4V-Flash' },
+      { id: 'glm-4.6v-flash', name: 'GLM-4.6V-Flash' }
     ]},
     { key: 'kimi', label: 'Kimi', url: 'https://api.moonshot.cn/v1/chat/completions', models: [
       { id: 'moonshot-v1-8k', name: 'moonshot-v1-8k' },
@@ -376,6 +427,14 @@
         continue;
       }
       if (/^```/.test(line)) { flushPara(); inCode = true; codeBuf = []; continue; }
+      // R81：图片生成结果「![提示词](图片URL)」渲染为图片（文本链路上不会自然产生该语法）
+      var imgM = /^!\[([^\]]*)\]\(([^)\s]+)\)$/.exec(line.trim());
+      if (imgM) {
+        flushPara();
+        html += '<p><img class="ai-md-img" src="' + escHtml(imgM[2]) + '" alt="' +
+          escHtml(imgM[1]) + '" style="max-width:100%;border-radius:10px;"></p>';
+        continue;
+      }
       if (/^###\s+/.test(line)) { flushPara(); html += '<h3>' + inlineMd(escHtml(line.replace(/^###\s+/, ''))) + '</h3>'; continue; }
       if (/^##\s+/.test(line)) { flushPara(); html += '<h2>' + inlineMd(escHtml(line.replace(/^##\s+/, ''))) + '</h2>'; continue; }
       if (/^#\s+/.test(line)) { flushPara(); html += '<h1>' + inlineMd(escHtml(line.replace(/^#\s+/, ''))) + '</h1>'; continue; }
@@ -569,6 +628,27 @@
     }
     var fullText = '';
     var firstChunk = true;
+    // 需求20B/A6：逐字重排 innerHTML 会带来行高抖动与重排开销。
+    // 用 requestAnimationFrame 节流（无 rAF 的老内核退化为 16ms setTimeout），
+    // 并以 renderSettled 闸门保证收尾渲染（含降级前缀）不被迟到的 rAF 覆盖。
+    var renderSettled = false;
+    var renderPending = false;
+    function flushRender() {
+      renderPending = false;
+      if (renderSettled) return;
+      aiB.mdEl.innerHTML = renderMarkdown(fullText);
+      scrollBottom();
+      renderCtxUsage();
+    }
+    function scheduleRender() {
+      if (renderSettled || renderPending) return;
+      renderPending = true;
+      if (typeof window !== 'undefined' && window.requestAnimationFrame) {
+        window.requestAnimationFrame(flushRender);
+      } else {
+        setTimeout(flushRender, 16);
+      }
+    }
     var opts = {
       image: image ? image : null,
       model: getSelectedModelId(),
@@ -576,14 +656,13 @@
       onChunk: function (delta, full) {
         if (firstChunk) { removeTyping(aiB); firstChunk = false; }
         fullText = full;
-        aiB.mdEl.innerHTML = renderMarkdown(fullText);
-        scrollBottom();
-        renderCtxUsage();
+        scheduleRender();
       },
       onFallback: function (name) { toast('当前模型繁忙，已自动切换到 ' + name); },
       onModelUsed: function (id, name) { setUsedModel(aiB, id, name); }
     };
     if (typeof callAI !== 'function') {
+      renderSettled = true;
       removeTyping(aiB);
       var svcMsg = 'AI 服务暂未就绪，请稍后重试。';
       aiB.mdEl.innerHTML = renderMarkdown(svcMsg);
@@ -594,22 +673,59 @@
       return;
     }
     callAI(funcType, apiMessages, opts).then(function (res) {
-      var ft = (typeof res === 'string') ? res : fullText;
-      if (!ft) ft = fullText;
-      aiB.mdEl.innerHTML = renderMarkdown(ft);
-      showMsgActions(aiB);
-      state.messages.push({ role: 'ai', content: ft });
-      setSendBusy(false);
-      saveCurrentChat();
-    }).catch(function (err) {
+      renderSettled = true;   // 收尾后停用 rAF 节流渲染
       removeTyping(aiB);
-      var local = '（网络不佳，以下为本地参考）\n\n' + localFallback(text);
-      aiB.mdEl.innerHTML = renderMarkdown(local);
+      var ft = '';
+      var degraded = false;
+      if (typeof res === 'string') {
+        ft = res;
+      } else if (res && typeof res === 'object') {
+        // 底座降级（所有模型都失败 -> 本地预设）时返回的是 res.text；此前只读流式缓冲 fullText，
+        // 而该路径不会触发 onChunk，导致 fullText 恒为空 -> 气泡空白。此处改为优先取 res.text。
+        ft = (res.text !== null && res.text !== undefined && res.text !== '') ? String(res.text) : fullText;
+        degraded = (res.degraded === true || res.fromPreset === true);
+      } else {
+        ft = fullText;
+      }
+      if (!ft) ft = fullText;
+      if (!ft) {
+        // 底座「成功」却没有任何文本（理论上不应发生）：兜底成本地参考，绝不渲染空气泡
+        ft = localFallback(text);
+        degraded = true;
+      }
+      var body = degraded ? ('（网络不佳，以下为本地参考）\n\n' + ft) : ft;
+      aiB.mdEl.innerHTML = renderMarkdown(body);
       showMsgActions(aiB);
-      state.messages.push({ role: 'ai', content: local });
+      state.messages.push({ role: 'ai', content: body });
       setSendBusy(false);
       saveCurrentChat();
-      toast('网络不佳，以下为本地参考');
+      if (degraded) toast('网络不佳，以下为本地参考');
+    }).catch(function (err) {
+      renderSettled = true;   // 收尾后停用 rAF 节流渲染
+      removeTyping(aiB);
+      var errMsg = (err && err.message) ? String(err.message) : '';
+      var content;
+      if (err && err.code === 'IMAGE_INVALID') {
+        // 图片归一化失败：如实告知，不再伪装成「网络不佳」
+        content = '图片解析失败：仅支持 JPG / PNG / WebP / GIF / BMP 格式的图片，请换一张再试。';
+        toast('图片格式不支持，请换一张');
+      } else if (err && err.rateLimited) {
+        // 配额用尽（本地 10 次/分钟 或 服务端 429）：明确提示 + 建议稍后重试
+        content = '（提问太频繁）\n\n' + (errMsg || '公共额度限制为每分钟 10 次，请休息 1 分钟后再试。');
+        toast('提问太频繁，请稍后再试');
+      } else if (err && err.status >= 400 && err.status < 500) {
+        // 请求本身有问题（400/403/404/422）：展示后端原因，不伪装成本地参考
+        content = 'AI 服务返回错误：' + (err.apiMessage || errMsg || ('HTTP ' + err.status));
+        toast('请求被拒绝，请更换模型或检查问题内容');
+      } else {
+        content = '（网络不佳，以下为本地参考）\n\n' + localFallback(text);
+        toast('网络不佳，以下为本地参考');
+      }
+      aiB.mdEl.innerHTML = renderMarkdown(content);
+      showMsgActions(aiB);
+      state.messages.push({ role: 'ai', content: content });
+      setSendBusy(false);
+      saveCurrentChat();
     });
   }
 
@@ -1116,7 +1232,20 @@
     }
     list.appendChild(modelRow({ id: 'auto', name: '自动（推荐）' }, manual && sel === 'auto'));
     var combined = applyListSettings(getBuiltinModels().filter(function (m) { return m.id !== 'auto'; }).concat(getCustomModels()));
-    combined.forEach(function (m) { list.appendChild(modelRow(m, manual && sel === m.id)); });
+    /* 图片生成模型（types 含 imagegen）排到分隔线下方，与文本模型分开 */
+    var textRows = [];
+    var imageGenRows = [];
+    combined.forEach(function (m) {
+      var ts = (m && m.types) ? m.types : [];
+      if (ts.indexOf('imagegen') >= 0) imageGenRows.push(m); else textRows.push(m);
+    });
+    textRows.forEach(function (m) { list.appendChild(modelRow(m, manual && sel === m.id)); });
+    if (imageGenRows.length) {
+      var imgSep = doc.createElement('div');
+      imgSep.style.cssText = 'height:1px;background:rgba(128,128,128,.28);margin:6px 4px;flex:none;';
+      list.appendChild(imgSep);
+      imageGenRows.forEach(function (m) { list.appendChild(modelRow(m, manual && sel === m.id)); });
+    }
   }
   /* customMsg：由调用方指定的提示文案（保存自定义模型时用「已添加并启用 XXX」） */
   function selectModel(id, customMsg) {
@@ -1416,6 +1545,20 @@
     } catch (e) { /* 非 JSON，走原文截断 */ }
     return String(t || '').slice(0, 160);
   }
+  /* 需求：r.json() 在响应体非 JSON（网关/CDN 返回的 HTML 错误页）时会抛裸 SyntaxError
+     （"Unexpected token '<', \"<!DOCTYPE \"... is not valid JSON"），并被下方 catch 原样展示给用户。
+     这里改为「先 text 再 JSON.parse」，失败时抛人类可读 Error（含 HTTP 状态与响应体前 80 字符），
+     风格与 assets/ai-service.js 的 safeRespJson 一致。成功路径返回值与 r.json() 完全一致。 */
+  function parseJsonOrFriendly(t, code) {
+    try {
+      return JSON.parse(t);
+    } catch (e) {
+      var head = String(t == null ? '' : t).replace(/\s+/g, ' ').replace(/^ +| +$/g, '');
+      if (head.length > 80) head = head.slice(0, 80) + '…';
+      throw new Error('接口返回了非 JSON 内容（HTTP ' + code + '），API 地址可能填错或服务不可用' +
+        (head ? '。响应开头：' + head : ''));
+    }
+  }
   function testCustom() {
     if (cmTesting) return;
     var url = getVal('cmApiUrl').trim();
@@ -1445,7 +1588,8 @@
           throw e;
         });
       }
-      return r.json();
+      // 200/2xx 也先读文本再安全解析：非 JSON（HTML 错误页）时抛人类可读 Error，不抛裸 SyntaxError
+      return r.text().then(function (t) { return parseJsonOrFriendly(t, code); });
     });
     Promise.race([req, timeoutRace]).then(function () {
       clearTimeout(timer); setCmTestBusy(false);

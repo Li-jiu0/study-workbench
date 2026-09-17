@@ -843,7 +843,7 @@
     var t = String(text == null ? '' : text).trim();
     if (!t) return false;
     var ss = window.speechSynthesis;
-    if (!ss || typeof window.SpeechSynthesisUtterance !== 'function') { toast('当前浏览器不支持语音合成，无法朗读'); return false; }
+    if (!ss || typeof window.SpeechSynthesisUtterance !== 'function') { vpBrowserUnsupported(); return false; }
     vpEnsureVoices(function () {
       try {
         ss.cancel();
@@ -856,12 +856,89 @@
     return true;
   }
 
+  /* ==================================================================
+     R73 需求4：语音播放三级降级（App 内可用 / 浏览器能力探测 / 友好兜底）
+       ① 原生桥（App 内）：系统 TTS 就绪 → 走 app.js 既有链路（含重试 / 引擎自动切换）；
+          未就绪 → 直接调原生网络 TTS（AndroidTTS.netTts，MediaPlayer 播放，不依赖系统引擎）。
+       ② Web Speech（浏览器）：speechSynthesis + voiceschanged 兜底。
+       ③ 都不支持：友好提示（区分安卓浏览器 / 桌面浏览器），并自动展开原文兜底。
+     语法铁律：ES2017 上限（禁 ?. ?? 展开 Object.fromEntries .at() 等）。
+     ================================================================== */
+  var _vpNativeSeq = 0, _vpResetTimer = null;
+
+  function vpNativeAvailable() {
+    try { return !!(window.AndroidTTS && typeof window.AndroidTTS.speak === 'function'); } catch (e) { return false; }
+  }
+  function vpNativeReady() {
+    try { return !!(window.AndroidTTS && typeof window.AndroidTTS.isReady === 'function' && window.AndroidTTS.isReady()); } catch (e) { return false; }
+  }
+  /* 估算时长走完后自动复位播放按钮（原生链路没有页内 onend 可用） */
+  function vpAutoReset(dur) {
+    if (_vpResetTimer) { clearTimeout(_vpResetTimer); _vpResetTimer = null; }
+    _vpResetTimer = setTimeout(function () { _vpResetTimer = null; vpSetPlaying(false); }, (dur > 0 ? dur : 2000) + 400);
+  }
+  /* 把原生网络 TTS 的完成/失败回调并入 voiceplayer（app.js 注册表里没有 'vp' 前缀 id）。 */
+  function vpHookNetTts() {
+    if (window.__vpNetHooked) return;
+    window.__vpNetHooked = true;
+    var oldDone = window.__netTtsDone, oldErr = window.__netTtsError;
+    window.__netTtsDone = function (id) {
+      try { if (String(id).indexOf('vp') === 0) { vpSetPlaying(false); return; } } catch (e) {}
+      if (typeof oldDone === 'function') { try { oldDone(id); } catch (e2) {} }
+    };
+    window.__netTtsError = function (id, msg) {
+      try {
+        if (String(id).indexOf('vp') === 0) {
+          vpSetPlaying(false);
+          toast('朗读失败（' + (msg || '') + '）');
+          return;
+        }
+      } catch (e) {}
+      if (typeof oldErr === 'function') { try { oldErr(id, msg); } catch (e3) {} }
+    };
+  }
+  /* 一级：App 原生。返回 true 表示已受理朗读 */
+  function vpTryNative(text, rate) {
+    if (!vpNativeAvailable()) return false;
+    vpHookNetTts();
+    var t = String(text == null ? '' : text);
+    var r = Number(rate) > 0 ? Number(rate) : 0.9;
+    // 引擎已就绪：走 app.js 既有链路（错误重试 / 引擎自动切换最完整）
+    if (vpNativeReady() && typeof speakUtterance === 'function') {
+      try { speakUtterance(t, 'en-US'); _vpProgDur = vpEstDur(t, r); vpSetPlaying(true); vpAutoReset(_vpProgDur); return true; } catch (e) {}
+    }
+    // 引擎未就绪：直接调原生网络 TTS（MediaPlayer 播放，不需要系统语音引擎）
+    if (window.AndroidTTS && typeof window.AndroidTTS.netTts === 'function') {
+      try {
+        _vpNativeSeq++;
+        var ok = window.AndroidTTS.netTts(t, 'en-US', r, 'vp' + _vpNativeSeq);
+        if (ok) { _vpProgDur = vpEstDur(t, r); vpSetPlaying(true); vpAutoReset(_vpProgDur); return true; }
+      } catch (e2) {}
+    }
+    // 最后再交给 app.js 原生链路（内部会给诊断提示，不会静默）
+    if (typeof speakUtterance === 'function') {
+      try { speakUtterance(t, 'en-US'); _vpProgDur = vpEstDur(t, r); vpSetPlaying(true); vpAutoReset(_vpProgDur); return true; } catch (e3) {}
+    }
+    return false;
+  }
+  /* 三级：环境不支持语音合成时的友好兜底 + 原文自动展开 */
+  function vpBrowserUnsupported() {
+    var ua = '';
+    try { ua = String(navigator.userAgent || ''); } catch (e) {}
+    if (/Android/i.test(ua)) {
+      toast('当前浏览器不支持语音朗读（多数国产手机浏览器如此）。请在「星途 App」内打开本页，或改用 Chrome / Edge 浏览器。');
+    } else {
+      toast('当前浏览器不支持语音朗读，建议改用 Chrome / Edge 浏览器。');
+    }
+    try { if (S) { S.showEn = true; render(); } } catch (e2) {}
+  }
+
   function play() {
     var it = SCENES[S.scene].lines[S.i];
     _vpProgDur = vpEstDur(it.en, 0.9);
-    // App 内保持既有链路（原生 TTS / netSpeak），浏览器内改走安全播放层
-    if (typeof isNativeApp === 'function') { try { if (isNativeApp() && typeof speakUtterance === 'function') { speakUtterance(it.en, 'en-US'); return; } } catch (e) {} }
-    vpSafeSpeak(it.en, 'en-US', 0.9);
+    if (vpTryNative(it.en, 0.9)) return;        // ① App 原生（系统 TTS 优先，未就绪则原生网络 TTS）
+    if (vpSafeSpeak(it.en, 'en-US', 0.9)) return; // ② 浏览器 Web Speech
+    vpBrowserUnsupported();                       // ③ 友好提示 + 原文兜底
   }
   window.openVoiceTrain = function (mode) { openVoice(mode); };
   window.openVoiceTrain.__close = function () { vpStop(); try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {} var m = document.getElementById('vpMask'); if (m) m.remove(); S = null; if (window.closeAppModal) window.closeAppModal('vpMask'); };
@@ -970,7 +1047,9 @@
   window.openVoiceTrain.__sayWord = function (w) {
     if (!w) return;
     _vpProgDur = vpEstDur(w, 0.6);
-    vpSafeSpeak(String(w), 'en-US', 0.6);
+    if (vpTryNative(String(w), 0.6)) return;
+    if (vpSafeSpeak(String(w), 'en-US', 0.6)) return;
+    vpBrowserUnsupported();
   };
   // 语境示例里「慢速播放某一句」
   window.openVoiceTrain.__playAt = function (n) {
@@ -979,7 +1058,9 @@
     n = Number(n);
     if (isNaN(n) || n < 0 || n >= lns.length) return;
     _vpProgDur = vpEstDur(lns[n].en, 0.6);
-    vpSafeSpeak(lns[n].en, 'en-US', 0.6);
+    if (vpTryNative(lns[n].en, 0.6)) return;
+    if (vpSafeSpeak(lns[n].en, 'en-US', 0.6)) return;
+    vpBrowserUnsupported();
   };
   // 播放/停止同一按钮：朗读中再点一次即停止，并复位按钮与高亮
   window.openVoiceTrain.__play = function () { if (vpIsPlaying()) { vpStop(); return; } play(); };
@@ -990,17 +1071,9 @@
     toast('慢速播放');
     var it = SCENES[S.scene].lines[S.i];
     _vpProgDur = vpEstDur(it.en, 0.7);
-    // App 内：保持既有原生/网络 TTS 慢速链路
-    if (typeof isNativeApp === 'function') {
-      try {
-        if (isNativeApp()) {
-          if (typeof netSpeak === 'function' && netSpeak(it.en, 'en-US', 0.7, null)) return;
-          if (typeof nativeSpeak === 'function' && nativeSpeak(it.en, 'en-US', 0.7)) return;
-        }
-      } catch (e) {}
-    }
-    // 浏览器内：走安全播放层（替代原先裸 speechSynthesis.speak，那段会因 voices 未就绪静默失败）
-    vpSafeSpeak(it.en, 'en-US', 0.7);
+    if (vpTryNative(it.en, 0.7)) return;          // ① App 原生（系统 TTS 优先，未就绪则原生网络 TTS）
+    if (vpSafeSpeak(it.en, 'en-US', 0.7)) return; // ② 浏览器 Web Speech
+    vpBrowserUnsupported();                        // ③ 友好提示 + 原文兜底
   };
   window.openVoiceTrain.__stop = function () { vpStop(); };
   window.openVoiceTrain.__en = function () { if (!S) return; if (isChallenge()) { toast('挑战模式下不显示原文，切回精听模式即可'); return; } S.showEn = !S.showEn; render(); };
