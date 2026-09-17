@@ -22,11 +22,7 @@ var AI_CONFIG = {
       apiUrl: "https://open.bigmodel.cn/api/paas/v4/chat/completions",
       apiKey: "339ab396568541d0b7c0be4a577e5e53.VM5HxadQcgew1JdB"
     },
-    siliconflow: {
-      name: "硅基流动",
-      apiUrl: "https://api.siliconflow.cn/v1/chat/completions",
-      apiKey: "***REMOVED-BY-R2C***"
-    },
+    // R73k：硅基流动 provider 已移除（欠费 402 且前端 models 为空，保留只会误导排查）
     // ===== R63 新增 4 平台（2026-09-16 联网实测通过）=====
     qianfan: {
       name: "百度千帆",
@@ -47,7 +43,7 @@ var AI_CONFIG = {
     openrouter: {
       name: "OpenRouter",
       apiUrl: "https://openrouter.ai/api/v1/chat/completions",
-      apiKey: "****REDACTED-KEY(full-key-kept-local-only)****",
+      apiKey: "***REMOVED-BY-R2C***",
       extraHeaders: {
         "HTTP-Referer": "http://110.42.134.62",
         "X-Title": "Xingtu Learning"
@@ -57,7 +53,7 @@ var AI_CONFIG = {
     gemini: {
       name: "Google Gemini",
       apiUrl: "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
-      apiKey: "****REDACTED-KEY(full-key-kept-local-only)****",
+      apiKey: "AQ.REDACTED-GEMINI-KEY",
       apiFormat: "gemini",
       keyInQuery: true,
       needVPN: true,
@@ -83,16 +79,6 @@ var AI_CONFIG = {
         { id: "glm-4v-flash", name: "GLM-4V-Flash", types: ["image"] },
         { id: "glm-4.6v-flash", name: "GLM-4.6V-Flash", types: ["image", "general"] }
       ]
-    },
-    {
-      key: "siliconflow",
-      label: "硅基流动",
-      builtin: true,
-      apiUrl: "https://api.siliconflow.cn/v1/chat/completions",
-      apiFormat: "openai",
-      needKey: false,
-      note: "",
-      models: [],
     },
     {
       key: "ark",
@@ -262,7 +248,7 @@ var AI_CONFIG = {
   maxMode: { maxTokens: 4000, temperatureDelta: -0.1 },
 
   // 内置免费模型列表（28 个，含 fallback 链；顺序即模型下拉分组顺序：火山方舟 → 智谱 → 百度千帆 → OpenRouter → Gemini → 图片生成）
-  // 硅基流动全部模型 402 欠费已清空，provider 配置保留，待换 key 后恢复；seedream 图片模型走 arkimage（images/generations），调用链路待评估。
+  // R73k：硅基流动已整体移除（provider/平台卡/自检）；seedream 图片模型走 arkimage（images/generations），失败不再降级文本模型。
   builtinModels: [
     {
       id: "ark-v4-flash",
@@ -576,7 +562,7 @@ var AI_CONFIG = {
       rate: "1x",
       temperature: 0.7,
       maxTokens: 1000,
-      fallback: "ark-v4-flash"
+      fallback: null
     },
     {
       id: "ark-seedream-4-0828",
@@ -588,7 +574,7 @@ var AI_CONFIG = {
       rate: "1x",
       temperature: 0.7,
       maxTokens: 1000,
-      fallback: "ark-v4-flash"
+      fallback: null
     },
     {
       id: "ark-seedream-5-pro",
@@ -600,7 +586,7 @@ var AI_CONFIG = {
       rate: "1x",
       temperature: 0.7,
       maxTokens: 1000,
-      fallback: "ark-v4-flash"
+      fallback: null
     }
   ],
 
@@ -648,7 +634,7 @@ var AI_CONFIG = {
 
   // 自动模式：问题类型 -> 首选模型
   autoRoute: {
-    image: "glm-4.6v-flash",
+    image: "glm-4v-flash",
     math: "ark-v4-1-flash",
     translate: "glm-4.7",
     general: "glm-4.7"
@@ -686,8 +672,8 @@ var AI_CONFIG = {
     },
     vision: {
       desc: "视觉识图",
-      primary: "glm-4.6v-flash",
-      fallback: ["glm-4v-flash"],
+      primary: "glm-4v-flash",
+      fallback: ["glm-4.6v-flash"],
       temperature: 0.3,
       maxTokens: 1500
     },
@@ -745,11 +731,11 @@ var AI_CONFIG = {
   }
   var ok = true;
 
-  // 1) providers：对象，且 zhipu / siliconflow 均有非空 apiUrl + apiKey
+  // 1) providers：对象，且 zhipu 有非空 apiUrl + apiKey（R73k：硅基已移除，不再要求）
   var providers = AI_CONFIG.providers;
   if (!(typeof providers === "object" && providers !== null)) {
     ok = false;
-  } else if (!providerOk(providers, "zhipu") || !providerOk(providers, "siliconflow")) {
+  } else if (!providerOk(providers, "zhipu")) {
     ok = false;
   }
 

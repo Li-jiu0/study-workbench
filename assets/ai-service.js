@@ -1245,6 +1245,10 @@
           if (looksLikeHtml(full)) {
             throw makeError(nonJsonMessage(respStatus(resp), respCtype(resp), full), respStatus(resp), "NON_JSON");
           }
+          // R73k：中转上游故障标记（ai.py 对 402/401/429 等统一加前缀）→ 抛错走直连链，不当答案吐出
+          if (full.indexOf("⚠️【中转错误】") === 0) {
+            throw makeError(full, 502, "RELAY_UPSTREAM");
+          }
           if (full.length < GUARD_LEN) continue;
           htmlChecked = true;
         }
@@ -1255,6 +1259,9 @@
         if (looksLikeHtml(full)) {
           throw makeError(nonJsonMessage(respStatus(resp), respCtype(resp), full), respStatus(resp), "NON_JSON");
         }
+        if (full.indexOf("⚠️【中转错误】") === 0) {
+          throw makeError(full, 502, "RELAY_UPSTREAM");
+        }
         if (full) emit(full, full);
       }
       return { text: full, count: count };
@@ -1264,6 +1271,10 @@
     // R72：整段读取到 HTML 错误页时同样不当作答案文本
     if (looksLikeHtml(text)) {
       throw makeError(nonJsonMessage(respStatus(resp), respCtype(resp), text), respStatus(resp), "NON_JSON");
+    }
+    // R73k：中转上游故障标记 → 抛错走直连链
+    if (text.indexOf("⚠️【中转错误】") === 0) {
+      throw makeError(text, 502, "RELAY_UPSTREAM");
     }
     if (text && emit) emit(text, text);
     return { text: text, count: text ? 1 : 0 };
