@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0b1026">
 <title>登录 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260915c">
-<link rel="stylesheet" href="assets/page-head.css?v=20260915c">
-<link rel="stylesheet" href="assets/states.css?v=20260915c">
+<link rel="stylesheet" href="assets/common.css?v=20260916O">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
 <style>
   :root{
     --primary:#5b8def; --accent:#9b6bd9;
@@ -111,7 +111,7 @@
   <div class="login-logo">
     <div class="lg-icon" data-icon="zap"></div>
     <div class="lg-title">星 途</div>
-    <div class="lg-sub" id="lgSub">注册登录后开启学习</div>
+    <div class="lg-sub" id="lgSub">祝君一切安好 · 诸事顺宜</div>
   </div>
 
   <!-- 登录 / 注册 切换 -->
@@ -156,15 +156,16 @@
     <div id="matchTip"></div>
   </div>
 
-  <button class="btn-primary" id="loginSubmitBtn" onclick="submitLogin()" aria-label="登录或注册按钮">🚀 登 录</button>
+  <button class="btn-primary" id="loginSubmitBtn" onclick="submitLogin()" aria-label="登录">登录</button>
 
   <div class="login-notice" id="loginNotice">💡 正在检测运行模式……</div>
 </div>
 
-<script src="assets/icon-map.js?v=20260915c" defer></script>
-<script src="assets/xt-toast.js?v=20260915c" defer></script>
-<script src="assets/error-boundary.js?v=20260915c" defer></script>
-<script src="assets/config.js?v=20260915c" defer></script>
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script src="assets/icon-map.js?v=20260916O" defer></script>
+<script src="assets/xt-toast.js?v=20260916O" defer></script>
+<script src="assets/error-boundary.js?v=20260916O" defer></script>
+<script src="assets/config.js?v=20260916O" defer></script>
 <script>
 /* ==================== 登录页逻辑（独立于 app.js） =====================================
    双模式（自动检测，互不影响）：
@@ -248,11 +249,11 @@ function applyModeNotice() {
   var sub = document.getElementById('lgSub');
   var n = document.getElementById('loginNotice');
   if (ONLINE) {
-    if (sub) sub.textContent = '多人在线版 · 注册登录后开启学习';
-    if (n) n.innerHTML = '💡 <b>多人在线版</b>：账号密码保存在服务器数据库（密码加盐哈希），登录使用 JWT 令牌，支持静态续期。<br>后端地址：<b>' + escHtml(API_BASE || '同源部署') + '</b>';
+    if (sub) sub.textContent = '祝君一切安好 · 诸事顺宜';
+    if (n) n.innerHTML = '💡 <b>当前为多人在线版</b><br>后端地址：<b>' + escHtml(API_BASE || '同源部署') + '</b>';
   } else {
     if (sub) sub.textContent = '单机离线版 · 数据保存在本机';
-    if (n) n.innerHTML = '📱 <b>单机离线模式</b>：未检测到后端服务器，账号仅保存在<b>本机</b>（localStorage，密码混淆存储）。<br>所有学习数据、发贴均在本机，适合个人使用；如需多人博客/在线 AI，请启动 <b>server/</b> 后端后重新打开。';
+    if (n) n.innerHTML = '📱 <b>单机离线模式</b>：未检测到后端服务器，数据保存在本机。<br>如需多人博客 / 在线 AI，请启动 <b>server/</b> 后端后重新打开。';
   }
 }
 function escHtml(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -390,7 +391,7 @@ function switchMode(mode) {
   document.getElementById('tabRegister').classList.toggle('active', mode === 'register');
   document.getElementById('confirmGroup').style.display = mode === 'register' ? '' : 'none';
   document.getElementById('nickGroup').style.display = mode === 'register' ? '' : 'none';
-  document.getElementById('loginSubmitBtn').textContent = mode === 'login' ? '🚀 登 录' : '✨ 注 册 并 进 入';
+  document.getElementById('loginSubmitBtn').textContent = mode === 'login' ? '登录' : '✨ 注 册 并 进 入';
   refreshStrength();
   if (mode !== 'register') { document.getElementById('matchTip').innerHTML = ''; }
 }

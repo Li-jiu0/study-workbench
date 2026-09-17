@@ -9,7 +9,7 @@ from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 
 from database import (ChatGroup, ChatGroupMember, Message, User,
-                      friend_ids_of, get_db, now_iso)
+                      friend_ids_of, get_db, is_admin_user, now_iso)
 from rate_limit import rate_limit
 from schemas import (GroupCreateIn, GroupMeIn, GroupMsgIn, GroupPatchIn,
                      GroupReadIn, GroupTransferIn)
@@ -104,9 +104,65 @@ async def create_group(body: GroupCreateIn, user: User = Depends(get_current_use
     return {"id": g.id, "name": g.name, "memberCount": len(member_ids) + 1}
 
 
+def _admin_group_rows(db: Session) -> list[dict]:
+    """管理员视图群列表（Bug2，R72）：返回**全部群**，只读。
+
+    只在「我的成员行」之外补一条管理员分支，不改 require_member / group_detail：
+    管理员点进群详情仍是 403（既定口径），前端按只读卡片渲染、不可点入。
+    读语义：管理员不是群成员、无已读游标，unreadCount 恒 0；lastMessage 照常算。
+    """
+    groups = db.query(ChatGroup).all()
+    if not groups:
+        return []
+    gids = [g.id for g in groups]
+    member_counts = dict(
+        db.query(ChatGroupMember.group_id, func.count(ChatGroupMember.id))
+        .filter(ChatGroupMember.group_id.in_(gids))
+        .group_by(ChatGroupMember.group_id).all()
+    )
+    last_id_by_gid = {
+        gid: mid
+        for gid, mid in db.query(Message.group_id, func.max(Message.id))
+        .filter(Message.group_id.in_(gids))
+        .group_by(Message.group_id).all()
+        if gid
+    }
+    last_ids = list(last_id_by_gid.values())
+    last_msgs = {
+        m.id: m
+        for m in db.query(Message).filter(Message.id.in_(last_ids)).all()
+    } if last_ids else {}
+    items = []
+    for g in groups:
+        last = last_msgs.get(last_id_by_gid.get(g.id))
+        items.append({
+            "id": g.id,
+            "name": g.name,
+            "ownerId": g.owner_id,
+            "avatar": g.avatar,
+            "memberCount": int(member_counts.get(g.id, 0)),
+            "lastMessage": {
+                "content": (last.content or "")[:80],
+                "kind": last.kind,
+                "senderId": last.sender_id,
+                "createdAt": last.created_at,
+            } if last else None,
+            "unreadCount": 0,
+            "role": "admin-view",
+        })
+    items.sort(key=lambda x: (x["lastMessage"] or {}).get("createdAt", "") or "", reverse=True)
+    return items
+
+
 @router.get("")
 def list_groups(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """我的群列表：memberCount / lastMessage / unreadCount（游标模型一次算清）。"""
+    """我的群列表：memberCount / lastMessage / unreadCount（游标模型一次算清）。
+
+    Bug2（R72）：管理员账号改为返回**全部群**（role='admin-view'、unreadCount=0，只读视图）；
+    普通用户逻辑完全不变。
+    """
+    if is_admin_user(user):
+        return {"items": _admin_group_rows(db)}
     my_members = db.query(ChatGroupMember).filter(
         ChatGroupMember.user_id == user.id).all()
     items = []

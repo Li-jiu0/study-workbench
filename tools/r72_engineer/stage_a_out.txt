@@ -1,0 +1,22 @@
+creds: extracted PASS(len=9) HOST=110.42.134.62
+tools exist: pscp=True plink=True
+
+== 1) 下载（pscp）==
+  database.py          rc=0 size=25803 
+  schemas.py           rc=0 size=9917 
+  routers/chat.py      rc=0 size=6911 
+  routers/friends.py   rc=0 size=14687 
+  routers/groups.py    rc=0 size=15596 
+
+== 2) 远端只读探活 ==
+  is-active/NRestarts: active
+2
+  --- probe rc=0 ---
+CWD /opt/study-workbench/server
+USERS 16
+FRIEND_REMARKS_TABLE 0
+HAS_DDL_建表SQL.sql True
+SRVDIR_LIST ['.env', '.env.bak-20260914c', '.env.bak-20260914d', '.env.example', '.venv', '__pycache__', 'backups', 'check_users.py', 'config.py', 'data', 'data.db', 'data.db.backup-20260911-0845', 'data.db.backup-20260911-1600', 'database.py', 'filecheck.py', 'fix_friend_requests_backend.py', 'main.py', 'rate_limit.py', 'requirements.txt', 'routers', 'schemas.py', 'scripts', 'security.py', 'test_friends.py', 'test_friends2.py', 'uploads', 'ws.py', 'wsmanager.py', '建表SQL.sql']
+STAMPS [('20260916O', 516), ('20260916k', 109), ('20260916R', 66), ('20260915c', 32)]
+HTML_COUNT 48
+

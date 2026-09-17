@@ -1,0 +1,11 @@
+R72 登录页 jsdom 独立测试（项15）
+============================================================
+[PASS] 15a-登录按钮初始文案=登录  btn=登录
+[PASS] 15b-#lgSub=祝君一切安好 · 诸事顺宜  lgSub=祝君一切安好 · 诸事顺宜
+[PASS] 15c-#loginNotice在线模式无JWT/盐哈希/静态续期泄露  notice=💡 <b>当前为多人在线版</b><br>后端地址：<b>同源部署</b>
+[PASS] 15d-switchMode(login)按钮=登录  btn=登录
+[PASS] 15e-switchMode(register)按钮含注册  btn=✨ 注 册 并 进 入
+[PASS] 15f-切回login后#lgSub不变  
+[PASS] 15g-页面脚本运行无jsdomError  err=none
+============================================================
+登录页用例 PASS=7 FAIL=0

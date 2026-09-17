@@ -1,0 +1,37 @@
+D:\下载的文件\学习工作台\server\.venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+[WARN] 未设置环境变量 ADMIN_PASSWORD，管理员账号沿用内置默认密码，请尽快在服务器环境变量中配置 ADMIN_PASSWORD 并重启服务。
+R72 后端独立回归（项2/4/5后端）
+============================================================
+[PASS] Bug1-admin读A消息-200  
+[PASS] Bug1-admin会话仍含A(核心回归)  items=[2]
+[PASS] Bug1-admin对A未读=0  unread=0
+[PASS] Bug1-admin对A最后消息=回复内容  
+[PASS] Bug1-admin会话带peerRemark字段  
+[PASS] Bug1-A会话含admin  ids=[4, 3]
+[PASS] Bug1-A会话含好友B(无消息)  
+[PASS] Bug1-A对B无消息-lastMessage为null  
+[PASS] Bug1-A对admin未读=1  
+[PASS] Bug1-limit=1返回<=1项且total正确  len=1 total=2
+[PASS] Bug1-limit封顶500  
+[PASS] Bug1-unread含admin  
+[PASS] Bug1-unread带peerRemark  peerRemark=boss管理员
+[PASS] Bug2-群主A role=owner  role=owner
+[PASS] Bug2-普通成员B role=member  role=member
+[PASS] Bug2-管理员可见全部群  count=1
+[PASS] Bug2-管理员 role=admin-view  role=admin-view
+[PASS] Bug2-管理员 unreadCount=0  
+[PASS] Bug2-管理员群详情仍403(只读)  status=403
+[PASS] Bug3-设置备注200  {"ok":true,"peerId":3,"peerRemark":"我的好友B"}
+[PASS] Bug3-返回peerRemark正确  
+[PASS] Bug3-超长截断<=20字  len=20 val=备注备注备注备注备注备注备注备注备注备注
+[PASS] Bug3-list_friends带peerRemark  peerRemark=备注备注备注备注备注备注备注备注备注备注
+[PASS] Bug3-conversations带peerRemark  
+[PASS] Bug3-隔离性:B的friends中A的peerRemark为空(隐私红线)  peerRemark=
+[PASS] Bug3-隔离性:B的conversations中A的peerRemark为空  
+[PASS] Bug3-非好友403  status=403
+[PASS] Bug3-给自己400  status=400
+[PASS] Bug3-清空备注200  
+[PASS] Bug3-清除后friends peerRemark为空  
+============================================================
+后端用例 PASS=30 FAIL=0

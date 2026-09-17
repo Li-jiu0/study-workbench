@@ -1,0 +1,13 @@
+RC=0
+PPT_HIT PPT训练.html                               1
+PPT_HIT _gq_orig_from_git.html                   1
+PPT_HIT _rp_corrupt_backup.html                  1
+PPT_HIT blog_wechat.html                         2
+PPT_HIT 商务礼仪面试.html                              1
+PPT_HIT 四级备考.html                                1
+PPT_HIT 央国企笔试.html                               1
+PPT_HIT 学习博客.html                                1
+PPT_HIT 高情商表达.html                               1
+PPT_TOTAL=10
+
+[STDERR] 

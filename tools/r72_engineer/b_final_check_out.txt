@@ -1,0 +1,22 @@
+[up] rc=0 
+[check] rc=0
+USERS_TOTAL 16
+USERS_MAXID 17
+RESID_13_16 [13, 14, 15, 16]
+LEFT_TMP 0
+FR_COLS [('id', 'INTEGER', 1, 1), ('owner_id', 'INTEGER', 1, 0), ('peer_id', 'INTEGER', 1, 0), ('remark', 'VARCHAR(20)', 1, 0), ('updated_at', 'VARCHAR(19)', 1, 0)]
+FR_IDX [('sqlite_autoindex_friend_remarks_1', 1)]
+FR_IDXCOLS sqlite_autoindex_friend_remarks_1 ['owner_id', 'peer_id']
+FR_DDL CREATE TABLE friend_remarks (
+	id INTEGER NOT NULL, 
+	owner_id INTEGER NOT NULL, 
+	peer_id INTEGER NOT NULL, 
+	remark VARCHAR(20) NOT NULL, 
+	updated_at VARCHAR(19) NOT NULL, 
+	PRIMARY KEY (id), 
+	CONSTRAINT uq_friend_remark UNIQUE (owner_id, peer_id), 
+	FOREIGN KEY(owner_id) REFERENCES users (id) ON DELETE CASCADE, 
+	FOREIGN KEY(peer_id) REFERENCES users (id) ON DELETE CASCADE
+)
+FR_ROWS 0
+

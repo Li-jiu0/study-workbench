@@ -1,0 +1,25 @@
+=== 新页面 ===
+我的文件.html                          size=53338   CRLF=1146  loneLF=0     BOM=True  mtime=09-17 13:52:30
+导入题库.html                          size=22052   CRLF=373   loneLF=0     BOM=True  mtime=09-17 13:52:30
+=== 对照：既有页面 BOM 抽样 ===
+工具.html                            size=28254   CRLF=436   loneLF=0     BOM=True  mtime=09-17 13:58:21
+更多.html                            size=17208   CRLF=293   loneLF=0     BOM=True  mtime=09-17 13:58:21
+关于.html                            size=26810   CRLF=409   loneLF=0     BOM=False mtime=09-17 13:54:15
+登录.html                            size=27585   CRLF=524   loneLF=0     BOM=True  mtime=09-17 13:52:01
+=== 关键标记 ===
+[MISS] app.js
+  assets/app.js :: files:我的文件=1 | ppt:我的文件=1 | AndroidBridge.notify=2 | removeItem 残留=11
+  个人中心.html :: xtFolio=0 | 我的文件入口=4 | folio section=0
+  更多.html :: 穿越英语=0 | 导入题库页跳转=1 | openQuest=0
+  演示.html :: pptHub=0 | pptWorkList=0 | 跳转我的文件=2 | ppt-works.js=0
+  关于.html :: v2.3=3 | v2.2=1 | 我的文件 chip=6 | 演示 chip=1
+  学习工作台.html :: data-page="files"=1 | data-page="ppt"=0
+  assets/importer.js :: xtFilesRegister=3
+=== 全站残留扫描（根 HTML，排除 备份/演示页自身/_.bak） ===
+data-page="ppt" 残留: NONE
+href='演示.html' 残留: NONE
+  我的文件.html :: mfList=3 | mfModule=2 | xtFilesRegister=5 | folio 键=2 | imports 键=2 | 共用 DOM toast=1 | 共用 DOM morePanel=1 | script 计数=14 | script 闭合=14
+  导入题库.html :: openImporter=10 | qbank.js=1 | importer.js=13 | script 计数=16 | script 闭合=16
+node --check assets/app.js        rc=0 
+node --check assets/importer.js   rc=0 
+备份文件数(.bak-pre-r72-20260917) = 41

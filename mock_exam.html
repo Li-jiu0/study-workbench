@@ -1,22 +1,24 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>真题模考 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260915c">
-<link rel="stylesheet" href="assets/page-head.css?v=20260915c">
-<link rel="stylesheet" href="assets/states.css?v=20260915c">
-<script src="assets/icon-map.js?v=20260915c" defer></script>
-<script src="assets/xt-toast.js?v=20260915c" defer></script>
-<script src="assets/error-boundary.js?v=20260915c" defer></script>
-<script src="assets/app.js?v=20260915f" defer></script>
-<script src="data/mock-papers.js?v=20260915c" defer></script>
-<script src="assets/mock-engine.js?v=20260915c" defer></script>
+<link rel="stylesheet" href="assets/common.css?v=20260916O">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
+<script src="assets/icon-map.js?v=20260916O" defer></script>
+<script src="assets/xt-toast.js?v=20260916O" defer></script>
+<script src="assets/error-boundary.js?v=20260916O" defer></script>
+<script src="assets/app.js?v=20260916S" defer></script>
+<script src="data/mock-papers.js?v=20260916O" defer></script>
+<script src="assets/mock-engine.js?v=20260916O" defer></script>
 <!-- 【批次 20260913m】考试指南并入本页：guide 数据沿用 MINI_BANK（mini-cet.js 的 cet-guide / mini-exam.js 的 exam-guide） -->
-<script src="assets/mini-cet.js?v=20260915c" defer></script>
-<script src="assets/mini-exam.js?v=20260915c" defer></script>
+<script src="assets/mini-cet.js?v=20260916O" defer></script>
+<script src="assets/mini-exam.js?v=20260916O" defer></script>
 <style>
 /* mock_exam.html 页面专属样式（不走弹窗/不弹窗 mask） */
 body { background: var(--xt-bg); margin: 0; color: var(--xt-text); }
@@ -133,7 +135,7 @@ body { height: auto; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scro
   outline-offset: 2px;
 }
 /* ==================== 【批次 20260913m】双 tab 合并页样式 ====================
-   参照 商务礼仪面试.html #page-iv-group 合并页范式：
+   参照 面测.html #page-iv-group 合并页范式：
    tab 选中态 .on 同步 + 面板 display 切换，由 switchMockTab() 承担。 */
 .mock-merge-tabs {
   display: flex;
@@ -217,7 +219,7 @@ body { height: auto; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scro
   <!-- 【批次 20260913m】考试指南并入真题模考页（用户拍板）：双 tab 结构
        tab1 = 真题模拟：原套卷列表/倒计时/状态区整体搬入本面板；
        tab2 = 考试指南：渲染 MINI_BANK 的 cet-guide / exam-guide info 卡内容（内容零删减搬家）。
-       切换逻辑 switchMockTab() 与选中态 .on 同步，参照商务礼仪面试.html 合并页范式。 -->
+       切换逻辑 switchMockTab() 与选中态 .on 同步，参照面测.html 合并页范式。 -->
   <div class="mock-merge-tabs" role="tablist" aria-label="真题模考分区">
     <button type="button" class="mock-merge-tab on" id="mockTabBtnMock" role="tab" aria-selected="true" aria-controls="mockTabMock" onclick="switchMockTab('mock')">
       <span class="nav-icon" data-icon="clipboard" data-icon-size="16"></span>真题模拟
@@ -367,7 +369,7 @@ body { height: auto; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scro
     hintEl.textContent = days >= 0 ? '加油 💪' : ('已过 ' + Math.abs(days) + ' 天');
   }
 
-  // —— 【批次 20260913m】双 tab 切换（选中态 .on 同步，参照商务礼仪面试.html 合并页范式）——
+  // —— 【批次 20260913m】双 tab 切换（选中态 .on 同步，参照面测.html 合并页范式）——
   window.switchMockTab = function (t) {
     var isGuide = (t === 'guide');
     var bM = $('mockTabBtnMock'), bG = $('mockTabBtnGuide');
@@ -511,14 +513,14 @@ body { height: auto; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scro
          用户在 exam↔run 间来回跳后历史栈变成 …→exam→run→exam→run，返回只在这两页乒乓球，
          永远回不到来源备考页。
    方案：不再依赖历史栈，改为按 URL 的 cat 参数显式跳转到来源备考页：
-         cat=cet-mock  → 四级备考.html
-         cat=exam-mock → 央国企笔试.html
-         无 cat / 未知  → 兜底 四级备考.html（四级为默认模考入口）
-   注意：本页可被「四级备考.html」或「央国企笔试.html」进入（带 ?cat=），也可被成绩页返回。 */
+         cat=cet-mock  → 英语.html
+         cat=exam-mock → 行测.html
+         无 cat / 未知  → 兜底 英语.html（四级为默认模考入口）
+   注意：本页可被「英语.html」或「行测.html」进入（带 ?cat=），也可被成绩页返回。 */
 function goBack() {
   var cat = '';
   try { cat = (new URLSearchParams(window.location.search)).get('cat') || ''; } catch (e) { cat = ''; }
-  var target = cat === 'exam-mock' ? '央国企笔试.html' : '四级备考.html';
+  var target = cat === 'exam-mock' ? '行测.html' : '英语.html';
   window.location.href = target;
 }
 </script>

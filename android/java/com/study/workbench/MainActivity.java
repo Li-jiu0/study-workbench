@@ -2,9 +2,14 @@ package com.study.workbench;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -48,6 +53,13 @@ public class MainActivity extends Activity {
     private static final int REQ_FILE_CHOOSER = 1001;
     private WebView web;
     private ValueCallback<Uri[]> filePathCallback;
+
+    // ---- 原生消息通知（R72 需求5：收到消息弹系统横幅）----
+    private static final String NOTIFY_CHANNEL_ID = "xt_msg";
+    private static final int NOTIFY_ID = 101;
+    private static final int REQ_NOTIFY_PERM = 2003;
+    private volatile String pendingNotifyTitle = null;
+    private volatile String pendingNotifyText = null;
 
     // ---- 原生 TTS（朗读发音）----
     private TextToSpeech tts;
@@ -143,6 +155,15 @@ public class MainActivity extends Activity {
                 } finally {
                     if (conn != null) conn.disconnect();
                 }
+            }
+            /** 【R72 需求5】系统级消息通知横幅：WebView 入站消息 → 原生 Notification。
+             *  前端契约（assets/notify.js / app.js 调用）：notify(String title, String text)。
+             *  任何异常都不得影响 WebView，故全程 try/catch。 */
+            @JavascriptInterface
+            public void notify(final String title, final String text) {
+                try {
+                    showNotify(title, text);
+                } catch (Throwable e) { /* 通知失败绝不影响页面 */ }
             }
         }, "AndroidBridge");
 
@@ -587,6 +608,73 @@ public class MainActivity extends Activity {
         });
     }
 
+    /* ================= 原生消息通知（R72 需求5） ================= */
+
+    /** 创建通知渠道（API 26+ 必须；已存在则跳过，创建失败不影响其它功能） */
+    private void ensureNotifyChannel() {
+        try {
+            if (Build.VERSION.SDK_INT < 26) return;
+            NotificationManager nm = (NotificationManager) getSystemService(android.content.Context.NOTIFICATION_SERVICE);
+            if (nm == null) return;
+            if (nm.getNotificationChannel(NOTIFY_CHANNEL_ID) != null) return;
+            NotificationChannel ch = new NotificationChannel(NOTIFY_CHANNEL_ID, "消息通知", NotificationManager.IMPORTANCE_HIGH);
+            ch.setDescription("星途 · 收到新消息时弹出横幅提醒");
+            nm.createNotificationChannel(ch);
+        } catch (Throwable e) { /* 渠道创建失败：静默 */ }
+    }
+
+    /** 弹一条原生通知横幅；title 空则用「星途」，text 截断 100 字。
+     *  API 33+ 未授权时先申请（本次不弹），授权后在 onRequestPermissionsResult 补弹。 */
+    private void showNotify(final String title, final String text) {
+        final String t = (title == null || title.trim().isEmpty()) ? "星途" : title.trim();
+        String body = (text == null) ? "" : text;
+        if (body.length() > 100) body = body.substring(0, 100);
+        final String b = body;
+        runOnUiThread(new Runnable() {
+            @Override public void run() {
+                try {
+                    ensureNotifyChannel();
+                    if (Build.VERSION.SDK_INT >= 33
+                            && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                            != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                        // 未授权：记下待弹内容，授权后补弹
+                        pendingNotifyTitle = t;
+                        pendingNotifyText = b;
+                        requestNotifyPermission();
+                        return;
+                    }
+                    NotificationManager nm = (NotificationManager) getSystemService(android.content.Context.NOTIFICATION_SERVICE);
+                    if (nm == null) return;
+                    Intent open = new Intent(MainActivity.this, MainActivity.class);
+                    open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    int piFlags = PendingIntent.FLAG_UPDATE_CURRENT;
+                    if (Build.VERSION.SDK_INT >= 23) piFlags |= PendingIntent.FLAG_IMMUTABLE;
+                    PendingIntent pi = PendingIntent.getActivity(MainActivity.this, 0, open, piFlags);
+                    Notification.Builder builder;
+                    if (Build.VERSION.SDK_INT >= 26) {
+                        builder = new Notification.Builder(MainActivity.this, NOTIFY_CHANNEL_ID);
+                    } else {
+                        builder = new Notification.Builder(MainActivity.this);
+                    }
+                    builder.setSmallIcon(R.drawable.ic_launcher);
+                    builder.setContentTitle(t);
+                    if (b.length() > 0) builder.setContentText(b);
+                    builder.setAutoCancel(true);
+                    builder.setContentIntent(pi);
+                    nm.notify(NOTIFY_ID, builder.build());
+                } catch (Throwable e) { /* 通知失败绝不影响 WebView */ }
+            }
+        });
+    }
+
+    /** 申请通知权限（仅 API 33+ 需要），授权结果在 onRequestPermissionsResult 处理 */
+    private void requestNotifyPermission() {
+        try {
+            if (Build.VERSION.SDK_INT < 33) return;
+            requestPermissions(new String[] { android.Manifest.permission.POST_NOTIFICATIONS }, REQ_NOTIFY_PERM);
+        } catch (Throwable e) { /* 申请失败：静默 */ }
+    }
+
     // 原生 TTS 播放完成 → 回调网页 window.__nativeTtsDone(utteranceId)，让依赖 onend 的流程继续
     private void notifyTtsDone(final String utteranceId) {
         runOnUiThread(new Runnable() {
@@ -664,6 +752,16 @@ public class MainActivity extends Activity {
                     && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED);
             if (!recPermissionGranted) {
                 notifyRecError("perm", "not_allowed");
+            }
+        } else if (requestCode == REQ_NOTIFY_PERM) {
+            boolean granted = (grantResults != null && grantResults.length > 0
+                    && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED);
+            if (granted) { // 授权成功：补弹此前被拦下的通知
+                String pt = pendingNotifyTitle;
+                String pb = pendingNotifyText;
+                pendingNotifyTitle = null;
+                pendingNotifyText = null;
+                if (pt != null) showNotify(pt, pb);
             }
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);

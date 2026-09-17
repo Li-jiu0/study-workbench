@@ -1,0 +1,57 @@
+root *.html count = 42
+   AI.html
+   AI模拟面试.html
+   PPT案例拆解.html
+   PPT版式库.html
+   PPT素材库.html
+   ai-settings.html
+   blog_wechat.html
+   mock_exam.html
+   mock_exam_result.html
+   mock_exam_run.html
+   万能金句库.html
+   个人中心.html
+   企业定向库.html
+   关于.html
+   动态.html
+   商务礼仪.html
+   四级经验分享.html
+   四级词汇.html
+   场景话术库.html
+   好友申请.html
+   学习工作台.html
+   学习概括.html
+   学途.html
+   导入题库.html
+   工具.html
+   我的文件.html
+   时政热点.html
+   更多.html
+   演示.html
+   申论刷题.html
+   登录.html
+   社区.html
+   私聊.html
+   管理员.html
+   英语.html
+   行测.html
+   行测刷题.html
+   表达.html
+   设置.html
+   错题本.html
+   面测.html
+   面试题库.html
+
+deploy HTML (excl blog_wechat) = 41
+
+deploy assets = 7
+   app.js           exists=True bytes=7081581
+   api.js           exists=True bytes=111979
+   chat-local.js    exists=True bytes=209022
+   importer.js      exists=True bytes=35258
+   notify.js        exists=True bytes=22476
+   ai-service.js    exists=True bytes=72186
+   ai-settings.js   exists=True bytes=99162
+
+-- root HTML 行尾（loneLF 应 0）--
+loneLF!=0 的 root HTML: 1 [('ai-settings.html', 638)]

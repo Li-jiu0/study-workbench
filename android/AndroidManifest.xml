@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.study.workbench"
-    android:versionCode="18"
-    android:versionName="1.17">
+    android:versionCode="19"
+    android:versionName="1.18">
 
     <!-- 预留：将来若连接局域网后端（多人在线模式）需要联网权限；单机离线其实用不到 -->
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- 语音跟读/语音输入：系统 SpeechRecognizer 需要麦克风（Android 6.0+ 运行时申请） -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- 需求5：系统级消息通知横幅（Android 13 / API 33+ 需运行时申请 POST_NOTIFICATIONS） -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="33" />
 

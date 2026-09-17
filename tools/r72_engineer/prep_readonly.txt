@@ -1,0 +1,31 @@
+== ① users 盘点（只读）rc=0 ==
+USERS_COLUMNS ['id', 'username', 'password_hash', 'nickname', 'motto', 'bio', 'gender', 'birthday', 'city', 'avatar', 'created_at', 'phone', 'goal', 'tags', 'last_seen_at', 'token_version', 'last_request_seen_at', 'last_seen_request_id', 'moment_visibility', 'friend_allow', 'searchable', 'is_admin']
+EXPORT_COLUMNS ['id', 'username', 'nickname', 'created_at', 'is_admin']
+USERS_COUNT 16
+ROW|1|good|馍|2026-09-10 23:40|0
+ROW|2|asdf|梦想成真|2026-09-10 23:40|0
+ROW|3|goos|hi|2026-09-10 23:41|0
+ROW|4|aaa|树枝|2026-09-11 00:14|0
+ROW|6|qqqqq|一号|2026-09-11 08:41|0
+ROW|7|Sage|Sage|2026-09-11 09:34|0
+ROW|8|777|小明|2026-09-13 15:23|0
+ROW|9|123yeyuehui|灰灰|2026-09-13 23:32|0
+ROW|10|管理员|管理员|2026-09-14 02:36|1
+ROW|11|3347158526|🍂|2026-09-14 15:40|0
+ROW|12|good12|你好呀|2026-09-14 15:42|0
+ROW|13|smoke_894755|smoke_894755|2026-09-16 02:17|0
+ROW|14|smoke_227199|smoke_227199|2026-09-16 02:20|0
+ROW|15|diagcurl01|diagcurl01|2026-09-16 03:22|0
+ROW|16|diagpw03|诊断号|2026-09-16 03:24|0
+ROW|17|12345678|太阳|2026-09-17 15:04|0
+
+
+== ② 版本戳原始分布（只读）rc=0 ==
+HTML_FILES 48
+--- uniq -c (明文 token, count) ---
+   516  ?v=20260916O
+   109  ?v=20260916k
+    66  ?v=20260916R
+    32  ?v=20260915c
+DISTINCT_TOKENS 4
+

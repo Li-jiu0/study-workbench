@@ -5,10 +5,11 @@
 """
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, case, func, or_
 from sqlalchemy.orm import Session
 
-from database import Message, User, can_message, get_db, is_friend, now_iso
+from database import (FriendRemark, Message, User, can_message, friend_ids_of,
+                     get_db, is_admin_user, is_friend, now_iso)
 from routers.friends import is_blocked
 from security import get_current_user
 from wsmanager import send_to
@@ -104,6 +105,86 @@ async def send_message(peer_id: int, body: SendMsgIn, user: User = Depends(get_c
     return msg_dict(m)
 
 
+@router.get("/conversations")
+def list_conversations(limit: int = 100, user: User = Depends(get_current_user),
+                       db: Session = Depends(get_db)):
+    """当前用户的「全部会话」列表（Bug1 修复，R72）。
+
+    与 /unread 的关键区别：**不受已读状态影响** —— 只要与对端有过消息往来就返回一行，
+    因此管理员回复（=把对方消息置已读）后，该会话不会再从列表里消失。
+    - 管理员：返回与任何用户有过往来的会话；
+    - 普通用户：返回有往来的对端 + 我的好友（好友可无消息，lastMessage 为 null）。
+    每条：peerId / peerNickname / peerAvatar / peerRemark / lastMessage / unreadCount / updatedAt，
+    按 updatedAt 倒序；limit 默认 100（1~500）。
+
+    性能：全部走「按对端聚合」的批量查询，**不做逐会话 N+1**。
+    """
+    limit = min(max(limit, 1), 500)
+    me = user.id
+    # 1) 每个对端的最后一条消息 id（一次 group by；私聊 group_id IS NULL）
+    peer_expr = case((Message.sender_id == me, Message.receiver_id),
+                     else_=Message.sender_id)
+    last_rows = (
+        db.query(peer_expr.label("peer"), func.max(Message.id).label("last_id"))
+        .filter(Message.group_id.is_(None),
+                or_(Message.sender_id == me, Message.receiver_id == me))
+        .group_by(peer_expr)
+        .all()
+    )
+    last_id_by_peer: dict[int, int] = {}
+    for peer, last_id in last_rows:
+        if peer and peer != me:
+            last_id_by_peer[peer] = last_id
+    # 2) 普通用户补齐「我的好友」（可能从未聊过）
+    peer_ids = set(last_id_by_peer.keys())
+    if not is_admin_user(user):
+        peer_ids |= friend_ids_of(db, me)
+    peer_ids.discard(me)
+    if not peer_ids:
+        return {"items": [], "total": 0}
+    # 3) 批量取：最后一条消息 / 用户资料 / 我的备注 / 未读数（全部一次查询）
+    last_ids = list(last_id_by_peer.values())
+    last_msgs = {
+        m.id: m for m in db.query(Message).filter(Message.id.in_(last_ids)).all()
+    } if last_ids else {}
+    users = {u.id: u for u in db.query(User).filter(User.id.in_(list(peer_ids))).all()}
+    remarks = {
+        r.peer_id: (r.remark or "")
+        for r in db.query(FriendRemark).filter(
+            FriendRemark.owner_id == me,
+            FriendRemark.peer_id.in_(list(peer_ids)),
+        ).all()
+    }
+    unread = {
+        sid: cnt for sid, cnt in db.query(Message.sender_id, func.count(Message.id))
+        .filter(Message.receiver_id == me, Message.group_id.is_(None),
+                Message.read_at.is_(None))
+        .group_by(Message.sender_id).all()
+    }
+    items = []
+    for pid in peer_ids:
+        u = users.get(pid)
+        lm = last_msgs.get(last_id_by_peer.get(pid))
+        items.append({
+            "peerId": pid,
+            "peerNickname": (u.nickname if u else "已注销用户"),
+            "peerAvatar": (u.avatar if u else None),
+            "peerRemark": remarks.get(pid, ""),
+            "lastMessage": {
+                "id": lm.id,
+                "kind": lm.kind,
+                "content": lm.content,
+                "createdAt": lm.created_at,
+                "senderId": lm.sender_id,
+            } if lm else None,
+            "unreadCount": int(unread.get(pid, 0)),
+            "updatedAt": (lm.created_at if lm else ""),
+        })
+    items.sort(key=lambda x: x["updatedAt"] or "", reverse=True)
+    total = len(items)
+    return {"items": items[:limit], "total": total}
+
+
 @router.get("/unread")
 def unread(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """我的未读私信：按好友汇总（补昵称头像，供会话列表免二次请求渲染角标）。"""
@@ -132,7 +213,18 @@ def unread(user: User = Depends(get_current_user), db: Session = Depends(get_db)
             else:
                 p["last"] = m.content[:80]
         total += 1
-    return {"total": total, "items": sorted(by_peer.values(), key=lambda x: -x["lastId"])}
+    # Bug3（R72）：带上「我对该对端」的私有备注，供会话列表 / 未读角标免二次请求渲染。
+    remarks = {
+        r.peer_id: (r.remark or "")
+        for r in db.query(FriendRemark).filter(
+            FriendRemark.owner_id == user.id,
+            FriendRemark.peer_id.in_(list(by_peer.keys())),
+        ).all()
+    } if by_peer else {}
+    items = sorted(by_peer.values(), key=lambda x: -x["lastId"])
+    for it in items:
+        it["peerRemark"] = remarks.get(it["peerId"], "")
+    return {"total": total, "items": items}
 
 
 def do_mark_read(db: Session, peer_id: int, me_id: int, up_to_id: int) -> int:

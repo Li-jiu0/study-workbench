@@ -510,6 +510,27 @@
         (toBuiltin ? '；并已自动保存为自定义题库「' + curName + '」' + (curN ? '（' + curN + ' 条）' : '') : '');
       toast(tip, 'success');
 
+      /* ③ R72-9：可选登记到「我的文件」——数据键为唯一真相，登记函数为可选增强。
+         跨页调用可能不存在（我的文件.html 未加载该脚本时 window.xtFilesRegister 为 undefined），
+         故 typeof 守卫 + try/catch；未加载时静默跳过，由 我的文件.html 渲染时汇总数据键。 */
+      try {
+        if (typeof window.xtFilesRegister === 'function') {
+          var regModule = isBuiltin(S.target) ? labelOf(S.target) : (S.target || curName);
+          var regTitle = toBuiltin ? (curName + '（到 ' + labelOf(S.target) + '）') : ('自定义·' + safeFileName(S.rawName));
+          window.xtFilesRegister({
+            id: 'imp:' + (toBuiltin ? labelOf(S.target) : S.target) + ':' + curName,
+            title: regTitle,
+            kind: 'bank',
+            module: regModule || '题库',
+            source: 'import',
+            items: items.length,
+            size: 0,
+            createdAt: new Date().toISOString(),
+            payload: { name: curName, type: curType, count: items.length }
+          });
+        }
+      } catch (eReg) { /* 登记为可选增强：失败绝不影响导入主流程 */ }
+
       /* ③ 收尾：刷新宿主页面的题库列表 → 关闭向导 */
       try { if (typeof window.__impAfterImport === 'function') window.__impAfterImport(); } catch (e) { }
       var view = document.getElementById('importerView');
