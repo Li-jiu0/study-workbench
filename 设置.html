@@ -757,13 +757,13 @@
             </div>
           </div>
 
-          <!-- 绑定与认证（任务 E · 2026-09-16）：手机号 / 微信号 / 邮箱号 三项绑定状态 + 页面内可展开区块。
+          <!-- 绑定与认证（任务 E · 2026-09-16；R73d · 2026-09-18 删除手机号/微信号入口）：邮箱号绑定状态 + 页面内可展开区块。
                ADR-3：一律使用页面内可展开区块（.st-bind-panel.active），不使用任何遮罩弹窗；
                状态与操作全部由脚本 stRenderBindings() 动态渲染（数据源见下方脚本区契约注释）。 -->
           <div class="setting-row st-bind-row" id="stBindRow">
             <div class="setting-info">
               <div class="setting-name">绑定与认证</div>
-              <div class="setting-desc">绑定手机号 / 微信号 / 邮箱号，用于账号找回与登录安全。</div>
+              <div class="setting-desc">绑定邮箱号，用于账号找回与登录安全。</div>
             </div>
           </div>
           <div id="stBindList" class="st-bind-list"></div>
@@ -1507,7 +1507,7 @@ function stDeleteAccount() {
 
 /* ==================== 任务 E：绑定与认证（2026-09-16 新增） ====================
    ADR-3：一律使用页面内可展开区块（#stBindPanel.active），不使用任何遮罩弹窗。
-   三项绑定：手机号 / 微信号 / 邮箱号，各自显示「未绑定」或脱敏值，每行一个操作按钮。
+   绑定项：邮箱号（R73d 起仅保留邮箱，手机号/微信号入口已删），显示「未绑定」或脱敏值，每行一个操作按钮。
 
    数据源与接口契约（前端只对接后端「已实现」的真实路由，不写死任何后端假设）：
      ① 本地单机模式（stIsOnline() === false）：
@@ -1530,7 +1530,7 @@ function stDeleteAccount() {
           后端四类异常文案（发送失败 / 过期 / 错误 / 邮箱被占用）与「邮件服务未配置」均可如实展示；401 由其内部自动刷新。
    ============================================================================ */
 
-var ST_BIND_CHANNELS = ['phone', 'wechat', 'email'];
+var ST_BIND_CHANNELS = ['email']; /* R73d(20260918)：手机号/微信号绑定入口按需求删除，仅保留邮箱 */
 var ST_BIND_META = {
   phone:  { name: '手机号', icon: 'smartphone', ph: '请输入 11 位手机号' },
   wechat: { name: '微信号', icon: 'message-circle', ph: '请输入微信号（字母开头，6-20 位）' },
