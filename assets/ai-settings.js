@@ -761,15 +761,21 @@
     return !!(m && m.types && isArray(m.types) && m.types.indexOf('imagegen') >= 0);
   }
 
-  /* R81：失败文案分场景——需代理网络类 / Key 失效 / 模型 ID 无效 / 其他 */
+  /* R81：失败文案分场景——需代理网络类 / Key 失效 / 模型 ID 无效 / 其他
+     R73n：timeout 不再谎报「需要梯子」——探测可达但检测超时，多半是梯子链路慢，引导重试 */
   function healthReasonEx(id, err) {
     var s = String(err === null || typeof err === 'undefined' ? '' : err);
     if (s === 'http_429') { return '当前模型额度已用完/被限流，已自动降级'; }
-    if (s === 'network' || s === 'cors' || s === 'timeout' || s === 'empty') {
+    if (s === 'timeout' || s === 'empty') {
+      if (needProxyModel(id)) {
+        return providerNameOf(id) + ' 平台可达但响应慢，检测超时——请再点一次重新检测；多次超时请切换国内模型';
+      }
+      return '请求超时，无响应';
+    }
+    if (s === 'network' || s === 'cors') {
       if (needProxyModel(id)) {
         return providerNameOf(id) + ' 需要梯子访问，请检查网络或切换到国内模型';
       }
-      if (s === 'timeout' || s === 'empty') { return '请求超时，无响应'; }
       return '网络不可达';
     }
     if (s === 'http_401' || s === 'http_403') { return 'Key 无效/过期'; }
