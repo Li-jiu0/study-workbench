@@ -22,7 +22,7 @@ JAVA_OUT = os.path.join(OUT, "java")
 CLASSES = os.path.join(OUT, "classes")
 DEX_OUT = os.path.join(OUT, "dex")
 KEPT = os.path.join(ROOT, "android", "workbench.keystore")
-FINAL_APK = os.path.join(ROOT, "学习工作台-安卓App.apk")
+FINAL_APK = os.path.join(ROOT, "星途-安卓App.apk")
 SIGNED = os.path.join(OUT, "app-signed.apk")
 
 os.makedirs(os.path.join(STAGE, "assets"), exist_ok=True)

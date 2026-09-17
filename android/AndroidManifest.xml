@@ -33,7 +33,7 @@
     <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="33" />
 
     <application
-        android:label="学习工作台"
+        android:label="星途"
         android:icon="@drawable/ic_launcher"
         android:usesCleartextTraffic="true"
         android:allowBackup="true"
