@@ -132,9 +132,9 @@
     { id: 'or-nemotron-ultra', name: 'Nemotron-Ultra', provider: 'openrouter', model: 'nvidia/nemotron-3-ultra-550b-a55b:free', types: ['general','reasoning'], tag: null, fallback: 'ark-v4-pro' },
     { id: 'gm-flash-lite', name: 'Gemini-3.5-Flash-Lite', provider: 'gemini', model: 'gemini-3.5-flash-lite', types: ['general'], tag: null, fallback: 'ark-v4-flash' },
     { id: 'gm-flash', name: 'Gemini-3.5-Flash', provider: 'gemini', model: 'gemini-3.5-flash', types: ['general','reasoning'], tag: null, fallback: 'ark-v4-pro' },
-    { id: 'ark-seedream-4-0415', name: 'Seedream-4.0', provider: 'arkimage', model: 'doubao-seedream-4-0-20260415', types: ['imagegen'], tag: null, fallback: 'ark-v4-flash' },
-    { id: 'ark-seedream-4-0828', name: 'Seedream-4.0-Fast', provider: 'arkimage', model: 'doubao-seedream-4-0-250828', types: ['imagegen'], tag: null, fallback: 'ark-v4-flash' },
-    { id: 'ark-seedream-5-pro', name: 'Seedream-5-Pro', provider: 'arkimage', model: 'doubao-seedream-5-0-pro-260628', types: ['imagegen'], tag: null, fallback: 'ark-v4-flash' }
+    { id: 'ark-seedream-4-0415', name: 'Seedream-4.0', provider: 'arkimage', model: 'doubao-seedream-4-0-20260415', types: ['imagegen'], tag: null, fallback: null },
+    { id: 'ark-seedream-4-0828', name: 'Seedream-4.0-Fast', provider: 'arkimage', model: 'doubao-seedream-4-0-250828', types: ['imagegen'], tag: null, fallback: null },
+    { id: 'ark-seedream-5-pro', name: 'Seedream-5-Pro', provider: 'arkimage', model: 'doubao-seedream-5-0-pro-260628', types: ['imagegen'], tag: null, fallback: null }
   ];
 
   /* 自定义模型：服务商预设（选择后自动填 API 地址 + 切换模型 ID 下拉选项）

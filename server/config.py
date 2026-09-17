@@ -39,6 +39,12 @@ VOICE_DIR = UPLOAD_DIR / "voice"
 # 大模型服务商注册表：默认接口与模型，密钥从 .env 注入
 # 前端只会拿到“已配置密钥”的服务商列表（名称+模型），拿不到任何密钥。
 AI_PROVIDERS = {
+    "ark": {
+        "name": "火山方舟（豆包/DeepSeek）",
+        "base_url": _get("ARK_BASE_URL", "https://ark.cn-beijing.volces.com/api/v3/chat/completions"),
+        "model": _get("ARK_MODEL", "deepseek-v4-flash-ga-260731"),
+        "api_key": _get("ARK_API_KEY"),
+    },
     "deepseek": {
         "name": "DeepSeek 深度求索",
         "base_url": _get("DEEPSEEK_BASE_URL", "https://api.deepseek.com/chat/completions"),
@@ -60,8 +66,14 @@ AI_PROVIDERS = {
     "zhipu": {
         "name": "智谱 GLM",
         "base_url": _get("ZHIPU_BASE_URL", "https://open.bigmodel.cn/api/paas/v4/chat/completions"),
-        "model": _get("ZHIPU_MODEL", "glm-4-flash"),
+        "model": _get("ZHIPU_MODEL", "glm-4.7"),
         "api_key": _get("ZHIPU_API_KEY"),
+    },
+    "qianfan": {
+        "name": "百度千帆（ERNIE）",
+        "base_url": _get("QIANFAN_BASE_URL", "https://qianfan.baidubce.com/v2/chat/completions"),
+        "model": _get("QIANFAN_MODEL", "ernie-4.5-turbo-32k"),
+        "api_key": _get("QIANFAN_API_KEY"),
     },
     "siliconflow": {
         "name": "硅基流动",
