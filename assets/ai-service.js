@@ -1949,6 +1949,10 @@
 
   // ---------- R64 N4：健康检查（跨线契约 C2；直接复用 requestModel，绝不计入限频） ----------
   var HEALTH_TIMEOUT = 5000;
+  // R73n：needProxy 平台（gemini/openrouter）走梯子，完整请求链路慢（TLS+推理），
+  // 5s 窗口会误杀——实测平台探测 1.5s 可达，但生成请求超 5s 很常见，被误报成「需要梯子」。
+  // 放宽到 15s；国内平台维持 5s。
+  var HEALTH_TIMEOUT_PROXY = 15000;
 
   // err 分类如实：http_<code> / cors / network / timeout / empty
   function classifyHealthErr(e) {
@@ -2023,6 +2027,9 @@
       // 极短 ping（"hi" + maxTokens=1）不烧 token
       var ping = mc;
       ping.maxTokens = 1;
+      // R73n：按平台选检测窗口——needProxy 平台 15s，其余 5s
+      var hTimeout = (mc && mc.provider && providerNeedProxy(mc.provider))
+        ? HEALTH_TIMEOUT_PROXY : HEALTH_TIMEOUT;
 
       // 端点 / Key 缺失：不抛异常，返回新增 err 值（调用方线1 会映射成用户可读文案）
       var eff = resolveEffectiveEndpointKey(ping);
@@ -2046,14 +2053,14 @@
         return;
       }
 
-      // 总超时 5s（R83）：复用 raceTimeout（老 WebView 兼容）；有 AbortController 时再加一层硬中止
+      // 总超时（R73n：needProxy 平台 15s，其余 5s）：复用 raceTimeout（老 WebView 兼容）；有 AbortController 时再加一层硬中止
       var ctrl = null;
       var timer = null;
       if (typeof AbortController === "function") {
         ctrl = new AbortController();
         timer = setTimeout(function () {
           try { ctrl.abort(); } catch (eAb) { /* 忽略 */ }
-        }, HEALTH_TIMEOUT);
+        }, hTimeout);
       }
       function finish(result) {
         if (timer) clearTimeout(timer);
@@ -2065,7 +2072,7 @@
         [{ role: "user", content: "hi" }],
         null,
         ctrl ? ctrl.signal : null,
-        { responseTimeout: HEALTH_TIMEOUT, firstTokenTimeout: HEALTH_TIMEOUT, totalTimeout: HEALTH_TIMEOUT }
+        { responseTimeout: hTimeout, firstTokenTimeout: hTimeout, totalTimeout: hTimeout }
       ).then(function (text) {
         if (text) finish({ ok: true, ms: Date.now() - startedAt, err: null });
         else finish({ ok: false, ms: Date.now() - startedAt, err: "empty" });
