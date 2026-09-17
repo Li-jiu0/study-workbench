@@ -304,7 +304,7 @@ function applyModeNotice() {
   var n = document.getElementById('loginNotice');
   if (ONLINE) {
     if (sub) sub.textContent = '祝君一切安好 · 诸事顺宜';
-    if (n) n.innerHTML = '💡 后端地址：<b>' + escHtml(API_BASE || '同源部署') + '</b>';
+    if (n) n.innerHTML = '💡 开源：<a href="https://github.com/Li-jiu0/study-workbench" target="_blank" rel="noopener">https://github.com/Li-jiu0/study-workbench</a>';
   } else {
     if (sub) sub.textContent = '单机离线版 · 数据保存在本机';
     if (n) n.innerHTML = '📱 <b>单机离线模式</b>：未检测到后端服务器，数据保存在本机。<br>如需多人博客 / 在线 AI，请启动 <b>server/</b> 后端后重新打开。';
