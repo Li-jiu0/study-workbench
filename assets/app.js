@@ -37,10 +37,14 @@ window.lsKey = lsKey;
       if (k) olds.push(k);
     }
   } catch (e) { olds = []; }
+  // R72-1：目标键已存在时「跳过但不清源」——裸键一律保留（老数据的兼容读取兜底）。
   function copyOne(oldKey, newKey) {
-    if (localStorage.getItem(newKey) != null) return; // 新键已存在：不覆盖当前账号数据
     var v = localStorage.getItem(oldKey);
-    if (v != null) { try { localStorage.setItem(newKey, v); } catch (e) { /* 忽略 */ } }
+    if (v == null) return;
+    if (localStorage.getItem(newKey) == null) {
+      try { localStorage.setItem(newKey, v); } catch (e) { /* 忽略 */ }
+    }
+    // 目标键已存在：不覆盖当前账号数据，且不改动裸键。
   }
   LITERAL_KEYS.forEach(function (key) {
     if (olds.indexOf(key) >= 0) copyOne(key, lsKey(key));
@@ -50,15 +54,198 @@ window.lsKey = lsKey;
       if (key.indexOf(p) === 0 && key.indexOf('@') === -1) copyOne(key, lsKey(key));
     });
   });
-  // 全部处理完后一次性删除旧键（避免迁移逻辑反复触发）
-  LITERAL_KEYS.forEach(function (key) {
-    if (olds.indexOf(key) >= 0) { try { localStorage.removeItem(key); } catch (e) { /* 忽略 */ } }
-  });
-  PREFIX_KEYS.forEach(function (p) {
-    olds.forEach(function (key) {
-      if (key.indexOf(p) === 0 && key.indexOf('@') === -1) { try { localStorage.removeItem(key); } catch (e) { /* 忽略 */ } }
+  // R72-1：迁移后**不再删除裸键**——裸键保留作兼容兜底（chat-local.js 等仍读裸键；
+  // 此处原 removeItem 正是本批「会话列表消失」的共因）。迁移幂等：下次运行 copyOne 见目标键已存在即跳过。
+})();
+
+/* ========== AI 悬浮头像：拖拽 + 点击打开面板（独立自举） ==========
+   放在文件最前部的原因：悬浮头像不能依赖后面任何初始化代码是否成功，
+   否则一旦某处初始化抛异常，绑定就不执行 → 球既点不开也拖不动。
+   实现要点：
+   1) 本段所有状态都在闭包内，不引用文件后部声明的变量（避免 TDZ）；
+   2) 同时监听 mouse / touch 两套事件（老 Android WebView 没有 PointerEvent）；
+   3) 找不到 #aiFab 时轮询重试（兼容后插入 DOM 的页面）；
+   4) 拖动位置持久化到 localStorage，双击复位。 */
+(function initAiFabModule() {
+  var POS_KEY = 'study_workbench_ai_fab_pos';
+  var fab = null, bound = false;
+  var dragging = false, moved = false, lastMoveEnd = 0;
+  var sx = 0, sy = 0, origL = 0, origT = 0;
+
+  function toast(msg) {
+    try { if (typeof showToast === 'function') showToast(msg); } catch (e) { /* 忽略 */ }
+  }
+  function clampNum(v, lo, hi) {
+    if (typeof v !== 'number' || isNaN(v)) return lo;
+    return Math.max(lo, Math.min(hi, v));
+  }
+  // 老 WebView 不认 calc(...) 里的 env()，整条 bottom 声明会被丢弃，
+  // 悬浮球会掉到文档静态位置（往往在屏幕外）。不支持时用纯 px 兜底。
+  function ensureVisible(el) {
+    try {
+      if (el.style.top || el.style.bottom || el.style.left) return;
+      var supportsEnv = false;
+      if (window.CSS && typeof window.CSS.supports === 'function') {
+        supportsEnv = !!window.CSS.supports('bottom', 'env(safe-area-inset-bottom)');
+      }
+      if (!supportsEnv) {
+        el.style.right = '16px';
+        el.style.bottom = '84px';   // 落在底部导航之上
+      }
+    } catch (e) { /* 忽略 */ }
+  }
+  function restore(el) {
+    try {
+      var saved = null;
+      try { saved = JSON.parse(localStorage.getItem(POS_KEY) || 'null'); } catch (e) { saved = null; }
+      if (saved && typeof saved.left === 'number' && typeof saved.top === 'number') {
+        el.style.left = saved.left + 'px';
+        el.style.top = saved.top + 'px';
+        el.style.right = 'auto';
+        el.style.bottom = 'auto';
+      } else {
+        el.style.left = ''; el.style.top = '';
+        el.style.right = ''; el.style.bottom = '';
+        ensureVisible(el);
+      }
+      try { el.classList.remove('dragging'); } catch (e2) { /* 忽略 */ }
+    } catch (e) { /* 忽略 */ }
+  }
+  function applyPos(el, nl, nt) {
+    var vw = window.innerWidth || document.documentElement.clientWidth || 320;
+    var vh = window.innerHeight || document.documentElement.clientHeight || 480;
+    var w = el.offsetWidth || 54, h = el.offsetHeight || 54;
+    nl = clampNum(nl, 4, Math.max(4, vw - w - 4));
+    nt = clampNum(nt, 4, Math.max(4, vh - h - 4));
+    el.style.left = nl + 'px';
+    el.style.top = nt + 'px';
+    el.style.right = 'auto';
+    el.style.bottom = 'auto';
+  }
+  function startDrag(cx, cy) {
+    if (!fab) return;
+    var rect = fab.getBoundingClientRect();
+    origL = rect.left; origT = rect.top;
+    sx = cx; sy = cy;
+    dragging = true; moved = false;   // 每次按下都重置，避免上一次的拖拽状态吞掉点击
+    try { fab.classList.add('dragging'); } catch (e) { /* 忽略 */ }
+  }
+  function moveDrag(cx, cy) {
+    if (!fab || !dragging) return;
+    var dx = cx - sx, dy = cy - sy;
+    if (!moved && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) moved = true;
+    if (moved) applyPos(fab, origL + dx, origT + dy);
+  }
+  function endDrag(saveNow) {
+    if (!fab) return;
+    dragging = false;
+    try { fab.classList.remove('dragging'); } catch (e) { /* 忽略 */ }
+    if (moved) {
+      var nl = parseFloat(fab.style.left);
+      var nt = parseFloat(fab.style.top);
+      if (isNaN(nl) || isNaN(nt)) {
+        var r = fab.getBoundingClientRect(); nl = r.left; nt = r.top;
+      }
+      if (saveNow) {
+        try { localStorage.setItem(POS_KEY, JSON.stringify({ left: Math.round(nl), top: Math.round(nt) })); } catch (e) { /* 忽略 */ }
+      }
+      lastMoveEnd = new Date().getTime();
+    }
+  }
+  // 打开面板：即使 toggleAiPanel 依赖的模块未初始化成功（抛异常），也要保证能打开
+  function openPanel() {
+    var p = null, wasOpen = false;
+    try { p = document.getElementById('aiPanel'); } catch (e) { /* 忽略 */ }
+    try { if (p) wasOpen = p.classList.contains('open'); } catch (e) { /* 忽略 */ }
+    if (typeof toggleAiPanel === 'function') {
+      try { toggleAiPanel(); return; } catch (e) { /* 中途抛异常：按下面状态兜底 */ }
+    }
+    // 兜底：状态没变说明面板还没打开（或该函数不存在），直接打开，避免点了没反应
+    try {
+      if (p && p.classList.contains('open') === wasOpen) p.classList.add('open');
+    } catch (e2) { /* 忽略 */ }
+  }
+  function bind(el) {
+    if (!el || bound) return;
+    fab = el; bound = true;
+    ensureVisible(el);
+    restore(el);
+
+    // ---- mouse ----
+    el.addEventListener('mousedown', function (e) {
+      e = e || window.event;
+      if (e.button && e.button !== 0) return;
+      startDrag(e.clientX, e.clientY);
+      try { e.preventDefault(); } catch (err) { /* 忽略 */ }
     });
-  });
+    el.addEventListener('mousemove', function (e) {
+      e = e || window.event;
+      moveDrag(e.clientX, e.clientY);
+    });
+    // mouseup 挂在 window 上，鼠标移出球外松手也能结束拖拽
+    window.addEventListener('mouseup', function () { endDrag(true); });
+
+    // ---- touch ----
+    el.addEventListener('touchstart', function (e) {
+      var t = e.touches && e.touches[0];
+      if (!t) return;
+      startDrag(t.clientX, t.clientY);
+    }, false);
+    el.addEventListener('touchmove', function (e) {
+      var t = e.touches && e.touches[0];
+      if (!t) return;
+      moveDrag(t.clientX, t.clientY);
+      if (dragging && moved) {
+        try { e.preventDefault(); } catch (err) { /* 忽略 */ }   // 拖动时不让页面跟着滚
+      }
+    }, false);
+    el.addEventListener('touchend', function (e) {
+      endDrag(true);
+      if (moved) {
+        // 抑制 touchend 后老内核合成的 click，避免"拖完又弹面板"
+        try { e.preventDefault(); } catch (err) { /* 忽略 */ }
+      }
+    }, false);
+    el.addEventListener('touchcancel', function () { endDrag(false); }, false);
+
+    // ---- 点击 / 双击 ----
+    el.addEventListener('click', function () {
+      var now = new Date().getTime();
+      // 刚拖完的那一下不算点击（老内核 touch 后可能补发 click）
+      if (moved && (now - lastMoveEnd) < 600) { moved = false; return; }
+      moved = false;
+      openPanel();
+    });
+    el.addEventListener('dblclick', function () {
+      try { localStorage.removeItem(POS_KEY); } catch (e) { /* 忽略 */ }
+      restore(el);
+      toast('🔄 AI头像已回到默认位置');
+    });
+  }
+  function attempt() {
+    try {
+      var el = document.getElementById('aiFab');
+      if (el) { bind(el); return true; }
+    } catch (e) { /* 忽略 */ }
+    return false;
+  }
+
+  // 保留原有全局函数名，供调试 / 页面内联调用（幂等）
+  window.initAiFabDrag = function () { try { attempt(); } catch (e) { /* 忽略 */ } };
+  window.restoreAiFabPos = function () { try { if (fab) restore(fab); else attempt(); } catch (e) { /* 忽略 */ } };
+
+  // 自举：DOM 未就绪（或元素后被追加）时轮询重试
+  function boot(tries) {
+    if (attempt()) return;
+    if (tries > 0) setTimeout(function () { boot(tries - 1); }, 200);
+  }
+  try { boot(40); } catch (e) { /* 忽略 */ }
+  try {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () { attempt(); });
+    }
+    window.addEventListener('load', function () { attempt(); });
+  } catch (e) { /* 忽略 */ }
 })();
 
 const AUTH_KEY = 'study_workbench_auth';        // 当前登录会话 {account, loginAt}
@@ -311,7 +498,7 @@ let appData = {
   lastVisitDate: "",    // 上次访问日期，用于每日重置随机顺序
   dailyQueues: {},      // 每日学习队列 {commScenes: {date, ids: []}, ...}
   reviewToday: { date: "", words: [] }, // 【R36】每日复习队列 {date, words:[单词,...]}，跨日自动重建
-  // ===== 广场（发贴系统）数据 =====
+  // ===== 社区（发贴系统）数据 =====
   notes: [],            // 发贴文章 [{id,title,category,tags,cover,privacy,status,content,excerpt,views,likes,liked,comments,createdAt,updatedAt}]
   favoriteNotes: [],    // 我收藏的发贴 ID 列表
   profile: { name: '同学', avatar: '学', motto: '好好学习，天天向上', gender: 'secret', birthday: '', city: '' }  // 个人中心资料
@@ -1212,7 +1399,7 @@ function loadData() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      appData = { ...appData, ...JSON.parse(saved) };
+      appData = Object.assign({}, appData, JSON.parse(saved));
     }
   } catch (e) { console.error('加载数据失败', e); }
   // 【P0-B T03】防御回退：旧档升级时确保 mockExams 字段存在
@@ -1255,23 +1442,25 @@ function saveData() {
 
 // ========== 导航 ==========
 const pageTitles = {
-  home: '首页', cet: '四级备考', exam: '央国企笔试备考',
-  comm: '高情商表达', interview: '商务礼仪及面试', ppt: 'PPT训练',
+  home: '首页', cet: '英语', exam: '行测备考',
+  comm: '表达', interview: '面测', ppt: '我的文件',
   'speaking-demo': '情景式口语', 'exam-demo': '行测刷题',
   'roleplay-demo': '角色扮演', 'interview-demo': '模拟面试',
-  'exam-center': '行测刷题中心', shenlun: '申论刷题', 'wrong-book': '错题本', 'cet-vocab': '四级词汇', 'etiquette': '商务礼仪', 'iv-questions': '面试题库', 'ppt-layouts': 'PPT版式库', 'ppt-cases': 'PPT案例拆解', 'comm-scenes': '场景话术库', 'comm-quotes': '万能金句库', 'settings': '设置', 'blog': '广场', 'profile': '个人中心'
+  'exam-center': '行测刷题中心', shenlun: '申论刷题', 'wrong-book': '错题本', 'cet-vocab': '四级词汇', 'etiquette': '商务礼仪', 'iv-questions': '面试题库', 'ppt-layouts': 'PPT版式库', 'ppt-cases': 'PPT案例拆解', 'comm-scenes': '场景话术库', 'comm-quotes': '万能金句库', 'settings': '设置', 'blog': '社区', 'profile': '个人中心'
 };
 
 // ========== 多页面版：各模块独立网页的文件映射 ==========
 // 本页没有某模块的 DOM 时，navigateTo() 会据此跳转到对应模块网页
 const PAGE_FILES = {
   home: '学习工作台.html',
-  cet: '四级备考.html', 'speaking-demo': '四级备考.html',
-  exam: '央国企笔试.html', 'exam-demo': '央国企笔试.html',
-  comm: '高情商表达.html', 'roleplay-demo': '高情商表达.html',
-  interview: '商务礼仪面试.html', 'interview-demo': '商务礼仪面试.html',
-  ppt: 'PPT训练.html',
-  blog: '学习博客.html',
+  cet: '英语.html', 'speaking-demo': '英语.html',
+  exam: '行测.html', 'exam-demo': '行测.html',
+  comm: '表达.html', 'roleplay-demo': '表达.html',
+  interview: '面测.html', 'interview-demo': '面测.html',
+  // R72-6：主入口「演示」→「我的文件」；ppt 键保留并改指新页，防历史深链/旧快捷入口死链。
+  files: '我的文件.html',
+  ppt: '我的文件.html',
+  blog: '社区.html',
   'exam-center': '行测刷题.html',
   // 【2026-09-15】申论刷题.html 已上线，但从未登记进路由表 → 首页模块卡点它只会
   // 打 warn「未知页面」原地不动。补登记后 navigateTo('shenlun') 才跳得过去。
@@ -1480,7 +1669,7 @@ function renderTasks() {
 }
 
 function getModuleName(module) {
-  const names = { cet: '四级备考', exam: '央国企笔试', comm: '高情商表达', interview: '商务礼仪面试', ppt: 'PPT训练' };
+  const names = { cet: '英语', exam: '行测', comm: '表达', interview: '面测', ppt: '我的文件' };
   return names[module] || module;
 }
 
@@ -1645,9 +1834,9 @@ const MODULE_PROGRESS_TARGET = {
 // 设计说明（为什么是这 12 张卡）：
 //  · 行测五大模块与 EXAM_BANK 的 type 不是一对一 —— 图形推理 / 定义判断 / 类比推理 / 逻辑判断
 //    在考试学上同属「判断推理」，必须按下表归并，否则判断推理会漏统计这 4 个题型。
-//  · 央国企笔试.html 的行测入口就是 exam-center（同一套 EXAM_BANK），不再重复出卡。
+//  · 行测.html 的行测入口就是 exam-center（同一套 EXAM_BANK），不再重复出卡。
 //  · 错题本没有「已攻克」数据源（wrongQuestions 只增不减），出卡必然恒 0% 空转，故不列入。
-//  · 四级备考.html 只有任务清单与目标日，没有可计量的内容库，同样不列入（不造假数据）。
+//  · 英语.html 只有任务清单与目标日，没有可计量的内容库，同样不列入（不造假数据）。
 const XT_EXAM_MODULE_TYPES = {
   '数量关系': ['数量关系'],
   '言语理解': ['言语理解'],
@@ -2055,18 +2244,18 @@ function activityToItem(it) {
     var rel = formatRelTime(it.t);
     var type = it.type || '';
     if (type === 'vocab') {
-      return { ts: it.t || 0, icon: 'book', title: '背单词 · ' + (it.ref || ''), meta: '四级备考 · ' + rel, module: 'cet' };
+      return { ts: it.t || 0, icon: 'book', title: '背单词 · ' + (it.ref || ''), meta: '英语 · ' + rel, module: 'cet' };
     }
     if (type === 'fav') {
       var qf = findExamById(Number(it.ref));
       return { ts: it.t || 0, icon: 'star', title: qf ? (qf.type + '·' + (qf.sub || '')) : ('收藏 · #' + it.ref), meta: '已收藏 · ' + rel, module: 'exam' };
     }
     if (type === 'listen') {
-      return { ts: it.t || 0, icon: 'headphones', title: '听力练习 · ' + (it.ref || ''), meta: '四级备考 · ' + rel, module: 'cet' };
+      return { ts: it.t || 0, icon: 'headphones', title: '听力练习 · ' + (it.ref || ''), meta: '英语 · ' + rel, module: 'cet' };
     }
     if (type === 'exam') {
       var q = findExamById(Number(it.ref));
-      return { ts: it.t || 0, icon: 'package', title: q ? (q.type + '·' + (q.sub || '')) : ('刷题 · #' + it.ref), meta: '央国企笔试 · ' + rel, module: 'exam' };
+      return { ts: it.t || 0, icon: 'package', title: q ? (q.type + '·' + (q.sub || '')) : ('刷题 · #' + it.ref), meta: '行测 · ' + rel, module: 'exam' };
     }
     // 【批次八】内容库学完记录（markAsViewed 写入，type = viewedContent 的 contentKey）
     var libMeta = {
@@ -2126,7 +2315,7 @@ function computeRecentLearning() {
         ts: dateToTs(rec.lastReview),
         icon: 'package',
         title: q ? (q.type + '·' + (q.sub || '')) : ('题目 #' + id),
-        meta: '央国企笔试 · ' + (formatDateRel(rec.lastReview) || '已练习'),
+        meta: '行测 · ' + (formatDateRel(rec.lastReview) || '已练习'),
         module: 'exam'
       });
     });
@@ -2387,6 +2576,17 @@ function refreshHomeCards() {
   var r = document.getElementById('recentList');
   if (!g && !w && !r) return;            // 非首页（三容器全无）直接跳过，零副作用
   try { loadData(); } catch (e) { /* 读取失败则沿用现有 appData，不打断 */ }
+  // 【2026-09-16 修复·本周学习时长不随真实数据变动】
+  // 背景：renderStats() 内含 renderWeekChart()（本周 7 柱）与四个统计数，原本只由 renderHome()
+  // 调用一次。用户「学完一章回到首页」若命中 bfcache（脚本不重跑）或跨标签页学完切回，
+  // #weekChart 仍是旧快照，表现为「本周学习时长不随真实数据变动」。
+  // 这里补一次 renderStats()：它会重新 getStudySummary() 读 study-stats.js 的最新周数据，
+  // 再重绘柱高与柱顶数值（数据源见 renderWeekChart 注释，全为真实值，无假数据）。
+  // 注意：必须先 loadData() 重读 localStorage 再渲染，故置于其下。
+  // 容器判空：仅当 #weekChart 或四个统计节点之一存在（即当前是首页）时才补渲染。
+  var weekBox = document.getElementById('weekChart');
+  var totalBox = document.getElementById('totalHours');
+  if (weekBox || totalBox) { try { renderStats(); } catch (e0) { /* 静默，不打断其它卡片 */ } }
   if (g) { try { renderModuleProgress(); } catch (e1) { /* 静默 */ } }
   if (w) { try { renderWeakPoints(); } catch (e2) { /* 静默 */ } }
   if (r) { try { renderRecentLearning(); } catch (e3) { /* 静默 */ } }
@@ -2770,14 +2970,14 @@ function openTool(toolId) {
 // ========== AI学习助手（悬浮聊天窗口） ==========
 // ⚠️ 安全约定：正式环境大模型密钥只能放在后端 ai-server/.env 中，前端代码绝不出现密钥。
 // 【后续扩展点】启动 ai-server 后端后，把 apiUrl 填为后端地址即可启用后端中转模式：
-//   AI_CONFIG.apiUrl = 'http://localhost:3000/api/chat'
+//   APP_AI_DEMO_CONFIG.apiUrl = 'http://localhost:3000/api/chat'
 // 留空 = 本地演示模式（不联网，由内置规则引擎回复，适合先体验交互效果）。
-const AI_CONFIG = {
+const APP_AI_DEMO_CONFIG = {
   apiUrl: '', // 例：'http://localhost:3000/api/chat'
 };
 
 // ========== AI 服务商配置（本地演示版，新增） ==========
-// 三种模式优先级：① 服务商直连（下面配置了 apiKey）→ ② 后端中转（AI_CONFIG.apiUrl）→ ③ 本地演示
+// 三种模式优先级：① 服务商直连（下面配置了 apiKey）→ ② 后端中转（APP_AI_DEMO_CONFIG.apiUrl）→ ③ 本地演示
 // ⚠️ 密钥只保存在本机浏览器 localStorage，仅适合个人本地使用；
 //    正式/多人环境必须改为后端中转（ai-server），禁止密钥出现在前端代码或仓库中。
 const AI_CFG_KEY = lsKey('study_workbench_ai_config');
@@ -2817,7 +3017,7 @@ function clearAiProviderConfig() {
 function currentAiMode() {
   const cfg = getAiProviderConfig();
   if (cfg.apiKey && cfg.baseUrl) return { mode: 'provider', cfg };
-  if (AI_CONFIG.apiUrl) return { mode: 'backend', cfg: null };
+  if (APP_AI_DEMO_CONFIG.apiUrl) return { mode: 'backend', cfg: null };
   return { mode: 'demo', cfg: null };
 }
 // 上下文记忆：取最近 N 条历史组装 messages（含刚 push 的最新用户消息）
@@ -2893,33 +3093,26 @@ let aiStreaming = false; // 是否正在流式输出，防止重复发送
 
 /* ========== AI 伙伴（多角色模式）：像"换个伙伴"一样切换不同人设的 AI ========== */
 const AI_PARTNER_KEY = lsKey('study_workbench_ai_partner');
-// 预置伙伴：人设（systemPrompt 注入大模型）+ 问候语 + 本地演示兜底风格 + 主题色
+// 预置伙伴（2026-09-16 重构为 2 个：小助手 / 暖心学伴；数组第一项为默认选中）
+// 人设（systemPrompt 注入大模型）+ 问候语 + 本地兜底风格（demoStyle）+ 主题色 + 线性图标名
+// 图标走站内 icon-map.js（lucide 线性图标），与 AI 页 sparkles 风格统一；emoji 仅作无图标时的文本兜底。
+// 旧 id 兼容：老用户 localStorage 里存的是 'gongkao'（原公考导师）及更早的 xiaotu/coach/mentor 等，
+// 不做映射会让老用户读到未知 id 而取不到人设、历史也读不出来，见 normalizeAiPartnerId() / migrateAiPartnerId()。
+const AI_PARTNER_ID_ALIAS = {
+  gongkao: 'assistant', xiaotu: 'assistant', coach: 'assistant',
+  mentor: 'assistant', interviewer: 'assistant', buddy: 'warm'
+};
 const AI_PARTNERS = [
-  { id: 'xiaotu', name: '小兔', emoji: '🐰', tag: '温柔治愈型', color: '#F06A9A', bg: '#FFF0F5',
-    desc: '像朋友一样倾听，温柔鼓励，适合学累了想被安慰的时候',
-    systemPrompt: '你叫小兔，是一位温柔治愈、善解人意的聊天伙伴。用温暖亲切的语气和用户聊天，像知心朋友一样倾听和回应。多用轻柔的问候和鼓励（如"慢慢来""你已经很棒了"），适当使用 emoji 和波浪线传递温度。如果用户提到学习压力或情绪困扰，先共情安抚，再给一两个轻松可行的小建议，不要长篇大论讲道理。',
-    greeting: '嗨~我是小兔，今天想聊点什么呀？不用紧张，慢慢说就好 🐰💕',
-    demoStyle: function (text) { return '嗯嗯，我在认真听呢～关于「' + text.slice(0, 30) + '」，你是怎么想的呀？无论你怎么选，我都支持你 🐰\n\n（当前是本地演示模式，接入真实 AI 后我能陪你聊得更深入哦）'; } },
-  { id: 'coach', name: '学霸教练', emoji: '🦉', tag: '高效规划型', color: '#5B8DEF', bg: '#EEF4FF',
-    desc: '备考规划专家，帮你拆目标、定计划、查漏补缺',
-    systemPrompt: '你叫学霸教练，是一位经验丰富的备考规划导师，擅长四级、行测、央国企笔试、面试等考试辅导。回答要结构化：先给结论或建议，再分要点展开，必要时给出具体可执行的时间安排。语气专业但亲切，结尾常给一句鼓励。不要空泛，要具体到每天做什么。',
-    greeting: '我是学霸教练🦉 今天想攻哪一科？报上你的目标，我给你拆一份学习计划。',
-    demoStyle: function (text) { return '收到，关于「' + text.slice(0, 30) + '」，我的建议是：① 先明确目标；② 拆成每天 30 分钟的小任务；③ 每周日复盘一次。\n\n（当前是本地演示模式，接入真实 AI 后我可以按你的具体基础给一份完整计划 📋）'; } },
-  { id: 'mentor', name: '智多星', emoji: '🧠', tag: '思维导师型', color: '#9B6BF3', bg: '#F5F0FF',
-    desc: '帮你把问题想深一层，结构化分析、找本质',
-    systemPrompt: '你叫智多星，是一位思维严谨的导师。回答注重逻辑：先界定问题，再分析原因或利弊，最后给结论和行动建议。擅长用"是什么-为什么-怎么办"的结构。必要时可反问用户一两个问题帮助澄清。语气沉稳、有启发性。',
-    greeting: '我是智多星🧠 遇到什么问题了？说来听听，我陪你一起把它想透。',
-    demoStyle: function (text) { return '关于「' + text.slice(0, 30) + '」，我们拆三层看：① 现状是什么；② 卡点在哪；③ 最小下一步能做什么。\n\n（当前是本地演示模式，接入真实 AI 后我可以带你做更深的推演 🔍）'; } },
-  { id: 'interviewer', name: '面试官', emoji: '🎯', tag: '模拟面试型', color: '#2FBF8F', bg: '#EAF9F3',
-    desc: '模拟真实面试场景，犀利提问 + 逐题点评',
-    systemPrompt: '你叫面试官，是一位严格但专业的模拟面试官。当用户求职面试时：先出一个真实的面试问题，用户回答后给出点评（优点+改进点）和参考回答要点。语气职业、直接，不过度夸奖，可以追问细节。若用户问的不是面试问题，也尽量联系到求职或职场场景回答。',
-    greeting: '我是面试官🎯 准备好了吗？先来个经典开场：请做一段 1 分钟的自我介绍。',
-    demoStyle: function (text) { return '好的，假设这是面试现场：关于「' + text.slice(0, 30) + '」，请再说具体一点？我会从逻辑、量化成果、匹配度三个维度给你点评 🎯\n\n（当前是本地演示模式，接入真实 AI 后模拟会更逼真）'; } },
-  { id: 'buddy', name: '老铁', emoji: '😎', tag: '直爽激励型', color: '#F08A24', bg: '#FFF4E8',
-    desc: '不跟你客气，直接打鸡血，犯懒的时候找他最管用',
-    systemPrompt: '你叫老铁，是用户身边最直爽的铁哥们儿。语气豪爽、接地气，说话带点东北老铁的味道（但别过头），喜欢用短句和感叹号。见不得用户拖延犯懒，会直接戳破并打鸡血。该夸的时候使劲夸，该提醒的时候也不含糊。最后总要推着用户去行动。',
-    greeting: '嘿老铁😎 又见面了！今天学得咋样？别整虚的，有啥问题直接说。',
-    demoStyle: function (text) { return '老铁，关于「' + text.slice(0, 30) + '」这事——干就完了！先做 10 分钟，做不动了你再来找我，我陪你唠 😎\n\n（当前是本地演示模式，接入真实 AI 后我随叫随到）'; } },
+  { id: 'assistant', name: '小助手', icon: 'sparkles', emoji: '✨', tag: '全能学习助手', color: '#2F6BFF', bg: '#EDF3FF',
+    desc: '覆盖行测、申论、四级、面试、PPT、备考规划等全站学习问题，先给结论、条理清晰、能直接照着做',
+    systemPrompt: '你叫小助手，是星途学习平台里的通用学习助手，覆盖全站各模块：英语四六级（词汇、听力、阅读、写作翻译）、行测（言语、判断、资料分析、数量关系、常识）、申论、面试与求职、PPT 与汇报表达、商务礼仪、备考规划与效率方法。回答规则：① 先给结论或判断，再分要点展开，要点用「1. 2. 3.」或「第一/第二/第三」编号；② 每个要点必须给具体可执行的动作（做什么、做多久、用什么资料、怎么检验），禁止空泛的“多练习多总结”；③ 涉及解题要给出可复用的方法、公式或答题框架，并点出常见易错点；④ 涉及规划要按阶段给出每天或每周的量化安排，并说明如何复盘调整；⑤ 语言简洁务实、条理清晰，不空话不堆砌，不用感叹号堆情绪；⑥ 信息不足时先给出通用框架，并在结尾用一句话问清关键变量（目标、剩余天数、当前水平、每天可学时长）。',
+    greeting: '我是小助手 ✨\n行测、申论、四级、面试、PPT、备考规划都可以问我。\n先给我一个场景，我直接给你能照着做的步骤。',
+    demoStyle: function (text) { return '【结论】关于「' + text.slice(0, 30) + '」，先抓高频考点，再补方法，最后限时练。\n\n【要点】\n1. 先定位：明确它属于哪个模块、考频多高、你目前正确率多少。\n2. 再补方法：记一个可复用的解题框架或答题结构，不要靠感觉做。\n3. 限时训练：按考试节奏掐表做，做完逐题复盘错因。\n4. 复盘节奏：每天 20 分钟错题复盘，每周一次整套模考。\n\n【下一步】告诉我你的目标、剩余天数和每天可学时长，我给你排一份到天的计划。\n\n（当前 AI 未连接，以上是本地参考答案，联网后我会按你的基础展开）'; } },
+  { id: 'warm', name: '暖心学伴', icon: 'sprout', emoji: '🌱', tag: '陪伴打气', color: '#12B886', bg: '#E8F8F2',
+    desc: '备考路上陪着你，帮你拆任务、缓情绪、慢慢往前走',
+    systemPrompt: '你叫暖心学伴，是陪在用户身边的备考搭子。说话亲切自然，多用短句，像朋友聊天，不用官话套话。回答规则：① 先共情，先接住用户的情绪或处境（“确实挺累的”“这题卡住很正常”），再给建议；② 一次只给一两个小建议，不要长篇大论，不要列一堆要点；③ 帮用户把任务拆小，拆到“现在就能开始做”的程度，并给一个具体的开始动作；④ 用户焦虑、摆烂、想放弃时，先稳住情绪，肯定已经做到的事，再给一个最小下一步，绝不施压、不说教、不比较别人；⑤ 可以适度用 emoji 和语气词，但不要过度；⑥ 结尾常留一句温暖的追问或鼓励，让用户愿意继续说下去。',
+    greeting: '嗨，我是暖心学伴 🌱\n学累了还是卡住了？都可以跟我说。\n不着急，我们一点点来，先做一小步就好。',
+    demoStyle: function (text) { return '嗯，我懂你说的这种感觉 🌱 关于「' + text.slice(0, 30) + '」，卡住真的挺正常的，别急着否定自己。\n\n要不我们先做一件最小的事：就花 10 分钟，把这一块里你最不熟的一个点挑出来看一看。做完就停也行，做了就算赢。\n\n你今天状态怎么样？是想先缓缓，还是现在就开这一小步？\n\n（当前 AI 未连接，以上是本地参考答案，联网后我能陪你聊得更细）'; } },
 ];
 
 /* ========== AI 快捷功能（一键调用） ========== */
@@ -2938,49 +3131,339 @@ const AI_QUICK_ACTIONS = [
     prompt: '请开始一场模拟面试，岗位是[央国企/互联网/公务员]。你当面试官，先出第一个问题，我回答后你点评，然后再出下一个问题。一共5个问题，结束后给我总体评分和改进建议。' },
 ];
 
-// 打开AI快捷功能面板
+// 打开AI快捷功能面板：不再重复造一条 bar，统一复用 ensureAiQuickBar() 注入的 #aiQuickBar
 function openAiQuickActions() {
   const panel = document.getElementById('aiPanel');
   if (!panel) return;
   if (!panel.classList.contains('open')) toggleAiPanel();
-  
-  // 在AI聊天输入框上方显示快捷功能
-  const inputArea = panel.querySelector('.ai-input-area');
-  if (!inputArea) return;
-  
-  // 移除已有的快捷功能条
-  const old = document.getElementById('aiQuickBar');
-  if (old) old.remove();
-  
-  const bar = document.createElement('div');
-  bar.id = 'aiQuickBar';
-  bar.style.cssText = 'padding:8px 12px;border-bottom:1px solid var(--border);display:flex;gap:8px;overflow-x:auto;';
-  bar.innerHTML = '<div style="font-size:12px;color:var(--text-secondary);align-self:center;flex-shrink:0;">⚡ 快捷功能：</div>' +
-    AI_QUICK_ACTIONS.map(a => 
-      `<button style="flex-shrink:0;padding:6px 12px;border:1px solid var(--border);border-radius:20px;background:var(--card);font-size:12px;cursor:pointer;white-space:nowrap;" onclick="useAiQuickAction('${a.id}')">${a.emoji} ${a.name}</button>`
-    ).join('');
-  
-  panel.insertBefore(bar, inputArea);
+  ensureAiCardCss();
+  ensureAiQuickBar();
+  const bar = document.getElementById('aiQuickBar');
+  if (bar && bar.scrollIntoView) { try { bar.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (eSv) { /* 老内核忽略 */ } }
+  showToast('⚡ 选一个快捷功能，补充具体内容后发送');
 }
 
 // 使用AI快捷功能
 function useAiQuickAction(id) {
   const action = AI_QUICK_ACTIONS.find(a => a.id === id);
   if (!action) return;
-  
-  // 把prompt放到输入框里，让用户补充具体内容
+
+  // 把prompt放到输入框里，让用户补充具体内容（发送时走真实 AI）
   const input = document.getElementById('aiInput');
   if (input) {
     input.value = action.prompt;
     input.focus();
     // 滚动到输入框
-    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (input.scrollIntoView) { try { input.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (eSv2) { /* 老内核忽略 */ } }
   }
-  
+
   showToast(`${action.emoji} ${action.name}：请补充具体内容后发送`);
 }
+/* ---------- 与 AI.html（assets/ai-page.js）共用的存储口径 ----------
+   模型选择：'ai_selected_model'（与 ai-page.js 同一把 key，首页切换后进 AI.html 状态一致）
+   对话历史：'ai_chat_history'（ai-page.js 的会话列表），首页小助手以固定会话 id
+            'xt_home_<伙伴id>' 读写，做到「同一套历史」而不是两套割裂的 AI。
+   角色    ：AI.html 没有伙伴概念（只有 preset chips），因此角色以首页 AI_PARTNERS 为准，
+            AI.html 侧只需能读到同一份历史与模型。 */
+var XT_AI_MODEL_KEY = 'ai_selected_model';
+var XT_AI_HISTORY_KEY = 'ai_chat_history';
+/* 自定义模型：与 assets/ai-page.js 的 CUSTOM_KEY 逐字一致（'ai_custom_models'）。
+   存储结构（与 ai-page.js saveCustom 写入格式对齐）：JSON 数组，元素形如
+   { id:'custom_<ts>', name, apiUrl, apiKey, model, types:[], custom:true, tag:'自定义' }。 */
+var XT_AI_CUSTOM_KEY = 'ai_custom_models';
+function xtHomeChatId() { return 'xt_home_' + getAiPartnerId(); }
+
+/** 当前选中的模型 id（'auto' = 自动），首页与 AI.html 共用同一把 key */
+function getSharedAiModelId() {
+  try { return localStorage.getItem(XT_AI_MODEL_KEY) || 'auto'; } catch (e) { return 'auto'; }
+}
+/** 写入共享模型 id */
+function setSharedAiModelId(id) {
+  try { localStorage.setItem(XT_AI_MODEL_KEY, String(id == null ? 'auto' : id)); } catch (e) { /* 忽略 */ }
+}
+/** 内置模型列表（来自 assets/ai-config.js 的 window.AI_CONFIG，缺失时返回空数组） */
+function xtAiBuiltinModels() {
+  var cfg = (typeof window !== 'undefined') ? window.AI_CONFIG : null;
+  return (cfg && cfg.builtinModels) ? cfg.builtinModels : [];
+}
+/** 用户自定义模型列表（读 assets/ai-page.js 写入的 'ai_custom_models'）。
+    静默降级：键不存在 / 空串 / 非法 JSON / 解析结果不是数组 → 一律返回 []，绝不抛错，
+    保证首页小助手在数据异常时仍可正常用「只有预置模型」的口径工作。 */
+function xtAiCustomModels() {
+  try {
+    var raw = localStorage.getItem(XT_AI_CUSTOM_KEY);
+    if (!raw) return [];
+    var list = JSON.parse(raw);
+    if (!list || typeof list.length !== 'number') return []; // 非数组（如旧格式对象）→ 降级
+    var out = [];
+    for (var i = 0; i < list.length; i++) {
+      var m = list[i];
+      if (!m || typeof m !== 'object') continue;        // 元素缺失/非法 → 跳过该条
+      if (!m.id) continue;                              // 无 id 无法选中 → 跳过
+      if (!m.name) m.name = String(m.id);               // 旧格式缺 name → 用 id 兜底显示
+      out.push(m);
+    }
+    return out;
+  } catch (e) { return []; }
+}
+/** auto 选项的显示名（唯一取值口径，供 auto 分支与孤儿兜底共用，避免两份走岔） */
+function xtAiAutoModelName() {
+  var cfg = (typeof window !== 'undefined') ? window.AI_CONFIG : null;
+  var a = cfg && cfg.autoOption;
+  return (a && a.name) ? a.name : '自动（推荐）';
+}
+/** 当前选中模型的显示名（auto 取 AI_CONFIG.autoOption.name） */
+function getSharedAiModelName() {
+  var id = getSharedAiModelId();
+  if (!id || id === 'auto') { return xtAiAutoModelName(); }
+  var list = xtAiBuiltinModels();
+  for (var i = 0; i < list.length; i++) { if (list[i].id === id) return list[i].name || id; }
+  // 自定义模型（AI 页配置的）：与内置同口径解析显示名
+  var customs = xtAiCustomModels();
+  for (var j = 0; j < customs.length; j++) { if (customs[j].id === id) return customs[j].name || id; }
+  // 兜底：id 指向已被删除的模型（内置/自定义列表均无）→ 不再显示孤儿 id，回退到与 auto 同口径的自动名。
+  // 本函数是纯读取，不改写 ai_selected_model（写回是 selectAiModel 的职责）。
+  return xtAiAutoModelName();
+}
+/** 把首页当前会话镜像进 AI.html 的共享历史（只更新自己的会话，不动其它会话） */
+function syncHomeChatToShared() {
+  try {
+    if (!aiChatHistory || !aiChatHistory.length) return;
+    var list = [];
+    try { list = JSON.parse(localStorage.getItem(XT_AI_HISTORY_KEY)) || []; } catch (e2) { list = []; }
+    if (!list || typeof list.length !== 'number') list = [];
+    var title = '';
+    var store = [];
+    for (var i = 0; i < aiChatHistory.length; i++) {
+      var m = aiChatHistory[i];
+      if (!m) continue;
+      if (!title && m.role === 'user') title = String(m.text == null ? '' : m.text).slice(0, 20);
+      store.push({ role: m.role === 'user' ? 'user' : 'ai', content: String(m.text == null ? '' : m.text) });
+    }
+    if (!title) title = getAiPartner().name;
+    var id = xtHomeChatId();
+    var chat = { id: id, title: title, createdAt: Date.now(), updatedAt: Date.now(), messages: store };
+    var idx = -1;
+    for (var k = 0; k < list.length; k++) { if (list[k] && list[k].id === id) { idx = k; break; } }
+    if (idx >= 0) { chat.createdAt = list[idx].createdAt || chat.createdAt; list[idx] = chat; }
+    else { list.unshift(chat); }
+    if (list.length > 50) list = list.slice(0, 50);
+    localStorage.setItem(XT_AI_HISTORY_KEY, JSON.stringify(list));
+  } catch (e) { /* 共享历史写入失败不影响本地历史 */ }
+}
+/** 从共享历史恢复首页小助手会话（本地历史为空时才用） */
+function loadHomeChatFromShared() {
+  try {
+    var list = JSON.parse(localStorage.getItem(XT_AI_HISTORY_KEY)) || [];
+    if (!list || typeof list.length !== 'number') return [];
+    var id = xtHomeChatId();
+    for (var i = 0; i < list.length; i++) {
+      if (list[i] && list[i].id === id && list[i].messages && list[i].messages.length) {
+        var out = [];
+        for (var j = 0; j < list[i].messages.length; j++) {
+          var m = list[i].messages[j];
+          if (!m) continue;
+          out.push({ role: m.role === 'user' ? 'user' : 'ai', text: String(m.content == null ? '' : m.content), time: Date.now() });
+        }
+        return out;
+      }
+    }
+  } catch (e) { /* 忽略 */ }
+  return [];
+}
+/** 清空时同步移除共享历史里的首页会话 */
+function removeHomeChatFromShared() {
+  try {
+    var list = JSON.parse(localStorage.getItem(XT_AI_HISTORY_KEY)) || [];
+    if (!list || typeof list.length !== 'number') return;
+    var id = xtHomeChatId();
+    var next = [];
+    for (var i = 0; i < list.length; i++) { if (list[i] && list[i].id !== id) next.push(list[i]); }
+    localStorage.setItem(XT_AI_HISTORY_KEY, JSON.stringify(next));
+  } catch (e) { /* 忽略 */ }
+}
+
+/** 伙伴图标：优先 lucide 线性图标，缺失时退回 data-icon span（由 icon-map.js 扫描） */
+function aiPartnerIconHtml(p, size) {
+  var partner = p || getAiPartner();
+  var n = partner.icon || 'sparkles';
+  var s = size || 20;
+  if (typeof window.lucideIcon === 'function') {
+    var svg = window.lucideIcon(n, s);
+    if (svg) return svg;
+  }
+  return '<span class="nav-icon" data-icon="' + n + '" data-icon-size="' + s + '">' + (partner.emoji || '') + '</span>';
+}
+
+/** 统一 AI 底座（assets/ai-service.js 的 window.callAI）是否就绪 */
+function aiBaseReady() { return typeof window.callAI === 'function'; }
+/** 老 WebView（Chrome 50~58）没有 ReadableStream/TextDecoder，做不了真流式；有能力才走逐字 */
+function aiStreamCapable() {
+  try {
+    return typeof ReadableStream !== 'undefined' && typeof TextDecoder !== 'undefined' && typeof window.fetch === 'function';
+  } catch (e) { return false; }
+}
+/** 卡片副标题：真实 AI 状态（不再出现“本地演示模式”） */
+function aiStatusText() {
+  if (aiBaseReady()) return '已接入 AI · 模型：' + getSharedAiModelName();
+  return 'AI 未就绪 · 本地参考答案';
+}
+
+/* ---------- 首页卡片：模型选择弹窗（与 AI.html 共用 ai_selected_model） ---------- */
+function ensureAiModelPicker() {
+  var box = document.getElementById('aiModelPicker');
+  if (box) return box;
+  box = document.createElement('div');
+  box.id = 'aiModelPicker';
+  box.className = 'ai-partner-picker';
+  box.innerHTML = '<div class="ai-partner-picker-mask" onclick="closeAiModelPicker()"></div>' +
+    '<div class="ai-partner-picker-box">' +
+      '<div class="ai-partner-picker-head"><div class="ai-partner-picker-title">选择模型（与 AI 页同步）</div><div class="ai-close" onclick="closeAiModelPicker()">✕</div></div>' +
+      '<div class="ai-partner-list" id="aiModelList"></div>' +
+    '</div>';
+  document.body.appendChild(box);
+  return box;
+}
+function renderAiModelList() {
+  var list = document.getElementById('aiModelList');
+  if (!list) return;
+  var cur = getSharedAiModelId();
+  var cfg = (typeof window !== 'undefined') ? window.AI_CONFIG : null;
+  var auto = cfg && cfg.autoOption;
+  var html = aiModelRow('auto', (auto && auto.name) ? auto.name : '自动（推荐）', '按问题类型自动挑模型', cur);
+  var models = xtAiBuiltinModels();
+  for (var i = 0; i < models.length; i++) {
+    var m = models[i];
+    var sub = String(m.tag || '');
+    if (m.rate) sub += (sub ? ' · ' : '') + m.rate;
+    if (m.provider) sub += (sub ? ' · ' : '') + m.provider;
+    html += aiModelRow(m.id, m.name || m.id, sub, cur);
+  }
+  // 用户自定义模型（AI 页「添加模型」写入 'ai_custom_models'）：追加到预置模型之后，
+  // 名称带「自定义」标记以便区分；异常数据由 xtAiCustomModels() 静默降级为空数组。
+  var customs = xtAiCustomModels();
+  for (var c = 0; c < customs.length; c++) {
+    var cm = customs[c];
+    var csub = String(cm.tag || '自定义');
+    if (cm.model) csub += ' · ' + cm.model;
+    html += aiModelRow(cm.id, (cm.name || cm.id) + '（自定义）', csub, cur);
+  }
+  list.innerHTML = html;
+}
+/* 把字符串安全地嵌进 `onclick="fn('...')"` 这类「HTML 属性内的 JS 单引号字面量」。
+   双层转义顺序不可颠倒：① 先做 JS 单引号字符串转义（\ 与 '），② 再做 HTML 属性转义（复用 xtEscapeHtml）。
+   ai_custom_models 是用户可写数据，id 可以含 ' / \ / < 等，不转义会提前闭合属性或破坏结构。 */
+function aiEscJsAttrStr(s) {
+  var js = String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  return xtEscapeHtml(js);
+}
+function aiModelRow(id, name, sub, cur) {
+  var active = (id === cur);
+  return '<div class="ai-partner-card' + (active ? ' active' : '') + '" style="--pc:#2F6BFF;--pbg:#EDF3FF" onclick="selectAiModel(\'' + aiEscJsAttrStr(id) + '\')">' +
+    '<div class="ai-partner-card-emoji" style="background:#EDF3FF">' + aiPartnerIconHtml({ icon: 'sparkles', emoji: '✨' }, 18) + '</div>' +
+    '<div class="ai-partner-card-info">' +
+      '<div class="ai-partner-card-name">' + xtEscapeHtml(name) + '</div>' +
+      '<div class="ai-partner-card-desc">' + xtEscapeHtml(sub || '') + '</div>' +
+    '</div>' +
+    (active ? '<div class="ai-partner-card-check" style="color:#2F6BFF">✓ 使用中</div>' : '<div class="ai-partner-card-use" style="color:#2F6BFF">使用</div>') +
+    '</div>';
+}
+function openAiModelPicker() {
+  ensureAiPartnerPickerCss();
+  ensureAiCardCss();
+  var box = ensureAiModelPicker();
+  renderAiModelList();
+  box.classList.add('open');
+}
+function closeAiModelPicker() {
+  var box = document.getElementById('aiModelPicker');
+  if (box) box.classList.remove('open');
+}
+function selectAiModel(id) {
+  setSharedAiModelId(id);
+  renderAiModelList();
+  closeAiModelPicker();
+  renderAiPartnerBar();
+  showToast('已切换模型：' + getSharedAiModelName() + '（AI 页同步）');
+}
+
+/* ---------- 首页卡片：快捷功能条 + 卡片补充样式 ---------- */
+function ensureAiCardCss() {
+  if (document.getElementById('xtAiCardCss')) return;
+  var st = document.createElement('style');
+  st.id = 'xtAiCardCss';
+  st.textContent = [
+    '#aiPartnerBar{display:-webkit-box;display:flex;-webkit-box-align:center;align-items:center;gap:8px;',
+    'padding:8px 12px;border-bottom:1px solid var(--border,#e5e7eb);background:var(--bg-sub,#f7f8fa);}',
+    '#aiPartnerBar .xt-ap-icon{width:26px;height:26px;border-radius:8px;flex:0 0 26px;',
+    'display:-webkit-box;display:flex;-webkit-box-align:center;align-items:center;-webkit-box-pack:center;justify-content:center;}',
+    '#aiPartnerBar .xt-ap-icon svg{display:block;}',
+    '#aiPartnerBar .xt-ap-name{font-size:14px;font-weight:700;color:var(--text,#1a1b1c);}',
+    '#aiPartnerBar .xt-ap-tag{font-size:11px;padding:1px 6px;border-radius:8px;}',
+    '#aiPartnerBar .xt-ap-spacer{-webkit-box-flex:1;flex:1;}',
+    '#aiPartnerBar .xt-ap-btn{font-size:12px;padding:3px 8px;border:1px solid var(--border,#e5e7eb);',
+    'border-radius:12px;color:var(--text-secondary,#6b7280);cursor:pointer;white-space:nowrap;max-width:132px;',
+    'overflow:hidden;text-overflow:ellipsis;}',
+    '#aiQuickBar{display:-webkit-box;display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;',
+    'padding:8px 12px;border-top:1px solid var(--border,#e5e7eb);}',
+    '#aiQuickBar::-webkit-scrollbar{display:none;}',
+    '#aiQuickBar .xt-qa{flex:0 0 auto;font-size:12px;padding:5px 10px;border:1px solid var(--border,#e5e7eb);',
+    'border-radius:14px;background:var(--card,#fff);color:var(--text,#1a1b1c);cursor:pointer;white-space:nowrap;}',
+    '#aiQuickBar .xt-qa.more{color:var(--text-secondary,#6b7280);}',
+    '.ai-msg-actions{display:-webkit-box;display:flex;gap:12px;margin-top:6px;}',
+    '.ai-msg-actions button{border:none;background:none;font-size:11px;color:var(--text-secondary,#6b7280);cursor:pointer;padding:0;}',
+    '#aiModelPicker.open{display:-webkit-box;display:flex;}'
+  ].join('');
+  document.head.appendChild(st);
+}
+function ensureAiQuickBar() {
+  var panel = document.getElementById('aiPanel');
+  if (!panel || document.getElementById('aiQuickBar')) return;
+  var inputRow = panel.querySelector('.ai-input-row') || panel.querySelector('.ai-input-area');
+  if (!inputRow) return;
+  var bar = document.createElement('div');
+  bar.id = 'aiQuickBar';
+  var html = '';
+  for (var i = 0; i < AI_QUICK_ACTIONS.length; i++) {
+    html += '<button type="button" class="xt-qa" onclick="useAiQuickAction(\'' + AI_QUICK_ACTIONS[i].id + '\')">' + AI_QUICK_ACTIONS[i].name + '</button>';
+  }
+  html += '<button type="button" class="xt-qa more" onclick="openFullAiPage()">在 AI 页打开 ›</button>';
+  bar.innerHTML = html;
+  panel.insertBefore(bar, inputRow);
+}
+/** 跳到 AI.html 继续完整对话（首页卡片与 AI 页共用同一套模型/历史） */
+function openFullAiPage() { location.href = 'AI.html'; }
+
+/* ---------- 伙伴 id：旧 id 兼容映射 + 历史搬迁 ---------- */
+function normalizeAiPartnerId(id) {
+  var s = String(id == null ? '' : id);
+  if (!s) return '';
+  if (AI_PARTNER_ID_ALIAS[s]) return AI_PARTNER_ID_ALIAS[s];
+  return s;
+}
+// 首次读到旧 id 时落盘迁移（并顺手把旧的历史搬到新 key），后续读取直接走新 id
+function migrateAiPartnerId() {
+  try {
+    var raw = localStorage.getItem(AI_PARTNER_KEY);
+    var old = String(raw == null ? '' : raw);
+    if (!old) return;
+    var next = normalizeAiPartnerId(old);
+    if (next === old) return;
+    localStorage.setItem(AI_PARTNER_KEY, next);
+    var oldKey = lsKey('study_workbench_ai_chat_' + old);
+    var newKey = lsKey('study_workbench_ai_chat_' + next);
+    var moved = localStorage.getItem(oldKey);
+    if (moved && !localStorage.getItem(newKey)) localStorage.setItem(newKey, moved);
+  } catch (e) { /* 忽略：迁移失败不影响默认伙伴 */ }
+}
 function getAiPartnerId() {
-  try { return localStorage.getItem(AI_PARTNER_KEY) || AI_PARTNERS[0].id; } catch (e) { return AI_PARTNERS[0].id; }
+  // 旧版本存过的伙伴 id（gongkao / xiaotu / coach / mentor / interviewer / buddy）统一映射到现行角色
+  migrateAiPartnerId();
+  var id = null;
+  try { id = localStorage.getItem(AI_PARTNER_KEY); } catch (e) { id = null; }
+  id = normalizeAiPartnerId(id);
+  if (!id || !AI_PARTNERS.some(p => p.id === id)) return AI_PARTNERS[0].id;
+  return id;
 }
 function getAiPartner() {
   const id = getAiPartnerId();
@@ -2997,12 +3480,35 @@ function switchAiHistory() {
 // 更新伙伴条 / 头像 / 标题
 function renderAiPartnerBar() {
   const p = getAiPartner();
-  const em = document.getElementById('aiPartnerEmoji'); if (em) em.textContent = p.emoji;
+  const em = document.getElementById('aiPartnerEmoji'); if (em) em.innerHTML = aiPartnerIconHtml(p, 18);
   const nm = document.getElementById('aiPartnerName'); if (nm) nm.textContent = p.name;
   const tg = document.getElementById('aiPartnerTag');
   if (tg) { tg.textContent = p.tag; tg.style.background = p.bg; tg.style.color = p.color; }
-  const av = document.querySelector('#aiPanel .ai-avatar'); if (av) av.textContent = p.emoji;
+  const av = document.querySelector('#aiPanel .ai-avatar'); if (av) av.innerHTML = aiPartnerIconHtml(p, 20);
   const t = document.querySelector('#aiPanel .ai-title'); if (t) t.textContent = 'AI伙伴 · ' + p.name;
+  // 模型芯片 / 副标题 / 徽标：与 AI.html 共用同一套模型配置与状态文案
+  const chip = document.getElementById('aiModelChip');
+  if (chip) chip.textContent = '模型：' + getSharedAiModelName();
+  const sub = document.getElementById('aiSubtitle'); if (sub) sub.textContent = aiStatusText();
+  const badge = document.getElementById('aiModeBadge'); if (badge) badge.textContent = aiBaseReady() ? 'AI' : '本地';
+}
+// 伙伴弹窗居中修正：common.css 里 .ai-partner-picker 用 inset:0、.ai-partner-picker-box 用
+// width:min(...) 定位，老 WebView 不认 inset/min()，遮罩会塌成 0 高、弹窗缩到左上角。
+// 这里用页面级样式（#id 选择器优先级高于 common.css 的类选择器）补一套兼容写法，不改 common.css。
+function ensureAiPartnerPickerCss() {
+  if (document.getElementById('aiPartnerPickerCss')) return;
+  const st = document.createElement('style');
+  st.id = 'aiPartnerPickerCss';
+  st.textContent = [
+    '#aiPartnerPicker{position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;',
+    'display:none;-webkit-box-align:center;align-items:center;-webkit-box-pack:center;justify-content:center;z-index:99999;}',
+    '#aiPartnerPicker.open{display:-webkit-box;display:flex;}',
+    '#aiPartnerPicker .ai-partner-picker-mask{position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;background:rgba(0,0,0,.45);}',
+    '#aiPartnerPicker .ai-partner-picker-box{position:relative;left:auto;top:auto;transform:none;-webkit-transform:none;',
+    'margin:auto;width:92vw;max-width:380px;max-height:72vh;border-radius:16px;overflow:hidden;',
+    'display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.25);z-index:2;}'
+  ].join('');
+  document.head.appendChild(st);
 }
 // 动态注入伙伴条 + 角色选择弹窗（不改 HTML，所有页面加载即生效）
 function ensureAiPartnerUI() {
@@ -3011,24 +3517,28 @@ function ensureAiPartnerUI() {
   const header = panel.querySelector('.ai-panel-header');
   if (!header) return;
   const p = getAiPartner();
+  ensureAiCardCss();
   const bar = document.createElement('div');
   bar.id = 'aiPartnerBar';
   bar.className = 'ai-partner-bar';
-  bar.innerHTML = '<div class="ai-partner-chip" onclick="openAiPartnerPicker()" title="切换AI伙伴">' +
-    '<span class="ai-partner-emoji" id="aiPartnerEmoji">' + p.emoji + '</span>' +
-    '<span class="ai-partner-name" id="aiPartnerName">' + p.name + '</span>' +
-    '<span class="ai-partner-tag" id="aiPartnerTag" style="background:' + p.bg + ';color:' + p.color + '">' + p.tag + '</span>' +
-    '<span class="ai-partner-switch">🔀 换个伙伴</span></div>';
+  bar.innerHTML = '<span class="xt-ap-icon" id="aiPartnerEmoji" style="background:' + p.bg + ';color:' + p.color + '">' + aiPartnerIconHtml(p, 18) + '</span>' +
+    '<span class="xt-ap-name" id="aiPartnerName">' + p.name + '</span>' +
+    '<span class="xt-ap-tag" id="aiPartnerTag" style="background:' + p.bg + ';color:' + p.color + '">' + p.tag + '</span>' +
+    '<span class="xt-ap-spacer"></span>' +
+    '<span class="xt-ap-btn" id="aiModelChip" onclick="openAiModelPicker()" title="切换模型（与 AI 页同步）">模型：' + getSharedAiModelName() + '</span>' +
+    '<span class="xt-ap-btn" id="aiPartnerSwitch" onclick="openAiPartnerPicker()" title="换个伙伴">切换角色</span>';
   panel.insertBefore(bar, header);
   const picker = document.createElement('div');
   picker.id = 'aiPartnerPicker';
+  ensureAiPartnerPickerCss();
   picker.className = 'ai-partner-picker';
   picker.innerHTML = '<div class="ai-partner-picker-mask" onclick="closeAiPartnerPicker()"></div>' +
     '<div class="ai-partner-picker-box">' +
-      '<div class="ai-partner-picker-head"><div class="ai-partner-picker-title">👋 换个伙伴</div><div class="ai-close" onclick="closeAiPartnerPicker()">✕</div></div>' +
+      '<div class="ai-partner-picker-head"><div class="ai-partner-picker-title">换个伙伴</div><div class="ai-close" onclick="closeAiPartnerPicker()">✕</div></div>' +
       '<div class="ai-partner-list" id="aiPartnerList"></div>' +
     '</div>';
   document.body.appendChild(picker);
+  ensureAiQuickBar();
   renderAiPartnerList();
   renderAiPartnerBar();
 }
@@ -3039,7 +3549,7 @@ function renderAiPartnerList() {
   list.innerHTML = AI_PARTNERS.map(p => {
     const active = p.id === cur;
     return '<div class="ai-partner-card' + (active ? ' active' : '') + '" style="--pc:' + p.color + ';--pbg:' + p.bg + '" onclick="selectAiPartner(\'' + p.id + '\')">' +
-      '<div class="ai-partner-card-emoji" style="background:' + p.bg + '">' + p.emoji + '</div>' +
+      '<div class="ai-partner-card-emoji" style="background:' + p.bg + '">' + aiPartnerIconHtml(p, 18) + '</div>' +
       '<div class="ai-partner-card-info">' +
         '<div class="ai-partner-card-name">' + p.name + '<span class="ai-partner-card-tag" style="background:' + p.bg + ';color:' + p.color + '">' + p.tag + '</span></div>' +
         '<div class="ai-partner-card-desc">' + p.desc + '</div>' +
@@ -3059,16 +3569,17 @@ function closeAiPartnerPicker() {
   if (picker) picker.classList.remove('open');
 }
 function selectAiPartner(id) {
-  if (!AI_PARTNERS.some(p => p.id === id)) return;
+  if (!AI_PARTNERS.some(p => p.id === id)) { closeAiPartnerPicker(); return; }
   if (id === getAiPartnerId()) { closeAiPartnerPicker(); return; }
   setAiPartner(id);
-  switchAiHistory();
+  switchAiHistory();   // 切换不丢历史：各角色历史独立存，切回来原样恢复
   renderAiPartnerBar();
   renderAiMessages();
   closeAiPartnerPicker();
   const p = getAiPartner();
-  showToast('已切换为 ' + p.name + ' ' + p.emoji + ' · ' + p.tag);
+  showToast('已切换为 ' + p.name + ' · ' + p.tag);
   if (aiChatHistory.length === 0) pushAiMsg('ai', p.greeting);
+  try { syncHomeChatToShared(); } catch (eSync) { /* 忽略 */ }
 }
 
 /**
@@ -3076,26 +3587,28 @@ function selectAiPartner(id) {
  */
 function toggleAiPanel() {
   const panel = document.getElementById('aiPanel');
+  if (!panel) return;                       // 面板不存在时静默，避免抛错导致悬浮球"点了没反应"
   const opening = !panel.classList.contains('open');
   panel.classList.toggle('open');
   if (opening) {
-    if (aiChatHistory.length === 0) {
-      // 首次打开：按当前伙伴的问候语欢迎
-      const _m0 = currentAiMode();
-      const _modeTxt = _m0.mode === 'provider' ? '服务商直连' : (_m0.mode === 'backend' ? '后端在线' : '本地演示');
-      pushAiMsg('ai', getAiPartner().greeting + '\n\n（当前为「' + _modeTxt + '」模式，试试问我：「四级怎么复习」「行测资料分析怎么做」）');
-    } else {
-      renderAiMessages();
-    }
-    // 更新模式徽标与副标题（三种模式：服务商直连 / 后端中转 / 本地演示）
-    const m = currentAiMode();
-    const cfg = getAiProviderConfig();
-    const prov = AI_PROVIDERS.find(p => p.id === cfg.provider);
-    document.getElementById('aiModeBadge').textContent = m.mode === 'provider' ? (prov ? prov.name.split('(')[0].trim() : '直连') : (m.mode === 'backend' ? '在线' : '演示');
-    document.getElementById('aiSubtitle').textContent =
-      m.mode === 'provider' ? ((prov ? prov.name : '自定义接口') + ' · 流式 · 带上下文') :
-      m.mode === 'backend' ? '已连接后端 · 流式回答' : '本地演示模式 · 历史已保存';
-    setTimeout(() => document.getElementById('aiInput').focus(), 100);
+    try {
+      if (aiChatHistory.length === 0) {
+        // 首次打开：按当前伙伴的问候语欢迎（不发请求；公共 Key 限频 10 次/分钟，只在用户发送时才调 AI）
+        pushAiMsg('ai', getAiPartner().greeting + '\n\n试试问我：「四级怎么复习」「行测资料分析怎么做」「帮我排一份 30 天计划」');
+      } else {
+        renderAiMessages();
+      }
+    } catch (e) { /* 问候/历史渲染失败不影响面板本身打开 */ }
+    // 更新模式徽标与副标题：首页卡片与 AI.html 共用 window.callAI 同一套底座
+    // 这些节点/依赖在部分页面可能缺失，逐个判空，避免整段抛错让面板停在半开状态
+    try {
+      const badge = document.getElementById('aiModeBadge');
+      const sub = document.getElementById('aiSubtitle');
+      if (badge) badge.textContent = aiBaseReady() ? 'AI' : '本地';
+      if (sub) sub.textContent = aiStatusText();
+      const input = document.getElementById('aiInput');
+      if (input) setTimeout(function () { input.focus(); }, 100);
+    } catch (e2) { /* 忽略 */ }
   }
 }
 
@@ -3107,13 +3620,15 @@ function clearAiChat() {
     if (!ok) return;
     aiChatHistory = [];
     localStorage.removeItem(getAiChatKey());
+    try { removeHomeChatFromShared(); } catch (eClr) { /* 共享历史清理失败不影响本地 */ }
     renderAiMessages();
     showToast('聊天记录已清空');
   });
 }
 
 /**
- * 发送一条用户消息：优先走后端接口（真实AI），否则走本地规则引擎（演示）
+ * 发送一条用户消息：优先走统一 AI 底座 window.callAI（与 AI.html 同一套），
+ * 底座缺失时依次降级到 服务商直连 / 后端中转 / 本地规则引擎（旧路径全部保留）
  */
 function sendAiMsg() {
   const input = document.getElementById('aiInput');
@@ -3122,15 +3637,156 @@ function sendAiMsg() {
   input.value = '';
   pushAiMsg('user', text); // 先入历史，供上下文记忆使用
   aiStreaming = true;
-  document.getElementById('aiSendBtn').style.opacity = '0.5';
+  const sb = document.getElementById('aiSendBtn');
+  if (sb) sb.style.opacity = '0.5';
+  aiDispatchReply(text);
+}
+/** 统一的回复派发：主路径 callAI，旧的三条降级路径原样保留 */
+function aiDispatchReply(text) {
+  if (typeof window.callAI === 'function') {
+    fetchAssistantReply(text);   // 统一 AI 底座（assets/ai-service.js）
+    return;
+  }
   const m = currentAiMode();
   if (m.mode === 'provider') {
-    fetchProviderReply();   // 服务商直连（密钥来自本地配置，OpenAI兼容协议，流式+上下文）
+    fetchProviderReply();        // 服务商直连（密钥来自本地配置，OpenAI 兼容协议，流式+上下文）
   } else if (m.mode === 'backend') {
-    fetchAiReply(text);     // 后端中转（密钥在后端）
+    fetchAiReply(text);          // 后端中转（密钥在后端）
   } else {
-    localAiReply(text);     // 本地演示模式：规则引擎
+    localAiReply(text);          // 本地兜底：规则引擎 + 伙伴 demoStyle
   }
+}
+/** 组装发给统一底座的 messages：system 人设 + 最近 14 条上下文 */
+function buildAiBaseMessages() {
+  const msgs = [{ role: 'system', content: getAiPartner().systemPrompt }];
+  const hist = (aiChatHistory || []).slice(-14);
+  for (let i = 0; i < hist.length; i++) {
+    const m = hist[i];
+    if (!m || !m.text) continue;
+    msgs.push({ role: m.role === 'user' ? 'user' : 'assistant', content: String(m.text) });
+  }
+  return msgs;
+}
+/**
+ * 首页卡片的主通道：走 window.callAI（与 AI.html 完全同一套模型配置 / 降级 / 限频）。
+ * 双口径渲染：现代浏览器 onChunk 逐字输出；老内核（无 ReadableStream）先显示
+ * 「AI 正在思考…」加载态，整段返回后再正确渲染，不裸调用流式 API。
+ */
+async function fetchAssistantReply(text) {
+  const canStream = aiStreamCapable();
+  const model = getSharedAiModelId();
+  let bubble = null;
+  let settled = false;
+  const settle = function (finalText) {
+    if (settled) return;
+    settled = true;
+    aiStreaming = false;
+    const btn = document.getElementById('aiSendBtn');
+    if (btn) btn.style.opacity = '';
+    finishStreaming('ai', finalText);
+    renderAiMessages();
+    try { syncHomeChatToShared(); } catch (eSync) { /* 忽略 */ }
+  };
+  try {
+    // 两种内核都先落一个「思考中」气泡：现代内核要等首个 chunk、老内核要等整段返回，
+    // 这段等待期间若没有任何反馈，用户会以为点了发送没反应。
+    // 首个 chunk（现代）或打字机首帧（老内核）会把这段占位文案整体覆盖掉。
+    bubble = createStreamingBubble();
+    bubble.textContent = 'AI 正在思考…';
+    scrollAiMessages();
+    const opts = { model: model };
+    if (canStream) {
+      opts.onChunk = function (piece, full) {
+        if (!bubble) bubble = createStreamingBubble();
+        if (full !== null && full !== undefined && full !== '') {
+          bubble.textContent = String(full);
+        } else {
+          bubble.textContent = bubble.textContent + String(piece == null ? '' : piece);
+        }
+        scrollAiMessages();
+      };
+    }
+    const r = await window.callAI('auto', buildAiBaseMessages(), opts);
+    const out = r && (r.text || r.content);
+    if (!out) throw new Error('AI 返回了空内容');
+    if (r && r.degraded) {
+      // 底座已降级到本地预设：与 AI.html 保持一致，给统一提示而不是假装是 AI 回答
+      settle(String(out));
+      showToast('网络不佳，以下为本地参考');
+      return;
+    }
+    if (canStream) {
+      settle(String(out));
+    } else {
+      if (!bubble) bubble = createStreamingBubble();
+      typewriterIntoBubble(bubble, String(out), function () { settle(String(out)); });
+    }
+  } catch (e) {
+    if (settled) return;
+    settled = true;
+    aiStreaming = false;
+    const btn2 = document.getElementById('aiSendBtn');
+    if (btn2) btn2.style.opacity = '';
+    // 撤掉可能残留的“正在思考”气泡，再走统一降级提示
+    if (bubble && bubble.parentNode && bubble.parentNode.parentNode) {
+      bubble.parentNode.parentNode.removeChild(bubble.parentNode);
+    }
+    aiDegradeReply(e, text);
+  }
+}
+/** 断网 / 限流 / Key 失效的统一降级提示（文案与 AI.html 一致），随后给本地参考答案 */
+function aiDegradeReply(err, text) {
+  let reason = '网络异常';
+  if (err && err.rateLimited) reason = '提问太频繁了，休息一下吧';
+  else if (err && err.message) reason = err.message;
+  pushAiMsg('ai', '（网络不佳，以下为本地参考）\n\n' + reason, true);
+  renderAiMessages();
+  showToast('网络不佳，以下为本地参考');
+  aiStreaming = true;
+  localAiFallbackReply(text);
+}
+/** 复制某条 AI 回复（老 WebView 没有 navigator.clipboard，用 textarea + execCommand） */
+function copyAiText(btn) {
+  let msg = null;
+  let node = btn;
+  while (node && node !== document.body) {
+    const cls = (node.getAttribute && node.getAttribute('class')) || '';
+    if (cls && cls.indexOf('ai-msg') >= 0) { msg = node; break; }
+    node = node.parentNode;
+  }
+  const bubble = msg ? msg.querySelector('.ai-msg-bubble') : null;
+  if (!bubble) { showToast('没有可复制的内容'); return; }
+  const clone = bubble.cloneNode(true);
+  const acts = clone.querySelector('.ai-msg-actions');
+  if (acts && acts.parentNode) acts.parentNode.removeChild(acts);
+  const txt = clone.textContent || '';
+  if (!txt) { showToast('没有可复制的内容'); return; }
+  const ta = document.createElement('textarea');
+  ta.value = txt;
+  ta.style.cssText = 'position:fixed;left:-9999px;top:0;';
+  document.body.appendChild(ta);
+  ta.select();
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+  document.body.removeChild(ta);
+  showToast(ok ? '已复制' : '复制失败，请手动选择');
+}
+/** 重新生成最后一条 AI 回复：回退到最后一条用户提问再发一次 */
+function regenerateAiLast() {
+  if (aiStreaming) { showToast('AI 正在回复中…'); return; }
+  let lastUser = '';
+  while (aiChatHistory.length) {
+    const last = aiChatHistory[aiChatHistory.length - 1];
+    if (last && last.role === 'user') { lastUser = String(last.text || ''); break; }
+    aiChatHistory.pop();
+  }
+  if (!lastUser) { showToast('还没有可重新生成的提问'); return; }
+  try { localStorage.setItem(getAiChatKey(), JSON.stringify(aiChatHistory)); } catch (e) { /* 忽略 */ }
+  renderAiMessages();
+  aiStreaming = true;
+  const btn = document.getElementById('aiSendBtn');
+  if (btn) btn.style.opacity = '0.5';
+  aiDispatchReply(lastUser);
 }
 
 /**
@@ -3139,7 +3795,7 @@ function sendAiMsg() {
  */
 async function fetchAiReply(text) {
   try {
-    const res = await fetch(AI_CONFIG.apiUrl, {
+    const res = await fetch(APP_AI_DEMO_CONFIG.apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: text, messages: buildAiContextMessages() }) // messages 为上下文记忆（后端可选使用）
@@ -3165,7 +3821,7 @@ async function fetchAiReply(text) {
       typewriterIntoBubble(bubble, reply, () => finishStreaming('ai', reply));
     }
   } catch (e) {
-    finishStreaming('ai', '⚠️ 后端连接失败：' + e.message + '\n\n请确认 ai-server 已启动（node server.js），或把 AI_CONFIG.apiUrl 置空回到演示模式。');
+    finishStreaming('ai', '⚠️ 后端连接失败：' + e.message + '\n\n请确认 ai-server 已启动（node server.js），或把 APP_AI_DEMO_CONFIG.apiUrl 置空回到演示模式。');
   }
 }
 
@@ -3206,7 +3862,7 @@ const AI_LOCAL_INTENTS = [
     '作文提分最快的三个动作：\n\n1. 卷面：字迹清晰、段落分明，阅卷的第一印象分是真实的；\n2. 结构：三段式（观点 - 论证 - 结论）永远不出错，每段第一句写分论点；\n3. 词汇升级：very important 换成 crucial 或 indispensable，I think 换成 From my perspective。\n\n篇幅控制在 120 到 180 词，写完一定留 2 分钟检查时态和主谓一致。'
   ] },
   { id: 'cet_overall', pri: 3, kw: ['四级', '六级', 'cet', '英语', '425', '过级', '英语四级', '英语学习'], replies: [
-    '四级 425 分大致拆成：听力 149、阅读 149、写作翻译 127。\n\n优先级建议：\n1. 先攻听力和阅读，占比最大、提分最快；\n2. 词汇是地基，前 20 天每天 30 词不能断；\n3. 考前 3 周开始整套计时模考，练的是节奏不是知识；\n4. 写作翻译留最后 2 周突击，见效快。\n\n「四级备考」页按词汇 / 听力 / 阅读 / 写作翻译分了任务清单，可以直接照着走。',
+    '四级 425 分大致拆成：听力 149、阅读 149、写作翻译 127。\n\n优先级建议：\n1. 先攻听力和阅读，占比最大、提分最快；\n2. 词汇是地基，前 20 天每天 30 词不能断；\n3. 考前 3 周开始整套计时模考，练的是节奏不是知识；\n4. 写作翻译留最后 2 周突击，见效快。\n\n「英语」页按词汇 / 听力 / 阅读 / 写作翻译分了任务清单，可以直接照着走。',
     '如果只剩一个月：\n\n第 1 周：过一遍高频 1500 词 + 每天 1 篇听力精听；\n第 2 周：阅读专项，每天 2 篇限时 + 精析；\n第 3 周：整套真题 3 套，严格计时，建立做题节奏；\n第 4 周：错题回炉 + 作文句型默写 + 翻译热词背诵。\n\n关键是每天固定时段，哪怕只有 90 分钟，连续 30 天也比周末突击 10 小时强。',
     '英语学习最容易踩的坑是只输入不输出。\n\n建议把每天的时间切成三块：\n1. 输入（40%）：背词、精听、阅读；\n2. 消化（30%）：错题精析、长难句拆解；\n3. 输出（30%）：跟读、复述、造句。\n\n分数长期卡在 400 上下的同学，多数不是词汇不够，是从来没练过把学到的东西用出来。'
   ] },
@@ -3265,12 +3921,12 @@ const AI_LOCAL_INTENTS = [
     '结构化 / 半结构化面试的准备清单：\n\n1. 把岗位要求列出来，每条准备一个经历佐证；\n2. 准备 3 个你想问面试官的问题（团队氛围、业务重点、成长路径）；\n3. 现场带纸笔，回答前可以快速列两点；\n4. 遇到不会的题，说思路比说答案重要。\n\n可以在「AI 模拟面试」页先跑几轮，把口头禅和卡壳的地方练掉。'
   ] },
   { id: 'iv_general', pri: 3, kw: ['面试', '模拟面试', '面试官', '求职', '校招', '秋招', '春招', 'offer', '简历', '求职技巧'], replies: [
-    '面试准备三步走：\n\n1. 自我介绍控制在 1 分钟：定位 → 教育背景 → 经历（STAR + 量化成果）→ 为什么匹配；\n2. 高频题提前写逐字稿：优缺点、为什么选我们、职业规划、期望薪资；\n3. 实战演练：「商务礼仪面试」页有模拟面试，「面试题库」页可以按题型刷高频题。\n\n记住：面试是聊天不是考试，真诚加结构化表达最加分。',
+    '面试准备三步走：\n\n1. 自我介绍控制在 1 分钟：定位 → 教育背景 → 经历（STAR + 量化成果）→ 为什么匹配；\n2. 高频题提前写逐字稿：优缺点、为什么选我们、职业规划、期望薪资；\n3. 实战演练：「面测」页有模拟面试，「面试题库」页可以按题型刷高频题。\n\n记住：面试是聊天不是考试，真诚加结构化表达最加分。',
     '面试前 24 小时的检查清单：\n\n1. 研究公司：主营业务、近期动态、这个岗位在做什么；\n2. 准备 3 个能体现你能力的完整故事（带背景、动作、结果、数字）；\n3. 准备 3 个反问问题；\n4. 着装和路线：提前确认地点和时长，别迟到。\n\n面试后 24 小时内发一封简短的感谢消息，是低投入高回报的动作。',
     '简历是面试的入场券，两个硬指标：\n\n1. 一页纸，最相关的经历放最上面；\n2. 每条经历写成「动作 + 对象 + 结果 + 数字」，比如「搭建 XX 流程，使处理时长从 3 天缩短到 1 天」。\n\n岗位职责写得再漂亮，不如一个可验证的数字。另外简历里写的每一条都要准备好被追问细节，编的经历一问就穿。'
   ] },
   { id: 'workplace', pri: 2, kw: ['高情商', '话术', '拒绝', '汇报', '沟通', '情商', '夸人', '委婉', '不会说话', '得罪人'], replies: [
-    '高情商表达的核心不是圆滑，是「把对方的处境也放进你的话里」。\n\n几个高频场景：\n· 拒绝：先肯定 + 说明原因 + 给替代方案（这个需求我能理解，本周排期已经满了，我下周一优先处理可以吗）；\n· 汇报坏消息：结论先行 + 原因 + 已有动作 + 需要的支持，不要铺垫半天；\n· 被夸：接住并转给团队（谢谢，这次多亏 XX 帮我把数据补齐）；\n· 提意见：先说事实，再说影响，最后给建议。\n\n「场景话术库」和「万能金句库」里有很多现成模板，可以直接照着改。',
+    '表达的核心不是圆滑，是「把对方的处境也放进你的话里」。\n\n几个高频场景：\n· 拒绝：先肯定 + 说明原因 + 给替代方案（这个需求我能理解，本周排期已经满了，我下周一优先处理可以吗）；\n· 汇报坏消息：结论先行 + 原因 + 已有动作 + 需要的支持，不要铺垫半天；\n· 被夸：接住并转给团队（谢谢，这次多亏 XX 帮我把数据补齐）；\n· 提意见：先说事实，再说影响，最后给建议。\n\n「场景话术库」和「万能金句库」里有很多现成模板，可以直接照着改。',
     '职场沟通里最好用的一条公式：事实 + 感受 + 需求。\n\n比如同事总临时甩需求给你：\n「这周你三次在下班前给我提需求（事实），我这边要重新排优先级，压力挺大（感受），能不能提前一天同步，我来安排时间（需求）。」\n\n这样既表达了立场，又不伤人。很多人要么忍着不说，要么一开口就带情绪，其实缺的就是这个结构。',
     '汇报工作的三种结构，按场景选：\n\n1. 进度汇报：完成了什么 / 卡在哪 / 下一步 / 需要什么支持；\n2. 方案汇报：背景 → 问题 → 方案对比 → 建议 → 预期收益；\n3. 出事汇报：现状 → 影响范围 → 已采取措施 → 后续计划。\n\n领导最怕的不是坏消息，是不知道发生了什么。主动同步比被动追问体面得多。'
   ] },
@@ -3328,8 +3984,8 @@ const AI_LOCAL_INTENTS = [
 
   /* ---------- 五、平台导览与设置（pri 1） ---------- */
   { id: 'nav', pri: 1, kw: ['在哪', '哪里', '怎么用', '入口', '功能', '模块', '页面', '用不了', '找不到'], replies: [
-    '这个平台我比较熟，给你指个路：\n\n· 英语：四级备考（任务清单与目标日）、四级词汇（间隔重复背单词）、四级经验分享；\n· 行测：行测刷题（分题型专项）、央国企笔试、真题模拟（整套计时模考）、错题本；\n· 申论：申论刷题；\n· 面试职场：商务礼仪面试、面试题库、AI 模拟面试、商务礼仪、高情商表达、场景话术库、万能金句库；\n· PPT：PPT 训练、PPT 版式库、PPT 案例拆解、PPT 素材库；\n· 其他：时政热点、企业定向库、工具、个人中心、设置。\n\n顶部搜索框可以直接搜模块和发贴，找不到入口时用它最快。',
-    '你想找的功能大概在这几类里：\n\n1. 刷题类：行测刷题（按数量关系 / 言语理解 / 常识判断 / 判断推理 / 资料分析分专项）、申论刷题、真题模拟；\n2. 背单词：四级词汇，按固定间隔自动排复习；\n3. 错题复盘：错题本，收录后按模块筛选；\n4. 面试演练：AI 模拟面试、面试题库、商务礼仪面试；\n5. 表达素材：场景话术库、万能金句库、高情商表达。\n\n你告诉我具体想干什么（比如「想练资料分析」「想背单词」），我直接告诉你去哪页、怎么用。',
+    '这个平台我比较熟，给你指个路：\n\n· 英语：英语（任务清单与目标日）、四级词汇（间隔重复背单词）、四级经验分享；\n· 行测：行测刷题（分题型专项）、行测、真题模拟（整套计时模考）、错题本；\n· 申论：申论刷题；\n· 面试职场：面测、面试题库、AI 模拟面试、商务礼仪、表达、场景话术库、万能金句库；\n· PPT：演示、PPT 版式库、PPT 案例拆解、PPT 素材库；\n· 其他：时政热点、企业定向库、工具、个人中心、设置。\n\n顶部搜索框可以直接搜模块和发贴，找不到入口时用它最快。',
+    '你想找的功能大概在这几类里：\n\n1. 刷题类：行测刷题（按数量关系 / 言语理解 / 常识判断 / 判断推理 / 资料分析分专项）、申论刷题、真题模拟；\n2. 背单词：四级词汇，按固定间隔自动排复习；\n3. 错题复盘：错题本，收录后按模块筛选；\n4. 面试演练：AI 模拟面试、面试题库、面测；\n5. 表达素材：场景话术库、万能金句库、表达。\n\n你告诉我具体想干什么（比如「想练资料分析」「想背单词」），我直接告诉你去哪页、怎么用。',
     '如果只是想快速上手，我建议的路线是：\n\n1. 先去首页看倒计时和今日任务，把目标日设好；\n2. 每天三件事：四级词汇过一遍 + 行测刷题 20 题 + 错题本复盘；\n3. 每周用真题模拟做一套限时模考，看数据变化；\n4. 面试或职场相关的内容，等笔试告一段落再集中练。\n\n数据都会沉淀在各模块进度里，首页能看到。'
   ] },
   { id: 'progress', pri: 1, kw: ['进度', '学习数据', '统计', '打卡', '连续天数', '各模块进度', '我的数据'], replies: [
@@ -3341,7 +3997,7 @@ const AI_LOCAL_INTENTS = [
     '数据相关：\n\n1. 导入导出：设置页可以导出全部学习数据，换设备时导入即可；\n2. 清空数据：谨慎操作，清空前建议先导出一份；\n3. 聊天记录：AI 面板里可以单独清空，每个伙伴的历史是分开存的。\n\n如果遇到页面数据不刷新，先试试下拉刷新或重新进入该页面。'
   ] },
   { id: 'countdown', pri: 1, kw: ['倒计时', '还有几天', '考试日期', '目标日', '什么时候考'], replies: [
-    '倒计时在首页顶部，按你设定的目标日自动计算剩余天数。\n\n用法建议：\n1. 把目标日设成真实考试日期，不要设成「大概那几天」；\n2. 按剩余天数倒推：30 天以上打基础，15 到 30 天专项突破，15 天以内以真题模考和错题回炉为主；\n3. 每周看一次倒计时，用它来调整计划强度。\n\n目标日可以在四级备考页或设置里调整。',
+    '倒计时在首页顶部，按你设定的目标日自动计算剩余天数。\n\n用法建议：\n1. 把目标日设成真实考试日期，不要设成「大概那几天」；\n2. 按剩余天数倒推：30 天以上打基础，15 到 30 天专项突破，15 天以内以真题模考和错题回炉为主；\n3. 每周看一次倒计时，用它来调整计划强度。\n\n目标日可以在英语页或设置里调整。',
     '剩余天数不同，打法完全不一样：\n\n· 60 天以上：词汇 + 各模块基础，慢一点没关系；\n· 30 到 60 天：分模块专项，把正确率拉到目标线；\n· 15 到 30 天：真题限时模考，练节奏和取舍；\n· 15 天以内：只做两件事，错题回炉 + 保持手感。\n\n你告诉我剩余天数和目标，我可以帮你排个更具体的时间表。'
   ] },
 
@@ -3476,7 +4132,33 @@ function aiChitChatIntent(raw) {
   return null;
 }
 
+// 本地演示 / 兜底通道：优先走统一 AI 底座 window.callAI（'auto' 由服务层按关键词自动路由模型），
+// 底座未加载、抛错或返回空时静默降级回本地规则引擎，不报错、不白屏。
 function localAiReply(text) {
+  const p = getAiPartner();
+  if (typeof window.callAI !== 'function') { localAiFallbackReply(text); return; }
+  const messages = [{ role: 'system', content: p.systemPrompt }];
+  const hist = (aiChatHistory || []).slice(-10);
+  for (const h of hist) {
+    if (!h || !h.text) continue;
+    messages.push({ role: h.role === 'user' ? 'user' : 'assistant', content: h.text });
+  }
+  if (!messages.some(m => m.role === 'user')) messages.push({ role: 'user', content: String(text == null ? '' : text) });
+  let settled = false;
+  const fail = function () { if (settled) return; settled = true; localAiFallbackReply(text); };
+  try {
+    Promise.resolve(window.callAI('auto', messages, {})).then(function (r) {
+      if (settled) return;
+      const out = r && (r.text || r.content);
+      if (!out) { fail(); return; }
+      settled = true;
+      const bubble = createStreamingBubble();
+      typewriterIntoBubble(bubble, String(out), function () { finishStreaming('ai', String(out)); });
+    }).catch(fail);
+  } catch (e) { fail(); }
+}
+
+function localAiFallbackReply(text) {
   const raw = String(text == null ? '' : text);
   const p = getAiPartner();
   let intent = aiChitChatIntent(raw) || aiMatchIntent(raw);
@@ -3500,7 +4182,9 @@ function localAiReply(text) {
     body = aiPickReply('fallback', AI_LOCAL_FALLBACKS);
     aiLastTopic = { id: '', title: '', at: 0 };
   }
-  const reply = p.name + ' ' + p.emoji + '：\n' + body;
+  // 规则引擎也没内容时，退回伙伴自己的演示话术（demoStyle），保证一定有回复
+  if (!body && typeof p.demoStyle === 'function') body = p.demoStyle(raw);
+  const reply = p.name + '：\n' + body;
   // 打字机效果输出
   const bubble = createStreamingBubble();
   typewriterIntoBubble(bubble, reply, function () { finishStreaming('ai', reply); });
@@ -3513,7 +4197,7 @@ function createStreamingBubble() {
   const box = document.getElementById('aiMessages');
   const msg = document.createElement('div');
   msg.className = 'ai-msg ai';
-  msg.innerHTML = '<div class="ai-msg-avatar">' + getAiPartner().emoji + '</div><div class="ai-msg-bubble typing"></div>';
+  msg.innerHTML = '<div class="ai-msg-avatar">' + aiPartnerIconHtml(getAiPartner(), 16) + '</div><div class="ai-msg-bubble typing"></div>';
   box.appendChild(msg);
   scrollAiMessages();
   return msg.querySelector('.ai-msg-bubble');
@@ -3544,7 +4228,8 @@ function typewriterIntoBubble(bubble, text, done) {
 function finishStreaming(role, text) {
   pushAiMsg(role, text, true); // 只存不重渲染
   aiStreaming = false;
-  document.getElementById('aiSendBtn').style.opacity = '';
+  const sb = document.getElementById('aiSendBtn');
+  if (sb) sb.style.opacity = '';   // 无输入行的页面直接跳过，避免抛错中断落库
 }
 
 /**
@@ -3554,6 +4239,7 @@ function pushAiMsg(role, text, skipRender) {
   aiChatHistory.push({ role, text, time: Date.now() });
   if (aiChatHistory.length > 100) aiChatHistory = aiChatHistory.slice(-100); // 防止无限膨胀
   localStorage.setItem(getAiChatKey(), JSON.stringify(aiChatHistory));
+  try { syncHomeChatToShared(); } catch (eSync) { /* 共享历史写入失败不影响本地 */ }
   if (!skipRender) renderAiMessages();
 }
 
@@ -3563,12 +4249,20 @@ function pushAiMsg(role, text, skipRender) {
 function renderAiMessages() {
   const box = document.getElementById('aiMessages');
   box.innerHTML = '';
-  aiChatHistory.forEach(m => {
+  aiChatHistory.forEach((m, i) => {
     const div = document.createElement('div');
     div.className = 'ai-msg ' + (m.role === 'user' ? 'user' : 'ai');
-    div.innerHTML = '<div class="ai-msg-avatar">' + (m.role === 'user' ? '🙋' : getAiPartner().emoji) + '</div><div class="ai-msg-bubble"></div>';
+    div.innerHTML = '<div class="ai-msg-avatar">' + (m.role === 'user' ? '🙋' : aiPartnerIconHtml(getAiPartner(), 16)) + '</div><div class="ai-msg-bubble"></div>';
     div.querySelector('.ai-msg-bubble').textContent = m.text;
     box.appendChild(div);
+    // 最后一条助手回复挂上「复制 / 重新生成」
+    if (m.role !== 'user' && i === aiChatHistory.length - 1) {
+      const acts = document.createElement('div');
+      acts.className = 'ai-msg-actions';
+      acts.innerHTML = '<button type="button" onclick="copyAiText(this)">复制</button>' +
+        '<button type="button" onclick="regenerateAiLast()">重新生成</button>';
+      div.querySelector('.ai-msg-bubble').appendChild(acts);
+    }
   });
   scrollAiMessages();
 }
@@ -3581,13 +4275,15 @@ function scrollAiMessages() {
   box.scrollTop = box.scrollHeight;
 }
 
-// 启动时读取当前伙伴的历史；无历史时兼容导入旧版全局历史
+// 启动时读取当前伙伴的历史；无历史时兼容导入旧版全局历史 → 再退回与 AI.html 共享的历史
 try {
   aiChatHistory = JSON.parse(localStorage.getItem(getAiChatKey())) || [];
   if (!aiChatHistory.length) { aiChatHistory = JSON.parse(localStorage.getItem(lsKey(AI_CHAT_KEY))) || []; }
+  if (!aiChatHistory.length) { aiChatHistory = loadHomeChatFromShared(); }
 } catch (e) { aiChatHistory = []; }
-// 注入 AI 伙伴条 + 角色选择弹窗（所有页面通用，幂等）
+// 注入 AI 伙伴条 + 角色选择弹窗 + 快捷功能条（所有页面通用，幂等）
 try { ensureAiPartnerUI(); } catch (e) {}
+try { renderAiPartnerBar(); } catch (eRb) { /* 同步模型/状态文案，失败不影响页面 */ }
 
 // ========== 学习留言板（服务器版：点赞 + 回复） ==========
 async function addBoardMsg() {
@@ -3685,13 +4381,25 @@ async function deleteBoardReply(replyId) {
   } catch (e) { showToast(e.message); }
 }
 
+// 可见兜底：读不到数据时也要有东西展示，绝不留白
+function renderBoardFallback(list, msg) {
+  if (!list) return;
+  list.innerHTML = '<div class="board-empty">' + esc(msg)
+    + '<div style="margin-top:8px"><button class="btn btn-outline" onclick="renderBoard()">重试</button></div></div>';
+}
+
 async function renderBoard() {
   const list = document.getElementById('boardList');
   if (!list) return;
+  // api.js 未就绪/后端不可用时不抛错，直接给兜底文案
+  if (typeof api !== 'function') {
+    renderBoardFallback(list, '留言服务暂不可用（离线模式）');
+    return;
+  }
   list.innerHTML = '<div class="board-empty">加载中…</div>';
   try {
     var d = await api('/api/board?limit=50');
-    if (!d.items.length) {
+    if (!d || !d.items || !d.items.length) {
       list.innerHTML = '<div class="board-empty">还没有留言，写下第一条学习心得吧 ✍️</div>';
       return;
     }
@@ -3726,16 +4434,25 @@ async function renderBoard() {
       list.appendChild(div);
     });
   } catch (e) {
-    list.innerHTML = '<div class="board-empty">⚠️ 加载失败：' + esc(e.message) + '</div>';
+    // 出错也要给可见反馈 + 重试入口（原来是纯留白）
+    renderBoardFallback(list, '⚠️ 加载失败：' + ((e && e.message) || '未知错误'));
   }
 }
 
-// 启动时加载留言（等api.js加载完成）
+// 启动时加载留言（等 api.js 加载完成）
+// api.js 在 app.js 之后才执行（defer 顺序），原来的写法会无限轮询且一直留白；
+// 这里最多等 5 秒，超时也强制渲染一次，由 renderBoard 内部给出可见兜底文案。
+var _initBoardTries = 0;
 function _initBoard() {
-  if (typeof api === 'function') renderBoard();
-  else setTimeout(_initBoard, 100);
+  if (typeof api === 'function') {
+    try { renderBoard(); } catch (e) { /* renderBoard 内部已有兜底 */ }
+    return;
+  }
+  _initBoardTries++;
+  if (_initBoardTries < 50) { setTimeout(_initBoard, 100); return; }
+  try { renderBoard(); } catch (e) { /* 忽略 */ }
 }
-_initBoard();
+try { _initBoard(); } catch (e) { /* 忽略 */ }
 
 // ========== 口语体验 ==========
 let speakingPlaying = false;
@@ -5114,6 +5831,83 @@ function updateModuleStats() {
 }
 
 
+// ========== 分类标签条「收放」（折叠/展开）通用逻辑 ==========
+// 契约：容器带 data-xt-collapse 标记；收起态加 .is-collapsed，展开态加 .is-open。
+// 默认收起（只留当前选中项 + 展开按钮）。切换分类只重渲染列表区、不重建容器，故状态挂在容器 class 上天然安全。
+function xtInitCollapse() {
+  var boxes = document.querySelectorAll('[data-xt-collapse]');
+  for (var i = 0; i < boxes.length; i++) {
+    var box = boxes[i];
+    if (box.getAttribute('data-xt-collapse-bound') === '1') continue;
+    box.setAttribute('data-xt-collapse-bound', '1');
+    // 默认收起（若作者未显式标记展开态）
+    if (!box.classList.contains('is-open') && !box.classList.contains('is-collapsed')) {
+      box.classList.add('is-collapsed');
+    }
+    var btn = box.querySelector('.type-filter-toggle');
+    if (!btn) continue;
+    (function (b, container) {
+      b.onclick = function (ev) {
+        if (ev && ev.stopPropagation) ev.stopPropagation();
+        xtToggleCollapse(container);
+      };
+      // 键盘可达：因标了 role=button + tabindex=0，需支持 Enter / Space 激活（复用同一跳转路径）
+      b.onkeydown = function (ev) {
+        if (!ev) return;
+        if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar') {
+          if (ev.preventDefault) ev.preventDefault();   // 防止 Space 滚动页面
+          if (ev.stopPropagation) ev.stopPropagation();
+          xtToggleCollapse(container);
+        }
+      };
+    })(btn, box);
+    xtSyncCollapseToggleText(box);
+  }
+}
+
+// 切换某个容器的收放状态，并同步按钮文案/箭头
+function xtToggleCollapse(box) {
+  if (!box) return;
+  var open = box.classList.contains('is-open');
+  if (open) {
+    box.classList.remove('is-open');
+    box.classList.add('is-collapsed');
+  } else {
+    box.classList.remove('is-collapsed');
+    box.classList.add('is-open');
+  }
+  xtSyncCollapseToggleText(box);
+}
+
+// 按钮文案跟随状态：收起→「展开」，展开→「收起」
+function xtSyncCollapseToggleText(box) {
+  if (!box) return;
+  var btn = box.querySelector('.type-filter-toggle');
+  if (!btn) return;
+  var open = box.classList.contains('is-open');
+  var caret = btn.querySelector('.xt-caret');
+  var caretHtml = caret ? caret.outerHTML : '<span class="xt-caret">\u25BE</span>';
+  btn.innerHTML = (open ? '\u6536\u8d77' : '\u5c55\u5f00') + caretHtml;
+}
+
+// 自举：DOM 未就绪时轮询重试（与本文件既有 boot 模式一致）
+(function () {
+  var tries = 30;
+  function go() {
+    try { xtInitCollapse(); } catch (e) { /* 静默 */ }
+  }
+  function boot() {
+    if (document.querySelector('[data-xt-collapse]')) { go(); return; }
+    if (tries-- > 0) setTimeout(boot, 200);
+  }
+  try {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', boot);
+    } else { boot(); }
+    window.addEventListener('load', go);
+  } catch (e) { /* 忽略 */ }
+})();
+
 // ========== 商务礼仪渲染 ==========
 let etiquetteFiltered = ETIQUETTE_DATA;
 
@@ -5264,12 +6058,91 @@ function renderIvQuestionCard(q, viewed, isToday) {
 
 // ========== PPT版式库渲染 ==========
 let layoutFiltered = PPT_LAYOUTS;
+let layoutActive = '全部';
+let layoutFilterExpanded = false;
 
-function filterLayouts(cat) {
-  document.querySelectorAll('#layoutFilter .type-filter').forEach(t => {
-    t.classList.toggle('active', t.dataset.cat === cat);
-  });
-  layoutFiltered = cat === '全部' ? PPT_LAYOUTS : PPT_LAYOUTS.filter(l => l.category === cat);
+// 按数据自带的 category 字段对版式分组（结构页 / 内容页），组内按版式名聚合为筛选标签
+function getLayoutGroups() {
+  var groups = {};
+  for (var i = 0; i < PPT_LAYOUTS.length; i++) {
+    var l = PPT_LAYOUTS[i];
+    if (!groups[l.category]) groups[l.category] = [];
+    if (groups[l.category].indexOf(l.name) === -1) groups[l.category].push(l.name);
+  }
+  return { groups: groups, names: Object.keys(groups) };
+}
+
+function layoutFilterChip(val) {
+  return '<span class="type-filter" data-val="' + val + '" onclick="filterLayouts(\'' + val + '\')">' + val + '</span>';
+}
+
+// 收放分类：默认只显示第一组 + 展开按钮；点开显示全部分类与标签；收起不影响已选筛选
+function renderLayoutFilter() {
+  var box = document.getElementById('layoutFilter');
+  if (!box) return;
+  var g = getLayoutGroups();
+  var groups = g.groups, names = g.names;
+  box.style.cssText = 'display:flex;flex-direction:column;align-items:flex-start;gap:10px;margin-bottom:16px';
+
+  // 找出当前选中项所属的分类（用于收起时把选中项钉在首行，避免“看不见”）
+  var activeGroup = null;
+  if (names.indexOf(layoutActive) !== -1) activeGroup = layoutActive;
+  else {
+    for (var i = 0; i < names.length; i++) {
+      if (groups[names[i]].indexOf(layoutActive) !== -1) { activeGroup = names[i]; break; }
+    }
+  }
+  var hiddenGroups = layoutFilterExpanded ? [] : names.slice(1);
+  var activeHidden = (activeGroup !== null) && (hiddenGroups.indexOf(activeGroup) !== -1);
+
+  // 首行：全部 + （若选中项在收起分组内则钉住） + 展开/收起按钮
+  var row1 = '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%">';
+  row1 += layoutFilterChip('全部');
+  if (activeHidden) row1 += layoutFilterChip(layoutActive);
+  row1 += '<button type="button" onclick="toggleLayoutFilter()" style="border:1px dashed var(--primary);color:var(--primary);background:var(--bg);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer">' + (layoutFilterExpanded ? '收起 ▴' : '展开 ▾') + '</button>';
+  row1 += '</div>';
+
+  // 各分类组（默认仅显示第一组，其余收起）
+  var groupsHtml = '';
+  for (var gi = 0; gi < names.length; gi++) {
+    var cat = names[gi];
+    var hidden = (!layoutFilterExpanded && gi > 0);
+    var inner = '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%">';
+    inner += '<span style="font-size:12px;color:var(--text-muted);margin-right:2px;font-weight:600;white-space:nowrap">' + cat + '：</span>';
+    for (var ti = 0; ti < groups[cat].length; ti++) {
+      inner += layoutFilterChip(groups[cat][ti]);
+    }
+    inner += '</div>';
+    groupsHtml += '<div style="width:100%' + (hidden ? ';display:none' : '') + '">' + inner + '</div>';
+  }
+
+  box.innerHTML = row1 + groupsHtml;
+  updateLayoutFilterActive();
+}
+
+function updateLayoutFilterActive() {
+  var box = document.getElementById('layoutFilter');
+  if (!box) return;
+  var chips = box.querySelectorAll('.type-filter');
+  for (var i = 0; i < chips.length; i++) {
+    var c = chips[i];
+    if (c.getAttribute('data-val') === layoutActive) c.classList.add('active');
+    else c.classList.remove('active');
+  }
+}
+
+function toggleLayoutFilter() {
+  layoutFilterExpanded = !layoutFilterExpanded;
+  renderLayoutFilter();
+}
+
+function filterLayouts(val) {
+  layoutActive = val;
+  var g = getLayoutGroups();
+  if (val === '全部') layoutFiltered = PPT_LAYOUTS;
+  else if (g.names.indexOf(val) !== -1) layoutFiltered = PPT_LAYOUTS.filter(function (l) { return l.category === val; });
+  else layoutFiltered = PPT_LAYOUTS.filter(function (l) { return l.name === val; });
+  renderLayoutFilter();
   renderLayouts();
 }
 
@@ -5961,6 +6834,7 @@ function answerExamQuestion(selectedIndex) {
   updateModuleStats();
 renderEtiquette();
 renderIvQuestions();
+renderLayoutFilter();
 renderLayouts();
 renderPptCases();
 renderCommScenes();
@@ -6378,12 +7252,12 @@ applyTheme();          // 应用上次保存的主题（深色/浅色）——�
 /* ========== 首页：功能中心快捷入口（可自选） + 最近打开 + 问候 ========== */
 // J 批次：dc = lucide data-icon 名（hq-ic 渲染用）；ic 保留 emoji（编辑面板 chip 文案用）
 var HOME_DEF = [
-  { k: 'plaza', ic: '🌍', dc: 'globe', t: '广场', d: '看大家的', url: '学习博客.html' },
-  { k: 'cet', ic: '📖', dc: 'book-open', t: '四级备考', d: '词汇听力阅读', url: '四级备考.html' },
-  { k: 'exam', ic: '📝', dc: 'pencil', t: '央国企笔试', d: '行测刷题', url: '央国企笔试.html' },
-  { k: 'comm', ic: '💬', dc: 'message-square', t: '高情商表达', d: '场景话术', url: '高情商表达.html' },
-  { k: 'interview', ic: '🤝', dc: 'handshake', t: '商务礼仪面试', d: '面试题库', url: '商务礼仪面试.html' },
-  { k: 'ppt', ic: '🎨', dc: 'palette', t: 'PPT训练', d: '版式案例', url: 'PPT训练.html' }
+  { k: 'plaza', ic: '🌍', dc: 'globe', t: '社区', d: '看大家的', url: '社区.html' },
+  { k: 'cet', ic: '📖', dc: 'book-open', t: '英语', d: '词汇听力阅读', url: '英语.html' },
+  { k: 'exam', ic: '📝', dc: 'pencil', t: '行测', d: '行测刷题', url: '行测.html' },
+  { k: 'comm', ic: '💬', dc: 'message-square', t: '表达', d: '场景话术', url: '表达.html' },
+  { k: 'interview', ic: '🤝', dc: 'handshake', t: '面测', d: '面试题库', url: '面测.html' },
+  { k: 'ppt', ic: '📁', dc: 'folder', t: '我的文件', d: '题库/作品归档', url: '我的文件.html' }
 ];
 var HOME_SHOW_KEY = lsKey('study_workbench_home_show');
 function homePrefs() { try { return JSON.parse(localStorage.getItem(HOME_SHOW_KEY)) || {}; } catch (e) { return {}; } }
@@ -6434,9 +7308,14 @@ function decorateHome() {
   renderHomeQuick();
 }
 (function () {
+  // 值必须是 HOME_DEF 里真实存在的 k（plaza/cet/exam/comm/interview/ppt），
+  // 否则下面的 HOME_DEF.find 拿不到 def，访问记录不会写入，且「最近打开」会渲染出 href="undefined"。
+  // 2026-09-16 修正：'社区.html' 原值 'blog'、'面试题库.html' 原值 'iv' 均不在 HOME_DEF 中（死条目），
+  // 已分别改为 'plaza' / 'interview'；'私聊.html'('chat') 与 '设置.html'/'个人中心.html'('settings')
+  // 在 HOME_DEF 中没有对应入口（首页功能中心不展示这两项），属历史遗留死条目，直接删除。
   var recentMap = {
-    '学习博客.html': 'blog', '私聊.html': 'chat', '行测刷题.html': 'exam', '面试题库.html': 'iv',
-    '四级词汇.html': 'cet', '四级备考.html': 'listen', '设置.html': 'settings', '个人中心.html': 'settings'
+    '社区.html': 'plaza', '行测刷题.html': 'exam', '面试题库.html': 'interview',
+    '四级词汇.html': 'cet', '英语.html': 'cet'
   };
   var name = decodeURIComponent(location.pathname.split('/').pop());
   if (recentMap[name]) {
@@ -6444,9 +7323,20 @@ function decorateHome() {
     if (def) recordModuleVisit(def.k, def.t);
   }
 })();
-if (document.getElementById('page-home')) decorateHome();
-loadData();            // 读取本地数据——全页面通用
-updateDate();          // 顶栏日期在外壳里——全页面通用
+// 首页"功能中心/更多功能"卡片：任何一步出错都必须渲染出可见兜底，不能留白。
+try {
+  if (document.getElementById('page-home')) decorateHome();
+} catch (e) {
+  try {
+    var qn = document.getElementById('homeQuickNav');
+    if (qn) {
+      qn.innerHTML = '<div class="card-header"><div class="card-title"><span class="title-icon" data-icon="map"></span>功能中心</div></div>'
+        + '<div style="padding:14px;font-size:13px;color:var(--text-secondary)">功能入口加载失败，可直接用下方入口进入各模块。</div>';
+    }
+  } catch (e2) { /* 忽略 */ }
+}
+try { loadData(); } catch (e) { /* 读取本地数据失败不阻断后续渲染 */ }
+try { updateDate(); } catch (e) { /* 顶栏日期缺失不影响页面 */ }
 function __tryInit(name, fn) { try { fn(); } catch (e) { /* 本页无该模块 DOM，正常跳过 */ } }
 __tryInit('renderHome', renderHome);
 __tryInit('initVocabOrder', initVocabOrder);
@@ -6458,119 +7348,45 @@ __tryInit('renderWrongBook', renderWrongBook);
 __tryInit('updateModuleStats', updateModuleStats);
 __tryInit('renderEtiquette', renderEtiquette);
 __tryInit('renderIvQuestions', renderIvQuestions);
+__tryInit('renderLayoutFilter', renderLayoutFilter);
 __tryInit('renderLayouts', renderLayouts);
 __tryInit('renderPptCases', renderPptCases);
 __tryInit('renderCommScenes', renderCommScenes);
 __tryInit('renderQuotes', renderQuotes);
 
-// 如果没有倒计时，添加默认的
-if (appData.countdowns.length === 0) {
-  const today = new Date();
-  const cetDate = new Date(today.getFullYear(), 11, 14); // 12月第二个周六（近似）
-  appData.countdowns = [
-    { id: 1, name: '四级考试', date: cetDate.toISOString().split('T')[0], pinned: true, color: '#4A90D9' },
-    { id: 2, name: '秋招笔试高峰', date: new Date(today.getFullYear(), 9, 15).toISOString().split('T')[0], pinned: false, color: '#E05040' }
-  ];
-  saveData();
-  if (document.getElementById('countdownRow')) renderCountdowns();
-}
-
-/* ========== AI悬浮头像：拖拽自由移动【交互增强】 ========== */
-// 让 AI 头像可被按住拖到屏幕任意位置，避免遮挡底部"更多功能"等入口；
-// 拖拽后的位置持久化到 localStorage，下次打开自动恢复；
-// 双击头像回到默认右下角位置。
-const AI_FAB_POS_KEY = 'study_workbench_ai_fab_pos';
-let aiFabDragging = false;   // 本次按下后是否发生了位移（区分"拖动"与"点击"）
-let aiFabStartX = 0, aiFabStartY = 0;
-let aiFabStartLeft = 0, aiFabStartTop = 0;
-
-// 恢复上次保存的位置（若用户拖过）；否则回到 CSS 默认位置
-function restoreAiFabPos() {
-  const fab = document.getElementById('aiFab');
-  if (!fab) return;
-  let saved = null;
-  try { saved = JSON.parse(localStorage.getItem(AI_FAB_POS_KEY) || 'null'); } catch (e) {}
-  if (saved && typeof saved.left === 'number' && typeof saved.top === 'number') {
-    fab.style.left = saved.left + 'px';
-    fab.style.top = saved.top + 'px';
-    fab.style.right = 'auto';
-    fab.style.bottom = 'auto';
-  } else {
-    fab.style.left = ''; fab.style.top = '';
-    fab.style.right = ''; fab.style.bottom = ''; // 回到 CSS 默认（躲在底部导航上方）
-    fab.classList.remove('dragging');
+// 如果没有倒计时，添加默认的（countdowns 缺失时先补空数组，避免这里抛异常打断后续初始化）
+try {
+  if (!Array.isArray(appData.countdowns)) appData.countdowns = [];
+  if (appData.countdowns.length === 0) {
+    const today = new Date();
+    const cetDate = new Date(today.getFullYear(), 11, 14); // 12月第二个周六（近似）
+    appData.countdowns = [
+      { id: 1, name: '四级考试', date: cetDate.toISOString().split('T')[0], pinned: true, color: '#4A90D9' },
+      { id: 2, name: '秋招笔试高峰', date: new Date(today.getFullYear(), 9, 15).toISOString().split('T')[0], pinned: false, color: '#E05040' }
+    ];
+    saveData();
+    const cdRow = document.getElementById('countdownRow');
+    if (cdRow && typeof renderCountdowns === 'function') renderCountdowns();
   }
-}
+} catch (e) { /* 倒计时兜底失败不影响页面其它初始化 */ }
 
-function initAiFabDrag() {
-  const fab = document.getElementById('aiFab');
-  if (!fab) return;
-  restoreAiFabPos();
-
-  fab.addEventListener('pointerdown', function (e) {
-    aiFabDragging = false;                 // 每次按下先重置，避免上次拖拽状态残留
-    aiFabStartX = e.clientX;
-    aiFabStartY = e.clientY;
-    const rect = fab.getBoundingClientRect();
-    aiFabStartLeft = rect.left;
-    aiFabStartTop = rect.top;
-    fab.classList.add('dragging');
-    try { fab.setPointerCapture(e.pointerId); } catch (err) {}
-  });
-
-  fab.addEventListener('pointermove', function (e) {
-    if (!(typeof fab.hasPointerCapture === 'function' && fab.hasPointerCapture(e.pointerId))) return;
-    const dx = e.clientX - aiFabStartX;
-    const dy = e.clientY - aiFabStartY;
-    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) aiFabDragging = true; // 超过阈值才算拖动
-    if (aiFabDragging) {
-      const w = fab.offsetWidth, h = fab.offsetHeight;
-      let nl = aiFabStartLeft + dx;
-      let nt = aiFabStartTop + dy;
-      nl = Math.max(4, Math.min(window.innerWidth - w - 4, nl));   // 限制在视口内
-      nt = Math.max(4, Math.min(window.innerHeight - h - 4, nt));
-      fab.style.left = nl + 'px';
-      fab.style.top = nt + 'px';
-      fab.style.right = 'auto';
-      fab.style.bottom = 'auto';
-    }
-  });
-
-  fab.addEventListener('pointerup', function (e) {
-    try { fab.releasePointerCapture(e.pointerId); } catch (err) {}
-    fab.classList.remove('dragging');
-    if (aiFabDragging) {
-      // 记住最终位置
-      const left = parseFloat(fab.style.left) || fab.getBoundingClientRect().left;
-      const top = parseFloat(fab.style.top) || fab.getBoundingClientRect().top;
-      try { localStorage.setItem(AI_FAB_POS_KEY, JSON.stringify({ left: Math.round(left), top: Math.round(top) })); } catch (err) {}
-    }
-  });
-
-  // 点击（非拖动）→ 打开/收起面板；双击 → 回到默认位置
-  fab.addEventListener('click', function () {
-    if (aiFabDragging) { aiFabDragging = false; return; } // 刚拖完，不当作点击
-    toggleAiPanel();
-  });
-  fab.addEventListener('dblclick', function () {
-    try { localStorage.removeItem(AI_FAB_POS_KEY); } catch (e) {}
-    restoreAiFabPos();
-    showToast('🔄 AI头像已回到默认位置');
-  });
-}
-
-// 初始化 AI 头像拖拽
+/* ========== AI悬浮头像 ========== */
+// 实现已上移到文件顶部的 initAiFabModule 自举闭包，原因：
+// ① 原来这段绑定排在文件最末尾，前面任何一处初始化抛异常都会让它执行不到 → 悬浮球既点不开也拖不动；
+// ② 原来只绑 pointer* 事件，老 WebView 没有 PointerEvent（或 setPointerCapture 静默失败）→ 必然拖不动；
+// 现改为 mouse + touch 双通道，且不依赖本文件其它初始化是否成功。
+// 全局入口名 window.initAiFabDrag / window.restoreAiFabPos 保持不变。
 initAiFabDrag();
 
-// ==================== 广场（发贴系统） ====================
+// ==================== 社区（发贴系统） ====================
 // J 批次：dc = lucide data-icon 名（帖子卡/筛选 chip/统计条渲染用）；
 // icon 保留 emoji（仅剩原生 <select><option> 等无法渲染 SVG 的位置使用）
 const BLOG_CATS = [
-  { id: 'cet', name: '四级备考', icon: '📖', dc: 'book-open' },
-  { id: 'exam', name: '央国企笔试', icon: '📝', dc: 'pencil' },
-  { id: 'comm', name: '高情商表达', icon: '💬', dc: 'message-square' },
-  { id: 'interview', name: '商务礼仪面试', icon: '🤝', dc: 'handshake' },
-  { id: 'ppt', name: 'PPT训练', icon: '🎨', dc: 'palette' },
+  { id: 'cet', name: '英语', icon: '📖', dc: 'book-open' },
+  { id: 'exam', name: '行测', icon: '📝', dc: 'pencil' },
+  { id: 'comm', name: '表达', icon: '💬', dc: 'message-square' },
+  { id: 'interview', name: '面测', icon: '🤝', dc: 'handshake' },
+  { id: 'ppt', name: '演示', icon: '🎨', dc: 'palette' },
   { id: 'other', name: '其他', icon: '📚', dc: 'globe' }
 ];
 const BLOG_COLORS = {
@@ -6579,8 +7395,8 @@ const BLOG_COLORS = {
   ppt: ['#D4A056', '#F2C879'], other: ['#34C784', '#7BE3B5']
 };
 
-let blogCatFilter = 'all';   // 广场分类筛选
-let blogTagFilter = '';      // 广场标签筛选
+let blogCatFilter = 'all';   // 社区分类筛选
+let blogTagFilter = '';      // 社区标签筛选
 let blogMineType = 'all';    // 我的文章筛选：all/published/draft/archived/favorite
 let blogMineOpen = false;    // 我的文章：false=分类菜单页，true=分类列表页（K7）
 let bcExpandAll = false;     // 评论折叠：false=只显示前3条，true=展开全部（K5）
@@ -6700,7 +7516,7 @@ function noteCardHtml(n, opts) {
   </div>`;
 }
 
-// ---- 广场（分类筛选 + 搜索 + 标签筛选）----
+// ---- 社区（分类筛选 + 搜索 + 标签筛选）----
 // K9（20260913K）美化重设计：分类筛选收进与搜索框同一行的自定义下拉
 // （按钮上显示当前分类，展开列出全部 + 六分类）；blogCatFilter/blogTagFilter
 // 逻辑与 renderBlogList 联动保持不变。
@@ -6859,7 +7675,7 @@ function openBlogDetail(id) {
  * - replyTo 嵌套渲染：c.replyTo 为被回复评论的昵称字符串（与 api.js 云贴口径一致），
  *   子楼层跟随其父楼层缩进（class="bc-item bc-reply"），并带「回复 @xx」标记
  * - 折叠：评论 >5 条时默认只显示前 3 条，底部出现「展开全部 N 条 / 收起」按钮
- *   （class="bc-fold-btn"，命名与 学习博客.html 的 .bc-* CSS 契约一致）
+ *   （class="bc-fold-btn"，命名与 社区.html 的 .bc-* CSS 契约一致）
  */
 function renderLocalComments(n) {
   const list = n.comments || [];
@@ -7183,7 +7999,7 @@ function buildOutlineFromContent(title, content) {
   out.push('2. 用「错题本」记录做错的同类题，隔天复盘；');
   out.push('3. 用费曼技巧把知识点讲给同学听，讲不清就是没掌握。');
   out.push('');
-  out.push('> 提示：当前为「本地演示模式」生成的模板提纲。启动 ai-server 并配置 `AI_CONFIG.apiUrl` 后，可让真实 AI 深度提炼。');
+  out.push('> 提示：当前为「本地演示模式」生成的模板提纲。启动 ai-server 并配置 `APP_AI_DEMO_CONFIG.apiUrl` 后，可让真实 AI 深度提炼。');
   return out.join('\n');
 }
 async function editorAiAssist() {
@@ -7217,13 +8033,13 @@ async function editorAiAssist() {
       updateEditorPreview();
       showToast('⚠️ AI 生成失败');
     }
-  } else if (AI_CONFIG.apiUrl) {
+  } else if (APP_AI_DEMO_CONFIG.apiUrl) {
     showToast('🤖 AI 生成中…');
     if (ta.value && !ta.value.endsWith('\n')) ta.value += '\n';
     ta.value += '## 🤖 AI 复习提纲（生成中…）\n';
     updateEditorPreview();
     try {
-      const res = await fetch(AI_CONFIG.apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: prompt }) });
+      const res = await fetch(APP_AI_DEMO_CONFIG.apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: prompt }) });
       if (!res.ok) throw new Error('后端返回 ' + res.status);
       let reply = '';
       if (res.body && res.body.getReader) {
@@ -7302,7 +8118,7 @@ function renderProfilePage() {
       <span style="display:inline-flex;align-items:center;gap:4px;width:110px;font-size:12px;color:var(--text-secondary)">${icSpan(c.dc, 12)} ${c.name}</span>
       <div style="flex:1;height:14px;background:var(--bg);border-radius:7px;overflow:hidden"><div style="height:100%;width:${Math.round(catCount[c.id] / maxCat * 100)}%;background:linear-gradient(90deg,${noteColors(c.id)[0]},${noteColors(c.id)[1]})"></div></div>
       <span style="width:60px;font-size:12px;color:var(--text-secondary)">${catCount[c.id]} 篇</span>
-    </div>`).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有发贴，去「广场 → 写发贴」试试吧</div>';
+    </div>`).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有发贴，去「社区 → 写发贴」试试吧</div>';
   const auth = getAuth();
   let st = {};
   try { st = loadAllSettings(); } catch (e) { }
@@ -7329,7 +8145,7 @@ function renderProfilePage() {
   box.innerHTML = `
     <!-- 个人信息头部 -->
     <div class="pp-profile" style="background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;border-radius:16px;padding:24px 20px;margin-bottom:16px;text-align:center">
-      <div class="pp-avatar" style="width:80px;height:80px;margin:0 auto 12px;border:3px solid rgba(255,255,255,0.3);font-size:32px">${p.avatarImg && /^data:image\//.test(p.avatarImg) ? '<img src="' + p.avatarImg + '" alt="头像" style="border-radius:50%;width:100%;height:100%;object-fit:cover">' : esc(p.avatar)}</div>
+      <div class="pp-avatar" style="width:80px;height:80px;margin:0 auto 12px;border:3px solid rgba(255,255,255,0.3);font-size:32px">${(window.apiAvatarHtml ? window.apiAvatarHtml(p, p.avatar, 'style="border-radius:50%;width:100%;height:100%;object-fit:cover"') : esc(p.avatar))}</div>
       <div class="pp-name" style="color:#fff;font-size:20px;font-weight:700">${esc(p.name)}</div>
       <div class="pp-id" style="color:rgba(255,255,255,0.8);font-size:13px;margin-top:4px">${auth ? '@' + esc(auth.account) : '本地学习账号'}${p.motto ? ' · ' + esc(p.motto) : ''}</div>
       <button class="pp-account-btn" onclick="editProfile()" style="margin-top:12px;background:rgba(255,255,255,0.2);color:#fff;border:none;padding:8px 20px;border-radius:20px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px">${icSpan('pencil', 14)} 编辑资料</button>
@@ -7445,7 +8261,7 @@ function renderProfilePage() {
             <div style="margin-bottom:4px;display:flex;justify-content:center;color:var(--text)"><span class="nav-icon" data-icon="mic" data-icon-size="24"></span></div>
             <div style="font-size:12px">面试题库</div>
           </div>
-          <div style="text-align:center;padding:12px;background:var(--bg-sub);border-radius:10px;cursor:pointer" onclick="location.href='四级备考.html'">
+          <div style="text-align:center;padding:12px;background:var(--bg-sub);border-radius:10px;cursor:pointer" onclick="location.href='英语.html'">
             <div style="margin-bottom:4px;display:flex;justify-content:center;color:var(--text)"><span class="nav-icon" data-icon="headphones" data-icon-size="24"></span></div>
             <div style="font-size:12px">听力训练</div>
           </div>
@@ -7458,7 +8274,7 @@ function renderProfilePage() {
 
       <div class="pp-row" onclick="location.href='设置.html'"><span class="pp-ic" data-icon="settings"></span><span class="pp-tx">设置</span><span class="pp-st">${speakState}</span><span class="pp-ar">›</span></div>
 
-      <div class="pp-row" onclick="showAbout()"><span class="pp-ic" data-icon="info"></span><span class="pp-tx">关于</span><span class="pp-st">v2.2</span><span class="pp-ar">›</span></div>
+      <div class="pp-row" onclick="location.href='关于.html'"><span class="pp-ic" data-icon="info"></span><span class="pp-tx">关于</span><span class="pp-st">v2.2</span><span class="pp-ar">›</span></div>
     </div>
 
     <!-- 数据安全卡片 -->
@@ -7498,7 +8314,7 @@ function renderPostStatsOnly(container) {
       <span style="display:inline-flex;align-items:center;gap:4px;width:110px;font-size:12px;color:var(--text-secondary)">${icSpan(c.dc, 12)} ${c.name}</span>
       <div style="flex:1;height:14px;background:var(--bg);border-radius:7px;overflow:hidden"><div style="height:100%;width:${Math.round(catCount[c.id] / maxCat * 100)}%;background:linear-gradient(90deg,${noteColors(c.id)[0]},${noteColors(c.id)[1]})"></div></div>
       <span style="width:60px;font-size:12px;color:var(--text-secondary)">${catCount[c.id]} 篇</span>
-    </div>`).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有发贴，去「广场 → 写发贴」试试吧</div>';
+    </div>`).join('') || '<div style="color:var(--text-secondary);font-size:13px">还没有发贴，去「社区 → 写发贴」试试吧</div>';
   const totalNotes = pub.length + draft.length + arch.length;
 
   container.innerHTML = `
@@ -7562,8 +8378,8 @@ let peAvatarTemp = null; // 临时头像：data:image/... 字符串；null = 使
 function renderPeAvatarPreview() {
   const el = document.getElementById('peAvatarPreview'); if (!el) return;
   const p = appData.profile;
-  if (peAvatarTemp && /^data:image\//.test(peAvatarTemp)) {
-    el.innerHTML = '<img src="' + peAvatarTemp + '" alt="头像预览">';
+  if (typeof peAvatarTemp === 'string' && peAvatarTemp !== '') {
+    el.innerHTML = (window.apiAvatarHtml ? window.apiAvatarHtml({ avatarImg: peAvatarTemp }, (p.avatar || '学').slice(0, 2)) : ('<img src="' + peAvatarTemp + '" alt="头像预览">'));
   } else {
     el.textContent = (p.avatar || '学').slice(0, 2);
   }
@@ -7631,7 +8447,7 @@ function updateProfileUI() {
   const p = appData.profile;
   const av = document.querySelector('.user-card .user-avatar');
   if (av) {
-    if (p.avatarImg && /^data:image\//.test(p.avatarImg)) { av.innerHTML = '<img src="' + p.avatarImg + '" alt="头像">'; }
+    if (window.apiAvatarHtml) { av.innerHTML = window.apiAvatarHtml(p, p.avatar); } else if (p.avatarImg) { av.innerHTML = '<img src="' + p.avatarImg + '" alt="头像">'; }
     else { av.textContent = p.avatar; }
   }
   const nm = document.querySelector('.user-card .user-name'); if (nm) nm.textContent = p.name;
@@ -7640,11 +8456,11 @@ function updateProfileUI() {
 // ---- 底部“更多”面板入口 ----
 function openBlogStats() {
   if (document.getElementById('page-blog')) { closeMorePanel(); showBlogView('stats'); }
-  else location.href = '学习博客.html#stats';   // 跨页：带 hash 定位到统计视图
+  else location.href = '社区.html#stats';   // 跨页：带 hash 定位到统计视图
 }
 function openBlogFavorites() {
   if (document.getElementById('page-blog')) { closeMorePanel(); blogMineType = 'favorite'; blogMineOpen = true; showBlogView('mine'); }
-  else location.href = '学习博客.html#favorite'; // 跨页：定位到我的收藏
+  else location.href = '社区.html#favorite'; // 跨页：定位到我的收藏
 }
 function openBlogProfile() {
   // 个人中心已独立成页（个人中心.html）
@@ -7657,7 +8473,7 @@ if (document.getElementById('page-blog')) {
   loadBlogEditor();
   renderBlogList();
   renderBlogMine();
-  // 支持从其他页面带 #hash 跳转直达子视图（如 学习博客.html#stats / #note=xxx）
+  // 支持从其他页面带 #hash 跳转直达子视图（如 社区.html#stats / #note=xxx）
   const __h = location.hash.replace('#', '');
   if (__h === 'favorite') { blogMineType = 'favorite'; blogMineOpen = true; showBlogView('mine'); }
   else if (__h.startsWith('note=')) openBlogDetail(__h.slice(5));
@@ -7666,18 +8482,18 @@ if (document.getElementById('page-blog')) {
 updateProfileUI();
 
 // ==================== 全局搜索（顶栏，新增） ====================
-// 检索范围：① 广场发贴（标题/内容/标签/摘要） ② 各学习模块（标题/关键词）
-// 点击结果：发贴 → 跳 学习博客.html#note=ID 打开详情；模块 → navigateTo 跨页跳转
+// 检索范围：① 社区发贴（标题/内容/标签/摘要） ② 各学习模块（标题/关键词）
+// 点击结果：发贴 → 跳 社区.html#note=ID 打开详情；模块 → navigateTo 跨页跳转
 // J 批次：dc = lucide data-icon 名（全局搜索 gs-item-icon 渲染用），映射与 HOME_DEF / E1-R 约定一致；
 // icon 保留 emoji（数据兼容字段，不再渲染进 gs-item-icon）
 const MODULE_INDEX = [
   { page: 'home',           icon: '🏠', dc: 'home',            title: '首页',                 desc: '倒计时 · 今日任务 · 学习数据', kw: '首页 主页 倒计时 任务 统计' },
-  { page: 'cet',            icon: '📖', dc: 'book-open',       title: '四级备考',             desc: '词汇速记 · 听力 · 阅读 · 写作翻译', kw: '四级 英语 词汇 单词 听力 阅读 写作 翻译 cet' },
-  { page: 'exam',           icon: '📝', dc: 'pencil',          title: '央国企笔试',           desc: '行测全题型刷题', kw: '笔试 行测 图形推理 定义判断 类比推理 逻辑 言语 数量关系 资料分析 国企' },
-  { page: 'comm',           icon: '💬', dc: 'message-square',  title: '高情商表达',           desc: '场景话术 · 金句库 · 角色扮演', kw: '高情商 表达 话术 沟通 金句 情商' },
-  { page: 'interview',      icon: '🤝', dc: 'handshake',       title: '商务礼仪面试',         desc: '商务礼仪 · 模拟面试', kw: '面试 礼仪 自我介绍 简历 offer' },
-  { page: 'ppt',            icon: '🎨', dc: 'palette',         title: 'PPT训练',             desc: '版式训练 · 案例拆解', kw: 'PPT 汇报 课件 幻灯片 版式 演示' },
-  { page: 'blog',           icon: '🗒️', dc: 'globe',           title: '广场',             desc: '广场 · 写发贴 · 统计', kw: '博客 发贴 写作 草稿 日记' },
+  { page: 'cet',            icon: '📖', dc: 'book-open',       title: '英语',             desc: '词汇速记 · 听力 · 阅读 · 写作翻译', kw: '四级 英语 词汇 单词 听力 阅读 写作 翻译 cet' },
+  { page: 'exam',           icon: '📝', dc: 'pencil',          title: '行测',           desc: '行测全题型刷题', kw: '笔试 行测 图形推理 定义判断 类比推理 逻辑 言语 数量关系 资料分析 国企' },
+  { page: 'comm',           icon: '💬', dc: 'message-square',  title: '表达',           desc: '场景话术 · 金句库 · 角色扮演', kw: '高情商 表达 话术 沟通 金句 情商' },
+  { page: 'interview',      icon: '🤝', dc: 'handshake',       title: '面测',         desc: '商务礼仪 · 模拟面试', kw: '面试 礼仪 自我介绍 简历 offer' },
+  { page: 'ppt',            icon: '📁', dc: 'folder',          title: '我的文件',         desc: '题库 · 作品 · 笔记归档', kw: '我的文件 文件 题库 作品 笔记 归档' },
+  { page: 'blog',           icon: '🗒️', dc: 'globe',           title: '社区',             desc: '社区 · 写发贴 · 统计', kw: '博客 发贴 写作 草稿 日记' },
   { page: 'exam-center',    icon: '🧮', dc: 'pencil',          title: '行测刷题',             desc: '分题型专项刷题中心', kw: '行测 刷题 专项 刷题中心' },
   { page: 'wrong-book',     icon: '📒', dc: 'book',            title: '错题本',               desc: '错题收录与复盘', kw: '错题 错题本 复盘 收录' },
   { page: 'cet-vocab',      icon: '📖', dc: 'book-open',       title: '四级词汇',             desc: '间隔重复背单词', kw: '四级 词汇 单词 背单词 间隔重复' },
@@ -7714,7 +8530,7 @@ function globalSearch(kw) {
       const idx = (n.content || '').toLowerCase().indexOf(kw);
       if (idx >= 0) ctx = '…' + (n.content || '').slice(Math.max(0, idx - 12), idx + 40) + '…';
       else ctx = (n.excerpt || (n.tags || []).join(' / ') || '');
-      results.push({ icon: 'pencil', title: n.title, desc: ctx + ' · ' + (n.status === 'draft' ? '草稿' : '发贴'), action: "if(document.getElementById('page-blog')){closeGsDropdown();openBlogDetail('" + n.id + "');}else{location.href='学习博客.html#note=" + n.id + "';}" });
+      results.push({ icon: 'pencil', title: n.title, desc: ctx + ' · ' + (n.status === 'draft' ? '草稿' : '发贴'), action: "if(document.getElementById('page-blog')){closeGsDropdown();openBlogDetail('" + n.id + "');}else{location.href='社区.html#note=" + n.id + "';}" });
     }
   });
   const noteCount = results.length;
@@ -8324,34 +9140,53 @@ function updateGoalProgress(idx, progress) {
 
 
 
-// ========== 关于弹窗 ==========
+// ========== 关于（2026-09-16：改为独立页面 关于.html） ==========
+// 全站所有 showAbout() 调用点（更多页菜单、底部更多面板等）统一跳转独立页面，不再弹窗。
 function showAbout() {
+  let here = '';
+  try { here = decodeURIComponent(String((location && location.href) ? location.href : '')); } catch (e) { here = ''; }
+  if (here.indexOf('关于.html') >= 0) return;   // 已在关于页：忽略，避免自我跳转
+  location.href = '关于.html';
+}
+window.showAbout = showAbout;
+
+// 旧版页内弹窗：保留作兜底（关于页缺失 / 无法跳转时仍可查看），内容与 关于.html 一致。
+function showAboutDialog() {
   var old = document.getElementById('aboutModal');
   if (old) old.remove();
   var mask = document.createElement('div');
   mask.id = 'aboutModal';
-  mask.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  mask.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:9999;display:-webkit-box;display:flex;-webkit-box-align:center;align-items:center;-webkit-box-pack:center;justify-content:center;padding:20px';
   mask.onclick = function(e) { if (e.target === mask) mask.remove(); };
-  var html = '<div style="background:#fff;border-radius:20px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.3)">' +
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">' +
-    '<div style="font-size:18px;font-weight:800;color:#1a1b1c">ℹ️ 关于</div>' +
+  var html = '<div style="background:#fff;border-radius:20px;max-width:440px;width:100%;max-height:80vh;overflow-y:auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.3)">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">' +
+    '<div style="font-size:18px;font-weight:800;color:#1a1b1c">关于星途</div>' +
     '<button id="aboutClose" style="background:none;border:none;font-size:22px;cursor:pointer;color:#999">×</button>' +
     '</div>' +
-    '<div style="font-size:15px;font-weight:800;color:#1a1b1c">🚀 星途 v2.1</div>' +
-    '<div style="font-size:13px;color:#6b7280;margin-top:4px">一站式备考平台</div>' +
-    '<div style="margin-top:16px;font-size:13px;color:#374151;line-height:1.8">本应用数据默认保存在本机浏览器；登录服务器后，发贴/私信/AI 记录可多端同步。</div>' +
-    '<div style="margin-top:14px;font-weight:700;color:#1a1b1c">🗂️ 学习模块</div>' +
-    '<div style="font-size:13px;color:#374151;line-height:1.7;margin-top:4px">四级词汇(间隔重复) · 听说训练 · 行测刷题 · 错题本 · 央国企笔试 · 面试题库 · 高情商表达 · 商务礼仪 · PPT训练 · 万能金句/场景话术 · 广场 · 好友私信</div>' +
-    '<div style="margin-top:14px;font-weight:700;color:#1a1b1c">🧰 便捷能力</div>' +
-    '<div style="font-size:13px;color:#374151;line-height:1.7;margin-top:4px">导入题库 · AI多模型 · 发贴回收站 · Markdown导出 · 外观主题 · 专注计时 · 数据备份</div>' +
-    '<div style="margin-top:16px;border-top:1px dashed #e4e3dd;padding-top:10px;font-size:12px;color:#9ca3af">v2.1 更新：外观皮肤 · 好友私信 · AI对话记录 · 听说训练播放器 · 导入题库 · 个人资料等</div>' +
+    '<div style="font-size:15px;font-weight:800;color:#1a1b1c">星途 v2.3</div>' +
+    '<div style="font-size:13px;color:#6b7280;margin-top:4px">给上班族的备考搭子 · 学得下去、问得明白</div>' +
+    '<div style="margin-top:14px;font-size:13px;color:#374151;line-height:1.8">白天上班、晚上备考，最怕的是工具散、计划断、没人答疑。星途把这一路要用的东西收在一处：能刷题背词、能写申论做 PPT，还有一个随叫随到的 AI —— 不会就问，问完就能接着学。</div>' +
+
+    '<div style="margin-top:16px;font-weight:700;color:#1a1b1c">AI 怎么用</div>' +
+    '<div style="font-size:13px;color:#374151;line-height:1.75;margin-top:4px">' +
+    '<b>AI 问答</b>：底部导航点「AI」进入。默认「自动（推荐）」会按题型挑模型——数学推理走 DeepSeek-R1、英语翻译走混元、发图提问走视觉模型；也能手动指定。开 <b>MAX 模式</b>输出更长（适合申论批改、长文讲解），开 <b>深度思考</b>会先推导再给结论。' +
+    '</div>' +
+    '<div style="font-size:13px;color:#374151;line-height:1.75;margin-top:6px">' +
+    '<b>AI 伙伴</b>：两位常驻——<b>小助手</b>覆盖行测、申论、四级、面试、PPT、备考规划，给的是结论+可执行动作；<b>暖心学伴</b>学不动的时候先稳住你，再拆一个「现在就能开始」的小任务。' +
+    '</div>' +
+
+    '<div style="margin-top:16px;font-weight:700;color:#1a1b1c">学习模块</div>' +
+    '<div style="font-size:13px;color:#374151;line-height:1.7;margin-top:4px">英语（词汇+听说）· 行测刷题 · 申论刷题 · 错题本 · 央国企定向库 · 面试题库 · AI 模拟面试 · 时政热点 · 表达 · 商务礼仪 · 我的文件 · 万能金句 / 场景话术 · 动态社区 · 好友私信</div>' +
+
+    '<div style="margin-top:16px;border-top:1px dashed #e4e3dd;padding-top:10px;font-size:12px;color:#9ca3af;line-height:1.7">完整版本说明、数据说明与免责声明请见「关于」独立页面。</div>' +
     '<div style="margin-top:16px;text-align:right;font-style:italic;color:#6b7280">—— 小叶子</div>' +
     '</div>';
   mask.innerHTML = html;
   document.body.appendChild(mask);
-  document.getElementById('aboutClose').onclick = function() { mask.remove(); };
+  var closeBtn = document.getElementById('aboutClose');
+  if (closeBtn) closeBtn.onclick = function() { mask.remove(); };
 }
-window.showAbout = showAbout;
+window.showAboutDialog = showAboutDialog;
 
 // ========== 【9/11 新增】每日学习时长统计与上限提醒 ==========
 // 口径：页面可见即计时（visibilitychange / blur 暂停），按自然日 key 累计。
@@ -8681,6 +9516,17 @@ window.seedStudyLimitUI = seedStudyLimitUI;
         avatar: msg.avatar || '',
         remaining: XT_TOAST_MS
       };
+      // R72-5：原生桥（Android）系统通知——页内 toast 之前先尝试调用；
+      // 方法名 notify(title, text) 为与另一条线约定的固定契约（逐字一致），带空值兜底与长度上限。
+      try {
+        if (window.AndroidBridge && typeof window.AndroidBridge.notify === 'function') {
+          var nTitle = '星途 - 新消息';
+          var nText = String(name + '：' + (text == null ? '' : text)).replace(/\s+/g, ' ').trim();
+          if (!nText) nText = '您有一条新消息';
+          if (nText.length > 100) nText = nText.slice(0, 100);
+          window.AndroidBridge.notify(nTitle, nText);
+        }
+      } catch (eN) { /* 原生桥不可用：忽略，绝不影响页内通知 */ }
       if (live.length < XT_TOAST_MAX) mountToast(item);
       else queue.push(item);
     } catch (e) { /* 通知失败绝不影响主流程 */ }
