@@ -1,4 +1,4 @@
-/* 四级备考 占位模块内容（听力/阅读/写作/翻译/模考） */
+/* 英语 占位模块内容（听力/阅读/写作/翻译/模考） */
 window.MINI_BANK = window.MINI_BANK || {};
 var CET = window.MINI_BANK;
 

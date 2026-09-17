@@ -1,4 +1,4 @@
-/* 高情商表达 占位模块内容 */
+/* 表达 占位模块内容 */
 window.MINI_BANK = window.MINI_BANK || {};
 var COMM = window.MINI_BANK;
 

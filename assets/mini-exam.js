@@ -1,4 +1,4 @@
-/* 央国企笔试 占位模块内容 */
+/* 行测 占位模块内容 */
 window.MINI_BANK = window.MINI_BANK || {};
 var EXAM = window.MINI_BANK;
 

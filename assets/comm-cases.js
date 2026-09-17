@@ -4,7 +4,7 @@
    ---------------------------------------------------------------------
    挂载方式（ADR-2 注册表模式）：
      · 注册 XTC.registerView('GQV2', 'comm-cases', fn)，宿主页面不需要改结构；
-       宿主页（高情商表达.html）只新增 script 引用即可（见 tools/qa/_r48b3_impl_note.md 改动清单）。
+       宿主页（表达.html）只新增 script 引用即可（见 tools/qa/_r48b3_impl_note.md 改动清单）。
      · 分发：本文件自己在 DOMContentLoaded 里包装 window.openGqCasesView，
        命中 V2 且数据就绪 → 渲染新视图；否则原样透传旧的 mini.js 引擎路径，一行未删。
      · 不依赖 app.js / mini.js 的任何渲染函数；XTC 缺失时降级为本地 helper。

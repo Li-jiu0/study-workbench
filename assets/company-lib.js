@@ -141,7 +141,7 @@
     return null;
   }
 
-  /** 页签分组：按数据出现顺序去重 */
+  /** 分类列表：按数据出现顺序去重（用于分类筛选下拉，数据驱动，勿硬编码） */
   function CL_cats() {
     var items = CL_items();
     var out = [];
@@ -153,7 +153,7 @@
     return out;
   }
 
-  /** 当前页签 + 关键词过滤 */
+  /** 当前关键词过滤 */
   function CL_filtered() {
     var items = CL_items();
     var kw = (state.kw || '').toLowerCase();
@@ -251,22 +251,12 @@
     var el = CL_el('clHero');
     if (!el) return;
     var meta = CL_meta();
-    var items = CL_items();
-    var tags = [];
-    for (var i = 0; i < items.length; i++) {
-      if (tags.indexOf(items[i].cat) === -1) tags.push(items[i].cat);
-    }
     var html = '';
     html += '<div class="cl-hero">';
     html += '  <div class="cl-hero-icon">' + CL_icon('package', 26) + '</div>';
     html += '  <div class="cl-hero-main">';
     html += '    <div class="cl-hero-title">企业定向库</div>';
     html += '    <div class="cl-hero-sub">8 类定向内容 · 企业名片 + 笔试考情 + 考点自测 + 答题注意</div>';
-    html += '    <div class="cl-hero-tags">';
-    for (var j = 0; j < tags.length; j++) {
-      html += '<span class="cl-tag">' + CL_esc(tags[j]) + '</span>';
-    }
-    html += '    </div>';
     html += '  </div>';
     html += '  <button type="button" class="cl-btn cl-btn-ghost" onclick="CompanyLib.goXingce()">';
     html += CL_icon('pencil', 15) + '去行测刷题 · 企业定向</button>';
@@ -292,21 +282,6 @@
     html += '  </div>';
     html += '  <div class="cl-prog-bar"><i style="width:' + pct + '%"></i></div>';
     html += '  <div class="cl-prog-hint">点开任意一类，看完后点「标记已学」即可累计进度；收藏用于考前快速回看。</div>';
-    html += '</div>';
-    el.innerHTML = html;
-  }
-
-  function CL_renderTabs() {
-    var el = CL_el('clTabs');
-    if (!el) return;
-    var cats = CL_cats();
-    var html = '<div class="cl-tabs">';
-    html += '<button type="button" class="cl-tab' + (state.cat === CAT_ALL ? ' is-active' : '') +
-      '" onclick="CompanyLib.setCat(\'' + CAT_ALL + '\')">全部</button>';
-    for (var i = 0; i < cats.length; i++) {
-      html += '<button type="button" class="cl-tab' + (state.cat === cats[i] ? ' is-active' : '') +
-        '" onclick="CompanyLib.setCat(\'' + CL_esc(cats[i]) + '\')">' + CL_esc(cats[i]) + '</button>';
-    }
     html += '</div>';
     el.innerHTML = html;
   }
@@ -613,9 +588,22 @@
 
   /* ===================== 对外行为 ===================== */
 
+  /** 渲染分类筛选下拉：数据驱动生成选项（不硬编码分类名），选中当前 state.cat */
+  function CL_renderCatFilter() {
+    var sel = CL_el('clCatSel');
+    if (!sel) return;
+    var cats = CL_cats();
+    var html = '<option value="' + CL_esc(CAT_ALL) + '">全部分类</option>';
+    for (var i = 0; i < cats.length; i++) {
+      html += '<option value="' + CL_esc(cats[i]) + '">' + CL_esc(cats[i]) + '</option>';
+    }
+    sel.innerHTML = html;
+    sel.value = state.cat;
+    if (sel.selectedIndex < 0) sel.value = CAT_ALL;
+  }
+
   function CL_rerender() {
     CL_renderProgress();
-    CL_renderTabs();
     CL_renderList();
   }
 
@@ -637,6 +625,16 @@
           CL_renderList();
         });
       }
+
+      // 分类筛选下拉：选项数据驱动渲染，change 复用既有的 setCat()（与搜索叠加筛选）
+      CL_renderCatFilter();
+      var catSel = CL_el('clCatSel');
+      if (catSel && !catSel.getAttribute('data-cl-bound')) {
+        catSel.setAttribute('data-cl-bound', '1');
+        catSel.addEventListener('change', function () {
+          self.setCat(this.value || CAT_ALL);
+        });
+      }
       // 兼容其它组件在页面加载完成后才写入数据的情况
       if (typeof window.lucideAutoRender === 'function') {
         try { window.lucideAutoRender(); } catch (e) { /* noop */ }
@@ -644,12 +642,15 @@
       return self;
     },
 
-    /** 切换页签 */
+    /** 切换分类 */
     setCat: function (cat) {
       state.cat = cat;
       state.detailId = '';
       CL_rerender();
       CL_renderDetail();
+      // 同步下拉显示值（deep-link / 外部调用时防状态双源不同步）
+      var sel = CL_el('clCatSel');
+      if (sel && sel.value !== cat) sel.value = cat;
     },
 
     /** 搜索框（与 input 事件等价，供外部调用） */

@@ -1,4 +1,4 @@
-/* PPT训练 占位模块内容 */
+/* 演示 占位模块内容 */
 window.MINI_BANK = window.MINI_BANK || {};
 var PPT = window.MINI_BANK;
 

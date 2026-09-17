@@ -3,7 +3,7 @@
  * -----------------------------------------------------------------------------
  * 加载位置：assets/xt-content.js → assets/data-cet-read.js → 本文件。
  * 注册方式：XTC.registerView('CETV2', 'cet-read', fn)（等价 window.CETV2['cet-read'] = fn）
- *          分发由宿主页 四级备考.html（T20 一次性预埋）负责，本文件不改任何 HTML。
+ *          分发由宿主页 英语.html（T20 一次性预埋）负责，本文件不改任何 HTML。
  * 结构：技巧速览（沿用原有 10 道策略题，降级为 tab）+
  *       选词填空 1 篇 / 长篇匹配 1 篇 / 仔细阅读 2 篇（共 4 篇 30 题，每题带解析）。
  * 兼容：ES5 语法，不用箭头函数 / 可选链 / 空值合并。
@@ -11,6 +11,12 @@
  *       图标全部走 data-icon（icon-map.js），每次 innerHTML 后补 XTC.renderIcons() / lucideAutoRender()；
  *       内容资产一律页内全屏视图承载，禁止弹窗（ADR-3）。
  * 版本戳：20260915b
+ * 变更（20260916 第三批 L5 / N9-11 收口）：
+ *   - 三种题型（选词填空 cloze / 长篇匹配 match / 仔细阅读 careful）共用 .cr-grid 右栏，
+ *     统一保证「答题卡 crCard + 题目区 + 结果区」三段都有可见内容，消除空卡片：
+ *     ① cardHtml 在题量为 0 时输出明确空状态，不再吐只带头部的中空卡片；
+ *     ② careful 在 qs 为空时不调用 XTC.renderQuiz（其内部会 innerHTML=''），改为显式占位；
+ *     ③ 三个渲染器对 blanks/stats/paras/options 做数据兜底，缺字段不再整份渲染中断。
  * ========================================================================== */
 (function () {
   'use strict';
@@ -251,6 +257,13 @@
   function cardHtml(total, unit, guide) {
     var n = parseInt(total, 10);
     if (isNaN(n) || n < 0) n = 0;
+    /* ★ n===0 时必须给「可见内容」：若仍输出「答题卡 · 共 0 空」+ 空题号行，
+       右栏就是一块只带头部的中空卡片（即 N9-11 的空卡片症状）。
+       这里直接渲染明确的空状态文案，保证三种题型在任何数据形态下右栏都有可读内容。 */
+    if (n === 0) {
+      return '<div class="cr-card-h">' + icon('check-circle', 15) + '答题卡</div>' +
+        '<div class="cr-empty">本篇暂无题目数据，请先阅读左侧文章要点。</div>';
+    }
     var h = '<div class="cr-card-h">' + icon('check-circle', 15) +
       '答题卡 · 共 ' + n + ' ' + esc(unit) + '</div>' +
       '<div class="cr-card-m">已作答 <span class="cr-card-done">0</span> / ' + n + ' · 交卷后可逐题对照解析</div>' +
@@ -288,14 +301,18 @@
   /* --------------------------------------------------------- 选词填空渲染 */
   function renderCloze(host, p) {
     var i, j;
+    /* ★ 数据兜底：字段缺失时退化为空数组，避免 p.blanks.length 抛 TypeError
+       导致整份视图渲染中断（宿主页会整串地失去内容，等同白屏）。 */
+    var optsList = p.options || [];
+    var blanks = p.blanks || [];
     var optHtml = '';
-    for (i = 0; i < p.options.length; i++) {
-      var o = p.options[i];
+    for (i = 0; i < optsList.length; i++) {
+      var o = optsList[i];
       optHtml += '<span class="cr-opt"><b>' + esc(o.k) + '</b>' + esc(o.w) + ' <i>' + esc(o.p) + '</i></span>';
     }
     var selOpts = '<option value="">—</option>';
-    for (i = 0; i < p.options.length; i++) {
-      selOpts += '<option value="' + esc(p.options[i].k) + '">' + esc(p.options[i].k) + '. ' + esc(p.options[i].w) + '</option>';
+    for (i = 0; i < optsList.length; i++) {
+      selOpts += '<option value="' + esc(optsList[i].k) + '">' + esc(optsList[i].k) + '. ' + esc(optsList[i].w) + '</option>';
     }
 
     var paras = String(p.body || '').split('\n\n');
@@ -318,7 +335,7 @@
         '</div>' +
         '<div class="cr-col cr-col-quiz">' +
           '<div class="cr-quiz-card" id="crCard">' +
-            cardHtml(p.blanks.length, '空', '先通读左侧文章把握大意，再逐空判断词性与搭配，从上方 15 个选项中选词。') +
+            cardHtml(blanks.length, '空', '先通读左侧文章把握大意，再逐空判断词性与搭配，从上方选项中选词。') +
           '</div>' +
           '<div id="crRes"></div>' +
         '</div>' +
@@ -328,8 +345,8 @@
     var timerEl = host.querySelector('#crTimer');
     startTimer(timerEl);
 
-    var syncCard = bindCard(host, p.blanks.length, function (idx) {
-      var b = p.blanks[idx];
+    var syncCard = bindCard(host, blanks.length, function (idx) {
+      var b = blanks[idx];
       var node = b ? host.querySelector('.cr-blank[data-no="' + b.no + '"]') : null;
       if (!node) return '';
       if (node.className.indexOf('wrong') >= 0) return 'bad';
@@ -342,8 +359,8 @@
     host.querySelector('#crSubmit').addEventListener('click', function () {
       var sels = host.querySelectorAll('.cr-blank');
       var correct = 0, items = [], k;
-      for (k = 0; k < p.blanks.length; k++) {
-        var b = p.blanks[k];
+      for (k = 0; k < blanks.length; k++) {
+        var b = blanks[k];
         var node = host.querySelector('.cr-blank[data-no="' + b.no + '"]');
         var val = node ? node.value : '';
         var ok = (val === b.a);
@@ -358,15 +375,15 @@
         }
         if (ok) correct++;
         var word = '';
-        for (j = 0; j < p.options.length; j++) if (p.options[j].k === b.a) word = p.options[j].w;
+        for (j = 0; j < optsList.length; j++) if (optsList[j].k === b.a) word = optsList[j].w;
         items.push({ k: '第 ' + b.no + ' 空', ans: b.a + '. ' + word, x: b.x });
       }
       stopTimer();
       host.querySelector('#crSubmit').disabled = true;
-      host.querySelector('#crRes').innerHTML = resultHtml(correct, p.blanks.length, timer.sec, p.minutes, items);
+      host.querySelector('#crRes').innerHTML = resultHtml(correct, blanks.length, timer.sec, p.minutes, items);
       icons(host);
       syncCard();
-      saveResult(p.id, correct, p.blanks.length, timer.sec);
+      saveResult(p.id, correct, blanks.length, timer.sec);
       renderBar();
     });
 
@@ -378,20 +395,23 @@
   /* --------------------------------------------------------- 长篇匹配渲染 */
   function renderMatch(host, p) {
     var i, j;
+    /* ★ 与 renderCloze 同样的数据兜底，字段缺失时不再整份渲染中断。 */
+    var paras = p.paras || [];
+    var stats = p.stats || [];
     var artHtml = '';
-    for (i = 0; i < p.paras.length; i++) {
-      artHtml += '<div class="cr-para"><span class="cr-para-k">' + esc(p.paras[i].k) + '</span>' +
-        '<span class="cr-para-t">' + esc(p.paras[i].t) + '</span></div>';
+    for (i = 0; i < paras.length; i++) {
+      artHtml += '<div class="cr-para"><span class="cr-para-k">' + esc(paras[i].k) + '</span>' +
+        '<span class="cr-para-t">' + esc(paras[i].t) + '</span></div>';
     }
     var selOpts = '<option value="">—</option>';
-    for (i = 0; i < p.paras.length; i++) {
-      selOpts += '<option value="' + esc(p.paras[i].k) + '">' + esc(p.paras[i].k) + '</option>';
+    for (i = 0; i < paras.length; i++) {
+      selOpts += '<option value="' + esc(paras[i].k) + '">' + esc(paras[i].k) + '</option>';
     }
     var stHtml = '';
-    for (i = 0; i < p.stats.length; i++) {
+    for (i = 0; i < stats.length; i++) {
       stHtml += '<div class="cr-stat"><span class="cr-stat-n">' + (i + 1) + '</span>' +
-        '<span class="cr-stat-t">' + esc(p.stats[i].t) + '</span>' +
-        '<select class="cr-sel" data-no="' + p.stats[i].no + '" aria-label="第' + (i + 1) + '题">' + selOpts + '</select></div>';
+        '<span class="cr-stat-t">' + esc(stats[i].t) + '</span>' +
+        '<select class="cr-sel" data-no="' + esc(stats[i].no) + '" aria-label="第' + (i + 1) + '题">' + selOpts + '</select></div>';
     }
 
     host.innerHTML =
@@ -404,7 +424,7 @@
         '</div>' +
         '<div class="cr-col cr-col-quiz">' +
           '<div class="cr-quiz-card" id="crCard">' +
-            cardHtml(p.stats.length, '题', '先浏览左侧各段抓主旨与关键词，再为右侧每条陈述匹配段号。') +
+            cardHtml(stats.length, '题', '先浏览左侧各段抓主旨与关键词，再为右侧每条陈述匹配段号。') +
           '</div>' +
           '<div class="cr-quiz-card"><div class="cr-stats">' + stHtml + '</div></div>' +
           '<div id="crRes"></div>' +
@@ -415,8 +435,8 @@
     var timerEl = host.querySelector('#crTimer');
     startTimer(timerEl);
 
-    var syncCard = bindCard(host, p.stats.length, function (idx) {
-      var st = p.stats[idx];
+    var syncCard = bindCard(host, stats.length, function (idx) {
+      var st = stats[idx];
       var node = st ? host.querySelector('.cr-sel[data-no="' + st.no + '"]') : null;
       if (!node) return '';
       if (node.className.indexOf('wrong') >= 0) return 'bad';
@@ -428,8 +448,8 @@
 
     host.querySelector('#crSubmit').addEventListener('click', function () {
       var correct = 0, items = [], k;
-      for (k = 0; k < p.stats.length; k++) {
-        var st = p.stats[k];
+      for (k = 0; k < stats.length; k++) {
+        var st = stats[k];
         var node = host.querySelector('.cr-sel[data-no="' + st.no + '"]');
         var val = node ? node.value : '';
         var ok = (val === st.a);
@@ -443,10 +463,10 @@
       }
       stopTimer();
       host.querySelector('#crSubmit').disabled = true;
-      host.querySelector('#crRes').innerHTML = resultHtml(correct, p.stats.length, timer.sec, p.minutes, items);
+      host.querySelector('#crRes').innerHTML = resultHtml(correct, stats.length, timer.sec, p.minutes, items);
       icons(host);
       syncCard();
-      saveResult(p.id, correct, p.stats.length, timer.sec);
+      saveResult(p.id, correct, stats.length, timer.sec);
       renderBar();
     });
 
@@ -490,7 +510,7 @@
         '<div class="cr-col cr-col-art">' +
           '<div class="cr-h"><span class="cr-h-t">' + esc(cur.title) + '</span><span class="cr-h-s">' + esc(cur.sub) + '</span></div>' +
           '<div class="cr-toolbar"><span class="cr-tk">' + icon('timer', 14) + '<span id="crTimer2">00:00</span></span>' +
-          '<span>建议 ' + esc(cur.minutes) + ' 分钟 · 5 题</span><span class="cr-sp"></span></div>' +
+          '<span>建议 ' + esc(cur.minutes) + ' 分钟 · ' + qs.length + ' 题</span><span class="cr-sp"></span></div>' +
           '<div class="cr-tip"><b>做法：</b>' + esc(cur.tip) + '</div>' +
           '<div class="cr-art">' + artHtml + '</div>' +
         '</div>' +
@@ -533,10 +553,15 @@
         renderBar();
       }
     };
-    if (window.XTC && typeof window.XTC.renderQuiz === 'function') {
-      window.XTC.renderQuiz(box.querySelector('#crQuizHost'), qs, opts);
-    } else {
-      box.querySelector('#crQuizHost').innerHTML = '<div class="cr-empty">自测组件未加载（assets/xt-content.js 缺失）</div>';
+    /* ★ XTC.renderQuiz 在 quiz 为空时会执行 slotEl.innerHTML = ''（见 xt-content.js），
+       此时右栏只剩答题卡一块，视觉上接近空卡片；这里先判空并显式占位。 */
+    var qHost = box.querySelector('#crQuizHost');
+    if (!qs.length) {
+      if (qHost) qHost.innerHTML = '<div class="cr-empty">本篇暂无题目，请先阅读左侧文章。</div>';
+    } else if (window.XTC && typeof window.XTC.renderQuiz === 'function') {
+      window.XTC.renderQuiz(qHost, qs, opts);
+    } else if (qHost) {
+      qHost.innerHTML = '<div class="cr-empty">自测组件未加载（assets/xt-content.js 缺失）</div>';
     }
   }
 

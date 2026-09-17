@@ -530,6 +530,14 @@ input, textarea { font-family: inherit; outline: none; }
   animation: fadeIn 0.2s ease;
 }
 .modal-overlay.active { display: flex; }
+/* 内联表单区块（页面内可展开，ADR-3：非遮罩）：默认隐藏，.active 时展开。
+   历史上这条规则只写在「学习工作台.html」的局部 <style> 里，任何共享 CSS 都没有，
+   导致复用同一份 #countdownModal DOM 的页面（关于页、学习概括页）其表单默认可见，
+   看起来像页面上多挂了一张「添加倒计时」卡片。此处统一收敛为全站唯一权威定义
+   （与上面 .modal-overlay 的显隐语义配对：display:none + .active 显隐）。
+   app.js 的 openCountdownModal()/closeCountdownModal() 仅切 .active 类，语义不变。 */
+.xt-inline-form { display: none; }
+.xt-inline-form.active { display: block; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .modal {
   background: var(--card);
@@ -587,16 +595,16 @@ input, textarea { font-family: inherit; outline: none; }
 /* 倒计时 */
 .countdown-row {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   overflow-x: auto;
   padding-bottom: 4px;
   -webkit-overflow-scrolling: touch;
 }
 .countdown-card {
-  min-width: 160px;
+  min-width: 140px;
   background: var(--card);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 12px;
   box-shadow: var(--shadow);
   position: relative;
   overflow: hidden;
@@ -609,27 +617,27 @@ input, textarea { font-family: inherit; outline: none; }
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;
-  height: 4px;
+  height: 3px;
   background: var(--cd-color, var(--primary));
 }
-.countdown-name { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
-.countdown-days { font-size: 32px; font-weight: 800; color: var(--cd-color, var(--primary)); line-height: 1; }
-.countdown-days .unit { font-size: 14px; font-weight: 500; color: var(--text-muted); margin-left: 2px; }
-.countdown-date { font-size: 11px; color: var(--text-muted); margin-top: 8px; }
-.countdown-actions { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; opacity: 0; transition: var(--transition); }
+.countdown-name { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 5px; }
+.countdown-days { font-size: 26px; font-weight: 800; color: var(--cd-color, var(--primary)); line-height: 1; }
+.countdown-days .unit { font-size: 12px; font-weight: 500; color: var(--text-muted); margin-left: 2px; }
+.countdown-date { font-size: 10px; color: var(--text-muted); margin-top: 5px; }
+.countdown-actions { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; opacity: 0; transition: var(--transition); }
 .countdown-card:hover .countdown-actions { opacity: 1; }
 .countdown-btn {
-  width: 24px; height: 24px;
+  width: 20px; height: 20px;
   border-radius: 50%;
   background: var(--bg);
   display: flex; align-items: center; justify-content: center;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
   transition: var(--transition);
 }
 .countdown-btn:hover { background: var(--primary-light); }
 .countdown-add {
-  min-width: 120px;
+  min-width: 140px;   /* 须与 .countdown-card 同值：历史缺这条导致虚线卡比正式卡窄、行内错位 */
   border: 2px dashed var(--border);
   background: transparent;
   box-shadow: none;
@@ -637,13 +645,13 @@ input, textarea { font-family: inherit; outline: none; }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
 }
 .countdown-add:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
-.countdown-add .add-icon { font-size: 28px; }
+.countdown-add .add-icon { font-size: 20px; }
 
 /* 首页网格 */
 .home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
@@ -788,6 +796,34 @@ input, textarea { font-family: inherit; outline: none; }
   color: #fff;
   border-color: var(--primary);
 }
+
+/* ===== 分类标签条「收放」（折叠/展开）=====
+   仅对显式标记了 data-xt-collapse 的容器生效，未标记的 .type-filter 页面（场景话术库 / 行测刷题 / 申论刷题）不受影响。
+   默认收起：只保留当前选中项 + 展开按钮；展开后显示全部标签。
+   容器本身的行内 display:flex 无需覆盖（收起态仍是 flex，仅隐藏未选中项）。 */
+[data-xt-collapse] { align-items: center; }
+[data-xt-collapse].is-collapsed > .type-filter:not(.active) { display: none; }
+[data-xt-collapse].is-open > .type-filter { display: inline-block; }
+
+/* 收放开关按钮：视觉与 .type-filter 一致，但用虚线边框+箭头区分 */
+.type-filter-toggle {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--bg);
+  border: 1px dashed var(--primary);
+  cursor: pointer;
+  transition: var(--transition);
+  user-select: none;
+  white-space: nowrap;
+}
+.type-filter-toggle:hover { background: var(--primary); color: #fff; border-style: solid; }
+.type-filter-toggle .xt-caret { display: inline-block; margin-left: 4px; }
+[data-xt-collapse].is-collapsed .type-filter-toggle .xt-caret { transform: rotate(0deg); }
+[data-xt-collapse].is-open .type-filter-toggle .xt-caret { transform: rotate(180deg); }
 
 /* 选项按钮 */
 .option-btn {
@@ -1344,13 +1380,15 @@ input, textarea { font-family: inherit; outline: none; }
 
 @media (max-width: 480px) {
   .feature-grid { grid-template-columns: 1fr; }
-  .countdown-card { min-width: 140px; }
-  .countdown-days { font-size: 26px; }
+  .countdown-card, .countdown-add { min-width: 120px; }   /* 虚线卡同步收窄，避免与正式卡错位 */
+  .countdown-card { padding: 10px; }
+  .countdown-days { font-size: 22px; }
+  .countdown-add .add-icon { font-size: 18px; }
 }
 
-/* ===== 学习博客（笔记系统）样式 ===== */
+/* ===== 社区（笔记系统）样式 ===== */
 .blog-wrap { display: flex; flex-direction: column; gap: 16px; }
-/* 博客顶部子导航 */
+/* 社区顶部子导航 */
 .blog-subnav { display: flex; gap: 8px; flex-wrap: wrap; }
 .blog-subnav .sb-tab {
   padding: 8px 16px; border-radius: 20px; background: var(--card);
@@ -2097,7 +2135,7 @@ body.dark .bottom-nav { background: rgba(30,34,40,0.92); }
    ===================================================================== */
 
 /* ---------- 需求7：广场「发布 / 存草稿」按钮栏吸底 ----------
-   注意：只作用于学习博客编辑视图专用的 .ed-actions-bar（学习博客.html:236）。
+   注意：只作用于社区编辑视图专用的 .ed-actions-bar（社区.html:292）。
    基础类 .editor-actions 被 blog_wechat.html 等页共用，绝不能在此改成 fixed。
    .editor-actions 位于 #blogViewEdit 内，仅编辑态显示；列表 / 详情 / 统计等只读视图
    该节点为 display:none，不会出现悬空栏。 */
@@ -2799,3 +2837,14 @@ html.modal-lock, body.modal-lock { touch-action: none; }
   .msg-toast { width: auto; }
 }
 body.reduce-motion .msg-toast { transition: none; }
+/* ===== B4（20260916）「我的文章」视图布局（作用域限定 · 全站零副作用） ===== */
+/* 只命中 #blogViewMine（及其 .blog-mine-scope 类），不影响社区/统计等其它 .blog-grid。
+   规则与 blog_wechat.html 页内 <style> 等价，供其它复用同一 id 的页面兜底。 */
+#blogViewMine .blog-filters { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+#blogViewMine .blog-filters .chip { flex: 0 0 auto; white-space: nowrap; }
+#blogViewMine .blog-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+#blogViewMine .blog-grid .note-card { height: 100%; }
+#blogViewMine .note-body { justify-content: space-between; }
+@media (max-width: 480px) {
+  #blogViewMine .blog-grid { grid-template-columns: 1fr; gap: 12px; }
+}

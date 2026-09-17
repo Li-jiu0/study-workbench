@@ -126,6 +126,27 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
     return user
 
 
+def get_current_user_optional(request: Request, db: Session = Depends(get_db)):
+    """可选登录：未登录 / 令牌无效时返回 None，其余行为同 get_current_user。
+    供游客可用的接口使用（如 AI 中转：登录用户走每日限额，游客走每 IP 限流）。"""
+    token = _bearer_from(request)
+    if not token:
+        return None
+    payload = decode_token(token)
+    if not payload or payload.get("typ", TYPE_ACCESS) != TYPE_ACCESS:
+        return None
+    try:
+        user_id = int(payload.get("sub", 0))
+    except (TypeError, ValueError):
+        return None
+    if not user_id:
+        return None
+    user = db.get(User, user_id)
+    if user:
+        _touch_last_seen(user)
+    return user
+
+
 def verify_refresh_token(token: str) -> int | None:
     """校验 refresh 令牌并返回 user_id；非法返回 None。"""
     payload = decode_token(token)
