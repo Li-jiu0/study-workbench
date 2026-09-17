@@ -3,7 +3,7 @@
    批次：2026-09-14 / R48「做真内容」第 3 批 / 版本戳 20260914e
    ---------------------------------------------------------------------
    挂载方式（ADR-2 注册表模式）：
-     · 幂等注册 window.PPTV2['ppt-tips']（幂等：宿主页 PPT训练.html 已由 T00 预埋
+     · 幂等注册 window.PPTV2['ppt-tips']（幂等：宿主页 演示.html 已由 T00 预埋
        注册表分发逻辑，本文件**不改任何 HTML 结构**，挂载点沿用 #pptPanelSlot）。
      · 學练闭环三个 tab：技巧速览（原 5 张卡片原样保留 + 可展开深入）
                         → 技巧练习（每个技巧 2-3 题，共 13 题，全部带解析）
@@ -26,9 +26,23 @@
         交卷给分 + 逐题解析）；正反例 → 页内翻页对比。一律**不做全屏 modal**（ADR-3）。
      ④ 正文卡片化：detail.groups 拆成可折叠要点小卡（默认只开第一张），
         关键句（「」引号内 / 冒号前 / **标记**）加粗高亮。
-     ⑤ 顶部导航栏去橙：在宿主页 PPT训练.html 的 <style> 内覆盖 .ppt-view-top
+     ⑤ 顶部导航栏去橙：在宿主页 演示.html 的 <style> 内覆盖 .ppt-view-top
         （浅灰/白 + common.css 令牌），本文件不碰 common.css。
      localStorage 全部经 PT_get/PT_set 包裹，不可用时不抛错、静默回退。
+   ---------------------------------------------------------------------
+   2026-09-16 · L8（N9-14 收口，三件事。本批 A5 已把 ⑥⑦⑧ 全部接线落地）：
+     ⑥ PT_art()：data-ppt-tips.js 的 casesArt[]（11 组数据驱动图元）此前**没有渲染器，
+        是死数据**。现按数据侧约定的 200×130 画布，把 r/c/l/t 四类图元现场绘成内联
+        SVG，并由 PT_figure() 接入正反例画廊，图随 data 走，**零外部图片依赖**，
+        file:// 与老 WebView 通吃，不会出现 404。
+     ⑦ 对比图回填位：PT_CASE_IMG 映射表 + PT_figure()。表里有真实截图就出 <img>，
+        图缺失（404 / naturalWidth=0）由 PT_bindFigures() 摘掉 <img> 露出下层手绘
+        SVG 兜底；**表为空时页面一个图片请求都不发**，杜绝占位图 404 刷屏。
+        回填步骤见 PT_CASE_IMG 上方注释块。
+     ⑧ cases[]（文字版模板图）与 casesArt[]（图元版）合成同一组正反例画廊
+        PT_casePool()，同题材重复项由数据侧 dup 标记过滤，
+        window.PptTips.setHideDup(false) 可一键恢复全陈列（数据一行未删）。
+        casesArt 在前、cases 在后；画廊计数与翻页均走同一池，三处口径一致。
    ===================================================================== */
 (function () {
   'use strict';
@@ -46,6 +60,39 @@
   var PT_cur = null;     // 当前数据对象（页内区块回调复用）
   var PT_inline = {};    // { itemId: 'quiz' | 'cases' | '' } 页内区块展开态
   var PT_caseIdx = {};   // { itemId: 0 } 正反例翻页下标
+
+  /* =====================================================================
+     ★★ 占位点 / 资源回填点（2026-09-16 L8）★★
+     =====================================================================
+     现状：assets/images/ppt-tips/ 目录尚不存在，实拍对比图未交付。
+           本文件因此**默认不发任何图片请求**，对比图全部由内联 SVG 手绘
+           （老的 file:// 与安卓 WebView 都能画），页面不会 404、不会报错。
+
+     回填三步（拿到实拍图后，资源方无需动逻辑，只动这张表）：
+       1) 把图片放进 assets/images/ppt-tips/ ，建议命名：
+            <技巧id>_<序号>_bad.png / <技巧id>_<序号>_good.png
+            技巧 id 依次为 tips-key / tips-align / tips-image / tips-anim / tips-flow
+            例：assets/images/ppt-tips/tips-align_0_bad.png
+       2) 按下表 key 规则写进 PT_CASE_IMG（同一个表中可只填部分 key，未填的继续
+          用手绘 SVG，不会报错）：
+            key = <技巧id> + '|' + <kind> + '|' + <组内序号> + '|' + <bad|good>
+            kind = art（casesArt 的图元组，序号从 0 起，按 casesArt 数组顺序）
+                 = tpl（cases 的模板组，序号从 0 起，按过滤后的展示顺序）
+       3) 想先看小李 diag 效果，浏览器控制台跑：
+            PptTips.imgInfo()              // 列出全部可回填 key
+            PptTips.setImgMap({...})       // 临时塞一张图试看
+     注意：图缺失时 PT_bindFigures() 会把 <img> 摘掉、露出手绘 SVG 兜底，
+           绝不会留下一个坏掉的图标或刷一片 404。  */
+  var PT_CASE_IMG = {
+    /* 示例（保持注释状态，勿直接放开，指向不存在的文件会白跑一次请求）：
+    'tips-align|art|0|bad':  'assets/images/ppt-tips/tips-align_0_bad.png',
+    'tips-align|art|0|good': 'assets/images/ppt-tips/tips-align_0_good.png'
+    */
+  };
+
+  /* true：与 art 图元组同题材的旧文字组（数据侧 dup:1）不在画廊里重复出现。
+     false：27 组全陈列。数据一行没删，随时可翻回来。 */
+  var PT_HIDE_DUP = true;
 
   /* ==================== helper（PT_ 前缀） ==================== */
 
@@ -306,6 +353,178 @@
     return PT_svgWrap(s);
   }
 
+  /* ==================== P0-1（补）：casesArt 图元 → 内联 SVG ====================
+     画布由数据侧约定为 200 × 130；四类图元：
+       r 矩形 {x,y,w,h,f 填充,s 描边,r 圆角,d 虚线}
+       c 圆   {x,y,r,f 填充,s 描边,d 虚线}
+       l 线   {x,y,x2,y2,c 颜色,d 虚线}
+       t 文字 {x,y,s 内容,f 字号,c 颜色,b 粗体,a start|middle|end}
+     全部最大 ES2017 / 老 WebView 可用元素，不用 transform-box 之类新技术。 */
+
+  function PT_n(v, def) {
+    var n = parseFloat(v);
+    return isNaN(n) ? def : n;
+  }
+
+  function PT_color(v, def) {
+    var s = (v === null || v === undefined) ? '' : String(v);
+    if (!s) return def;
+    return PT_esc(s);
+  }
+
+  function PT_artPrim(p) {
+    if (!p || !p.k) return '';
+    var k = p.k, d = p.d ? ' stroke-dasharray="4 3"' : '';
+    if (k === 'r') {
+      return '<rect x="' + PT_n(p.x, 0) + '" y="' + PT_n(p.y, 0) +
+        '" width="' + PT_n(p.w, 0) + '" height="' + PT_n(p.h, 0) +
+        '" rx="' + PT_n(p.r, 0) + '" ry="' + PT_n(p.r, 0) +
+        '" fill="' + PT_color(p.f, '#E5E7EB') +
+        '" stroke="' + PT_color(p.s, 'none') + '" stroke-width="1"' + d + '/>';
+    }
+    if (k === 'c') {
+      return '<circle cx="' + PT_n(p.x, 0) + '" cy="' + PT_n(p.y, 0) +
+        '" r="' + PT_n(p.r, 3) + '" fill="' + PT_color(p.f, '#E5E7EB') +
+        '" stroke="' + PT_color(p.s, 'none') + '" stroke-width="1"' + d + '/>';
+    }
+    if (k === 'l') {
+      return '<line x1="' + PT_n(p.x, 0) + '" y1="' + PT_n(p.y, 0) +
+        '" x2="' + PT_n(p.x2, 0) + '" y2="' + PT_n(p.y2, 0) +
+        '" stroke="' + PT_color(p.c, '#CBD5E1') + '" stroke-width="1"' + d + '/>';
+    }
+    if (k === 't') {
+      var a = (p.a === 'middle' || p.a === 'end') ? ' text-anchor="' + p.a + '"' : '';
+      var b = p.b ? ' font-weight="700"' : '';
+      return '<text x="' + PT_n(p.x, 0) + '" y="' + PT_n(p.y, 0) +
+        '" font-size="' + PT_n(p.f, 9) + '" fill="' + PT_color(p.c, '#475569') +
+        '"' + a + b + '>' + PT_esc(p.s || '') + '</text>';
+    }
+    return '';
+  }
+
+  /* @param {Array} list 图元数组；@return {string} 内联 <svg> 串 */
+  function PT_art(list) {
+    var arr = list || [];
+    var s = '<rect x="0.5" y="0.5" width="199" height="129" rx="6" fill="#FFFFFF" stroke="#E8ECF0" stroke-width="1"/>';
+    for (var i = 0; i < arr.length; i++) s += PT_artPrim(arr[i]);
+    return '<svg class="pt-svg pt-svg-art" viewBox="0 0 200 130" preserveAspectRatio="xMidYMid meet">' + s + '</svg>';
+  }
+
+  /* ==================== P0-1（补·L8-⑧）：正反例画廊统一池 ====================
+     cases[]（文字模板图，数据侧 k = key/align/image/anim/flow，由 PT_caseSvg 画）
+     与 casesArt[]（图元图，数据侧 art[] 图元，由 PT_art 画）合成同一组画廊条目：
+       { t 标题, kind:'tpl'|'art', seq 组内序号, bad:{cap,art|k}, good:{cap,art|k}, note }
+     同题材重复项（数据侧 dup:1，仅 art 组带该标记）默认被 PT_HIDE_DUP 过滤掉，
+     数据一行未删；window.PptTips.setHideDup(false) 可恢复全陈列。 */
+
+  /* @param {Object} it 单个技巧 item
+     @param {boolean} hideDup 是否滤掉数据侧 dup:1 的文字组
+     @return {Array} 画廊条目数组 */
+  function PT_casePool(it, hideDup) {
+    var pool = [];
+    var i, c, arts, tpls;
+    if (!it) return pool;
+    arts = it.casesArt || [];
+    for (i = 0; i < arts.length; i++) {
+      c = arts[i] || {};
+      pool.push({
+        t: c.t || '',
+        kind: 'art',
+        seq: i,
+        dup: 0,
+        bad: { cap: (c.bad && c.bad.cap) || '', art: (c.bad && c.bad.art) || [] },
+        good: { cap: (c.good && c.good.cap) || '', art: (c.good && c.good.art) || [] },
+        note: c.note || ''
+      });
+    }
+    tpls = it.cases || [];
+    for (i = 0; i < tpls.length; i++) {
+      c = tpls[i] || {};
+      /* dup 标记只在 hideDup 为真时生效；数据未删，随时翻回来 */
+      if (hideDup && c.dup) continue;
+      pool.push({
+        t: c.t || '',
+        kind: 'tpl',
+        seq: i,
+        dup: c.dup ? 1 : 0,
+        bad: { cap: c.bad || '', k: c.k || 'key' },
+        good: { cap: c.good || '', k: c.k || 'key' },
+        note: c.note || ''
+      });
+    }
+    return pool;
+  }
+
+  /* ==================== P0-1（补·L8-⑦）：图片回填位 ====================
+     PT_CASE_IMG 里填了真实截图 key 就出 <img>，图缺失（加载失败 / naturalWidth=0）
+     由 PT_bindFigures() 摘掉 <img>、露出下层手绘 SVG 兜底；表为空时一个图片请求都不发。 */
+
+  /* @return {string} 该侧要显示的图片路径，无则 '' */
+  function PT_imgSrc(id, kind, seq, mode) {
+    var key = String(id) + '|' + kind + '|' + seq + '|' + mode;
+    var v = PT_CASE_IMG[key];
+    return (typeof v === 'string' && v) ? v : '';
+  }
+
+  /* 单侧图形：有截图出 <img>（下层仍垫一份手绘 SVG 兜底），否则只出手绘 SVG。
+     @param {Object} it 技巧 item；@param {string} id；@param {Object} e 画廊条目
+     @param {string} mode 'bad' | 'good'；@return {string} innerHTML 片段 */
+  function PT_figure(it, id, e, mode) {
+    var one = (mode === 'bad') ? e.bad : e.good;
+    var svg = '';
+    if (e.kind === 'art') svg = PT_art(one.art || []);
+    else svg = PT_caseSvg(one.k || 'key', mode);
+    var src = PT_imgSrc(id, e.kind, e.seq, mode);
+    var h = '<div class="pt-fig">';
+    if (src) {
+      h += '<div class="pt-fig-wrap">';
+      h += '<img class="pt-fig-img" alt="' + PT_esc(e.t || '') + '" data-fig-key="' +
+        PT_esc(String(id) + '|' + e.kind + '|' + e.seq + '|' + mode) + '" src="' + PT_esc(src) + '">';
+      /* 手绘 SVG 垫在 <img> 下面：图片一旦被摘掉，这一层自然露出，不留白屏 */
+      h += '<div class="pt-fig-fb">' + svg + '</div>';
+      h += '</div>';
+    } else {
+      /* 表里没有这张图 → 连 <img> 都不生成，页面零图片请求 */
+      h += svg;
+    }
+    h += '</div>';
+    return h;
+  }
+
+  /* 把加载失败的 <img> 摘掉，露出手绘 SVG 兜底（老 WebView 无 naturalWidth 时按 onerror 处理） */
+  function PT_bindFigures(root) {
+    if (!root || typeof root.querySelectorAll !== 'function') return;
+    var imgs = root.querySelectorAll('img.pt-fig-img'), i;
+    for (i = 0; i < imgs.length; i++) {
+      (function (im) {
+        function drop() {
+          if (im.parentNode) im.parentNode.removeChild(im);
+        }
+        /* 已缓存且解码失败的图：naturalWidth 为 0 */
+        try {
+          if (im.complete && typeof im.naturalWidth === 'number' && im.naturalWidth === 0) { drop(); return; }
+        } catch (e) { /* 忽略 */ }
+        im.onerror = drop;
+      })(imgs[i]);
+    }
+  }
+
+  /* 列出全部可回填 key（QA / 资源方对表用） */
+  function PT_imgInfo() {
+    var data = PT_data(), list = [], items, i, j, e, pool;
+    if (!data) return list;
+    items = data.items || [];
+    for (i = 0; i < items.length; i++) {
+      pool = PT_casePool(items[i], false);
+      for (j = 0; j < pool.length; j++) {
+        e = pool[j];
+        list.push(String(items[i].id) + '|' + e.kind + '|' + e.seq + '|bad');
+        list.push(String(items[i].id) + '|' + e.kind + '|' + e.seq + '|good');
+      }
+    }
+    return list;
+  }
+
   /* k → 绘图模板；mode = 'bad' | 'good' */
   function PT_caseSvg(k, mode) {
     var bad = (mode === 'bad');
@@ -316,20 +535,23 @@
     return PT_svgKey(bad);
   }
 
-  /* 单侧（反面 / 正面）小图 + 说明 */
-  function PT_side(mode, c) {
+  /* 单侧（反面 / 正面）小图 + 说明。d 为画廊条目（kind/seq/cap 等） */
+  function PT_side(it, e, mode) {
     var isBad = (mode === 'bad');
+    var cap = isBad ? (e.bad && e.bad.cap) : (e.good && e.good.cap);
     return '<div class="pt-cmp-side ' + mode + '">' +
       '<div class="pt-cmp-h">' + PT_icon(isBad ? 'x-circle' : 'check-circle', 13) +
       (isBad ? '反面做法' : '正面做法') + '</div>' +
-      PT_caseSvg(c.k, mode) +
-      '<div class="pt-cmp-cap">' + PT_esc(isBad ? (c.bad || '') : (c.good || '')) + '</div>' +
+      PT_figure(it, it.id, e, mode) +
+      '<div class="pt-cmp-cap">' + PT_esc(cap || '') + '</div>' +
       '</div>';
   }
 
-  /* 正反例翻页对比（页内区块，非 modal） */
+  /* 正反例翻页对比（页内区块，非 modal）。
+     画廊 = casesArt[]（图元版）+ cases[]（文字模板版），casesArt 在前，
+     同题材重复项由 PT_HIDE_DUP 过滤。 */
   function PT_caseHtml(it) {
-    var cs = it.cases || [];
+    var cs = PT_casePool(it, PT_HIDE_DUP);
     if (!cs.length) return '<div class="pt-empty">本节暂无正反例</div>';
     var idx = PT_caseIdx[it.id] || 0;
     if (idx < 0) idx = 0;
@@ -345,9 +567,9 @@
       '<span class="pt-navb" data-act="case-next" data-id="' + PT_esc(it.id) + '">' + PT_icon('chevron-right', 14) + '</span>' +
       '</span></div>';
     h += '<div class="pt-cmp-row">';
-    h += PT_side('bad', c);
+    h += PT_side(it, c, 'bad');
     h += '<div class="pt-cmp-mid">' + PT_icon('arrow-right', 18) + '</div>';
-    h += PT_side('good', c);
+    h += PT_side(it, c, 'good');
     h += '</div>';
     h += '<div class="pt-cmp-note">' + PT_icon('lightbulb', 13) + '<span>' + PT_esc(c.note || '') + '</span></div>';
     h += '</div>';
@@ -433,6 +655,11 @@
     '.pt-cmp-side.bad .pt-cmp-h,.pt-cmp-side.bad .pt-cmp-h .nav-icon{color:#C0392B}',
     '.pt-cmp-side.good .pt-cmp-h,.pt-cmp-side.good .pt-cmp-h .nav-icon{color:#2E7D32}',
     '.pt-svg{width:100%;height:auto;display:block;background:#fff;border-radius:8px}',
+    /* ===== L8-⑦：图片回填位（有截图出 <img>，缺失露出手绘 SVG 兜底） ===== */
+    '.pt-fig{position:relative}',
+    '.pt-fig-wrap{position:relative}',
+    '.pt-fig-img{position:relative;z-index:1;width:100%;height:auto;display:block;background:#fff;border-radius:8px}',
+    '.pt-fig-fb{position:absolute;left:0;top:0;right:0;z-index:0}',
     '.pt-cmp-cap{font-size:12px;line-height:1.7;color:var(--text-secondary,#6B7280);margin-top:6px}',
     '.pt-cmp-mid{flex:none;align-self:center;display:flex;align-items:center;color:var(--primary,#36CFC9)}',
     '.pt-cmp-note{display:flex;gap:6px;align-items:flex-start;font-size:12px;line-height:1.7;color:var(--text-secondary,#6B7280);background:var(--card,#fff);border:1px dashed var(--border,#E8ECF0);border-radius:10px;padding:7px 10px;margin-top:8px}',
@@ -541,7 +768,7 @@
       for (j = 0; j < scene.length; j++) h += '<span class="pt-tag">' + PT_esc(scene[j]) + '</span>';
       /* P0-3：「小测 N 题」「正反例 M 组」由死标签改为可点击入口 */
       var qn = (it.practice || []).length;
-      var cn = (it.cases || []).length;
+      var cn = PT_casePool(it, PT_HIDE_DUP).length;
       if (qn) {
         h += '<span class="pt-btn mini' + (PT_inline[it.id] === 'quiz' ? ' act' : '') +
           '" data-act="quiz" data-id="' + PT_esc(it.id) + '">' + PT_icon('check-circle', 13) + '小测 ' + qn + ' 题</span>';
@@ -612,6 +839,23 @@
     return h || '<div class="pt-empty">暂无任务</div>';
   }
 
+  /* 全站正反例画廊组数：优先实时池长（casesArt + cases，走 PT_casePool 同一口径），
+     数据未就绪/无 items 时回退 meta.cases + meta.casesArt 之和。
+     —— 与 PT_caseHtml 翻页计数、「正反例 M 组」入口一致，避免 16/27 口径打架。 */
+  function PT_poolCount(data) {
+    var n = 0, items, i;
+    if (data) {
+      items = data.items;
+      if (items && items.length) {
+        for (i = 0; i < items.length; i++) n += PT_casePool(items[i], PT_HIDE_DUP).length;
+        return n;
+      }
+      var m = data.meta || {};
+      return (m.cases || 0) + (m.casesArt || 0);
+    }
+    return 0;
+  }
+
   /* ==================== 主渲染 ==================== */
 
   function PT_setHeader(data) {
@@ -622,7 +866,8 @@
     if (title) title.textContent = 'PPT · 技巧提升';
     if (tag) {
       var m = data.meta || {};
-      tag.textContent = '5 专题 · ' + (m.quiz || 0) + ' 道练习 · ' + (m.cases || 0) + ' 组正反例 · ' + (m.tasks || 0) + ' 项实战任务';
+      var poolN = PT_poolCount(data);
+      tag.textContent = '5 专题 · ' + (m.quiz || 0) + ' 道练习 · ' + poolN + ' 组正反例 · ' + (m.tasks || 0) + ' 项实战任务';
     }
     if (desc) desc.textContent = data.intro || '';
     if (icon && typeof window.lucideIcon === 'function') {
@@ -770,6 +1015,8 @@
     if (curTab === TAB_SCAN) PT_renderInlinePanels(data);
     PT_renderStats(data);
     PT_updateProgress();
+    /* P0-1（补·L8-⑦）：把加载失败的 <img> 摘掉，露出手绘 SVG 兜底 */
+    PT_bindFigures(pane);
   }
 
   /* ==================== P0-3：页内小测（XTC 优先，本地兜底） ==================== */
@@ -1074,7 +1321,7 @@
         return;
       }
       if (act === 'case-prev' || act === 'case-next') {
-        var cs = PT_cases(data, id);
+        var cs = PT_casePool(PT_item(data, id), PT_HIDE_DUP);
         if (!cs.length) return;
         var cur = PT_caseIdx[id] || 0;
         cur = (act === 'case-next') ? cur + 1 : cur - 1;
@@ -1124,6 +1371,19 @@
     }
   }
 
+  /* 临时塞图试看：把 { key: url } 合进 PT_CASE_IMG 并重渲染（不改数据文件） */
+  function PT_setImgMap(map) {
+    if (!map || typeof map !== 'object') return 0;
+    var n = 0, k;
+    for (k in map) {
+      if (Object.prototype.hasOwnProperty.call(map, k)) {
+        PT_CASE_IMG[k] = map[k];
+        n++;
+      }
+    }
+    return n;
+  }
+
   PT_register();
 
   window.PptTips = {
@@ -1134,6 +1394,21 @@
     /* 2026-09-15 P0 新增对外接口（只读 / 便于 QA 与后续 P1 复用） */
     learned: PT_learned,
     caseSvg: PT_caseSvg,
-    highlight: PT_hl
+    highlight: PT_hl,
+    /* 2026-09-16 L8 新增对外接口（正反例画廊 / 图片回填） */
+    casePool: function (id) { return PT_casePool(PT_item(PT_data(), id), PT_HIDE_DUP); },
+    art: PT_art,
+    imgInfo: PT_imgInfo,
+    setImgMap: function (map) {
+      var n = PT_setImgMap(map);
+      if (PT_cur) PT_renderPane(PT_cur);
+      return n;
+    },
+    /* 一键恢复 / 关闭同题材重复项过滤（数据一行未删） */
+    setHideDup: function (flag) {
+      PT_HIDE_DUP = (flag !== false);
+      if (PT_cur) PT_renderPane(PT_cur);
+      return PT_HIDE_DUP;
+    }
   };
 })();

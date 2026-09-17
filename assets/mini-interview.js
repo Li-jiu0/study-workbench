@@ -1,4 +1,4 @@
-/* 商务礼仪面试 占位模块内容 */
+/* 面测 占位模块内容 */
 window.MINI_BANK = window.MINI_BANK || {};
 var IV = window.MINI_BANK;
 

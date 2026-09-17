@@ -63,6 +63,12 @@ AI_PROVIDERS = {
         "model": _get("ZHIPU_MODEL", "glm-4-flash"),
         "api_key": _get("ZHIPU_API_KEY"),
     },
+    "siliconflow": {
+        "name": "硅基流动",
+        "base_url": _get("SILICONFLOW_BASE_URL", "https://api.siliconflow.cn/v1/chat/completions"),
+        "model": _get("SILICONFLOW_MODEL", "Qwen/Qwen2.5-7B-Instruct"),
+        "api_key": _get("SILICONFLOW_API_KEY"),
+    },
     "openai": {
         "name": "OpenAI",
         "base_url": _get("OPENAI_BASE_URL", "https://api.openai.com/v1/chat/completions"),

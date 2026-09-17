@@ -1,6 +1,6 @@
 /* =====================================================================
-   data-ppt-templates.js · A7「PPT · 实战模板库」富结构数据（v2）
-   批次：2026-09-14 / R48「做真内容」/ 版本戳 20260914e
+   data-ppt-templates.js · A7「PPT · 实战模板库」富结构数据（v3）
+   批次：2026-09-16 / B2「N9-12 PPT版式库升级」/ 版本戳 20260916（本波不 bump）
    ---------------------------------------------------------------------
    架构约定（ADR-1 数据外置 + 后置覆盖）：
      · 本文件在 assets/mini-ppt.js **之后**加载，用新结构覆盖同名 key
@@ -16,6 +16,18 @@
      · 不调用 saveData()；进度键由渲染器前缀化为 xtc:ppt:tpl:<id>:*
      · 全部原创：版式、文案、骨架均由本文件自撰，未搬运任何商业模板。
      · 渲染器：assets/tpl-preview.js（注册 window.PPTV2['ppt-templates']）
+   ---------------------------------------------------------------------
+   B2 新增（v3，不改动上面的 'ppt-templates' key 一字节语义）：
+     · 新增同名板式库数据集 window.MINI_BANK['ppt-layout-lib']，字段严格按
+       《需求文档-PPT版式库升级-豆包-20260915.md》第七节：
+         id / name / category / previewImage / pptFile / useCase /
+         designPoints[] / palette / placeholder（占位骨架用）
+     · previewImage 一律填 ''（**不写会 404 的路径**）；previewImage 为空时
+       渲染器走「内联 SVG 版式示意骨架」占位降级（见 tpl-preview.js）。
+     · pptFile 一律 null（本波无真实 .pptx 文件）→ 下载按钮显示「制作中」置灰。
+     · 共 16 条，覆盖 4 个分类：封面页 4 / 目录页 3 / 过渡页 3 / 内容页 6。
+     · 分类页签顺序与需求文档一致：全部 · 封面页 · 目录页 · 过渡页 · 内容页 · 我的收藏
+     · 内容全部原创，为经验性排版建议，不含任何权威结论或数据断言。
    ===================================================================== */
 (function () {
   'use strict';
@@ -562,5 +574,315 @@
         '第五步做减法：一页只留一个结论，多余内容移到备注栏或附录页。'
       ]
     }
+  };
+
+  /* =====================================================================
+     B2 · N9-12 版式库数据集（v3）
+     ---------------------------------------------------------------------
+     字段口径严格对齐《需求文档-PPT版式库升级-豆包-20260915.md》第七节；
+     额外增加 palette（配色，用于占位骨架着色）与 ph（placeholder 骨架布局键）。
+     previewImage 一律为空串 —— 图片目录 assets/images/ppt-templates/ 尚不存在，
+     绝不能写会 404 的路径；渲染器见 previewImage 为空即走内联 SVG 占位。
+     ===================================================================== */
+
+  /* 4 个分类，顺序与需求文档第四节页签一致 */
+  var LIB_CATS = ['封面页', '目录页', '过渡页', '内容页'];
+
+  var LIB_ITEMS = [
+    /* ---------- 封面页 4 ---------- */
+    {
+      id: 'cover-01',
+      name: '封面页·商务蓝',
+      category: '封面页',
+      previewImage: '',
+      pptFile: null,
+      ph: 'cover-center',
+      palette: { main: '#1F4E79', accent: '#2E75B6', bg: '#FFFFFF', text: '#333333' },
+      useCase: '汇报 / 答辩 / 发布会的第一页，奠定整份材料的基本风格',
+      designPoints: [
+        '大标题居中，字号 40-60pt，是全篇最大的一处文字',
+        '副标题紧贴主标题下方，字号约为主标题的一半',
+        '背景用主题色纯色或深色渐变，避免花哨图片抢焦点',
+        '底部留汇报人 / 日期 / 单位落款，位置固定不动'
+      ]
+    },
+    {
+      id: 'cover-02',
+      name: '封面页·极简白',
+      category: '封面页',
+      previewImage: '',
+      pptFile: null,
+      ph: 'cover-left',
+      palette: { main: '#2C3E50', accent: '#E05040', bg: '#FFFFFF', text: '#2E2A27' },
+      useCase: '课程讲义 / 内部文档转化而来的分享，追求干净耐看',
+      designPoints: [
+        '标题左对齐而非居中，右侧留大块白，气质更克制',
+        '只用一条强调色细线做分割，不再加任何装饰',
+        '白底黑字对比足，投影与打印都清晰',
+        '适合内容偏理性、不需要情绪渲染的场合'
+      ]
+    },
+    {
+      id: 'cover-03',
+      name: '封面页·深色质感',
+      category: '封面页',
+      previewImage: '',
+      pptFile: null,
+      ph: 'cover-dark',
+      palette: { main: '#12263F', accent: '#00A8E8', bg: '#12263F', text: '#FFFFFF' },
+      useCase: '发布会 / 路演 / 品牌向分享，希望第一眼有冲击力',
+      designPoints: [
+        '深色底 + 高亮度标题字，对比强、显高级',
+        '标题占版面约三分之二宽，字号放大才有气势',
+        '底部放一个小色块或一句 slogan，起稳定重心的作用',
+        '深色底现场投影易偏暗，务必提前到现场试投'
+      ]
+    },
+    {
+      id: 'cover-04',
+      name: '封面页·分隔线式',
+      category: '封面页',
+      previewImage: '',
+      pptFile: null,
+      ph: 'cover-rule',
+      palette: { main: '#2F7A5E', accent: '#F0A03C', bg: '#FBF7EF', text: '#3A3A3A' },
+      useCase: '教育培训 / 系列课程的第 N 讲封面，需要标明章节',
+      designPoints: [
+        '主标题与副标题之间加一条水平细线，结构一目了然',
+        '左上角或右上角给出"第 X 讲 / 系列名"信息位',
+        '暖底色比纯白更亲和，长时间看眼睛不累',
+        '章节序号建议全篇统一同一位置，翻页时形成节奏'
+      ]
+    },
+
+    /* ---------- 目录页 3 ---------- */
+    {
+      id: 'toc-01',
+      name: '目录页·数字编号版',
+      category: '目录页',
+      previewImage: '',
+      pptFile: null,
+      ph: 'toc-number',
+      palette: { main: '#1F4E79', accent: '#2E75B6', bg: '#FFFFFF', text: '#333333' },
+      useCase: '结构清晰的正式汇报，目录要能一眼看出层级',
+      designPoints: [
+        '每条用 01 / 02 / 03 数字编号，编号与文字左对齐成一条线',
+        '章节数控制在 3-5 条，超过就说明该合并',
+        '每条不超过 12 个字，长标题换行或改短',
+        '当前章节可加粗或换强调色，其余保持灰色弱化'
+      ]
+    },
+    {
+      id: 'toc-02',
+      name: '目录页·双列排布',
+      category: '目录页',
+      previewImage: '',
+      pptFile: null,
+      ph: 'toc-twocol',
+      palette: { main: '#42526E', accent: '#36CFC9', bg: '#FFFFFF', text: '#333333' },
+      useCase: '章节较多（6-8 条）的课程或培训类材料',
+      designPoints: [
+        '分左右两列，每列 3-4 条，避免单列拉太长',
+        '两列的条目顶部必须对齐，错位会立刻显得乱',
+        '给每条配一个小图标位，视觉更友好但要统一风格',
+        '列与列之间留出至少一个字符宽的间距，别贴在一起'
+      ]
+    },
+    {
+      id: 'toc-03',
+      name: '目录页·侧边标签式',
+      category: '目录页',
+      previewImage: '',
+      pptFile: null,
+      ph: 'toc-sidebar',
+      palette: { main: '#2C3E50', accent: '#E05040', bg: '#F4F7FA', text: '#1B2733' },
+      useCase: '内容分块明显的分析报告或长文档提炼',
+      designPoints: [
+        '左侧一条竖向色带承载目录，右侧留白或放一句主题语',
+        '竖带的宽度建议不超过页宽的 30%',
+        '目录文字距竖带边缘留出固定内边距，显得精致',
+        '适合与大段内容的正文页形成明显区分'
+      ]
+    },
+
+    /* ---------- 过渡页 3 ---------- */
+    {
+      id: 'section-01',
+      name: '过渡页·大号序号',
+      category: '过渡页',
+      previewImage: '',
+      pptFile: null,
+      ph: 'section-big',
+      palette: { main: '#1F4E79', accent: '#2E75B6', bg: '#1F4E79', text: '#FFFFFF' },
+      useCase: '长材料分章节时的"翻篇页"，给听众一个停顿点',
+      designPoints: [
+        '整页只放一个超大序号 + 章节名，不再放任何正文',
+        '深色底与前后内容页拉开差异，起到"分隔"作用',
+        '停留时间短，视觉冲击比信息量更重要',
+        '序号字号建议为主标题的 2 倍以上'
+      ]
+    },
+    {
+      id: 'section-02',
+      name: '过渡页·色块横幅',
+      category: '过渡页',
+      previewImage: '',
+      pptFile: null,
+      ph: 'section-band',
+      palette: { main: '#2F7A5E', accent: '#F0A03C', bg: '#FBF7EF', text: '#3A3A3A' },
+      useCase: '偏轻松的分享 / 内训，过渡页不希望太"重"',
+      designPoints: [
+        '页面中部一条横幅色块，章节名写在色块内',
+        '色块高度约占页高的四分之一，上下留白对称',
+        '色块用主题色或强调色，与封面保持同一套配色',
+        '横幅之外全部留白，不放任何多余元素'
+      ]
+    },
+    {
+      id: 'section-03',
+      name: '过渡页·左序右题',
+      category: '过渡页',
+      previewImage: '',
+      pptFile: null,
+      ph: 'section-left',
+      palette: { main: '#12263F', accent: '#00A8E8', bg: '#F4F7FA', text: '#1B2733' },
+      useCase: '正式报告章节切换，需要同时交代"第几部分、讲什么"',
+      designPoints: [
+        '左侧放大号序号，右侧放章节标题与一句本章要点',
+        '左右之间用一条竖线或留白分隔，形成清晰阅读顺序',
+        '浅底深字，与深色过渡页交替使用可增加节奏变化',
+        '一句要点控制在 20 字内，写成结论而非描述'
+      ]
+    },
+
+    /* ---------- 内容页 6 ---------- */
+    {
+      id: 'content-01',
+      name: '内容页·左文右图',
+      category: '内容页',
+      previewImage: '',
+      pptFile: null,
+      ph: 'content-lr',
+      palette: { main: '#5B8DEF', accent: '#36CFC9', bg: '#FFFFFF', text: '#333333' },
+      useCase: '需要配图说明的内容，产品介绍 / 概念解释',
+      designPoints: [
+        '左侧文字占 40-50%，右侧图片占 50-60%',
+        '标题在左上方，正文分点列出，每点一行',
+        '图片要清晰且与内容强相关，宁缺毋滥',
+        '图文之间留出至少 24px 间距，别贴边'
+      ]
+    },
+    {
+      id: 'content-02',
+      name: '内容页·三栏并列',
+      category: '内容页',
+      previewImage: '',
+      pptFile: null,
+      ph: 'content-3col',
+      palette: { main: '#4CAF50', accent: '#FF9800', bg: '#FFFFFF', text: '#333333' },
+      useCase: '展示三个并列要点 / 优势 / 步骤',
+      designPoints: [
+        '三栏等宽，栏与栏间距一致，整体左右对齐',
+        '每栏结构统一：图标 / 序号 + 标题 + 两行说明',
+        '三栏内容体量尽量均衡，避免一栏特别长',
+        '适合"三大优势""三个步骤"这类并列表达'
+      ]
+    },
+    {
+      id: 'content-03',
+      name: '内容页·四宫格',
+      category: '内容页',
+      previewImage: '',
+      pptFile: null,
+      ph: 'content-grid',
+      palette: { main: '#5B8DEF', accent: '#9B6BD9', bg: '#FFFFFF', text: '#333333' },
+      useCase: '展示四个并列模块 / 维度 / 模块能力',
+      designPoints: [
+        '2×2 网格，每格等大，四格间距完全一致',
+        '每格内：小图标或数字 + 标题 + 一句说明',
+        '可用四种近似色区分，但明度要接近才不显花',
+        '注意四格文字量均衡，不要有一格只剩两三个字'
+      ]
+    },
+    {
+      id: 'content-04',
+      name: '内容页·时间轴',
+      category: '内容页',
+      previewImage: '',
+      pptFile: null,
+      ph: 'content-timeline',
+      palette: { main: '#00A8E8', accent: '#FF9F68', bg: '#F4F7FA', text: '#1B2733' },
+      useCase: '展示发展历程 / 流程步骤 / 项目计划',
+      designPoints: [
+        '横向或纵向一条主线，节点用圆点标记',
+        '每个节点：时间 + 标题 + 一句简短说明',
+        '节点数 3-6 个为宜，过多就拆成两页',
+        '已完成 / 进行中 / 未开始可用颜色区分，但线型要统一'
+      ]
+    },
+    {
+      id: 'content-05',
+      name: '内容页·数据图表',
+      category: '内容页',
+      previewImage: '',
+      pptFile: null,
+      ph: 'content-chart',
+      palette: { main: '#12263F', accent: '#00A8E8', bg: '#F4F7FA', text: '#1B2733' },
+      useCase: '展示数据 / 趋势 / 对比，用图表说话',
+      designPoints: [
+        '图表占版面 50-70%，是这一页的绝对主角',
+        '页面标题写结论，不写"数据图表"这类类型名',
+        '图表旁配一到两条数据解读，说明"所以呢"',
+        '去掉网格线与多余标签，只留必要刻度'
+      ]
+    },
+    {
+      id: 'content-06',
+      name: '内容页·对比双栏',
+      category: '内容页',
+      previewImage: '',
+      pptFile: null,
+      ph: 'content-compare',
+      palette: { main: '#E05040', accent: '#36CFC9', bg: '#FFFFFF', text: '#333333' },
+      useCase: '展示两种方案 / 版本 / 观点的对比',
+      designPoints: [
+        '左右两栏对称，中间用 VS 或箭头分隔',
+        '每栏顶部写清"这是哪一方"，避免听众混淆',
+        '对比项要一一对应，行数尽量相同才好横向比',
+        '底部可加一句推荐结论，替听众做判断'
+      ]
+    }
+  ];
+
+  /* 给每条补 palette 兜底与统一字段，避免渲染器遇到缺字段崩 */
+  for (var j = 0; j < LIB_ITEMS.length; j++) {
+    var it = LIB_ITEMS[j];
+    if (!it.palette) it.palette = { main: '#5B8DEF', accent: '#36CFC9', bg: '#FFFFFF', text: '#333333' };
+    if (typeof it.previewImage !== 'string') it.previewImage = '';
+    if (typeof it.pptFile === 'undefined') it.pptFile = null;
+    if (!it.designPoints || !it.designPoints.length) it.designPoints = ['待补充设计要点'];
+  }
+
+  /* 分类计数（供页签显示 "封面页 (4)" 之类，可选） */
+  var LIB_COUNT = {};
+  for (var c = 0; c < LIB_CATS.length; c++) LIB_COUNT[LIB_CATS[c]] = 0;
+  for (var k = 0; k < LIB_ITEMS.length; k++) {
+    var cat = LIB_ITEMS[k].category;
+    if (typeof LIB_COUNT[cat] === 'number') LIB_COUNT[cat]++;
+    else LIB_COUNT[cat] = 1;
+  }
+
+  PPT['ppt-layout-lib'] = {
+    t: 'PPT版式库',
+    mode: 'layout-lib',
+    v: 3,
+    credit: '原创版式骨架 · 由星途自撰，非任何商业模板复刻',
+    cats: LIB_CATS,
+    counts: LIB_COUNT,
+    meta: { unit: '种', total: LIB_ITEMS.length },
+    /* 预览图目录（当前不存在，仅作后续补真图的锚点说明） */
+    imageDir: 'assets/images/ppt-templates/',
+    fileDir: 'assets/ppt-files/',
+    items: LIB_ITEMS
   };
 })();

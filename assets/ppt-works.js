@@ -1,12 +1,19 @@
 /* =====================================================================
    ppt-works.js · R58「PPT · 我的作品集」P0 + P1（版本戳 20260914e）
    ---------------------------------------------------------------------
-   定位：替换 PPT训练.html 里「只能填标题 + 一句话笔记」的旧作品集实现，
+   定位：替换 演示.html 里「只能填标题 + 一句话笔记」的旧作品集实现，
         P0 = 添加改 Modal（标题/类型/多图上传/设计说明/标签）+ 卡片缩略图；
         P1 = 查看大图预览（多图左右翻页 + 设计说明 + 标签）。
 
+   【需求A（20260916reqA）】「添加作品」改为**带遮罩的弹窗**（.modal-overlay + .modal，
+   与本页 #countdownModal 同构）：点「+ 添加作品」唤起弹窗、不新开页面；取消 / ✕ / ESC / 点遮罩
+   四种方式关闭且不留脏数据；保存前校验标题非空（页面内红字提示 + toast，禁 alert）。
+   录入项在原有 5 项之外新增「作品链接（选填）」，并把上传从「仅图片」放宽为「图片 / 文件」。
+   存储层零改动：localStorage 键仍为 xtc:lib:pptw:works，仅在作品对象上新增 files / link 两个可选字段
+   （旧数据经 norm() 读出时自动补 files=[] / link=''，向前兼容）。
+
    契约（与 design-class.js / tpl-preview.js / ppt-tips.js 同构，ADR-2 注册表模式）：
-     · 宿主 PPT训练.html 只提供 #pptFolioGrid + 两个 .app-modal 容器，本文件不改 HTML 结构；
+     · 宿主 演示.html 只提供 #pptFolioGrid + 两个 .app-modal 容器，本文件不改 HTML 结构；
      · 幂等注册 window.PPTV2['ppt-works']，可经 openPptPanel('ppt-works') 在全屏面板内复用；
      · 弹窗走 T19 统一 .app-modal 基础设施（openAppModal/closeAppModal：ESC + 点遮罩 + 锁滚动）；
      · 存储走 XTC.storage（内部自动 lsKeySafe 多账号隔离），键前缀严格用 xtc:lib:pptw:
@@ -26,11 +33,14 @@
   var LEGACY_KEY = 'study_workbench_ppt_portfolio'; // 旧数据（仅读取迁移，绝不清空）
   var TYPES = ['封面页', '目录页', '内容页', '数据页', '结束页', '整份稿件', '其他'];
   var MAX_IMAGES = 6;
+  var MAX_FILES = 2;                 // 需求A：非图片附件个数上限（localStorage 容量所限，从严）
+  var MAX_FILE_SIZE = 1024 * 1024;   // 需求A：单个附件原始体积上限 1MB
   var MAX_EDGE = 1000;      // 图片压缩长边上限
   var KEEP_BELOW = 300 * 1024; // 小于该体积且无需缩放时保留原图
   var VIEW_ID = 'ppt-works';
 
   var pending = [];   // 添加弹窗里待保存的图片 base64
+  var pendingFiles = []; // 需求A：添加弹窗里待保存的非图片附件 [{name,size,data}]
   var curId = '';     // 当前预览的作品 id
   var curImg = 0;     // 当前预览第几张
   var migrated = false;
@@ -108,6 +118,8 @@
       title: String(x.title || '未命名作品'),
       type: x.type || '其他',
       images: imgs,
+      files: (x.files && Object.prototype.toString.call(x.files) === '[object Array]') ? x.files : [],
+      link: String(x.link || ''),
       description: String(x.description || x.note || ''),
       tags: (x.tags && Object.prototype.toString.call(x.tags) === '[object Array]') ? x.tags : [],
       createdAt: x.createdAt || x.date || new Date().toISOString(),
@@ -186,6 +198,7 @@
     if (save(list)) return true;
     var lite = norm(item);
     lite.images = [];
+    lite.files = [];
     list[list.length - 1] = lite;
     if (save(list)) { toast('本地空间不足，已保存为纯文本（不含图片）'); return true; }
     list.pop();
@@ -195,6 +208,24 @@
   }
 
   /* ---------------------------------------------------------------- 图片压缩 */
+  /** 需求A：判断是否为图片（部分安卓机型 File.type 为空，按扩展名兜底） */
+  function isImageFile(f) {
+    if (!f) return false;
+    var t = f.type ? String(f.type) : '';
+    if (t.indexOf('image/') === 0) return true;
+    var n = f.name ? String(f.name).toLowerCase() : '';
+    return /\.(png|jpe?g|gif|webp|bmp|svg)$/.test(n);
+  }
+
+  /** 需求A：附件原样读成 dataURL（不压缩，靠 MAX_FILE_SIZE 限体积） */
+  function readAsDataUrl(file, cb) {
+    if (!window.FileReader) { cb(''); return; }
+    var fr = new FileReader();
+    fr.onload = function () { cb(String(fr.result || '')); };
+    fr.onerror = function () { cb(''); };
+    fr.readAsDataURL(file);
+  }
+
   function readShrink(file, cb) {
     if (!window.FileReader) { cb(''); return; }
     var fr = new FileReader();
@@ -266,63 +297,131 @@
     for (var i = 0; i < nodes.length; i++) renderInto(nodes[i]);
   }
 
-  /* ---------------------------------------------------------------- 添加弹窗 */
+  /* ---------------------------------------------------------------- 添加弹窗（需求A：带遮罩的弹窗） */
+  /** 需求A：清掉标题非空的红字提示与描红态 */
+  function clearTitleErr() {
+    var err = $id('pwTitleErr');
+    if (err) err.style.display = 'none';
+    var t = $id('pwTitle');
+    if (t) t.classList.remove('pw-invalid');
+  }
+
   function renderPending() {
     var box = $id('pwThumbs');
-    if (!box) return;
-    var html = '';
-    for (var i = 0; i < pending.length; i++) {
-      html += '<div class="pw-thumb-item"><img src="' + esc(pending[i]) + '" alt="">' +
-        '<span class="pw-thumb-x" data-pw-rm="' + i + '">×</span></div>';
+    if (box) {
+      var html = '';
+      for (var i = 0; i < pending.length; i++) {
+        html += '<div class="pw-thumb-item"><img src="' + esc(pending[i]) + '" alt="">' +
+          '<span class="pw-thumb-x" data-pw-rm="' + i + '">×</span></div>';
+      }
+      box.innerHTML = html;
+      var xs = box.querySelectorAll('[data-pw-rm]');
+      for (var k = 0; k < xs.length; k++) {
+        (function (node) {
+          node.addEventListener('click', function () {
+            var idx = parseInt(node.getAttribute('data-pw-rm'), 10);
+            if (!isNaN(idx)) { pending.splice(idx, 1); renderPending(); }
+          });
+        })(xs[k]);
+      }
     }
-    box.innerHTML = html;
-    var xs = box.querySelectorAll('[data-pw-rm]');
-    for (var k = 0; k < xs.length; k++) {
-      (function (node) {
-        node.addEventListener('click', function () {
-          var idx = parseInt(node.getAttribute('data-pw-rm'), 10);
-          if (!isNaN(idx)) { pending.splice(idx, 1); renderPending(); }
-        });
-      })(xs[k]);
+    /* 需求A：非图片附件条目（#pwFileList），与图片缩略图同款「点 ✕ 移除」交互 */
+    var fbox = $id('pwFileList');
+    if (fbox) {
+      var fh = '';
+      for (var j = 0; j < pendingFiles.length; j++) {
+        var f = pendingFiles[j] || {};
+        fh += '<div class="pw-file-item"><span class="pw-file-name">' + esc(f.name || '附件') + '</span>' +
+          '<span class="pw-file-x" data-pw-rmf="' + j + '">×</span></div>';
+      }
+      fbox.innerHTML = fh;
+      var fs = fbox.querySelectorAll('[data-pw-rmf]');
+      for (var m = 0; m < fs.length; m++) {
+        (function (node2) {
+          node2.addEventListener('click', function () {
+            var idx2 = parseInt(node2.getAttribute('data-pw-rmf'), 10);
+            if (!isNaN(idx2)) { pendingFiles.splice(idx2, 1); renderPending(); }
+          });
+        })(fs[m]);
+      }
     }
   }
 
   function openAdd() {
     migrate();
     pending = [];
-    var t = $id('pwTitle'); if (t) t.value = '';
+    pendingFiles = [];
+    var t = $id('pwTitle'); if (t) { t.value = ''; t.classList.remove('pw-invalid'); }
     var d = $id('pwDesc'); if (d) d.value = '';
     var g = $id('pwTags'); if (g) g.value = '';
+    var lk = $id('pwLink'); if (lk) lk.value = '';   // 需求A：作品链接（选填）
     var s = $id('pwType'); if (s) s.value = TYPES[0];
     var f = $id('pwFiles'); if (f) f.value = '';
+    clearTitleErr();
     renderPending();
-    openMask('pptWorkModal');
+    openMask('pptWorkModal');   // → window.openAppModal('pptWorkModal') → 宿主页加 .active 并锁滚动
   }
 
+  /** 需求A：关闭（取消 / ✕ / ESC / 点遮罩）一律丢弃未保存内容，绝不落库 */
   function closeAdd() {
+    pending = [];
+    pendingFiles = [];
+    clearTitleErr();
     closeMask('pptWorkModal');
   }
 
+  /** 需求A：图片进压缩通道；非图片文件按体积上限进 pendingFiles */
   function pickFiles(input) {
     var files = input && input.files ? input.files : [];
     if (!files.length) return;
-    if (files.length + pending.length > MAX_IMAGES) toast('最多上传 ' + MAX_IMAGES + ' 张，多余的已忽略');
     for (var i = 0; i < files.length; i++) {
-      if (pending.length >= MAX_IMAGES) break;
-      (function () {
-        readShrink(files[i], function (d) {
-          if (d && pending.length < MAX_IMAGES) pending.push(d);
-          renderPending();
-        });
-      })();
+      var f = files[i];
+      if (!f) continue;
+      if (isImageFile(f)) {
+        if (pending.length >= MAX_IMAGES) { toast('最多上传 ' + MAX_IMAGES + ' 张图片，多余的已忽略'); continue; }
+        (function (file) {
+          readShrink(file, function (d) {
+            if (d && pending.length < MAX_IMAGES) pending.push(d);
+            renderPending();
+          });
+        })(f);
+      } else {
+        if (pendingFiles.length >= MAX_FILES) { toast('最多上传 ' + MAX_FILES + ' 个文件，多余的已忽略'); continue; }
+        if (f.size && f.size > MAX_FILE_SIZE) {
+          toast('单个文件不能超过 1MB：' + (f.name || '未命名'));
+          continue;
+        }
+        (function (file2) {
+          readAsDataUrl(file2, function (d2) {
+            if (d2 && pendingFiles.length < MAX_FILES) {
+              pendingFiles.push({ name: file2.name || '附件', size: file2.size || 0, data: d2 });
+            }
+            renderPending();
+          });
+        })(f);
+      }
     }
   }
 
   function saveWork() {
-    var title = String((($id('pwTitle') || {}).value) || '').trim();
-    if (!title) { toast('请填写作品标题'); return; }
+    /* 需求A 校验：标题非空 —— 页面内红字提示（#pwTitleErr）+ 输入框描红 + 聚焦，
+       并复用站内 toast；按 ADR-3 铁律禁用原生 alert / confirm / prompt。 */
+    var tEl = $id('pwTitle');
+    var title = String(((tEl || {}).value) || '').trim();
+    if (!title) {
+      var err = $id('pwTitleErr');
+      if (err) err.style.display = 'block';
+      if (tEl) {
+        tEl.classList.add('pw-invalid');
+        try { tEl.focus(); } catch (e) { /* 老 WebView 忽略 */ }
+      }
+      toast('请填写作品标题');
+      return;
+    }
+    clearTitleErr();
     var type = String((($id('pwType') || {}).value) || TYPES[0]);
     var desc = String((($id('pwDesc') || {}).value) || '').trim();
+    var link = String((($id('pwLink') || {}).value) || '').trim();  // 需求A：作品链接（选填）
     var tagStr = String((($id('pwTags') || {}).value) || '').trim();
     var tags = [];
     if (tagStr) {
@@ -334,6 +433,8 @@
       title: title.slice(0, 40),
       type: type,
       images: pending.slice(0, MAX_IMAGES),
+      files: pendingFiles.slice(0, MAX_FILES),
+      link: link.slice(0, 300),
       description: desc.slice(0, 300),
       tags: tags,
       createdAt: new Date().toISOString(),
@@ -342,8 +443,9 @@
     });
     if (!add(item)) return;
     pending = [];
+    pendingFiles = [];
     closeAdd();
-    render();
+    render();   // 需求A：保存后实时刷新「我的作品集」，新增作品立即可见
     toast('作品已保存');
     if (window.StudyStats && typeof window.StudyStats.track === 'function') {
       try { window.StudyStats.track('ppt', 'task', { type: 'portfolio_add' }); } catch (e) { /* 忽略 */ }
@@ -385,6 +487,17 @@
     var t = $id('pwVTitle'); if (t) t.textContent = w.title;
     var m = $id('pwVMeta'); if (m) m.textContent = fmtDate(w.createdAt) + ' · ' + w.type;
     var d = $id('pwVDesc'); if (d) d.textContent = w.description || '（暂无设计说明）';
+    /* 需求A：作品链接展示（无链接则置空，旧数据自动为空） */
+    var vl = $id('pwVLink');
+    if (vl) {
+      if (w.link) {
+        var href = (/^https?:\/\//i.test(w.link) ? w.link : 'http://' + w.link);
+        vl.innerHTML = '<a class="pw-v-link" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' +
+          esc(w.link) + '</a>';
+      } else {
+        vl.innerHTML = '';
+      }
+    }
     var tg = $id('pwVTags');
     if (tg) {
       var th = '';

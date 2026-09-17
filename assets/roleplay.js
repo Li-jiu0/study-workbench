@@ -1,7 +1,7 @@
 /* =====================================================================
    roleplay.js —— 角色扮演训练（纯静态、可复用挂载资产）
    ---------------------------------------------------------------------
-   把「高情商表达」页内「角色扮演训练」的完整实现（DOM 结构 + 样式 +
+   把「表达」页内「角色扮演训练」的完整实现（DOM 结构 + 样式 +
    交互逻辑 + 剧本对话数据）无损抽取为独立资产，便于搬到其它页面
    （如 i人团伙页面）内联挂载，而不再依赖 app.js 里的同名函数。
 
@@ -103,7 +103,7 @@
   /* ------------------------- 交互逻辑（原 app.js 角色扮演体验段，逐字保留语义） ------------------------- */
   var rpRound = 1;
   var rpRecording = false;
-  // 当前挂载配置（backTo/onBack 由 mountRolePlay 的 options 决定，默认回落到高情商表达页 comm）
+  // 当前挂载配置（backTo/onBack 由 mountRolePlay 的 options 决定，默认回落到表达页 comm）
   var RP_OPTS = { backTo: 'comm', onBack: null };
 
   /* 返回：优先自定义回调，其次宿主 navigateTo(target)，都没有则静默降级（严禁 alert） */
@@ -118,7 +118,7 @@
   // 旧 openRoleplayDemo 的等价实现；window.openRolePlay 的底层
   function openRoleplayDemo() {
     // 宿主页仍保留 #page-roleplay-demo 时走原来的「切页」行为；
-    // 该页已下线（如高情商表达页删除菜单后）则退化为就近挂载到 #roleplayMount。
+    // 该页已下线（如表达页删除菜单后）则退化为就近挂载到 #roleplayMount。
     if (document.getElementById('page-roleplay-demo')) {
       if (typeof window.navigateTo === 'function') {
         try { window.navigateTo('roleplay-demo'); return; } catch (e) {}
@@ -377,7 +377,7 @@
   window.nextRoleplayRound = nextRoleplayRound;
   window.toggleRpVoice = toggleRpVoice;
 
-  /* ------------------------- 自举：高情商表达页内置锚点 #roleplayMount 自动挂载 ------------------------- */
+  /* ------------------------- 自举：表达页内置锚点 #roleplayMount 自动挂载 ------------------------- */
   function autoBoot() {
     var m = document.getElementById('roleplayMount');
     if (m) window.mountRolePlay(m);

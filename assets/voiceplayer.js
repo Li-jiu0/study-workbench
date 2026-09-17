@@ -166,6 +166,87 @@
     return out;
   }
 
+  /* ------------------------------------------------------------------
+     N9-18 P1（需求 7）：训练状态与今日统计
+     —— 只存 localStorage，读写全部 try/catch（file:// / 隐私模式下静默降级为内存态）。
+     存储结构：localStorage['vt_train_v1'] =
+       { d: 'YYYY-MM-DD', done: { 'scene#idx': {u:听懂次数, s:跟读分} } }
+     每次跨天自动清零，避免"今日统计"变成累计统计。
+     ------------------------------------------------------------------ */
+  var TRAIN_KEY = 'vt_train_v1';
+  var TRAIN = { d: '', done: {} };
+  function trainToday() {
+    var dt = new Date();
+    var m = dt.getMonth() + 1, dd = dt.getDate();
+    return dt.getFullYear() + '-' + (m < 10 ? '0' + m : m) + '-' + (dd < 10 ? '0' + dd : dd);
+  }
+  function trainLoad() {
+    var t = trainToday(), raw = null;
+    try { raw = window.localStorage.getItem(TRAIN_KEY); } catch (e) { raw = null; }
+    if (raw) {
+      try {
+        var o = JSON.parse(raw);
+        if (o && o.d === t && o.done && typeof o.done === 'object') { TRAIN = { d: t, done: o.done }; return; }
+      } catch (e2) { /* 脏数据丢弃重建 */ }
+    }
+    TRAIN = { d: t, done: {} };
+  }
+  function trainSave() {
+    try { window.localStorage.setItem(TRAIN_KEY, JSON.stringify(TRAIN)); } catch (e) { /* 降级为内存态 */ }
+  }
+  function trainKey(scene, idx) { return String(scene) + '#' + String(idx); }
+  function trainGet(scene, idx) {
+    var k = trainKey(scene, idx);
+    return Object.prototype.hasOwnProperty.call(TRAIN.done, k) ? TRAIN.done[k] : null;
+  }
+  /* 记录一次训练结果：understood=true 听懂 / false 没听懂；score 为跟读分（可空） */
+  function trainMark(scene, idx, understood, score) {
+    var k = trainKey(scene, idx);
+    var it = trainGet(scene, idx) || { u: 0, s: 0, n: 0 };
+    if (understood === true) { it.u = (it.u || 0) + 1; it.ok = 1; }
+    else if (understood === false) { it.u = (it.u || 0) + 1; it.ok = 0; }
+    if (typeof score === 'number' && score > 0) {
+      it.n = (it.n || 0) + 1;
+      it.s = Math.round((((it.s || 0) * (it.n - 1)) + score) / it.n);
+    }
+    TRAIN.done[k] = it;
+    trainSave();
+  }
+  /* 今日统计：完成句数 / 平均听懂次数 / 跟读平均分 */
+  function trainStats() {
+    var ks = Object.keys(TRAIN.done), i, done = 0, uSum = 0, sSum = 0, sN = 0, sc = TRAIN.done;
+    for (i = 0; i < ks.length; i++) {
+      var v = sc[ks[i]];
+      if (!v) continue;
+      done++;
+      uSum += (Number(v.u) || 0);
+      if (Number(v.s) > 0 && Number(v.n) > 0) { sSum += Number(v.s); sN++; }
+    }
+    return {
+      done: done,
+      avgListen: done ? Math.round((uSum / done) * 10) / 10 : 0,
+      avgScore: sN ? Math.round(sSum / sN) : 0
+    };
+  }
+  /* 本情景（本组）完成状态：已"听懂"过的句子视为 ✓ */
+  function sceneDoneFlags(scene) {
+    var out = [], lns = (SCENES[scene] && SCENES[scene].lines) ? SCENES[scene].lines : [], i, v;
+    for (i = 0; i < lns.length; i++) {
+      v = trainGet(scene, i);
+      out.push(!!(v && v.ok === 1));
+    }
+    return out;
+  }
+  /* 挑战模式正确率（本情景内：听懂句数 / 已作答句数） */
+  function sceneAcc(scene) {
+    var f = sceneDoneFlags(scene), lns = (SCENES[scene] && SCENES[scene].lines) ? SCENES[scene].lines : [], i, done = 0, ok = 0, v;
+    for (i = 0; i < lns.length; i++) {
+      v = trainGet(scene, i);
+      if (v && typeof v.ok === 'number') { done++; if (v.ok === 1) ok++; }
+    }
+    return { done: done, ok: ok, pct: done ? Math.round((ok / done) * 100) : 0 };
+  }
+
   /* AI 助教「生词」用极简内置词典（离线可用，未命中时降级为「慢速朗读该词」）。
      只覆盖九个内置场景出现过的实词，不做全量词典。 */
   var VOCAB = {
@@ -242,6 +323,16 @@
       '.vp-subs{flex:none;display:flex;gap:8px;flex-wrap:wrap;padding:8px 16px 4px;min-height:34px;align-items:center}' +
       '.vp-subs .s{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:6px 12px;font-size:13px;color:var(--text-secondary);cursor:pointer;font-family:inherit;line-height:1.4}' +
       '.vp-subs .s.on{background:var(--primary-light);border-color:var(--primary);color:var(--primary-dark);font-weight:700}' +
+      /* 收放：收起态只显示「当前项 + 展开」一行，展开态才显示整片胶囊（默认收起，减少拥挤） */
+      '.vp-cats.is-collapsed,.vp-subs.is-collapsed{padding-top:10px}' +
+      '.vp-subs.is-collapsed{padding-top:6px}' +
+      '.vp-cats.is-collapsed .c,.vp-subs.is-collapsed .s{display:none}' +
+      '.vp-sum{display:none;align-items:center;gap:8px;flex-wrap:wrap;width:100%}' +
+      '.vp-cats.is-collapsed .vp-sum,.vp-subs.is-collapsed .vp-sum{display:flex}' +
+      '.vp-sum .cur{font-size:13px;font-weight:700;color:var(--primary-dark);background:var(--primary-light);border:1px solid var(--primary);border-radius:18px;padding:6px 13px;line-height:1.4}' +
+      '.vp-sum .tip{font-size:12px;color:var(--text-muted)}' +
+      '.vp-sum .tg{display:inline-flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:6px 13px;font-size:13px;color:var(--text-secondary);cursor:pointer;font-family:inherit;line-height:1.4}' +
+      '.vp-sum .tg:hover{border-color:var(--primary);color:var(--primary-dark)}' +
       '.vp-none{font-size:12px;color:var(--text-muted)}' +
       '.vp-stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:0;padding:6px 16px 20px;overflow-y:auto}' +
       '.vp-count{color:var(--text-muted);font-size:12px;margin-bottom:8px}' +
@@ -302,31 +393,97 @@
       '.vp-ctx b{display:block;font-size:13px;line-height:1.5}' +
       '.vp-ctx em{display:block;font-style:normal;font-size:12px;color:var(--text-secondary);margin-top:2px}' +
       '.vp-ctx button{background:transparent;border:none;color:var(--primary);font-size:12px;cursor:pointer;padding:4px 0;font-family:inherit}' +
-      '.vp-eval{background:var(--card);color:var(--text);max-width:820px;width:100%;margin-top:14px;border-radius:14px;padding:14px;max-height:40vh;overflow:auto;font-size:13px;box-shadow:var(--shadow);border:1px solid var(--border)}';
+      '.vp-eval{background:var(--card);color:var(--text);max-width:820px;width:100%;margin-top:14px;border-radius:14px;padding:14px;max-height:40vh;overflow:auto;font-size:13px;box-shadow:var(--shadow);border:1px solid var(--border)}' +
+      /* ===== N9-18 P1：精听/挑战双模式（需求 8） ===== */
+      '.vp-gmode{flex:none;display:flex;gap:6px;margin:10px 16px 0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:4px}' +
+      '.vp-gmode .g{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;text-align:center;padding:8px 0;border-radius:9px;background:transparent;font-size:12px;color:var(--text-secondary);cursor:pointer;font-family:inherit;border:none}' +
+      '.vp-gmode .g.on{background:var(--primary-light);color:var(--primary-dark);font-weight:700}' +
+      /* ===== N9-18 P1：三阶段训练流程（需求 6） ===== */
+      '.vp-steps{display:flex;gap:6px;justify-content:center;align-items:center;margin-top:12px;flex-wrap:wrap}' +
+      '.vp-steps .st{font-size:12px;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:4px 11px}' +
+      '.vp-steps .st.on{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:700}' +
+      '.vp-steps .st.done{background:var(--primary-light);border-color:var(--primary);color:var(--primary-dark);font-weight:700}' +
+      '.vp-guide{margin-top:12px;font-size:14px;color:var(--text-secondary);line-height:1.7}' +
+      '.vp-yn{display:flex;gap:10px;justify-content:center;align-items:center;margin-top:14px;flex-wrap:wrap}' +
+      '.vp-yn .y{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:12px;padding:11px 20px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:600}' +
+      '.vp-yn .y:hover{border-color:var(--primary);color:var(--primary-dark)}' +
+      '.vp-yn .y.solid{background:var(--primary);border-color:var(--primary);color:#fff}' +
+      /* ===== N9-18 P1：训练状态反馈（需求 7） ===== */
+      '.vp-stat{width:70%;max-width:820px;margin-top:12px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow);text-align:left}' +
+      '@media (max-width:820px){.vp-stat{width:100%}}' +
+      '.vp-stat .dots{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}' +
+      '.vp-stat .dot{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;border-radius:8px;font-size:12px;background:var(--bg);border:1px solid var(--border);color:var(--text-muted);padding:0 6px}' +
+      '.vp-stat .dot.ok{background:var(--primary-light);border-color:var(--primary);color:var(--primary-dark);font-weight:700}' +
+      '.vp-stat .dot.cur{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:700}' +
+      '.vp-stat .rows{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--text-secondary)}' +
+      '.vp-stat .rows b{color:var(--primary-dark);font-size:14px}' +
+      '.vp-stat h4{margin:0 0 4px;font-size:13px;color:var(--text)}';
     var st = document.createElement('style'); st.id = 'vpStyle'; st.textContent = c; (document.head || document.documentElement).appendChild(st);
   }
 
   // 图标补绘：动态插入 data-icon 元素后触发 lucide 全量扫描（icon-map.js 未加载时静默跳过）
   function paintIcons() { if (typeof window.lucideAutoRender === 'function') { try { window.lucideAutoRender(); } catch (e) {} } }
 
-  /* ===== N9-18 辅助：场景两级分类条 ===== */
+  /* ===== N9-18 辅助：场景两级分类条（两级各自可收放，收放态存 S，重建不丢） ===== */
   function renderSceneBar() {
     var bar1 = document.getElementById('vpCats');
     var bar2 = document.getElementById('vpSubs');
     if (!bar1 || !bar2 || !S) return;
     var h1 = '', h2 = '', i, keys;
+    // 收放态：默认收起（S.catsOpen / S.subsOpen 非 true 即收起）
+    var catsOpen = S.catsOpen === true;
+    var subsOpen = S.subsOpen === true;
+    // —— 第一级：大类 ——
+    if (catsOpen) {
+      // 展开态：摘要行收起（CSS 隐藏 .vp-sum），仅保留常显的「收起」按钮
+      h1 += '<button class="tg" onclick="openVoiceTrain.__catsToggle()">收起</button>';
+    } else {
+      // 收起态：显示当前分类名 + 展开按钮，仍能看清选中项
+      h1 += '<span class="vp-sum"><span class="cur">' + esc(groupTitle(S.group)) + '</span>' +
+            '<button class="tg" onclick="openVoiceTrain.__catsToggle()">全部分类</button></span>';
+    }
+    // 大类胶囊（展开态才由 CSS 显示）
     for (i = 0; i < SCENE_GROUPS.length; i++) {
       var g = SCENE_GROUPS[i];
       var n = sceneKeysOf(g.k).length;
       h1 += '<button class="c' + (S.group === g.k ? ' on' : '') + (n ? '' : ' dis') + '" onclick="openVoiceTrain.__group(\'' + g.k + '\')">' + esc(g.t) + '</button>';
     }
+    // —— 第二级：场景条目 ——
     keys = sceneKeysOf(S.group);
+    if (subsOpen) {
+      // 展开态：仅保留常显的「收起」按钮
+      h2 += '<button class="tg" onclick="openVoiceTrain.__subsToggle()">收起</button>';
+    } else {
+      h2 += '<span class="vp-sum"><span class="cur">' + esc(SCENES[S.scene] ? SCENES[S.scene].t : '—') + '</span>' +
+            '<button class="tg" onclick="openVoiceTrain.__subsToggle()">换一个</button></span>';
+    }
     for (i = 0; i < keys.length; i++) {
       h2 += '<button class="s' + (S.scene === keys[i] ? ' on' : '') + '" onclick="openVoiceTrain.__scene(\'' + keys[i] + '\')">' + esc(SCENES[keys[i]].t) + '</button>';
     }
-    if (!keys.length) h2 = '<span class="vp-none">该分类暂未收录场景，先看看其它分类</span>';
+    if (!keys.length) h2 += '<span class="vp-none">该分类暂未收录场景，先看看其它分类</span>';
+    // 两级各自挂 is-open / is-collapsed，CSS 据此决定显示摘要行还是整片胶囊
+    bar1.className = 'vp-cats ' + (catsOpen ? 'is-open' : 'is-collapsed');
+    bar2.className = 'vp-subs ' + (subsOpen ? 'is-open' : 'is-collapsed');
     bar1.innerHTML = h1;
     bar2.innerHTML = h2;
+    paintIcons();
+  }
+
+  /* ===== N9-18 P1（需求 8）：精听 / 挑战 双模式切换条 ===== */
+  function renderGModeBar() {
+    var bar = document.getElementById('vpGMode');
+    if (!bar || !S) return;
+    // 口语跟读 tab 不做挑战模式（挑战模式针对听力），隐藏整条
+    if (S.mode === 'speak') { bar.innerHTML = ''; bar.style.display = 'none'; return; }
+    bar.style.display = '';
+    var h = '', defs = [
+      { k: 'intensive', t: '📖 精听模式', tip: '可慢速 / 看原文 / 看中文' },
+      { k: 'challenge', t: '🎯 挑战模式', tip: '隐藏原文中文慢速，只听' }
+    ], i;
+    for (i = 0; i < defs.length; i++) {
+      h += '<button class="g' + (S.genMode === defs[i].k ? ' on' : '') + '" title="' + esc(defs[i].tip) + '" onclick="openVoiceTrain.__genMode(\'' + defs[i].k + '\')">' + defs[i].t + '</button>';
+    }
+    bar.innerHTML = h;
     paintIcons();
   }
 
@@ -404,9 +561,60 @@
     return h;
   }
 
+  /* ==================================================================
+     N9-18 P1（需求 6）：单句「三阶段」训练流程
+     阶段① 听(stage='listen') → 阶段② 理解(stage='check') → 阶段③ 说(stage='speak')
+     切句 / 切场景 / 切 tab / 切模式都会把 stage 复位到 'listen'。
+     挑战模式下隐藏「原文 / 中文」，但阶段流程本身不变。
+     ================================================================== */
+  var STAGE_DEF = [
+    { k: 'listen', t: '① 听' },
+    { k: 'check', t: '② 理解' },
+    { k: 'speak', t: '③ 说' }
+  ];
+  function stageIdx(k) {
+    for (var i = 0; i < STAGE_DEF.length; i++) { if (STAGE_DEF[i].k === k) return i; }
+    return 0;
+  }
+  function stageBarHtml() {
+    var h = '<div class="vp-steps">', i, cur = stageIdx(S.stage);
+    for (i = 0; i < STAGE_DEF.length; i++) {
+      h += '<span class="st' + (i === cur ? ' on' : (i < cur ? ' done' : '')) + '">' + STAGE_DEF[i].t + '</span>';
+    }
+    if (S.stage === 'check') h += '<span class="st on">?</span>';
+    h += '</div>';
+    return h;
+  }
+  /* 挑战模式：是否允许显示原文 / 中文 / 慢速 */
+  function isChallenge() { return S && S.genMode === 'challenge'; }
+  function challengeStatHtml() {
+    var a = sceneAcc(S.scene);
+    return '<div class="vp-stat"><h4>挑战模式 · 本情景正确率</h4>' +
+      '<div class="rows"><span>已作答 <b>' + a.done + '</b> 句</span>' +
+      '<span>听懂 <b>' + a.ok + '</b> 句</span>' +
+      '<span>正确率 <b>' + a.pct + '%</b></span></div></div>';
+  }
+  /* 训练状态反馈（需求 7）：本组完成点阵 + 今日统计 */
+  function statPanelHtml() {
+    var flags = sceneDoneFlags(S.scene), lns = SCENES[S.scene].lines, i, st = trainStats();
+    var h = '<div class="vp-stat"><h4>本组进度（✓ 已听懂 / ● 当前 / ○ 未完成）</h4><div class="dots">';
+    for (i = 0; i < flags.length; i++) {
+      var cls = (i === S.i) ? 'dot cur' : (flags[i] ? 'dot ok' : 'dot');
+      h += '<span class="' + cls + '">' + (flags[i] ? '✓' : (i + 1)) + '</span>';
+    }
+    h += '</div><h4>今日统计</h4><div class="rows">' +
+      '<span>已完成 <b>' + st.done + '</b> 句</span>' +
+      '<span>平均听懂 <b>' + st.avgListen + '</b> 次</span>' +
+      '<span>跟读平均分 <b>' + st.avgScore + '</b></span></div></div>';
+    return h;
+  }
+
   /* ===== N9-18：主渲染 ===== */
   function render() {
     var sc = SCENES[S.scene], lns = sc.lines, i = S.i, it = lns[i];
+    var chg = isChallenge();
+    // 挑战模式强制隐藏原文 / 中文（需求 8：❌中文 ❌原文 ❌慢速）
+    if (chg) { S.showEn = false; S.showZh = false; }
     var showEn = S.showEn;
     // 砍掉模糊隐藏：隐藏态完全不显示英文，只给可点击提示
     var enHtml = showEn
@@ -416,18 +624,42 @@
     var pct = Math.round(((i + 1) / lns.length) * 100);
     var box = document.getElementById('vpBody');
     var evalBox = '<div id="vpEval"></div>';
+    // 控制区：挑战模式隐藏「慢速 / 原文 / 中文」
     var ctl =
       '<div class="vp-ctl">' +
       '<button class="vp-cbtn vp-nav" title="上一句" onclick="openVoiceTrain.__prev()"><span class="nav-icon" data-icon="chevron-left" data-icon-size="16"></span></button>' +
       '<button class="vp-cbtn vp-play" id="vpPlay" title="播放 / 停止" onclick="openVoiceTrain.__play()"><span class="nav-icon" data-icon="play" data-icon-size="18"></span><span id="vpPlayLabel">' + (vpIsPlaying() ? '停止' : '播放') + '</span></button>' +
-      '<button class="vp-cbtn" onclick="openVoiceTrain.__slow()">慢速</button>' +
-      '<button class="vp-sw' + (showEn ? ' on' : '') + '" onclick="openVoiceTrain.__en()"><span class="swbox"><span class="knob"></span></span>原文</button>' +
-      '<button class="vp-sw' + (S.showZh ? ' on' : '') + '" onclick="openVoiceTrain.__zh()"><span class="swbox"><span class="knob"></span></span>中文</button>' +
+      (chg ? '' : '<button class="vp-cbtn" onclick="openVoiceTrain.__slow()">慢速</button>') +
+      (chg ? '' : '<button class="vp-sw' + (showEn ? ' on' : '') + '" onclick="openVoiceTrain.__en()"><span class="swbox"><span class="knob"></span></span>原文</button>') +
+      (chg ? '' : '<button class="vp-sw' + (S.showZh ? ' on' : '') + '" onclick="openVoiceTrain.__zh()"><span class="swbox"><span class="knob"></span></span>中文</button>') +
       '<button class="vp-cbtn vp-nav" title="下一句" onclick="openVoiceTrain.__next()"><span class="nav-icon" data-icon="chevron-right" data-icon-size="16"></span></button>' +
       '</div>';
-    var rec = (S.mode === 'speak')
-      ? '<div class="vp-ctl2"><button class="vp-cbtn solid" id="vpRec" onclick="openVoiceTrain.__rec()"><span class="nav-icon" data-icon="mic" data-icon-size="14"></span>跟读这一句</button></div>'
-      : '';
+    // 阶段引导 + 阶段专属操作区（需求 6）
+    var stage = S.stage || 'listen';
+    var stageHtml = '';
+    stageHtml += '<div class="vp-guide">';
+    if (stage === 'listen') {
+      stageHtml += '🎧 请认真听这一句（可重复播放）';
+    } else if (stage === 'check') {
+      stageHtml += '你听懂了吗？';
+    } else {
+      stageHtml += '现在请跟读，尽量模仿语音语调';
+    }
+    stageHtml += '</div>';
+    if (stage === 'listen') {
+      stageHtml += '<div class="vp-yn">' +
+        '<button class="y solid" onclick="openVoiceTrain.__toCheck()">听完了，去判断 →</button></div>';
+    } else if (stage === 'check') {
+      stageHtml += '<div class="vp-yn">' +
+        '<button class="y" onclick="openVoiceTrain.__mark(0)">😕 没听懂</button>' +
+        '<button class="y solid" onclick="openVoiceTrain.__mark(1)">😊 听懂了</button>' +
+        '</div>';
+    } else {
+      stageHtml += '<div class="vp-yn">' +
+        '<button class="y solid" id="vpRec" onclick="openVoiceTrain.__rec()"><span class="nav-icon" data-icon="mic" data-icon-size="14"></span>开始跟读</button>' +
+        '<button class="y" onclick="openVoiceTrain.__next()">下一句 →</button>' +
+        '</div>';
+    }
     var full = '';
     if (S.full) {
       full = '<div class="vp-full">';
@@ -436,7 +668,7 @@
       }
       full += '</div>';
     }
-    var ai = '<div class="vp-aiwrap">' +
+    var ai = chg ? '' : '<div class="vp-aiwrap">' +
       (S.aiOpen
         ? '<button class="vp-aifab" onclick="openVoiceTrain.__ai()"><span class="nav-icon" data-icon="sparkles" data-icon-size="15"></span>收起 AI 助教</button><div class="vp-aibox">' + aiBodyHtml() + '</div>'
         : '<button class="vp-aifab" onclick="openVoiceTrain.__ai()"><span class="nav-icon" data-icon="sparkles" data-icon-size="15"></span>这句没听懂？点我</button>') +
@@ -447,10 +679,12 @@
       '<span class="vp-idx">第 ' + (i + 1) + ' 句 / 共 ' + lns.length + ' 句</span></div>' +
       '<div class="vp-bar"><i id="vpBarIn" style="width:' + pct + '%"></i></div>' +
       enHtml + zhHtml +
+      stageBarHtml() +
+      stageHtml +
       '<div class="vp-apbar"><i id="vpApIn"></i></div>' +
-      '<button class="vp-link" onclick="openVoiceTrain.__full()">' + (S.full ? '收起全文' : '查看全文') + '</button>' +
+      (chg ? '' : '<button class="vp-link" onclick="openVoiceTrain.__full()">' + (S.full ? '收起全文' : '查看全文') + '</button>') +
       '</div>' +
-      ctl + rec + full + ai + evalBox;
+      ctl + full + (chg ? challengeStatHtml() : statPanelHtml()) + ai + evalBox;
     // 播放中重绘（切句 / 开关 / 展开）时补回高亮与按钮文案
     if (vpIsPlaying()) {
       var pe = document.getElementById('vpEn');
@@ -463,10 +697,16 @@
 
   function openVoice(mode) {
     css();
+    trainLoad();
+    var listen = (mode || 'listen') !== 'speak';
     S = {
       mode: mode || 'listen', scene: 'coffee', group: 'life', i: 0,
       showEn: mode === 'speak', showZh: true, slow: false,
-      full: false, aiOpen: false, aiTab: 'word'
+      full: false, aiOpen: false, aiTab: 'word',
+      // N9-18 P1：训练阶段（听→理解→说）+ 精听/挑战双模式
+      stage: 'listen', genMode: listen ? 'intensive' : 'intensive',
+      // 收放态：默认收起（两级各自独立收放；状态存 S，重建 DOM 不丢，见 renderSceneBar）
+      catsOpen: false, subsOpen: false
     };
     var m = document.getElementById('vpMask'); if (m) m.remove();
     m = document.createElement('div'); m.id = 'vpMask'; m.className = 'vp-mask open';
@@ -479,6 +719,8 @@
       '<div class="vp-mode">' +
       '<div class="m' + (mode === 'listen' ? ' on' : '') + '" data-mo="listen" onclick="openVoiceTrain.__mode(\'listen\')"><span class="nav-icon" data-icon="headphones" data-icon-size="14"></span>听力精听</div>' +
       '<div class="m' + (mode === 'speak' ? ' on' : '') + '" data-mo="speak" onclick="openVoiceTrain.__mode(\'speak\')"><span class="nav-icon" data-icon="mic" data-icon-size="14"></span>口语跟读</div></div>' +
+      // N9-18 P1：精听 / 挑战 双模式（需求 8），仅听力精听 tab 下沉到三阶段流程
+      '<div class="vp-gmode" id="vpGMode"></div>' +
       // N9-18：场景条改为两级分类（大类 + 具体场景），内容由 renderSceneBar 填充
       '<div class="vp-cats" id="vpCats"></div>' +
       '<div class="vp-subs" id="vpSubs"></div>' +
@@ -487,6 +729,7 @@
     if (window.openAppModal) window.openAppModal('vpMask'); // 统一弹窗基建：锁滚动（ESC 关闭由 app.js 按 #vpMask 联动 __close）
     paintIcons();
     renderSceneBar();
+    renderGModeBar();
     render();
   }
   /* ============ P1 修复：Web Speech 安全播放层（2026-09-15） ============
@@ -625,14 +868,42 @@
   window.openVoiceTrain.__mode = function (mo) {
     if (!S || !mo) return;
     S.mode = mo; S.showEn = (mo === 'speak'); S.i = 0; S.full = false; S.aiOpen = false; vpStop();
+    S.stage = 'listen'; // 切 tab 复位到阶段①，避免口语 tab 空转「理解」流程
     // K19 修复：切换 tab 时同步更新选中态（此前 on 类写死于初次渲染，点击另一 tab 样式不变）
     var tabs = document.querySelectorAll('#vpMask .vp-mode .m');
     for (var ti = 0; ti < tabs.length; ti++) { tabs[ti].classList.toggle('on', tabs[ti].getAttribute('data-mo') === mo); }
     var tt = document.getElementById('vpTitle');
     if (tt) tt.innerHTML = '<span class="nav-icon" data-icon="' + (mo === 'listen' ? 'headphones' : 'mic') + '" data-icon-size="16"></span> 听说训练 · ' + (mo === 'listen' ? '听力精听' : '口语跟读');
     // 切 tab 后重绘顶部/场景区图标态（chips 是静态 DOM，仅需标题与句区刷新）
+    renderGModeBar();
     render();
     paintIcons();
+  };
+  // N9-18 P1（需求 8）：精听 / 挑战 模式切换
+  window.openVoiceTrain.__genMode = function (gk) {
+    if (!S || !gk) return;
+    S.genMode = (gk === 'challenge') ? 'challenge' : 'intensive';
+    S.stage = 'listen'; S.full = false; S.aiOpen = false;
+    if (isChallenge()) { S.showEn = false; S.showZh = false; }
+    vpStop();
+    toast(isChallenge() ? '挑战模式：隐藏原文/中文/慢速，只管听' : '精听模式：可慢速、看原文、看中文');
+    renderGModeBar();
+    render();
+  };
+  // N9-18 收放：大类条展开/收起（内联挂全局，重渲染后仍可用）
+  window.openVoiceTrain.__catsToggle = function () {
+    if (!S) return;
+    S.catsOpen = !(S.catsOpen === true);
+    // 展开大类时顺手收起条目条，避免两级同时铺满屏幕（保持「一次只看一层」）
+    if (S.catsOpen) S.subsOpen = false;
+    renderSceneBar();
+  };
+  // N9-18 收放：条目条展开/收起
+  window.openVoiceTrain.__subsToggle = function () {
+    if (!S) return;
+    S.subsOpen = !(S.subsOpen === true);
+    if (S.subsOpen) S.catsOpen = false;
+    renderSceneBar();
   };
   // N9-18：第一级大类切换（点大类 → 展开该类下的具体场景，并自动选中第一个）
   window.openVoiceTrain.__group = function (gk) {
@@ -640,7 +911,10 @@
     var keys = sceneKeysOf(gk);
     if (!keys.length) { toast('「' + groupTitle(gk) + '」暂未收录场景，先看看其它分类'); return; }
     S.group = gk;
-    if (keys.indexOf(S.scene) < 0) { S.scene = keys[0]; S.i = 0; S.showEn = S.mode === 'speak'; S.showZh = true; }
+    if (keys.indexOf(S.scene) < 0) { S.scene = keys[0]; S.i = 0; S.showEn = S.mode === 'speak'; S.showZh = true; S.stage = 'listen'; }
+    // 选中即收起大类，并自动展开条目条（用户下一步就是挑条目，一步到位不打断）
+    S.catsOpen = false;
+    S.subsOpen = true;
     renderSceneBar();
     render();
   };
@@ -648,14 +922,39 @@
   window.openVoiceTrain.__scene = function (k) {
     if (!S || !SCENES[k]) return;
     S.scene = k; S.i = 0; S.showEn = S.mode === 'speak'; S.showZh = true;
-    S.group = groupKeyOf(k); S.full = false; S.aiOpen = false;
+    S.group = groupKeyOf(k); S.full = false; S.aiOpen = false; S.stage = 'listen';
+    // 选完条目即收起，回到「当前项一行」的紧凑态（同 company-lib setCat 习惯）
+    S.subsOpen = false;
     renderSceneBar(); render();
   };
-  window.openVoiceTrain.__prev = function () { if (!S) return; if (S.i > 0) { S.i--; } else { toast('已是第一句'); } vpStop(); render(); };
+  window.openVoiceTrain.__prev = function () { if (!S) return; if (S.i > 0) { S.i--; } else { toast('已是第一句'); } S.stage = 'listen'; vpStop(); render(); };
   window.openVoiceTrain.__next = function () {
     if (!S) return;
-    if (S.i < SCENES[S.scene].lines.length - 1) { S.i++; vpStop(); render(); }
+    if (S.i < SCENES[S.scene].lines.length - 1) { S.i++; S.stage = 'listen'; vpStop(); render(); }
     else { toast('本情景完成！换个情景再练吧'); }
+  };
+  // N9-18 P1：阶段推进 —— 阶段① →（点击「听完了，去判断」）→ 阶段②
+  window.openVoiceTrain.__toCheck = function () {
+    if (!S) return;
+    S.stage = 'check';
+    vpStop();
+    render();
+  };
+  // N9-18 P1：阶段② 听懂 / 没听懂 → 记录到今日统计 → 进入阶段③
+  window.openVoiceTrain.__mark = function (ok) {
+    if (!S) return;
+    var understood = !!ok;
+    trainMark(S.scene, S.i, understood, 0);
+    if (!understood) {
+      // 没听懂：精听模式放宽限制（自动揭示原文+中文），挑战模式维持隐藏
+      if (!isChallenge()) { S.showEn = true; S.showZh = true; }
+      toast('没关系，再来一遍或多看原文');
+    } else {
+      toast('很棒！进入跟读阶段');
+    }
+    S.stage = 'speak';
+    vpStop();
+    render();
   };
   // N9-18：全文跳转 / 全文开关 / AI 助教开关 / AI 分栏 / 单词慢速朗读
   window.openVoiceTrain.__jump = function (n) {
@@ -663,7 +962,7 @@
     var lns = SCENES[S.scene].lines;
     n = Number(n);
     if (isNaN(n) || n < 0 || n >= lns.length) return;
-    S.i = n; vpStop(); render();
+    S.i = n; S.stage = 'listen'; vpStop(); render();
   };
   window.openVoiceTrain.__full = function () { if (!S) return; S.full = !S.full; render(); };
   window.openVoiceTrain.__ai = function () { if (!S) return; S.aiOpen = !S.aiOpen; render(); };
@@ -686,6 +985,7 @@
   window.openVoiceTrain.__play = function () { if (vpIsPlaying()) { vpStop(); return; } play(); };
   window.openVoiceTrain.__slow = function () {
     if (!S) return;
+    if (isChallenge()) { toast('挑战模式下不可慢速，切回精听模式即可'); return; }
     S.slow = true;
     toast('慢速播放');
     var it = SCENES[S.scene].lines[S.i];
@@ -703,8 +1003,8 @@
     vpSafeSpeak(it.en, 'en-US', 0.7);
   };
   window.openVoiceTrain.__stop = function () { vpStop(); };
-  window.openVoiceTrain.__en = function () { if (!S) return; S.showEn = !S.showEn; render(); };
-  window.openVoiceTrain.__zh = function () { if (!S) return; S.showZh = !S.showZh; render(); };
+  window.openVoiceTrain.__en = function () { if (!S) return; if (isChallenge()) { toast('挑战模式下不显示原文，切回精听模式即可'); return; } S.showEn = !S.showEn; render(); };
+  window.openVoiceTrain.__zh = function () { if (!S) return; if (isChallenge()) { toast('挑战模式下不显示中文，切回精听模式即可'); return; } S.showZh = !S.showZh; render(); };
   window.openVoiceTrain.__rec = function () {
     if (!S || typeof startEnglishRecognition !== 'function') { toast('当前浏览器/页面不支持语音识别，请用文本跟读'); return; }
     var it = SCENES[S.scene].lines[S.i];
@@ -713,10 +1013,15 @@
     startEnglishRecognition(function () { }, function (finalText) {
       var el = document.getElementById('vpEval'); if (!el) return;
       var ev = (typeof evaluateSpeaking === 'function') ? evaluateSpeaking(finalText, it.en) : { score: 0, tips: ['（无评分模块）'] };
+      // N9-18 P1：跟读分并入今日统计（需求 7「跟读平均分」）
+      try { trainMark(S.scene, S.i, null, Number(ev && ev.score) || 0); } catch (e0) {}
       el.innerHTML = '<div style="font-weight:700;color:var(--primary);font-size:18px">综合得分 ' + (ev.score || 0) + '</div>' +
         '<div style="color:var(--text-secondary);margin:6px 0">你说了：' + esc(finalText) + '</div>' +
         '<div style="font-size:12px;color:var(--text-muted)">参考答案：' + esc(it.en) + '</div>';
       if (ev.tips && ev.tips.length) el.innerHTML += '<div style="margin-top:6px;font-size:12px;color:#666">' + ev.tips.map(function (t) { return '• ' + t; }).join('<br>') + '</div>';
+      // 刷新训练状态（点阵 + 今日统计）
+      var sp = document.getElementById('vpBody');
+      if (sp) render();
     }, function () { });
   };
   // 启动听力三类题型增量合并（失败静默回退内置 3 场景）

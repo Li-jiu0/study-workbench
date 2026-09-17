@@ -333,7 +333,7 @@
     var map = {
       '四级词汇.html': 'cet', '面试题库.html': 'iv', '商务礼仪.html': 'etiquet',
       '场景话术库.html': 'scenes', '万能金句库.html': 'quotes', 'PPT版式库.html': 'layouts',
-      'PPT案例拆解.html': 'cases', '行测刷题.html': 'exam', '央国企笔试.html': 'exam'
+      'PPT案例拆解.html': 'cases', '行测刷题.html': 'exam', '行测.html': 'exam'
     };
     var name = decodeURIComponent(location.pathname.split('/').pop());
     var key = map[name];

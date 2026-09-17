@@ -17,7 +17,7 @@ from database import (AiLog, AiUsage, Note, SessionLocal, User, get_db,
                       now_iso)
 from rate_limit import rate_limit
 from schemas import ChatIn
-from security import get_current_user
+from security import get_current_user, get_current_user_optional
 
 router = APIRouter(prefix="/api/ai", tags=["ai"])
 
@@ -52,7 +52,7 @@ def _note_system(note: Note) -> str:
 
 
 @router.get("/models")
-def list_models(user: User = Depends(get_current_user)):
+def list_models(user: User = Depends(get_current_user_optional)):
     """前端下拉框数据源：只返回已配置密钥的服务商（名称 + 模型名），绝不含密钥。"""
     return {
         "models": [
@@ -88,13 +88,16 @@ def ai_history(limit: int = 200, user: User = Depends(get_current_user), db: Ses
 
 
 @router.post("/chat")
-async def chat(body: ChatIn, user: User = Depends(get_current_user),
+async def chat(body: ChatIn, user: User = Depends(get_current_user_optional),
                db: Session = Depends(get_db), _rl: None = Depends(rate_limit("ai"))):
+    # 游客（未登录）也可使用：登录用户走每日调用限额，游客仅受每 IP 限流保护，
+    # 这样手机浏览器 / 电脑浏览器 / APK 三种环境都不依赖第三方平台的跨域与直连能力。
     providers = configured_providers()
     cfg = providers.get(body.provider)
     if not cfg:
         raise HTTPException(400, "该模型未在服务端配置密钥，请在 server/.env 中填写对应 API Key")
-    _record_usage(db, user.id)  # 先计数、超限直接 429，避免空耗
+    if user:
+        _record_usage(db, user.id)  # 先计数、超限直接 429，避免空耗
 
     messages = [m for m in body.messages if isinstance(m, dict)
                 and m.get("role") in ("user", "assistant", "system")
@@ -111,7 +114,7 @@ async def chat(body: ChatIn, user: User = Depends(get_current_user),
 
     # 入库：用户的最后一次提问（避免把整段历史重复入库）
     last_user = next((m for m in reversed(messages) if m["role"] == "user"), None)
-    if last_user:
+    if user and last_user:
         db.add(AiLog(user_id=user.id, role="user", content=last_user["content"],
                      provider=body.provider, created_at=now_iso()))
         db.commit()
@@ -159,16 +162,17 @@ async def chat(body: ChatIn, user: User = Depends(get_current_user),
             acc.append(msg)
             yield msg.encode("utf-8")
         finally:
-            # 保存完整回答到数据库（尽力而为，失败不影响已输出的内容）
-            reply = "".join(acc)
-            db2 = SessionLocal()
-            try:
-                db2.add(AiLog(user_id=user.id, role="assistant", content=reply or "（空回复）",
-                              provider=body.provider, created_at=now_iso()))
-                db2.commit()
-            except Exception:
-                pass
-            finally:
-                db2.close()
+            # 保存完整回答到数据库（登录用户才落库，游客不入库；失败不影响已输出的内容）
+            if user:
+                reply = "".join(acc)
+                db2 = SessionLocal()
+                try:
+                    db2.add(AiLog(user_id=user.id, role="assistant", content=reply or "（空回复）",
+                                  provider=body.provider, created_at=now_iso()))
+                    db2.commit()
+                except Exception:
+                    pass
+                finally:
+                    db2.close()
 
     return StreamingResponse(gen(), media_type="text/plain; charset=utf-8")
