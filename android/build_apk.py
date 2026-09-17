@@ -99,6 +99,13 @@ REQUIRED_ASSETS = [
     "ai-service.js",
     "ai-page.js",
     "ai-settings.js",
+    # --- R74-R85 新增：动态空间/TA资料页/代理支持（缺一即新页面静默失效） ---
+    "xt-moments.js",
+    "xt-moments.css",
+    "xt-profile.js",
+    "xt-profile.css",
+    "xt-settings.js",
+    "net-compat.js",
     # --- R70 新增：启动期基础设施 ---
     "xt-polyfill.js",
     "xt-toast.js",
@@ -134,13 +141,19 @@ if _missing_data_src:
 for item in os.listdir(os.path.join(ROOT, "assets")):
     src = os.path.join(ROOT, "assets", item)
     dst = os.path.join(STAGE, "assets", item)
+    if ".bak" in item.lower():
+        continue  # R73b: 备份文件不入包（含密钥快照/减体积）
     if os.path.isdir(src):
-        shutil.copytree(src, dst, dirs_exist_ok=True)
+        shutil.copytree(src, dst, dirs_exist_ok=True, ignore=shutil.ignore_patterns("*.bak*"))
     else:
         shutil.copy2(src, dst)
 
 # 复制一级资源目录 data/（递归，含 data/mock-papers.js 及将来新增文件）
-shutil.copytree(_data_dir, os.path.join(STAGE, "data"), dirs_exist_ok=True)
+shutil.copytree(_data_dir, os.path.join(STAGE, "data"), dirs_exist_ok=True, ignore=shutil.ignore_patterns("*.bak*"))
+for _root, _dirs, _files in os.walk(os.path.join(STAGE, "data")):
+    for _f in _files:
+        if ".bak" in _f.lower():
+            os.remove(os.path.join(_root, _f))
 _data_count = sum(len(files) for _, _, files in os.walk(os.path.join(STAGE, "data")))
 print(f"✓ 一级资源目录 data/ 已递归复制（{_data_count} 个文件）")
 
@@ -169,7 +182,7 @@ print(f"✓ APK 资源白名单校验通过（{len(REQUIRED_ASSETS)} 项，含�
 print(f"✓ APK 数据资源白名单校验通过（{len(REQUIRED_DATA_ASSETS)} 项：data/mock-papers.js）")
 
 # ---- 2) 复制工程文件到 ASCII 目录 ----
-shutil.copytree(os.path.join(ROOT, "android", "res"), RES, dirs_exist_ok=True)
+shutil.copytree(os.path.join(ROOT, "android", "res"), RES, dirs_exist_ok=True, ignore=shutil.ignore_patterns("*.bak*"))
 shutil.copy2(os.path.join(ROOT, "android", "AndroidManifest.xml"), MANIFEST)
 shutil.copytree(os.path.join(ROOT, "android", "java"), JAVA_SRC, dirs_exist_ok=True)
 print("工程文件已复制到 ASCII 临时目录")
