@@ -60,5 +60,15 @@
             android:name=".MsgPollService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+
+        <!-- R101：应用内下载更新包自动安装 —— Android 7+ 系统安装器读 file:// 会
+             FileUriExposedException，须经 content:// 授权读取。本工程零 androidx/support
+             依赖（系统 API 无 FileProvider 类），故自写极简 ApkFileProvider：仅开放
+             系统公共 Download 目录下的 .apk（防目录穿越），exported=false + 运行时授权。 -->
+        <provider
+            android:name=".ApkFileProvider"
+            android:authorities="com.study.workbench.apkfile"
+            android:exported="false"
+            android:grantUriPermissions="true" />
     </application>
 </manifest>

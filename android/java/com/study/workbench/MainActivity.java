@@ -2,21 +2,28 @@ package com.study.workbench;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.DownloadManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.view.KeyEvent;
+import android.webkit.DownloadListener;
 import android.webkit.JavascriptInterface;
+import android.webkit.URLUtil;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -61,6 +68,9 @@ public class MainActivity extends Activity {
     private static final int NOTIFY_ID = 101;
     private static final int REQ_NOTIFY_PERM = 2003;
     private static final int REQ_LOCATION_PERM = 2004;
+
+    // ---- 【应用内更新下载】R101：系统 DownloadManager 后台下载 APK + 完成广播自动弹安装 ----
+    private BroadcastReceiver apkDoneReceiver = null;
     private volatile String pendingNotifyTitle = null;
     private volatile String pendingNotifyText = null;
     private volatile String xtAndroidJs = null;   // R73：桥接胶水 assets/xt-android.js 内容缓存（注入前读一次）
@@ -92,6 +102,9 @@ public class MainActivity extends Activity {
         //   Android 6.0+ ACCESS_FINE/COARSE_LOCATION 属危险权限，仅在 Manifest 声明不够，
         //   必须运行时申请；拒绝也不影响其它功能（页面侧会降级为手动填写地区）。
         maybeRequestLocationPermission();
+        // 【应用内更新下载】R101：注册 DownloadManager 下载完成广播（Context 级，
+        //   不依赖 WebView 页面存活 —— 用户退出检测更新页/切后台，下载完成仍能自动弹安装）。
+        registerApkDoneReceiver();
 
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);            // 全站逻辑为原生 JS
@@ -250,6 +263,21 @@ public class MainActivity extends Activity {
                         }
                     }
                 });
+            }
+            /** 【R101】App 内下载更新包 —— 交给系统 DownloadManager 后台下载（退出页面不中断），完成后自动弹安装。
+             *  前端契约：AndroidBridge.downloadApk(url, fileName)；fileName 可为空（原生兜底推断）。 */
+            @JavascriptInterface
+            public void downloadApk(final String url, final String fileName) {
+                try {
+                    final String u = (url == null) ? "" : url.trim();
+                    if (u.isEmpty()) { toast("下载地址为空"); return; }
+                    runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            // 与 WebView DownloadListener 共用同一实现（enqueueApkDownload）
+                            enqueueApkDownload(u, fileName, null);
+                        }
+                    });
+                } catch (Throwable e) { /* 下载失败不影响页面其它功能 */ }
             }
         }, "AndroidBridge");
 
@@ -579,6 +607,23 @@ public class MainActivity extends Activity {
                 }
             }
         });
+
+        // 【应用内更新下载】R101（P0 根因修复）：安卓 WebView 里 a[download] / window.open(.apk)
+        //   【不会自动保存】，只会触发本回调 —— 此前未注册 DownloadListener，保存请求被静默丢弃，
+        //   表现为"进度 100% 显示下载完成，但手机上找不到安装包"。现统一交给系统 DownloadManager
+        //   后台下载（与 AndroidBridge.downloadApk 同一实现 enqueueApkDownload），落盘公共 Download 目录。
+        web.setDownloadListener(new DownloadListener() {
+            @Override
+            public void onDownloadStart(String url, String userAgent,
+                    String contentDisposition, String mimetype, long contentLength) {
+                // 文件名优先按 URL/响应头推断（URLUtil.guessFileName 会把 %E6%98%9F… 百分号编码
+                // 解码成中文文件名，如 星途-1.25.apk），推断不出由 enqueueApkDownload 内部兜底
+                String name = null;
+                try { name = URLUtil.guessFileName(url, contentDisposition, mimetype); }
+                catch (Throwable t) { name = null; }
+                enqueueApkDownload(url, name, mimetype);
+            }
+        });
     }
 
     /* ================= 原生 TTS 初始化 / 引擎兜底（v1.8：看门狗 + 引擎轮换） ================= */
@@ -764,6 +809,102 @@ public class MainActivity extends Activity {
                 android.widget.Toast.makeText(MainActivity.this, s, android.widget.Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+    /* ================= 【应用内更新下载】R101：DownloadManager 后台下载 + 完成自动弹安装 ================= */
+
+    /** 统一下载入口：交给系统 DownloadManager 后台下载（退出检测更新页面 / 切后台 / 关屏均不中断），
+     *  落盘 /storage/emulated/0/Download/，下载完成后由 apkDoneReceiver 自动弹安装界面。
+     *  两条入口共用本实现：
+     *    ① AndroidBridge.downloadApk(url, fileName) —— 页面 JS 主动调用（走系统下载，摆脱页面生命周期）
+     *    ② WebView DownloadListener —— 页面 a[download] / window.open(.apk) 的兜底路径
+     *  任何失败都兜底为浏览器打开该 URL，绝不影响其它功能。 */
+    private void enqueueApkDownload(final String url, final String fileName, final String mimetype) {
+        try {
+            // 1. 确定文件名：优先调用方指定 → URLUtil.guessFileName（对 URL 百分号编码解码，
+            //    %E6%98%9F%E9%80%94-1.25.apk → 星途-1.25.apk）→ 最终兜底 xingtu-update.apk
+            String name = (fileName == null || fileName.trim().isEmpty()) ? null : fileName.trim();
+            if (name == null) {
+                try {
+                    name = URLUtil.guessFileName(url, null, "application/vnd.android.package-archive");
+                } catch (Throwable t) { name = null; }
+            }
+            if (name == null || name.trim().isEmpty()) name = "xingtu-update.apk";
+            // 防路径穿越/非法文件名：DownloadManager 目标只接受纯文件名，去掉路径分隔符与保留字符
+            name = name.replaceAll("[\\\\/:*?\"<>|]", "_");
+            if (name.startsWith(".")) name = "xingtu-update.apk";
+
+            // 2. 构造下载请求：公共 Download 目录 + 通知栏可见 + 流量/漫游均允许（更新场景优先保证成功）
+            DownloadManager.Request req = new DownloadManager.Request(Uri.parse(url));
+            req.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, name);
+            req.setMimeType((mimetype == null || mimetype.trim().isEmpty())
+                    ? "application/vnd.android.package-archive" : mimetype.trim());
+            req.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+            req.setVisibleInDownloadsUi(true);
+            req.setAllowedOverMetered(true);
+            req.setAllowedOverRoaming(true);
+
+            // 3. 入队系统下载服务
+            DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+            if (dm == null) throw new IllegalStateException("DownloadManager 不可用");
+            dm.enqueue(req);
+            toast("正在下载安装包，可在通知栏查看进度");
+        } catch (Throwable t) {
+            // DownloadManager 不可用 / 入队失败：兜底用系统浏览器打开该 URL
+            try {
+                Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(i);
+            } catch (Throwable t2) {
+                toast("无法启动下载，请稍后重试");
+            }
+        }
+    }
+
+    /** 注册下载完成广播（onCreate 注册 / onDestroy 注销）。
+     *  BroadcastReceiver 是 Context 级注册，不依赖 WebView 页面 ——
+     *  用户退出「检测更新」页、甚至 App 退到后台，下载完成仍会自动弹安装。 */
+    private void registerApkDoneReceiver() {
+        try {
+            if (apkDoneReceiver != null) return;
+            apkDoneReceiver = new BroadcastReceiver() {
+                @Override public void onReceive(Context context, Intent intent) {
+                    long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L);
+                    if (id < 0) return;
+                    try {
+                        DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+                        Uri uri = (dm == null) ? null : dm.getUriForDownloadedFile(id);
+                        if (uri == null) return; // 下载失败/被取消：系统通知栏已提示，静默即可
+                        installApk(uri);
+                    } catch (Throwable t) {
+                        toast("下载完成但无法自动安装，请到 Download 目录手动点击安装包");
+                    }
+                }
+            };
+            registerReceiver(apkDoneReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+        } catch (Throwable e) { /* 注册失败：仅失去"自动弹安装"，下载本身不受影响 */ }
+    }
+
+    /** 弹系统安装界面（ACTION_VIEW + APK MIME）。
+     *  Android 7+（N）对 file:// 跨进程读会抛 FileUriExposedException，须经 content://
+     *  授权读取 —— 用自写 ApkFileProvider（零 androidx/support 依赖，仅开放 Download 目录 .apk）；
+     *  DownloadManager 返回的本来就是 content://（N+）时直接使用。
+     *  覆盖更新安装（同包名同签名，versionCode 递增）系统直接允许，无需"未知来源"授权；
+     *  任何异常兜底 Toast 提示手动安装。 */
+    private void installApk(Uri uri) {
+        try {
+            Uri target = uri;
+            if (Build.VERSION.SDK_INT >= 24 && "file".equals(uri.getScheme())) {
+                target = ApkFileProvider.uriFor(new java.io.File(uri.getPath()));
+            }
+            Intent i = new Intent(Intent.ACTION_VIEW);
+            i.setDataAndType(target, "application/vnd.android.package-archive");
+            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(i);
+        } catch (Throwable t) {
+            toast("无法自动弹出安装界面，请到 Download 目录手动点击安装包");
+        }
     }
 
     /* ================= 原生消息通知（R72 需求5） ================= */
@@ -1001,6 +1142,11 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        // 【R101】注销下载完成广播（与 onCreate 的 registerApkDoneReceiver 配对）
+        if (apkDoneReceiver != null) {
+            try { unregisterReceiver(apkDoneReceiver); } catch (Exception e) { }
+            apkDoneReceiver = null;
+        }
         if (web != null) {
             web.destroy();
             web = null;

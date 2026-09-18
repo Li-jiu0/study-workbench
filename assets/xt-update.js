@@ -907,6 +907,22 @@
     var btn = $('xtUpDownloadBtn');
     var filename = fileNameOf(url, data);
 
+    // R101：安卓 App 环境 —— 直接交给系统下载器后台下载（退出本页面不中断，通知栏看进度）
+    if (window.AndroidBridge && typeof window.AndroidBridge.downloadApk === 'function') {
+      try {
+        window.AndroidBridge.downloadApk(url, filename);
+        setProgress(null, '已开始后台下载，可在通知栏查看进度', true);
+        showGuide('<div class="xt-up-guide-title">正在后台下载新版本</div>' +
+          '<div class="xt-up-guide-row">安装包：<b>' + esc(filename) + '</b></div>' +
+          '<div class="xt-up-guide-row">下载由系统接管：退出本页面、切换到其他应用都不会中断。</div>' +
+          '<div class="xt-up-guide-row">下载完成后将自动弹出安装界面；若未弹出，可在通知栏或「Download」目录点击安装包安装。</div>');
+        toast('success', '已开始后台下载');
+        return;
+      } catch (e) {
+        /* 原生调用失败：降级走下方网页下载 */
+      }
+    }
+
     if (downloadXhr) {
       toast('info', '正在下载中，请稍候…');
       return;
