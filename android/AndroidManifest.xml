@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.study.workbench"
-    android:versionCode="24"
-    android:versionName="1.23">
+    android:versionCode="26"
+    android:versionName="1.25">
 
     <!-- 预留：将来若连接局域网后端（多人在线模式）需要联网权限；单机离线其实用不到 -->
     <uses-permission android:name="android.permission.INTERNET" />
