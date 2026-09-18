@@ -1,0 +1,56 @@
+icon map file = assets\icon-map.js bytes=39055
+names(123): alert-triangle, archive, arrow-left, arrow-left-right, arrow-right, award, badge-check, ban, banknote, bell, book, book-open, bookmark, bot, bow, brain, briefcase, building, calculator, calendar-clock, calendar-days, chart, chart-bar, check, check-circle, chevron-down, chevron-left, chevron-right, chevron-up, clipboard, clipboard-list, clock, close, cloud, coffee, delete, done, download, edit, eraser, eye, eye-off, file-text, fire, globe, graduation-cap, hand, handshake, headphones, heart, help-circle, home, id-card, image, in-progress, inbox, info, languages, lightbulb, locked, logout, mail, map, megaphone, menu, message-circle, message-square, messages-square, mic, monitor, moon, notebook, package, palette, pause, pen, pencil, phone, pin, play, plug, plus, pointer, presentation, puzzle, quote, rocket, rotate-ccw, rss, ruler, save, scene, search, send, settings, shield, shield-check, shirt, shuffle, skip-back, skip-forward, smartphone, smile, sparkles, sprout, star, sun, tag, target, thumbs-up, timer, trash, trophy, upload, user, users, utensils, video, volume-2, wine, wrench, x-circle, zap
+
+=== 学习概括.html <script> tags ===
+  L12    <script src="assets/xt-polyfill.js?v=20260916L">
+  L13    <script>
+  L412   <script src="assets/icon-map.js?v=20260916L" defer>
+  L413   <script src="assets/xt-toast.js?v=20260916L" defer>
+  L414   <script src="assets/error-boundary.js?v=20260916L" defer>
+  L415   <script src="assets/app.js?v=20260916L" defer>
+  L416   <script src="assets/quest.js?v=20260916L" defer>
+  L417   <script src="assets/config.js?v=20260916L" defer>
+  L418   <script src="assets/api.js?v=20260916L" defer>
+  L419   <script src="assets/study-stats.js?v=20260916L" defer>
+  L420   <script src="assets/ai-config.js?v=20260916L">
+  L421   <script src="assets/ai-presets.js?v=20260916L">
+  L422   <script src="assets/ai-service.js?v=20260916L">
+  L423   <script>
+
+=== 学习概括.html 尾部 30 行 ===
+  L807       var empty = document.getElementById('xgEmpty');
+  L808       var body = document.getElementById('xgBody');
+  L809       if (empty) empty.style.display = hasData ? 'none' : 'block';
+  L810       if (body) body.style.display = hasData ? 'block' : 'none';
+  L811     }
+  L812   
+  L813     /* ---------- 主流程 ---------- */
+  L814     function renderAll() {
+  L815       renderKpi();
+  L816       renderMinutes();
+  L817       renderBars();
+  L818       renderDonut();
+  L819       renderExamTable();
+  L820       renderRecent();
+  L821       renderAccumulate();
+  L822       renderWeekReport();
+  L823       renderKeys();
+  L824       renderEmpty();
+  L825     }
+  L826   
+  L827     renderAll();
+  L828   
+  L829     /* 离开页面再回来时刷新一次（其它页面产生的学习记录要能立刻反映） */
+  L830     window.addEventListener('focus', renderAll);
+  L831     document.addEventListener('visibilitychange', function () {
+  L832       if (document.visibilityState === 'visible') renderAll();
+  L833     });
+  L834   })();
+  L835   </script>
+  L836   </body>
+  L837   </html>
+  L838   
+
+=== 全站 notify.js 引用现状 ===
+pages referencing notify.js = 0
+total .html (non-bak) = 39

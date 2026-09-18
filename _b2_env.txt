@@ -1,0 +1,9 @@
+PPT版式库.html size=12924 crlf=232 lone_lf=0 mtime=1789532293.0028896
+assets/data-ppt-templates.js size=25641 crlf=566 lone_lf=0 mtime=1789373345.2389777
+assets/tpl-preview.js size=32863 crlf=710 lone_lf=0 mtime=1789532294.4277287
+images exists=True
+subdirs=[]
+ppt-templates dir exists=False
+ppt-files dir exists=False
+qa page_check exists=True
+escheck exists=True

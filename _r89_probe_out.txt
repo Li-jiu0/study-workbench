@@ -1,0 +1,32 @@
+=== A. TARGET FILES ===
+assets\xt-profile.js           140721  CRLF        crlf=2798    loneLF=0      loneCR=0     09-18 19:13
+assets\xt-profile.css           39053  CRLF        crlf=1224    loneLF=0      loneCR=0     09-18 18:52
+assets\chat-local.js           240000  CRLF        crlf=4381    loneLF=0      loneCR=0     09-18 18:19
+assets\xt-region.js             44387  LF          crlf=0       loneLF=886    loneCR=0     09-18 19:06
+assets\xt-moments.js            55240  CRLF        crlf=1121    loneLF=0      loneCR=0     09-18 19:05
+assets\xt-update.js             38340  LF          crlf=0       loneLF=1094   loneCR=0     09-18 18:52
+assets\icon-map.js              39868  CRLF        crlf=828     loneLF=0      loneCR=0     09-18 18:18
+assets\common.css              127605  CRLF        crlf=2915    loneLF=0      loneCR=0     09-18 18:51
+个人资料.html                        2959  CRLF        crlf=52      loneLF=0      loneCR=0     09-18 19:06
+私聊.html                         76885  CRLF        crlf=1167    loneLF=0      loneCR=0     09-18 19:09
+地区选择.html                       18313  CRLF        crlf=403     loneLF=0      loneCR=0     09-18 19:07
+朋友圈发布.html                      12612  CRLF        crlf=170     loneLF=0      loneCR=0     09-18 19:06
+更多.html                         18875  CRLF        crlf=319     loneLF=0      loneCR=0     09-18 19:06
+更新.html                         21439  CRLF        crlf=356     loneLF=0      loneCR=0     09-18 19:06
+设置.html                        164991  CRLF        crlf=2522    loneLF=0      loneCR=0     09-18 19:06
+
+=== B. HTML files containing '对话记录' ===
+  [dialog-record] tools\_preview_fetch.html
+  [dialog-record] 个人资料.html
+  [dialog-record] 备份\cleanup-20260912\settings.html
+  [dialog-record] 备份\cleanup-20260912\settings_wechat.html
+  [dialog-record] 备份\cleanup-20260912\设置_旧版.html
+  [dialog-record] 备份\设置.backup-20260911-bottomnav.html
+  [dialog-record] 备份\设置.backup-20260911-privacy.html
+  [dialog-record] 备份\设置.backup-20260911-t01.html
+  [dialog-record] 备份\设置.backup-20260911-t05.html
+
+=== C. HTML files referencing xt-profile.js ===
+  tools\_preview_fetch.html
+  个人中心.html
+  个人资料.html

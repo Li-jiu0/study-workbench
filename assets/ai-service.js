@@ -1012,18 +1012,19 @@
   // reasoning：推理型模型的思维链增量（reasoning_content / reasoning），content 为空时用于兜底。
   function consumeLine(line) {
     line = String(line == null ? "" : line).replace(/^[\s\r\n]+|[\s\r\n]+$/g, "");
-    if (line.indexOf("data:") !== 0) return { content: "", reasoning: "" };
+    if (line.indexOf("data:") !== 0) return { content: "", reasoning: "", usage: null };
     var data = line.slice(5).replace(/^[\s\r\n]+|[\s\r\n]+$/g, "");
-    if (!data || data === "[DONE]") return { content: "", reasoning: "" };
+    if (!data || data === "[DONE]") return { content: "", reasoning: "", usage: null };
     var obj = null;
-    try { obj = JSON.parse(data); } catch (e) { return { content: "", reasoning: "" }; }
+    try { obj = JSON.parse(data); } catch (e) { return { content: "", reasoning: "", usage: null }; }
     if (obj && obj.error) {
       var c = obj.error.code ? obj.error.code : null;
       var m2 = obj.error.message ? obj.error.message : "stream error";
       throw makeError("API流式错误:" + c + " " + m2, (c === 1305 ? 200 : 0), c);
     }
     var choices = obj ? obj.choices : null;
-    if (!choices || !choices.length) return { content: "", reasoning: "" };
+    // 需求 E：部分平台在最后一个 chunk 只发 usage（无 choices），这里照样取出，供用量统计
+    if (!choices || !choices.length) return { content: "", reasoning: "", usage: (obj && obj.usage) ? obj.usage : null };
     var delta = choices[0].delta;
     var content = (delta && delta.content) ? String(delta.content) : "";
     var reasoning = "";
@@ -1031,7 +1032,7 @@
       if (delta.reasoning_content != null) reasoning = String(delta.reasoning_content);
       else if (delta.reasoning != null) reasoning = String(delta.reasoning);
     }
-    return { content: content, reasoning: reasoning };
+    return { content: content, reasoning: reasoning, usage: (obj && obj.usage) ? obj.usage : null };
   }
 
   // 流式读取 SSE（仅在 canStreamRead 为真时调用）。返回 { text, reasoning }：
@@ -1043,6 +1044,7 @@
     var buffer = "";
     var full = "";
     var reasoning = "";
+    var usage = null;      // 需求 E：流内 usage（多数平台在最后一个 chunk 下发）
     var lineSeen = false;
     function handleLine(line) {
       // R72：流式读到 HTML（网关/CDN 错误页）时，首个非空行即可判定，直接抛人类可读错误；
@@ -1054,6 +1056,7 @@
         }
       }
       var pr = consumeLine(line);
+      if (pr.usage) usage = pr.usage;
       if (pr.reasoning) {
         reasoning += pr.reasoning;
         if (markActivity) markActivity();
@@ -1075,12 +1078,12 @@
       }
     }
     if (buffer.length) handleLine(buffer);
-    return { text: full, reasoning: reasoning };
+    return { text: full, reasoning: reasoning, usage: usage };
   }
 
   // 非流式兜底：整段文本里抽内容。兼容 SSE 文本、纯 JSON、以及被网关折叠成 JSON 的情况。
   // content 为空（null/""/非字符串）时按序回退 reasoning_content -> reasoning（推理型模型兜底）。
-  function extractContent(text, emit) {
+  function extractContent(text, emit, sink) {
     var s = String(text == null ? "" : text);
     if (s.indexOf("data:") !== -1) {
       var lines = s.split("\n");
@@ -1101,6 +1104,12 @@
       var obj = null;
       try { obj = JSON.parse(t); } catch (e) { obj = null; }
       if (obj) {
+        // 需求 E：整段响应里的 usage（OpenAI 兼容 usage / Gemini usageMetadata），取出供用量统计
+        if (obj.usage && typeof obj.usage === "object") {
+          if (sink) sink.usage = obj.usage;
+        } else if (obj.usageMetadata && typeof obj.usageMetadata === "object") {
+          if (sink) sink.usage = obj.usageMetadata;
+        }
         if (obj.error) {
           var c = obj.error.code ? obj.error.code : null;
           var m2 = obj.error.message ? obj.error.message : "API error";
@@ -1175,7 +1184,11 @@
               provider: p.id,
               messages: messages,
               temperature: temperature,
-              maxTokens: maxTokens
+              maxTokens: maxTokens,
+              // R88-M1：带上用户选中的模型 id（ai-config.js 的 id），
+              // 服务端据此解析真实模型名——此前不带导致恒跑 .env 默认模型，
+              // 表现为「选哪个模型都用同一个」。无选中则不带该字段（保持旧契约）。
+              modelId: (opt.modelId ? String(opt.modelId) : undefined)
             })
           }),
           respMs, null, "服务端中转超时（" + respMs + "ms 未响应）", "TIMEOUT_RELAY"
@@ -1217,7 +1230,16 @@
               await simulateTyping(full, onChunk);
             } catch (e3) { /* 忽略 */ }
           }
-          return { text: full, providerId: p.id, providerName: p.name };
+          // R88-M1：读取服务端回传的「实际执行的模型名」（响应头 X-Ai-Model-Used）。
+          // 跨域（APK）时需服务端 expose_headers 暴露才读得到；读不到就保持空串，
+          // 由上层如实回落到本地可辨别的名字，绝不编造。
+          var usedModel = "";
+          try {
+            if (resp.headers && typeof resp.headers.get === "function") {
+              usedModel = String(resp.headers.get("X-Ai-Model-Used") || "");
+            }
+          } catch (eH) { usedModel = ""; }
+          return { text: full, providerId: p.id, providerName: p.name, modelUsed: usedModel };
         }
         lastErr = makeError("中转空回复", 0, "EMPTY");
       } catch (e) {
@@ -1309,7 +1331,7 @@
   // ---------- R81：图片生成专用链路（types 含 imagegen 的模型，绝不走 chat/completions） ----------
   // 端点：provider.apiUrl（arkimage = .../images/generations）
   // 请求体：{ model, prompt, size:"1024x1024", response_format:"url" }；响应取 data[0].url
-  // 超时：Seedream-5-Pro 实测约 35s，图片生成给足 60s，不沿用文本模型的 15s 短超时。
+  // 超时：图片生成实测约 35s，给足 60s，不沿用文本模型的 15s 短超时。
   var IMAGE_TIMEOUT_RESPONSE = 60000;
   var IMAGE_TIMEOUT_TOTAL = 90000;
   var IMAGE_TIMEOUT_HEALTH = 60000;
@@ -1373,13 +1395,42 @@
     return txt.slice(0, 2000);
   }
 
-  async function requestImageGeneration(modelConfig, messages, onChunk, signal, options) {
+  // 老解析路径：兼容 data[] / images[] 两种响应体，url 与 b64_json 都收。
+  // 张数取响应体数组长度，绝不写死 1（R86：此前账本里生图恒为 1 张是假数据）。
+  function xtExtractImageUrls(json) {
+    var out = [];
+    if (!json || typeof json !== "object") return out;
+    var arr = null;
+    if (json.data && json.data.length) arr = json.data;
+    else if (json.images && json.images.length) arr = json.images;
+    if (!arr) return out;
+    for (var i = 0; i < arr.length; i++) {
+      var it = arr[i];
+      if (!it) continue;
+      if (typeof it.url === "string" && it.url) out.push(it.url);
+      else if (typeof it.b64_json === "string" && it.b64_json) out.push("data:image/png;base64," + it.b64_json);
+      else if (typeof it.image === "string" && it.image) out.push(it.image);
+    }
+    return out;
+  }
+
+  async function requestImageGeneration(modelConfig, messages, onChunk, signal, options, sink) {
     var cfg = getConfig();
     var provider = (modelConfig.provider && cfg && cfg.providers) ? cfg.providers[modelConfig.provider] : null;
     var apiKey = (typeof modelConfig.apiKey === "string" && modelConfig.apiKey)
       ? modelConfig.apiKey : (provider ? provider.apiKey : null);
+    // R86：端点解析接入能力注册表 —— provider.imageUrl（硅基）> imageApiUrl > apiUrl（火山方舟 arkimage
+    // 的 apiUrl 本身就是 images/generations）> 能力默认端点；模型自带 apiUrl 仍最优先。
     var apiUrl = (typeof modelConfig.apiUrl === "string" && modelConfig.apiUrl)
-      ? modelConfig.apiUrl : (provider ? provider.apiUrl : null);
+      ? modelConfig.apiUrl : null;
+    if (!apiUrl) {
+      var caps = xtCaps();
+      var imgCap = (caps && typeof caps.get === "function") ? caps.get("imagegen") : null;
+      if (imgCap && caps && typeof caps.endpoint === "function") {
+        try { apiUrl = String(caps.endpoint(imgCap, provider) || ""); } catch (eEp) { apiUrl = ""; }
+      }
+      if (!apiUrl && provider && provider.apiUrl) apiUrl = String(provider.apiUrl);
+    }
     if (!apiUrl) {
       var eNoUrl = makeError("图片生成缺少接口地址:" + modelConfig.id, 0, "NO_ENDPOINT");
       eNoUrl.modelId = modelConfig.id;
@@ -1396,8 +1447,12 @@
     var respMs = (opt.responseTimeout != null) ? opt.responseTimeout : IMAGE_TIMEOUT_RESPONSE;
     var totalMs = (opt.totalTimeout != null) ? opt.totalTimeout : IMAGE_TIMEOUT_TOTAL;
     var prompt = (opt.prompt != null && opt.prompt !== "") ? String(opt.prompt) : collectImagePrompt(messages);
+    // R86：分辨率取本次请求实际使用的值（调用方 opts.size > 模型 imageSize > 出厂默认）。
+    // 生图按「张数 × 分辨率」计费，账本必须记真实值，不能写死 1024x1024。
+    var usedSize = (opt.size != null && opt.size !== "") ? String(opt.size)
+      : ((modelConfig.imageSize != null && modelConfig.imageSize !== "") ? String(modelConfig.imageSize) : IMAGE_SIZE);
 
-    var body = { model: modelConfig.model, prompt: prompt, size: IMAGE_SIZE, response_format: "url" };
+    var body = { model: modelConfig.model, prompt: prompt, size: usedSize, response_format: "url" };
     var headers = { "Content-Type": "application/json", "Authorization": "Bearer " + apiKey };
     if (provider && provider.extraHeaders) {
       for (var hk in provider.extraHeaders) {
@@ -1438,22 +1493,48 @@
       iErr.modelName = modelConfig.name;
       throw iErr;
     }
-    var imgUrl = "";
-    try {
-      var j = JSON.parse(raw);
-      if (j && j.data && j.data[0]) {
-        if (typeof j.data[0].url === "string" && j.data[0].url) imgUrl = j.data[0].url;
-        else if (typeof j.data[0].b64_json === "string" && j.data[0].b64_json) {
-          imgUrl = "data:image/png;base64," + j.data[0].b64_json;
+    // R86：解析优先复用 ai-cap-image 的 parse（张数取 data[]/images[] 长度、用量口径与之对齐）；
+    // 能力模块没加载或没命中时，退到本文件原有解析，但同样必须拿到真实张数与分辨率。
+    var json = null;
+    try { json = JSON.parse(raw); } catch (e3) { json = null; }
+    var urls = [];
+    var capUsage = null;
+    var caps2 = xtCaps();
+    var imgCap2 = (caps2 && typeof caps2.get === "function") ? caps2.get("imagegen") : null;
+    if (json && imgCap2 && typeof imgCap2.parse === "function") {
+      try {
+        var pr = imgCap2.parse(json, {
+          meta: { size: usedSize, mode: "t2i" },
+          modelCfg: modelConfig,
+          input: { prompt: prompt, size: usedSize }
+        });
+        if (pr && pr.ok !== false && pr.result && pr.result.urls && pr.result.urls.length) {
+          urls = pr.result.urls;
+          capUsage = (pr.usage && typeof pr.usage === "object") ? pr.usage : null;
         }
-      }
-    } catch (e3) { imgUrl = ""; }
-    if (!imgUrl) {
+      } catch (eCapParse) { urls = []; capUsage = null; }
+    }
+    if (!urls.length) urls = xtExtractImageUrls(json);
+    if (!urls.length) {
       var eEmpty = makeError("图片生成返回空结果", 0, "EMPTY");
       eEmpty.modelId = modelConfig.id;
       eEmpty.modelName = modelConfig.name;
       throw eEmpty;
     }
+    if (!capUsage) {
+      var capsU = xtCaps();
+      if (capsU && typeof capsU.usage === "function") {
+        try { capUsage = capsU.usage({ kind: "imagegen", n: urls.length, size: usedSize }); } catch (eU) { capUsage = null; }
+      }
+      if (!capUsage) {
+        capUsage = {
+          kind: "imagegen", n: urls.length, size: usedSize,
+          inTok: 0, outTok: 0, exact: 0, chars: 0, seconds: 0, dim: 0, docs: 0
+        };
+      }
+    }
+    // R86：用量回传外层（sink 为空 = 健康检查等内部探测，不记账）
+    if (sink && typeof sink === "object") sink.capUsage = capUsage;
     // 与现有渲染衔接：返回 Markdown 图片串，由 ai-page.js renderMarkdown 渲染成 <img>
     // R73p：alt 必须剔掉 [ ] ( ) 与换行 —— 否则 renderMarkdown 的图片正则匹配不上，图片会退化成纯文本
     var altText = String(prompt)
@@ -1462,15 +1543,873 @@
       .replace(/\s+/g, " ")
       .replace(/^ +| +$/g, "")
       .slice(0, 40);
-    var out = "![" + altText + "](" + imgUrl + ")";
+    var parts = [];
+    for (var ui = 0; ui < urls.length; ui++) {
+      parts.push("![" + altText + "](" + urls[ui] + ")");
+    }
+    var out = parts.join("\n");
     if (onChunk) {
       try { onChunk(out, out); } catch (e4) { /* 渲染失败不影响结果 */ }
     }
     return out;
   }
 
-  // ---------- 核心请求 ----------
-  async function requestModel(modelConfig, messages, onChunk, signal, options) {
+  // ==================== R86：通用能力调用层（生图 / 视觉 / 语音 / 嵌入 / 重排） ====================
+  // 各能力的具体协议由 assets/ai-cap-*.js 注册进 window.XT_AI_CAPS（注册表在 ai-cap-registry.js），
+  // 这里只负责「查能力 -> 发请求 -> 解响应 -> 回传用量」，不掺任何单一能力的业务细节。
+  // 新增一种能力 = 新建一个 ai-cap-xxx.js，本文件不用改。
+  //
+  // 缺失降级原则（重要）：注册表脚本没加载 / cap.build 返回 null / 能力抛错，
+  // 一律退化为改造前的 chat/completions 链路，绝不让「能力层缺失」变成「对话不可用」。
+  var XT_KIND_BY_TYPE = {
+    imagegen: "imagegen",
+    audio: "asr",
+    embedding: "embed",
+    rerank: "rerank",
+    image: "vision",
+    translate: "text",     // 【R87/T02 新增】翻译走文本 token 口径
+    video: "video",        // 【R87/T02 新增】
+    "3d": "model3d"        // 【R87/T02 新增】type 保持 '3d'，kind 记 'model3d'
+  };
+  // 非对话类能力：既不能走服务端中转（/api/ai/chat 只发 {model, messages, stream}，
+  // 且会把 content 过滤成字符串），也不能进三模式链（模式链里编排的全是文本模型）
+  var XT_NON_CHAT_TYPES = ["imagegen", "audio", "embedding", "rerank", "video", "3d"]; // 【R87/T02 新增 video/3d】
+  // 账本 kind 白名单（老记录没有 kind 字段 -> 读取侧按 text 兜底）
+  var XT_KIND_LIST = ["text", "vision", "imagegen", "asr", "embed", "rerank", "video", "model3d"]; // 【R87/T02 新增 video/model3d】
+  var XT_CAP_TIMEOUT_DEFAULT = 60000;
+
+  // 能力注册表的安全访问器：脚本缺失 / 结构异常一律返回 null，调用方据此退化
+  function xtCaps() {
+    try {
+      if (typeof window === "undefined" || !window) return null;
+      var c = window.XT_AI_CAPS;
+      if (!c || typeof c.byType !== "function") return null;
+      return c;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function xtKindOfType(t) {
+    var s = String(t == null ? "" : t);
+    return XT_KIND_BY_TYPE[s] ? XT_KIND_BY_TYPE[s] : "";
+  }
+
+  // 非法/未知 kind 一律收敛为 text
+  function xtUsageNormKind(k) {
+    var s = String(k == null ? "" : k);
+    return inList(XT_KIND_LIST, s) ? s : "text";
+  }
+
+  // 模型是否为非对话类能力模型（生图 / 语音 / 嵌入 / 重排）
+  function xtIsNonChatModel(mc) {
+    var types = (mc && Object.prototype.toString.call(mc.types) === "[object Array]") ? mc.types : [];
+    for (var i = 0; i < types.length; i++) {
+      if (inList(XT_NON_CHAT_TYPES, String(types[i]))) return true;
+    }
+    return false;
+  }
+
+  function xtIsNonChatKind(k) {
+    var s = String(k == null ? "" : k);
+    return (s === "imagegen" || s === "asr" || s === "embed" || s === "rerank");
+  }
+
+  // 按模型 types 找到接管它的能力：命中注册表则拿 cap；注册表缺失时用内置类型表兜底（只定 kind，不接管请求）
+  function xtResolveCapability(modelCfg, opt) {
+    var info = { kind: "", cap: null, type: "" };
+    var types = (modelCfg && Object.prototype.toString.call(modelCfg.types) === "[object Array]") ? modelCfg.types : [];
+    var caps = xtCaps();
+    var fbKind = "";
+    var fbType = "";
+    for (var i = 0; i < types.length; i++) {
+      var t = String(types[i] == null ? "" : types[i]);
+      if (!t) continue;
+      var cap = caps ? caps.byType(t) : null;
+      if (cap && cap.key) {
+        info.kind = String(cap.key);
+        info.cap = cap;
+        info.type = t;
+        return info;
+      }
+      var k = xtKindOfType(t);
+      if (k && !fbKind) { fbKind = k; fbType = t; }
+    }
+    if (fbKind) {
+      info.kind = fbKind;
+      info.type = fbType;
+    }
+    return info;
+  }
+
+  // 取能力调用所需 Key：模型自带 > 用户自填 > provider 默认（与 chat 链路同一优先级）
+  function xtCapApiKey(modelCfg, provider) {
+    var selfKey = (modelCfg && typeof modelCfg.apiKey === "string" && modelCfg.apiKey) ? modelCfg.apiKey : "";
+    if (selfKey) return selfKey;
+    var userKey = "";
+    if (modelCfg && modelCfg.provider) {
+      try { userKey = localStorage.getItem("ai_user_key_" + modelCfg.provider) || ""; } catch (e) { userKey = ""; }
+    }
+    if (userKey) return userKey;
+    return (provider && provider.apiKey) ? String(provider.apiKey) : "";
+  }
+
+  // 合并请求头：能力自带 headers < provider.extraHeaders < 模型 extraHeaders < 鉴权（有则补）
+  function xtCapMergeHeaders(base, provider, modelCfg, apiKey) {
+    var out = {};
+    var k;
+    var i;
+    if (base && typeof base === "object") {
+      for (k in base) {
+        if (Object.prototype.hasOwnProperty.call(base, k)) out[k] = base[k];
+      }
+    }
+    var srcs = [];
+    if (provider && provider.extraHeaders && typeof provider.extraHeaders === "object") srcs.push(provider.extraHeaders);
+    if (modelCfg && modelCfg.extraHeaders && typeof modelCfg.extraHeaders === "object") srcs.push(modelCfg.extraHeaders);
+    for (i = 0; i < srcs.length; i++) {
+      for (k in srcs[i]) {
+        if (Object.prototype.hasOwnProperty.call(srcs[i], k)) out[k] = srcs[i][k];
+      }
+    }
+    if (apiKey && !out["Authorization"] && !out["authorization"]) out["Authorization"] = "Bearer " + apiKey;
+    return out;
+  }
+
+  // 兼容各家错误体：优先用注册表的 errText（SiliconFlow {code,message,data} / OpenAI {error:{message}}），
+  // 注册表缺失时本地实现同样逻辑，保证错误信息不会因为脚本缺失而退化成一串 [object Object]
+  function xtCapErrText(json, fallback) {
+    var fb = String(fallback == null ? "" : fallback);
+    var caps = xtCaps();
+    if (caps && typeof caps.errText === "function") {
+      try {
+        var s = caps.errText(json, fb);
+        if (s) return String(s);
+      } catch (e) { /* 落本地实现 */ }
+    }
+    var out = "";
+    try {
+      if (!json || typeof json !== "object") return fb;
+      if (json.message) out = String(json.message);
+      else if (json.msg) out = String(json.msg);
+      else if (json.error && json.error.message) out = String(json.error.message);
+      if (json.code != null && out) out = "[" + json.code + "] " + out;
+    } catch (e2) { out = ""; }
+    return out || fb;
+  }
+
+  // multipart 上传：老 WebView 的 FormData + fetch 组合不可靠，这里走 XHR。
+  // 绝不手写 Content-Type —— multipart boundary 必须交给浏览器自动生成，否则服务端解析不出文件。
+  function xtXhrSend(url, payload, headers, timeoutMs, method) {
+    return new Promise(function (resolve, reject) {
+      var xhr = null;
+      try {
+        xhr = new XMLHttpRequest();
+      } catch (eNew) {
+        reject(makeError("当前环境不支持上传（XMLHttpRequest 不可用）", 0, "NO_XHR"));
+        return;
+      }
+      var settled = false;
+      var timer = setTimeout(function () {
+        if (settled) return;
+        settled = true;
+        try { xhr.abort(); } catch (eA) { /* 忽略 */ }
+        reject(makeTimeoutError("能力调用超时（" + timeoutMs + "ms 未返回）", "TIMEOUT_TOTAL"));
+      }, timeoutMs);
+      function finish(fn, v) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        fn(v);
+      }
+      try {
+        xhr.open(method || "POST", url, true);
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState !== 4) return;
+          var text = "";
+          var status = 0;
+          try { text = String(xhr.responseText == null ? "" : xhr.responseText); } catch (eT) { text = ""; }
+          try { status = Number(xhr.status) || 0; } catch (eS) { status = 0; }
+          finish(resolve, { status: status, text: text });
+        };
+        xhr.onerror = function () { finish(reject, makeError("能力调用网络失败", 0, "NETWORK")); };
+        if (headers) {
+          for (var h in headers) {
+            if (!Object.prototype.hasOwnProperty.call(headers, h)) continue;
+            // multipart 的 Content-Type（含 boundary）由浏览器带，手写必然出错
+            if (String(h).toLowerCase() === "content-type") continue;
+            try { xhr.setRequestHeader(h, headers[h]); } catch (eH) { /* 老内核拒绝非法头名，忽略 */ }
+          }
+        }
+        xhr.send(payload);
+      } catch (eSend) {
+        finish(reject, makeError("能力调用发送失败：" +
+          ((eSend && eSend.message) ? eSend.message : "未知原因"), 0, "SEND_FAILED"));
+      }
+    });
+  }
+
+  /**
+   * 通用能力调用器：按能力模块自己声明的端点 / 方法 / 请求体发一次请求，并把用量回传给 sink。
+   * @param {Object} cap        能力对象（来自 XT_AI_CAPS）
+   * @param {Object} modelCfg   模型配置
+   * @param {Object} input      能力输入（由 xtBuildCapInput 组装）
+   * @param {Object} opt        透传给 cap.build 的 opts
+   * @param {Object} sink       用量收集器（可为空）；成功时写入 sink.capUsage
+   * @returns {Promise<*>}      cap.parse 归一后的 result
+   */
+  async function xtCallCapability(cap, modelCfg, input, opt, sink) {
+    var cfg = getConfig();
+    var provider = (modelCfg && modelCfg.provider && cfg && cfg.providers) ? cfg.providers[modelCfg.provider] : null;
+    var req = null;
+    try {
+      req = cap.build({ modelCfg: modelCfg, provider: provider, input: input || {}, opts: opt || {} });
+    } catch (eBuild) {
+      var eb = makeError("能力请求构造失败（" + cap.key + "）：" +
+        ((eBuild && eBuild.message) ? eBuild.message : "未知原因"), 0, "CAP_BUILD");
+      eb.modelId = modelCfg ? modelCfg.id : "";
+      eb.modelName = modelCfg ? modelCfg.name : "";
+      throw eb;
+    }
+    if (!req) {
+      var eNull = makeError("能力未生成请求（" + cap.key + "），已退回通用对话链路", 0, "CAP_NO_REQUEST");
+      if (modelCfg) { eNull.modelId = modelCfg.id; eNull.modelName = modelCfg.name; }
+      throw eNull;
+    }
+    if (req.ok === false) {
+      var eBad = makeError(String(req.err || ("能力请求构造失败：" + cap.key)), 0, "CAP_BUILD");
+      if (modelCfg) { eBad.modelId = modelCfg.id; eBad.modelName = modelCfg.name; }
+      throw eBad;
+    }
+    // 端点：模型自带 apiUrl 最优先（自定义模型），否则用能力解析出的端点
+    var url = ((modelCfg && typeof modelCfg.apiUrl === "string" && modelCfg.apiUrl) ? modelCfg.apiUrl : req.url);
+    if (!url) {
+      var eUrl = makeError("能力调用缺少接口地址（" + cap.key + "）", 0, "NO_ENDPOINT");
+      if (modelCfg) { eUrl.modelId = modelCfg.id; eUrl.modelName = modelCfg.name; }
+      throw eUrl;
+    }
+    var apiKey = xtCapApiKey(modelCfg, provider);
+    if (!apiKey) {
+      var eKey = makeError("能力调用缺少 API Key（" + cap.key + "）", 0, "NO_KEY");
+      if (modelCfg) { eKey.modelId = modelCfg.id; eKey.modelName = modelCfg.name; }
+      throw eKey;
+    }
+    var headers = xtCapMergeHeaders(req.headers, provider, modelCfg, apiKey);
+    var timeoutMs = (cap && typeof cap.timeout === "number" && cap.timeout > 0) ? cap.timeout : XT_CAP_TIMEOUT_DEFAULT;
+    var target = proxyWrapUrl(String(url), modelCfg ? modelCfg.provider : null);
+
+    var status = 0;
+    var raw = "";
+    if (req.formData) {
+      // multipart（语音识别等）：走 XHR，让浏览器自动带 boundary
+      var rx = await xtXhrSend(target, req.formData, headers, timeoutMs, req.method || "POST");
+      status = rx.status;
+      raw = rx.text;
+    } else {
+      var fetchOpts = {
+        method: req.method || "POST",
+        headers: headers,
+        body: (req.body != null) ? req.body : ""
+      };
+      var ctrl = makeAbortController();
+      if (ctrl) fetchOpts.signal = ctrl.signal;
+      var resp = null;
+      try {
+        resp = await raceTimeout(fetch(target, fetchOpts), timeoutMs, null,
+          "能力调用超时（" + timeoutMs + "ms 未返回）", "TIMEOUT_TOTAL");
+      } catch (eT) {
+        if (ctrl) { try { ctrl.abort(); } catch (eA) { /* 忽略 */ } }
+        if (modelCfg) { eT.modelId = modelCfg.id; eT.modelName = modelCfg.name; }
+        throw eT;
+      }
+      status = respStatus(resp);
+      try { raw = await readResponseText(resp); } catch (eR) { raw = ""; }
+    }
+
+    var json = null;
+    try { json = raw ? JSON.parse(raw) : null; } catch (eP) { json = null; }
+    if (!(status >= 200 && status < 300)) {
+      var em = xtCapErrText(json, (raw ? String(raw).replace(/\s+/g, " ").slice(0, 200) : ("HTTP " + status)));
+      var eHttp = makeError("能力调用失败（" + cap.key + "）：" + status + " " + em, status, "CAP_HTTP");
+      if (modelCfg) { eHttp.modelId = modelCfg.id; eHttp.modelName = modelCfg.name; }
+      eHttp.apiMessage = em;
+      throw eHttp;
+    }
+    if (!json) {
+      var eNj = makeError(nonJsonMessage(status, "", raw), status, "NON_JSON");
+      if (modelCfg) { eNj.modelId = modelCfg.id; eNj.modelName = modelCfg.name; }
+      throw eNj;
+    }
+    var out = null;
+    try {
+      out = cap.parse(json, { meta: (req && req.meta) ? req.meta : {}, modelCfg: modelCfg, input: input || {} });
+    } catch (eParse) {
+      var ePr = makeError("能力响应解析失败（" + cap.key + "）：" +
+        ((eParse && eParse.message) ? eParse.message : "未知原因"), status, "CAP_PARSE");
+      if (modelCfg) { ePr.modelId = modelCfg.id; ePr.modelName = modelCfg.name; }
+      throw ePr;
+    }
+    if (!out || out.ok === false) {
+      var eOut = makeError(xtCapErrText(json, (out && out.err) ? String(out.err) : ("能力调用失败：" + cap.key)),
+        status, "CAP_PARSE");
+      if (modelCfg) { eOut.modelId = modelCfg.id; eOut.modelName = modelCfg.name; }
+      throw eOut;
+    }
+    if (sink && typeof sink === "object") {
+      sink.capUsage = (out.usage && typeof out.usage === "object") ? out.usage : null;
+    }
+    return out.result;
+  }
+
+  // 取最后一条用户文本（兼容 content 为字符串 / 分段数组），用于给能力补默认输入
+  function xtLastUserText(messages) {
+    var arr = (messages && messages.length) ? messages : [];
+    for (var i = arr.length - 1; i >= 0; i--) {
+      var m = arr[i];
+      if (!m || m.role !== "user") continue;
+      var c = m.content;
+      if (typeof c === "string" && c) return c;
+      if (c && c.length) {
+        var buf = [];
+        for (var j = 0; j < c.length; j++) {
+          if (c[j] && c[j].type === "text" && typeof c[j].text === "string") buf.push(c[j].text);
+        }
+        if (buf.length) return buf.join(" ");
+      }
+    }
+    return "";
+  }
+
+  // 组装能力输入：调用方 opts.xtInput 为准，缺失项按 messages / 模型配置补默认。
+  // 音频等二进制走 opts.xtInput.blob（或 opts.file / opts.blob / opts.audioBlob）。
+  function xtBuildCapInput(cap, modelCfg, messages, opt) {
+    var o = opt || {};
+    var src = (o.xtInput && typeof o.xtInput === "object") ? o.xtInput : {};
+    var input = {};
+    var k;
+    for (k in src) {
+      if (Object.prototype.hasOwnProperty.call(src, k)) input[k] = src[k];
+    }
+    var txt = xtLastUserText(messages);
+    if (input.prompt == null) input.prompt = (o.prompt != null && o.prompt !== "") ? String(o.prompt) : txt;
+    if (input.query == null) input.query = input.prompt;
+    if (input.text == null) input.text = input.prompt;
+    if (input.texts == null) input.texts = input.prompt ? [input.prompt] : [];
+    if (input.documents == null) input.documents = [];
+    if (input.size == null) {
+      input.size = (o.size != null && o.size !== "") ? String(o.size)
+        : ((modelCfg && modelCfg.imageSize) ? String(modelCfg.imageSize) : IMAGE_SIZE);
+    }
+    if (input.batch == null) input.batch = Number(o.batch) || 1;
+    if (input.mode == null) input.mode = (cap && cap.defaultMode) ? String(cap.defaultMode) : "";
+    if (input.blob == null) {
+      if (o.file != null) input.blob = o.file;
+      else if (o.blob != null) input.blob = o.blob;
+      else if (o.audioBlob != null) input.blob = o.audioBlob;
+    }
+    if (input.fileName == null) input.fileName = (o.fileName != null) ? String(o.fileName) : "speech.wav";
+    return input;
+  }
+
+  // 能力结果 -> 对话串：ASR 返回识别文本，其余给一句人类可读摘要（原始对象放 sink.capResult）
+  function xtCapResultText(kind, result) {
+    if (result == null) return "";
+    if (kind === "asr") {
+      if (typeof result === "string") return result;
+      if (typeof result.text === "string") return result.text;
+    }
+    if (typeof result === "string") return result;
+    if (typeof result === "object") {
+      if (kind === "embed") {
+        var vs = (result.vectors && result.vectors.length) ? result.vectors.length : 0;
+        return "向量嵌入完成：" + vs + " 条 · " + (result.dim || 0) + " 维";
+      }
+      if (kind === "rerank") {
+        var rs = (result.ranked && result.ranked.length) ? result.ranked.length : 0;
+        return "结果重排完成：" + rs + " 条";
+      }
+      if (kind === "imagegen" && result.urls && result.urls.length) {
+        var ps = [];
+        for (var i = 0; i < result.urls.length; i++) ps.push("![](" + result.urls[i] + ")");
+        return ps.join("\n");
+      }
+      try {
+        var s = JSON.stringify(result);
+        return s.length > 2000 ? (s.slice(0, 2000) + "…") : s;
+      } catch (e) {
+        return "";
+      }
+    }
+    return String(result);
+  }
+
+  /**
+   * 直接跑一次能力（不经过对话降级链），供语音 / 嵌入 / 重排等无对话入口的场景使用，
+   * 同时保证每次调用都落一条用量账。
+   * @param {string} modelId 模型 id
+   * @param {Object} input   能力输入（如 { blob: File } / { texts: [...] } / { prompt, size }）
+   * @param {Object} opts    可选：{ xtNoUsage: true } 不记账
+   * @returns {Promise<{ok:boolean, kind:string, result:*, usage:*}>}
+   */
+  async function xtRunCapability(modelId, input, opts) {
+    var o = opts || {};
+    var raw = findModel(modelId);
+    var mc = raw ? applyOverrides(raw) : null;
+    if (!mc) throw makeError("未找到模型：" + modelId, 0, "NO_MODEL");
+    var info = xtResolveCapability(mc, o);
+    if (!info.kind) throw makeError("该模型没有可直连的能力：" + modelId, 0, "NO_CAP");
+    var cap = info.cap;
+    if (!cap || typeof cap.build !== "function") {
+      throw makeError("能力模块未加载：" + info.kind + "（" + modelId + "）", 0, "NO_CAP");
+    }
+    var startedAt = Date.now();
+    var sink = { usage: null, capUsage: null };
+    var capInput = (input && typeof input === "object") ? input : {};
+    var srcIn = (o.xtInput && typeof o.xtInput === "object") ? o.xtInput : {};
+    for (var k in srcIn) {
+      if (Object.prototype.hasOwnProperty.call(srcIn, k) && capInput[k] == null) capInput[k] = srcIn[k];
+    }
+    try {
+      var result;
+      if (typeof cap.run === "function") {
+        /* R92-A：异步能力（video / 3d）自带 run(ctx, onProgress)——创建→轮询→取结果→
+           上报模型平台用量全在能力模块内部完成。xtCallCapability 是单发请求链路，
+           撑不住分钟级异步任务（视频退到它只会拿到 taskId 拿不到结果）。 */
+        var capCfg = getConfig();
+        var capProvider = (mc && mc.provider && capCfg && capCfg.providers) ? capCfg.providers[mc.provider] : null;
+        var runRes = await cap.run({ modelCfg: mc, provider: capProvider, input: capInput },
+                                   (typeof o.onProgress === "function") ? o.onProgress : null);
+        if (!runRes || runRes.ok === false) {
+          var re = makeError((runRes && runRes.err) ? String(runRes.err) : ("能力执行失败：" + cap.key), 0, "CAP_RUN");
+          re.modelId = mc ? mc.id : "";
+          re.modelName = mc ? mc.name : "";
+          throw re;
+        }
+        result = runRes.result;
+        if (sink && typeof sink === "object") {
+          sink.capUsage = (runRes.usage && typeof runRes.usage === "object") ? runRes.usage : null;
+        }
+      } else {
+        result = await xtCallCapability(cap, mc, capInput, o, sink);
+      }
+      if (o.xtNoUsage !== true) {
+        try {
+          xtUsageRecordAuto({
+            ts: startedAt,
+            model: String(mc.name || ""),
+            modelId: String(mc.id || ""),
+            modelKey: String(mc.model || ""),
+            inputText: "",
+            reply: xtCapUsageSummary(info.kind, sink.capUsage),
+            ok: true,
+            capUsage: sink.capUsage,
+            ms: Date.now() - startedAt
+          });
+        } catch (eRec) { /* 记账失败绝不影响主流程 */ }
+      }
+      return { ok: true, kind: info.kind, result: result, usage: sink.capUsage };
+    } catch (e) {
+      if (o.xtNoUsage !== true) {
+        try {
+          xtUsageRecordAuto({
+            ts: startedAt,
+            model: String(mc.name || ""),
+            modelId: String(mc.id || ""),
+            modelKey: String(mc.model || ""),
+            inputText: "",
+            reply: "",
+            ok: false,
+            kind: info.kind,
+            ms: Date.now() - startedAt,
+            err: (e && e.message) ? String(e.message) : "能力调用失败"
+          });
+        } catch (eRec2) { /* 记账失败绝不影响主流程 */ }
+      }
+      throw e;
+    }
+  }
+
+  // 账本 reply 摘要：非对话类能力不存完整结果（生图 URL / 向量数组会把 1000 条账本撑爆）
+  function xtCapUsageSummary(kind, capUsage) {
+    var u = (capUsage && typeof capUsage === "object") ? capUsage : {};
+    var n = Math.round(Number(u.n) || 0);
+    if (kind === "imagegen") return "「" + n + " 张 · " + (u.size || "未标注分辨率") + "」";
+    if (kind === "asr") return "「" + (Math.round(Number(u.chars) || 0)) + " 字 · " + (Number(u.seconds) || 0) + " 秒」";
+    if (kind === "embed") return "「" + (Math.round(Number(u.docs) || 0)) + " 条 · " + (Math.round(Number(u.dim) || 0)) + " 维」";
+    if (kind === "rerank") return "「" + (Math.round(Number(u.docs) || 0)) + " 条重排」";
+    if (kind === "vision") return "「视觉理解 · " + (Math.round(Number(u.inTok) || 0) + Math.round(Number(u.outTok) || 0)) + " tokens」";
+    return "「" + kind + " · n=" + n + "」";
+  }
+
+  // ==================== 需求 E：模型用量统计（埋点 + 本地账本） ====================
+  // 设计约定：
+  //   1) 账本只写 localStorage 单键 xt_ai_usage_v1，上限 500 条，超出丢弃最旧的；
+  //   2) token 来源优先取上游 usage（prompt_tokens/completion_tokens、input_tokens/output_tokens，
+  //      Gemini 走 usageMetadata.promptTokenCount/candidatesTokenCount）；取不到时按字符数估算并在明细里标注；
+  //   3) 全程 try/catch：localStorage 不可用 / 超配额 / JSON 损坏 一律静默，绝不抛到对话主流程。
+  var USAGE_KEY = "xt_ai_usage_v1";
+  // R86：能力层接入后，生图 / 语音 / 嵌入 / 重排 也会各落一条账（此前只有文本会落），
+  // 账本填满速度约为改造前的两倍。上限 500 -> 1000，避免近期明细被过早挤出，
+  // 1000 条 JSON 约 200~300KB，仍在 localStorage 5MB 配额的安全区内。
+  var USAGE_MAX_RECORDS = 1000;
+  var USAGE_REPLY_MAX = 500;
+  var USAGE_ERR_MAX = 80;
+  // 按模型聚合时的分组分隔符（模型名理论上不会包含该控制字符）
+  var USAGE_SEP = "\u0001";
+
+  // 本地存储可用性探测（隐私模式 / 老内核下 localStorage 可能直接抛错）
+  function xtUsageStorage() {
+    try {
+      if (typeof localStorage === "undefined" || !localStorage) return null;
+      return localStorage;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // token 估算：中文约 1.5 字符/token，英文约 4 字符/token；CJK 与非 CJK 分别计后向上取整
+  function xtUsageEstimateTokens(text) {
+    var s = String(text == null ? "" : text);
+    if (!s) return 0;
+    var cjk = 0;
+    var other = 0;
+    for (var i = 0; i < s.length; i++) {
+      var code = s.charCodeAt(i);
+      if ((code >= 0x2E80 && code <= 0x9FFF) || (code >= 0xAC00 && code <= 0xD7AF) ||
+          (code >= 0xF900 && code <= 0xFAFF) || (code >= 0xFF00 && code <= 0xFF60)) {
+        cjk++;
+      } else if (code > 0x20) {
+        other++;
+      }
+    }
+    var n = Math.ceil(cjk / 1.5 + other / 4);
+    if (n <= 0) n = 1;
+    return n;
+  }
+
+  // 把 messages 拍平成纯文本（兼容 content 为字符串 / 分段数组两种形态），用于输入 token 估算
+  function xtUsageMessagesText(messages) {
+    var out = "";
+    var arr = (messages && messages.length) ? messages : [];
+    for (var i = 0; i < arr.length; i++) {
+      var m = arr[i];
+      if (!m) continue;
+      var c = m.content;
+      if (typeof c === "string") {
+        out += c + "\n";
+      } else if (c && c.length) {
+        for (var j = 0; j < c.length; j++) {
+          var p = c[j];
+          if (p && typeof p.text === "string") out += p.text + "\n";
+        }
+      }
+    }
+    return out;
+  }
+
+  // 归一化各家 usage 字段 -> { in, out }；取不到有效值返回 null（调用方据此回落估算）
+  function xtUsageNormUsage(u) {
+    if (!u || typeof u !== "object") return null;
+    var pin = null;
+    var pout = null;
+    if (u.prompt_tokens != null) pin = Number(u.prompt_tokens);
+    else if (u.input_tokens != null) pin = Number(u.input_tokens);
+    else if (u.promptTokenCount != null) pin = Number(u.promptTokenCount);
+    if (u.completion_tokens != null) pout = Number(u.completion_tokens);
+    else if (u.output_tokens != null) pout = Number(u.output_tokens);
+    else if (u.candidatesTokenCount != null) pout = Number(u.candidatesTokenCount);
+    if (pin != null && (!isFinite(pin) || pin < 0)) pin = null;
+    if (pout != null && (!isFinite(pout) || pout < 0)) pout = null;
+    if ((pin == null || pin <= 0) && (pout == null || pout <= 0)) return null;
+    return {
+      in: (pin == null) ? 0 : Math.round(pin),
+      out: (pout == null) ? 0 : Math.round(pout)
+    };
+  }
+
+  // 读取账本：JSON 损坏 / 存储不可用一律返回空数组，绝不影响主流程
+  function xtUsageRead() {
+    try {
+      var ls = xtUsageStorage();
+      if (!ls) return [];
+      var raw = ls.getItem(USAGE_KEY);
+      if (!raw) return [];
+      var arr = JSON.parse(raw);
+      if (!arr || !arr.length) return [];
+      var out = [];
+      for (var i = 0; i < arr.length; i++) {
+        if (arr[i] && typeof arr[i] === "object") out.push(arr[i]);
+      }
+      return out;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // 写入账本：超配额时丢弃最旧的一半后重试一次，仍失败则放弃（静默）
+  function xtUsageWrite(arr) {
+    try {
+      var ls = xtUsageStorage();
+      if (!ls) return false;
+      ls.setItem(USAGE_KEY, JSON.stringify(arr));
+      return true;
+    } catch (e) {
+      try {
+        var ls2 = xtUsageStorage();
+        if (!ls2) return false;
+        var half = arr.slice(Math.floor(arr.length / 2));
+        ls2.setItem(USAGE_KEY, JSON.stringify(half));
+        return true;
+      } catch (e2) {
+        return false;
+      }
+    }
+  }
+
+  // 追加一条明细（成功 / 失败都记），超出上限丢弃最旧的
+  function xtUsageRecord(entry) {
+    try {
+      if (!entry || typeof entry !== "object") return false;
+      var list = xtUsageRead();
+      list.push({
+        ts: Number(entry.ts) || Date.now(),
+        model: String(entry.model == null ? "" : entry.model) || "未命名模型",
+        modelId: String(entry.modelId == null ? "" : entry.modelId),
+        ok: entry.ok === false ? false : true,
+        inTok: Math.round(Number(entry.inTok) || 0),
+        outTok: Math.round(Number(entry.outTok) || 0),
+        exact: Number(entry.exact) || 0,
+        reply: String(entry.reply == null ? "" : entry.reply).slice(0, USAGE_REPLY_MAX),
+        ms: Math.round(Number(entry.ms) || 0),
+        err: entry.ok === false ? String(entry.err == null ? "" : entry.err).slice(0, USAGE_ERR_MAX) : ""
+      });
+      if (list.length > USAGE_MAX_RECORDS) list = list.slice(list.length - USAGE_MAX_RECORDS);
+      return xtUsageWrite(list);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // 埋点主入口：由「请求结束」处调用，内部决定 token 是实测还是估算
+  // o = { ts, model, modelId, modelKey, inputText, reply, ok, usage, ms, err }
+  // exact 位标记：1 = 输入实测，2 = 输出实测（3 = 两者实测，0 = 全估算）
+  function xtUsageRecordAuto(o) {
+    try {
+      var src = o || {};
+      var usage = xtUsageNormUsage(src.usage);
+      var reply = String(src.reply == null ? "" : src.reply);
+      var exact = 0;
+      var inTok = 0;
+      var outTok = 0;
+      if (usage && usage.in > 0) {
+        inTok = usage.in;
+        exact += 1;
+      } else {
+        inTok = xtUsageEstimateTokens(src.inputText);
+      }
+      if (usage && usage.out > 0) {
+        outTok = usage.out;
+        exact += 2;
+      } else {
+        outTok = xtUsageEstimateTokens(reply);
+      }
+      return xtUsageRecord({
+        ts: (src.ts != null) ? src.ts : Date.now(),
+        model: src.model || src.modelKey || "未命名模型",
+        modelId: src.modelId || "",
+        ok: src.ok !== false,
+        inTok: inTok,
+        outTok: outTok,
+        exact: exact,
+        reply: reply,
+        ms: (src.ms != null) ? src.ms : 0,
+        err: (src.ok === false) ? (src.err || "") : ""
+      });
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function xtUsageList() {
+    return xtUsageRead();
+  }
+
+  function xtUsageClear() {
+    try {
+      var ls = xtUsageStorage();
+      if (!ls) return false;
+      ls.setItem(USAGE_KEY, "[]");
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // 时间范围筛选：today（本地零点起）/ 7d / 30d / all
+  function xtUsageFilterByRange(records, range) {
+    var arr = (records && records.length) ? records : [];
+    var r = String(range == null ? "all" : range);
+    if (r === "all") return arr.slice();
+    var now = Date.now();
+    var start = 0;
+    if (r === "today") {
+      var d = new Date(now);
+      start = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0).getTime();
+    } else if (r === "7d") {
+      start = now - 7 * 24 * 60 * 60 * 1000;
+    } else if (r === "30d") {
+      start = now - 30 * 24 * 60 * 60 * 1000;
+    } else {
+      return arr.slice();
+    }
+    var out = [];
+    for (var i = 0; i < arr.length; i++) {
+      var ts = Number(arr[i] && arr[i].ts);
+      if (isFinite(ts) && ts >= start) out.push(arr[i]);
+    }
+    return out;
+  }
+
+  // 汇总行排序：tokens（默认，合计倒序）/ count / in / out / name（名称升序）/ time（最近使用倒序）
+  function xtUsageSortRows(rows, sortBy) {
+    var arr = (rows && rows.length) ? rows.slice() : [];
+    var by = String(sortBy == null ? "tokens" : sortBy);
+    arr.sort(function (a, b) {
+      if (by === "name") return String(a.model).localeCompare(String(b.model));
+      if (by === "count") {
+        if (b.count !== a.count) return b.count - a.count;
+        return b.total - a.total;
+      }
+      if (by === "in") {
+        if (b.inTok !== a.inTok) return b.inTok - a.inTok;
+        return b.total - a.total;
+      }
+      if (by === "out") {
+        if (b.outTok !== a.outTok) return b.outTok - a.outTok;
+        return b.total - a.total;
+      }
+      if (by === "time") {
+        if (b.lastTs !== a.lastTs) return b.lastTs - a.lastTs;
+        return b.total - a.total;
+      }
+      if (b.total !== a.total) return b.total - a.total;
+      if (b.count !== a.count) return b.count - a.count;
+      return String(a.model).localeCompare(String(b.model));
+    });
+    return arr;
+  }
+
+  // 按模型分类汇总：调用次数 / 输入 / 输出 / 合计 / 占比 / 失败数 / 最近使用
+  function xtUsageSummarize(records, range, sortBy) {
+    var rows = xtUsageFilterByRange(records, range);
+    var map = {};
+    var order = [];
+    var calls = 0;
+    var inTok = 0;
+    var outTok = 0;
+    var fail = 0;
+    var lastTs = 0;
+    for (var i = 0; i < rows.length; i++) {
+      var it = rows[i];
+      if (!it) continue;
+      var name = String(it.model == null ? "" : it.model) || "未命名模型";
+      var mid = String(it.modelId == null ? "" : it.modelId);
+      var key = name + USAGE_SEP + mid;
+      var row = map[key];
+      if (!row) {
+        row = {
+          model: name, modelId: mid, count: 0, inTok: 0, outTok: 0,
+          total: 0, fail: 0, lastTs: 0, exactCount: 0, ratio: 0
+        };
+        map[key] = row;
+        order.push(key);
+      }
+      var tin = Math.round(Number(it.inTok) || 0);
+      var tout = Math.round(Number(it.outTok) || 0);
+      var ts = Number(it.ts) || 0;
+      row.count += 1;
+      row.inTok += tin;
+      row.outTok += tout;
+      row.total += tin + tout;
+      if (it.ok === false) row.fail += 1;
+      if (Number(it.exact) || 0) row.exactCount += 1;
+      if (ts > row.lastTs) row.lastTs = ts;
+      calls += 1;
+      inTok += tin;
+      outTok += tout;
+      if (it.ok === false) fail += 1;
+      if (ts > lastTs) lastTs = ts;
+    }
+    var out = [];
+    var totalAll = inTok + outTok;
+    for (var k = 0; k < order.length; k++) {
+      var rr = map[order[k]];
+      rr.ratio = totalAll > 0 ? (rr.total / totalAll) : 0;
+      out.push(rr);
+    }
+    out = xtUsageSortRows(out, sortBy);
+    return {
+      rows: out,
+      calls: calls,
+      inTok: inTok,
+      outTok: outTok,
+      total: totalAll,
+      fail: fail,
+      lastTs: lastTs,
+      range: String(range == null ? "all" : range),
+      sortBy: String(sortBy == null ? "tokens" : sortBy)
+    };
+  }
+
+  function xtUsagePad2(n) {
+    var v = Number(n) || 0;
+    return (v < 10 ? "0" : "") + v;
+  }
+
+  function xtUsageFormatTime(ts) {
+    var n = Number(ts) || 0;
+    if (!n) return "—";
+    var d = new Date(n);
+    if (!d.getTime()) return "—";
+    var now = new Date();
+    var sameYear = (d.getFullYear() === now.getFullYear());
+    var md = xtUsagePad2(d.getMonth() + 1) + "-" + xtUsagePad2(d.getDate());
+    var hm = xtUsagePad2(d.getHours()) + ":" + xtUsagePad2(d.getMinutes());
+    return sameYear ? (md + " " + hm) : (d.getFullYear() + "-" + md + " " + hm);
+  }
+
+  function xtUsageFormatNum(n) {
+    var v = Math.round(Number(n) || 0);
+    var neg = v < 0;
+    var t = String(Math.abs(v));
+    var out = "";
+    while (t.length > 3) {
+      out = "," + t.slice(t.length - 3) + out;
+      t = t.slice(0, t.length - 3);
+    }
+    return (neg ? "-" : "") + t + out;
+  }
+
+  var XT_AI_USAGE = {
+    KEY: USAGE_KEY,
+    MAX_RECORDS: USAGE_MAX_RECORDS,
+    REPLY_MAX: USAGE_REPLY_MAX,
+    record: xtUsageRecord,
+    recordAuto: xtUsageRecordAuto,
+    list: xtUsageList,
+    clear: xtUsageClear,
+    estimateTokens: xtUsageEstimateTokens,
+    messagesText: xtUsageMessagesText,
+    normalizeUsage: xtUsageNormUsage,
+    filterByRange: xtUsageFilterByRange,
+    sortRows: xtUsageSortRows,
+    summarize: xtUsageSummarize,
+    formatTime: xtUsageFormatTime,
+    formatNum: xtUsageFormatNum
+  };
+
+  // ---------- 核心请求（需求 E：主体改名为 requestModelCore，外层 requestModel 包用量埋点） ----------
+  async function requestModelCore(modelConfig, messages, onChunk, signal, options, sink) {
     var cfg = getConfig();
     // ----- R64 N2：模型自带直连配置（自定义模型 / overrides）优先于 provider 默认 -----
     var provider = (modelConfig.provider && cfg.providers) ? cfg.providers[modelConfig.provider] : null;
@@ -1692,6 +2631,8 @@
         throw e4;
       }
       if (streamResult) {
+        // 需求 E：流式响应里的 usage（有则记为实测值，没有则由外层按字符数估算）
+        if (streamResult.usage && sink) sink.usage = streamResult.usage;
         fullText = streamResult.text || "";
         if (!fullText && streamResult.reasoning) {
           // 流式全程只有思维链、content 为空 -> 以 reasoning 作为最终文本（不加前缀，避免污染渲染）
@@ -1723,7 +2664,7 @@
         throw njErr;
       }
       try {
-        fullText = extractContent(String(whole), null);
+        fullText = extractContent(String(whole), null, sink);
       } catch (e6) {
         e6.requestInfo = debugInfo;
         e6.modelId = modelConfig.id;
@@ -1762,6 +2703,52 @@
     }
 
     return fullText;
+  }
+
+  // 需求 E：requestModel 外层包裹 —— 每次请求（成功 / 失败）都写一条用量明细。
+  // 埋点全程 try/catch：localStorage 不可用 / 超配额 / JSON 损坏都不会影响正常对话。
+  async function requestModel(modelConfig, messages, onChunk, signal, options) {
+    var opt = options || {};
+    // 健康检查等内部探测不计入用量（「批量检测」一次会灌进十几条噪声，把真实用量挤出去）
+    if (opt.xtNoUsage === true) {
+      return await requestModelCore(modelConfig, messages, onChunk, signal, opt, { usage: null });
+    }
+    var startedAt = Date.now();
+    var sink = { usage: null };
+    var mName = (modelConfig && modelConfig.name) ? String(modelConfig.name) : "";
+    var mId = (modelConfig && modelConfig.id) ? String(modelConfig.id) : "";
+    var mKey = (modelConfig && modelConfig.model) ? String(modelConfig.model) : "";
+    var inputText = "";
+    try { inputText = xtUsageMessagesText(messages); } catch (eIn) { inputText = ""; }
+    try {
+      var text = await requestModelCore(modelConfig, messages, onChunk, signal, opt, sink);
+      xtUsageRecordAuto({
+        ts: startedAt,
+        model: mName,
+        modelId: mId,
+        modelKey: mKey,
+        inputText: inputText,
+        reply: (typeof text === "string") ? text : "",
+        ok: true,
+        usage: sink.usage,
+        ms: Date.now() - startedAt
+      });
+      return text;
+    } catch (e) {
+      xtUsageRecordAuto({
+        ts: startedAt,
+        model: mName,
+        modelId: mId,
+        modelKey: mKey,
+        inputText: inputText,
+        reply: "",
+        ok: false,
+        usage: sink.usage,
+        ms: Date.now() - startedAt,
+        err: (e && e.message) ? String(e.message) : "请求失败"
+      });
+      throw e;
+    }
   }
 
   // ---------- R83：需梯子平台判定与降级提示（依据 providers[x].needVPN / needProxy） ----------
@@ -1833,7 +2820,33 @@
           for (var ri = 0; ri < msgs.length; ri++) relayMsgs.push(msgs[ri]);
           // R65-B：MAX 模式注入深度教学 system（置于最前，与站点 system 并存）
           if (opts.max) relayMsgs = withMaxSystem(relayMsgs);
-          var relayed = await relayChat(provs, relayMsgs, tempR, maxTR, opts.onChunk, reqOpts);
+          var relayStart = Date.now();
+          // R88-M1：把用户选中的模型 id 透传给中转，服务端据此解析真实模型名
+          var relayOpts = {};
+          for (var rk in reqOpts) { if (Object.prototype.hasOwnProperty.call(reqOpts, rk)) relayOpts[rk] = reqOpts[rk]; }
+          if (selId) relayOpts.modelId = selId;
+          var relayed = await relayChat(provs, relayMsgs, tempR, maxTR, opts.onChunk, relayOpts);
+          // 用量明细要显示「实际调用的模型名」：采用服务端回传的真实模型名；
+          // 拿不到时用本地选中模型的真实模型串（ai-config 的 model 字段）兜底；
+          // 再拿不到才用可辨别的「平台名」+ 未知标记——始终不伪造『看起来正常』的假名。
+          var relayUsedModel = (relayed && relayed.modelUsed) ? String(relayed.modelUsed) : "";
+          if (!relayUsedModel && selModel && selModel.model) relayUsedModel = String(selModel.model);
+          if (!relayUsedModel) {
+            relayUsedModel = (relayed && relayed.providerName)
+              ? (String(relayed.providerName) + "（模型名未知）")
+              : "服务端中转（模型名未知）";
+          }
+          xtUsageRecordAuto({
+            ts: relayStart,
+            model: relayUsedModel,
+            modelId: (relayed && relayed.providerId) ? ("relay:" + relayed.providerId) : "relay",
+            modelKey: "relay",
+            inputText: xtUsageMessagesText(relayMsgs),
+            reply: (relayed && relayed.text) ? String(relayed.text) : "",
+            ok: true,
+            usage: null,
+            ms: Date.now() - relayStart
+          });
           return {
             text: relayed.text,
             model: "relay:" + relayed.providerId,
@@ -2052,23 +3065,33 @@
   }
 
   // R66 N2：aiHealthCheck 支持可选第二参数 cfgOverride（临时配置）。签名一字不改。
-  //   window.aiHealthCheck(modelId, cfgOverride) -> Promise<{ok:boolean, ms:number, err:string|null}>
+  //   window.aiHealthCheck(modelId, cfgOverride) -> Promise<{ok:boolean, ms:number, err:string|null, kind:string}>
   //   cfgOverride（可选）: { apiUrl, apiKey, apiFormat, extraHeaders, modelId }
   // - 传 cfgOverride 时：用临时配置构造请求（apiUrl/apiKey/apiFormat/extraHeaders 覆盖；
   //   cfgOverride.modelId 覆盖实际请求的模型 id），不读也不写 ai_model_settings.overrides、
   //   不修改任何已存配置、结果不落盘（由调用方决定）。
   // - 不传时：行为与改造前完全一致（走 overrides 合并后的模型配置）。
-  // - 保持：maxTokens=1、12s 超时、绝不触发 recordCall / 不计入限频；err 值域不变
-  //   （http_XXX / cors / network / timeout / empty）并新增两个值：no_endpoint / no_key。
+  // - 保持：maxTokens=1、绝不触发 recordCall / 不计入限频；err 值域
+  //   （http_XXX / cors / network / timeout / empty）并新增 no_endpoint / no_key /
+  //   unsupported_probe（R87/T02：该能力未实现自动探测，不再误报 http_400）。
   //   R83：连通性检测超时统一 5 秒（文档 §四），超时即判不可用并降级，不长时间等待；
-  //   图片生成模型改走 images/generations 专用检测，超时 60s（Seedream-5-Pro 实测约 35s）。
+  //   图片生成模型改走 images/generations 专用检测，超时 60s（实测约 35s）。
+  //   R87 / T02：按模型能力分派探测——xtResolveCapability 找到接管能力后：
+  //     有 cap.probe(function) -> 走专用探针；无 probe 的文本族能力（vision/translate）
+  //     回落文本探测；无 probe 的非对话能力（asr/embed/rerank/video/model3d）返回
+  //     unsupported_probe。隐藏第三实参 batchScan===true（由 aiHealthCheckBatch 传入）
+  //     时，按 cap.probeNoAuto===true（取不到则按 kind 兜底）跳过成本极高的探针。
+  //     凡「按策略跳过 / 无法自动探测」一律带 skipped:true，err 仍取 unsupported_probe
+  //     （不新增 err 值域）；消费方据 skipped 判定「不写 health」（保持「无记录=可见」）。
   function aiHealthCheckImpl(modelId, cfgOverride) {
+    // 第三实参（隐藏）：批量扫描标记。对外声明的签名保持 (modelId, cfgOverride) 不变。
+    var batchScan = (arguments.length > 2 && arguments[2] === true);
     return new Promise(function (resolve) {
       var startedAt = Date.now();
       var ov = (cfgOverride && typeof cfgOverride === "object") ? cfgOverride : null;
       var raw = findModel(modelId);
       if (!raw && !ov) {
-        resolve({ ok: false, ms: 0, err: "not_found" });
+        resolve({ ok: false, ms: 0, err: "not_found", kind: "" });
         return;
       }
       var mc;
@@ -2100,8 +3123,8 @@
 
       // 端点 / Key 缺失：不抛异常，返回新增 err 值（调用方线1 会映射成用户可读文案）
       var eff = resolveEffectiveEndpointKey(ping);
-      if (!eff.apiUrl) { resolve({ ok: false, ms: 0, err: "no_endpoint" }); return; }
-      if (!eff.apiKey) { resolve({ ok: false, ms: 0, err: "no_key" }); return; }
+      if (!eff.apiUrl) { resolve({ ok: false, ms: 0, err: "no_endpoint", kind: "" }); return; }
+      if (!eff.apiKey) { resolve({ ok: false, ms: 0, err: "no_key", kind: "" }); return; }
       // R81：图片生成模型走 images/generations 专用检测（最小 prompt），不用文本聊天接口误报失败
       if (isImageGenModel(ping)) {
         var iCtrl = (typeof AbortController === "function") ? new AbortController() : null;
@@ -2112,13 +3135,73 @@
           { prompt: "a red apple", responseTimeout: IMAGE_TIMEOUT_HEALTH, totalTimeout: IMAGE_TIMEOUT_HEALTH })
           .then(function (out) {
             if (iTimer) clearTimeout(iTimer);
-            finish({ ok: !!out, ms: Date.now() - startedAt, err: out ? null : "empty" });
+            finish({ ok: !!out, ms: Date.now() - startedAt, err: out ? null : "empty", kind: "imagegen" });
           }, function (eImg) {
             if (iTimer) clearTimeout(iTimer);
-            finish({ ok: false, ms: Date.now() - startedAt, err: classifyHealthErr(eImg) });
+            finish({ ok: false, ms: Date.now() - startedAt, err: classifyHealthErr(eImg), kind: "imagegen" });
           });
         return;
       }
+
+      // ---------- R87 / T02：能力分派（生图分支之后、文本兜底之前） ----------
+      // 复用 xtResolveCapability 解析该模型对应的能力：
+      //   1) cap 且 typeof cap.probe === 'function'                     -> 走 cap.probe(ctx) 专用探针；
+      //   2) cap 无 probe 且为文本族（vision / translate / text）        -> 回落文本探测（零回归）；
+      //   3) cap 无 probe 且为非对话能力（asr/embed/rerank/video/model3d） -> unsupported_probe；
+      //   4) 无 cap（纯文本模型，含注册表缺失）                          -> 回落文本探测（行为不变）。
+      // 探针绝不触发 recordCall / 不进 10 次/分钟限频（与既有健康检查同层）。
+      var capInfo = xtResolveCapability(ping);
+      var capObj = (capInfo && capInfo.cap) ? capInfo.cap : null;
+      var capKind = (capInfo && capInfo.kind) ? String(capInfo.kind) : "";
+      if (capObj && typeof capObj.probe === "function") {
+        // 成本保护：由能力模块用 probeNoAuto===true 声明「不进『检测全部』自动批量」（设计 §3.3）；
+        // 取不到该字段时退回按 kind 兜底（video / model3d 单次约 10 万 / 3 万 tokens）。
+        // 用户手动单模型检测（不经 aiHealthCheckBatch）仍允许提交探针。
+        var noAuto = (typeof capObj.probeNoAuto === "boolean")
+          ? capObj.probeNoAuto
+          : (capKind === "video" || capKind === "model3d");
+        if (batchScan && noAuto) {
+          // skipped:true -> 消费方据此「不写 health」（保持「无记录=可见」），绝不把策略跳过当失败隐藏
+          finish({ ok: false, skipped: true, ms: 0, err: "unsupported_probe", kind: capKind });
+          return;
+        }
+        var cfgP = getConfig();
+        var provP = (ping && ping.provider && cfgP && cfgP.providers) ? cfgP.providers[ping.provider] : null;
+        var pTimeout = (typeof capObj.probeTimeout === "number" && capObj.probeTimeout > 0)
+          ? capObj.probeTimeout
+          : ((typeof capObj.timeout === "number" && capObj.timeout > 0) ? capObj.timeout : XT_CAP_TIMEOUT_DEFAULT);
+        var probeRes = null;
+        try {
+          probeRes = capObj.probe({ modelCfg: ping, provider: provP, timeout: pTimeout });
+        } catch (eProbe) {
+          finish({ ok: false, ms: Date.now() - startedAt, err: classifyHealthErr(eProbe), kind: capKind });
+          return;
+        }
+        // 契约（设计 §3.3）：probe 返回 Promise<{ok, err, detail?}>；非 Promise 视为空结果
+        if (!probeRes || typeof probeRes.then !== "function") {
+          finish({ ok: false, ms: Date.now() - startedAt, err: "empty", kind: capKind });
+          return;
+        }
+        probeRes.then(function (pr) {
+          var ok = !!(pr && pr.ok);
+          var perr = ok ? null : ((pr && pr.err) ? String(pr.err) : "empty");
+          finish({ ok: ok, ms: Date.now() - startedAt, err: perr, kind: capKind });
+        }, function (eProbe2) {
+          finish({ ok: false, ms: Date.now() - startedAt, err: classifyHealthErr(eProbe2), kind: capKind });
+        });
+        return;
+      }
+      if (capObj) {
+        // 有 cap 无 probe：vision / translate 本就是「文本族」（其探针即文本 chat）；
+        // 其余非对话能力没有专用探测，返回 unsupported_probe（不再把「用错接口的 400」呈现为模型不可用）。
+        if (capKind !== "vision" && capKind !== "translate" && capKind !== "text") {
+          // skipped:true -> 「无法自动探测」而非「探测失败」，消费方据此不写 health（不隐藏）
+          finish({ ok: false, skipped: true, ms: 0, err: "unsupported_probe", kind: capKind });
+          return;
+        }
+      }
+      // 文本兜底（纯文本模型 / vision / translate / 注册表缺失）：kind 如实记录
+      var textKind = capKind ? capKind : "text";
 
       // 总超时（R73n：needProxy 平台 15s，其余 5s）：复用 raceTimeout（老 WebView 兼容）；有 AbortController 时再加一层硬中止
       var ctrl = null;
@@ -2139,14 +3222,20 @@
         [{ role: "user", content: "hi" }],
         null,
         ctrl ? ctrl.signal : null,
-        { responseTimeout: hTimeout, firstTokenTimeout: hTimeout, totalTimeout: hTimeout }
+        { responseTimeout: hTimeout, firstTokenTimeout: hTimeout, totalTimeout: hTimeout, xtNoUsage: true }
       ).then(function (text) {
-        if (text) finish({ ok: true, ms: Date.now() - startedAt, err: null });
-        else finish({ ok: false, ms: Date.now() - startedAt, err: "empty" });
+        if (text) finish({ ok: true, ms: Date.now() - startedAt, err: null, kind: textKind });
+        else finish({ ok: false, ms: Date.now() - startedAt, err: "empty", kind: textKind });
       }, function (e) {
-        finish({ ok: false, ms: Date.now() - startedAt, err: classifyHealthErr(e) });
+        finish({ ok: false, ms: Date.now() - startedAt, err: classifyHealthErr(e), kind: textKind });
       });
     });
+  }
+
+  // R87 / T02：批量扫描专用入口——成本极高的能力（video / model3d）探针不进「检测全部」自动批量。
+  // 对外签名 (modelId, cfgOverride) 与 aiHealthCheck 完全一致；仅向 impl 注入隐藏的 batchScan 标记。
+  function aiHealthCheckBatch(modelId, cfgOverride) {
+    return aiHealthCheckImpl(modelId, cfgOverride, true);
   }
 
   // ---------- R65-C：modelModes 链完整性软校验（找不到只 warn，不抛错） ----------
@@ -2187,19 +3276,28 @@
     getModelSettings: aiGetModelSettingsImpl,
     saveModelSettings: aiSaveModelSettingsImpl,
     healthCheck: aiHealthCheckImpl,
+    healthCheckBatch: aiHealthCheckBatch,
     // R77：海外平台代理访问
     getProxyConfig: getProxyConfig,
     probeProxyPlatforms: probeProxyPlatforms,
     isProviderOffline: isProviderOffline,
-    proxyWrapUrl: proxyWrapUrl
+    proxyWrapUrl: proxyWrapUrl,
+    usage: XT_AI_USAGE,
+    // R92-A\uff1a\u80fd\u529b\u76f4\u8fde\u5165\u53e3\uff08\u5f02\u6b65\u80fd\u529b cap.run \u5206\u53d1\u5728 xtRunCapability \u5185\u90e8\u5b8c\u6210\uff09
+    xtRunCapability: xtRunCapability
   };
 
   if (typeof window !== "undefined") {
     window.AI_SERVICE = AI_SERVICE;
     window.callAI = callAI;
-    // R64 N4 跨线契约（守卫式挂载，避免与既有全局名冲突）
+    // R92-A：能力直连入口（video / 3d 等 types 模型）；守卫式挂载，避免全局名冲突
+    if (typeof window.xtRunCapability !== "function") window.xtRunCapability = xtRunCapability;    // R64 N4 跨线契约（守卫式挂载，避免与既有全局名冲突）
     if (typeof window.aiGetModelSettings !== "function") window.aiGetModelSettings = aiGetModelSettingsImpl;
     if (typeof window.aiSaveModelSettings !== "function") window.aiSaveModelSettings = aiSaveModelSettingsImpl;
     if (typeof window.aiHealthCheck !== "function") window.aiHealthCheck = aiHealthCheckImpl;
+    // R87 / T02：批量扫描入口（video / model3d 探针不进「检测全部」）。守卫式挂载，避免全局名冲突。
+    if (typeof window.aiHealthCheckBatch !== "function") window.aiHealthCheckBatch = aiHealthCheckBatch;
+    // 需求 E：模型用量账本（用量页 assets/xt-aiusage.js 直接消费该对象）
+    window.XT_AI_USAGE = XT_AI_USAGE;
   }
 })();

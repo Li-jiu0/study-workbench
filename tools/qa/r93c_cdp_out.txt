@@ -1,0 +1,13 @@
+=== R93-C CDP circle-icon verification (更新.html, real Chrome) ===
+--- Phase 1: error state (backend absent) ---
+  PASS  C1 error state reached (检测失败)  :: title=检测失败
+  PASS  C2 .xt-up-icon-bad has svg width=26  :: w=26
+  PASS  C3 circle svg === book-open template (APP icon)  :: matched
+  PASS  C3b circle svg is NOT alert-triangle
+  PASS  C4 brand block svg intact  :: w=28
+--- Phase 2: latest state (stub v1.24) ---
+  PASS  C5a recheck ran  :: recheck-called
+  PASS  C5b latest circle svg === check-circle (untouched)  :: title=已是最新版本
+  PASS  C5c brand block svg intact
+SUMMARY pass=8 fail=0
+R93C_CDP_PASS

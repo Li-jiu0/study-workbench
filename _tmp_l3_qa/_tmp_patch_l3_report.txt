@@ -1,0 +1,13 @@
+ok    D:\下载的文件\学习工作台\AI.html  pair#0
+ok    D:\下载的文件\学习工作台\AI.html  pair#1
+ok    D:\下载的文件\学习工作台\AI.html  pair#2
+ok    D:\下载的文件\学习工作台\AI.html  pair#3
+ok    D:\下载的文件\学习工作台\AI.html  pair#4
+ok    D:\下载的文件\学习工作台\AI.html  pair#5
+ok    D:\下载的文件\学习工作台\AI.html  pair#6
+      -> crlf=883 lf=883
+ok    D:\下载的文件\学习工作台\assets\ai-page.js  pair#0
+ok    D:\下载的文件\学习工作台\assets\ai-page.js  pair#1
+ok    D:\下载的文件\学习工作台\assets\ai-page.js  pair#2
+ok    D:\下载的文件\学习工作台\assets\ai-page.js  pair#3
+      -> crlf=0 lf=1221

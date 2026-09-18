@@ -1,0 +1,139 @@
+
+== S0 环境自检：M5 面板可被驱动 ==
+#xtpChatBody 存在: true
+M5 工具条 .xtp-m5-tools: true
+列表 .xtp-list: true
+body 内 ID: ["xtpM5Kw","xtpM5Range","xtpM5Tag","xtpM5Fav","xtpM5SelBtn","xtpM5GoAi","xtpM5Export","xtpM5Backup","xtpM5Restore","xtpM5ClearAll"]
+[PASS] S0-1 M5 工具条渲染成功
+[PASS] S0-2 #xtpM5Range 在位
+[PASS] S0-3 #xtpM5Kw 在位
+[PASS] S0-4 #xtpM5Tag 在位
+[PASS] S0-5 #xtpM5Fav 在位
+
+== S1 3 条旧时间戳(2025-09)会话 → 应渲染 3 张卡 ==
+卡片数=3  range=all  空态=null
+[PASS] S1-1 range 默认 all 且卡片数 = 3 || cards=3 range=all
+[PASS] S1-2 无空态元素
+[PASS] S1-3 无重置按钮
+
+== S2 切 #xtpM5Range → d7：卡片清零 + 空态含「当前筛选 / 近 7 天 / 本机共 3 条」 ==
+[PASS] S2-0 成功派发 change 到 #xtpM5Range
+卡片数=0
+空态文案="没有符合条件的对话（当前筛选：近 7 天，本机共 3 条）。"
+select.value=d7
+[PASS] S2-1 卡片清零（复现 P1 现象） || 实测=0
+[PASS] S2-2 空态出现
+[PASS] S2-3 空态含「当前筛选」
+[PASS] S2-4 空态含「近 7 天」
+[PASS] S2-5 空态含本机总数（本机共 3 条） || "没有符合条件的对话（当前筛选：近 7 天，本机共 3 条）。"
+[PASS] S2-6 空态不含误导性「服务端还有」文案
+
+== S3 ★关键：M5.range 未被静默回退为 all（验证工程师「无自动回退」声明） ==
+range 元素 value = d7
+[PASS] S3-1 range 元素值仍为 d7 || 实测=d7
+[PASS] S3-2 重复置 d7 后卡片仍为 0（未被回退到 all） || before=0 after=0
+[PASS] S3-3 反证：若被静默改成 all 卡片会回到 3，实测 0 → 未回退 || 实测=0
+源码中 M5.range = 'all' 出现位置:
+  2197: M5.kw = ''; M5.tag = ''; M5.favOnly = false; M5.range = 'all'; M5.from = ''; M5.to = '';
+【判定】上述出现点若都在「初始化 / 重置按钮处理器 / change 处理器」中，则无自动回退。
+
+== S4 空态重置按钮存在且文案含「重置筛选」 ==
+按钮存在=true  文案="查看全部本机记录（重置筛选）"
+[PASS] S4-1 #xtpM5ResetFilter 存在
+[PASS] S4-2 按钮文案含「重置筛选」
+[PASS] S4-3 容器 .xtp-m5-emptyact 存在
+
+== S5 点击重置按钮 → 3 卡恢复 + range=all + kw/tag/favOnly 全重置 ==
+tag 下拉有「乙」: true
+tag 下拉有「甲」: true
+  设 tag=乙 后: 卡片=1  rangeEl=true
+  点收藏后: 卡片=0  favOn=true
+复合筛选后: 卡片=0 range=d7 tag="乙" favOn=true
+[PASS] S5-0 复合筛选(tag+fav+d7)下出现重置按钮
+[PASS] S5-1 成功点击重置按钮
+重置后: 卡片=3 range=all tag="" favOn=false kw=""
+[PASS] S5-2 3 张卡恢复 || 实测=3
+[PASS] S5-3 range 回 all || all
+[PASS] S5-4 tag 清空 || ""
+[PASS] S5-5 favOnly 关闭
+[PASS] S5-6 关键词清空 || ""
+[PASS] S5-7 空态与重置按钮均消失
+
+== S6 边界①：本机 0 条 + 有筛选 → 不应出现重置按钮 ==
+卡片=0 空态="本机暂无会话记录（本页的清理、删除只作用于本机会话）。去 AI 问答页对话后，会自动出现在这里。" 重置按钮=false
+[PASS] S6-1 卡片 0 张
+[PASS] S6-2 空态文案为「本机暂无会话记录…」 || "本机暂无会话记录（本页的清理、删除只作用于本机会话）。去 AI 问答页对话后，会自动出现在这里。"
+[PASS] S6-3 无重置按钮（无意义）
+
+== S7 边界②：本机 >0、筛选后仍 >0 → 不应出现空态/重置按钮 ==
+卡片=2 空态=false 重置按钮=false
+[PASS] S7-1 d7 下 2 张新卡仍显示 || 实测=2
+[PASS] S7-2 无空态
+[PASS] S7-3 无重置按钮
+
+== S8 边界③：新时间戳(今天) + range=d7 → 正常显示、无空态、无重置按钮 ==
+卡片=1 range=d7
+[PASS] S8-1 1 张卡正常显示 || 实测=1
+[PASS] S8-2 无空态 / 无重置按钮
+切 today 后 卡片=1
+[PASS] S8-3 today 下 1 张卡正常 || 实测=1
+
+== S9 ★闭包陷阱回归：搜索框 / 时间筛选 / 重置按钮 三者互不串扰 ==
+S9-0 元素在位: range=%s kw=%s tag=%s fav=%s 卡片=%d
+A-1 搜索「对话 3」后 卡片=1 kw="对话 3"
+[PASS] S9-1 搜索生效：1 张卡 || 实测=1
+A-2 再切 d7 后 卡片=0 range=d7
+[PASS] S9-2 搜索后仍能切筛选（range 元素=d7） || d7
+[PASS] S9-3 双重过滤：0 张（对话3 在 100 天前） || 实测=0
+[PASS] S9-4 重绘后搜索框保留关键词 || "对话 3"
+[PASS] S9-5 出现重置按钮
+A-3 重置后 卡片=3 kw="" range=all
+[PASS] S9-6 重置后 3 张卡全回 || 实测=3
+[PASS] S9-7 重置后搜索框清空 || ""
+B-0 d7 单独生效卡片=2
+B-1 先 d7 再搜索「对话 2」→ 卡片=1 range=d7
+[PASS] S9-8 先筛选后搜索：1 张（对话2 在 d7 内） || 实测=1
+[PASS] S9-9 先筛选后搜索：range 未被搜索破坏 || d7
+B-2 d7 + 搜索「对话 3」（100天前）→ 卡片=0 range=d7
+[PASS] S9-10 时间与关键词同时生效 → 0 张 || 实测=0
+[PASS] S9-11 range 仍为 d7 || d7
+B-3 再次重置 → 卡片=3
+[PASS] S9-12 再次重置恢复 3 张卡（处理器未失效） || 实测=3
+C-0 tag 下拉选项: ["","甲"]
+C-1 setTag(甲) 成功=true 生效值="甲" 卡片=1
+[PASS] S9-13 tag 下拉可被赋值且生效 || "甲"
+[PASS] S9-13b 单 tag 筛选生效（甲 只有 1 条） || 实测=1
+C-2 tag=甲 + d7 → 卡片=0 重置按钮=true
+[PASS] S9-14 tag+d7 复合为空 → 出现重置按钮 || 卡片=0
+C-3 重置后 卡片=3 tag=""
+[PASS] S9-15 重置后 tag 清空、卡片恢复 3 || cards=3 tag=""
+D-1 favOnly + d7 → 卡片=0 favOn=true
+[PASS] S9-14 favOnly 与 range 可叠加
+D-2 重置后 卡片=3 favOn=false
+[PASS] S9-15 重置后 favOnly 关闭、卡片恢复
+
+== S10 真因A 回归：清空确认框 / toast 文案点明「服务端记录不受影响 / 仍保留」 ==
+confirmBox 调用片段:
+confirmBox('清空全部对话记录',
+      '将删除本机全部 ' + n + ' 条会话（共 ' + totalMsg + ' 条消息），此操作不可恢复。\n（服务端记录不受影响，如需删除请联系管理员或等待后续版本支持）\n建议先「备份」。确定继续吗？',
+      '清空', true, function () {
+        localStorage.removeItem('ai_chat_history');
+[PASS] S10-1 confirm 文案含「本机全部 N 条会话」
+[PASS] S10-2 confirm 文案含「服务端记录不受影响」
+toast 片段: toast('已清空本机会话，服务端记录仍保留')
+[PASS] S10-3 toast 文案含「服务端记录仍保留」
+运行时可达性: typeof window.toast=undefined typeof window.confirmBox=undefined
+运行时可达性: typeof window.xtpOpenView=function
+【标注】S10-1..3 为**源码级验证**；confirmBox/toast 是 IIFE 内闭包函数，未挂 window，
+        jsdom 下无法调用捕获其运行时字符串，故不声称运行时验证。
+
+== S11 结构不变量：重置按钮仅在「列表空 && 本机>0 && 有筛选」三条同时成立时出现 ==
+无筛选: 卡片=1 重置=false
+[PASS] S11-1 无筛选 → 无重置按钮
+本机 0: 卡片=0 重置=false
+[PASS] S11-2 本机 0 → 无重置按钮
+有筛选且仍 >0: 卡片=1 重置=false
+[PASS] S11-3 有筛选但列表非空 → 无重置按钮
+
+== 汇总 ==
+通过 62 / 62

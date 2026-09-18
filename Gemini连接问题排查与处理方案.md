@@ -69,7 +69,7 @@ Content-Type: application/json
 ### 2.5 API Key
 
 ```
-AQ.****REDACTED-KEY(完整Key仅存本地未入库****
+***REMOVED-BY-R2C***
 ```
 
 ### 2.6 可用模型

@@ -1,0 +1,12 @@
+R93-C patch log
+xt-update.js before: size=39089 CRLF=0 LF=1114 pureLF=1114 NL=b'\n'
+alert-triangle span occurrence=1 (expect 1); book-open span already=0
+更新.html before: size=23107 CRLF=386 LF=386 pureLF=0 NL=b'\r\n'
+version old hit=1 (expect 1); new-already=0
+xt-update.js after: size=39084 CRLF=0 LF=1114 pureLF=1114
+[VERIFY js] book-open in renderError span hit=1 (expect 1)
+[VERIFY js] alert-triangle hit=0 (expect 0)
+[VERIFY js] check-circle kept hit=1 (expect >=1, renderLatest untouched)
+更新.html after: size=23107 CRLF=386 LF=386 pureLF=0
+[VERIFY html] v=20260918f hit=1 (expect 1)  v=20260918e hit=0 (expect 0)
+RESULT=PASS

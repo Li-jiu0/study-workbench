@@ -10,9 +10,14 @@
      数据：全部读取本机 localStorage（assets/xt-profile.js），无数据一律显示 0；
            角标 / 右侧小字无真实来源时不显示。
      子视图（我的笔记 / 我的收藏 / 学习数据 / AI对话记录 / 个人信息编辑）
-           均为本页内全屏推入层，不新建文件。 -->
-<link rel="stylesheet" href="assets/common.css?v=20260917b">
-<link rel="stylesheet" href="assets/xt-profile.css?v=20260917b">
+           均为本页内全屏推入层，不新建文件。
+     R86-C：「AI对话记录」主数据源改为服务端 GET /api/ai/history（仅当前登录用户自己的记录，
+           扁平消息 items:[{role,content,provider,createdAt}]，**没有会话 ID**），前端按时间
+           自然间隔分段渲染并标注时间；加载中 / 失败 / 空 三态齐备；未登录不发请求（游客态
+           必然 401）。本机 localStorage.ai_chat_history（会话结构）降级为离线兜底。
+     R86-C：头像裁剪改为微信风格全屏暗色裁剪台（拖动 + 双指捏合 + 滑杆，输出仍为正方形图片）。 -->
+<link rel="stylesheet" href="assets/common.css?v=20260918d">
+<link rel="stylesheet" href="assets/xt-profile.css?v=20260918d">
 </head>
 <body class="theme-home">
 
@@ -42,6 +47,6 @@
      其自动初始化只碰 #profileBox（本页不存在）且包在 try/catch 内。 -->
 <script src="assets/api.js?v=20260917b" defer></script>
 <script src="assets/xt-settings.js?v=20260917" defer></script>
-<script src="assets/xt-profile.js?v=20260917b" defer></script>
+<script src="assets/xt-profile.js?v=20260918e" defer></script>
 </body>
 </html>

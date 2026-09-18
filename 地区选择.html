@@ -1,0 +1,409 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#5B8DEF">
+<title>选择地区 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260918d">
+<style>
+/* ==================== R86-B：地区选择页（页内自洽样式，.xtr- 前缀） ==================== */
+/* R89-B\uff1a\u4fee\u590d\u672c\u9875\u4e0d\u80fd\u4e0a\u4e0b\u6ed1\u52a8
+   \u771f\u56e0\uff1aassets/common.css L68 \u5168\u5c40\u9501\u6b7b\u4e86\u6839\u6eda\u52a8\uff08html, body { height: 100%; overflow: hidden; }\uff09\u3002
+   \u4e0d\u52a8\u5168\u5c40\u89c4\u5219\uff08\u5f71\u54cd\u5168\u7ad9 46 \u9875\uff09\uff0c\u4ec5\u5728\u672c\u9875\u9ad8\u7279\u5f02\u6027\u8986\u76d6\uff1a\u653e\u5f00\u6839\u6eda\u52a8\u3002
+   \u6ce8\u610f\uff1a\u5fc5\u987b\u7528\u4e24\u6761\u9009\u62e9\u5668\u5206\u5f00\u5199\uff0chtml \u4e0d\u5e26 .theme-home\uff0c\u65e0\u6cd5\u5408\u5e76\u6210\u4e00\u6761\u3002 */
+html { height: auto; overflow-y: auto; overflow-x: hidden; }
+body.theme-home { height: auto; min-height: 100%; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+.xtr-page { max-width: 720px; margin: 0 auto; padding: 0 0 40px; }
+.xtr-head { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; background: var(--card, #fff); border-bottom: 1px solid var(--border, #e6e9f0); }
+.xtr-back { display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 10px;
+  border: 1px solid var(--border, #e6e9f0); background: transparent; color: var(--text-secondary, #6b7280);
+  font-size: 13px; cursor: pointer; flex: 0 0 auto; }
+.xtr-title { font-size: 16px; font-weight: 700; color: var(--text, #1f2937); }
+.xtr-cur { margin-left: auto; font-size: 12px; color: var(--text-muted, #9aa3b2); max-width: 45%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.xtr-sec { padding: 14px 16px 0; }
+.xtr-sec-t { font-size: 12px; font-weight: 700; color: var(--text-muted, #9aa3b2); margin-bottom: 8px; letter-spacing: .5px; }
+
+.xtr-search { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 12px;
+  border: 1px solid var(--border, #e6e9f0); background: var(--bg, #f5f7fb); }
+.xtr-search input { flex: 1 1 auto; min-width: 0; border: none; outline: none; background: transparent;
+  font-size: 14px; color: var(--text, #1f2937); }
+
+.xtr-crumb { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 12px 16px 0;
+  font-size: 13px; color: var(--text-secondary, #6b7280); }
+.xtr-crumb b { color: var(--text, #1f2937); font-weight: 700; }
+.xtr-crumb .xtr-cb { padding: 3px 8px; border-radius: 8px; cursor: pointer; }
+.xtr-crumb .xtr-cb.on { background: var(--primary, #5B8DEF); color: #fff; }
+
+.xtr-list { padding: 8px 0 0; }
+.xtr-item { display: flex; align-items: center; gap: 10px; padding: 12px 16px; font-size: 14px;
+  color: var(--text, #1f2937); cursor: pointer; border-bottom: 1px solid var(--border, #eef1f6); }
+.xtr-item:active { background: var(--bg, #f5f7fb); }
+.xtr-item .xtr-tick { margin-left: auto; color: var(--primary, #5B8DEF); font-size: 14px; flex: 0 0 auto; }
+.xtr-item.on { color: var(--primary, #5B8DEF); font-weight: 700; }
+.xtr-item .xtr-sub { font-size: 12px; color: var(--text-muted, #9aa3b2); }
+.xtr-item .xtr-arrow { margin-left: auto; color: var(--text-muted, #9aa3b2); flex: 0 0 auto; }
+
+.xtr-loc { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px;
+  border: 1px solid var(--border, #e6e9f0); background: var(--card, #fff); font-size: 14px;
+  color: var(--text, #1f2937); cursor: pointer; }
+.xtr-loc.bad { cursor: default; color: var(--text-secondary, #6b7280); }
+.xtr-loc .xtr-loc-t { flex: 1 1 auto; min-width: 0; line-height: 1.6; }
+.xtr-loc .xtr-loc-t small { display: block; color: var(--text-muted, #9aa3b2); font-size: 12px; margin-top: 2px; }
+.xtr-loc .xtr-reloc { flex: 0 0 auto; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--primary, #5B8DEF);
+  background: transparent; color: var(--primary, #5B8DEF); font-size: 12px; cursor: pointer; }
+
+.xtr-recent { display: flex; flex-wrap: wrap; gap: 8px; padding: 2px 0 2px; }
+.xtr-recent .xtr-chip { display: inline-flex; align-items: center; gap: 4px; padding: 7px 12px; border-radius: 999px;
+  border: 1px solid var(--border, #e6e9f0); background: var(--card, #fff); color: var(--text, #1f2937);
+  font-size: 13px; cursor: pointer; }
+.xtr-recent .xtr-chip:active { background: var(--bg, #f5f7fb); }
+.xtr-empty { padding: 26px 16px; text-align: center; color: var(--text-muted, #9aa3b2); font-size: 13px; }
+.xtr-tip { padding: 12px 16px 0; font-size: 12px; color: var(--text-muted, #9aa3b2); line-height: 1.8; }
+.xtr-toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-120px);
+  background: var(--text, #1f2937); color: #fff; padding: 12px 24px; border-radius: 12px; font-size: 14px;
+  z-index: 2000; transition: transform .3s ease; max-width: 90%; text-align: center; }
+.xtr-toast.on { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body class="theme-home">
+<div class="xtr-page">
+
+  <div class="xtr-head">
+    <button class="xtr-back" type="button" onclick="XtrPage.goBack()">‹ 返回</button>
+    <div class="xtr-title">选择地区</div>
+    <div class="xtr-cur" id="xtrCurText"></div>
+  </div>
+
+  <div class="xtr-sec">
+    <div class="xtr-sec-t">搜索</div>
+    <div class="xtr-search">
+      <span data-icon="search" data-icon-size="15"></span>
+      <input type="text" id="xtrSearch" placeholder="输入省 / 市 / 区关键词，如：天河、杭州" autocomplete="off" oninput="XtrPage.onSearch(this.value)">
+    </div>
+  </div>
+
+  <div class="xtr-sec">
+    <div class="xtr-sec-t">当前位置</div>
+    <div class="xtr-loc bad" id="xtrLocBox">
+      <div class="xtr-loc-t" id="xtrLocText">定位中…<small>正在获取你的位置</small></div>
+      <button class="xtr-reloc" type="button" id="xtrRelocBtn" style="display:none" onclick="XtrPage.locate()">重新定位</button>
+    </div>
+  </div>
+
+  <div class="xtr-sec" id="xtrRecentSec" style="display:none">
+    <div class="xtr-sec-t">常用城市</div>
+    <div class="xtr-recent" id="xtrRecent"></div>
+  </div>
+
+  <div class="xtr-crumb" id="xtrCrumb"></div>
+
+  <div class="xtr-list" id="xtrList"></div>
+
+  <div class="xtr-tip">点选「省 → 市 → 区」逐级选择，或直接搜索关键词快速定位；选中后立即返回个人信息页，点「保存」生效。<br>地区每 30 天仅可修改一次。</div>
+</div>
+
+<div class="xtr-toast" id="xtrToast"></div>
+
+<script src="assets/xt-region.js?v=20260918a"></script>
+<script src="assets/icon-map.js?v=20260916O"></script>
+<script>
+/* ==================== R86-B：地区选择页交互（ES5，老 WebView 兼容） ====================
+   ① 搜索：省 / 市 / 区 三级关键词匹配，最多 60 条；
+   ② 自动定位：navigator.geolocation + 逆地理编码（高德 / 腾讯 / Nominatim），
+      解析成「省 / 市 / 区 + 街道」的可读地址，作为「当前位置」可直接选中；
+      拒绝授权 / 定位失败 / 服务不可用 → 一律降级为手动选择，并给「重新定位」入口；
+   ③ 逐级点选：省 → 市 → 区，已保存地区默认高亮（打勾）；
+   ④ 结果回写：localStorage['xt_region_pick'] + 跳回 back 页面（默认 个人中心.html）。
+   禁用 alert / confirm / prompt，提示一律走页内 toast。 */
+(function () {
+  'use strict';
+  var R = window.XT_REGION;
+  var $ = function (id) { return document.getElementById(id); };
+  var PICK_KEY = 'xt_region_pick';
+  var RECENT_KEY = 'xt_region_recent';
+  var RECENT_MAX = 8;
+
+  /* R88-J：常用城市（LRU ≤8），与 XT_LOC_PICK 共用同一键。 */
+  function recentList() {
+    var raw = '';
+    try { raw = localStorage.getItem(RECENT_KEY) || ''; } catch (e) { return []; }
+    if (!raw) return [];
+    var arr = null;
+    try { arr = JSON.parse(raw); } catch (e2) { arr = null; }
+    if (Object.prototype.toString.call(arr) !== '[object Array]') return [];
+    var out = [], i, s;
+    for (i = 0; i < arr.length; i++) {
+      s = (arr[i] == null) ? '' : String(arr[i]).replace(/^\s+|\s+$/g, '');
+      if (s && out.indexOf(s) < 0) out.push(s);
+    }
+    return out;
+  }
+
+  function recentPush(text) {
+    var t = (text == null) ? '' : String(text).replace(/^\s+|\s+$/g, '');
+    if (!t) return;
+    var list = recentList(), out = [t], i;
+    for (i = 0; i < list.length; i++) { if (list[i] !== t) out.push(list[i]); }
+    if (out.length > RECENT_MAX) out = out.slice(0, RECENT_MAX);
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify(out)); } catch (e) {}
+  }
+
+  function renderRecent() {
+    var sec = $('xtrRecentSec'), box = $('xtrRecent');
+    if (!sec || !box) return;
+    var list = recentList();
+    if (!list.length) { sec.style.display = 'none'; box.innerHTML = ''; return; }
+    var html = '', i;
+    for (i = 0; i < list.length; i++) {
+      html += '<span class="xtr-chip" onclick="XtrPage.pick(\'' + esc(list[i]).replace(/'/g, "\\'") + '\')">' +
+        esc(list[i]) + '</span>';
+    }
+    box.innerHTML = html;
+    sec.style.display = '';
+  }
+
+  var state = {
+    cur: '',           // 已保存的地区文本（高亮用）
+    back: '个人中心.html',
+    level: 0,          // 0=省 1=市 2=区
+    province: '',
+    city: '',
+    district: '',
+    keyword: '',
+    locBusy: false,
+    locItem: null      // 定位结果 {text, province, city, district}
+  };
+
+  var toastTimer = null;
+  function toast(msg) {
+    var el = $('xtrToast');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'xtr-toast on';
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.className = 'xtr-toast'; }, 2200);
+  }
+
+  function param(name) {
+    try {
+      var m = location.search.match(new RegExp('[?&]' + name + '=([^&]*)'));
+      return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : '';
+    } catch (e) { return ''; }
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function isCur(text) { return !!text && text === state.cur; }
+
+  /* ---------------- 结果回写 ---------------- */
+  function pick(text) {
+    text = String(text || '').trim();
+    if (!text) { toast('请先选择一个地区'); return; }
+    try {
+      localStorage.setItem(PICK_KEY, JSON.stringify({ text: text, ts: Date.now() }));
+    } catch (e) { /* 隐私模式下 setItem 可能抛异常，忽略（下方仍会跳转） */ }
+    recentPush(text);   /* R88-J：选中即入常用城市 */
+    toast('已选择：' + text);
+    setTimeout(function () {
+      try { location.replace(state.back); } catch (e2) { location.href = state.back; }
+    }, 260);
+  }
+
+  /* ---------------- 渲染 ---------------- */
+  function renderCrumb() {
+    var box = $('xtrCrumb');
+    if (!box) return;
+    var html = '<span class="xtr-cb' + (state.level === 0 ? ' on' : '') + '" onclick="XtrPage.goLevel(0)">' +
+      (state.province ? esc(state.province) : '请选择省 / 直辖市') + '</span>';
+    if (state.province) {
+      html += '<span>›</span><span class="xtr-cb' + (state.level === 1 ? ' on' : '') + '" onclick="XtrPage.goLevel(1)">' +
+        (state.city ? esc(state.city) : '请选择城市') + '</span>';
+    }
+    if (state.city) {
+      html += '<span>›</span><span class="xtr-cb' + (state.level === 2 ? ' on' : '') + '" onclick="XtrPage.goLevel(2)">' +
+        (state.district ? esc(state.district) : '请选择区 / 县') + '</span>';
+    }
+    box.innerHTML = html;
+  }
+
+  function itemHtml(text, opts) {
+    var o = opts || {};
+    var cls = 'xtr-item' + (isCur(text) ? ' on' : '');
+    var right = o.arrow ? '<span class="xtr-arrow">›</span>'
+      : (isCur(text) ? '<span class="xtr-tick">✓ 当前</span>' : '');
+    var sub = o.sub ? '<span class="xtr-sub"> · ' + esc(o.sub) + '</span>' : '';
+    return '<div class="' + cls + '" onclick="' + o.onclick + '">' + esc(text) + sub + right + '</div>';
+  }
+
+  function renderList() {
+    var box = $('xtrList');
+    if (!box) return;
+    var html = '';
+    var i, names;
+
+    if (state.keyword) {
+      var hits = R.search(state.keyword, 60);
+      if (!hits.length) {
+        box.innerHTML = '<div class="xtr-empty">没找到「' + esc(state.keyword) + '」，换个关键词试试（如：天河、杭州、朝阳）</div>';
+        return;
+      }
+      for (i = 0; i < hits.length; i++) {
+        var h = hits[i];
+        var sub = (h.province !== h.city) ? h.province : '';
+        html += itemHtml(h.text, { sub: sub, onclick: "XtrPage.pick('" + esc(h.text).replace(/'/g, "\\'") + "')" });
+      }
+      box.innerHTML = html;
+      return;
+    }
+
+    if (state.level === 0) {
+      names = R.provinces();
+      for (i = 0; i < names.length; i++) {
+        html += itemHtml(names[i], { arrow: true, onclick: "XtrPage.pickProvince('" + esc(names[i]).replace(/'/g, "\\'") + "')" });
+      }
+    } else if (state.level === 1) {
+      names = R.citiesOf(state.province);
+      if (!names.length) {
+        box.innerHTML = '<div class="xtr-empty">暂无该省的城市数据，可返回用搜索定位</div>';
+        return;
+      }
+      for (i = 0; i < names.length; i++) {
+        var hasD = R.districtsOf(state.province, names[i]).length > 0;
+        var txt = R.textOf(state.province, names[i], '');
+        html += itemHtml(names[i], { arrow: hasD, sub: hasD ? '' : '', onclick: (hasD
+          ? "XtrPage.pickCity('" + esc(names[i]).replace(/'/g, "\\'") + "')"
+          : "XtrPage.pick('" + esc(txt).replace(/'/g, "\\'") + "')") });
+      }
+    } else {
+      names = R.districtsOf(state.province, state.city);
+      if (!names.length) {
+        box.innerHTML = '<div class="xtr-empty">该市暂无区县数据，可返回用搜索定位</div>';
+        return;
+      }
+      for (i = 0; i < names.length; i++) {
+        var full = R.textOf(state.province, state.city, names[i]);
+        html += itemHtml(names[i], { onclick: "XtrPage.pick('" + esc(full).replace(/'/g, "\\'") + "')" });
+      }
+    }
+    box.innerHTML = html;
+  }
+
+  function render() { renderCrumb(); renderList(); }
+
+  /* ---------------- 定位 ---------------- */
+  function setLocBox(cls, main, sub, showBtn) {
+    var box = $('xtrLocBox'), txt = $('xtrLocText'), btn = $('xtrRelocBtn');
+    if (box) box.className = 'xtr-loc' + (cls ? ' ' + cls : '');
+    if (txt) txt.innerHTML = esc(main) + (sub ? '<small>' + esc(sub) + '</small>' : '');
+    if (btn) btn.style.display = showBtn ? '' : 'none';
+  }
+
+  function locate() {
+    if (!R || typeof R.locate !== 'function') { setLocBox('bad', '定位服务不可用，请手动选择', '', true); return; }
+    if (state.locBusy) return;
+    state.locBusy = true;
+    state.locItem = null;
+    setLocBox('bad', '定位中…', '正在获取你的位置', false);
+    R.locate(function (res) {
+      if (!res || !res.ok) {
+        state.locBusy = false;
+        var reason = (res && res.reason) || 'error';
+        var msg = reason === 'denied' ? '定位权限被拒绝' :
+          (reason === 'unavailable' ? '无法获取位置信息（请检查系统定位开关）' :
+            (reason === 'timeout' ? '定位超时' :
+              (reason === 'unsupported' ? '当前浏览器不支持定位' : '定位失败')));
+        setLocBox('bad', msg + '，可直接手动选择', '也可点「重新定位」再试一次', true);
+        return;
+      }
+      setLocBox('bad', '已获取坐标，正在解析地址…', '', false);
+      R.reverseGeocode(res.lat, res.lng, function (g) {
+        state.locBusy = false;
+        if (!g || !g.text) {
+          setLocBox('bad', '地址解析服务不可用，可直接手动选择', '也可点「重新定位」再试一次', true);
+          return;
+        }
+        var text = g.text;
+        // 优先用「省 市 区」结构化结果，缺失则用完整地址文本
+        if (g.province || g.city) text = R.textOf(g.province, g.city, g.district);
+        if (!text) text = g.text;
+        state.locItem = { text: text, detail: g.text };
+        setLocBox('', '当前位置：' + text, g.text && g.text !== text ? ('详细：' + g.text) : '点击即可选中', false);
+        var box = $('xtrLocBox');
+        if (box) box.onclick = function () { if (state.locItem) XtrPage.pick(state.locItem.text); };
+      });
+    });
+  }
+
+  /* ---------------- 对外 API ---------------- */
+  window.XtrPage = {
+    goBack: function () {
+      if (state.back) { try { location.replace(state.back); } catch (e) { location.href = state.back; } return; }
+      try { history.back(); } catch (e2) {}
+    },
+    goLevel: function (lv) {
+      state.keyword = '';
+      var si = $('xtrSearch'); if (si) si.value = '';
+      if (lv === 0) { state.province = ''; state.city = ''; state.district = ''; }
+      else if (lv === 1) { state.city = ''; state.district = ''; }
+      state.level = lv;
+      render();
+    },
+    pickProvince: function (p) {
+      state.province = p;
+      state.city = '';
+      state.district = '';
+      var cities = R.citiesOf(p);
+      if (cities.length === 1 && !R.districtsOf(p, cities[0]).length) {
+        // 只有一个市且无区县 → 直接完成（如台湾省各市）
+        XtrPage.pick(R.textOf(p, cities[0], ''));
+        return;
+      }
+      state.level = 1;
+      render();
+    },
+    pickCity: function (c) {
+      state.city = c;
+      state.district = '';
+      var ds = R.districtsOf(state.province, c);
+      if (!ds.length) { XtrPage.pick(R.textOf(state.province, c, '')); return; }
+      state.level = 2;
+      render();
+    },
+    pick: pick,
+    locate: locate,
+    renderRecent: renderRecent,
+    recentList: recentList,
+    recentPush: recentPush,
+    onSearch: function (v) {
+      state.keyword = String(v || '').trim();
+      renderList();
+    },
+    toast: toast
+  };
+
+  /* ---------------- 初始化 ---------------- */
+  function boot() {
+    state.cur = param('cur') || '';
+    var b = param('back');
+    if (b) state.back = b;
+    if ($('xtrCurText')) $('xtrCurText').textContent = state.cur ? ('当前：' + state.cur) : '';
+    renderRecent();   /* R88-J：常用城市 */
+    render();
+    locate();
+    if (typeof window.lucideAutoRender === 'function') window.lucideAutoRender();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+</script>
+</body>
+</html>

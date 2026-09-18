@@ -1,0 +1,252 @@
+%% R88-B 服务端中转端点 · 类图
+%% 作者：架构师 高见远（Gao）  2026-09-18
+%% 对应文档：docs/design-r88b-服务端中转端点与真可用修复.md
+
+classDiagram
+    %% ==================== 服务端 · 中转层 ====================
+    class MediaRouter {
+        <<FastAPI APIRouter 新建>>
+        prefix = "/api/media"
+        +POST /image() JSONResponse
+        +POST /video() JSONResponse
+        +POST /model3d() JSONResponse
+        +GET  /tasks/id JSONResponse
+        +POST /asr() JSONResponse
+        +POST /embed() JSONResponse
+        +POST /rerank() JSONResponse
+        +POST /translate() JSONResponse
+        +GET  /capabilities() JSONResponse
+        -_record_usage(db, user_id) int
+        -_task_cache dict
+        -_TASK_TTL_SEC int = 1800
+        -_POLL_THROTTLE_MS int = 3000
+        -_capabilities() dict
+    }
+
+    class MediaProviders {
+        <<适配层 新建 无状态>>
+        +PROVIDERS dict
+        +resolve(provider_id) dict
+        +endpoint_for(kind, provider_id) str
+        +build_image_body(inp, model) dict
+        +build_video_body(inp, model) dict
+        +build_3d_body(inp, model) dict
+        +build_translate_body(inp, model) dict
+        +parse_upstream(kind, json) dict
+        +friendly_error(status, raw, hints) str
+        -_filter_key(text) str
+    }
+
+    class MediaStore {
+        <<落盘层 新建 无状态>>
+        +MEDIA_DIR Path
+        +MAX_BYTES int = 104857600
+        +ensure_dir()
+        +save_from_url(kind, url) dict
+        +save_bytes(kind, data, ext) str
+        +guess_ext(url_or_ct) str
+        +public_url(filename) str
+        -_rand8() str
+    }
+
+    class QuotaLedger {
+        <<现有模块 复用不改>>
+        +check_quota(model_id) tuple
+        +record_usage(model_id, amount, ok) dict
+        +known_model_ids() set
+        +ledger_snapshot() dict
+        +resolve_model_name(provider, mid) str
+    }
+
+    class Config {
+        <<现有模块 改 2 行>>
+        +AI_PROVIDERS dict
+        +MEDIA_DIR Path
+        +RATE_AI_MEDIA_PER_MIN int
+        +configured_providers() dict
+    }
+
+    class RateLimit {
+        <<现有模块 改 1 行>>
+        +_LIMITS dict
+        +rate_limit(group) dependency
+    }
+
+    class Security {
+        <<现有模块 不改>>
+        +get_current_user_optional()
+        +get_current_user()
+    }
+
+    class MainApp {
+        <<main.py 改 1 行>>
+        +include_router(media.router)
+        +mount("/uploads", UPLOAD_DIR)
+    }
+
+    MediaRouter --> MediaProviders : 组上游请求
+    MediaRouter --> MediaStore : 产物落盘
+    MediaRouter --> QuotaLedger : 前置检查 + 记账
+    MediaRouter --> Security : 可选登录
+    MediaRouter --> RateLimit : 限流(media)
+    MediaProviders --> Config : 读 key / base_url
+    MediaStore --> Config : MEDIA_DIR
+    MainApp --> MediaRouter : 装配
+
+    %% ==================== 前端 · 能力层 ====================
+    class AiService {
+        <<ai-service.js LF>>
+        +callAI(funcType, msgs, opts)
+        +relayBase() str
+        +relayToken() str
+        +xtCallCapability(cap, mc, input, opt, sink)
+        +xtRunCapability(modelId, input, opts)
+        +xtRelayCapability(cap, mc, input, opt, sink)
+        +xtMediaUrl(kind) str
+        +AI_SERVICE 导出对象
+    }
+
+    class CapRegistry {
+        <<ai-cap-registry.js LF>>
+        +register(cap)
+        +get(keyOrType)
+        +byType(t)
+        +endpoint(cap, provider)
+        +usage(o)
+        +errText(json, fb)
+    }
+
+    class CapVideo {
+        <<ai-cap-video.js LF wait-for R88-B>>
+        key = video
+        async = true
+        +build(ctx)
+        +parse(json, ctx)
+        +parseDone(json, ctx)
+        +poll(taskId, ctx, onProgress)
+        +run(ctx, onProgress)
+        +probe(ctx)
+    }
+
+    class Cap3D {
+        <<ai-cap-3d.js LF wait-for R88-B>>
+        key = model3d
+        async = true
+        +build(ctx)
+        +parse(json, ctx)
+        +parseDone(json, ctx)
+        +poll(taskId, ctx, onProgress)
+        +run(ctx, onProgress)
+    }
+
+    class CapImage {
+        <<ai-cap-image.js LF>>
+        key = imagegen
+        +build(ctx)
+        +parse(json, ctx)
+    }
+
+    class CapAudio {
+        <<ai-cap-audio.js LF>>
+        key = asr
+        +build(ctx)
+        +parse(json, ctx)
+        +probe(ctx)
+    }
+
+    class CapEmbed {
+        <<ai-cap-embed.js LF>>
+        key = embed
+        +build(ctx)
+        +parse(json, ctx)
+    }
+
+    class CapRerank {
+        <<ai-cap-embed.js LF>>
+        key = rerank
+        +build(ctx)
+        +parse(json, ctx)
+    }
+
+    class CapTranslate {
+        <<ai-cap-translate.js LF>>
+        key = text
+        +build(ctx)
+        +parse(json, ctx)
+    }
+
+    class AiPage {
+        <<ai-page.js LF>>
+        +capRunner() function
+        +runAudioRecognition(audio, m)
+    }
+
+    AiPage --> AiService : capRunner 取 xtRunCapability
+    AiService --> CapRegistry : xtResolveCapability / byType
+    AiService --> CapVideo : cap.run 异步
+    AiService --> Cap3D : cap.run 异步
+    AiService --> CapImage : cap.build/parse
+    AiService --> CapAudio : cap.build/parse formData
+    AiService --> CapEmbed : cap.build/parse
+    AiService --> CapRerank : cap.build/parse
+    AiService --> CapTranslate : cap.build/parse
+
+    CapVideo ..> MediaRouter : POST /api/media/video + GET /tasks/id
+    Cap3D ..> MediaRouter : POST /api/media/model3d + GET /tasks/id
+    CapImage ..> MediaRouter : POST /api/media/image
+    CapAudio ..> MediaRouter : POST /api/media/asr
+    CapEmbed ..> MediaRouter : POST /api/media/embed
+    CapRerank ..> MediaRouter : POST /api/media/rerank
+    CapTranslate ..> MediaRouter : POST /api/media/translate
+
+    %% ==================== 数据模型 ====================
+    class ImageIn {
+        +str modelId
+        +str prompt
+        +str size
+        +int batch
+        +str mode
+        +str imageDataUrl
+    }
+    class VideoIn {
+        +str modelId
+        +str prompt
+        +str mode
+        +str imageUrl
+        +str ratio
+        +int duration
+        +str resolution
+        +bool audio
+        +bool cameraFixed
+        +int seed
+    }
+    class Model3DIn {
+        +str modelId
+        +str imageUrl
+        +str prompt
+        +str subdivision
+        +str format
+    }
+    class MediaResp {
+        +bool ok
+        +dict data
+        +str error
+        +str code
+    }
+    class TaskState {
+        +str taskId
+        +str kind
+        +str modelId
+        +str status
+        +int attempts
+        +float createdAt
+        +float lastPollAt
+        +dict result
+        +dict usage
+    }
+
+    MediaRouter ..> ImageIn
+    MediaRouter ..> VideoIn
+    MediaRouter ..> Model3DIn
+    MediaRouter ..> MediaResp
+    MediaRouter ..> TaskState : 缓存

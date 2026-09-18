@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>社区 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260917b">
+<link rel="stylesheet" href="assets/common.css?v=20260918d">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O">
@@ -87,6 +87,14 @@
 .note-body .nc-excerpt,
 .note-detail-box .nd-content,
 .bc-item .bc-text { word-break: break-word; overflow-wrap: break-word; }
+/* R88-H / T04：社区发贴「所在位置」入口 + 位置 chip（仅本页；只读文字地址，不涉坐标） */
+.blog-loc-bar { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.blog-loc-btn { display: inline-flex; align-items: center; gap: 4px; background: none; border: 1px dashed var(--border); color: var(--text-secondary); cursor: pointer; font-size: 12px; padding: 6px 10px; border-radius: 8px; transition: color .15s, border-color .15s; }
+.blog-loc-btn:hover { color: var(--primary); border-color: var(--primary); }
+.blog-loc-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, transparent); border-radius: 999px; padding: 4px 10px; max-width: 240px; }
+.blog-loc-chip .blog-loc-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.blog-loc-chip .blog-loc-x { cursor: pointer; font-weight: 700; opacity: .7; }
+.blog-loc-chip .blog-loc-x:hover { opacity: 1; }
 </style>
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
 <script>window.__XT_PROD__=true;</script>
@@ -133,8 +141,8 @@
         <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
       </div>
       <div class="nav-section">互动</div>
-      <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
-        <span class="nav-icon" data-icon="users"></span><span>好友</span>
+      <div class="nav-item" data-external="1" onclick="gotoChat()" title="通讯录 · 添加好友（需在线模式）">
+        <span class="nav-icon" data-icon="users"></span><span>通讯录</span>
       </div>
       <div class="nav-section">中心</div>
       <div class="nav-item" data-page="wrong-book">
@@ -306,6 +314,10 @@
                 <button class="btn btn-primary" onclick="saveBlogNote('published')"><span class="nav-icon" data-icon="upload" data-icon-size="16"></span> 发布</button>
                 <button class="btn btn-outline" onclick="saveBlogNote('draft')"><span class="nav-icon" data-icon="save" data-icon-size="16"></span> 存草稿</button>
                 <button class="btn btn-outline" onclick="resetBlogEditor()"><span class="nav-icon" data-icon="rotate-ccw" data-icon-size="16"></span> 清空</button>
+                <span class="blog-loc-bar">
+                  <button type="button" class="blog-loc-btn" id="blogLocBtn" onclick="blogPickLoc()"><span class="nav-icon" data-icon="map-pin" data-icon-size="14"></span> 所在位置</button>
+                  <span class="blog-loc-chip" id="blogLocChip" data-loc="" style="display:none"><span class="nav-icon" data-icon="map-pin" data-icon-size="12"></span><span class="blog-loc-text" id="blogLocText"></span><span class="blog-loc-x" onclick="blogClearLoc()" title="清除位置">&times;</span></span>
+                </span>
                 <div class="spacer"></div>
                 <span id="blogEditStatus" style="font-size:var(--xt-font-sm);color:var(--text-secondary)"></span>
               </div>
@@ -444,6 +456,7 @@
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
 <script src="assets/app.js?v=20260917b" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/xt-region.js?v=20260918a" defer></script>
 <script src="assets/api.js?v=20260917b" defer></script>
 <script>
 /* ===================================================================
@@ -778,8 +791,106 @@
   else initShare();
 })();
 </script>
-<script src="assets/ai-config.js?v=20260918b"></script>
+<script src="assets/ai-config.js?v=20260918c"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260918b"></script>
+<script src="assets/ai-service.js?v=20260918d"></script>
+<script src="assets/ai-cap-registry.js?v=20260918c"></script>
+<script src="assets/ai-cap-image.js?v=20260918c"></script>
+<script src="assets/ai-cap-vision.js?v=20260918c"></script>
+<script src="assets/ai-cap-audio.js?v=20260918c"></script>
+<script src="assets/ai-cap-embed.js?v=20260918c"></script>
+<script src="assets/ai-cap-translate.js?v=20260918c"></script>
+<script src="assets/ai-cap-video.js?v=20260918c"></script>
+<script src="assets/ai-cap-3d.js?v=20260918c"></script>
+<script>
+/* ===================================================================
+   R88-H / T04：社区发贴「所在位置」
+   -------------------------------------------------------------------
+   位置文字地址的唯一真源 = #blogLocChip 的 data-loc 属性（String）。
+   saveBlogNote（app.js 本地链路 / api.js 服务端链路）均从该节点读取同一值。
+   只产出/渲染文字地址，任何路径不渲染经纬度。
+   手动兜底复用 app.js 的 window.uiPrompt（禁原生 prompt）。
+   =================================================================== */
+(function () {
+  function toast(msg) { try { if (typeof showToast === 'function') showToast(msg); } catch (e) { } }
+
+  // 取当前 chip 上的文字地址（空串 = 未设位置）
+  function currentLoc() {
+    var chip = document.getElementById('blogLocChip');
+    if (!chip) return '';
+    return chip.getAttribute('data-loc') || '';
+  }
+
+  // 渲染 / 隐藏位置 chip（空值不渲染）
+  window.blogRenderLocChip = function () {
+    var chip = document.getElementById('blogLocChip');
+    if (!chip) return;
+    var txt = currentLoc();
+    var label = document.getElementById('blogLocText');
+    if (txt) {
+      chip.setAttribute('data-loc', txt);
+      if (label) label.textContent = txt;
+      chip.style.display = 'inline-flex';
+    } else {
+      chip.setAttribute('data-loc', '');
+      if (label) label.textContent = '';
+      chip.style.display = 'none';
+    }
+    if (window.lucideAutoRender) window.lucideAutoRender();
+  };
+
+  // 清除位置
+  window.blogClearLoc = function () {
+    var chip = document.getElementById('blogLocChip');
+    if (chip) chip.setAttribute('data-loc', '');
+    window.blogRenderLocChip();
+  };
+
+  // 手动输入兜底：复用 app.js 的 uiPrompt（异步，取消返回 null）
+  function manualInput(title, placeholder, cb) {
+    if (typeof window.uiPrompt !== 'function') { cb(''); return; }
+    var msg = placeholder ? (title + '（' + placeholder + '）') : title;
+    window.uiPrompt(msg, '').then(function (v) {
+      cb(v == null ? '' : String(v).trim());
+    }).catch(function () { cb(''); });
+  }
+
+  // 主入口：定位 → 逆编码 → 文字地址；失败降级手动输入
+  window.blogPickLoc = function () {
+    if (!window.XT_LOC_PICK || typeof window.XT_LOC_PICK.pick !== 'function') {
+      toast('定位失败，请手动填写');
+      manualInput('所在位置', '如：图书馆 / 自习室', function (text) {
+        var chip = document.getElementById('blogLocChip');
+        if (chip) chip.setAttribute('data-loc', text || '');
+        window.blogRenderLocChip();
+      });
+      return;
+    }
+    var btn = document.getElementById('blogLocBtn');
+    if (btn) btn.disabled = true;
+    toast('正在定位…');
+    window.XT_LOC_PICK.pick({
+      fallbackTitle: '所在位置',
+      allowManual: true,
+      onManual: manualInput
+    }, function (r) {
+      if (btn) btn.disabled = false;
+      var chip = document.getElementById('blogLocChip');
+      if (r && r.text) {
+        if (chip) chip.setAttribute('data-loc', r.text);
+        window.blogRenderLocChip();
+      } else {
+        if (chip) chip.setAttribute('data-loc', '');
+        window.blogRenderLocChip();
+      }
+    });
+  };
+
+  // 进入编辑器时按 data-loc 现有值渲染一次
+  function init() { window.blogRenderLocChip(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
 </body>
 </html>

@@ -1,0 +1,13 @@
+FILE assets\xt-profile.js
+  bytes        : 138548  (was 108663, delta +29885)
+  CRLF pairs   : 2750
+  lone LF      : 0
+  lone CR      : 0
+  CRLF_OK      : YES
+FILE assets\xt-profile.css
+  bytes        : 39053  (was 33569, delta +5484)
+  CRLF pairs   : 1224
+  lone LF      : 0
+  lone CR      : 0
+  CRLF_OK      : YES
+EXIT=0

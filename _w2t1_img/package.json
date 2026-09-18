@@ -1,0 +1,12 @@
+{
+  "name": "_w2t1_img",
+  "version": "1.0.0",
+  "description": "",
+  "main": "pdf.min.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

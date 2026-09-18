@@ -1,0 +1,23 @@
+server up on 8899
+chrome Chrome/153.0.8010.48
+1280-welcome             boxW={'w': 768}/{'w': 768}(bg=rgb(255, 255, 25 bd=rgb(231, 233, 238)) panel=none(z330) labels side=[模型 · 自动] input=[自动] panelOpenClass=ai-input-box
+1280-conv                boxW={'w': 0}/{'w': 768}(bg=rgb(255, 255, 25 bd=rgb(231, 233, 238)) panel=none(z330) labels side=[模型 · 自动] input=[自动] panelOpenClass=ai-input-box
+1280-focus               boxW={'w': 0}/{'w': 768}(bg=rgb(255, 255, 25 bd=rgba(255, 140, 0, ) panel=none(z330) labels side=[模型 · 自动] input=[自动] panelOpenClass=ai-input-box focus
+1280-sidebar-model       boxW={'w': 0}/{'w': 768}(bg=rgb(255, 255, 25 bd=rgb(231, 233, 238)) panel=block(z330) labels side=[模型 · 自动] input=[自动] panelOpenClass=ai-input-box
+375-welcome              boxW={'w': 343}/{'w': 343}(bg=rgb(255, 255, 25 bd=rgb(231, 233, 238)) panel=none(z330) labels side=[模型 · 自动] input=[自动] panelOpenClass=ai-input-box
+375-conv                 boxW={'w': 0}/{'w': 343}(bg=rgb(255, 255, 25 bd=rgb(231, 233, 238)) panel=none(z330) labels side=[模型 · 自动] input=[自动] panelOpenClass=ai-input-box
+375-focus                boxW={'w': 0}/{'w': 343}(bg=rgb(255, 255, 25 bd=rgba(255, 140, 0, ) panel=none(z330) labels side=[模型 · 自动] input=[自动] panelOpenClass=ai-input-box focus
+375-drawer               boxW={'w': 343}/{'w': 343}(bg=rgb(255, 255, 25 bd=rgb(231, 233, 238)) panel=none(z330) labels side=[模型 · 自动] input=[自动] panelOpenClass=ai-input-box
+375-drawer-model         boxW={'w': 343}/{'w': 343}(bg=rgb(255, 255, 25 bd=rgb(231, 233, 238)) panel=block(z330) labels side=[模型 · 自动] input=[自动] panelOpenClass=ai-input-box
+BEFORE-1280-welcome      boxW={'w': 768}/{'w': 768}(bg=rgb(246, 247, 24 bd=rgba(0, 0, 0, 0)) panel=none(z330) labels side=[模型 · 自动] input=[自动] panelOpenClass=ai-input-box
+      errors=['log:Failed to load resource: the server responded with a status of 404 (Not Found) @http://127.0.0.1:8899/api/health']
+SELECT-1280              boxW={'w': 0}/{'w': 768}(bg=rgb(255, 255, 25 bd=rgb(231, 233, 238)) panel=none(z330) labels side=[模型 · GLM-4.5-Flash] input=[GLM-4.5-Flash] panelOpenClass=ai-input-box
+      errors=['log:Failed to load resource: the server responded with a status of 404 (Not Found) @http://127.0.0.1:8899/api/health']
+SELECT-375               boxW={'w': 343}/{'w': 343}(bg=rgb(255, 255, 25 bd=rgb(231, 233, 238)) panel=none(z330) labels side=[模型 · GLM-4.5-Flash] input=[GLM-4.5-Flash] panelOpenClass=ai-input-box
+      errors=['log:Failed to load resource: the server responded with a status of 404 (Not Found) @http://127.0.0.1:8899/api/health']
+BEFORE-1280-after-send   boxW={'w': 0}/{'w': 768}(bg=rgb(255, 255, 25 bd=rgba(0, 0, 0, 0.06) panel=none(z330) labels side=[模型 · GLM-4.5-Flash] input=[GLM-4.5-Flash] panelOpenClass=ai-input-box focus
+      errors=['log:Failed to load resource: the server responded with a status of 404 (Not Found) @http://127.0.0.1:8899/api/health']
+BEFORE-375-welcome       boxW={'w': 343}/{'w': 343}(bg=rgb(246, 247, 24 bd=rgba(0, 0, 0, 0)) panel=none(z330) labels side=[模型 · GLM-4.5-Flash] input=[GLM-4.5-Flash] panelOpenClass=ai-input-box
+      errors=['log:Failed to load resource: the server responded with a status of 404 (Not Found) @http://127.0.0.1:8899/api/health']
+BEFORE-375-after-send    boxW={'w': 0}/{'w': 343}(bg=rgb(255, 255, 25 bd=rgba(0, 0, 0, 0.06) panel=none(z330) labels side=[模型 · GLM-4.5-Flash] input=[GLM-4.5-Flash] panelOpenClass=ai-input-box focus
+      errors=['log:Failed to load resource: the server responded with a status of 404 (Not Found) @http://127.0.0.1:8899/api/health']

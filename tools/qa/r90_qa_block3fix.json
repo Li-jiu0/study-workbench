@@ -1,0 +1,261 @@
+{
+  "total": 51,
+  "pass": 50,
+  "results": [
+    {
+      "name": "B3-1.0 发布页真实加载，xt-moments.js 真执行并暴露 XTM",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-1.1 #xtmLocBtn 存在",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-1.2 #xtmAtBtn 存在",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-1.2b #xtmLocBtn.onclick 是函数（原生 boot 已绑定）",
+      "pass": true,
+      "detail": "function"
+    },
+    {
+      "name": "B3-1.2c #xtmAtBtn.onclick 是函数（原生 boot 已绑定）",
+      "pass": true,
+      "detail": "function"
+    },
+    {
+      "name": "B3-1.3 #xtmLocBtn 发起整页跳转（URL 非空）",
+      "pass": true,
+      "detail": "[\"地区选择.html?cur=&back=%E6%9C%8B%E5%8F%8B%E5%9C%88%E5%8F%91%E5%B8%83.html\"]"
+    },
+    {
+      "name": "B3-1.4 #xtmAtBtn 发起整页跳转（URL 非空）",
+      "pass": true,
+      "detail": "[\"地区选择.html?cur=&back=%E6%9C%8B%E5%8F%8B%E5%9C%88%E5%8F%91%E5%B8%83.html\"]"
+    },
+    {
+      "name": "B3-1.5-loc.1 URL 指向 地区选择.html",
+      "pass": true,
+      "detail": "地区选择.html?cur=&back=朋友圈发布.html"
+    },
+    {
+      "name": "B3-1.5-loc.2 URL 带 cur= 参数",
+      "pass": true,
+      "detail": "地区选择.html?cur=&back=朋友圈发布.html"
+    },
+    {
+      "name": "B3-1.5-loc.3 URL 带 back= 参数",
+      "pass": true,
+      "detail": "地区选择.html?cur=&back=朋友圈发布.html"
+    },
+    {
+      "name": "B3-1.5-loc.4 back 解码 = 朋友圈发布.html（回跳发表页，非默认 个人中心）",
+      "pass": true,
+      "detail": "地区选择.html?cur=&back=朋友圈发布.html"
+    },
+    {
+      "name": "B3-1.5-at.1 URL 指向 地区选择.html",
+      "pass": true,
+      "detail": "地区选择.html?cur=&back=朋友圈发布.html"
+    },
+    {
+      "name": "B3-1.5-at.2 URL 带 cur= 参数",
+      "pass": true,
+      "detail": "地区选择.html?cur=&back=朋友圈发布.html"
+    },
+    {
+      "name": "B3-1.5-at.3 URL 带 back= 参数",
+      "pass": true,
+      "detail": "地区选择.html?cur=&back=朋友圈发布.html"
+    },
+    {
+      "name": "B3-1.5-at.4 back 解码 = 朋友圈发布.html（回跳发表页，非默认 个人中心）",
+      "pass": true,
+      "detail": "地区选择.html?cur=&back=朋友圈发布.html"
+    },
+    {
+      "name": "B3-1.6 两按钮产生完全相同的跳转 URL（共用同一处理器 xtmPickLocation）",
+      "pass": true,
+      "detail": "地区选择.html?cur=&back=%E6%9C%8B%E5%8F%8B%E5%9C%88%E5%8F%91%E5%B8%83.html VS 地区选择.html?cur=&back=%E6%9C%8B%E5%8F%8B%E5%9C%88%E5%8F%91%E5%B8%83.html"
+    },
+    {
+      "name": "B3-1.7 首选是整页跳转而非页内弹层（XT_LOC_PICK 存在但未被调用）",
+      "pass": true,
+      "detail": "XT_LOC_PICK=object nav=[\"地区选择.html?cur=&back=%E6%9C%8B%E5%8F%8B%E5%9C%88%E5%8F%91%E5%B8%83.html\"]"
+    },
+    {
+      "name": "B3-2.1 goBack 使用 state.back",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-2.2 goBack 首选 location.replace(state.back)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-2.3 默认 back = 个人中心.html（说明 back 参数非默认值）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-2.4 boot 读 param('back') 覆盖 state.back",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-2.5 pick() 选中后也跳 state.back（回写+回跳一体）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-2.6 pick() 把 {text,ts} 写入 localStorage（回写数据源）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-2R.1 goBack() 真跳回 朋友圈发布.html（闭环达成，非仅参数存在）",
+      "pass": true,
+      "detail": "http://127.0.0.1:62476/%E5%9C%B0%E5%8C%BA%E9%80%89%E6%8B%A9.html?back=%E6%9C%8B%E5%8F%8B%E5%9C%88%E5%8F%91%E5%B8%83.html"
+    },
+    {
+      "name": "B3-2R.2 goBack() 未跳向默认 个人中心.html",
+      "pass": true,
+      "detail": "http://127.0.0.1:62476/%E5%9C%B0%E5%8C%BA%E9%80%89%E6%8B%A9.html?back=%E6%9C%8B%E5%8F%8B%E5%9C%88%E5%8F%91%E5%B8%83.html"
+    },
+    {
+      "name": "B3-2R.3 对照：无 back 参数时回跳默认 个人中心.html（证明 back 是决定因素）",
+      "pass": false,
+      "detail": "http://127.0.0.1:62476/%E5%9C%B0%E5%8C%BA%E9%80%89%E6%8B%A9.html"
+    },
+    {
+      "name": "B3-2R.4 pick() 真写入回写键 {text,ts}",
+      "pass": true,
+      "detail": "{\"text\":\"R90省 R90市\",\"ts\":1789733271424}"
+    },
+    {
+      "name": "B3-2R.5 pick() 真回跳到 朋友圈发布.html（完整闭环：选→回写→回跳）",
+      "pass": true,
+      "detail": "http://127.0.0.1:62476/%E5%9C%B0%E5%8C%BA%E9%80%89%E6%8B%A9.html?cur=&back=%E6%9C%8B%E5%8F%8B%E5%9C%88%E5%8F%91%E5%B8%83.html"
+    },
+    {
+      "name": "B3-3.1 整页跳转被拒（hook 返回 false）→ 降级调用 openPicker",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-3.2 降级调用签名正确（opts 含 title/confirmText/current；第二参是回调）",
+      "pass": true,
+      "detail": "{\"title\":\"选择位置\",\"confirmText\":\"确定\",\"current\":\"\"} cb=function"
+    },
+    {
+      "name": "B3-3.3 降级过程不抛异常",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-3.4 降级回调真写入位置显示区（#xtmChosen 含值 + 按钮 on 态）",
+      "pass": true,
+      "detail": "\" R90降级值\" | xtm-fn on"
+    },
+    {
+      "name": "B3-3.5 openPicker 异常被吞（未冒泡到调用方）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-3.6 继续降级到本页输入层（真出现可见弹层，不白屏不静默）",
+      "pass": true,
+      "detail": "xtm-overlay display=block"
+    },
+    {
+      "name": "B3-3.7 双降级都不可用时仍不抛异常（有兜底）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-3.8 双降级时本页输入层仍出现",
+      "pass": true,
+      "detail": "xtm-overlay"
+    },
+    {
+      "name": "B3-4.1 新鲜回写值被消费（一次性：key 被删除）",
+      "pass": true,
+      "detail": "null"
+    },
+    {
+      "name": "B3-4.2 值真回填到位置显示区（#xtmChosen 含地址）",
+      "pass": true,
+      "detail": "\" R90省 R90市\""
+    },
+    {
+      "name": "B3-4.3 位置按钮进入已选态（class 含 xtm-fn on）",
+      "pass": true,
+      "detail": "xtm-fn on"
+    },
+    {
+      "name": "B3-4.4 无 key 时不残留任何位置值（二次消费被拒）",
+      "pass": true,
+      "detail": "\"\""
+    },
+    {
+      "name": "B3-4.5 TTL 过期值被拒绝（不回填）",
+      "pass": true,
+      "detail": "\"\""
+    },
+    {
+      "name": "B3-4.6 TTL 过期值仍被消费掉（key 删除，不留脏数据）",
+      "pass": true,
+      "detail": "null"
+    },
+    {
+      "name": "B3-4.7 对照：TTL 边界内（9 分钟）值被接受（证明 TTL 判断有效而非一刀切）",
+      "pass": true,
+      "detail": "\" R90边界内值\""
+    },
+    {
+      "name": "B3-4.8 畸形 JSON 不抛异常且不回填",
+      "pass": true,
+      "detail": " | \"\""
+    },
+    {
+      "name": "B3-4.9 畸形 JSON 的 key 也被清掉（不留脏键）",
+      "pass": true,
+      "detail": "null"
+    },
+    {
+      "name": "B3-5.1 #xtmFileImg 在位",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-5.2 #xtmFileVid 在位",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-5.3 #xtmCancel / #xtmSubmit 在位",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-5.4 #xtmLocBtn / #xtmAtBtn 在位",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-5.5 功能栏 6 按钮齐全",
+      "pass": true,
+      "detail": "[\"xtmCancel\",\"xtmSubmit\",\"xtmText\",\"xtmMedia\",\"xtmFileImg\",\"xtmFileVid\",\"xtmFuncbar\",\"xtmLocBtn\",\"xtmVisBtn\",\"xtmMentionBtn\",\"xtmAtBtn\",\"xtmVidBtn\",\"xtmLinkBtn\",\"xtmChosen\"]"
+    },
+    {
+      "name": "B3-5.6 字节数 == 12612（任务书期望未改）",
+      "pass": true,
+      "detail": "实测 12612（差 0）"
+    }
+  ]
+}

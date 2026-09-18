@@ -1,0 +1,49 @@
+=== pairing ===
+AI.html   <!-- =13  --> =13
+AI.html   <div =142  </div> =142 (script/style removed)
+AI.html   <script =14  </script> =14
+AI.html   <button =25  </button> =25
+
+=== forbidden syntax in ai-page.js ===
+optional-chain ?.      0
+nullish ??             0
+replaceAll             0
+Object.fromEntries     0
+.at(                   0
+lookbehind (?<=        0
+lookbehind (?<!        0
+exponent **            0
+object-spread {...     0
+obj rest destruct      0
+catch {} bare          0
+native alert           0
+native confirm         0
+native prompt          0
+await count (non-top-level expected): 1
+
+=== globals in ai-page.js (top-level var/const/let/function) ===
+
+
+=== key ids ===
+aiInputBox             html=True js=True
+aiWelcomeInputSlot     html=True js=True
+aiDockInputSlot        html=True js=True
+aiModelPanel           html=True js=True
+aiModelInfoBtn         html=True js=True
+aiSettingsBtn          html=True js=True
+aiClearBtn             html=True js=True
+aiModelBtn             html=True js=True
+aiModelLabel           html=True js=True
+aiDeepThinkChip        html=True js=True
+aiSendBtn              html=True js=True
+aiAttachBtn            html=True js=True
+aiFileInput            html=True js=True
+aiChat                 html=True js=True
+aiHistory              html=True js=True
+
+=== css spot check ===
+\.ai-input-wrap\{width:100%;max-width:768px                  True
+\.ai-input-box\{[^}]*background:var\(--ai-card\)             True
+\.ai-model-panel\{[^}]*z-index:330                           True
+\.ai-welcome \.ai-input-wrap\{max-width:768px\}              False
+\.ai-hist-foot-btn \.ai-foot-label\{flex:1                   True

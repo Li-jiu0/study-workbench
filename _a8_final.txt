@@ -1,0 +1,11 @@
+=== 最终断言：学习概括.html ===
+bytes=45023 CRLF=837 bareLF=0 -> PASS
+comment <!-- -->  : 19 / 19
+div               : 186 / 186
+script            : 14 / 14
+head/body/html    : 1/1 1/1 1/1
+
+=== notify.js 断言 ===
+bytes=21408 CRLF=0 bareLF=552 -> PASS(pure LF)
+node --check rc=0 -> PASS
+escheck: DONE 0 (rc=0)

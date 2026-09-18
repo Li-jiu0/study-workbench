@@ -1,0 +1,2 @@
+﻿keys JSDOM,VirtualConsole,CookieJar,requestInterceptor,toughCookie
+ver 30.0.1

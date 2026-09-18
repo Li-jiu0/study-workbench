@@ -1,0 +1,95 @@
+=== 1. 个人资料.html: chatLocal / paintChat / m5 wiring ===
+  L10    数据：全部读取本机 localStorage（assets/xt-profile.js），无数据一律显示 0；
+  L50    <script src="assets/xt-profile.js?v=20260918d" defer></script>
+
+=== 2. assets/xt-profile.js  (2799 lines) ===
+  L290   function aiChatArr() { var a = readJSON('ai_chat_history', []); return isArr(a) ? a : []; }
+  L294   *   1) 请求未发：原 chatBody() 从不调用 GET /api/ai/history，登录用户的真实历史一条都拉不到；
+  L295   *   2) 字段错配：它把本机 localStorage.ai_chat_history 当成「扁平消息数组」逐条读
+  L301   *   主数据源 = GET /api/ai/history（服务端只返回当前登录用户自己的记录；
+  L305   *   本机 ai_chat_history（会话结构）降级为离线兜底，按会话分组渲染。
+  L355   /** 本机 ai_chat_history 的消息总条数（会话结构：逐会话累加 messages.length） */
+  L387   /** 本机 ai_chat_history（会话结构）→ 段数组，仅作离线兜底 */
+  L430   console.warn('[xt-profile] AI对话记录：未登录或 api.js 未就绪，跳过 GET /api/ai/history，仅展示本机兜底');
+  L434   console.warn('[xt-profile] AI对话记录：请求 GET /api/ai/history?limit=' + AI_CHAT_LIMIT);
+  L435   var p = window.api('/api/ai/history?limit=' + AI_CHAT_LIMIT, { method: 'GET' }).then(function (d) {
+  L728   btns += '<button class="xtp-hero-act" type="button" data-other-act="chat">' +
+  L852   if (a === 'chat') {
+  L1085  { icon: 'bot', title: 'AI对话记录', view: 'chat', badge: chatBadge() }
+  L1260  else if (id === 'chat') { title = 'AI对话记录'; body = chatBody(); }
+  L1270  if (id === 'chat') { bindChatView(el); }
+  L1504  /** 本机会话兜底区块（ai_chat_history 真实结构是会话数组，按会话展示） */
+  L1505  function chatLocalHtml(title, note) {
+  L1528  s += '</div></section><div class="xtp-tip">以上为本机 localStorage.ai_chat_history 的会话记录（未上传服务端）。</div>';
+  L1537  ' 段（来源：GET /api/ai/history）。</div>';
+  L1551  m5PanelHtml();
+  L1558  '</div>' + m5PanelHtml();
+  L1564  m5PanelHtml();
+  L1566  return chatServerHtml() + m5PanelHtml();
+  L1583  m5Bind(box);
+  L1612  *   ① 本机 localStorage.ai_chat_history = 会话数组
+  L1615  *   ② 服务端 GET /api/ai/history 只返回**扁平消息**（无 id / 无标题 / 无标签），且服务端
+  L1618  *   ③ 标签 / 收藏等扩展信息写入本页自有键 xt_ai_chat_meta_v1（按会话 id 索引），
+  L1619  *      不污染 ai_chat_history 的既有结构（否则会破坏 ai-page.js 的读取）。
+  L1626  var META_KEY = 'xt_ai_chat_meta_v1';   // { [chatId]: { tags:[String], fav:Boolean } } */
+  L1744  function m5RangeBounds() {
+  L1767  function m5Filtered() {
+  L1769  var b = m5RangeBounds(), out = [], i;
+  L1801  function m5ToolbarHtml() {
+  L1853  var list = m5Filtered(), i;
+  L1859  function m5CardHtml(s) {
+  L1888  function m5PanelHtml() {
+  L1889  var list = m5Filtered(), i, s = '';
+  L1890  for (i = 0; i < list.length; i++) { s += m5CardHtml(list[i]); }
+  L1895  return m5ToolbarHtml() +
+  L1905  function m5ClearAll() {
+  L1913  localStorage.removeItem('ai_chat_history');
+  L1916  m5Repaint();
+  L1921  function m5DelOne(id) {
+  L1930  m5WriteSessions(out);
+  L1933  m5Repaint();
+  L1938  function m5DelSelected() {
+  L1948  m5WriteSessions(out);
+  L1953  m5Repaint();
+  L1958  function m5EditTags(id) {
+  L1978  m5Repaint();
+  L1983  function m5ToggleFav(id) {
+  L1986  m5Repaint();
+  L1995  function m5Pack(scope) {
+  L1996  var sessions = (scope === 'filtered') ? m5Filtered() : chatSessions();
+  L2030  function m5Export() {
+  L2033  m5Download(m5Pack('full'), 'ai-chat-export_' + m5Stamp() + '.json');
+  L2035  function m5Backup() {
+  L2038  m5Download(m5Pack('full'), 'ai-chat-backup_' + m5Stamp() + '.json');
+  L2041  function m5Restore() {
+  L2069  var merged = m5Merge(ok, data && data.meta);
+  L2070  m5Repaint();
+  L2080  function m5Merge(importSessions, importMeta) {
+  L2096  m5WriteSessions(out);
+  L2115  /** 写回 ai_chat_history（仅用规范化字段，保持 ai-page.js 可读） */
+  L2116  function m5WriteSessions(list) {
+  L2117  writeJSON('ai_chat_history', list);
+  L2121  function m5Repaint() {
+  L2125  function m5Bind(root) {
+  L2137  m5Repaint();
+  L2146  if (clearEl) { clearEl.addEventListener('click', function () { M5.kw = ''; m5Reset(); m5Repaint(); }); }
+  L2148  if (rangeEl) { rangeEl.addEventListener('change', function () { M5.range = rangeEl.value || 'all'; m5Reset(); m5Repaint(); }); }
+  L2150  if (tagEl) { tagEl.addEventListener('change', function () { M5.tag = tagEl.value || ''; m5Reset(); m5Repaint(); }); }
+  L2152  if (fromEl) { fromEl.addEventListener('change', function () { M5.from = fromEl.value || ''; m5Reset(); m5Repaint(); }); }
+  L2154  if (toEl) { toEl.addEventListener('change', function () { M5.to = toEl.value || ''; m5Reset(); m5Repaint(); }); }
+  L2156  if (favEl) { favEl.addEventListener('click', function () { M5.favOnly = !M5.favOnly; m5Reset(); m5Repaint(); }); }
+  L2158  if (selBtnEl) { selBtnEl.addEventListener('click', function () { M5.selMode = !M5.selMode; M5.sel = {}; m5Repaint(); }); }
+  L2162  else { var list = m5Filtered(), i; for (i = 0; i < list.length; i++) { M5.sel[list[i].id] = true; } }
+  L2163  m5Repaint();
+  L2166  if (delSelEl) { delSelEl.addEventListener('click', m5DelSelected); }
+  L2168  if (clearAllEl) { clearAllEl.addEventListener('click', m5ClearAll); }
+  L2170  if (exportEl) { exportEl.addEventListener('click', m5Export); }
+  L2172  if (backupEl) { backupEl.addEventListener('click', m5Backup); }
+  L2174  if (restoreEl) { restoreEl.addEventListener('click', m5Restore); }
+  L2181  m5Repaint();
+  L2188  m5ToggleFav(ev.currentTarget.getAttribute('data-id'));
+  L2195  m5EditTags(ev.currentTarget.getAttribute('data-id'));
+  L2202  m5DelOne(ev.currentTarget.getAttribute('data-id'));
+
+=== 3. 个人中心.html: AI chat record entry ===
+  L1111  不改动 assets/app.js、assets/api.js、assets/xt-profile.js。 */

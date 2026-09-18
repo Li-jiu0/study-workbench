@@ -1,0 +1,88 @@
+############################################################
+# 数据源 ORIGIN = http://127.0.0.1:8911
+# 来源         = 本脚本自启的本地静态服务（端口 8911）
+# 是否本地     = 是（验的是本地工作区代码）
+# 时间         = 2026-09-16T06:36:30.913Z
+############################################################
+
+== A. 页面加载 ==
+URL = http://127.0.0.1:8911/%E7%94%B3%E8%AE%BA%E5%88%B7%E9%A2%98.html
+html bytes = 87427
+typeof window.callAI = function
+PASS  A1 页面已渲染（body 文本 > 3000 字符）   [76247]
+== F. 禁止自动发问 ==
+PASS  F1 静置 1.5s 内 callAI 自动调用次数 = 0   [calls=0]
+SL.data 长度 = 100 ; 首题 id = q_001
+PASS  F2 打开题目后 callAI 仍未自动调用   [calls=0]
+#slAiBtn 存在 = true ; #slAiBox 存在 = true ; #slAnswerBox 存在 = true
+== B. 按钮存在且可点 ==
+PASS  B1 #slAiBtn 存在
+PASS  B2 #slAiBox 存在
+PASS  B3 #slAnswerBox 存在
+PASS  B4 按钮初始可用(disabled=false)   [disabled=false]
+PASS  B5 按钮文案含「AI 批改」   [AI 批改]
+== E. 空白作答保护 ==
+PASS  E1 空白作答点击后 callAI 未被调用   [calls=0]
+== C. 注入 callAI 桩 → 点击 → 结果渲染 ==
+PASS  C1 点击后 callAI 被调用 1 次   [calls=1]
+PASS  C2 funcType 与项目口径一致(longtext)   [funcType=longtext]
+PASS  C3 messages 为 [role,content] 结构   [len=1667]
+PASS  C4 prompt 含考生作答内容
+PASS  C5 加载期按钮禁用(disabled=true)   [disabled=true]
+PASS  C6 加载期按钮文案含「AI 正在批改」   [AI 正在批改…]
+PASS  C7 加载期 #slAiBox 已展开(on)   [sl-aibox on]
+PASS  C8 加载期显示「AI 正在批改…」
+PASS  C9 结果渲染进 #slAiBox   [AI 批改结果重新批改1. 总分：14/20，要点基本齐全。2. 采分点对照：组织领导（写到）；制度保障（部分写到）；漏：督导问责。3. 主要问题：要点缺失 1 条。4. 提分建议：补充督导问责条款。由 stub-model 生成 · 仅供]
+PASS  C10 结果含总分
+PASS  C11 结算后按钮恢复可用+文案复原   [disabled=false txt=AI 批改]
+PASS  C12 结果含 modelUsedName meta
+PASS  C13 结果区非错误态(无 sl-ai-err)   [sl-aibox on]
+== D. callAI 抛错降级 ==
+PASS  D1 同步抛错 → #slAiBox 有错误区块   [AI 暂时不可用重试SYNTHETIC_FAIL_500页面其它功能不受影响，可稍后重试。]
+PASS  D2 错误区块带 sl-ai-err 样式   [sl-aibox on sl-ai-err]
+PASS  D3 错误信息含原因
+PASS  D4 抛错后按钮恢复可用   [disabled=false]
+PASS  D5 页面其余功能不受影响（题干区仍在）
+== D'. callAI 返回 rejected Promise ==
+PASS  D'1 异步 reject → 错误区块出现   [AI 暂时不可用重试ASYNC_FAIL_TIMEOUT页面其它功能不受影响，可稍后重试。]
+PASS  D'2 异步错误含原因
+PASS  D'3 按钮恢复可用
+== D''. rateLimited 提示 ==
+PASS  D''1 限频提示显示「10 次/分钟」   [AI 暂时不可用重试提问太频繁了（公共 Key 限 10 次/分钟），请休息 1 分钟再试页面其它功能不受影响，可稍后重试。]
+== 未捕获异常 ==
+uncaught: JSDOM_ERR: Not implemented: navigation to another Document
+PASS  X1 无未捕获 JS 异常（排除 jsdom 导航噪声）   []
+
+========== 汇总 32/32 PASS ==========
+PASS  A1 页面已渲染（body 文本 > 3000 字符）   [76247]
+PASS  F1 静置 1.5s 内 callAI 自动调用次数 = 0   [calls=0]
+PASS  F2 打开题目后 callAI 仍未自动调用   [calls=0]
+PASS  B1 #slAiBtn 存在
+PASS  B2 #slAiBox 存在
+PASS  B3 #slAnswerBox 存在
+PASS  B4 按钮初始可用(disabled=false)   [disabled=false]
+PASS  B5 按钮文案含「AI 批改」   [AI 批改]
+PASS  E1 空白作答点击后 callAI 未被调用   [calls=0]
+PASS  C1 点击后 callAI 被调用 1 次   [calls=1]
+PASS  C2 funcType 与项目口径一致(longtext)   [funcType=longtext]
+PASS  C3 messages 为 [role,content] 结构   [len=1667]
+PASS  C4 prompt 含考生作答内容
+PASS  C5 加载期按钮禁用(disabled=true)   [disabled=true]
+PASS  C6 加载期按钮文案含「AI 正在批改」   [AI 正在批改…]
+PASS  C7 加载期 #slAiBox 已展开(on)   [sl-aibox on]
+PASS  C8 加载期显示「AI 正在批改…」
+PASS  C9 结果渲染进 #slAiBox   [AI 批改结果重新批改1. 总分：14/20，要点基本齐全。2. 采分点对照：组织领导（写到）；制度保障（部分写到）；漏：督导问责。3. 主要问题：要点缺失 1 条。4. 提分建议：补充督导问责条款。由 stub-model 生成 · 仅供]
+PASS  C10 结果含总分
+PASS  C11 结算后按钮恢复可用+文案复原   [disabled=false txt=AI 批改]
+PASS  C12 结果含 modelUsedName meta
+PASS  C13 结果区非错误态(无 sl-ai-err)   [sl-aibox on]
+PASS  D1 同步抛错 → #slAiBox 有错误区块   [AI 暂时不可用重试SYNTHETIC_FAIL_500页面其它功能不受影响，可稍后重试。]
+PASS  D2 错误区块带 sl-ai-err 样式   [sl-aibox on sl-ai-err]
+PASS  D3 错误信息含原因
+PASS  D4 抛错后按钮恢复可用   [disabled=false]
+PASS  D5 页面其余功能不受影响（题干区仍在）
+PASS  D'1 异步 reject → 错误区块出现   [AI 暂时不可用重试ASYNC_FAIL_TIMEOUT页面其它功能不受影响，可稍后重试。]
+PASS  D'2 异步错误含原因
+PASS  D'3 按钮恢复可用
+PASS  D''1 限频提示显示「10 次/分钟」   [AI 暂时不可用重试提问太频繁了（公共 Key 限 10 次/分钟），请休息 1 分钟再试页面其它功能不受影响，可稍后重试。]
+PASS  X1 无未捕获 JS 异常（排除 jsdom 导航噪声）

@@ -1,0 +1,64 @@
+=== A. 学习博客.html 「统计」按钮 / openBlogStats / showBlogView('stats') ===
+  L52    /* ⑥ R55（20260914）：帖子卡片分享 —— 统计行右侧按钮 + 浮动小菜单
+  L161   <div class="page active" id="page-blog">
+  L162   <!-- 需求10（C2 20260913h）：删除顶端说明性卡片；「广场/我的文章/写发贴/统计」提升为顶端主导航 -->
+  L166   <div class="sb-tab active" id="blogTabList" onclick="showBlogView('list')"><span class="nav-icon" data-icon="globe" data-icon-size="20"></span><span>广场</span></div>
+  L167   <div class="sb-tab" id="blogTabMine" onclick="showBlogView('mine')"><span class="nav-icon" data-icon="user" data-icon-size="20"></span><span>我的文章</span></div>
+  L168   <div class="sb-tab" id="blogTabEdit" onclick="showBlogView('edit')"><span class="nav-icon" data-icon="pen" data-icon-size="20"></span><span>写发贴</span></div>
+  L169   <div class="sb-tab" id="blogTabStats" onclick="showBlogView('stats')"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span><span>统计</span></div>
+  L301   <button class="btn btn-outline" style="align-self:flex-start" onclick="showBlogView('list')"><span data-icon="arrow-left" data-icon-size="16" style="vertical-align:-3px"></span> 返回列表</button
+  L305   <!-- ===== 视图：统计 ===== -->
+  L336   <div class="bottom-more-item" onclick="openBlogStats()">
+  L337   <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
+  L430   广场（发贴）编辑页增强：【字数统计 / 阅读时长 / 草稿自动保存 / 快速模板】
+  L455   // ① 字数 / 阅读时长统计
+  L549   // 叠加：任何预览刷新（含 startEditNote / AI 回填）后同步统计
+  L575   完成后向统计行（.note-body > .nc-actions，第一个）右侧「叠加」分享按钮。
+  L716   var row = card.querySelector('.note-body > .nc-actions'); // 第一个即统计行（浏览/点赞/评论）
+
+=== B. 学习博客.html stats 视图容器 ===
+  -- data-blog-view (x0) --
+  -- blogViewStats (x1) --
+     L306   <div class="blog-wrap" id="blogViewStats" style="display:none">
+  -- bv-stats (x0) --
+  -- id="page-blog" (x1) --
+     L161   <div class="page active" id="page-blog">
+
+=== C. app.js showBlogView 定义 ===
+  L6631  function showBlogView(view) {
+  L7231  function renderBlogStats() {
+  L7248  const statsBox = document.getElementById('blogStatsBox');
+  --- body ---
+  6631: function showBlogView(view) {
+  6632:   const map = { list: 'blogViewList', mine: 'blogViewMine', edit: 'blogViewEdit', detail: 'blogViewDetail', stats: 'blogViewStats' };
+  6633:   Object.keys(map).forEach(k => { const el = document.getElementById(map[k]); if (el) el.style.display = k === view ? 'flex' : 'none'; });
+  6634:   const tabs = { list: 'blogTabList', mine: 'blogTabMine', edit: 'blogTabEdit', stats: 'blogTabStats' };
+  6635:   Object.keys(tabs).forEach(k => { const t = document.getElementById(tabs[k]); if (t) t.classList.toggle('active', k === view); });
+  6636:   if (view === 'list') renderBlogList();
+  6637:   if (view === 'mine') renderBlogMine();
+  6638:   if (view === 'stats') renderBlogStats();
+  6639:   if (view === 'edit') updateEditorPreview();
+  6640: }
+  6641: 
+  6642: // ---- 卡片渲染 ----
+  6643: function noteCoverHtml(n) {
+  6644:   const cover = n.cover || '';
+  6645:   const isImg = /^(https?:|data:)/.test(cover);
+  6646:   const [c0, c1] = noteColors(n.category);
+  6647:   // J 批次：公开徽章 🌍 → globe data-icon（🔒私密为文案语义，保留）
+  6648:   const priv = `<span class="nc-privacy">${n.privacy === 'private' ? '🔒私密' : icSpan('globe', 12) + '公开'}</span>`;
+  6649:   if (isImg) {
+  6650:     return `<div class="note-cover" style="background:url(${cover}) center/cover no-repeat">${priv}</div>`;
+  6651:   }
+  6652:   // 无封面时回退为分类图标（原为分类 emoji，现走 data-icon）
+  6653:   const face = cover ? esc(cover) : icSpan(noteCat(n.category).dc, 26);
+  6654:   return `<div class="note-cover" style="background:linear-gradient(135deg,${c0},${c1})">${face}${priv}</div>`;
+  6655: }
+  6656: function noteCardHtml(n, opts) {
+  6657:   opts = opts || {};
+  6658:   const cat = noteCat(n.category);
+  6659:   const tags = (n.tags || []).map(t => `<span class="nc-tag" onclick="event.stopPropagation();blogTagFilter='${esc(t)}';showBlogView('list')">#${esc(t)}</span>`).join('');
+  6660:   // J 批次：统计行 👁/👍/💬 → eye/thumbs-up/message-circle data-icon
+
+=== D. 底部导航「学习统计」按钮的 onclick ===
+  onclick=openBlogStats()              x25   PPT案例拆解.html, PPT版式库.html, PPT训练.html, blog_wechat.html, 万能金句库.html

@@ -27,6 +27,8 @@ RATE_GLOBAL_PER_MIN = int(_get("RATE_GLOBAL_PER_MIN", "600") or 600)    # 兜底
 
 # AI 单用户每日调用上限（默认 200 次/天）
 AI_DAILY_LIMIT = int(_get("AI_DAILY_LIMIT", "200") or 200)
+# R88-F：前端直连平台后上报用量（POST /api/ai/usage/consume）的限流（次/分钟，按 IP）
+RATE_AI_CONSUME_PER_MIN = int(_get("RATE_AI_CONSUME_PER_MIN", "60") or 60)
 DATABASE_PATH = _get("DATABASE_PATH", "data.db")
 DB_URL = f"sqlite:///{(BASE_DIR / DATABASE_PATH).as_posix()}"
 
@@ -35,6 +37,10 @@ AVATAR_DIR = UPLOAD_DIR / "avatars"
 IMAGE_DIR = UPLOAD_DIR / "images"
 # 语音消息上传目录（A7）：/uploads 已静态挂载 UPLOAD_DIR，故 voice 作为其子目录无需再改 main 挂载，仅需 mkdir
 VOICE_DIR = UPLOAD_DIR / "voice"
+# 朋友圈视频上传目录（R88-M3）：/uploads 已静态挂载 UPLOAD_DIR，故 videos 作为其子目录无需再改 main 挂载，仅需 mkdir
+VIDEO_DIR = UPLOAD_DIR / "videos"
+# 私聊「发送文件」通用文档上传目录（R88-M8）：同上，files 作为 /uploads 子目录，无需改 main 挂载，仅需 mkdir
+FILE_DIR = UPLOAD_DIR / "files"
 
 # 大模型服务商注册表：默认接口与模型，密钥从 .env 注入
 # 前端只会拿到“已配置密钥”的服务商列表（名称+模型），拿不到任何密钥。

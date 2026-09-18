@@ -651,6 +651,42 @@
 
   /* ============================ 发布编辑页 ============================ */
   var P = null;
+  /* R89-B: 草稿键（跳转「地区选择.html」往返必须不丢内容）。此键与 M3 本地视频草稿约定一致。 */
+  var XTM_DRAFT_KEY = 'study_workbench_moment_draft2';
+  var XTM_REGION_PICK_KEY = 'xt_region_pick';
+  /* R89-B: 地区选择回写值 TTL（同 xt-profile.js / 地区选择.html 协议） */
+  var XTM_REGION_TTL = 10 * 60 * 1000;
+  /** 跳转缝（可被测试覆写：window.xtmNavHook / window.xtpNavHook）。 */
+  function xtmNav(url) {
+    try {
+      if (window.xtmNavHook && typeof window.xtmNavHook === 'function') { window.xtmNavHook(url); return; }
+    } catch (e0) { /* 忽略 hook 异常，回退真实跳转 */ }
+    try {
+      if (window.xtpNavHook && typeof window.xtpNavHook === 'function') { window.xtpNavHook(url); return; }
+    } catch (e1) { /* 忽略 */ }
+    location.href = url;
+  }
+  /** 消费地区选择回写值（一次性 + TTL），返回地址文本或 ''。 */
+  function xtmTakeRegionPick() {
+    var raw = '';
+    try { raw = localStorage.getItem(XTM_REGION_PICK_KEY) || ''; } catch (e) { return ''; }
+    if (!raw) return '';
+    var obj = null;
+    try { obj = JSON.parse(raw); } catch (e2) { obj = null; }
+    try { localStorage.removeItem(XTM_REGION_PICK_KEY); } catch (e3) { /* 忽略 */ }
+    if (!obj || !obj.text) return '';
+    try { if (obj.ts && (Date.now() - obj.ts > XTM_REGION_TTL)) return ''; } catch (e4) { return ''; }
+    return String(obj.text).slice(0, 64);
+  }
+  /** 写入地址到草稿 P.location + 刷新显示（不发送）。坐标绝不进任何字符串。 */
+  function xtmApplyLocation(text) {
+    if (!P) return false;
+    var t = String(text || '').replace(/^\s+|\s+$/g, '');
+    if (!t) return false;
+    P.location = t.slice(0, 64);
+    if (typeof renderChosen === 'function') renderChosen();
+    return true;
+  }
   function newP() {
     return { picked: [], video: '', linkUrl: '', linkTitle: '', location: '', visScope: '', visIds: [], visNames: [], mentionIds: [], mentionNames: [], textMode: false };
   }
@@ -682,6 +718,91 @@
       .then(function (r) { return r.json(); })
       .then(function (d) { if (!d.url) throw new Error(d.detail || '上传失败'); return d.url; });
   }
+  /* R88-M3：朋友圈本地上传视频。
+     服务端端点 POST /api/uploads/video（≤50MB，魔数白名单 mp4 / webm），返回 {url}。
+     url 直接写入 P.video → 既有 renderPicked() 预览 + 既有 mediaHtml() 播放（渲染层零改动）。 */
+  var VIDEO_MAX_BYTES = 50 * 1024 * 1024;
+  var VIDEO_ACCEPT = 'video/mp4,video/webm,video/quicktime,video/*';
+
+  function uploadVideo(file) {
+    var fd = new FormData();
+    fd.append('file', file, file.name || 'moment.mp4');
+    return fetch(apiBase() + '/api/uploads/video', { method: 'POST', headers: { 'Authorization': 'Bearer ' + tok() }, body: fd })
+      .then(function (r) {
+        return r.json().then(function (d) {
+          if (!r.ok || !d || !d.url) throw new Error((d && (d.detail || d.message)) || ('上传失败(' + r.status + ')'));
+          return d.url;
+        }, function () {
+          if (!r.ok) throw new Error('上传失败(' + r.status + ')');
+          throw new Error('上传失败：服务端响应异常');
+        });
+      });
+  }
+
+  function videoRemoveDraftUrl() { /* 预留：blob: 预览地址无需 revoke（仅本次会话） */ }
+
+  /* 视频选择弹层：两条路（本机文件 / 粘贴链接），复用既有 xtm-overlay / xtm-sheet 样式 */
+  function videoSheet() {
+    var el = ensureOverlay('xtmVideoPick', 'xtm-overlay');
+    el.innerHTML = '<div class="xtm-sheet" onclick="event.stopPropagation()">' +
+      '<div class="xtm-sheet-hd"><span>视频</span><span class="xtm-sheet-x" onclick="XTM.closeVideoSheet()">' + ico('close', 18, '✕') + '</span></div>' +
+      '<div class="xtm-picker-list">' +
+        '<div class="xtm-picker-row" id="xtmVidFromLocal"><div class="xtm-picker-nm">' + ico('upload', 16, '⬆') + ' 从本机选择视频</div><div class="xtm-picker-ck"></div></div>' +
+        '<div class="xtm-picker-row" id="xtmVidFromLink"><div class="xtm-picker-nm">' + ico('file', 16, '🔗') + ' 粘贴视频链接</div><div class="xtm-picker-ck"></div></div>' +
+      '</div></div>';
+    el.style.display = 'block';
+    el.onclick = function () { closeVideoSheet(); };
+    var bl = $('xtmVidFromLocal');
+    if (bl) bl.onclick = function () { closeVideoSheet(); pickLocalVideo(); };
+    var bk = $('xtmVidFromLink');
+    if (bk) bk.onclick = function () {
+      closeVideoSheet();
+      inputSheet('视频链接', '粘贴视频地址', P.video, function (v) {
+        var u = String(v || '').trim();
+        if (!u) return;
+        P.video = u.slice(0, 512);
+        renderPicked();
+      });
+    };
+  }
+  function closeVideoSheet() { var el = $('xtmVideoPick'); if (el) el.style.display = 'none'; }
+
+  /* 触发隐藏的文件选择器 */
+  function pickLocalVideo() {
+    var inp = $('xtmFileVid');
+    if (!inp) { toast('当前页面缺少视频选择控件'); return; }
+    inp.value = '';
+    inp.click();
+  }
+
+  /* 选中视频后的处理：类型/大小校验 → 本地预览 → 上传 → 写 P.video */
+  function onVideoPicked(input) {
+    var files = input && input.files ? input.files : [];
+    var f = files.length ? files[0] : null;
+    if (!f) return;   /* 用户取消选择：静默（不报错） */
+    if (!/^video\//.test(f.type || '')) { toast('请选择视频文件'); input.value = ''; return; }
+    if (f.size > VIDEO_MAX_BYTES) { toast('视频超过 50MB'); input.value = ''; return; }
+    if (!f.size) { toast('视频文件为空'); input.value = ''; return; }
+
+    /* 1) 本地即时预览（blob URL）——先让用户看到选中的视频 */
+    var localUrl = '';
+    try { localUrl = URL.createObjectURL(f); } catch (e) { localUrl = ''; }
+    if (localUrl) { P.video = localUrl; renderPicked(); }
+
+    /* 2) 上传到服务端，成功后把 P.video 换成服务端 URL */
+    toast('视频上传中…');
+    uploadVideo(f).then(function (url) {
+      P.video = url;
+      renderPicked();
+      toast('视频已上传');
+    }).catch(function (e) {
+      P.video = '';
+      renderPicked();
+      toast('视频上传失败：' + ((e && e.message) || '网络错误') + '，请重试');
+    }).then(function () {
+      input.value = '';
+    });
+  }
   function renderPicked() {
     var box = $('xtmMedia');
     if (!box) return;
@@ -704,14 +825,13 @@
     var box = $('xtmChosen');
     if (!box) return;
     var parts = [];
-    if (P.location) parts.push('📍 ' + esc(P.location));
+    if (P.location) parts.push(ico('map-pin', 14, '📍') + ' ' + esc(P.location));
     if (P.visScope) { parts.push(ico('eye', 12, '👁') + ' ' + esc(VIS_TEXT[P.visScope] || '公开') + (P.visNames.length ? '（' + esc(P.visNames.join('、')) + '）' : '')); }
     if (P.mentionIds.length) parts.push('@ ' + esc(P.mentionNames.join('、')));
     if (P.linkUrl) parts.push('🔗 ' + esc(P.linkTitle || P.linkUrl));
     box.innerHTML = parts.map(function (x) { return '<span>' + x + '</span>'; }).join('');
     var fb = $('xtmVisBtn'); if (fb) fb.className = 'xtm-fn' + (P.visScope && P.visScope !== 'public' ? ' on' : '');
     var fm = $('xtmMentionBtn'); if (fm) fm.className = 'xtm-fn' + (P.mentionIds.length ? ' on' : '');
-    var fl = $('xtmLocBtn'); if (fl) fl.className = 'xtm-fn' + (P.location ? ' on' : '');
   }
   function pubSubmit() {
     if (!tok()) { toast('请先登录后再发表'); return; }
@@ -840,6 +960,9 @@
   function initPublishPage() {
     S.page = 'publish';
     P = newP();
+    /* R89-B：若从「地区选择.html」跳回，消费一次回写值（TTL 10 分钟）并写入草稿位置。 */
+    var __rp = xtmTakeRegionPick();
+    if (__rp) { P.location = __rp; }
     var params = '';
     try { params = location.search || ''; } catch (e) {}
     if (params.indexOf('mode=text') !== -1) {
@@ -870,18 +993,58 @@
         rd.readAsDataURL(f);
       });
     });
-    var locBtn = $('xtmLocBtn');
-    if (locBtn) locBtn.onclick = function () { inputSheet('所在位置', '如：图书馆 / 自习室', P.location, function (v) { P.location = v.slice(0, 64); renderChosen(); }); };
+    /* R90：点「位置」/「所在位置」→ 首选【跳转整页 地区选择.html】（用户明确要求跳转，非页内弹层）。
+       R89-B 曾把首选做成同页半屏弹层（XT_LOC_PICK.openPicker），用户实测反馈要的是整页跳转，
+       故此处将优先级倒过来：整页跳转优先，半屏层降级为兜底。
+       回写链路同 xt-profile.js / 地区选择.html 协议（localStorage['xt_region_pick'] + TTL 10 分钟）。
+       全程绝不弹原生对话框，坐标绝不进字符串。跳转走 xtmNav() 可测缝，便于 jsdom 断言。 */
+    function xtmPickLocation() {
+      /* 1) 首选【跳整页 地区选择.html?cur=<当前已选>&back=朋友圈发布.html】。
+            先写草稿防止往返丢内容；选完由地区选择页回写 localStorage['xt_region_pick']，
+            回到本页后 initPublishPage() 消费一次并回填「位置」显示区。 */
+      var okNav = xtmOpenRegionPage();
+      if (okNav) return;
+      /* 2) 整页跳转不可用（环境受限）→ 降级到同页半屏选择器 XT_LOC_PICK.openPicker。 */
+      var LP = window.XT_LOC_PICK;
+      if (LP && typeof LP.openPicker === 'function') {
+        try {
+          LP.openPicker({ title: '选择位置', confirmText: '确定', current: P ? P.location : '' }, function (text) {
+            if (text) { xtmApplyLocation(text); toast('已记录位置'); }
+          });
+          return;
+        } catch (e) { /* openPicker 异常 → 继续降级本页手动输入 */ }
+      }
+      /* 3) 都不可用（极端环境）→ 本页手动输入兜底（不白屏、不静默） */
+      toast('定位服务不可用，请手动填写');
+      inputSheet('所在位置', '如：图书馆 / 自习室', P ? P.location : '', function (v) {
+        xtmApplyLocation(v);
+      });
+    }
+    /* R89-B：跳整页「地区选择.html」。返回 true 表示跳转已发起。 */
+    function xtmOpenRegionPage() {
+      var back = '朋友圈发布.html';
+      try {
+        var pn = location.pathname || '';
+        var k = pn.lastIndexOf('/');
+        if (k >= 0 && pn.length > k + 1) back = decodeURIComponent(pn.substring(k + 1));
+      } catch (e) { /* 保持默认 */ }
+      if (P && typeof xtmSaveDraft === 'function') { try { xtmSaveDraft(); } catch (ed) { /* 忽略 */ } }
+      var cur = (P && P.location) ? P.location : '';
+      var url = '地区选择.html?cur=' + encodeURIComponent(cur) + '&back=' + encodeURIComponent(back);
+      /* 跳转成功判定：hook 存在但抛异常 / 返回 false 都视为失败，交由上层降级。 */
+      try {
+        var hook = (typeof window.xtmNavHook === 'function') ? window.xtmNavHook :
+                   ((typeof window.xtpNavHook === 'function') ? window.xtpNavHook : null);
+        if (hook) {
+          var res = hook(url);
+          return res === false ? false : true;
+        }
+        xtmNav(url);
+        return true;
+      } catch (e2) { return false; }
+    }
     var locSelf = $('xtmAtBtn');
-    if (locSelf) locSelf.onclick = function () {
-      if (!navigator.geolocation) { toast('当前设备不支持定位'); return; }
-      toast('正在定位…');
-      navigator.geolocation.getCurrentPosition(function (pos) {
-        P.location = ('经纬度 ' + pos.coords.latitude.toFixed(3) + ',' + pos.coords.longitude.toFixed(3));
-        renderChosen();
-        toast('已记录当前位置');
-      }, function () { toast('定位失败，请手动填写'); });
-    };
+    if (locSelf) locSelf.onclick = xtmPickLocation;
     var visBtn = $('xtmVisBtn');
     if (visBtn) visBtn.onclick = chooseVis;
     var menBtn = $('xtmMentionBtn');
@@ -889,7 +1052,9 @@
       pickerSheet('提醒谁看', P.mentionIds, function (ids, names) { P.mentionIds = ids; P.mentionNames = names || []; renderChosen(); });
     };
     var vidBtn = $('xtmVidBtn');
-    if (vidBtn) vidBtn.onclick = function () { inputSheet('视频链接', '粘贴视频地址', P.video, function (v) { P.video = v.slice(0, 512); renderPicked(); }); };
+    if (vidBtn) vidBtn.onclick = function () { videoSheet(); };
+    var vidFile = $('xtmFileVid');
+    if (vidFile) vidFile.addEventListener('change', function () { onVideoPicked(this); });
     var linkBtn = $('xtmLinkBtn');
     if (linkBtn) linkBtn.onclick = function () {
       inputSheet('链接地址', 'https://…', P.linkUrl, function (v) {
@@ -993,6 +1158,7 @@
       });
     },
     removeVideo: function () { if (P) { P.video = ''; renderPicked(); } },
+    closeVideoSheet: closeVideoSheet,
     boot: function () {
       var page = document.body.getAttribute('data-xtm');
       if (page === 'feed') initFeedPage();
@@ -1002,6 +1168,12 @@
   };
   window.XTM = XTM;
 
+  /* R88-J：底座 XT_LOC_PICK 内部 _failToast 只认 window.XT_TOAST / window.toast；
+     本页 toast 为私有函数（不在 window），故在此注入全局别名，避免底座失败静默。
+     不动 xt-region.js 既有契约。 */
+  if (typeof window.toast !== 'function' && typeof window.showToast === 'function') {
+    window.toast = window.showToast;
+  }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', XTM.boot);
   else XTM.boot();
 })();

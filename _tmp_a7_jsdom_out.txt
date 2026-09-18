@@ -1,0 +1,140 @@
+页面路径: D:\下载的文件\学习工作台\个人中心.html
+页面字节: 104035
+内联脚本段数: 8
+   #1 24 chars
+   #2 5871 chars
+   #3 6178 chars
+   #4 3022 chars
+   #5 5839 chars  <-- feed-btn
+   #6 5984 chars  <-- feed-btn
+   #7 1566 chars
+   #8 21320 chars   <-- 作品集
+  [PASS] 找到作品集内联脚本段（#index=7）
+  [PASS] 找到 feed-btn 内联脚本段（#index=5）
+
+boot 触发方式: dispatched DOMContentLoaded
+内联脚本执行错误: 无
+  [PASS] 全部内联脚本执行零异常
+  [PASS] 作品集全局 API 已挂载（window.xtFolioToggleFav 存在）
+
+---- 注入与 app.js/api.js 同构的资料卡动作区（含 onclick="editProfile()" 的「编辑资料」） ----
+已注入资料卡；「编辑资料」按钮存在 = true
+  [PASS] 资料卡内存在 button[onclick="editProfile()"]
+
+================ B1 feed-btn 挪位验证 ================
+HTML 阶段：
+  #profileFeedBtnRow 存在 = true 初始 display=none
+  #profileFeedBtn   存在 = true 初始 class=btn btn-outline
+  [PASS] HTML 中存在 #profileFeedBtnRow / #profileFeedBtn
+  [data-subpage="profile"] 子节点顺序: profileBox , profileFeedBtnRow , profileEditModal
+  [PASS] feed-btn 节点位于 #profileBox 之后（DOM 静态位置已挪出资料卡上方）
+  按钮 class = "btn btn-outline"
+  [PASS] 按钮已从 btn-primary 降级为 btn-outline
+
+调用 window.updateProfileFeedBtn()（self 视角，uid=10086）…
+  归位后 #profileFeedBtnRow.parentNode = <div>
+  「编辑资料」按钮的父节点           = <div>
+  两者同一节点 = true
+  归位后 display = block
+  [PASS] feed-btn 已搬进「编辑资料」所在的动作条（资料卡操作区）
+  [PASS] feed-btn 已显示（display=block）
+  [PASS] 自视角文案 = 「我的动态」（实际 "我的动态"）
+  [PASS] 运行时仍保持 btn-outline（未被外部样式拉回主按钮）
+  [PASS] 按钮已绑定 onclick
+
+模拟 renderProfilePage() 整块重写 #profileBox.innerHTML …
+  重渲染瞬间 #profileFeedBtnRow 是否仍取到 = false（节点已随 innerHTML 一起消失）
+  重渲染后 #profileFeedBtnRow 重新出现 = true
+  重渲染后 row.parentNode = <div>
+  重渲染后 row.parentNode === 新动作条 = true
+  重渲染后 display = block
+  [PASS] 资料卡重渲染后 feed-btn 节点被 MutationObserver 重新归位（节点重新挂回 DOM）
+  [PASS] 资料卡重渲染后 feed-btn 自动重新归位到新动作条
+  [PASS] 重渲染后 feed-btn 仍可见
+
+去重验证：动作区已存在同义「我的动态」按钮时（在线自视角 api.js 已渲染该按钮）…
+  #profileFeedBtnRow 是否仍存在于资料卡内 = true
+  #profileFeedBtnRow display = none
+  [PASS] 检测到同义按钮时自动隐藏本按钮，避免重复
+
+回归：再次调用 updateProfileFeedBtn() 不抛异常 …
+  [PASS] 重复调用 updateProfileFeedBtn() 不抛异常
+
+================ N9-4 我的作品集 · 收藏持久化实测 ================
+键名口径（项目约定：裸 key，经 window.lsKey() 加账号后缀）:
+  lsKey("xtc:lib:pf:folio:fav") = xtc:lib:pf:folio:fav@shared
+  [PASS] 收藏表使用裸 key 并经 lsKey() 前缀化（未自创前缀）
+  [PASS] 收藏键前缀与本页作品键同族 xtc:lib:pf:folio:
+
+已预置 localStorage（模拟真实使用）：
+  xtc:lib:pf:folio:works@shared -> 2 件（本页新增）
+  xtc:lib:pptw:works@shared   -> 1 件（演示页只读聚合）
+  xtc:lib:pf:folio:fav@shared     -> 已清空（未收藏）
+  [PASS] 作品集 DOM（#xtFolioGrid / #xtFolioBar）存在
+
+首次渲染：卡片数 = 3（期望 3 = 本页 2 + 演示 1）
+  分页条 HTML 摘要: 全部 3★ 收藏 0演示 · PPT 1我添加的 2共 3 件 · 收藏 0
+  [PASS] 两个来源已聚合渲染（本页 2 + 演示页 1 = 3 张卡片）
+  收藏态卡片数 = 0（期望 0）
+  [PASS] 初始无任何收藏（☆ 全为空心）
+  [PASS] 初始 localStorage 中无收藏键（未写入空壳）
+
+>> 模拟用户收藏：点击 id=f_test_2（四级冲刺 PPT）卡片右上角 ☆ …
+  [PASS] 找到测试卡片的收藏按钮 .xtf-fav[data-xf-fav="f_test_2"]
+  点击前按钮 class = "xtf-fav" 文案="☆"
+
+写入断言：
+  toast 提示 = ["已收藏，刷新后仍在"]
+  localStorage["xtc:lib:pf:folio:fav@shared"] = {"f_test_2":1}
+  [PASS] 收藏动作已写入 localStorage（键 xtc:lib:pf:folio:fav@shared）
+  [PASS] 收藏表内容正确：{"f_test_2":1}（实际 {"f_test_2":1}）
+
+>> 再收藏一个演示页作品 id=ppt_test_1（只读来源也应可收藏）…
+  [PASS] 找到演示页来源卡片的收藏按钮
+  收藏表 = {"f_test_2":1,"ppt_test_1":1}
+  [PASS] 收藏对「本页新增」与「演示页聚合」两个来源都生效
+  [PASS] 只读聚合键 xtc:lib:pptw:works 未被本页改写（仍 1 件）
+
+>> 打开查看弹窗并从弹窗内收藏 id=f_test_1 …
+  弹窗 class 含 active = true
+  弹窗收藏按钮文案（收藏前）= "☆ 收藏"
+  弹窗收藏后 收藏表 = {"f_test_2":1,"ppt_test_1":1,"f_test_1":1}
+  弹窗收藏按钮文案（收藏后）= "★ 已收藏"
+  [PASS] 查看弹窗内收藏同样写入 localStorage
+  [PASS] 弹窗按钮即时回显「★ 已收藏」
+
+>> 切到「★ 收藏」筛选 tab …
+  收藏筛选下卡片数 = 3（期望 3）
+  [PASS] 收藏筛选正确列出 3 件已收藏作品
+
+================ 重新加载页面 → 收藏状态恢复断言 ================
+搬迁 localStorage 键 4 个：
+   study_workbench_uid = 10086
+   xtc:lib:pf:folio:works@shared = [{"id":"f_test_1","title":"秋招简历 V3","type":"简历","images":[],"link":"",
+   xtc:lib:pptw:works@shared = [{"id":"ppt_test_1","title":"演示页作品 A","type":"PPT","images":[],"descri
+   xtc:lib:pf:folio:fav@shared = {"f_test_2":1,"ppt_test_1":1,"f_test_1":1}
+
+重载后 boot 触发方式: dispatched DOMContentLoaded
+重载后内联脚本执行错误: 无
+  [PASS] 重载后内联脚本执行零异常
+
+重载后渲染：卡片数 = 3，收藏态（★ on）卡片数 = 3（期望 3）
+  [PASS] 重载后作品列表完整恢复（3 件）
+  [PASS] 重载后 3 件作品的收藏态全部恢复（★ 高亮回到原卡片，位置未串）
+  逐卡收藏态: {"f_test_2":true,"f_test_1":true,"ppt_test_1":true}
+  [PASS] 重载后收藏状态与卡片一一对应（渲染回原位，未错位）
+
+>> 重载后取消收藏 id=f_test_2，再重载一次，确认「取消」同样持久化 …
+  取消后收藏表 = {"ppt_test_1":1,"f_test_1":1}
+  [PASS] 取消收藏已从 localStorage 移除该 id
+  第三次加载后收藏态: {"f_test_2":false,"f_test_1":true,"ppt_test_1":true}  ★数=2
+  [PASS] 第三次加载 ★ 数为 2（f_test_1、ppt_test_1）
+  [PASS] 已取消的 f_test_2 保持未收藏（取消动作同样持久化）
+
+>> 多账号隔离回归：CURRENT_ACCOUNT 改为 u777，确认读到独立空间（不串号）…
+  u777 视角卡片 id = ["u777_1"]  ★数=1
+  [PASS] 多账号隔离正确：u777 只看到自己的作品与其收藏，未串到 shared 账号
+
+================ 汇总 ================
+PASS = 41   FAIL = 0
+VERDICT: ALL_PASS

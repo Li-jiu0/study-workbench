@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>赞助 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260917b">
+<link rel="stylesheet" href="assets/common.css?v=20260918d">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O">
@@ -26,6 +26,32 @@
 .sp-qr{margin:18px auto 0;width:100%;max-width:320px;}
 .sp-qr img{display:block;width:100%;max-width:100%;height:auto;border-radius:12px;border:1px solid var(--border,#e5e7eb);background:#fff;}
 .sp-note{font-size:12px;color:var(--text-secondary,#9ca3af);line-height:1.8;margin-top:12px;text-align:center;overflow-wrap:break-word;word-break:break-word;}
+.sp-qr-item{position:relative;display:block;}
+.sp-qr-item + .sp-qr-item{margin-top:14px;}
+.sp-qr img{cursor:zoom-in;-webkit-tap-highlight-color:transparent;}
+.sp-zoom{position:absolute;right:8px;bottom:8px;width:26px;height:26px;border-radius:50%;
+  background:rgba(17,24,39,0.55);color:#fff;font-size:14px;line-height:26px;text-align:center;pointer-events:none;}
+/* ===== 收款码大图预览：点击放大 · 左右切换 · 保存下载 ===== */
+.sp-lb{position:fixed;left:0;top:0;right:0;bottom:0;z-index:3000;display:none;background:rgba(0,0,0,0.88);
+  -webkit-box-orient:vertical;-webkit-box-direction:normal;flex-direction:column;
+  -webkit-box-align:center;align-items:center;-webkit-box-pack:center;justify-content:center;}
+.sp-lb.active{display:-webkit-box;display:flex;}
+.sp-lb-img{max-width:92vw;max-height:70vh;object-fit:contain;border-radius:10px;background:#fff;}
+.sp-lb-count{margin-top:12px;color:#fff;font-size:13px;opacity:0.85;}
+.sp-lb-x{position:absolute;right:14px;top:14px;width:40px;height:40px;border-radius:50%;
+  background:rgba(255,255,255,0.18);color:#fff;font-size:18px;line-height:40px;text-align:center;cursor:pointer;}
+.sp-lb-nav{position:absolute;top:50%;margin-top:-22px;width:44px;height:44px;border-radius:50%;
+  background:rgba(255,255,255,0.18);color:#fff;font-size:22px;line-height:44px;text-align:center;cursor:pointer;}
+.sp-lb-prev{left:10px;}
+.sp-lb-next{right:10px;}
+.sp-lb-bar{margin-top:16px;display:-webkit-box;display:flex;-webkit-box-align:center;align-items:center;-webkit-box-pack:center;justify-content:center;}
+.sp-lb-btn{display:inline-block;padding:10px 18px;border-radius:999px;background:rgba(255,255,255,0.18);
+  color:#fff;font-size:14px;text-decoration:none;cursor:pointer;}
+@media (max-width:640px){
+  .sp-zoom{width:22px;height:22px;line-height:22px;font-size:12px;right:6px;bottom:6px;}
+  .sp-lb-img{max-height:60vh;}
+  .sp-lb-nav{width:38px;height:38px;line-height:38px;margin-top:-19px;font-size:20px;}
+}
 @media (max-width:640px){
   .sp-wrap{max-width:100%;}
   .sp-hero-icon{width:44px;height:44px;flex:0 0 44px;}
@@ -84,8 +110,8 @@
         <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
       </div>
       <div class="nav-section">互动</div>
-      <div class="nav-item" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
-        <span class="nav-icon" data-icon="users"></span><span>好友</span>
+      <div class="nav-item" onclick="gotoChat()" title="通讯录 · 添加好友（需在线模式）">
+        <span class="nav-icon" data-icon="users"></span><span>通讯录</span>
       </div>
       <div class="nav-section">中心</div>
       <div class="nav-item" onclick="location.href='错题本.html'">
@@ -146,8 +172,15 @@
               </div>
             </div>
             <div class="sp-text">如果星途帮到了你，欢迎扫码请作者喝一杯咖啡。你的每一份支持，都会用来维持服务器与题库的持续更新。</div>
-            <div class="sp-qr">
-              <img src="assets/赞助收款码.jpg" alt="赞助收款码" loading="lazy">
+            <div class="sp-qr" id="spQr">
+              <span class="sp-qr-item">
+                <img src="assets/赞助收款码.jpg" alt="赞助收款码" loading="lazy">
+                <span class="sp-zoom" aria-hidden="true">🔍</span>
+              </span>
+              <span class="sp-qr-item">
+                <img src="assets/赞助收款码2.jpg" alt="赞助收款码2" loading="lazy">
+                <span class="sp-zoom" aria-hidden="true">🔍</span>
+              </span>
             </div>
             <div class="sp-note">长按图片或直接截图保存收款码，再用微信 / 支付宝扫码即可赞助。感谢每一份心意！</div>
           </div>
@@ -290,8 +323,203 @@
 <script src="assets/config.js?v=20260916O" defer></script>
 <script src="assets/api.js?v=20260917b" defer></script>
 <script src="assets/study-stats.js?v=20260916O" defer></script>
-<script src="assets/ai-config.js?v=20260918b"></script>
+<script src="assets/ai-config.js?v=20260918c"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260918b"></script>
+<script src="assets/ai-service.js?v=20260918d"></script>
+<script src="assets/ai-cap-registry.js?v=20260918c"></script>
+<script src="assets/ai-cap-image.js?v=20260918c"></script>
+<script src="assets/ai-cap-vision.js?v=20260918c"></script>
+<script src="assets/ai-cap-audio.js?v=20260918c"></script>
+<script src="assets/ai-cap-embed.js?v=20260918c"></script>
+<script src="assets/ai-cap-translate.js?v=20260918c"></script>
+<script src="assets/ai-cap-video.js?v=20260918c"></script>
+<script src="assets/ai-cap-3d.js?v=20260918c"></script>
+<script>
+/* 赞助页收款码：点击放大预览 · 左右切换 · 保存下载（内联实现，不新增 js 文件） */
+(function () {
+  'use strict';
+
+  var overlay = null;
+  var bigImg = null;
+  var countEl = null;
+  var prevEl = null;
+  var nextEl = null;
+  var dlEl = null;
+  var list = [];
+  var index = 0;
+  var startX = 0;
+  var startY = 0;
+  var moved = false;
+
+  function notify(msg) {
+    try {
+      if (typeof window.xtToast === 'function') { window.xtToast('info', msg); return; }
+      if (typeof window.showToast === 'function') { window.showToast(msg); return; }
+    } catch (e) { /* 无 toast 实现时静默 */ }
+  }
+
+  function make(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) { n.className = cls; }
+    if (text) { n.textContent = text; }
+    return n;
+  }
+
+  function fileName(src) {
+    var s = String(src || '');
+    var q = s.indexOf('?');
+    if (q >= 0) { s = s.slice(0, q); }
+    var seg = s.split('/');
+    return seg[seg.length - 1] || 'sponsor.jpg';
+  }
+
+  function isOpen() {
+    return !!overlay && overlay.className.indexOf('active') >= 0;
+  }
+
+  function openAt(i) {
+    if (!list.length || !overlay) { return; }
+    index = ((i % list.length) + list.length) % list.length;
+    var cur = list[index];
+    var src = cur.getAttribute('src') || '';
+    bigImg.setAttribute('src', src);
+    bigImg.setAttribute('alt', cur.getAttribute('alt') || '收款码');
+    countEl.textContent = (index + 1) + ' / ' + list.length;
+    dlEl.setAttribute('href', src);
+    dlEl.setAttribute('download', fileName(src));
+    overlay.className = 'sp-lb active';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function go(step) {
+    if (!isOpen()) { return; }
+    openAt(index + step);
+  }
+
+  function close() {
+    if (!overlay) { return; }
+    overlay.className = 'sp-lb';
+    document.body.style.overflow = '';
+  }
+
+  function build() {
+    overlay = make('div', 'sp-lb');
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-label', '收款码预览');
+
+    var closeBtn = make('div', 'sp-lb-x', '\u2715');
+    closeBtn.setAttribute('role', 'button');
+    closeBtn.setAttribute('aria-label', '关闭预览');
+    closeBtn.setAttribute('tabindex', '0');
+
+    prevEl = make('div', 'sp-lb-nav sp-lb-prev', '\u2039');
+    prevEl.setAttribute('role', 'button');
+    prevEl.setAttribute('aria-label', '上一张');
+    nextEl = make('div', 'sp-lb-nav sp-lb-next', '\u203a');
+    nextEl.setAttribute('role', 'button');
+    nextEl.setAttribute('aria-label', '下一张');
+
+    bigImg = document.createElement('img');
+    bigImg.className = 'sp-lb-img';
+    bigImg.setAttribute('alt', '收款码大图');
+
+    countEl = make('div', 'sp-lb-count', '');
+
+    var bar = make('div', 'sp-lb-bar');
+    dlEl = document.createElement('a');
+    dlEl.className = 'sp-lb-btn';
+    dlEl.textContent = '\u2913 \u4fdd\u5b58\u56fe\u7247';
+    dlEl.setAttribute('role', 'button');
+    bar.appendChild(dlEl);
+
+    overlay.appendChild(closeBtn);
+    overlay.appendChild(prevEl);
+    overlay.appendChild(nextEl);
+    overlay.appendChild(bigImg);
+    overlay.appendChild(countEl);
+    overlay.appendChild(bar);
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', function (e) {
+      if (moved) { moved = false; return; }
+      if (e.target === overlay) { close(); }
+    });
+    closeBtn.addEventListener('click', function (e) {
+      if (e.stopPropagation) { e.stopPropagation(); }
+      close();
+    });
+    prevEl.addEventListener('click', function (e) {
+      if (e.stopPropagation) { e.stopPropagation(); }
+      go(-1);
+    });
+    nextEl.addEventListener('click', function (e) {
+      if (e.stopPropagation) { e.stopPropagation(); }
+      go(1);
+    });
+    dlEl.addEventListener('click', function (e) {
+      if (e.stopPropagation) { e.stopPropagation(); }
+      notify('\u56fe\u7247\u5df2\u5f00\u59cb\u4fdd\u5b58');
+    });
+    overlay.addEventListener('touchstart', function (e) {
+      moved = false;
+      if (!e.touches || !e.touches.length) { return; }
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    }, false);
+    overlay.addEventListener('touchend', function (e) {
+      var t = (e.changedTouches && e.changedTouches.length) ? e.changedTouches[0] : null;
+      if (!t) { return; }
+      var dx = t.clientX - startX;
+      var dy = t.clientY - startY;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+        moved = true;
+        go(dx < 0 ? 1 : -1);
+      }
+    }, false);
+
+    document.addEventListener('keydown', function (e) {
+      if (!isOpen()) { return; }
+      var key = e.key || '';
+      if (key === 'Escape' || key === 'Esc' || e.keyCode === 27) { close(); return; }
+      if (key === 'ArrowLeft' || e.keyCode === 37) { go(-1); return; }
+      if (key === 'ArrowRight' || e.keyCode === 39) { go(1); }
+    }, false);
+  }
+
+  function init() {
+    var box = document.getElementById('spQr');
+    if (!box || !document.body) { return; }
+    var imgs = box.getElementsByTagName('img');
+    for (var m = 0; m < imgs.length; m++) { list.push(imgs[m]); }
+    if (!list.length) { return; }
+    build();
+    if (list.length < 2) {
+      prevEl.style.display = 'none';
+      nextEl.style.display = 'none';
+      countEl.style.display = 'none';
+    }
+    for (var n = 0; n < list.length; n++) {
+      (function (idx) {
+        var node = list[idx];
+        node.setAttribute('data-sp-index', String(idx));
+        node.addEventListener('click', function (e) {
+          if (e && e.preventDefault) { e.preventDefault(); }
+          openAt(idx);
+        });
+      })(n);
+    }
+  }
+
+  function boot() {
+    try { init(); } catch (err) { /* 预览层为增强能力，失败不影响页面 */ }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, false);
+  } else {
+    boot();
+  }
+})();
+</script>
 </body>
 </html>

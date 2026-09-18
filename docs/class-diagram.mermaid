@@ -1,78 +1,88 @@
 classDiagram
-    class AuthRouter {
-        +register(body)
-        +login(body)
-        +refresh(body)
-        +me(user)
-        +change_password(body, user) NEW
+    class XT_REGION {
+        <<existing, assets/xt-region.js>>
+        +Object DATA
+        +Object GEO
+        +provinces()
+        +citiesOf(p)
+        +districtsOf(p,c)
+        +textOf(p,c,d) String
+        +search(kw) Array
+        +parseText(txt) Obj
+        +reverseGeocode(lat,lng,cb) void 'cb(null) on fail'
+        +locate(cb) void 'cb({ok,reason})'
     }
-    class Security {
-        +hash_password(password) str
-        +verify_password(password, stored) bool
-        +create_token(user_id, typ) str
-        +get_current_user(request, db) User
+
+    class XT_LOC_PICK {
+        <<NEW, appended in assets/xt-region.js>>
+        +LAST_KEY: 'xt_loc_last'
+        +pick(opts, cb) void
+        +last(cb) void
+        +isCoordinateText(s) Boolean
     }
-    class User {
-        +int id
-        +str username
-        +str password_hash
-        +str nickname
-        +str avatar
-        +int token_version OPTIONAL
+
+    class LocObj {
+        +String text 'only field allowed in DOM'
+        +String province
+        +String city
+        +String district
+        +Number lat 'store-only, never render'
+        +Number lng 'store-only, never render'
+        +String source 'gps|manual'
     }
-    class Message {
-        +int id
-        +int sender_id
-        +int receiver_id
-        +str kind
-        +str content
-        +str created_at
+
+    class IconMap {
+        <<existing, assets/icon-map.js>>
+        +LUCIDE_ICONS: {map-pin,navigation,camera,...}
+        +lucideIcon(name,size) String
+        +lucideAutoRender() void
     }
-    class ChatRouter {
-        +send_message(peer_id, body, user)
-        +list_messages(peer_id, user)
-        +unread(user)
+
+    class MomentsJS {
+        <<assets/xt-moments.js>>
+        +inputSheet(title,ph,val,onOk)
+        +pickerSheet(title,sel,onDone)
+        +ico(name,size,fallback)
+        +renderChosen()
+        +pubSubmit()
+        +xtmAtBtn.handler NEW 'call XT_LOC_PICK.pick'
     }
-    class UploadRouter {
-        +upload_image(file, user)
-        +upload_voice(file, user) NEW
+
+    class ChatLocalJS {
+        <<assets/chat-local.js>>
+        +imPickImage()
+        +imSendImage(inp)
+        +imSendText()
+        +imSendLocation(text) NEW 'kind=location'
     }
-    class FileCheck {
-        +ext_for(data) str
-        +ext_for_audio(data) str NEW
+
+    class PrivateChatPage {
+        <<私聊.html>>
+        +imTogglePlusMenu() NEW
+        +imPlusMenu 'image/map-pin items'
     }
-    class FriendRouter {
-        +list_friends(user) items_total
-        +search_users(q, user)
-        +remove_friend(peer_id, user)
+
+    class PublishPage {
+        <<朋友圈发布.html>>
+        +xtmLocBtn 'data-icon=map-pin'
+        +xtmAtBtn 'data-icon=navigation'
     }
-    class UserRouter {
-        +public_profile(id, user)
+
+    class CommunityPage {
+        <<社区.html>>
+        +blogPickLoc() NEW
+        +blogRenderLocChip() NEW
+        +saveBlogNote(stage) 'writes location'
     }
-    class StudyStats_JS {
-        +track(module, event, payload)
-        +render(containerId, module)
-        +getSummary() NEW
-    }
-    class ApiJS {
-        +renderUserHome(userId, box)
-        +removeFriend(userId, name)
-        +addFriend(userId)
-    }
-    class ChatLocal_JS {
-        +imOpenAddFriendModal() NEW
-        +imRenderFriendRows(items) NEW
-        +imToggleRecord() NEW
-        +imTogglePlayVoice(el, src) NEW
-        +imRemoveFriend(serverId, name) NEW
-        +renderMsgs()
-    }
-    AuthRouter --> Security : uses
-    AuthRouter --> User : reads/writes
-    ChatRouter --> Message : writes
-    UploadRouter --> FileCheck : validates
-    UserRouter --> FriendRouter : isFriend
-    ApiJS --> UserRouter : GET /api/users/{id}
-    ApiJS --> FriendRouter : GET/DELETE
-    ChatLocal_JS --> ApiJS : reuses
-    StudyStats_JS --> ApiJS : local-first
+
+    XT_LOC_PICK ..> XT_REGION : calls locate/reverseGeocode
+    XT_LOC_PICK --> LocObj : produces
+    MomentsJS ..> XT_LOC_PICK : pick (onManual=inputSheet)
+    PublishPage ..> MomentsJS : host
+    CommunityPage ..> XT_LOC_PICK : pick
+    PrivateChatPage ..> XT_LOC_PICK : pick
+    ChatLocalJS <-- PrivateChatPage : menu triggers
+    MomentsJS ..> IconMap : ico/map-pin
+    CommunityPage ..> IconMap : data-icon
+    PrivateChatPage ..> IconMap : data-icon
+    PublishPage ..> IconMap : data-icon

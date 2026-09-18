@@ -27,11 +27,15 @@
   var SETTINGS_KEY = 'ai_model_settings';     // R64 模型设置页写入（disabled/order/overrides）
   var MEMORY_MAX = 50;                        // 记忆条数上限（超出丢最旧）
   var MEMORY_ITEM_MAX = 200;                  // 单条记忆截断长度（字）
+  var AUDIO_MODELS_KEY = 'ai_audio_models_v1'; // R93-5b：视频带声音 map（{modelId:true}，ai-settings.js 模型列表写入）
   var SEND_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>';
   var COPY_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
   var REGEN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>';
   var CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   var MEM_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
+  /* R86：麦克风按钮图标（录音中切换为 STOP_SVG，并把描边色改成警示红） */
+  var MIC_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="22"/></svg>';
+  var STOP_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" stroke="none"/></svg>';
   // AI 头像：星星图标（对标 DeepSeek/WorkBuddy 用品牌图形而非文字）
   var SPARK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9L12 3z"/><path d="M18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9L18 15z"/></svg>';
 
@@ -68,8 +72,7 @@
     'gm-flash-lite': '0.8x',
     'gm-flash': '1.2x',
     'ark-seedream-4-0415': '1x',
-    'ark-seedream-4-0828': '1x',
-    'ark-seedream-5-pro': '1x'
+    'ark-seedream-4-0828': '1x'
   };
 
   /* 模型说明兜底（与开发文档 §7.3 一致）；若 AI_CONFIG 提供更全则用 AI_CONFIG。 */
@@ -101,7 +104,20 @@
     'gm-flash': { platform: "Google Gemini", params: "", type: "通用对话（推理）", stars: '★★★★', speed: "中", advantage: "通用能力强（实测约 2.9 秒）；需自备网络", applicable: "日常问答、推理" },
     'ark-seedream-4-0415': { platform: "火山方舟·图片生成", params: "", type: "图片生成", stars: '★★★★', speed: "中", advantage: "文生图；走 images/generations 接口，调用链路待评估", applicable: "文生图（v4 初版）" },
     'ark-seedream-4-0828': { platform: "火山方舟·图片生成", params: "", type: "图片生成（最快）", stars: '★★★★', speed: "快", advantage: "文生图最快版（实测 4.2 秒）；走 images/generations 接口，调用链路待评估", applicable: "文生图（速度优先）" },
-    'ark-seedream-5-pro': { platform: "火山方舟·图片生成", params: "", type: "图片生成（质量最好）", stars: '★★★★★', speed: "慢", advantage: "文生图最新版，质量最好；走 images/generations 接口，调用链路待评估", applicable: "文生图（质量优先）" }
+
+    /* ---------- 硅基流动 12 模型（R86：翻译 / 视觉 / 生图 / 语音识别 / 向量 / 重排） ---------- */
+    'sf-hunyuan-mt-7b': { platform: "硅基流动", params: "7B", type: "翻译对话", stars: '★★★★', speed: "快", advantage: "腾讯混元翻译模型，多语种互译，中文语境准确；免费额度", applicable: "翻译、外语学习、双语对照阅读" },
+    'sf-paddleocr-vl-1.5': { platform: "硅基流动", params: "", type: "视觉理解（文档/公式）", stars: '★★★★', speed: "快", advantage: "PaddleOCR-VL 版面与公式识别强，走 chat/completions 可正常对话；免费额度", applicable: "拍题识图、课件与试卷截图解读、表格识别" },
+    'sf-kolors': { platform: "硅基流动", params: "", type: "图片生成", stars: '★★★★', speed: "中", advantage: "快手 Kolors 文生图，中文提示词友好；免费额度", applicable: "文生图、学习配图生成" },
+    'sf-sensevoice': { platform: "硅基流动", params: "", type: "语音识别", stars: '★★★★', speed: "快", advantage: "SenseVoiceSmall，多语种识别 + 情绪/事件标签；免费额度", applicable: "录音转文字、口述笔记整理" },
+    'sf-asr-v32': { platform: "硅基流动", params: "", type: "语音识别", stars: '★★★★', speed: "快", advantage: "星辰 ASR V3.2，中文长句识别稳定；免费额度", applicable: "录音转文字、课堂口述转写" },
+    'sf-asr-ultra': { platform: "硅基流动", params: "", type: "语音识别（高精度）", stars: '★★★★★', speed: "中", advantage: "星辰 ASR V3.2-Ultra，识别精度更高的增强版；免费额度", applicable: "嘈杂环境录音、高精度转写" },
+    'sf-asr-diarize': { platform: "硅基流动", params: "", type: "语音识别（说话人分离）", stars: '★★★★', speed: "中", advantage: "星辰 Diarize，能区分不同说话人；免费额度", applicable: "多人对话转写、小组讨论记录" },
+    'sf-qwen-asr': { platform: "硅基流动", params: "1.7B", type: "语音识别", stars: '★★★★', speed: "快", advantage: "Qwen3-ASR-1.7B，中英文识别均衡；免费额度", applicable: "录音转文字、口语练习复核" },
+    'sf-bge-m3': { platform: "硅基流动", params: "", type: "向量嵌入", stars: '★★★★', speed: "快", advantage: "BAAI/bge-m3，多语言 + 多功能向量；免费额度", applicable: "知识库向量化、语义检索（需由程序调用）" },
+    'sf-bge-zh': { platform: "硅基流动", params: "", type: "向量嵌入（中文）", stars: '★★★★', speed: "快", advantage: "bge-large-zh-v1.5，中文语义表征效果好；免费额度", applicable: "中文资料向量化、相似度检索（需由程序调用）" },
+    'sf-bge-en': { platform: "硅基流动", params: "", type: "向量嵌入（英文）", stars: '★★★★', speed: "快", advantage: "bge-large-en-v1.5，英文语义表征效果好；免费额度", applicable: "英文资料向量化、相似度检索（需由程序调用）" },
+    'sf-bge-reranker': { platform: "硅基流动", params: "", type: "结果重排", stars: '★★★★', speed: "快", advantage: "bge-reranker-v2-m3，对检索结果做精排；免费额度", applicable: "检索结果重排、提高命中率（需由程序调用）" }
   };
 
   /* 内置模型兜底（与 AI_CONFIG.builtinModels 对齐） */
@@ -134,7 +150,20 @@
     { id: 'gm-flash', name: 'Gemini-3.5-Flash', provider: 'gemini', model: 'gemini-3.5-flash', types: ['general','reasoning'], tag: null, fallback: 'ark-v4-pro' },
     { id: 'ark-seedream-4-0415', name: 'Seedream-4.0', provider: 'arkimage', model: 'doubao-seedream-4-0-20260415', types: ['imagegen'], tag: null, fallback: null },
     { id: 'ark-seedream-4-0828', name: 'Seedream-4.0-Fast', provider: 'arkimage', model: 'doubao-seedream-4-0-250828', types: ['imagegen'], tag: null, fallback: null },
-    { id: 'ark-seedream-5-pro', name: 'Seedream-5-Pro', provider: 'arkimage', model: 'doubao-seedream-5-0-pro-260628', types: ['imagegen'], tag: null, fallback: null }
+
+    /* ---------- 硅基流动 12 模型（R86）---------- */
+    { id: 'sf-hunyuan-mt-7b', name: 'Hunyuan-MT-7B', provider: 'siliconflow', model: 'tencent/Hunyuan-MT-7B', types: ['general','translate'], tag: '免费', rate: '1x', fallback: null },
+    { id: 'sf-paddleocr-vl-1.5', name: 'PaddleOCR-VL-1.5', provider: 'siliconflow', model: 'PaddlePaddle/PaddleOCR-VL-1.5', types: ['image'], tag: '免费', rate: '1x', fallback: null },
+    { id: 'sf-kolors', name: 'Kolors', provider: 'siliconflow', model: 'Kwai-Kolors/Kolors', types: ['imagegen'], tag: '免费', rate: '1x', fallback: null },
+    { id: 'sf-sensevoice', name: 'SenseVoice', provider: 'siliconflow', model: 'FunAudioLLM/SenseVoiceSmall', types: ['audio'], tag: '免费', rate: '1x', fallback: null },
+    { id: 'sf-asr-v32', name: 'XingChen-ASR-V3.2', provider: 'siliconflow', model: 'XingChenAGI/XingChenASR-V3.2', types: ['audio'], tag: '免费', rate: '1x', fallback: null },
+    { id: 'sf-asr-ultra', name: 'XingChen-ASR-Ultra', provider: 'siliconflow', model: 'XingChenAGI/XingChenASR-V3.2-Ultra', types: ['audio'], tag: '免费', rate: '1x', fallback: null },
+    { id: 'sf-asr-diarize', name: 'XingChen-Diarize', provider: 'siliconflow', model: 'XingChenAGI/XingChenASR-Diarize-V3.0', types: ['audio'], tag: '免费', rate: '1x', fallback: null },
+    { id: 'sf-qwen-asr', name: 'Qwen-ASR-1.7B', provider: 'siliconflow', model: 'Qwen/Qwen3-ASR-1.7B', types: ['audio'], tag: '免费', rate: '1x', fallback: null },
+    { id: 'sf-bge-m3', name: 'bge-m3', provider: 'siliconflow', model: 'BAAI/bge-m3', types: ['embedding'], tag: '免费', rate: '1x', fallback: null },
+    { id: 'sf-bge-zh', name: 'bge-large-zh', provider: 'siliconflow', model: 'BAAI/bge-large-zh-v1.5', types: ['embedding'], tag: '免费', rate: '1x', fallback: null },
+    { id: 'sf-bge-en', name: 'bge-large-en', provider: 'siliconflow', model: 'BAAI/bge-large-en-v1.5', types: ['embedding'], tag: '免费', rate: '1x', fallback: null },
+    { id: 'sf-bge-reranker', name: 'bge-reranker-m3', provider: 'siliconflow', model: 'BAAI/bge-reranker-v2-m3', types: ['rerank'], tag: '免费', rate: '1x', fallback: null }
   ];
 
   /* 自定义模型：服务商预设（选择后自动填 API 地址 + 切换模型 ID 下拉选项）
@@ -186,6 +215,7 @@
   /* ---------- 元素引用（init 内赋值） ---------- */
   var aiInput, aiSendBtn, aiChat, aiMessages, aiWelcome, aiWelcomeInputSlot, aiDockInputSlot,
     aiInputBox, aiImgPreview, aiImgThumb, aiAttachBtn, aiFileInput, aiDeepThinkChip,
+    aiMicBtn, aiAudioPreview, aiAudioLabel,
     aiModelBtn, aiModelLabel, aiImgRemove, aiHistory, aiHistoryList,
     aiSidebarOverlay, aiCollapseBtn, cmTypes, pendingOk = null, customEditId = null,
     aiUserArea, aiUserAvatar, aiUserName, aiUserMoreBtn,
@@ -193,7 +223,8 @@
     aiModelPanel, aiModelList, aiMaxSwitch;
 
   /* ---------- 运行时状态 ---------- */
-  var state = { messages: [], chatId: null, image: null, sending: false };
+  /* R86：audio = { blob, file, mime, seconds }（与 image 同级；录完点发送即走语音识别回填） */
+  var state = { messages: [], chatId: null, image: null, audio: null, sending: false };
 
   /* ============ 工具函数 ============ */
   function lsGet(key, def) { try { var v = localStorage.getItem(key); if (v === null) return def; return JSON.parse(v); } catch (e) { return def; } }
@@ -266,11 +297,74 @@
     if (ovr && typeof ovr.name === 'string' && ovr.name) return ovr.name;
     return m.name || m.id || '';
   }
-  /* 过滤 disabled + 按 order 排序（order 在前者先排，未列入者按原顺序排后） */
+  /* ---------- R87/T04：不可用模型可见性（需求 4 后半） ----------
+     语义铁律（§9.6）：无 health 记录 → 视为【可见】；仅当明确探测失败
+     （health[id] 存在且 ok === false）且 hideUnavailable 为真时才隐藏。
+     隐藏 = 渲染期过滤：不写 disabled、不写持久化、不删模型 → 天然可逆。 */
+  function hideUnavailableOn() {
+    return getModelSettings().hideUnavailable === true;
+  }
+  function isHiddenByHealth(id) {
+    if (!id) return false;
+    if (!hideUnavailableOn()) return false;
+    var h = getModelSettings().health;
+    if (!h || typeof h !== 'object') return false;
+    var rec = h[id];
+    if (!rec || typeof rec !== 'object') return false;   /* 无 health 记录 → 可见（不误伤未检测模型） */
+    return rec.ok === false;                              /* 仅明确检测失败才隐藏 */
+  }
+  /* 健康状态变更 → 基于【当前】health / hideUnavailable 重算（不缓存快照，故可逆） */
+  function onHealthChanged() {
+    try { renderModelList(); } catch (e) { /* 列表未就绪：忽略 */ }
+  }
+
+  /* ---------- R88-M1（R88-C）：按功能分类联动过滤 ----------
+     语义铁律：与「健康检查自动隐藏」(R87) 叠加 = 【交集】。即一个模型要显示，
+     必须同时满足：(1) 未被 disabled；(2) 未被 health 隐藏；(3) 匹配当前分类筛选。
+     三种过滤全是【渲染期】只读判定：不写 disabled、不删 catModels/overrides、
+     不改任何持久化 → 取消筛选（catKey 置空）后立即恢复，数据从未被删除。
+     分类映射表与 ai-settings.js 的 CAT_OF_TYPE 保持一致（14 键，无隐式兜底）；
+     自定义分类（不在值域内）视为「无能力映射」→ 一律不匹配，避免误隐藏。
+     ── 依赖跨文件契约：ai_model_settings.lastSort.catKey（由 ai-settings 排序弹窗写入）。 */
+  var CAT_OF_TYPE_PAGE = {
+    general: 'general', longtext: 'longtext',
+    creative: 'content', interview: 'content',
+    math: 'reasoning', reasoning: 'reasoning',
+    translate: 'translate',
+    image: 'vision', imagegen: 'imagegen',
+    audio: 'audio', embedding: 'embedding', rerank: 'rerank',
+    video: 'video',
+    '3d': 'three_d'
+  };
+  /* 当前生效的分类筛选 key（来自 lastSort.catKey）。空串 = 不筛选（全部显示）。只读。 */
+  function activeCatFilterPage() {
+    var s = getModelSettings();
+    var ls = s && s.lastSort;
+    if (!ls || typeof ls !== 'object') return '';
+    var ck = ls.catKey;
+    return (typeof ck === 'string') ? ck : '';
+  }
+  /* 模型 id 是否匹配当前分类筛选。catKey 空 → 全部匹配；模型无类型映射 → 不匹配（不误伤筛选语义）。 */
+  function isHiddenByCategory(id) {
+    var catKey = activeCatFilterPage();
+    if (!catKey) return false;                 // 未选分类 → 不隐藏任何模型
+    if (!id) return false;
+    var m = getModelById(id);
+    if (!m) return false;                      // 模型已不存在：交由其它过滤/上游兜底，不在此误判
+    var ts = (Object.prototype.toString.call(m.types) === '[object Array]') ? m.types : [];
+    for (var i = 0; i < ts.length; i++) {
+      if (CAT_OF_TYPE_PAGE[ts[i]] === catKey) return false;   // 命中分类 → 可见
+    }
+    return true;                               // 无任何 type 映射到该分类 → 隐藏（渲染期，可逆）
+  }
+  /* 过滤 disabled + 不可用（health） + 功能分类（R88-C） + 按 order 排序（order 在前者先排，未列入者按原顺序排后）
+     过滤顺序说明：disabled → health → 分类，三者取【交集】（AND 语义），互不覆盖、互不破坏对方行为。 */
   function applyListSettings(list) {
     var out = [];
     var i;
-    for (i = 0; i < list.length; i++) { if (!isDisabledId(list[i].id)) out.push(list[i]); }
+    for (i = 0; i < list.length; i++) {
+      if (!isDisabledId(list[i].id) && !isHiddenByHealth(list[i].id) && !isHiddenByCategory(list[i].id)) out.push(list[i]);
+    }
     var order = settingsOrder();
     if (order && order.length) {
       var idx = {};
@@ -400,6 +494,17 @@
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
+  /* R93-4：识别视频文件 URL（.mp4/.webm/.mov；能力模块 video_url 实际为
+     .mp4 + X-Tos-Expires 查询串）。返回 [URL 前文本, 视频URL, URL 后文本]
+     或 null。新消息与旧存量纯文本消息走同一条识别路径——历史消息重渲染
+     即得内嵌播放器，无需迁移存储格式。 */
+  function videoUrlSplit(text) {
+    var s = String(text || '');
+    var m = /(https?:\/\/[^\s'"<>]+?\.(?:mp4|webm|mov)(?:\?[^\s'"<>]*)?)/i.exec(s);
+    if (!m) { return null; }
+    return [s.slice(0, m.index), m[1], s.slice(m.index + m[0].length)];
+  }
+
   /* ============ 轻量 Markdown 渲染（自实现，无外部库） ============ */
   function inlineMd(s) {
     var parts = s.split('`');
@@ -435,6 +540,17 @@
           escHtml(imgM[1]) + '" style="max-width:100%;border-radius:10px;"></p>';
         continue;
       }
+      // R93-4：视频结果 URL 任何渲染路径都内嵌 <video>（运行时首显与历史重渲染
+      // 同口径）；3D 的 .zip 不在视频后缀名单内，仍走原展示不误伤。
+      var vidM = videoUrlSplit(line);
+      if (vidM) {
+        flushPara();
+        if (vidM[0]) { html += '<p>' + inlineMd(escHtml(vidM[0])) + '</p>'; }
+        html += '<p><video class="ai-md-video" controls preload="metadata" src="' +
+          escHtml(vidM[1]) + '" style="max-width:100%;border-radius:10px;display:block;"></video></p>';
+        if (vidM[2]) { html += '<p>' + inlineMd(escHtml(vidM[2])) + '</p>'; }
+        continue;
+      }
       if (/^###\s+/.test(line)) { flushPara(); html += '<h3>' + inlineMd(escHtml(line.replace(/^###\s+/, ''))) + '</h3>'; continue; }
       if (/^##\s+/.test(line)) { flushPara(); html += '<h2>' + inlineMd(escHtml(line.replace(/^##\s+/, ''))) + '</h2>'; continue; }
       if (/^#\s+/.test(line)) { flushPara(); html += '<h1>' + inlineMd(escHtml(line.replace(/^#\s+/, ''))) + '</h1>'; continue; }
@@ -457,6 +573,149 @@
     return html;
   }
 
+  /* ============ R86：生图结果本地化（签名 URL 1 小时过期，必须落成本地 Blob） ============
+     硅基流动/火山生图返回的是 S3 预签名地址（X-Amz-Expires=3600），1 小时后 404。
+     拿到结果后异步下载成 Blob → 用 createObjectURL 换掉会话里的 src（当前会话永不失效），
+     同时尽力写一份进 IndexedDB（失败一律忽略，不影响主流程）。下载失败保留原 URL。 */
+  var IMG_DB_NAME = 'xt_ai_images';
+  var IMG_DB_STORE = 'blobs';
+  var imgDbReq = null;
+
+  function hasPromise() { return (typeof Promise === 'function'); }
+  function canObjectUrl() {
+    return !!(typeof window !== 'undefined' && window.URL && typeof window.URL.createObjectURL === 'function' && typeof window.Blob === 'function');
+  }
+  function getImgIdb() {
+    if (typeof window === 'undefined') return null;
+    return window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || null;
+  }
+  /* 打开（并按需建库）图片库；返回 Promise<IDBDatabase>，不可用时 reject */
+  function openImgDb() {
+    if (!hasPromise()) return Promise.reject(new Error('no promise'));
+    if (imgDbReq) return imgDbReq;
+    var idb = getImgIdb();
+    if (!idb) { imgDbReq = Promise.reject(new Error('no idb')); return imgDbReq; }
+    imgDbReq = new Promise(function (resolve, reject) {
+      var req = null;
+      try { req = idb.open(IMG_DB_NAME, 1); } catch (e) { reject(e); return; }
+      req.onupgradeneeded = function () {
+        try {
+          var db = req.result;
+          if (db.objectStoreNames && typeof db.objectStoreNames.contains === 'function' && !db.objectStoreNames.contains(IMG_DB_STORE)) {
+            db.createObjectStore(IMG_DB_STORE);
+          }
+        } catch (e) { /* 建表失败不影响主流程 */ }
+      };
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { reject(req.error || new Error('idb open failed')); };
+      req.onblocked = function () { reject(new Error('idb blocked')); };
+    });
+    return imgDbReq;
+  }
+  function idbPutBlob(url, blob) {
+    if (!hasPromise() || !blob) return Promise.resolve(false);
+    return openImgDb().then(function (db) {
+      return new Promise(function (resolve) {
+        var tx = null;
+        try { tx = db.transaction(IMG_DB_STORE, 'readwrite'); } catch (e) { resolve(false); return; }
+        tx.objectStore(IMG_DB_STORE).put(blob, url);
+        tx.oncomplete = function () { resolve(true); };
+        tx.onerror = function () { resolve(false); };
+        tx.onabort = function () { resolve(false); };
+      });
+    }).catch(function () { return false; });
+  }
+  function idbGetBlob(url) {
+    if (!hasPromise()) return Promise.resolve(null);
+    return openImgDb().then(function (db) {
+      return new Promise(function (resolve) {
+        var tx = null;
+        try { tx = db.transaction(IMG_DB_STORE, 'readonly'); } catch (e) { resolve(null); return; }
+        var rq = tx.objectStore(IMG_DB_STORE).get(url);
+        rq.onsuccess = function () { resolve(rq.result || null); };
+        rq.onerror = function () { resolve(null); };
+      });
+    }).catch(function () { return null; });
+  }
+  /* 下载远程图片为 Blob：优先 fetch，老内核退化为 XHR（responseType=blob） */
+  function downloadImageBlob(url) {
+    if (!hasPromise()) return Promise.reject(new Error('no promise'));
+    return new Promise(function (resolve, reject) {
+      var done = false;
+      function ok(b) { if (done) return; done = true; resolve(b); }
+      function bad(e) { if (done) return; done = true; reject(e); }
+      if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
+        try {
+          window.fetch(url, { mode: 'cors' }).then(function (r) {
+            if (!r || !r.ok) { reject(new Error('HTTP ' + (r ? r.status : 0))); return null; }
+            return r.blob();
+          }).then(function (b) {
+            if (b && b.size) ok(b); else bad(new Error('empty blob'));
+          }).catch(function () {
+            if (done) return;                    // 已失败（HTTP 非 2xx）不再重复下载
+            xhrDownload(url, ok, bad);           // fetch 本身不可用/被拦截 → 退 XHR
+          });
+          return;
+        } catch (e) { /* 落到 XHR */ }
+      }
+      xhrDownload(url, ok, bad);
+    });
+  }
+  function xhrDownload(url, resolve, reject) {
+    if (typeof XMLHttpRequest === 'undefined') { reject(new Error('no xhr')); return; }
+    var xhr = null;
+    try { xhr = new XMLHttpRequest(); } catch (e) { reject(e); return; }
+    xhr.open('GET', url, true);
+    try { xhr.responseType = 'blob'; } catch (e2) { /* 老内核无 blob 支持 → 放弃本地化 */ }
+    xhr.onload = function () {
+      var r = xhr.response;
+      if (xhr.status >= 200 && xhr.status < 300 && r && typeof r === 'object' && r.size) resolve(r);
+      else reject(new Error('HTTP ' + xhr.status));
+    };
+    xhr.onerror = function () { reject(new Error('network')); };
+    xhr.ontimeout = function () { reject(new Error('timeout')); };
+    try { xhr.send(); } catch (e3) { reject(e3); }
+  }
+  /* 把容器内所有远程生图换成 objectURL（同一张只处理一次：data-persist 标记） */
+  function persistGeneratedImages(root) {
+    if (!root || !canObjectUrl()) return;
+    var imgs = (root.querySelectorAll) ? root.querySelectorAll('img.ai-md-img') : [];
+    for (var i = 0; i < imgs.length; i++) localizeImage(imgs[i]);
+  }
+  function localizeImage(img) {
+    if (!img || !canObjectUrl()) return;
+    if (img.getAttribute('data-persist')) return;          // 已处理过
+    var url = img.getAttribute('src') || '';
+    if (!/^https?:\/\//i.test(url)) return;                // 只处理远程签名地址
+    img.setAttribute('data-persist', '1');
+    downloadImageBlob(url).then(function (blob) {
+      try { img.src = window.URL.createObjectURL(blob); } catch (e) { /* 换 src 失败就继续用原 URL */ }
+      idbPutBlob(url, blob);                               // 存失败静默忽略
+    }).catch(function () {
+      // 下载失败（跨域/签名已过期/网络）：保留原 URL，绝不打断对话
+      img.setAttribute('data-persist', '0');
+    });
+  }
+  /* 打开历史会话时：用 IndexedDB 里的 Blob 复活已过期的图 */
+  function restorePersistedImages(root) {
+    if (!root || !canObjectUrl()) return;
+    var imgs = (root.querySelectorAll) ? root.querySelectorAll('img.ai-md-img') : [];
+    for (var i = 0; i < imgs.length; i++) {
+      var el = imgs[i];
+      var url = el.getAttribute('src') || '';
+      if (!/^https?:\/\//i.test(url)) continue;
+      if (el.getAttribute('data-persist')) continue;
+      el.setAttribute('data-persist', '1');
+      swapFromDb(el, url);
+    }
+  }
+  function swapFromDb(img, url) {
+    idbGetBlob(url).then(function (blob) {
+      if (!blob) return;
+      try { img.src = window.URL.createObjectURL(blob); } catch (e) { /* 忽略 */ }
+    }).catch(function () { /* 忽略 */ });
+  }
+
   /* ============ 输入区相关 ============ */
   function autoGrow() {
     if (!aiInput) return;
@@ -469,9 +728,9 @@
   function updateSendEnabled() {
     if (!aiSendBtn) return;
     if (state.sending) { aiSendBtn.disabled = true; return; }
-    // 有文字或有图就必须可点：只读当前值，不依赖任何缓存状态
+    // 有文字或有附件（图片/语音）就必须可点：只读当前值，不依赖任何缓存状态
     var v = aiInput ? String(aiInput.value || '').trim() : '';
-    var empty = (!v && !state.image);
+    var empty = (!v && !state.image && !state.audio);
     aiSendBtn.disabled = empty;
   }
   function setSendBusy(busy) {
@@ -490,6 +749,13 @@
     if (aiAttachBtn) aiAttachBtn.classList.remove('has-image');
     updateSendEnabled();
   }
+  /* R86：清理语音附件（与 clearImage 同构） */
+  function clearAudio() {
+    if (REC.on) stopRecord();          // 录音中清理＝先停再丢弃
+    state.audio = null;
+    if (aiAudioPreview) aiAudioPreview.style.display = 'none';
+    updateSendEnabled();
+  }
   function handleFile(file) {
     if (!file) return;
     if (!/^image\//.test(file.type)) { toast('请上传图片文件'); return; }
@@ -502,6 +768,302 @@
       updateSendEnabled();
     };
     reader.readAsDataURL(file);
+  }
+
+  /* ============ R86：语音识别入口（麦克风录音 → 识别结果回填输入框） ============
+     录制写法复用 assets/chat-local.js 的 getUserMedia + MediaRecorder mime 候选；
+     不支持 / 权限被拒一律 toast 提示，不弹 alert，不静默失败。
+     识别结果不直接发出，回填输入框让用户编辑后再发（ASR 结果有误是常态）。 */
+  var REC = { rec: null, chunks: [], stream: null, start: 0, tick: null, stopTimer: null, on: false };
+  var MAX_REC_MS = 60000;                       // 单次最长 60 秒
+  var MIC_MIME_CANDS = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/ogg'];
+
+  function modelHasType(m, t) {
+    if (!m || !t) return false;
+    var ts = m.types;
+    return (Object.prototype.toString.call(ts) === '[object Array]' && ts.indexOf(t) >= 0);
+  }
+  function micSupported() {
+    var ok = false;
+    try {
+      ok = !!(window.MediaRecorder && navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.Blob);
+    } catch (e) { ok = false; }
+    if (!ok) {
+      try { ok = !!(window.MediaRecorder && window.Blob && (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia)); } catch (e2) { ok = false; }
+    }
+    return ok;
+  }
+  /* 老内核只有 navigator.getUserMedia(callback) 时，包一层 Promise 统一走法 */
+  function legacyGetUserMedia() {
+    return new Promise(function (resolve, reject) {
+      var fn = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+      if (!fn) { reject(new Error('unsupported')); return; }
+      try { fn.call(navigator, { audio: true }, resolve, function (e) { reject(e || new Error('denied')); }); }
+      catch (e) { reject(e); }
+    });
+  }
+  function pickMime() {
+    var mime = '';
+    try {
+      if (window.MediaRecorder.isTypeSupported) {
+        for (var i = 0; i < MIC_MIME_CANDS.length; i++) {
+          if (MediaRecorder.isTypeSupported(MIC_MIME_CANDS[i])) { mime = MIC_MIME_CANDS[i]; break; }
+        }
+      }
+    } catch (e) { mime = ''; }
+    return mime;
+  }
+  function setMicRecording(on, seconds) {
+    if (!aiMicBtn) return;
+    if (on) {
+      aiMicBtn.innerHTML = STOP_SVG;
+      aiMicBtn.style.color = '#e5484d';
+      aiMicBtn.classList.add('recording');
+      aiMicBtn.title = '录音中 ' + seconds + ' 秒，点击结束';
+      aiMicBtn.setAttribute('aria-label', '结束录音');
+    } else {
+      aiMicBtn.innerHTML = MIC_SVG;
+      aiMicBtn.style.color = '';
+      aiMicBtn.classList.remove('recording');
+      aiMicBtn.title = '点击开始录音，再点一次结束（最长 60 秒）';
+      aiMicBtn.setAttribute('aria-label', '语音输入');
+    }
+  }
+  function setAudioPreview(text) {
+    if (!aiAudioPreview) return;
+    aiAudioPreview.style.display = 'inline-flex';
+    if (aiAudioLabel) aiAudioLabel.textContent = text;
+  }
+  function toggleRecord() {
+    if (!micSupported()) { toast('当前浏览器不支持录音，请用 Chrome 打开并允许麦克风权限'); return; }
+    if (state.sending) { toast('正在识别中，请稍候'); return; }
+    if (REC.on) { stopRecord(); return; }
+    startRecord();
+  }
+  function startRecord() {
+    var p = null;
+    try {
+      p = (navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+        ? navigator.mediaDevices.getUserMedia({ audio: true })
+        : legacyGetUserMedia();
+    } catch (e) { p = legacyGetUserMedia(); }
+    if (!p || typeof p.then !== 'function') { toast('无法启动录音，请更换浏览器重试'); return; }
+    p.then(function (stream) {
+      REC.stream = stream;
+      REC.chunks = [];
+      REC.start = Date.now();
+      var mime = pickMime();
+      try { REC.rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream); }
+      catch (e) { try { REC.rec = new MediaRecorder(stream); } catch (e2) { REC.rec = null; } }
+      if (!REC.rec) { releaseStream(); toast('录音组件初始化失败，请更换浏览器重试'); return; }
+      REC.rec.ondataavailable = function (e) { if (e && e.data && e.data.size) REC.chunks.push(e.data); };
+      REC.rec.onstop = onRecordStop;
+      try { REC.rec.start(); } catch (e3) { releaseStream(); toast('无法开始录音，请检查麦克风权限'); return; }
+      REC.on = true;
+      setMicRecording(true, 0);
+      toast('录音中…再次点击麦克风结束（最长 60 秒）');
+      REC.tick = setInterval(function () {
+        var s = Math.round((Date.now() - REC.start) / 1000);
+        setMicRecording(true, s);
+      }, 1000);
+      REC.stopTimer = setTimeout(function () { stopRecord(); toast('已到 60 秒上限，自动结束录音'); }, MAX_REC_MS);
+    }).catch(function (err) {
+      var nm = (err && err.name) ? String(err.name) : '';
+      if (nm === 'NotAllowedError' || nm === 'PermissionDeniedError' || nm === 'SecurityError') {
+        toast('麦克风权限被拒绝，请在浏览器/系统设置里允许后重试');
+      } else if (nm === 'NotFoundError' || nm === 'DevicesNotFoundError') {
+        toast('没有检测到麦克风设备');
+      } else if (nm === 'NotReadableError' || nm === 'TrackStartError') {
+        toast('麦克风被其它程序占用，请关闭后重试');
+      } else {
+        toast('无法访问麦克风，请检查权限');
+      }
+    });
+  }
+  function stopRecord() {
+    if (REC.tick) { clearInterval(REC.tick); REC.tick = null; }
+    if (REC.stopTimer) { clearTimeout(REC.stopTimer); REC.stopTimer = null; }
+    if (REC.rec && REC.rec.state === 'recording') { try { REC.rec.stop(); } catch (e) { /* 忽略：失败也不会留下状态 */ } }
+    REC.on = false;
+    setMicRecording(false, 0);
+  }
+  function releaseStream() {
+    if (!REC.stream) return;
+    try {
+      var tracks = REC.stream.getTracks ? REC.stream.getTracks() : null;
+      if (tracks) { for (var i = 0; i < tracks.length; i++) { try { tracks[i].stop(); } catch (e) { /* 忽略 */ } } }
+    } catch (e2) { /* 忽略 */ }
+    REC.stream = null;
+  }
+  function onRecordStop() {
+    var secs = Math.max(1, Math.round((Date.now() - REC.start) / 1000));
+    var mime = (REC.rec && REC.rec.mimeType) ? REC.rec.mimeType : (pickMime() || 'audio/webm');
+    var blob = null;
+    try { blob = new Blob(REC.chunks, { type: mime }); } catch (e) { blob = null; }
+    REC.chunks = [];
+    releaseStream();
+    if (!blob || !blob.size) { toast('没有录到声音，请再试一次'); updateSendEnabled(); return; }
+    var file = null;
+    try {
+      if (typeof window !== 'undefined' && typeof window.File === 'function') {
+        var ext = (mime.indexOf('ogg') >= 0) ? 'ogg' : 'webm';
+        file = new File([blob], 'voice.' + ext, { type: mime });   // 上传接口通常需要带文件名
+      }
+    } catch (e2) { file = null; }
+    state.audio = { blob: blob, file: file, mime: mime, seconds: secs };
+    setAudioPreview('已录 ' + secs + ' 秒，点发送转文字');
+    updateSendEnabled();
+  }
+  /* DOM 注入：麦克风按钮挂在附件按钮旁边；语音条挂在图片预览旁边（AI.html 不动） */
+  function ensureMicButton() {
+    if (aiMicBtn || !aiAttachBtn) return;
+    var b = doc.createElement('button');
+    b.type = 'button';
+    b.id = 'aiMicBtn';
+    b.className = 'ai-icon-btn';
+    b.setAttribute('aria-label', '语音输入');
+    b.title = '点击开始录音，再点一次结束（最长 60 秒）';
+    b.innerHTML = MIC_SVG;
+    var host = aiAttachBtn.parentNode;
+    if (host) {
+      if (aiAttachBtn.nextSibling) host.insertBefore(b, aiAttachBtn.nextSibling);
+      else host.appendChild(b);
+    } else if (aiInputBox) { aiInputBox.appendChild(b); } else { return; }
+    aiMicBtn = b;
+    bindEl(b, 'click', toggleRecord);
+  }
+  function ensureAudioPreview() {
+    if (aiAudioPreview) return;
+    var box = doc.createElement('div');
+    box.id = 'aiAudioPreview';
+    box.style.cssText = 'display:none;align-items:center;gap:6px;margin:6px 0 0;padding:4px 10px;border-radius:999px;background:rgba(128,128,128,.16);font-size:12px;color:#666;';
+    box.innerHTML = '<span id="aiAudioLabel">语音</span>' +
+      '<button type="button" id="aiAudioRemove" title="移除" style="border:none;background:none;color:#e5484d;cursor:pointer;font-size:12px;padding:0 2px;">✕</button>';
+    var host = (aiImgPreview && aiImgPreview.parentNode) ? aiImgPreview.parentNode : aiInputBox;
+    if (!host) return;
+    if (aiImgPreview && aiImgPreview.nextSibling) host.insertBefore(box, aiImgPreview.nextSibling);
+    else host.appendChild(box);
+    aiAudioPreview = box;
+    aiAudioLabel = $('aiAudioLabel');
+    bindById('aiAudioRemove', 'click', clearAudio);
+  }
+
+  /* ---------- R93-5b：视频「带声音」状态读取（map 由 ai-settings.js 模型列表写入） ---------- */
+  function videoAudioOnFor(id) {
+    try {
+      var v = localStorage.getItem(AUDIO_MODELS_KEY);
+      var o = v ? JSON.parse(v) : null;
+      return !!(o && typeof o === 'object' && o[id] === true);
+    } catch (e) { return false; }
+  }
+
+  /* ---------- 发送语音：识别结果回填输入框，不直接当成提问发出 ---------- */
+  function asrResultText(res) {
+    if (typeof res === 'string') return res;
+    if (res && typeof res === 'object') {
+      if (typeof res.text === 'string' && res.text) return res.text;
+      if (typeof res.content === 'string' && res.content) return res.content;
+      if (res.data && typeof res.data.text === 'string') return res.data.text;
+      if (res.data && typeof res.data === 'string') return res.data;
+      if (typeof res.result === 'string') return res.result;
+    }
+    return '';
+  }
+  /* 直连能力调用器（ai-service.js 的 xtRunCapability）：现在没导出就退到 callAI，
+     一旦底座把它挂到 AI_SERVICE 上，语音识别自动走能力链路，本文件不用改第二遍 */
+  function capRunner() {
+    try {
+      if (typeof window !== 'undefined') {
+        if (window.AI_SERVICE && typeof window.AI_SERVICE.xtRunCapability === 'function') return window.AI_SERVICE.xtRunCapability;
+        if (typeof window.xtRunCapability === 'function') return window.xtRunCapability;
+      }
+    } catch (e) { /* 忽略 */ }
+    return null;
+  }
+  function audioExt(mime) {
+    var m = String(mime || '').toLowerCase();
+    if (m.indexOf('ogg') >= 0) return 'ogg';
+    if (m.indexOf('mp4') >= 0 || m.indexOf('m4a') >= 0) return 'm4a';
+    if (m.indexOf('mpeg') >= 0 || m.indexOf('mp3') >= 0) return 'mp3';
+    if (m.indexOf('wav') >= 0) return 'wav';
+    return 'webm';
+  }
+  function runAudioRecognition(audio, m) {
+    var id = (m && m.id) ? m.id : getSelectedModelId();
+    var payload = audio.file || audio.blob;
+    var input = { blob: payload, file: payload, fileName: 'voice.' + audioExt(audio.mime), mime: audio.mime, seconds: audio.seconds };
+    /* 1) 能力直连（ai-cap-audio.js 注册的 asr）：不占 chat 链路，且会落一条用量账 */
+    var runner = capRunner();
+    if (runner) {
+      return new Promise(function (resolve, reject) {
+        var p = null;
+        try { p = runner(id, input, {}); } catch (e) { reject(e); return; }
+        if (!p || typeof p.then !== 'function') { reject(new Error('语音识别链路不可用')); return; }
+        p.then(function (r) {
+          var body = (r && r.result !== undefined && r.result !== null) ? r.result : r;
+          resolve(asrResultText(body));
+        }, reject);
+      });
+    }
+    /* 2) 退到 callAI：音频挂在 opts 上，由底座分派到 asr 类型模型 */
+    if (typeof callAI !== 'function') return Promise.reject(new Error('AI 服务暂未就绪'));
+    return new Promise(function (resolve, reject) {
+      var opts = {
+        image: null,
+        audio: audio.blob,
+        audioFile: audio.file,
+        audioMime: audio.mime,
+        audioSeconds: audio.seconds,
+        model: (m && m.id) ? m.id : getSelectedModelId(),
+        max: false,
+        onChunk: function () { /* ASR 不走流式渲染 */ },
+        onFallback: function () { /* 忽略 */ },
+        onModelUsed: function () { /* 忽略 */ }
+      };
+      var p = null;
+      try { p = callAI('general', [{ role: 'user', content: '请把这段语音转成文字。' }], opts); }
+      catch (e) { reject(e); return; }
+      if (!p || typeof p.then !== 'function') { reject(new Error('语音识别链路不可用')); return; }
+      p.then(function (res) { resolve(asrResultText(res)); }, reject);
+    });
+  }
+  function sendAudioForTranscribe(text) {
+    var m = getModelById(getSelectedModelId());
+    if (!micSupported() || !hasPromise()) { toast('当前浏览器不支持语音识别，请用 Chrome 打开'); return; }
+    if (!m || !modelHasType(m, 'audio')) {
+      toast('当前模型不支持语音识别，请在模型列表「语音识别」区里选一个模型');
+      return;
+    }
+    var audio = state.audio;
+    if (!audio || !audio.blob) { clearAudio(); return; }
+    setSendBusy(true);
+    setAudioPreview('识别中…');
+    runAudioRecognition(audio, m).then(function (txt) {
+      setSendBusy(false);
+      txt = String(txt || '').replace(/^\s+|\s+$/g, '');
+      if (!txt) {
+        setAudioPreview('已录 ' + audio.seconds + ' 秒，点发送转文字');
+        toast('没有识别出内容，请靠近麦克风再说一次');
+        return;
+      }
+      clearAudio();     // 识别成功即消费掉附件，避免重复发送
+      var merged = text ? (text + (/\s$/.test(text) ? '' : ' ') + txt) : txt;
+      if (aiInput) {
+        aiInput.value = merged;
+        autoGrow();
+        updateSendEnabled();
+        renderCtxUsage();
+        try { aiInput.focus(); } catch (e) { /* 忽略聚焦异常 */ }
+      }
+      toast('已识别为文字，确认后点发送');
+    }).catch(function (err) {
+      setSendBusy(false);
+      setAudioPreview('已录 ' + audio.seconds + ' 秒，点发送转文字');
+      var msg = (err && err.message) ? String(err.message) : '';
+      if (msg.indexOf('暂未就绪') >= 0) toast('AI 服务暂未就绪，请稍后重试');
+      else if (msg.indexOf('链路不可用') >= 0) toast('该模型的语音识别链路还没接好，请换个语音模型或稍后再试');
+      else toast('语音识别失败：' + (msg || '请稍后重试'));
+    });
   }
 
   /* 输入框在欢迎页（居中）与对话页（底部）之间移动 */
@@ -607,11 +1169,112 @@
     return '这是本地参考回答（未连接在线模型）。你可以：\n- 检查网络后重试\n- 在「设置」中填写自己的模型 Key\n- 在输入框下方的「模型」列表里更换模型\n\n如果你的问题是关于学习方法，建议先明确目标，再拆成小步骤逐步推进。';
   }
 
+  /* ============ R92-A：能力型模型路由（video / 3d） ============ */
+  /* predictFuncType 只按输入文字猜功能，不知道用户选了什么模型：选中 types 含
+     'video'（或 '3d'）的模型时，普通对话链路 chat/completions 必然失败（视频/3D
+     是分钟级异步任务，走的是异步任务端点）。此处在 askAI 前置检查选中模型的
+     types，命中即改走 xtRunCapability 直连链路（ai-service.js 守卫式导出；
+     ai-cap-video.js / ai-cap-3d.js 内部完成 创建→轮询→取结果→上报用量），
+     其余路由（普通对话 / 翻译 / 推理 / 生图）一律不变。 */
+  var CAP_MODEL_TYPES = ['video', '3d'];
+
+  function isCapabilityModel(m) {
+    if (!m || !m.types || typeof m.types.length !== 'number') { return false; }
+    for (var i = 0; i < m.types.length; i++) {
+      for (var j = 0; j < CAP_MODEL_TYPES.length; j++) {
+        if (String(m.types[i]) === CAP_MODEL_TYPES[j]) { return true; }
+      }
+    }
+    return false;
+  }
+
+  function capModelKind(m) {
+    if (!m || !m.types || typeof m.types.length !== 'number') { return ''; }
+    for (var i = 0; i < m.types.length; i++) {
+      var t = String(m.types[i]);
+      if (t === 'video') { return 'video'; }
+      if (t === '3d') { return '3d'; }
+    }
+    return '';
+  }
+
+  /** 命中能力型模型：接管本次发送并返回 true（异步完成后自行收尾）；否则返回 false 走原路由 */
+  function routeCapabilityModel(aiB, text, image) {
+    var selId = getSelectedModelId();
+    if (!selId || selId === 'auto') { return false; }
+    var m = getModelById(selId);
+    if (!m || !isCapabilityModel(m)) { return false; }
+    var kind = capModelKind(m);
+    var run = capRunner();   /* R92-A：复用既有解析器（AI_SERVICE.xtRunCapability 优先，window 兼容兜底） */
+    if (typeof run !== 'function') {
+      removeTyping(aiB);
+      var missMsg = '视频 / 3D 能力模块未加载，请刷新页面后重试。';
+      aiB.mdEl.innerHTML = renderMarkdown(missMsg);
+      showMsgActions(aiB);
+      state.messages.push({ role: 'ai', content: missMsg });
+      setSendBusy(false);
+      saveCurrentChat();
+      return true;
+    }
+    var label = (kind === 'video') ? '视频' : '3D 模型';
+    var withAudio = (kind === 'video' && videoAudioOnFor(selId));   /* R93-5b：带声音按模型记忆（ai_audio_models_v1 map），默认关 */
+    var input = { prompt: String(text || '') };
+    if (withAudio) { input.audio = true; }
+    if (image) { input.imageUrl = String(image); input.mode = (kind === 'video') ? 'i2v' : 'i23d'; }
+    var progressShown = false;
+    run(selId, input, { onProgress: function (p) {
+      if (!progressShown) { removeTyping(aiB); progressShown = true; }
+      var tries = (p && typeof p.tries === 'number') ? p.tries : 0;
+      var max = (p && typeof p.max === 'number') ? p.max : 120;
+      aiB.mdEl.innerHTML = renderMarkdown('正在生成' + label + (withAudio ? '（带声音）' : '') + '…（第 ' + tries + '/' + max + ' 次查询）');
+      scrollBottom();
+    } }).then(function (r) {
+      removeTyping(aiB);
+      var u = (r && r.result) ? r.result : {};
+      var url = u.url ? String(u.url) : '';
+      var plain;
+      if (!url) {
+        plain = '（' + label + '生成完成但未返回文件地址）';
+        aiB.mdEl.innerHTML = renderMarkdown(plain);
+      } else if (kind === 'video') {
+        plain = '🎬 ' + label + (withAudio ? '（带声音）' : '') + '已生成（链接约 24 小时内有效，请及时观看 / 保存）：' + url;
+        aiB.mdEl.innerHTML = renderMarkdown('🎬 ' + label + (withAudio ? '（带声音）' : '') + '已生成（链接约 24 小时内有效，请及时观看 / 保存）：');
+        var vid = doc.createElement('video');
+        vid.src = url; vid.controls = true;
+        vid.setAttribute('style', 'max-width:100%;border-radius:10px;margin-top:6px;display:block;');
+        aiB.mdEl.appendChild(vid);
+      } else {
+        plain = '🧊 ' + label + '已生成（结果为 .zip 压缩包，内含模型文件）：' + url;
+        aiB.mdEl.innerHTML = renderMarkdown('🧊 ' + label + '已生成（结果为 .zip 压缩包，内含模型文件）：');
+        var lk = doc.createElement('a');
+        lk.href = url; lk.target = '_blank'; lk.rel = 'noopener';
+        lk.textContent = '⬇ 下载模型文件（.zip）';
+        lk.setAttribute('style', 'display:inline-block;margin-top:6px;');
+        aiB.mdEl.appendChild(lk);
+      }
+      showMsgActions(aiB);
+      state.messages.push({ role: 'ai', content: plain });
+      setSendBusy(false);
+      saveCurrentChat();
+    })['catch'](function (err) {
+      removeTyping(aiB);
+      var msg = (err && err.message) ? String(err.message) : '生成失败，请稍后重试';
+      aiB.mdEl.innerHTML = renderMarkdown('⚠️ ' + label + '生成失败：' + msg);
+      showMsgActions(aiB);
+      state.messages.push({ role: 'ai', content: '⚠️ ' + label + '生成失败：' + msg });
+      setSendBusy(false);
+      saveCurrentChat();
+      toast(label + '生成失败');
+    });
+    return true;
+  }
+
   function askAI(text, image) {
     var aiB = addAiBubble();
     scrollBottom();
     var funcType = predictFuncType(text, !!image);
-    // 上下文长度：只带最近 N 轮（1 轮 = 1 条用户 + 1 条 AI），0 表示全部
+    /* R92-A：选中模型 types 含 'video' / '3d' 时走能力直连链路（详见 routeCapabilityModel） */
+    if (routeCapabilityModel(aiB, text, image)) { return; }    // 上下文长度：只带最近 N 轮（1 轮 = 1 条用户 + 1 条 AI），0 表示全部
     var all = state.messages.map(function (m) { return { role: m.role, content: m.content }; });
     var turns = getCtxTurns();
     var apiMessages = all;
@@ -695,6 +1358,7 @@
       }
       var body = degraded ? ('（网络不佳，以下为本地参考）\n\n' + ft) : ft;
       aiB.mdEl.innerHTML = renderMarkdown(body);
+      persistGeneratedImages(aiB.mdEl);   // R86：生图签名 URL 1 小时过期，落成本地 Blob 后再展示
       showMsgActions(aiB);
       state.messages.push({ role: 'ai', content: body });
       setSendBusy(false);
@@ -733,8 +1397,10 @@
     if (state.sending) return;
     var text = aiInput ? String(aiInput.value || '').trim() : '';
     var hasImage = !!state.image;
-    if (!text && !hasImage) return;
+    if (!text && !hasImage && !state.audio) return;
     if (!aiMessages) { toast('页面尚未就绪，请刷新后重试'); return; }
+    // R86：有语音附件时先转文字回填输入框，不直接把音频当提问发出
+    if (state.audio) { sendAudioForTranscribe(text); return; }
     setSendBusy(true);
     try {
       enterConversation();
@@ -835,6 +1501,7 @@
     state.chatId = id;
     state.messages = [];
     state.image = null; clearImage();
+    state.audio = null; clearAudio();
     if (aiMessages) aiMessages.innerHTML = '';
     chat.messages.forEach(function (m) {
       if (m.role === 'user') {
@@ -844,6 +1511,7 @@
         state.messages.push({ role: 'ai', content: m.content });
         var b = addAiBubble(); removeTyping(b);
         b.mdEl.innerHTML = renderMarkdown(m.content); showMsgActions(b);
+        restorePersistedImages(b.mdEl);   // R86：历史里的生图用本地 Blob 复活（签名已过期也不白图）
       }
     });
     enterConversation();
@@ -857,6 +1525,7 @@
     state.messages = [];
     state.chatId = null;
     state.image = null; clearImage();
+    state.audio = null; clearAudio();
     if (aiInput) { aiInput.value = ''; autoGrow(); }
     if (aiMessages) aiMessages.innerHTML = '';
     enterWelcome();
@@ -1212,6 +1881,36 @@
     renderCtxUsage();
     closeModelPanel();
   }
+  /* ---------- R86：模型分区 ----------
+     视觉（types 含 image）仍留在「对话与识图」区：它走 chat/completions，能正常对话，
+     不能和走 images/generations 的生图混在一起。分区顺序即展示顺序；
+     未命中任何区（自定义模型没勾类型等）归入第 0 区，保证模型不丢。 */
+  var MODEL_GROUPS = [
+    { key: 'chat', title: '对话与识图', types: ['general', 'reasoning', 'math', 'translate', 'longtext', 'creative', 'interview', 'image'] },
+    { key: 'imagegen', title: '生图', types: ['imagegen'] },
+    { key: 'asr', title: '语音识别', types: ['audio'] },
+    { key: 'vec', title: '向量与重排', types: ['embedding', 'rerank'] },
+    /* 下一批（火山方舟视频生成 / 3D 生成）先占位：当前没有对应模型，空区不渲染标题，
+       届时只需在 ai-config.js 给模型写 types: ['video'] / ['3d']，本表与渲染逻辑都不用改 */
+    { key: 'video', title: '视频生成', types: ['video'] },
+    { key: 'model3d', title: '3D 生成', types: ['3d'] }
+  ];
+  function modelGroupIndex(m) {
+    var ts = (m && Object.prototype.toString.call(m.types) === '[object Array]') ? m.types : [];
+    for (var g = 0; g < MODEL_GROUPS.length; g++) {
+      var gt = MODEL_GROUPS[g].types;
+      for (var i = 0; i < gt.length; i++) { if (ts.indexOf(gt[i]) >= 0) return g; }
+    }
+    return 0;
+  }
+  /* 分区小标题（顶部分隔线 + 灰字），仅在该区有模型时才渲染 */
+  function groupTitleRow(title) {
+    var t = doc.createElement('div');
+    t.className = 'ai-mp-sec';
+    t.style.cssText = 'flex:none;margin:8px 4px 2px;padding:7px 6px 0;border-top:1px solid rgba(128,128,128,.28);font-size:11px;color:#999;letter-spacing:.5px;';
+    t.textContent = title;
+    return t;
+  }
   /* R64/N4：disabled 过滤 + order 排序 + overrides.name 显示都发生在渲染层
      （getBuiltinModels/getAllModels 保持全量，供选中/名称解析使用） */
   function renderModelList() {
@@ -1232,19 +1931,14 @@
     }
     list.appendChild(modelRow({ id: 'auto', name: '自动（推荐）' }, manual && sel === 'auto'));
     var combined = applyListSettings(getBuiltinModels().filter(function (m) { return m.id !== 'auto'; }).concat(getCustomModels()));
-    /* 图片生成模型（types 含 imagegen）排到分隔线下方，与文本模型分开 */
-    var textRows = [];
-    var imageGenRows = [];
-    combined.forEach(function (m) {
-      var ts = (m && m.types) ? m.types : [];
-      if (ts.indexOf('imagegen') >= 0) imageGenRows.push(m); else textRows.push(m);
-    });
-    textRows.forEach(function (m) { list.appendChild(modelRow(m, manual && sel === m.id)); });
-    if (imageGenRows.length) {
-      var imgSep = doc.createElement('div');
-      imgSep.style.cssText = 'height:1px;background:rgba(128,128,128,.28);margin:6px 4px;flex:none;';
-      list.appendChild(imgSep);
-      imageGenRows.forEach(function (m) { list.appendChild(modelRow(m, manual && sel === m.id)); });
+    /* R86：按能力分区（对话与识图 / 生图 / 语音识别 / 向量与重排）；空区连标题都不渲染 */
+    var buckets = [];
+    for (var bi = 0; bi < MODEL_GROUPS.length; bi++) buckets.push([]);
+    combined.forEach(function (m) { buckets[modelGroupIndex(m)].push(m); });
+    for (var bg = 0; bg < buckets.length; bg++) {
+      if (!buckets[bg].length) continue;
+      list.appendChild(groupTitleRow(MODEL_GROUPS[bg].title));
+      buckets[bg].forEach(function (m) { list.appendChild(modelRow(m, manual && sel === m.id)); });
     }
   }
   /* customMsg：由调用方指定的提示文案（保存自定义模型时用「已添加并启用 XXX」） */
@@ -1877,6 +2571,9 @@
     aiModelPanel = $('aiModelPanel'); aiModelList = $('aiModelList'); aiMaxSwitch = $('aiMaxSwitch');
 
     bindEvents();
+    doc.addEventListener('xt:health-changed', onHealthChanged);   // R87/T04：健康状态变更 → 模型列表重算（恢复可用自动回归）
+    ensureMicButton();      // R86：麦克风按钮（DOM 注入，AI.html 不动）
+    ensureAudioPreview();   // R86：语音附件条
     renderHistory();
     updateModelLabel();
     ensureMemorySection();

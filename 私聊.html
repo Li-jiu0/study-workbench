@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>私信 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260917b">
+<link rel="stylesheet" href="assets/common.css?v=20260918d">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O">
@@ -69,6 +69,13 @@
   .im-composer textarea:focus{border-color:var(--primary)}
   .im-icon{width:44px;height:44px;border:none;border-radius:12px;background:var(--primary-light);color:var(--primary);font-size:18px;cursor:pointer;flex-shrink:0}
   .im-send{height:44px;padding:0 18px;border:none;border-radius:12px;background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff;cursor:pointer;flex-shrink:0}
+  /* R90 item3：输入栏新增「定位」图标后，窄屏（≤360px）压缩图标与间距，保证整排不换行、不溢出。固定值 + @media，禁 clamp/min/max。 */
+  @media (max-width:360px){
+    .im-composer{gap:6px;padding:8px 8px}
+    .im-composer .im-icon{width:38px;height:38px}
+    .im-composer .im-send{height:38px;padding:0 12px}
+    .im-composer textarea{height:38px;padding:8px 10px}
+  }
   @media (max-width:760px){
     .im-side{width:100%;border-right:none}
     .im-chat{display:none}
@@ -89,11 +96,11 @@
 
 <div class="app">
 <nav class="sidebar"> <div class="logo"> <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div> <div> <div class="logo-text">星途</div> <div class="logo-sub">致追梦的人->修身</div> </div> </div> <div class="nav-list"> <div class="nav-item" data-page="home"> <span class="nav-icon" data-icon="home"></span><span>首页</span> </div> <div class="nav-section">学习模块</div> <div class="nav-item" data-page="cet"> <span class="nav-icon" data-icon="book-open"></span><span>英语</span> </div> <div class="nav-item" data-page="exam"> <span class="nav-icon" data-icon="pencil"></span><span>行测</span> </div>
-<div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>面测</span> </div> <div class="nav-item" data-page="files"> <span class="nav-icon" data-icon="folder"></span><span>我的文件</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon" data-icon="globe"></span><span>社区</span> </div> <div class="nav-item" data-page="moments"> <span class="nav-icon" data-icon="rss"></span><span>动态空间</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="book"></span><span>错题本</span> </div> <div class="nav-item" data-page="profile"> <span class="nav-icon" data-icon="user"></span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon" data-icon="settings"></span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak">🔥 连续打卡 0 天</div> </div> </div> </div> </nav>
+<div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>面测</span> </div> <div class="nav-item" data-page="files"> <span class="nav-icon" data-icon="folder"></span><span>我的文件</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon" data-icon="globe"></span><span>社区</span> </div> <div class="nav-item" data-page="moments"> <span class="nav-icon" data-icon="rss"></span><span>动态空间</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="通讯录 · 添加好友（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>通讯录</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="book"></span><span>错题本</span> </div> <div class="nav-item" data-page="profile"> <span class="nav-icon" data-icon="user"></span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon" data-icon="settings"></span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak">🔥 连续打卡 0 天</div> </div> </div> </div> </nav>
 
   <div class="main">
 <header class="topbar">
-      <div class="topbar-title" id="topbarTitle">好友</div>
+      <div class="topbar-title" id="topbarTitle">通讯录</div>
       <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
       <div class="gs-wrap" id="gsWrap">
         <input type="text" class="gs-input" id="gsInput" placeholder="搜索聊天记录…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
@@ -119,13 +126,13 @@
             </div>
           </div>
           <div class="im-tabs">
-            <!-- C1 20260913k：五 tab 顺序不变（会话→好友→群聊→申请→加好友）；「群聊」「加好友」由弹窗改为 tab 页面视图（onclick 改 imSwitchTab，原弹窗函数保留供面板复用） -->
+            <!-- C1 20260913k：五 tab 顺序不变（会话→好友→群聊→申请→添加好友）；「群聊」「添加好友」由弹窗改为 tab 页面视图（onclick 改 imSwitchTab，原弹窗函数保留供面板复用） -->
             <button class="im-tab active" data-tab="chats" onclick="imSwitchTab('chats')">会话</button>
-            <button class="im-tab" data-tab="friends" onclick="imSwitchTab('friends')">好友</button>
+            <button class="im-tab" data-tab="friends" onclick="imSwitchTab('friends')">通讯录</button>
             <button class="im-tab" data-tab="groups" onclick="imSwitchTab('groups')" title="我的群聊 · 发起新群聊">群聊</button>
             <!-- 【后续扩展点】发起群聊（T4 增量）：多选好友建群，本地模式提示「群聊需要联网」 -->
             <button class="im-tab" data-tab="requests" onclick="imSwitchTab('requests')">申请</button>
-            <button class="im-tab im-tab-add" data-tab="addfriend" onclick="imSwitchTab('addfriend')" title="搜索用户名/昵称添加好友">加好友</button>
+            <button class="im-tab im-tab-add" data-tab="addfriend" onclick="imSwitchTab('addfriend')" title="搜索用户名/昵称添加好友">添加好友</button>
           </div>
         </div>
         <!-- 需求01：联系管理员固定入口（管理员对普通用户完全隐形，这是唯一联系途径）。
@@ -138,7 +145,7 @@
           <div class="im-si"><div class="im-n">管理员</div><div class="im-sub" id="acEntrySub">管理员在线时会回复你</div></div>
           <span class="ac-badge" id="acEntryBadge" style="display:none"></span>
         </div>
-        <!-- C1 20260913k：「群聊」「加好友」tab 面板宿主（原弹窗节点由页尾脚本整体搬入，id 不变，chat-local.js 弹窗函数照常按 id 命中） -->
+        <!-- C1 20260913k：「群聊」「添加好友」tab 面板宿主（原弹窗节点由页尾脚本整体搬入，id 不变，chat-local.js 弹窗函数照常按 id 命中） -->
         <div class="im-panel-host" id="imPanelGroups"></div>
         <div class="im-panel-host" id="imPanelAddFriend"></div>
         <div class="im-list" id="imList"></div>
@@ -164,8 +171,26 @@
             <!-- R51（2026-09-14）：发图按钮 + 隐藏 file input 恢复（图片消息正式支持）。
                  点击 → imPickImage() → 触发 #imImgInput → change → imSendImage(this)
                  → chat-local.js：在线 POST /api/uploads/image + 发 kind='image' 消息；离线回落 dataURL。 -->
-            <button class="im-icon" title="发送图片" onclick="imPickImage()"><span class="nav-icon" data-icon="image" data-icon-size="20"></span></button>
+            <!-- R88-I（2026-09-18）：发图按钮改「+」浮层菜单入口（相册发图 / 拍摄 / 位置定位）。
+                 原 #imImgInput 与 onchange="imSendImage(this)" 原样保留，菜单「相册发图」仍走同一条链路。 -->
+            <button class="im-icon" id="imPlusBtn" title="更多" onclick="imTogglePlusMenu()"><span class="nav-icon" data-icon="plus" data-icon-size="20"></span></button>
             <input type="file" id="imImgInput" accept="image/*" style="display:none" onchange="imSendImage(this)">
+            <!-- R88-I：拍摄入口（capture 移动端直调相机；桌面退化为文件选择，同走 imSendImage 链路；不用 getUserMedia） -->
+            <input type="file" id="imCameraInput" accept="image/*" capture="environment" style="display:none" onchange="imSendImage(this)">
+            <!-- R88-I 增量：发送文件入口（不限 accept，允许常见文档/压缩包；change→imSendFile(this)） -->
+            <input type="file" id="imFileInput" style="display:none" onchange="imSendFile(this)">
+            <!-- R88-I：底部滑出的加号浮层菜单（遮罩点击 / 再点「+」/ ESC 关闭）；各项均真可用，无假占位 -->
+            <!-- R90 item3 修订（用户明确要求）：定位保留在加号菜单内，不挪出。加号菜单共 4 项。 -->
+            <div class="im-plus-mask" id="imPlusMask" onclick="imClosePlusMenu()"></div>
+            <!-- R88-M6 方案B（2026-09-18）：每项 = 彩色圆角方底色块(.im-plus-ico) + 白色图标 + 文字。
+                 配色由 #imPlusCss 的 .im-plus-ico--i1..--i3 统一管理（成体系，非各写各的）。
+                 R90 item3 修订：--i4 恢复启用（定位项已回到加号菜单内）。 -->
+            <div class="im-plus-menu" id="imPlusMenu">
+              <div class="im-plus-item" onclick="imPlusPickImage()"><span class="im-plus-ico im-plus-ico--i1"><span class="nav-icon" data-icon="image" data-icon-size="22"></span></span><span class="im-plus-txt">相册发图</span></div>
+              <div class="im-plus-item" onclick="imPlusPickCamera()"><span class="im-plus-ico im-plus-ico--i2"><span class="nav-icon" data-icon="camera" data-icon-size="22"></span></span><span class="im-plus-txt">拍摄</span></div>
+              <div class="im-plus-item" onclick="imPlusPickFile()"><span class="im-plus-ico im-plus-ico--i3"><span class="nav-icon" data-icon="file" data-icon-size="22"></span></span><span class="im-plus-txt">发送文件</span></div>
+              <div class="im-plus-item" onclick="imPlusPickLocation()"><span class="im-plus-ico im-plus-ico--i4"><span class="nav-icon" data-icon="map-pin" data-icon-size="22"></span></span><span class="im-plus-txt">定位</span></div>
+            </div>
             <button class="im-send" onclick="imSendText()">发送</button>
           </div>
         </div>
@@ -301,7 +326,7 @@
 
   <!-- 群设置：已按 ADR-3 改为右侧会话区「页面内视图」，节点现位于 #imChat 内（#imGroupSettingsModal） -->
 
-  <!-- ==================== 加好友模态（A3，2026-09-11；批次二 2026-09-11h 移除弹窗内「旧页回退」入口） ====================
+  <!-- ==================== 添加好友模态（A3，2026-09-11；批次二 2026-09-11h 移除弹窗内「旧页回退」入口） ====================
        搜索（300ms 防抖）→ imRenderFriendRows 统一渲染。
        注：好友申请.html 文件本身保留（直连 URL 仍可访问作为后门），但弹窗内不再提供跳转入口。 -->
   <!-- 2026-09-15 批次八：拆掉 .im-overlay/.im-modal 外壳与标题栏/✕，改为真正的页面内区块（ADR-3：核心功能不走弹窗）
@@ -352,12 +377,14 @@
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
 <script src="assets/app.js?v=20260917b" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
+<!-- R88-H（2026-09-18）：位置能力底座 XT_LOC_PICK（跟 config.js，先于 chat-local.js，确保调用前就绪） -->
+<script src="assets/xt-region.js?v=20260918a" defer></script>
 <script src="assets/emoji/manifest.js?v=20260916O" defer></script>
 <script src="assets/api.js?v=20260917b" defer></script>
 <script src="assets/chat-local.js?v=20260917b" defer></script>
 <script src="assets/admin-contact.js?v=20260917b" defer></script>
 <style>
-  /* R33（20260913r）：tab 视觉统一——去掉 .im-tab-add 的特殊填充/加粗与专属 hover，加好友与其余 4 个 tab 同享 .im-tab/.im-tab.active；“im-tab-add” 类保留在 DOM 仅作语义标记，无样式副作用 */
+  /* R33（20260913r）：tab 视觉统一——去掉 .im-tab-add 的特殊填充/加粗与专属 hover，添加好友与其余 4 个 tab 同享 .im-tab/.im-tab.active；“im-tab-add” 类保留在 DOM 仅作语义标记，无样式副作用 */
   .im-tab:not(.active):hover{border-color:var(--primary);color:var(--primary)}
   /* tab 按钮 + 头像的未读角标 */
   /* .im-tab{position:relative} 已并入文件末尾唯一权威定义区（未读角标锚点，必须保留，见 .tab-badge/.im-tab-badge） */
@@ -378,12 +405,12 @@
   .topbar-title{flex:0 0 auto;max-width:38vw;font-size:17px;line-height:36px}
   .topbar .gs-wrap{flex:1 1 auto;min-width:0;max-width:420px}
   .topbar .gs-input{height:36px;padding-top:0;padding-bottom:0;box-sizing:border-box}
-  /* C1 20260913k：「群聊」「加好友」tab 页面视图——弹窗节点搬入侧栏面板宿主后取消浮层定位，随 tab 显隐 */
+  /* C1 20260913k：「群聊」「添加好友」tab 页面视图——弹窗节点搬入侧栏面板宿主后取消浮层定位，随 tab 显隐 */
   .im-panel-host{display:none;flex:1;overflow-y:auto;border-top:1px solid var(--border)}
   .im-panel-host.active{display:block}
   .im-panel-host .im-overlay{position:static;top:auto;left:auto;right:auto;bottom:auto;background:transparent;z-index:auto;align-items:stretch;justify-content:stretch;padding:10px}
   .im-panel-host .im-modal{width:100%;max-width:none;max-height:none;margin:auto;box-shadow:none;border:1px solid var(--border)}
-  /* 2026-09-15 批次八：「加好友」已拆掉弹窗外壳，改为页面内区块（ADR-3）；
+  /* 2026-09-15 批次八：「添加好友」已拆掉弹窗外壳，改为页面内区块（ADR-3）；
      与「我的好友/群聊」列表同一视觉：无卡片边框、无圆角、无遮罩，直接作为面板内容铺开 */
   .im-af-sec{display:flex;flex-direction:column;padding:10px 14px;background:transparent}
   .im-af-sec .im-af-search{padding:0;margin-bottom:10px}
@@ -433,7 +460,7 @@
      【根因】原第④条把 5 个 tab 五等分（每格约 60px@320px）后又加 white-space:nowrap +
        overflow:hidden + text-overflow:ellipsis，"💬 会话 / 👥 好友 / 📩 申请" 这类
        emoji+空格+双字中文被整体截断成空白，故用户看到「四个按钮文字显示不出来」。
-     【修法】改用 flex:1 1 auto + 内容自适应宽度，短文案（加好友）不再被拉宽，
+     【修法】改用 flex:1 1 auto + 内容自适应宽度，短文案（添加好友）不再被拉宽，
        长文案优先拿到像素；去掉 ellipsis，窄屏下允许折行换行；tab 栏本身可横向滚动兜底，
        emoji 一并去除（历史遗留 emoji 不再新增，去除属于布局修复，不影响激活态底色/圆角）。
      【必须保留】position:relative —— .im-tab-badge/.tab-badge 未读红点依赖它为定位锚点。
@@ -528,7 +555,7 @@
 })();
 </script>
 <script>
-/* C1 20260913k：「加好友」「群聊」入口由弹窗改为 tab 页面视图。
+/* C1 20260913k：「添加好友」「群聊」入口由弹窗改为 tab 页面视图。
    实现方式：
    1. 把 #imGroupModal / #imAddFriendModal 整体节点搬进侧栏面板宿主（DOM 位置变化、id 不变），
       chat-local.js 的弹窗函数（imOpenGroupCreator / imOpenAddFriendModal 等）原样保留并复用——
@@ -849,8 +876,305 @@
   else init();
 })();
 </script>
-<script src="assets/ai-config.js?v=20260918b"></script>
+<script>
+/* =====================================================================
+   R88-I（2026-09-18）：私聊输入栏「+」浮层菜单（相册发图 / 拍摄 / 位置定位）
+   - 菜单开关：imTogglePlusMenu / imOpenPlusMenu / imClosePlusMenu（点遮罩、再点「+」、ESC 关闭）
+   - 相册发图 → imPickImage()（既有链路，不改）；拍摄 → #imCameraInput；位置 → imPickLocation()
+   - 位置定位复用 window.XT_LOC_PICK.pick，手动兜底用本页自建轻量输入弹层（❗禁用 window.prompt）
+   ES2017 上限：仅 var + function，无 ?. / ?? / 模板串 / 箭头函数。
+   ===================================================================== */
+(function () {
+  'use strict';
+  function $id(x) { return document.getElementById(x); }
+
+  /* ---------- 菜单开关 ---------- */
+  function imOpenPlusMenu() {
+    var m = $id('imPlusMenu');
+    var mask = $id('imPlusMask');
+    if (!m) return;
+    m.classList.add('open');
+    if (mask) mask.classList.add('open');
+  }
+  function imClosePlusMenu() {
+    var m = $id('imPlusMenu');
+    var mask = $id('imPlusMask');
+    if (m) m.classList.remove('open');
+    if (mask) mask.classList.remove('open');
+  }
+  window.imOpenPlusMenu = imOpenPlusMenu;
+  window.imClosePlusMenu = imClosePlusMenu;
+  window.imTogglePlusMenu = function () {
+    var m = $id('imPlusMenu');
+    if (!m) return;
+    if (m.classList.contains('open')) imClosePlusMenu();
+    else imOpenPlusMenu();
+  };
+
+  /* ---------- 分支1：相册发图（走既有 imPickImage 链路，不回归） ---------- */
+  window.imPlusPickImage = function () {
+    imClosePlusMenu();
+    if (typeof window.imPickImage === 'function') window.imPickImage();
+  };
+
+  /* ---------- 分支1b：发送文件（不限类型，change→imSendFile(this)） ---------- */
+  window.imPlusPickFile = function () {
+    imClosePlusMenu();
+    var inp = $id('imFileInput');
+    if (!inp) { return; }
+    try { inp.value = ''; } catch (e) { /* 老 WebView 重置失败不影响发送 */ }
+    inp.click();
+  };
+
+  /* ---------- 分支2：拍摄（capture 输入，桌面退化为文件选择，同走 imSendImage） ---------- */
+  window.imPlusPickCamera = function () {
+    imClosePlusMenu();
+    var inp = $id('imCameraInput');
+    if (!inp) {
+      // 无输入控件时回落相册链路（保证永不假按钮）
+      if (typeof window.imPickImage === 'function') window.imPickImage();
+      return;
+    }
+    try { inp.value = ''; } catch (e) { /* 老 WebView 重置失败不影响发送 */ }
+    inp.click();
+  };
+
+  /* ---------- 手动输入弹层（❗禁用 window.prompt；本页轻量 sheet，随 .im- 风格） ---------- */
+  function imShowLocInput(title, placeholder, cb) {
+    var wrap = document.createElement('div');
+    wrap.className = 'im-loc-sheet'
+    var t = (title || '所在位置');
+    var ph = (placeholder || '如：图书馆 / 自习室');
+    var html = '';
+    html += '<div class="im-loc-sheet-mask"></div>';
+    html += '<div class="im-loc-sheet-body" role="dialog" aria-modal="true">';
+    html += '<div class="im-loc-sheet-title">' + t + '</div>';
+    html += '<input class="im-loc-sheet-input" type="text" maxlength="64" placeholder="' + ph + '">';
+    html += '<div class="im-loc-sheet-acts">';
+    html += '<button type="button" class="im-loc-sheet-btn cancel">取消</button>';
+    html += '<button type="button" class="im-loc-sheet-btn ok">确定</button>';
+    html += '</div></div>';
+    wrap.innerHTML = html;
+    document.body.appendChild(wrap);
+    var input = wrap.querySelector('.im-loc-sheet-input');
+    var done = false;
+    function close() {
+      if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
+      document.removeEventListener('keydown', onKey);
+    }
+    function finish(v) {
+      if (done) return;
+      done = true;
+      close();
+      if (typeof cb === 'function') cb(v);
+    }
+    function onKey(e) {
+      var k = e && e.key;
+      if (k === 'Escape' || k === 'Esc') finish('');
+      else if (k === 'Enter') finish((input.value || '').trim());
+    }
+    wrap.querySelector('.im-loc-sheet-mask').addEventListener('click', function () { finish(''); });
+    wrap.querySelector('.im-loc-sheet-btn.cancel').addEventListener('click', function () { finish(''); });
+    wrap.querySelector('.im-loc-sheet-btn.ok').addEventListener('click', function () { finish((input.value || '').trim()); });
+    input.addEventListener('keydown', function (e) { if (e && e.key === 'Enter') { try { e.preventDefault(); } catch (_e) {} finish((input.value || '').trim()); } });
+    document.addEventListener('keydown', onKey);
+    setTimeout(function () { try { input.focus(); } catch (e) {} }, 30);
+    // 暴露关闭入口（外链调用可复用）
+    wrap.__imClose = function () { finish(''); };
+  }
+  window.imShowLocInput = imShowLocInput;
+
+  /* ---------- 分支3：位置定位（XT_LOC_PICK 主入口 + 手动兜底） ---------- */
+  /* R88-J item8：加号菜单「定位」—— 打开微信式位置选择层（XT_LOC_PICK.openPicker）。
+     两条路径都在：①「用当前位置」= 直接发当前定位；②「搜索地址」= 搜索选择后发送。
+     确认 = 立即 imSendLocation(text)。openPicker 缺失时降级 onLoc（旧链路）。 */
+  window.imPlusPickLocation = function () {
+    imClosePlusMenu();
+    var LP = window.XT_LOC_PICK;
+    if (!LP || typeof LP.openPicker !== 'function') {
+      if (typeof window.imPickLocation === 'function') { window.imPickLocation(); return; }
+      onLoc('所在位置');
+      return;
+    }
+    LP.openPicker({
+      title: '发送位置',
+      confirmText: '发送',
+      current: ''
+    }, function (text) {
+      var t = text == null ? '' : String(text).replace(/^\s+|\s+$/g, '');
+      if (t && typeof window.imSendLocation === 'function') window.imSendLocation(t);
+    });
+  };
+
+  /* 旧链路（一键定位 → 逆地理 → 文字；失败手动兜底）。保留作 openPicker 缺失时的兜底。 */
+  function onLoc(fallbackTitle) {
+    if (!window.XT_LOC_PICK || typeof window.XT_LOC_PICK.pick !== 'function') {
+      imShowLocInput(fallbackTitle || '所在位置', '如：图书馆 / 自习室', function (v) {
+        var t = (v || '').replace(/^\s+|\s+$/g, '');
+        if (t && typeof window.imSendLocation === 'function') window.imSendLocation(t);
+      });
+      return;
+    }
+    var opts = {
+      fallbackTitle: fallbackTitle || '所在位置',
+      onManual: function (title, placeholder, cb) { imShowLocInput(title, placeholder, cb); }
+    };
+    window.XT_LOC_PICK.pick(opts, function (r) {
+      if (r && r.text && typeof window.imSendLocation === 'function') window.imSendLocation(r.text);
+    });
+  }
+  window.imPickLocation = function () { onLoc('所在位置'); };
+
+  /* R88-J：底座 _failToast 只认 window.XT_TOAST/window.toast；本页有 showToast，注入别名避免静默。 */
+  if (typeof window.toast !== 'function' && typeof window.showToast === 'function') { window.toast = window.showToast; }
+
+  /* ---------- 样式注入（.im- 前缀，随本页风格；只用固定值 + @media，禁 clamp/min/max） ---------- */
+  function injectCss() {
+    if ($id('imPlusCss')) return;
+    var st = document.createElement('style');
+    st.id = 'imPlusCss';
+    st.textContent =
+      '.im-plus-mask{position:fixed;inset:0;background:rgba(0,0,0,.35);opacity:0;visibility:hidden;transition:opacity .2s ease;z-index:210}' +
+      '.im-plus-mask.open{opacity:1;visibility:visible}' +
+      '.im-plus-menu{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:16px 16px 0 0;padding:10px 0 16px;box-shadow:0 -6px 24px rgba(0,0,0,.12);transform:translateY(110%);transition:transform .24s ease;z-index:211;max-width:520px;margin:0 auto;max-height:82vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(16px + env(safe-area-inset-bottom))}' +
+      '.im-plus-menu.open{transform:translateY(0)}' +
+      '.im-plus-item{display:flex;align-items:center;gap:12px;padding:12px 22px;font-size:15px;color:var(--text,#1f2328);cursor:pointer}' +
+      '.im-plus-item:active{background:#f2f3f5}' +
+      /* R88-M6 方案B：彩色圆角方底色块 + 白色图标（对齐微信「+」菜单）。 */
+      '.im-plus-ico{flex:0 0 auto;width:44px;height:44px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;color:#fff}' +
+      '.im-plus-ico .nav-icon{display:inline-flex;align-items:center;justify-content:center;color:#fff}' +
+      '.im-plus-ico .nav-icon svg{stroke:#fff}' +
+      '.im-plus-ico--i1{background:linear-gradient(135deg,#22c07a,#12a86a)}' +
+      '.im-plus-ico--i2{background:linear-gradient(135deg,#5b8def,#3f6fd8)}' +
+      '.im-plus-ico--i3{background:linear-gradient(135deg,#f2a93b,#e08a1e)}' +
+      /* R90 item3：.im-plus-ico--i4 原为「定位」项配色；该项已移出加号菜单（改到输入栏 #imLocBtn），
+         此规则当前无 DOM 引用。按「最小变更 + 可复用」保留规则本体，仅此注释标注停用。 */
+      '.im-plus-ico--i4{background:linear-gradient(135deg,#eb5757,#d13b3b)}' +
+      '.im-plus-txt{flex:1;min-width:0}' +
+      '@media (max-width:360px){.im-plus-ico{width:40px;height:40px;border-radius:10px}}' +
+      '@media (max-height:520px){.im-plus-item{padding:8px 20px}.im-plus-ico{width:36px;height:36px;border-radius:9px}.im-plus-menu{padding:6px 0 10px;max-height:88vh}}' +
+
+      '.im-loc-sheet{position:fixed;inset:0;z-index:215}' +
+      '.im-loc-sheet-mask{position:absolute;inset:0;background:rgba(0,0,0,.35)}' +
+      '.im-loc-sheet-body{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:86%;max-width:360px;background:#fff;border-radius:14px;padding:18px 18px 14px;box-shadow:0 8px 30px rgba(0,0,0,.2);max-height:80vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-sizing:border-box}' +
+      '.im-loc-sheet-title{font-size:15px;font-weight:700;color:var(--text,#1f2328);margin-bottom:12px}' +
+      '.im-loc-sheet-input{width:100%;box-sizing:border-box;height:42px;padding:0 12px;border:1px solid #dcdfe6;border-radius:10px;font-size:14px;outline:none;color:var(--text,#1f2328)}' +
+      '.im-loc-sheet-input:focus{border-color:var(--primary,#3b82f6)}' +
+      '.im-loc-sheet-acts{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}' +
+      '.im-loc-sheet-btn{height:38px;padding:0 18px;border:none;border-radius:10px;font-size:14px;cursor:pointer}' +
+      '.im-loc-sheet-btn.cancel{background:#f2f3f5;color:#666}' +
+      '.im-loc-sheet-btn.ok{background:var(--primary,#3b82f6);color:#fff}';
+    document.head.appendChild(st);
+  }
+
+  /* ==================================================================
+     R88-J / M7：通用文件上传器 imUploadFile（可配置端点 + 类型分流 + 分类失败提示）
+     - 端点常量集中管理，便于后续统一替换（文档端点由另一线提供 /api/uploads/file）。
+     - 前端按 MIME/后缀分流：图片→image、视频→video、音频→voice、其余→file。
+     - 仅做「上传拿 URL」，不在此处落消息（消息落库在 chat-local.js；本文件不改它）。
+     ES2017：仅 var/function，无 ?. / ?? / 模板串。
+     ================================================================== */
+  var UPLOAD_EP = {
+    image: '/api/uploads',            // ≤8MB  JPG/PNG/WebP/GIF
+    imageChat: '/api/uploads/image',  // ≤5MB  JPG/PNG/WebP/GIF（聊天图，更严）
+    video: '/api/uploads/video',      // ≤50MB MP4/WebM
+    voice: '/api/uploads/voice',      // ≤2MB  webm/ogg/mp4/wav
+    file: '/api/uploads/file'         // ≤20MB pdf/docx/xlsx/pptx/zip/rar（另一线提供）
+  };
+  var UPLOAD_LIMIT = { image: 8 * 1048576, imageChat: 5 * 1048576, video: 50 * 1048576, voice: 2 * 1048576, file: 20 * 1048576 };
+
+  function imApiBase() { return (window.STUDY_API_BASE || 'http://110.42.134.62:8000'); }
+  function imAuthToken() { try { return localStorage.getItem('study_workbench_token') || ''; } catch (e) { return ''; } }
+
+  /** 按 MIME/后缀判定上传类别。 */
+  function imUploadKind(file) {
+    var t = String((file && file.type) || '').toLowerCase();
+    var n = String((file && file.name) || '').toLowerCase();
+    if (t.indexOf('image/') === 0 || /\.(png|jpe?g|webp|gif)$/.test(n)) return 'image';
+    if (t.indexOf('video/') === 0 || /\.(mp4|webm)$/.test(n)) return 'video';
+    if (t.indexOf('audio/') === 0 || /\.(webm|ogg|m4a|wav|mp3)$/.test(n)) return 'voice';
+    return 'file';
+  }
+
+  /** 人性化大小（B/KB/MB）。 */
+  function imFmtSize(n) {
+    var s = Number(n) || 0;
+    if (s < 1024) return s + ' B';
+    if (s < 1048576) return (s / 1024).toFixed(1) + ' KB';
+    return (s / 1048576).toFixed(1) + ' MB';
+  }
+
+  function imUploadToast(msg, err) {
+    if (typeof window.showToast === 'function') { window.showToast(msg); return; }
+    if (typeof window.xtToast === 'function') { window.xtToast(err ? 'error' : 'info', msg); return; }
+  }
+
+  /**
+   * 上传单文件到对应端点。
+   * @param {File}     file
+   * @param {Function} cb   cb(err, res)  err=null 表示成功；res={url,kind}
+   *                        err = { code, kind, msg } 分类失败。
+   */
+  function imUploadFile(file, cb) {
+    var done = (typeof cb === 'function') ? cb : function () {};
+    if (!file) { done({ code: 'nofile', msg: '未选择文件' }, null); return; }
+    var kind = imUploadKind(file);
+    var ep = (kind === 'image') ? UPLOAD_EP.imageChat : UPLOAD_EP[kind];
+    var limit = UPLOAD_LIMIT[(kind === 'image') ? 'imageChat' : kind];
+    if (file.size && file.size > limit) {
+      done({ code: 'too_large', kind: kind, msg: '文件超过 ' + imFmtSize(limit) + '（当前 ' + imFmtSize(file.size) + '）' }, null);
+      return;
+    }
+    var token = imAuthToken();
+    if (!token) { done({ code: 'noauth', kind: kind, msg: '请先登录后再发送文件' }, null); return; }
+    var fd = new FormData();
+    fd.append('file', file);
+    fetch(imApiBase() + ep, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token },
+      body: fd
+    }).then(function (r) {
+      if (r.status === 404) { throw { code: 'not_ready', kind: kind, msg: '服务端尚未开放该类型上传（端点未就绪）' }; }
+      if (r.status === 400) { throw { code: 'rejected', kind: kind, msg: '文件类型不被接受：' + kind }; }
+      if (!r.ok) { throw { code: 'http_' + r.status, kind: kind, msg: '上传失败（HTTP ' + r.status + '）' }; }
+      return r.json();
+    }).then(function (d) {
+      if (!d || !d.url) { done({ code: 'no_url', kind: kind, msg: '上传成功但未返回地址' }, null); return; }
+      done(null, { url: d.url, kind: kind });
+    }).catch(function (e) {
+      if (e && e.code) { done(e, null); return; }
+      done({ code: 'network', kind: kind, msg: '网络异常，上传失败' }, null);
+    });
+  }
+  window.imUploadFile = imUploadFile;
+  window.imUploadEndpoints = UPLOAD_EP;
+
+  function boot() {
+    injectCss();
+    // ESC 关闭 + 点击消息区外收起
+    document.addEventListener('keydown', function (e) {
+      var k = e && e.key;
+      if (k === 'Escape' || k === 'Esc') imClosePlusMenu();
+    });
+    // 图片图标水合（菜单内 nav-icon 由 icon-map.js autoRender 处理；此处兜底手动水合一次）
+    if (typeof window.lucideAutoRender === 'function') {
+      try { window.lucideAutoRender(); } catch (e) { /* 忽略 */ }
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+</script>
+<script src="assets/ai-config.js?v=20260918c"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260918b"></script>
+<script src="assets/ai-service.js?v=20260918d"></script>
+<script src="assets/ai-cap-registry.js?v=20260918c"></script>
+<script src="assets/ai-cap-image.js?v=20260918c"></script>
+<script src="assets/ai-cap-vision.js?v=20260918c"></script>
+<script src="assets/ai-cap-audio.js?v=20260918c"></script>
+<script src="assets/ai-cap-embed.js?v=20260918c"></script>
+<script src="assets/ai-cap-translate.js?v=20260918c"></script>
+<script src="assets/ai-cap-video.js?v=20260918c"></script>
+<script src="assets/ai-cap-3d.js?v=20260918c"></script>
 </body>
 </html>

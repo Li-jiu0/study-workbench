@@ -1344,6 +1344,53 @@ input, textarea { font-family: inherit; outline: none; }
 .bottom-more-item:hover { background: var(--bg); }
 .bottom-more-item .bm-icon { font-size: 24px; }
 .bottom-more-item .bm-label { font-size: 11px; color: var(--text-secondary); font-weight: 500; }
+/* ============================================================
+   R88-M6 方案B（2026-09-18）：图标「彩色圆角方底」容器（微信「+」菜单风格）。
+   一处定义、全树生效（#morePanel / #toolsPanel 40+ 页复用同一 .bm-icon>.nav-icon 结构）。
+   实现：让 .nav-icon[data-icon] 自身成为色块（属性选择器分组配色）。
+   兼容性：仅用属性选择器 + flex + 渐变，无 :has() / clamp()，老 WebView 安全。
+   ------------------------------------------------ */
+.bottom-more-item .bm-icon > .nav-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: linear-gradient(135deg, #5b8def, #3f6fd8); /* 默认蓝（未分组图标） */
+}
+.bottom-more-item .bm-icon > .nav-icon > svg { stroke: #fff; width: 22px; height: 22px; }
+/* 绿色系：学习 / 成长 / 内容 */
+.bm-icon > .nav-icon[data-icon="rss"],
+.bm-icon > .nav-icon[data-icon="book"],
+.bm-icon > .nav-icon[data-icon="book-open"],
+.bm-icon > .nav-icon[data-icon="bookmark"],
+.bm-icon > .nav-icon[data-icon="target"],
+.bm-icon > .nav-icon[data-icon="chart-bar"],
+.bm-icon > .nav-icon[data-icon="trophy"] { background: linear-gradient(135deg, #22c07a, #12a86a); }
+/* 蓝色系：工具 / 媒体 / AI */
+.bm-icon > .nav-icon[data-icon="mic"],
+.bm-icon > .nav-icon[data-icon="image"],
+.bm-icon > .nav-icon[data-icon="file"],
+.bm-icon > .nav-icon[data-icon="bot"],
+.bm-icon > .nav-icon[data-icon="upload"],
+.bm-icon > .nav-icon[data-icon="clipboard"] { background: linear-gradient(135deg, #5b8def, #3f6fd8); }
+/* 橙 / 琥珀系：设置 / 资料 / 录入 */
+.bm-icon > .nav-icon[data-icon="settings"],
+.bm-icon > .nav-icon[data-icon="user"],
+.bm-icon > .nav-icon[data-icon="users"],
+.bm-icon > .nav-icon[data-icon="info"],
+.bm-icon > .nav-icon[data-icon="package"],
+.bm-icon > .nav-icon[data-icon="inbox"] { background: linear-gradient(135deg, #f2a93b, #e08a1e); }
+/* 红 / 珊瑚系：提醒 / 反馈 */
+.bm-icon > .nav-icon[data-icon="bell"],
+.bm-icon > .nav-icon[data-icon="sparkles"],
+.bm-icon > .nav-icon[data-icon="help-circle"],
+.bm-icon > .nav-icon[data-icon="headphones"] { background: linear-gradient(135deg, #eb5757, #d13b3b); }
+@media (max-width: 360px) {
+  .bottom-more-item .bm-icon > .nav-icon { width: 40px; height: 40px; border-radius: 10px; }
+}
 .more-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;

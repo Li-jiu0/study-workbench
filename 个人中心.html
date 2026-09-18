@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" data-page-node-id="scAqzajn3bTDCBBENuGZj0">
 <meta name="theme-color" content="#5B8DEF" data-page-node-id="xcIilqbK544vSHAWBPyO4w">
 <title>个人中心 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260917b" data-page-node-id="tBLcp6JxdB6dWCmMCCx7F8">
+<link rel="stylesheet" href="assets/common.css?v=20260918d" data-page-node-id="tBLcp6JxdB6dWCmMCCx7F8">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O" data-page-node-id="uqByqsnHV08jClPBpI9G16">
@@ -114,12 +114,27 @@
 .subpage-list .sgc-desc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .subpage-list .sgc-icon,
 .subpage-list .sgc-arrow { flex: 0 0 auto; }
+/* ==================== R86-B（2026-09-18）：生日校验 / 账号 / 变更频率 / 地区 ==================== */
+.xt-acc-row { display: flex; align-items: center; gap: 10px; }
+.xt-acc-val { font-size: var(--xt-font-base); font-weight: 600; color: var(--text); word-break: break-all; }
+.xt-acc-val.xt-acc-muted { color: var(--text-muted); font-weight: 400; }
+.xt-bd-msg { font-size: var(--xt-font-xs); margin-top: 6px; line-height: 1.6; }
+.xt-bd-msg.ok { color: var(--text-muted); }
+.xt-bd-msg.bad { color: var(--danger, #E05040); }
+.pe-bd-err { color: var(--danger, #E05040); font-size: var(--xt-font-xs); margin-top: 6px; line-height: 1.6; }
+.xt-bd-invalid { border-color: var(--danger, #E05040) !important; }
+.xt-lock-tip { font-size: var(--xt-font-xs); color: var(--danger, #E05040); margin-top: 6px; line-height: 1.7; }
+.xt-city-row { display: flex; align-items: center; gap: 8px; }
+.xt-city-row .form-input { flex: 1 1 auto; min-width: 0; }
+.xt-city-btn { flex: 0 0 auto; white-space: nowrap; padding: 8px 12px; font-size: var(--xt-font-sm); }
+.xt-city-btn:disabled { opacity: .5; cursor: not-allowed; }
+
 </style>
 <body class="theme-home" data-page-node-id="YOxnETeT4z4J4WFn6FB0qJ">
 
 <div class="app" data-page-node-id="rC7PFhhDSQoJOtAFwVAjO6">
 <nav class="sidebar"> <div class="logo"> <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div> <div> <div class="logo-text">星途</div> <div class="logo-sub">致追梦的人->修身</div> </div> </div> <div class="nav-list"> <div class="nav-item" data-page="home"> <span class="nav-icon" data-icon="home"></span><span>首页</span> </div>  <div class="nav-item" onclick="location.href='AI.html'"> <span class="nav-icon" data-icon="sparkles"></span><span>AI</span> </div> <div class="nav-section">学习模块</div> <div class="nav-item" data-page="cet"> <span class="nav-icon" data-icon="book-open"></span><span>英语</span> </div> <div class="nav-item" data-page="exam"> <span class="nav-icon" data-icon="pencil"></span><span>行测</span> </div>
-<div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>面测</span> </div> <div class="nav-item" data-page="files"> <span class="nav-icon" data-icon="folder"></span><span>我的文件</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon" data-icon="globe"></span><span>社区</span> </div> <div class="nav-item" data-page="moments"> <span class="nav-icon" data-icon="rss"></span><span>动态空间</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="book"></span><span>错题本</span> </div> <div class="nav-item active" data-page="profile"> <span class="nav-icon" data-icon="user"></span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon" data-icon="settings"></span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak"><span data-icon="fire" data-icon-size="14" style="vertical-align:-2px"></span> 连续打卡 0 天</div> </div> </div> </div> </nav>
+<div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>面测</span> </div> <div class="nav-item" data-page="files"> <span class="nav-icon" data-icon="folder"></span><span>我的文件</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon" data-icon="globe"></span><span>社区</span> </div> <div class="nav-item" data-page="moments"> <span class="nav-icon" data-icon="rss"></span><span>动态空间</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="通讯录 · 添加好友（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>通讯录</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="book"></span><span>错题本</span> </div> <div class="nav-item active" data-page="profile"> <span class="nav-icon" data-icon="user"></span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon" data-icon="settings"></span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak"><span data-icon="fire" data-icon-size="14" style="vertical-align:-2px"></span> 连续打卡 0 天</div> </div> </div> </div> </nav>
 
   <div class="main" data-page-node-id="9bopuDa08t6vS7NC3NKjd2">
 <header class="topbar" data-page-node-id="qJPc52dgEhqzp4JZlJYJfQ">
@@ -239,6 +254,11 @@
               </div>
               <div class="pe-tip" data-page-node-id="Zti7kWo3G3KCbGG7K8avMW">支持 JPG / PNG / WebP 等图片，自动居中裁圆压缩。在线模式上传到服务器，离线模式以 base64 存本机浏览器。</div>
             </div>
+            <div class="form-group">
+              <div class="form-label">账号</div>
+              <div class="xt-acc-row"><span class="xt-acc-val xt-acc-muted" id="peAccount">未设置</span></div>
+              <div class="pe-tip">登录账号（用户名），对外展示的就是它；账号不支持修改。</div>
+            </div>
             <div class="form-group" data-page-node-id="8UHhRo88ACHZXxGptoAGfR">
               <div class="form-label" data-page-node-id="VVwiq1rZsyMfqfYc405M97">昵称 <span class="pe-counter" id="peCntName">0/20</span></div>
               <input type="text" class="form-input" id="peName" maxlength="20" placeholder="输入新的昵称" data-page-node-id="cmv7HPtDsMYGxbTV6HPQdp">
@@ -254,21 +274,26 @@
               </div>
               <div class="form-group" data-page-node-id="s48JYaLLym0HO04XTYONp2">
                 <div class="form-label" data-page-node-id="Dg2QLOf6IIhDeLWIFKTlGV">出生年月</div>
-                <input type="date" class="form-input" id="peBirthday" min="1950-01-01" max="2015-12-31" data-page-node-id="wmMbTNz3lwuG9Y0DIZuBu6"><br>
-                <input type="text" class="form-input" id="peBirthdayText" placeholder="或手动输入：19900102 / 1990-01-02 / 1990年1月2日" style="margin-top:6px" onblur="peBirthdayOnBlur()">
+                <input type="date" class="form-input" id="peBirthday" min="1950-01-01" max="2015-12-31" onchange="peBirthdayOnChange()" data-page-node-id="wmMbTNz3lwuG9Y0DIZuBu6">
+                <input type="text" class="form-input" id="peBirthdayText" placeholder="或手动输入：19900102 / 1990-01-02 / 1990年1月2日" style="margin-top:6px" oninput="peBirthdayOnInput()" onblur="peBirthdayOnBlur()">
+                <div class="xt-bd-msg ok" id="peBirthdayMsg">支持日期选择器或直接输入，统一格式 YYYY-MM-DD（1950-01-01 ~ 2015-12-31）</div>
               </div>
             </div>
             <div class="pe-grid2">
               <div class="form-group" data-page-node-id="U4j6ajc2Dys3OC03tzkfCK">
-                <div class="form-label" data-page-node-id="Ye7c6Te8QpYNOfsbA2RBz4">所在城市</div>
-                <input type="text" class="form-input" id="peCity" maxlength="20" placeholder="如：北京 / 上海" data-page-node-id="6DiOx2SpMqj2g0GatJYOF7">
+                <div class="form-label" data-page-node-id="Ye7c6Te8QpYNOfsbA2RBz4">所在地区</div>
+                <div class="xt-city-row">
+                  <input type="text" class="form-input" id="peCity" maxlength="40" placeholder="如：广东省 广州市 天河区" data-page-node-id="6DiOx2SpMqj2g0GatJYOF7">
+                  <button class="btn btn-outline xt-city-btn" type="button" id="peCityPickBtn" onclick="xtOpenRegionPicker()"><span data-icon="map" data-icon-size="14" style="vertical-align:-2px"></span> 选择地区</button>
+                </div>
+                <div class="pe-tip">点「选择地区」可自动定位，或按 省 / 市 / 区 逐级点选，也支持关键词搜索。</div>
               </div>
               <div class="form-group">
                 <div class="form-label">手机号 <span class="pe-private" id="pePhoneMask">仅自己可见</span></div>
                 <input type="tel" class="form-input" id="pePhone" maxlength="11" inputmode="numeric" placeholder="11 位手机号（可选）">
               </div>
             </div>
-            <div class="pe-tip" style="margin-top:-2px" data-page-node-id="nR7oubbZ2Y1uJYQXtnB1Qp"><span data-icon="locked" data-icon-size="14" style="vertical-align:-3px"></span> 隐私说明：性别、生日、手机号仅自己可见（公开主页不展示）；城市、简介、标签、学习目标会展示。</div>
+            <div class="pe-tip" style="margin-top:-2px" data-page-node-id="nR7oubbZ2Y1uJYQXtnB1Qp"><span data-icon="locked" data-icon-size="14" style="vertical-align:-3px"></span> 隐私说明：性别、生日、手机号仅自己可见（公开主页不展示）；地区、简介、标签、学习目标会展示。</div>
 
             <div class="pe-sec"><span class="nav-icon" data-icon="message-square" data-icon-size="16"></span> 个性展示</div>
             <div class="form-group" data-page-node-id="54KFGO7GdtfTWGda5GSuMp">
@@ -681,10 +706,9 @@ window.addEventListener('load', function() {
     var val = function (id) { var el = $(id); return el ? el.value : ''; };
     // 生日选择器：max 动态设为今天（避免选到未来日期）
     var bd = $('peBirthday');
-    if (bd && !bd.getAttribute('data-synced')) {
-      var t = new Date();
-      bd.max = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
-      bd.setAttribute('data-synced', '1');
+    if (bd) {
+      bd.max = '2015-12-31';
+      bd.min = '1950-01-01';
     }
     var cnt = function (id, n, max) { var el = $(id); if (el) el.textContent = n + '/' + max; };
     cnt('peCntName', val('peName').length, 20);
@@ -813,53 +837,10 @@ window.addEventListener('load', function() {
 })();
 </script>
 <script>
-/* T02 批次五（寇豆码 2026-09-12）：生日 normalize + onBlur + hash 路由初始化 */
-window.normalizeBirthdayText = function (raw) {
-  if (raw == null) return null;
-  var s = String(raw).trim();
-  if (!s) return null;
-  var m = s.match(/^(\d{4})(\d{2})(\d{2})$/);
-  if (m) s = m[1] + '-' + m[2] + '-' + m[3];
-  s = s.replace(/年|月|日/g, '-');
-  s = s.replace(/[-./\s]+$/, ''); // trim trailing separators (e.g. "1990-1-2-" after 年月日 replace)
-  m = s.match(/^(\d{4})[-./\s](\d{1,2})[-./\s](\d{1,2})$/);
-  if (!m) return null;
-  var y = parseInt(m[1], 10), mo = parseInt(m[2], 10), d = parseInt(m[3], 10);
-  if (!(y >= 1950 && y <= 2015)) return null;
-  if (!(mo >= 1 && mo <= 12)) return null;
-  if (!(d >= 1 && d <= 31)) return null;
-  var dt = new Date(y, mo - 1, d);
-  if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null;
-  var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
-  return y + '-' + pad(mo) + '-' + pad(d);
-};
-window.peBirthdayOnBlur = function () {
-  var txt = document.getElementById('peBirthdayText');
-  var dt = document.getElementById('peBirthday');
-  if (!txt || !dt) return;
-  var v = txt.value;
-  if (!v) {
-    var err = document.getElementById('peBirthdayTextErr');
-    if (err && err.parentNode) err.parentNode.removeChild(err);
-    return;
-  }
-  var norm = window.normalizeBirthdayText(v);
-  if (norm) {
-    dt.value = norm;
-    txt.value = '';
-    var err2 = document.getElementById('peBirthdayTextErr');
-    if (err2 && err2.parentNode) err2.parentNode.removeChild(err2);
-  } else {
-    var existing = document.getElementById('peBirthdayTextErr');
-    if (!existing) {
-      var div = document.createElement('div');
-      div.id = 'peBirthdayTextErr';
-      div.className = 'pe-bd-err';
-      div.textContent = '日期格式不对，参考：1990-01-02（需在 1950-01-01 到 2015-12-31 之间）';
-      txt.parentNode.insertBefore(div, txt.nextSibling);
-    }
-  }
-};
+/* T02 批次五（寇豆码 2026-09-12）：生日 normalize + onBlur + hash 路由初始化
+   R86-B（2026-09-18）：生日校验逻辑统一上移到页尾 R86-B 脚本（window.xtValidateBirthday /
+   window.normalizeBirthdayText / window.peBirthdayOnBlur / peBirthdayOnInput / peBirthdayOnChange），
+   本块不再重复定义，避免两套实现互相打架；hash 路由初始化保持原样。 */
 (function () {
   function boot() {
     if (typeof SubpageRouter === 'undefined' || !SubpageRouter || typeof SubpageRouter.init !== 'function') return;
@@ -1107,8 +1088,443 @@ window.peBirthdayOnBlur = function () {
   });
 })();
 </script>
-<script src="assets/ai-config.js?v=20260918b"></script>
+<script src="assets/ai-config.js?v=20260918c"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260918b"></script>
+<script src="assets/ai-service.js?v=20260918d"></script>
+<script src="assets/ai-cap-registry.js?v=20260918c"></script>
+<script src="assets/ai-cap-image.js?v=20260918c"></script>
+<script src="assets/ai-cap-vision.js?v=20260918c"></script>
+<script src="assets/ai-cap-audio.js?v=20260918c"></script>
+<script src="assets/ai-cap-embed.js?v=20260918c"></script>
+<script src="assets/ai-cap-translate.js?v=20260918c"></script>
+<script src="assets/ai-cap-video.js?v=20260918c"></script>
+<script src="assets/ai-cap-3d.js?v=20260918c"></script>
+<script>
+/* ==================== R86-B（2026-09-18）：个人信息页四项改造 ====================
+   ① 生日：统一 YYYY-MM-DD；输入即时校验（格式 / 不存在的日期 / 未来日期 / 越界年月）；
+      日期选择器与手动输入双向同步；保存前本地拦截；后端拒绝时沿用页面既有 toast 提示。
+   ② 账号：编辑区只读展示登录账号（CURRENT_USER.username），拿不到时显示占位符「未设置」。
+   ③ 变更频率：拉 /api/users/me/change-locks，锁定字段置灰 + 提示下次可改时间；
+      离线模式走 xt-settings.js 的本地同口径兜底（服务端已做权威校验，前端只是配合）。
+   ④ 地区：跳 地区选择.html（自动定位 / 逐级点选 / 关键词搜索），回写 #peCity 走现有保存链路。
+   约束：ES5 语法（无可选链 / 空值合并 / 顶层 await / 正则后行断言）；禁用 alert / confirm / prompt。
+   不改动 assets/app.js、assets/api.js、assets/xt-profile.js。 */
+(function () {
+  'use strict';
+  function $(id) { return document.getElementById(id); }
+  function toast(msg) { try { if (typeof showToast === 'function') showToast(String(msg)); } catch (e) {} }
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+  function apiBase() {
+    return (window.STUDY_API_BASE != null ? window.STUDY_API_BASE
+      : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000'));
+  }
+  function tok() { try { return localStorage.getItem('study_workbench_token') || ''; } catch (e) { return ''; } }
+  function isOnline() { try { return !!(typeof CURRENT_USER !== 'undefined' && CURRENT_USER); } catch (e) { return false; } }
+
+  /* ---------------- ① 生日校验 ---------------- */
+  var BD_MIN_Y = 1950;
+  var BD_MAX = { y: 2015, m: 12, d: 31 };
+  var BD_HINT = '支持日期选择器或直接输入，统一格式 YYYY-MM-DD（1950-01-01 ~ 2015-12-31）';
+
+  window.xtValidateBirthday = function (raw) {
+    var s = String(raw == null ? '' : raw).trim();
+    if (!s) return { ok: true, empty: true, msg: '', value: '' };
+    var m = s.match(/^(\d{4})(\d{2})(\d{2})$/);
+    if (m) s = m[1] + '-' + m[2] + '-' + m[3];
+    s = s.replace(/年|月|日/g, '-');
+    s = s.replace(/[-./\s]+$/, '');
+    m = s.match(/^(\d{4})[-./\s](\d{1,2})([-./\s](\d{1,2}))?$/);
+    if (!m) return { ok: false, msg: '日期格式不对，请用 YYYY-MM-DD（如 1990-01-02）', value: '' };
+    var y = parseInt(m[1], 10), mo = parseInt(m[2], 10), d = m[4] ? parseInt(m[4], 10) : 0;
+    if (!d) return { ok: false, msg: '还缺「日」，完整示例：1990-01-02', value: '' };
+    if (!(mo >= 1 && mo <= 12)) return { ok: false, msg: '月份需在 1~12 之间', value: '' };
+    var dim = new Date(y, mo, 0).getDate();
+    if (!(d >= 1 && d <= dim)) return { ok: false, msg: mo + ' 月没有 ' + d + ' 日，请检查日期', value: '' };
+    if (y < BD_MIN_Y) return { ok: false, msg: '年份不能早于 ' + BD_MIN_Y + ' 年', value: '' };
+    if (y > BD_MAX.y || (y === BD_MAX.y && (mo > BD_MAX.m || (mo === BD_MAX.m && d > BD_MAX.d)))) {
+      return { ok: false, msg: '出生年月不能晚于 2015-12-31（不能填未来日期）', value: '' };
+    }
+    return { ok: true, empty: false, msg: '', value: y + '-' + pad2(mo) + '-' + pad2(d) };
+  };
+
+  /* 兼容 T02 的老入口，语义完全不变（非法 / 越界一律 null） */
+  window.normalizeBirthdayText = function (raw) {
+    var r = window.xtValidateBirthday(raw);
+    return (r.ok && !r.empty) ? r.value : null;
+  };
+
+  function xtAgeOf(v) {
+    var r = window.xtValidateBirthday(v);
+    if (!r.ok || r.empty) return '';
+    var y = parseInt(r.value.slice(0, 4), 10);
+    var now = new Date();
+    var age = now.getFullYear() - y;
+    if (r.value.slice(5) > (pad2(now.getMonth() + 1) + '-' + pad2(now.getDate()))) age -= 1;
+    return age + ' 岁';
+  }
+
+  function xtBdMsg(msg, bad) {
+    var el = $('peBirthdayMsg');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.className = 'xt-bd-msg ' + (bad ? 'bad' : 'ok');
+  }
+
+  function xtBdFlag(bad) {
+    var ids = ['peBirthday', 'peBirthdayText'], i, e, c;
+    for (i = 0; i < ids.length; i++) {
+      e = $(ids[i]);
+      if (!e) continue;
+      c = e.className || '';
+      if (bad) { if (c.indexOf('xt-bd-invalid') < 0) e.className = c + ' xt-bd-invalid'; }
+      else { e.className = c.replace(/\s*xt-bd-invalid/g, ''); }
+    }
+  }
+
+  function xtBdErr(msg) {
+    var txt = $('peBirthdayText');
+    if (!txt || !txt.parentNode) return;
+    var ex = $('peBirthdayTextErr');
+    if (!ex) {
+      ex = document.createElement('div');
+      ex.id = 'peBirthdayTextErr';
+      ex.className = 'pe-bd-err';
+      txt.parentNode.insertBefore(ex, txt.nextSibling);
+    }
+    ex.textContent = msg || '';
+  }
+
+  function xtBdErrClear() {
+    var ex = $('peBirthdayTextErr');
+    if (ex && ex.parentNode) ex.parentNode.removeChild(ex);
+  }
+
+  window.peBirthdayOnInput = function () {
+    var txt = $('peBirthdayText');
+    if (!txt) return;
+    var v = String(txt.value || '').trim();
+    if (!v) { xtBdFlag(false); xtBdErrClear(); xtBdMsg(BD_HINT, false); return; }
+    if (v.replace(/\D/g, '').length < 8) { xtBdFlag(false); xtBdErrClear(); xtBdMsg('继续输入，完整示例：1990-01-02', false); return; }
+    var r = window.xtValidateBirthday(v);
+    if (r.ok && !r.empty) { xtBdFlag(false); xtBdErrClear(); xtBdMsg('将识别为 ' + r.value + '（' + xtAgeOf(r.value) + '），点空白处即生效', false); }
+    else { xtBdFlag(true); xtBdMsg(r.msg, true); }
+  };
+
+  window.peBirthdayOnChange = function () {
+    var dt = $('peBirthday'), txt = $('peBirthdayText');
+    if (!dt) return;
+    var r = window.xtValidateBirthday(dt.value);
+    if (!r.ok && !r.empty) { xtBdFlag(true); xtBdMsg(r.msg, true); toast('⚠️ ' + r.msg); return; }
+    xtBdFlag(false);
+    xtBdErrClear();
+    if (txt) txt.value = '';
+    if (r.empty) { xtBdMsg(BD_HINT, false); }
+    else { dt.value = r.value; xtBdMsg('已选择 ' + r.value + '（' + xtAgeOf(r.value) + '）', false); }
+    if (typeof window.peSyncUI === 'function') window.peSyncUI();
+  };
+
+  window.peBirthdayOnBlur = function () {
+    var dt = $('peBirthday'), txt = $('peBirthdayText');
+    if (!txt || !dt) return;
+    var v = String(txt.value || '').trim();
+    if (!v) { xtBdFlag(false); xtBdErrClear(); xtBdMsg(BD_HINT, false); return; }
+    var r = window.xtValidateBirthday(v);
+    if (r.ok && !r.empty) {
+      dt.value = r.value;
+      txt.value = '';
+      xtBdFlag(false);
+      xtBdErrClear();
+      xtBdMsg('已识别为 ' + r.value + '（' + xtAgeOf(r.value) + '）', false);
+      if (typeof window.peSyncUI === 'function') window.peSyncUI();
+    } else {
+      xtBdFlag(true);
+      xtBdMsg(r.msg, true);
+      xtBdErr(r.msg);
+      toast('⚠️ ' + r.msg);
+    }
+  };
+
+  /* ---------------- ② 账号展示（替换原「用户ID」位） ---------------- */
+  var ACC_EMPTY = '未设置';
+
+  function xtAccountText() {
+    var a = '';
+    try { if (isOnline()) a = CURRENT_USER.username || CURRENT_USER.account || ''; } catch (e) {}
+    if (!a) { try { a = localStorage.getItem('study_workbench_username') || ''; } catch (e2) {} }
+    if (!a) {
+      try {
+        var raw = localStorage.getItem('study_workbench_profile');
+        if (raw) { var o = JSON.parse(raw); a = (o && (o.username || o.account)) || ''; }
+      } catch (e3) {}
+    }
+    return String(a || '').trim();
+  }
+  window.xtAccountText = xtAccountText;
+
+  function xtInjectAccountRow() {
+    var box = $('profileBox');
+    if (!box) return;
+    var card = box.querySelector('.card');
+    if (!card) return;
+    var a = xtAccountText();
+    var row = card.querySelector('#xtAcctRow');
+    if (!row) {
+      var act = card.querySelector('.card-action');
+      if (a && act && act.textContent && act.textContent.indexOf('@' + a) >= 0) return; /* 卡头已展示 @账号 */
+      row = document.createElement('div');
+      row.id = 'xtAcctRow';
+      row.setAttribute('style', 'font-size:12px;color:var(--text-secondary);margin-top:8px;line-height:1.6');
+      var hdr = card.querySelector('.card-header');
+      if (hdr && hdr.parentNode === card) card.insertBefore(row, hdr.nextSibling);
+      else card.insertBefore(row, card.firstChild);
+    }
+    var acctText = '账号：' + (a || ACC_EMPTY);
+    /* R91-C：值未变不重写 DOM——textContent setter 即使同值也会重建文本节点，
+       会再次触发 #profileBox 上的 MutationObserver（xtWatchAccount），
+       形成「观察→渲染→再观察」无限微任务循环，页面完全卡死。 */
+    if (row.textContent !== acctText) { row.textContent = acctText; }
+  }
+
+  function xtRenderAccount() {
+    var el = $('peAccount');
+    var a = xtAccountText();
+    window.XT_ACCOUNT = a;
+    if (el) {
+      /* R91-C：同上，值未变不重写，避免自触发死循环 */
+      var accVal = a || ACC_EMPTY;
+      if (el.textContent !== accVal) { el.textContent = accVal; }
+      el.className = 'xt-acc-val' + (a ? '' : ' xt-acc-muted');
+    }
+    xtInjectAccountRow();
+  }
+  window.xtRenderAccount = xtRenderAccount;
+
+  /* ---------------- ③ 变更频率限制（配合服务端，权威在服务端） ---------------- */
+  var LOCK_MAP = [
+    { f: 'nickname', ids: ['peName'] },
+    { f: 'motto', ids: ['peMotto'] },
+    { f: 'bio', ids: ['peBio'] },
+    { f: 'gender', ids: ['peGender'] },
+    { f: 'birthday', ids: ['peBirthday', 'peBirthdayText'] },
+    { f: 'city', ids: ['peCity', 'peCityPickBtn'] },
+    { f: 'phone', ids: ['pePhone'] },
+    { f: 'goal', ids: ['peGoal'] },
+    { f: 'tags', ids: ['peTagInput'] }
+  ];
+  var LOCK_LABEL = {
+    nickname: '昵称', motto: '个性签名', bio: '个人简介', gender: '性别', birthday: '出生年月',
+    city: '所在地区', phone: '手机号', goal: '学习目标', tags: '备考方向标签'
+  };
+
+  function xtSetLockTip(field, text) {
+    var cfg = null, i, j, last = null;
+    for (i = 0; i < LOCK_MAP.length; i++) { if (LOCK_MAP[i].f === field) { cfg = LOCK_MAP[i]; break; } }
+    if (!cfg) return;
+    for (j = 0; j < cfg.ids.length; j++) { var e = $(cfg.ids[j]); if (e) last = e; }
+    if (!last || !last.parentNode) return;
+    var tip = $('xtLockTip_' + field);
+    if (!tip) {
+      tip = document.createElement('div');
+      tip.id = 'xtLockTip_' + field;
+      tip.className = 'xt-lock-tip';
+      last.parentNode.appendChild(tip);
+    }
+    if (text) { tip.textContent = text; tip.style.display = 'block'; }
+    else { tip.textContent = ''; tip.style.display = 'none'; }
+  }
+
+  window.xtApplyChangeLocks = function (locks) {
+    locks = locks || {};
+    window.__xtLocks = locks;
+    var i, j, cfg, lk, locked, el;
+    for (i = 0; i < LOCK_MAP.length; i++) {
+      cfg = LOCK_MAP[i];
+      lk = locks[cfg.f];
+      locked = !!(lk && lk.locked);
+      for (j = 0; j < cfg.ids.length; j++) {
+        el = $(cfg.ids[j]);
+        if (!el) continue;
+        try { el.disabled = locked; } catch (e) {}
+      }
+      if (cfg.f === 'tags') {
+        var chips = $('peChips');
+        if (chips) { chips.style.pointerEvents = locked ? 'none' : ''; chips.style.opacity = locked ? '0.5' : ''; }
+      }
+      xtSetLockTip(cfg.f, locked
+        ? ('🔒 ' + (LOCK_LABEL[cfg.f] || cfg.f) + '每月仅可修改一次，下次可改时间：' + (lk.nextAvailableAt || '—') + '。其他信息仍可正常修改。')
+        : '');
+    }
+  };
+
+  window.xtRefreshChangeLocks = function () {
+    if (!isOnline() || !tok()) {
+      window.xtApplyChangeLocks(typeof window.xtLocalLocks === 'function' ? window.xtLocalLocks(30) : {});
+      xtRenderAccount();
+      return;
+    }
+    fetch(apiBase() + '/api/users/me/change-locks', { headers: { 'Authorization': 'Bearer ' + tok() } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { window.xtApplyChangeLocks((d && d.locks) || {}); xtRenderAccount(); })
+      .catch(function () { window.xtApplyChangeLocks({}); });
+  };
+
+  /* ---------------- ④ 地区选择 ---------------- */
+  window.xtOpenRegionPicker = function () {
+    var el = $('peCity');
+    var cur = el ? (el.value || '') : '';
+    var back = '个人中心.html';
+    try {
+      var pn = location.pathname || '';
+      var k = pn.lastIndexOf('/');
+      if (k >= 0 && pn.length > k + 1) back = decodeURIComponent(pn.substring(k + 1));
+    } catch (e) {}
+    location.href = '地区选择.html?cur=' + encodeURIComponent(cur) + '&back=' + encodeURIComponent(back);
+  };
+
+  function xtTakeRegionPick() {
+    var raw = '';
+    try { raw = localStorage.getItem('xt_region_pick') || ''; } catch (e) { return ''; }
+    if (!raw) return '';
+    var obj = null;
+    try { obj = JSON.parse(raw); } catch (e2) { obj = null; }
+    try { localStorage.removeItem('xt_region_pick'); } catch (e3) {}
+    if (!obj || !obj.text) return '';
+    try { if (obj.ts && (Date.now() - obj.ts > 10 * 60 * 1000)) return ''; } catch (e4) { return ''; }
+    return String(obj.text).slice(0, 40);
+  }
+
+  var pendingRegion = xtTakeRegionPick();
+
+  /* ---------------- 编辑器打开 / 保存的拦截与联动 ---------------- */
+  var xtLastSnapshot = {};
+  var SNAP_IDS = ['peName', 'peMotto', 'peBio', 'peGender', 'peBirthday', 'peCity', 'pePhone', 'peGoal', 'peTags'];
+  var FIELD2ID = {
+    nickname: 'peName', motto: 'peMotto', bio: 'peBio', gender: 'peGender', birthday: 'peBirthday',
+    city: 'peCity', phone: 'pePhone', goal: 'peGoal', tags: 'peTags'
+  };
+
+  function xtSnapshot() {
+    var s = {}, i, e;
+    for (i = 0; i < SNAP_IDS.length; i++) { e = $(SNAP_IDS[i]); s[SNAP_IDS[i]] = e ? e.value : ''; }
+    return s;
+  }
+
+  function xtBlockedFields(snap) {
+    var out = [], f, e, nv, ov, lk;
+    for (f in FIELD2ID) {
+      if (!Object.prototype.hasOwnProperty.call(FIELD2ID, f)) continue;
+      lk = (window.__xtLocks && window.__xtLocks[f]) ? window.__xtLocks[f] : null;
+      if (!lk || !lk.locked) continue;
+      e = $(FIELD2ID[f]);
+      nv = e ? e.value : '';
+      ov = (snap && snap[FIELD2ID[f]] != null) ? snap[FIELD2ID[f]] : '';
+      if (String(nv) !== String(ov)) out.push(f);
+    }
+    return out;
+  }
+
+  function xtWrapEdit() {
+    var orig = window.editProfile;
+    if (typeof orig !== 'function') return;
+    window.editProfile = function () {
+      var r = orig.apply(this, arguments);
+      xtLastSnapshot = xtSnapshot();
+      xtRenderAccount();
+      window.xtRefreshChangeLocks();
+      return r;
+    };
+  }
+
+  function xtWrapSave() {
+    var orig = window.saveProfileEditor;
+    if (typeof orig !== 'function') return;
+    window.saveProfileEditor = function () {
+      var dtEl = $('peBirthday'), txtEl = $('peBirthdayText');
+      var raw = (txtEl && String(txtEl.value).trim()) ? txtEl.value : ((dtEl && dtEl.value) ? dtEl.value : '');
+      var r = window.xtValidateBirthday(raw);
+      if (!r.ok) {
+        xtBdFlag(true);
+        xtBdMsg(r.msg, true);
+        xtBdErr(r.msg);
+        toast('⚠️ ' + r.msg);
+        if (txtEl && txtEl.focus) { try { txtEl.focus(); } catch (e) {} }
+        return false;
+      }
+      if (dtEl) dtEl.value = r.value || '';
+      if (txtEl) txtEl.value = '';
+      xtBdFlag(false);
+      xtBdErrClear();
+
+      var blocked = xtBlockedFields(xtLastSnapshot);
+      if (blocked.length) {
+        var lb = LOCK_LABEL[blocked[0]] || blocked[0];
+        var lk = (window.__xtLocks && window.__xtLocks[blocked[0]]) ? window.__xtLocks[blocked[0]] : {};
+        toast('🔒 ' + lb + '每月仅可修改一次，下次可改时间：' + (lk.nextAvailableAt || '—'));
+        return false;
+      }
+
+      var snap = xtLastSnapshot;
+      var ret = orig.apply(this, arguments);
+
+      if (!isOnline() && typeof window.xtLocalRecord === 'function') {
+        var changed = [], f, e2;
+        for (f in FIELD2ID) {
+          if (!Object.prototype.hasOwnProperty.call(FIELD2ID, f)) continue;
+          if (f === 'phone') continue;
+          e2 = $(FIELD2ID[f]);
+          if (e2 && String(e2.value) !== String(snap[FIELD2ID[f]] == null ? '' : snap[FIELD2ID[f]])) changed.push(f);
+        }
+        if (changed.length) {
+          window.xtLocalRecord(changed);
+          window.xtApplyChangeLocks(window.xtLocalLocks(30));
+        }
+      }
+      setTimeout(function () { window.xtRefreshChangeLocks(); }, 1300);
+      return ret;
+    };
+  }
+
+  var xtAcctObs = null;
+  function xtWatchAccount() {
+    var box = $('profileBox');
+    if (!box || xtAcctObs || typeof window.MutationObserver !== 'function') return;
+    xtAcctObs = new window.MutationObserver(function () { xtRenderAccount(); });
+    try { xtAcctObs.observe(box, { childList: true, subtree: true }); } catch (e) { xtAcctObs = null; }
+  }
+
+  function xtBoot() {
+    xtWrapEdit();
+    xtWrapSave();
+    xtRenderAccount();
+    xtWatchAccount();
+    if (pendingRegion) {
+      setTimeout(function () {
+        try {
+          if (typeof SubpageRouter !== 'undefined' && SubpageRouter && typeof SubpageRouter.navigate === 'function') {
+            SubpageRouter.navigate('profile');
+          }
+        } catch (e) {}
+        setTimeout(function () {
+          if (typeof window.editProfile === 'function') { try { window.editProfile(); } catch (e2) {} }
+          var el = $('peCity');
+          if (el && pendingRegion) {
+            el.value = pendingRegion;
+            if (typeof window.peSyncUI === 'function') window.peSyncUI();
+            toast('📍 已选择地区：' + pendingRegion + '，确认后点「保存」');
+          }
+          pendingRegion = null;
+        }, 320);
+      }, 700);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(xtBoot, 60); });
+  } else {
+    setTimeout(xtBoot, 60);
+  }
+})();
+</script>
+
 </body>
 </html>

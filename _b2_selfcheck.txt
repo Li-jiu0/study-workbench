@@ -1,0 +1,7 @@
+PPT版式库.html size=15681 crlf=284 lone_lf=0 mtime=1789540481.3075376
+assets/data-ppt-templates.js size=39734 crlf=888 lone_lf=0 mtime=1789540377.0096872
+assets/tpl-preview.js size=70754 crlf=1525 lone_lf=0 mtime=1789540435.2635045
+open_comment=12 close_comment=12
+div_open=117 div_close=117
+script_open=15 script_close=15
+ppt-tpl refs=0

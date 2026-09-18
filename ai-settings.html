@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#ff8c00">
 <title>模型设置</title>
-<link rel="stylesheet" href="assets/common.css?v=20260917b">
+<link rel="stylesheet" href="assets/common.css?v=20260918d">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O">
@@ -187,6 +187,11 @@ body.dark .xt-stars{color:#4a4f58;}
   display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;
   background:var(--xt-warn-bg);border:1px solid var(--xt-warn-border);color:var(--xt-warn-text);font-weight:600;line-height:1.5;
 }
+/* R87：退役型号角标（tag 含「下线」，如「即将下线」） */
+.xt-set-badge-retire{
+  display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;
+  background:rgba(224,80,77,.12);border:1px solid rgba(224,80,77,.32);color:#e0504d;font-weight:600;line-height:1.5;
+}
 
 .xt-set-empty{text-align:center;color:var(--ai-muted);font-size:13px;padding:40px 0;}
 
@@ -260,6 +265,10 @@ body.dark .xt-stars{color:#4a4f58;}
 .xt-set-intro-k{flex-shrink:0;color:var(--ai-muted);font-weight:600;min-width:52px;}
 .xt-set-intro-v{color:var(--ai-text);word-break:break-word;}
 .xt-set-intro-none{font-size:12.5px;color:var(--ai-muted);margin-top:8px;}
+/* R87：说明卡五段式小节（这是什么/能做什么/怎么用/耗时与计费/建议与替代） */
+.xt-set-intro-sec{margin-top:9px;}
+.xt-set-intro-sec-t{font-size:12px;font-weight:700;color:var(--ai-orange);margin-bottom:2px;}
+.xt-set-intro-sec-v{font-size:12.5px;line-height:1.65;color:var(--ai-text);word-break:break-word;}
 .xt-set-intro-id{
   margin-top:10px;padding-top:9px;border-top:1px dashed var(--ai-border);
   font-family:"SFMono-Regular",Consolas,Menlo,monospace;font-size:11.5px;color:var(--ai-muted);word-break:break-all;
@@ -368,6 +377,18 @@ body.dark .xt-stars{color:#4a4f58;}
   font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
 .xt-sort-name{flex:1;min-width:0;color:var(--ai-text);font-weight:600;word-break:break-word;}
 .xt-sort-tag{flex-shrink:0;font-size:11px;color:var(--ai-muted);}
+/* R87 需求2：按功能分类排序行 / 隐藏不可用开关 */
+.xt-sort-cat-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:8px 0 2px;}
+.xt-sort-switch{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ai-sub);cursor:pointer;}
+.xt-sort-switch input{width:16px;height:16px;}
+#setSortCat .xt-set-select{margin-top:2px;}
+
+/* R88-M1（R88-C）：模型列表顶部的分类筛选提示条 */
+.xt-set-catfilter{
+  display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0 0 10px;
+  padding:8px 11px;border:1px solid var(--ai-border);border-radius:10px;
+  background:rgba(255,140,0,.06);font-size:12px;color:var(--ai-sub);line-height:1.6;
+}
 
 /* —— R66：记忆管理区块 —— */
 .xt-about-block{margin-top:14px;background:var(--ai-card);border:1px solid var(--ai-border);border-radius:14px;padding:14px 15px;}
@@ -468,6 +489,166 @@ body.dark .xt-stars{color:#4a4f58;}
   .xt-set-knob{width:15px;height:15px;top:2.5px;left:3px;}
   .xt-set-switch.on .xt-set-knob{left:20px;}
   .xt-drag-handle{padding:6px 3px;}
+}
+/* —— 需求 E：用量统计内嵌小节（沿用本页设计变量；不撑破 Tab 容器，窄屏自适应） —— */
+.xt-us-overview{display:flex;flex-wrap:wrap;gap:10px;}
+.xt-us-cell{
+  flex:1 1 30%;min-width:96px;box-sizing:border-box;background:var(--ai-bg);
+  border:1px solid var(--ai-border);border-radius:12px;padding:9px 11px;
+}
+.xt-us-cell-num{font-size:19px;font-weight:800;color:var(--ai-orange);line-height:1.25;word-break:break-all;}
+.xt-us-cell-label{font-size:11.5px;color:var(--ai-sub);margin-top:2px;}
+.xt-us-sublabel{
+  display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  margin:12px 0 6px;font-size:12px;font-weight:700;color:var(--ai-sub);
+}
+.xt-us-hint{font-size:11.5px;font-weight:400;color:var(--ai-muted);}
+.xt-us-chips{display:flex;flex-wrap:wrap;gap:8px;}
+.xt-us-chip{
+  min-height:34px;padding:0 13px;border-radius:999px;border:1px solid var(--ai-border);
+  background:var(--ai-bg);color:var(--ai-sub);font-size:12.5px;font-weight:600;
+  cursor:pointer;transition:all .15s;
+}
+.xt-us-chip.active{background:rgba(255,140,0,.1);border-color:var(--ai-orange);color:var(--ai-orange);}
+.xt-us-chip:hover{border-color:var(--ai-orange);color:var(--ai-orange);}
+.xt-us-model{padding:9px 0;border-bottom:1px solid rgba(128,128,128,.14);}
+.xt-us-model:last-child{border-bottom:none;}
+.xt-us-model-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+.xt-us-model-name{flex:1;min-width:0;font-size:13.5px;font-weight:700;color:var(--ai-text);word-break:break-word;}
+.xt-us-model-tok{flex-shrink:0;font-size:13px;font-weight:700;color:var(--ai-orange);}
+.xt-us-bar{margin:7px 0 6px;height:6px;border-radius:999px;background:var(--ai-code-bg);overflow:hidden;}
+.xt-us-bar i{display:block;height:100%;border-radius:999px;background:var(--ai-orange);min-width:2px;}
+.xt-us-model-meta{display:flex;flex-wrap:wrap;gap:10px;font-size:11.5px;color:var(--ai-sub);}
+.xt-us-warn{color:#e0504d;}
+/* R88-A：按模型单独列出 + A 口径（剩余可用量）新增样式 */
+.xt-us-model.warn{border-left:3px solid #e8a33d;padding-left:8px;}
+.xt-us-model.danger{border-left:3px solid #e0504d;padding-left:8px;}
+.xt-us-metric{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 6px;}
+.xt-us-metric-item{
+  min-width:0;box-sizing:border-box;background:var(--ai-bg);border:1px solid var(--ai-border);
+  border-radius:10px;padding:7px 9px;display:flex;flex-direction:column;gap:2px;
+}
+.xt-us-metric-label{font-size:11px;color:var(--ai-sub);line-height:1.4;}
+.xt-us-metric-val{font-size:13px;font-weight:700;color:var(--ai-text);line-height:1.4;word-break:break-word;}
+.xt-us-metric-val.danger{color:#e0504d;}
+.xt-us-model-id{margin:2px 0 0;line-height:1.4;}
+.xt-us-raw-id{
+  display:inline-block;max-width:100%;padding:0 6px;border-radius:6px;background:var(--ai-code-bg);
+  color:var(--ai-muted);font-size:10.5px;word-break:break-all;font-family:ui-monospace,Menlo,Consolas,monospace;
+}
+.xt-us-risk{
+  display:inline-block;margin-left:6px;padding:0 7px;border-radius:999px;
+  font-size:10.5px;font-weight:600;line-height:17px;vertical-align:1px;
+}
+.xt-us-risk.warn{color:#b8761a;background:rgba(232,163,61,.14);}
+.xt-us-risk.danger{color:#e0504d;background:rgba(224,80,77,.12);}
+.xt-us-muted{color:var(--ai-muted);}
+.xt-us-item{border-bottom:1px solid rgba(128,128,128,.14);padding:9px 0;}
+.xt-us-item:last-child{border-bottom:none;}
+.xt-us-item-h{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.xt-us-item-main{flex:1;min-width:0;}
+.xt-us-item-t{font-size:13px;font-weight:700;color:var(--ai-text);word-break:break-word;}
+.xt-us-badge{
+  display:inline-block;margin-left:6px;padding:0 7px;border-radius:999px;
+  font-size:10.5px;font-weight:600;line-height:17px;vertical-align:1px;
+}
+.xt-us-badge.ok{color:#2fbf71;background:rgba(47,191,113,.12);}
+.xt-us-badge.bad{color:#e0504d;background:rgba(224,80,77,.12);}
+.xt-us-item-m{margin-top:4px;font-size:11.5px;color:var(--ai-sub);word-break:break-word;}
+.xt-us-tag{
+  display:inline-block;padding:0 6px;border-radius:999px;background:var(--ai-code-bg);
+  color:var(--ai-muted);font-size:10.5px;line-height:16px;
+}
+.xt-us-item-err{margin-top:4px;font-size:11.5px;color:#e0504d;word-break:break-word;}
+.xt-us-fold{
+  flex-shrink:0;display:inline-flex;align-items:center;gap:3px;min-height:30px;padding:0 10px;
+  border:1px solid var(--ai-border);border-radius:999px;background:var(--ai-card);
+  color:var(--ai-sub);font-size:11.5px;font-weight:600;cursor:pointer;
+}
+.xt-us-fold:hover{border-color:var(--ai-orange);color:var(--ai-orange);}
+.xt-us-fold .xt-us-arrow{transition:transform .15s;}
+.xt-us-item.open .xt-us-fold{border-color:var(--ai-orange);color:var(--ai-orange);}
+.xt-us-item.open .xt-us-arrow{transform:rotate(180deg);}
+.xt-us-item-body{display:none;margin-top:8px;}
+.xt-us-item.open .xt-us-item-body{display:block;}
+.xt-us-reply{
+  background:var(--ai-code-bg);border:1px solid var(--ai-border);border-radius:10px;
+  padding:9px 11px;font-size:12.5px;line-height:1.7;color:var(--ai-text);
+  white-space:pre-wrap;word-break:break-word;max-height:240px;overflow:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.xt-us-reply.muted{color:var(--ai-muted);}
+.xt-us-btn{
+  min-height:34px;padding:0 13px;border-radius:10px;border:1px solid var(--ai-border);
+  background:var(--ai-card);color:var(--ai-sub);font-size:12.5px;font-weight:600;cursor:pointer;
+}
+.xt-us-btn:hover{border-color:var(--ai-orange);color:var(--ai-orange);}
+.xt-us-btn.danger{color:#e0504d;border-color:rgba(224,80,77,.4);}
+.xt-us-btn.danger:hover{background:rgba(224,80,77,.1);color:#e0504d;}
+.xt-us-btn.danger.armed{background:rgba(224,80,77,.14);}
+.xt-us-more{
+  display:block;width:100%;margin-top:10px;min-height:36px;border-radius:10px;
+  border:1px dashed var(--ai-border);background:transparent;color:var(--ai-sub);
+  font-size:12.5px;font-weight:600;cursor:pointer;
+}
+.xt-us-more:hover{border-color:var(--ai-orange);color:var(--ai-orange);}
+.xt-us-inline-empty{padding:12px 2px;font-size:12.5px;color:var(--ai-muted);text-align:center;}
+.xt-us-empty{padding:24px 12px;text-align:center;}
+.xt-us-empty-ico{color:var(--ai-muted);opacity:.7;}
+.xt-us-empty-main{margin-top:6px;font-size:14px;font-weight:700;color:var(--ai-text);}
+.xt-us-empty-sub{margin-top:5px;font-size:12.5px;color:var(--ai-sub);line-height:1.65;}
+.xt-us-warnbar{
+  margin-bottom:10px;border:1px solid rgba(224,80,77,.35);border-radius:10px;
+  padding:9px 11px;font-size:12px;color:#e0504d;line-height:1.6;
+}
+.xt-us-footnote{margin-top:10px;font-size:11.5px;color:var(--ai-muted);line-height:1.6;}
+.xt-us-clear-row{margin-top:12px;}
+.xt-us-clear-head{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  min-height:34px;padding:0 13px;border-radius:10px;border:1px solid var(--ai-border);
+  background:var(--ai-card);color:var(--ai-sub);font-size:12.5px;font-weight:600;cursor:pointer;
+  text-align:left;-webkit-appearance:none;appearance:none;
+}
+.xt-us-clear-head:hover{border-color:var(--ai-orange);color:var(--ai-orange);}
+.xt-us-clear-head .xt-us-arrow{transition:transform .15s;}
+.xt-us-clear-row.open .xt-us-clear-head{border-color:var(--ai-orange);color:var(--ai-orange);}
+.xt-us-clear-row.open .xt-us-clear-head .xt-us-arrow{transform:rotate(180deg);}
+.xt-us-clear-body{display:none;margin-top:8px;text-align:right;}
+.xt-us-clear-row.open .xt-us-clear-body{display:block;}
+.xt-us-selectrow{margin-bottom:2px;}
+.xt-us-select{
+  width:100%;box-sizing:border-box;min-height:34px;padding:0 10px;border-radius:10px;
+  border:1px solid var(--ai-border);background:var(--ai-bg);color:var(--ai-sub);
+  font-size:12.5px;font-weight:600;cursor:pointer;
+}
+.xt-us-select:hover{border-color:var(--ai-orange);color:var(--ai-orange);}
+.xt-us-foldrow{
+  display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;
+  min-height:34px;margin:12px 0 0;padding:0 12px;border-radius:10px;
+  border:1px solid var(--ai-border);background:var(--ai-bg);
+  color:var(--ai-sub);font-size:12px;font-weight:700;cursor:pointer;text-align:left;
+}
+.xt-us-foldrow:hover{border-color:var(--ai-orange);color:var(--ai-orange);}
+.xt-us-foldrow-cur{margin-left:auto;font-size:11.5px;font-weight:400;color:var(--ai-muted);}
+.xt-us-foldrow .xt-us-arrow{transition:transform .15s;flex-shrink:0;}
+.xt-us-foldrow.open{border-color:var(--ai-orange);color:var(--ai-orange);}
+.xt-us-foldrow.open .xt-us-arrow{transform:rotate(180deg);}
+.xt-us-foldbody{display:none;margin-top:8px;}
+.xt-us-foldbody.open{display:block;}
+.xt-us-footnote{display:none;}
+.xt-us-status{margin-top:8px;font-size:11.5px;color:var(--ai-muted);}
+.xt-us-status.on{color:var(--ai-orange);}
+@media (max-width:640px){
+  .xt-us-cell{flex:1 1 44%;min-width:0;}
+  .xt-us-cell-num{font-size:17px;}
+  .xt-us-metric{grid-template-columns:repeat(2,1fr);}
+}
+@media (max-width:400px){
+  .xt-us-chip{padding:0 11px;font-size:12px;}
+  .xt-us-cell-num{font-size:16px;}
+}
+@media (max-width:360px){
+  .xt-us-cell{flex:1 1 100%;}
 }
 </style>
 </head>
@@ -612,6 +793,9 @@ body.dark .xt-stars{color:#4a4f58;}
 
   <!-- ===== Tab 5：关于 ===== -->
   <section class="xt-set-panel" id="setPanelAbout">
+    <!-- 需求 E / 需求7：模型用量统计置顶——#setUsageRoot 必须为 #setPanelAbout 的首子元素
+         （跨线契约挂载点，T04 的 xt-aiusage.js 依赖此位置懒渲染） -->
+    <div id="setUsageRoot"></div>
     <div id="setAboutList"></div>
     <div class="xt-set-toolbar" style="margin-top:14px;margin-bottom:0;">
       <div class="xt-set-toolbar-btns">
@@ -642,7 +826,17 @@ body.dark .xt-stars{color:#4a4f58;}
       <button type="button" class="xt-set-btn primary" data-sort-act="map">映射</button>
       <button type="button" class="xt-set-btn danger" data-sort-act="reset">恢复默认</button>
     </div>
-    <div class="xt-sort-preview-label">排序预览（只读）</div>
+    <!-- R87 需求2：按功能分类排序（下拉项 = BUILTIN_CATS 12 类，按 FAMILY_ORDER 分组展示）。
+         #setSortCat 为容器、#setSortCatInner 为内层控件，id 为跨线契约字面量，不可改名。 -->
+    <div class="xt-sort-preview-label">按功能分类排序</div>
+    <div id="setSortCat">
+      <select class="xt-set-select" id="setSortCatInner" title="选择功能分类"></select>
+    </div>
+    <div class="xt-sort-cat-actions">
+      <button type="button" class="xt-set-btn" data-sort-act="cat">按分类排序</button>
+      <label class="xt-sort-switch"><input type="checkbox" id="setHideUnavail"><span>在 AI 页隐藏不可用模型</span></label>
+    </div>
+    <div class="xt-sort-preview-label" style="margin-top:12px;">排序预览（只读）</div>
     <div class="xt-sort-preview" id="setSortPreview"></div>
     <div class="xt-modal-btns" style="margin-top:12px;">
       <button type="button" class="xt-set-btn" data-sort-act="close">关闭</button>
@@ -659,11 +853,20 @@ body.dark .xt-stars{color:#4a4f58;}
 <script src="assets/app.js?v=20260917b" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
 <script src="assets/api.js?v=20260917b" defer></script>
-<script src="assets/ai-config.js?v=20260918b" defer></script>
+<script src="assets/ai-config.js?v=20260918c" defer></script>
   <!-- R70：连通性检测依赖 ai-service.js 导出的 window.aiHealthCheck。
        该页此前未加载底座 → typeof window.aiHealthCheck !== 'function'
        → 弹出「当前环境不支持连通性检测」。补上底座引用即可。 -->
-  <script src="assets/ai-service.js?v=20260918b" defer></script>
-<script src="assets/ai-settings.js?v=20260918b" defer></script>
+  <script src="assets/ai-service.js?v=20260918d" defer></script>
+  <script src="assets/ai-cap-registry.js?v=20260918c" defer></script>
+  <script src="assets/ai-cap-image.js?v=20260918c" defer></script>
+  <script src="assets/ai-cap-vision.js?v=20260918c" defer></script>
+  <script src="assets/ai-cap-audio.js?v=20260918c" defer></script>
+  <script src="assets/ai-cap-embed.js?v=20260918c" defer></script>
+  <script src="assets/ai-cap-translate.js?v=20260918c" defer></script>
+  <script src="assets/ai-cap-video.js?v=20260918c" defer></script>
+  <script src="assets/ai-cap-3d.js?v=20260918c" defer></script>
+<script src="assets/ai-settings.js?v=20260918f" defer></script>
+<script src="assets/xt-aiusage.js?v=20260918f" defer></script>
 </body>
 </html>

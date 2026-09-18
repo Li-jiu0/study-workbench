@@ -1,0 +1,7 @@
+799 "    var fl = $('xtmLocBtn'); if (fl) fl.className = 'xtm-fn' + (P.location ? ' on' : '');"
+958 "    var locBtn = $('xtmLocBtn');"
+959 "    if (locBtn) locBtn.onclick = function () { inputSheet('所在位置', '如：图书馆 / 自习室', P.location, function (v) { P.location = v.slice(0, 64); renderChosen(); }); };"
+960 "    var locSelf = $('xtmAtBtn');"
+961 '    if (locSelf) locSelf.onclick = function () {'
+1105 "  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', XTM.boot);"
+EXIT=0

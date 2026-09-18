@@ -1,0 +1,26 @@
+{
+  "pages_32": [
+    "AI.html", "blog_wechat.html", "PPT案例拆解.html", "PPT版式库.html", "万能金句库.html",
+    "个人中心.html", "企业定向库.html", "关于.html", "商务礼仪.html", "四级词汇.html",
+    "场景话术库.html", "学习工作台.html", "学习概括.html", "导入题库.html", "工具.html",
+    "我的文件.html", "时政热点.html", "更多.html", "演示.html", "申论刷题.html",
+    "社区.html", "私聊.html", "管理员.html", "英语.html", "行测.html",
+    "行测刷题.html", "表达.html", "设置.html", "赞助.html", "错题本.html",
+    "面测.html", "面试题库.html"
+  ],
+  "dynamic_4": ["动态.html", "朋友圈.html", "我的动态.html", "朋友圈发布.html"],
+  "ai_no_grid": "AI.html",
+  "s": {
+    "dyn_space": "动态空间",
+    "moments_title": "moments: '动态空间'",
+    "moments_file": "moments: '动态.html'",
+    "nav_blog": "<div class=\"nav-item\" data-page=\"blog\"",
+    "nav_moments": "<div class=\"nav-item\" data-page=\"moments\"",
+    "bottom_grid": "<div class=\"bottom-more-grid\"",
+    "nav_section": "<div class=\"nav-section\"",
+    "more_panel": "id=\"morePanel\"",
+    "data_page_moments": "data-page=\"moments\"",
+    "morepage_card": "<div class=\"morepage-card morepage-list-item\"",
+    "boundaries": ["</aside>", "</nav>", "</body>"]
+  }
+}

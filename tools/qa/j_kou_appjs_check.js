@@ -78,10 +78,15 @@ chk('B11 cover fallback uses cat.dc icon span', app.includes('icSpan(noteCat(n.c
 chk('B12 catBars no longer use c.icon', !app.includes('${c.icon} ${c.name}</span>'));
 
 // ---------- 3) AI demo fab 🤖 → bot data-icon (app.js scope) ----------
-chk('C1 applySettings renders aiAvatar via aiAvatarHtml', app.includes('aiBtn.innerHTML = aiAvatarHtml(s.aiAvatar)'));
+// R86h：助手头像 bug 修复后，applySettings 不再走 #aiFabBtn 死分支（全站无此节点），
+// 改为统一入口 xtApplyAiAvatarToFab()；存储键由误写的 aiIcon 纠正为 aiAvatar。
+chk('C1 applySettings applies aiAvatar via xtApplyAiAvatarToFab', app.includes('xtApplyAiAvatarToFab(s.aiAvatar)') && !app.includes("getElementById('aiFabBtn')"));
+chk('C1b avatar persisted under aiAvatar key (not aiIcon)', app.includes("setSetting('aiAvatar', icon)") && !app.includes("setSetting('aiIcon'"));
 chk('C2 setAiIcon inserts data-icon span (no raw textContent write)', !app.includes('fab.firstChild.textContent = icon'));
 chk('C3 AI avatar emoji→icon map present', app.includes("var AI_AVATAR_ICON_MAP = { '🤖': 'bot', '🧠': 'brain', '💡': 'lightbulb', '📚': 'book' }"));
-chk('C4 fab first text node replaced, badge preserved', app.includes("if (fab.firstChild && fab.firstChild.nodeType === 3) fab.replaceChild(iconSpan, fab.firstChild);"));
+// R86h：旧写法 replaceChild(iconSpan, fab.firstChild) 只替换第一个空白文本节点，
+// 原 bot 图标不会移除 → 按钮里叠出两个头像。改为先清空前置文本节点再插入。
+chk('C4 fab leading text nodes stripped before icon insert (no icon stacking)', app.includes('while (fab.firstChild && fab.firstChild.nodeType === 3) fab.removeChild(fab.firstChild);'));
 
 // ---------- 4) icon-map.js new icons: format compliance ----------
 const NEW_ICONS = ['bot', 'map', 'eye', 'thumbs-up', 'send', 'smile', 'image', 'video', 'brain', 'lightbulb', 'target', 'upload', 'cloud', 'tag'];

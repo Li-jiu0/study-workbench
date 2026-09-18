@@ -369,12 +369,10 @@ function applySettings() {
   window._voiceRate = s.voiceRate;
   window._voiceLang = s.voiceLang;
   
-  // 4. AI助手头像（J 批次：emoji → data-icon span 渲染）
-  var aiBtn = document.getElementById('aiFabBtn');
-  if (aiBtn) {
-    aiBtn.innerHTML = aiAvatarHtml(s.aiAvatar);
-    if (window.lucideAutoRender) window.lucideAutoRender();
-  }
+  // 4. AI助手头像（emoji → data-icon span 渲染；旧的 #aiFabBtn 分支指向全站都不存在的节点，改走 #aiFab）
+  xtApplyAiAvatarToFab(s.aiAvatar);
+  // 4b. AI面板宽度（存储键 aiPanelWidth；历史误存到 aiWidth 键的数据在读取时兼容）
+  xtApplyAiPanelWidth(); // 不传参 → 走 xtAiPanelWidthValue()，历史误存的 aiWidth 也能在加载时生效
   
   // 5. 屏幕常亮
   if (s.keepScreen && window.wakeLock) {
@@ -7489,6 +7487,13 @@ function noteCoverHtml(n) {
   const face = cover ? esc(cover) : icSpan(noteCat(n.category).dc, 26);
   return `<div class="note-cover" style="background:linear-gradient(135deg,${c0},${c1})">${face}${priv}</div>`;
 }
+/* R88-H / T04：位置 chip 渲染助手（只读 location 字符串；空值不渲染；绝不渲染坐标） */
+function blogLocChipHtml(n) {
+  var t = (n && n.location) ? String(n.location).trim() : '';
+  if (!t) return '';
+  return '<span class="blog-loc-chip" style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--primary);background:color-mix(in srgb, var(--primary) 12%, transparent);border-radius:999px;padding:2px 8px;max-width:200px"><span class="nav-icon" data-icon="map-pin" data-icon-size="12"></span><span class="blog-loc-text" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(t) + '</span></span>';
+}
+
 function noteCardHtml(n, opts) {
   opts = opts || {};
   const cat = noteCat(n.category);
@@ -7509,7 +7514,7 @@ function noteCardHtml(n, opts) {
     <div class="note-body">
       <div class="nc-title">${esc(n.title)}</div>
       <div class="nc-excerpt">${esc(n.excerpt)}</div>
-      <div class="nc-meta"><span class="nc-cat">${icSpan(cat.dc, 12)} ${cat.name}</span><span>${fmtTime(n.createdAt)}</span></div>
+      <div class="nc-meta"><span class="nc-cat">${icSpan(cat.dc, 12)} ${cat.name}</span>${blogLocChipHtml(n)}<span>${fmtTime(n.createdAt)}</span></div>
       ${tags ? `<div class="nc-tags">${tags}</div>` : ''}
       <div class="nc-actions">${stats}</div>
       ${acts}
@@ -7755,6 +7760,7 @@ function renderBlogDetail() {
         <span class="nd-cat">${icSpan(cat.dc, 12)} ${cat.name}</span>
         <span>${icSpan('eye', 12)} ${n.views || 0} 次阅读</span>
         <span>${icSpan('clock', 12)} 更新于 ${fmtTime(n.updatedAt || n.createdAt)}</span>
+        ${blogLocChipHtml(n)}
         <span>${n.privacy === 'private' ? '🔒 私密' : icSpan('globe', 12) + ' 公开'}</span>
       </div>
       <div class="note-interact">
@@ -7935,17 +7941,18 @@ function saveBlogNote(status) {
   const privacy = document.getElementById('bePrivacy').value;
   const cover = document.getElementById('beCover').value.trim();
   const tags = document.getElementById('beTags').value.split(/[,，]/).map(s => s.trim()).filter(Boolean).slice(0, 6);
+  const location = (document.getElementById('blogLocChip') && document.getElementById('blogLocChip').getAttribute('data-loc')) || '';
   if (!title) { showToast('⚠️ 请先填写标题'); document.getElementById('beTitle').focus(); return; }
   if (!content.trim()) { showToast('⚠️ 正文不能为空'); return; }
   const now = nowTs();
   const isNew = !editingNoteId;
   if (!isNew) {
     const n = appData.notes.find(x => x.id === editingNoteId);
-    if (n) { Object.assign(n, { title, category: cat, privacy, cover, tags, content, status, excerpt: makeExcerpt(content), updatedAt: now }); }
+    if (n) { Object.assign(n, { title, category: cat, privacy, cover, tags, content, status, excerpt: makeExcerpt(content), location, updatedAt: now }); }
     showToast(status === 'draft' ? '草稿已更新' : '已发布');
   } else {
     const id = uid();
-    appData.notes.push({ id, title, category: cat, privacy, cover, tags, content, status, excerpt: makeExcerpt(content), views: 0, likes: 0, liked: false, comments: [], createdAt: now, updatedAt: now });
+    appData.notes.push({ id, title, category: cat, privacy, cover, tags, content, status, excerpt: makeExcerpt(content), location, views: 0, likes: 0, liked: false, comments: [], createdAt: now, updatedAt: now });
     showToast(status === 'draft' ? '已存为草稿' : '已发布');
   }
   saveData();
@@ -8636,11 +8643,7 @@ function renderAiProviderForm() {
           <div class="setting-desc">悬浮按钮显示的头像</div>
         </div>
         <div class="setting-actions" id="swAiIcon">
-          <!-- data-val 的 emoji 值是功能数据（存 localStorage / AI_AVATAR_ICON_MAP 键），不能动；仅按钮显示换成 data-icon -->
-          <button class="theme-option active" data-val="🤖" onclick="setAiIcon('🤖',this)"><span class="nav-icon" data-icon="bot" data-icon-size="16"></span> 机器人</button>
-          <button class="theme-option" data-val="🧠" onclick="setAiIcon('🧠',this)"><span class="nav-icon" data-icon="brain" data-icon-size="16"></span> 大脑</button>
-          <button class="theme-option" data-val="💡" onclick="setAiIcon('💡',this)"><span class="nav-icon" data-icon="lightbulb" data-icon-size="16"></span> 灯泡</button>
-          <button class="theme-option" data-val="📚" onclick="setAiIcon('📚',this)"><span class="nav-icon" data-icon="book" data-icon-size="16"></span> 书本</button>
+          ${xtAiAvatarOptionHtml()}
         </div>
       </div>
       <div class="setting-row">
@@ -8649,10 +8652,8 @@ function renderAiProviderForm() {
           <div class="setting-desc">AI聊天面板的宽度</div>
         </div>
         <div class="setting-actions">
-          <select class="form-input" id="stAiWidth" onchange="setSetting('aiWidth',this.value);showToast('✅ 已保存')">
-            <option value="320">窄（320px）</option>
-            <option value="380" selected>标准（380px）</option>
-            <option value="450">宽（450px）</option>
+          <select class="form-input" id="stAiWidth" onchange="setSetting('aiPanelWidth',this.value);showToast('✅ 已保存')">
+            ${xtAiWidthOptionHtml()}
           </select>
         </div>
       </div>
@@ -8675,26 +8676,149 @@ function quickSelectModel(mdl) {
   showToast('已选择：' + mdl);
 }
 
+// 助手头像候选：val 为存储值（沿用旧 emoji，兼容历史数据），icon 为 data-icon 图标名
+var AI_AVATAR_OPTIONS = [
+  { val: '\uD83E\uDD16', icon: 'bot', label: '机器人' },
+  { val: '\uD83E\uDDE0', icon: 'brain', label: '大脑' },
+  { val: '\uD83D\uDCA1', icon: 'lightbulb', label: '灯泡' },
+  { val: '\uD83D\uDCDA', icon: 'book', label: '书本' }
+];
+// 读取当前助手头像：优先 aiAvatar 键；历史版本误存到 aiIcon 键的数据一次性兼容
+function xtAiAvatarValue() {
+  var v = '';
+  try {
+    var raw = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+    if (raw && typeof raw === 'object') {
+      if (raw.aiAvatar !== undefined && raw.aiAvatar !== null && raw.aiAvatar !== '') v = String(raw.aiAvatar);
+      else if (raw.aiIcon !== undefined && raw.aiIcon !== null && raw.aiIcon !== '') v = String(raw.aiIcon);
+    }
+  } catch (e) { v = ''; }
+  return v || DEFAULT_SETTINGS.aiAvatar;
+}
+// 存储值（emoji 或图标名）→ data-icon 图标名，未识别兜底 bot
+function xtAiAvatarIconName(v) {
+  if (v && AI_AVATAR_ICON_MAP[v]) return AI_AVATAR_ICON_MAP[v];
+  if (v && window.LUCIDE_ICONS && window.LUCIDE_ICONS[v]) return v;
+  return 'bot';
+}
+// 设置面板的四个候选按钮，选中态按已保存值回显（修复重开设置页永远高亮"机器人"）
+function xtAiAvatarOptionHtml() {
+  var cur = xtAiAvatarValue();
+  return AI_AVATAR_OPTIONS.map(function (o) {
+    return '<button class="theme-option' + (o.val === cur ? ' active' : '') + '" data-val="' + o.val +
+      '" onclick="setAiIcon(\'' + o.val + '\',this)">' +
+      '<span class="nav-icon" data-icon="' + o.icon + '" data-icon-size="16"></span> ' + o.label + '</button>';
+  }).join('');
+}
+// 把助手头像渲染到悬浮按钮 #aiFab：已转 data-icon 的页只改属性（避免新旧两个图标叠加），
+// 仍是 emoji 首节点的页先清掉前置文本节点再插入，ai-mode-badge 一律保留。
+// 用 try 包住：applySettings 可能在 #aiFab 尚未插入 DOM 时执行，不允许抛错打断后续设置项。
+function xtApplyAiAvatarToFab(v) {
+  try {
+    var fab = document.getElementById('aiFab');
+    if (!fab) return;
+    var name = xtAiAvatarIconName(v === undefined ? xtAiAvatarValue() : v);
+    var slot = null;
+    var kids = fab.children || fab.childNodes || [];
+    for (var i = 0; i < kids.length; i++) {
+      var cls = String(kids[i].className || '');
+      if (kids[i].nodeType === 1 && cls.indexOf('nav-icon') >= 0 && cls.indexOf('ai-mode-badge') < 0) { slot = kids[i]; break; }
+    }
+    if (slot) {
+      slot.setAttribute('data-icon', name);
+      slot.setAttribute('data-icon-size', '22');
+    } else {
+      slot = document.createElement('span');
+      slot.className = 'nav-icon';
+      slot.setAttribute('data-icon', name);
+      slot.setAttribute('data-icon-size', '22');
+      while (fab.firstChild && fab.firstChild.nodeType === 3) fab.removeChild(fab.firstChild);
+      if (fab.firstChild) fab.insertBefore(slot, fab.firstChild); else fab.appendChild(slot);
+    }
+    if (window.lucideAutoRender) window.lucideAutoRender();
+  } catch (e) { /* 忽略：头像渲染失败不影响其它设置项 */ }
+}
+// AI 面板宽度候选（选项集合与文案保持原样，仅改为按存储值回显）
+var AI_PANEL_WIDTH_OPTIONS = [
+  { val: '320', label: '窄（320px）' },
+  { val: '380', label: '标准（380px）' },
+  { val: '450', label: '宽（450px）' }
+];
+// 读取 AI 面板宽度：优先 aiPanelWidth 键；历史版本误存到 aiWidth 键的数据一次性兼容
+function xtAiPanelWidthValue() {
+  var v = '';
+  try {
+    var raw = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+    if (raw && typeof raw === 'object') {
+      if (raw.aiPanelWidth !== undefined && raw.aiPanelWidth !== null && raw.aiPanelWidth !== '') v = String(raw.aiPanelWidth);
+      else if (raw.aiWidth !== undefined && raw.aiWidth !== null && raw.aiWidth !== '') v = String(raw.aiWidth);
+    }
+  } catch (e) { v = ''; }
+  return v;
+}
+// 存储值 → CSS 宽度：认 '380'（裸数字按 px）/ '380px' / '85%'；其余（含默认值 normal）返回空串表示不设
+function xtAiPanelWidthCss(v) {
+  var t = String(v === undefined || v === null ? '' : v).trim();
+  if (!t) return '';
+  if (/^\d{2,4}$/.test(t)) return t + 'px';
+  if (/^\d{2,4}px$/.test(t)) return t;
+  if (/^\d{1,3}%$/.test(t)) return t;
+  return '';
+}
+// 应用面板宽度到 #aiPanel：节点不存在直接 return；非法值不设，回退 CSS 默认。同样 try 包住不许抛错
+function xtApplyAiPanelWidth(v) {
+  try {
+    var panel = document.getElementById('aiPanel');
+    if (!panel) return;
+    var css = xtAiPanelWidthCss(v === undefined ? xtAiPanelWidthValue() : v);
+    if (!css) return;
+    panel.style.width = css;
+    panel.style.maxWidth = '92vw'; // 兜住小屏，宽度值再大也不溢出视口
+  } catch (e) { /* 忽略：宽度应用失败不影响其它设置项 */ }
+}
+// 面板宽度下拉：选项集合不变，selected 跟随已保存值（未保存/非法时回落到设计默认值 380）
+function xtAiWidthOptionHtml() {
+  var cur = xtAiPanelWidthValue();
+  var known = false;
+  for (var i = 0; i < AI_PANEL_WIDTH_OPTIONS.length; i++) {
+    if (AI_PANEL_WIDTH_OPTIONS[i].val === cur) { known = true; break; }
+  }
+  if (!known) cur = '380';
+  return AI_PANEL_WIDTH_OPTIONS.map(function (o) {
+    return '<option value="' + o.val + '"' + (o.val === cur ? ' selected' : '') + '>' + o.label + '</option>';
+  }).join('');
+}
+
 // 设置AI助手图标
 function setAiIcon(icon, el) {
-  setSetting('aiIcon', icon);
-  var wrap = el.parentElement;
-  wrap.querySelectorAll('.theme-option').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  var fab = document.getElementById('aiFab');
-  if (fab) {
-    // J 批次：仅替换首个文本节点（原 emoji 头像）为 data-icon span，保留 ai-mode-badge 等后续节点
-    var iconSpan = document.createElement('span');
-    var name = AI_AVATAR_ICON_MAP[icon] || (window.LUCIDE_ICONS && window.LUCIDE_ICONS[icon] ? icon : 'bot');
-    iconSpan.className = 'nav-icon';
-    iconSpan.setAttribute('data-icon', name);
-    iconSpan.setAttribute('data-icon-size', '22');
-    if (fab.firstChild && fab.firstChild.nodeType === 3) fab.replaceChild(iconSpan, fab.firstChild);
-    else fab.insertBefore(iconSpan, fab.firstChild);
-    if (window.lucideAutoRender) window.lucideAutoRender();
+  setSetting('aiAvatar', icon); // 键名统一为 aiAvatar（旧代码误写 aiIcon，导致选择不落盘、刷新后失效）
+  var wrap = el && el.parentElement;
+  if (wrap) {
+    var btns = wrap.querySelectorAll('.theme-option');
+    for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+    el.classList.add('active');
   }
+  xtApplyAiAvatarToFab(icon);
   showToast('✅ 助手头像已更新');
 }
+// 自举兜底：applySettings 触发时机可能早于某些页面把 #aiFab 插入 DOM，这里轮询补一次
+// （与 applySettings 里的 xtApplyAiAvatarToFab 幂等并存：已有 .nav-icon 只改 data-icon 属性，不会叠加）
+(function () {
+  function once() {
+    try {
+      var fab = document.getElementById('aiFab');
+      if (fab) { xtApplyAiAvatarToFab(xtAiAvatarValue()); return true; }
+    } catch (e) { /* 忽略 */ }
+    return false;
+  }
+  function step(n) {
+    if (once()) return;
+    if (n > 0) setTimeout(function () { step(n - 1); }, 200);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { once(); });
+  window.addEventListener('load', function () { once(); });
+  step(20);
+})();
 
 // 显示AI用量统计
 function showAiUsage() {

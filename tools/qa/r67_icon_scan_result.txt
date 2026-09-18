@@ -1,0 +1,5 @@
+===== ai-settings.html =====
+  U+2264 ≤ LESS-THAN OR EQUAL TO          x1 @L571
+  U+2265 ≥ GREATER-THAN OR EQUAL TO       x1 @L154
+===== ai-settings.js =====
+  U+2264 ≤ LESS-THAN OR EQUAL TO          x3 @L21,425,425

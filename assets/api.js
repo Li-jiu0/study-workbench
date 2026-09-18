@@ -66,6 +66,47 @@ if (typeof window.apiAvatarHtml !== 'function') {
   };
 }
 
+/* ---------- 好友展示名统一取值（需求D，2026-09-17）：备注名 > 昵称 > 兜底 ----------
+   背景：好友自己设的「昵称」与「我给对方设的」备注名并存时，各页面曾分别用 nickname /
+         「备注名（原名）」拼接等写法渲染，同一好友在不同位置叫法不一致。
+   规则（全站唯一）：备注名 trim 后非空 → 一律只显示备注名（不再拼原名，也不重复拼接）；
+         备注名为空 / 仅空白字符 → 回退昵称；
+         昵称也为空 → 回退兜底值（对象式第 2 参 / 参数式第 3 参）；
+         兜底值未传 → '未设置昵称'；显式传 '' → 返回 ''（保留调用方原有的空串语义）。
+   数据：备注名字段固定为 peerRemark（server/routers/friends.py、server/routers/chat.py 均返回）。
+   调用：friendDisplayName(friendObj, fallback)         —— 对象式（推荐）
+         friendDisplayName(remark, nickname, fallback)  —— 参数式（兼容旧 imDisplayName 调用点）
+   风格：window.xxx + typeof 守卫，与上方头像工具一致，避免与其它文件顶层声明冲突。 */
+if (typeof window.friendDisplayName !== 'function') {
+  window.friendDisplayName = function (friend, nickname, fallback) {
+    var remark = '';
+    var nick = '';
+    var fb;
+    if (friend !== null && typeof friend === 'object') {
+      // 对象式：备注 peerRemark（兼容别名 remark）、昵称 nickname；第 2 参即兜底值
+      remark = (friend.peerRemark != null) ? friend.peerRemark : ((friend.remark != null) ? friend.remark : '');
+      nick = (friend.nickname != null) ? friend.nickname : '';
+      fb = (typeof nickname === 'undefined') ? undefined : nickname;
+    } else {
+      // 参数式：friend = 备注名，nickname = 昵称，fallback = 兜底值
+      remark = (friend == null) ? '' : friend;
+      nick = (typeof nickname === 'undefined') ? '' : nickname;
+      fb = (typeof fallback === 'undefined') ? undefined : fallback;
+    }
+    var r = (typeof remark === 'string' || typeof remark === 'number') ? String(remark).replace(/^\s+|\s+$/g, '') : '';
+    if (r) return r;                                   // ① 备注名非空 → 只显示备注名
+    var n = (typeof nick === 'string' || typeof nick === 'number') ? String(nick).replace(/^\s+|\s+$/g, '') : '';
+    if (n) return n;                                   // ② 未设备注 → 显示昵称
+    return (fb === undefined || fb === null) ? '未设置昵称' : String(fb); // ③ 兜底
+  };
+}
+if (typeof window.getFriendDisplayName !== 'function') {
+  /* 命名习惯兼容：与 friendDisplayName 完全同义，方便调用方按习惯取名 */
+  window.getFriendDisplayName = function (friend, nickname, fallback) {
+    return window.friendDisplayName(friend, nickname, fallback);
+  };
+}
+
 /* ---- 静默续期：用 refresh 换新 access（成功即一起轮换 refresh）。并发 401 共享同一次刷新 ---- */
 var _refreshBusy = null;
 function _doRefresh() {
@@ -417,6 +458,13 @@ function closeLogoutConfirm() {
 }
 function confirmLogout() { closeLogoutConfirm(); apiForceLogout(); }
 
+/* R88-H / T04：位置 chip 渲染助手（只读 location 字符串；空值不渲染；绝不渲染坐标） */
+function blogLocChipHtml(n) {
+  var t = (n && n.location) ? String(n.location).trim() : '';
+  if (!t) return '';
+  return '<span class="blog-loc-chip" style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--primary);background:color-mix(in srgb, var(--primary) 12%, transparent);border-radius:999px;padding:2px 8px;max-width:200px"><span class="nav-icon" data-icon="map-pin" data-icon-size="12"></span><span class="blog-loc-text" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(t) + '</span></span>';
+}
+
 /* ---------- 发贴卡片（增加作者行 / 修正评论计数） ---------- */
 function noteCardHtml(n, opts) {
   opts = opts || {};
@@ -447,7 +495,7 @@ function noteCardHtml(n, opts) {
     '<div class="note-body">' +
     '<div class="nc-title">' + esc(n.title) + '</div>' +
     '<div class="nc-excerpt">' + esc(n.excerpt) + '</div>' +
-    '<div class="nc-meta"><span class="nc-cat">' + cat.icon + ' ' + cat.name + '</span>' + author + '<span>' + fmtTime(n.createdAt) + '</span></div>' +
+    '<div class="nc-meta"><span class="nc-cat">' + cat.icon + ' ' + cat.name + '</span>' + author + blogLocChipHtml(n) + '<span>' + fmtTime(n.createdAt) + '</span></div>' +
     (tags ? '<div class="nc-tags">' + tags + '</div>' : '') +
     '<div class="nc-actions">' + stats + '</div>' + acts +
     '</div></div>';
@@ -657,6 +705,7 @@ function renderBlogDetail() {
         <span style="cursor:pointer" onclick="openUserHome(${n.author ? n.author.id : 0})"><span class="nav-icon" data-icon="user" data-icon-size="12"></span> ${n.author ? esc(n.author.nickname) : '未知'}</span>
         <span><span class="nav-icon" data-icon="eye" data-icon-size="12"></span> ${n.views || 0} 次阅读</span>
         <span><span class="nav-icon" data-icon="clock" data-icon-size="12"></span> 更新于 ${fmtTime(n.updatedAt || n.createdAt)}</span>
+        ${blogLocChipHtml(n)}
         <span>${n.privacy === 'private' ? '<span class="nav-icon" data-icon="locked" data-icon-size="12"></span> 私密' : '<span class="nav-icon" data-icon="globe" data-icon-size="12"></span> 公开'}</span>
       </div>
       <div class="note-interact">
@@ -775,7 +824,7 @@ async function saveBlogNote(status) {
   var tags = document.getElementById('beTags').value.split(/[,，]/).map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 6);
   if (!title) { showToast('⚠️ 请先填写标题'); document.getElementById('beTitle').focus(); return; }
   if (!content.trim()) { showToast('⚠️ 正文不能为空'); return; }
-  var payload = { title: title, content: content, category: cat, privacy: privacy, status: status, cover: cover, tags: tags };
+  var payload = { title: title, content: content, category: cat, privacy: privacy, status: status, cover: cover, tags: tags, location: (document.getElementById('blogLocChip') && document.getElementById('blogLocChip').getAttribute('data-loc')) || '' };
   try {
     if (editingNoteId) {
       await api('/api/notes/' + editingNoteId, { method: 'PUT', body: payload });

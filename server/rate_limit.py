@@ -25,11 +25,14 @@ from collections import defaultdict, deque
 
 from fastapi import HTTPException, Request
 
-from config import RATE_AI_PER_MIN, RATE_AUTH_PER_MIN, RATE_GLOBAL_PER_MIN
+from config import (RATE_AI_CONSUME_PER_MIN, RATE_AI_PER_MIN,
+                    RATE_AUTH_PER_MIN, RATE_GLOBAL_PER_MIN)
 
 _LIMITS = {
     "auth": RATE_AUTH_PER_MIN,
     "ai": RATE_AI_PER_MIN,
+    # R88-F：用量上报（无人登录态的前端直连场景）单独限流，防刷账本
+    "consume": RATE_AI_CONSUME_PER_MIN,
     "default": RATE_GLOBAL_PER_MIN,
 }
 _buckets: dict[str, deque[float]] = defaultdict(deque)

@@ -1,0 +1,2 @@
+assets/chat-local.js exit=0  OK
+assets/admin-contact.js exit=0  OK

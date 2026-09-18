@@ -1,0 +1,81 @@
+===== class 使用页面 =====
+  sprint-card      -> ['英语.html']
+  typeacc-card     -> (未使用/已废弃)
+  qtab-card        -> ['面测.html']
+  pptpath-card     -> ['演示.html']
+  ed-actions-bar   -> ['社区.html']
+
+===== 互动广场 出现位置（全项目）=====
+  blog_wechat.html x6
+  PPT案例拆解.html x1
+  PPT版式库.html x1
+  万能金句库.html x1
+  个人中心.html x1
+  企业定向库.html x1
+  关于.html x1
+  动态.html x1
+  商务礼仪.html x1
+  四级词汇.html x1
+  场景话术库.html x1
+  学习工作台.html x1
+  工具.html x1
+  时政热点.html x1
+  更多.html x2
+  演示.html x1
+  申论刷题.html x1
+  社区.html x1
+  私聊.html x1
+  管理员.html x1
+  英语.html x1
+  行测.html x1
+  行测刷题.html x1
+  表达.html x1
+  设置.html x1
+  错题本.html x1
+  面测.html x1
+  面试题库.html x1
+  assets/icon-map.js x3
+
+===== 社区.html 的 title / 主标题 =====
+  title: 社区 · 星途
+  学习博客 出现 0 次；社区 出现 9 次；互动广场 出现 1 次
+
+===== 各 HTML 的 <title> =====
+  AI.html                AI
+  AI模拟面试.html            AI模拟面试 - 星途
+  PPT案例拆解.html           PPT案例拆解 · 星途
+  PPT版式库.html            PPT版式库 · 星途
+  PPT素材库.html            PPT模板库 - 星途
+  blog_wechat.html       互动广场 · 星途
+  mock_exam.html         真题模考 · 星途
+  mock_exam_result.html  真题模考 · 成绩单
+  mock_exam_run.html     真题模考 · 考试中
+  万能金句库.html             万能金句库 · 星途
+  个人中心.html              个人中心 · 星途
+  企业定向库.html             企业定向库 · 星途
+  关于.html                关于 · 星途
+  动态.html                动态 · 星途
+  商务礼仪.html              商务礼仪 · 星途
+  四级经验分享.html            四级经验分享 - 星途
+  四级词汇.html              四级词汇 · 星途
+  场景话术库.html             场景话术库 · 星途
+  好友申请.html              加好友 · 星途
+  学习工作台.html             首页 · 星途
+  学途.html                学途 · 个人学习中枢
+  工具.html                工具 · 星途
+  时政热点.html              时政热点 · 星途
+  更多.html                更多功能 · 星途
+  演示.html                演示 · 星途
+  申论刷题.html              申论学习 · 星途
+  登录.html                登录 · 星途
+  社区.html                社区 · 星途
+  私聊.html                私信 · 星途
+  管理员.html               管理后台 · 星途
+  英语.html                英语 · 星途
+  行测.html                行测备考 · 星途
+  行测刷题.html              行测刷题中心 · 星途
+  表达.html                表达 · 星途
+  设置.html                设置 · 星途
+  错题本.html               错题本 · 星途
+  面测.html                面测 · 星途
+  面试题库.html              面试题库 · 星途

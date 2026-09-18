@@ -1,0 +1,963 @@
+
+/* =====================================================================
+   N9-19（20260916w3）：六阶段状态机 + 五段状态条
+   ---------------------------------------------------------------------
+   一、六阶段状态机（IV_STAGES，唯一阶段出口 = ivGotoStage）
+     setup（面试准备）→ reading（读题）→ preparing（准备）→ answering（回答）
+       → submitting（提交）→ reviewing（点评）→ 终态 eval（评定报告）
+   · 进入/退出条件与可回退性见 IV_STAGE_MACHINE / IV_TRANSITIONS 常量表
+   · 系统自动转移：reading→preparing（1.5s）、submitting→reviewing（点评返回）
+                     reviewing→reading（下一题）、reviewing→eval（末题）
+   · 用户可主动转移（状态条点击 / 次级按钮）只走 IV_TRANSITIONS 白名单
+   二、五段状态条（IV_BAR_STAGES）：读题 / 准备 / 回答 / 提交 / 点评
+     · 只映射六阶段的 reading..reviewing 五段（setup 阶段整块对话区隐藏，无状态条）
+     · 每段三态：未开始（灰点）/ 进行中（.active 蓝点 + 蓝色光环 + 粗体）/ 已完成（.done 半透明蓝点）
+   三、三条回退路径（真机可点通）
+     R1 preparing → reading ：状态条「读题」或「重读题目」
+     R2 answering → preparing：状态条「准备」或「再想想（回到准备）」
+     R3 reviewing → answering：状态条「回答」或点评卡「重答本题」（出栈上一次答案与点评）
+   四、每阶段只有一个主按钮：setup=开始面试 / reading=开始准备 / preparing=开始回答
+     / answering=结束回答 / submitting=（AI 正在点评）/ reviewing=下一题|查看面试结果
+   五、设计稿基线：浅紫灰画布 + 白卡片 + Google 蓝主色；AI 面试官 40px 小头像，题目在文字气泡内
+   六、老 WebView 兼容：全程 ES2017 及以下（禁可选链、空值合并、批量替换类新 API、对象展开、可选 catch 绑定）
+   ===================================================================== */
+
+/* ===================== 题库（5 题，与设计稿「第 1/5 题」一致） ===================== */
+var INTERVIEW_QUESTIONS = [
+  {
+    q: '你好，请坐。我们今天的面试大概30分钟。首先，请你做一个简单的自我介绍。',
+    keywords: ['姓名', '学校', '专业', '实习', '经历', '优势', '岗位'],
+    tip: '自我介绍建议包含：基本信息 + 教育背景 + 实习/项目经历 + 为什么适合这个岗位，控制在2-3分钟。',
+    demo: '面试官您好，我叫张明，是华东师范大学人力资源管理专业的应届毕业生。在校期间我担任学生会宣传部部长，主导过两场校园招聘会的宣传组织工作；大三在一家互联网公司实习了6个月，参与执行了两场50人规模的校招。我的优势是执行力和沟通能力比较强，做事有条理、有闭环意识。我了解到这个岗位需要经常对接业务部门和候选人，和我的实习经历、性格特点都比较匹配，希望能有机会加入团队，谢谢。',
+    time: 90, prep: 15
+  },
+  {
+    q: '好的，我了解了。那么你为什么选择我们公司？为什么应聘这个岗位？',
+    keywords: ['了解', '认同', '文化', '发展', '匹配', '兴趣', '规划'],
+    tip: '回答要点：对公司的了解 + 对岗位的理解 + 自身匹配度 + 职业规划，不要只说"工资高、稳定"。',
+    demo: '我选择贵公司主要有三个原因。第一，我关注到公司近两年在智能硬件领域的业务增长很快，说明战略方向清晰、发展空间大；第二，我在实习期间深度使用过贵公司的产品，体验做得很细致，说明公司重视产品打磨，这种文化我很认同；第三，这个岗位的职责和我的专业背景、实习经历匹配度高，我有信心快速上手并做出成果。所以我不是盲目投递，而是认真了解之后的慎重选择。',
+    time: 60, prep: 15
+  },
+  {
+    q: '嗯。那你觉得自己最大的优点和缺点分别是什么？请具体说明。',
+    keywords: ['优点', '缺点', '改进', '例子', '成长', '克服'],
+    tip: '优点要结合岗位需要，缺点要说"正在改进的特点"，不要说致命缺点，也不要说"我太追求完美"这种假缺点。',
+    demo: '我最大的优点是执行力强、闭环意识好。比如实习时负责一场宣讲会的物料准备，我把任务拆成清单、每天跟进进度，最后提前两天完成，没有出现遗漏。缺点是有时候在细节上花费时间偏多，影响整体节奏。我现在的改进方法是先给每项工作设定时间盒，优先保证整体进度，再用碎片时间打磨细节。这段时间的实践让我既保住了质量，也没有拖过进度。',
+    time: 60, prep: 15
+  },
+  {
+    q: '请介绍一次你成功完成某项任务的经历。当时遇到了什么困难，你是怎么解决的？',
+    keywords: ['背景', '目标', '行动', '结果', '反思', '收获', 'STAR'],
+    tip: '用STAR法则：Situation背景 + Task任务 + Action行动 + Result结果，重点说你做了什么、取得了什么成果。',
+    demo: '大三上学期，我负责组织一场300人规模的校园招聘会，这是背景。当时距离活动只剩两周，两位主讲的企业嘉宾临时确认无法到场，这是最大的困难和任务。我的行动分两步：一方面立即梳理备选嘉宾名单，48小时内联系并确认了两位替补嘉宾；另一方面把宣传物料提前，为可能的变动留出缓冲。最终活动如期举办，到场率85%，满意度4.6分。这件事让我学会了：遇到突发情况先稳住节奏、快速找替代方案，并把风险缓冲设计进计划里。',
+    time: 90, prep: 20
+  },
+  {
+    q: '如果在工作中你和同事发生了冲突，你会怎么处理？请举个具体的例子。',
+    keywords: ['沟通', '理解', '换位思考', '解决', '团队', '对事不对人'],
+    tip: '回答要点：先冷静 - 换位思考理解对方 - 主动沟通 - 对事不对人 - 寻求共同解决方案，不要只说"我会忍让"。',
+    demo: '实习时我和另一位同事在活动方案上有分歧：他想走线下摆摊，我建议主推线上推送。我没有急着争论，而是先约他单独沟通，发现他真正担心的是线上报名人数没有保障。于是我提出两者结合：线上为主、线下摆摊做补充引流，并用上一次活动的数据预估了两条渠道各自的报名量。最后他同意了方案，活动报名超额完成。我的原则是对事不对人：先理解对方在担心什么，再用数据和折中方案达成共识，而不是争一个输赢。',
+    time: 60, prep: 15
+  }
+];
+
+/* ===================== 状态 ===================== */
+var currentQuestion = 0;
+var userAnswers = [];
+var userResults = [];
+var interviewStarted = false;
+var timerInterval = null;
+var timeLeft = 90;
+var currentTotal = 90;
+var timerMode = 'answer';      /* 'prep' | 'answer' */
+var currentStage = 'setup';    /* 六阶段之一，见 IV_STAGES */
+var selectedType = 'structured';
+var selectedPos = 'general';
+
+/* 五段状态条（保留旧全局名，供外部引用） */
+var STAGES = ['reading', 'preparing', 'answering', 'submitting', 'reviewing'];
+
+/* ---------- 六阶段状态机 · 常量表 ---------- */
+var IV_STAGES = ['setup', 'reading', 'preparing', 'answering', 'submitting', 'reviewing'];
+var IV_BAR_STAGES = ['reading', 'preparing', 'answering', 'submitting', 'reviewing'];
+var IV_TERMINAL = 'eval';
+var IV_STAGE_LABEL = {
+  'setup': '面试准备',
+  'reading': '读题',
+  'preparing': '准备',
+  'answering': '回答',
+  'submitting': '提交',
+  'reviewing': '点评',
+  'eval': '评定报告'
+};
+/* 每阶段：index=阶段序号（0 起）；barIndex=状态条段序号（-1=不显示在状态条）；
+   primary=该阶段唯一主按钮；tip=阶段说明；timer=该阶段计时类型（''|prep|answer） */
+var IV_STAGE_MACHINE = {
+  'setup': { index: 0, barIndex: -1, primary: '开始面试', tip: '选择面试类型与岗位，准备好后开始', timer: '' },
+  'reading': { index: 1, barIndex: 0, primary: '开始准备', tip: '读题中：想清楚要回答什么，再进入准备', timer: '' },
+  'preparing': { index: 2, barIndex: 1, primary: '开始回答', tip: '准备中：理清思路，倒计时结束会自动开始作答', timer: 'prep' },
+  'answering': { index: 3, barIndex: 2, primary: '结束回答', tip: '回答中：写完点「结束回答」，也可按 Enter 提交', timer: 'answer' },
+  'submitting': { index: 4, barIndex: 3, primary: '', tip: '提交中：AI 面试官正在点评，请稍候', timer: '' },
+  'reviewing': { index: 5, barIndex: 4, primary: '下一题 / 查看面试结果', tip: '已点评：看评分与改进建议，再进入下一题', timer: '' },
+  'eval': { index: 6, barIndex: 5, primary: '重新面试', tip: '评定报告：本次模拟面试已完成', timer: '' }
+};
+/* 用户可主动触发的转移白名单（状态条点击 / 回退按钮）；
+   系统自动转移（reading→preparing、submitting→reviewing、reviewing→reading|eval）不走此表 */
+var IV_TRANSITIONS = {
+  'setup': { 'reading': true },
+  'reading': { 'preparing': true },
+  'preparing': { 'reading': true, 'answering': true },
+  'answering': { 'preparing': true, 'submitting': true },
+  'submitting': {},
+  'reviewing': { 'answering': true },
+  'eval': {}
+};
+/* 各阶段的回退说明（用于状态条 title 与提示条） */
+var IV_BACK_HINT = {
+  'reading': '回到读题，重新审题',
+  'preparing': '回到准备，重新理思路',
+  'answering': '回到回答，重答本题',
+  'submitting': '',
+  'reviewing': ''
+};
+
+/* 运行时数据 */
+var SESSION_QUESTIONS = [];    /* 本次面试题目（含 ?q= 带入的自选题目） */
+var PENDING_PREP_Q = '';       /* 来自「面试准备」页 ?q= 的自选题目 */
+var readingTimer = null;       /* 读题自动推进定时器 */
+var pendingFeedbackTimer = null; /* 提交后点评返回定时器 */
+var toastTimer = null;
+
+/* ===================== 工具 ===================== */
+function ico(name, size) {
+  if (typeof window.lucideIcon !== 'function') return '';
+  return window.lucideIcon(name, size || 16);
+}
+
+/* 猫头鹰头像（内联 SVG，40px 圆形 / 气泡 28px 复用） */
+function owlSvg(size) {
+  return '<svg viewBox="0 0 64 64" width="' + size + '" height="' + size + '" xmlns="http://www.w3.org/2000/svg">'
+    + '<circle cx="32" cy="32" r="32" fill="#E8F0FE"/>'
+    + '<path d="M11 15 L22 22 L14 29 Z" fill="#1765CC"/>'
+    + '<path d="M53 15 L42 22 L50 29 Z" fill="#1765CC"/>'
+    + '<ellipse cx="32" cy="35" rx="20" ry="22" fill="#1A73E8"/>'
+    + '<ellipse cx="32" cy="45" rx="11" ry="11" fill="#FFFFFF"/>'
+    + '<circle cx="23.5" cy="30" r="7.5" fill="#FFFFFF"/>'
+    + '<circle cx="40.5" cy="30" r="7.5" fill="#FFFFFF"/>'
+    + '<circle cx="23.5" cy="30" r="3.2" fill="#0B3B8C"/>'
+    + '<circle cx="40.5" cy="30" r="3.2" fill="#0B3B8C"/>'
+    + '<path d="M32 35 L27.5 39.5 L32 44 L36.5 39.5 Z" fill="#F9AB00"/>'
+    + '</svg>';
+}
+
+function scrollChat() {
+  var m = document.getElementById('chatMessages');
+  if (m) m.scrollTop = m.scrollHeight;
+}
+
+/* ===================== 设置面板选项 ===================== */
+(function bindSetupOptions() {
+  function bind(groupId, attrName, setter) {
+    var opts = document.querySelectorAll('#' + groupId + ' .setup-option');
+    for (var i = 0; i < opts.length; i++) {
+      opts[i].addEventListener('click', function () {
+        var list = document.querySelectorAll('#' + groupId + ' .setup-option');
+        for (var j = 0; j < list.length; j++) list[j].classList.remove('active');
+        this.classList.add('active');
+        setter(this.getAttribute(attrName));
+      });
+    }
+  }
+  bind('typeOptions', 'data-type', function (v) { selectedType = v; });
+  bind('posOptions', 'data-pos', function (v) { selectedPos = v; });
+})();
+
+/* ===================== 顶部进度 ===================== */
+function renderDots() {
+  var box = document.getElementById('progressDots');
+  if (!box) return;
+  var total = SESSION_QUESTIONS.length || INTERVIEW_QUESTIONS.length;
+  var html = '';
+  for (var i = 0; i < total; i++) {
+    var cls = 'dot';
+    if (i < currentQuestion) cls += ' done';
+    else if (i === currentQuestion && interviewStarted) cls += ' cur';
+    html += '<span class="' + cls + '"></span>';
+  }
+  box.innerHTML = html;
+}
+
+function updateProgress() {
+  var total = SESSION_QUESTIONS.length || INTERVIEW_QUESTIONS.length;
+  var info = document.getElementById('questionInfo');
+  if (info) info.textContent = '第 ' + (currentQuestion + 1) + ' / ' + total + ' 题';
+  renderDots();
+}
+
+/* ===================== 六阶段状态机 · 核心 ===================== */
+
+/* 当前题对象（越界兜底第一题，防 ?q= 注入后索引漂移） */
+function currentQ() {
+  return SESSION_QUESTIONS[currentQuestion] || INTERVIEW_QUESTIONS[0];
+}
+
+/* 阶段 → 在 IV_STAGES 中的序号（终态 eval 视为末位） */
+function ivStageNo(stage) {
+  for (var i = 0; i < IV_STAGES.length; i++) { if (IV_STAGES[i] === stage) return i; }
+  if (stage === IV_TERMINAL) return IV_STAGES.length;
+  return 0;
+}
+
+/* 阶段 → 五段状态条段序号；-1 = 不显示在状态条（setup） */
+function ivBarIndex(stage) {
+  for (var i = 0; i < IV_BAR_STAGES.length; i++) { if (IV_BAR_STAGES[i] === stage) return i; }
+  return -1;
+}
+
+/* 用户能否主动触发 currentStage → target（白名单见 IV_TRANSITIONS） */
+function ivCanGoto(target) {
+  var row = IV_TRANSITIONS[currentStage];
+  if (!row) return false;
+  return row[target] === true;
+}
+
+/* classList.toggle(cls, force) 在部分老内核不可靠，统一走显式增删 */
+function ivToggleClass(el, cls, on) {
+  if (!el) return;
+  if (on) el.classList.add(cls);
+  else el.classList.remove(cls);
+}
+
+/* 五段状态条渲染：未开始 / 进行中(.active) / 已完成(.done) + 可点标记与 title */
+function ivRenderStageBar() {
+  var bar = document.getElementById('stageBar');
+  if (!bar) return;
+  var segs = bar.querySelectorAll('.stage-seg');
+  var cur = (currentStage === IV_TERMINAL) ? IV_BAR_STAGES.length : ivBarIndex(currentStage);
+  for (var i = 0; i < segs.length; i++) {
+    var seg = segs[i];
+    seg.classList.remove('active', 'done');
+    if (cur >= 0) {
+      if (i < cur) seg.classList.add('done');
+      else if (i === cur) seg.classList.add('active');
+    }
+    var tgt = IV_BAR_STAGES[i];
+    var label = IV_STAGE_LABEL[tgt] || tgt;
+    var can = ivCanGoto(tgt) ? '1' : '0';
+    seg.setAttribute('data-jump', can);
+    seg.setAttribute('aria-current', i === cur ? 'step' : 'false');
+    if (can === '1') {
+      var hint = IV_BACK_HINT[tgt];
+      seg.setAttribute('title', (cur > i && hint) ? hint : '进入「' + label + '」阶段');
+    } else {
+      seg.setAttribute('title', '当前不可跳到「' + label + '」');
+    }
+  }
+}
+
+/* 当前阶段提示条：第 x/6 阶段 + 该阶段唯一主操作 + 可回退路径 */
+function ivRenderStageTip() {
+  var box = document.getElementById('stageTip');
+  if (!box) return;
+  var h = '<span class="tip-ic" data-icon="info" data-icon-size="14"></span>';
+  if (currentStage === IV_TERMINAL) {
+    h += '<span><b>评定报告</b>　本次模拟面试已完成，可点「重新面试」再练一轮。</span>';
+  } else {
+    var m = IV_STAGE_MACHINE[currentStage] || IV_STAGE_MACHINE['setup'];
+    h += '<span><b>第 ' + (m.index + 1) + ' / 6 阶段 · ' + (IV_STAGE_LABEL[currentStage] || '') + '</b>　' + m.tip;
+    var back = IV_BACK_HINT[currentStage];
+    if (back) h += '　<span class="tip-back">（可回退：' + back + '）</span>';
+    h += '</span>';
+  }
+  box.innerHTML = h;
+  if (typeof window.lucideAutoRender === 'function') {
+    try { window.lucideAutoRender(); } catch (e) { /* 忽略 */ }
+  }
+}
+
+/* 唯一阶段出口：任何阶段切换都经此函数，保证「状态条 / 输入区 / 计时器」三方一致 */
+function ivGotoStage(target, opts) {
+  if (!target) return false;
+  if (target !== IV_TERMINAL && IV_STAGE_MACHINE[target] === undefined) return false;
+  /* 同阶段重复调用也要做一次 UI 同步（初始化时 currentStage 已是 setup） */
+  var changed = (target !== currentStage);
+  currentStage = target;
+
+  /* 读题自动推进定时器：离开读题即取消 */
+  if (target !== 'reading' && readingTimer) { clearTimeout(readingTimer); readingTimer = null; }
+  /* 计时器只服务准备 / 回答两段，其余段一律停表 */
+  if (target !== 'preparing' && target !== 'answering') { clearInterval(timerInterval); timerInterval = null; }
+
+  ivRenderStageBar();
+  ivRenderStageTip();
+
+  /* 输入区：每阶段只暴露一个主按钮 */
+  var readC = document.getElementById('readComposer');
+  var prepC = document.getElementById('prepComposer');
+  var textC = document.getElementById('textComposer');
+  var aux = document.getElementById('answerAux');
+  var comp = document.getElementById('composer');
+  ivToggleClass(readC, 'hidden', target !== 'reading');
+  ivToggleClass(prepC, 'hidden', target !== 'preparing');
+  ivToggleClass(textC, 'hidden', target !== 'answering');
+  ivToggleClass(aux, 'hidden', target !== 'answering');
+  ivToggleClass(comp, 'idle', !(target === 'reading' || target === 'preparing' || target === 'answering'));
+
+  var label = document.getElementById('timerLabel');
+  if (label) label.textContent = (target === 'preparing') ? '准备剩余' : '回答剩余';
+
+  if (opts && opts.focusInput) {
+    var input = document.getElementById('inputBox');
+    if (input) { try { input.focus(); } catch (e) { /* 老内核忽略 */ } }
+  }
+  return changed;
+}
+
+/* 兼容旧函数名 setStage：一律走状态机，不再各自改 DOM */
+function setStage(stage) {
+  if (stage === 'setup' || stage === IV_TERMINAL) { ivGotoStage(stage); return; }
+  if (IV_STAGE_MACHINE[stage] === undefined) return;
+  ivGotoStage(stage);
+}
+
+/* 五段全部标记为已完成（终态用；保留旧名） */
+function markAllStagesDone() {
+  var bar = document.getElementById('stageBar');
+  if (!bar) return;
+  var segs = bar.querySelectorAll('.stage-seg');
+  for (var i = 0; i < segs.length; i++) { segs[i].classList.remove('active'); segs[i].classList.add('done'); }
+}
+
+/* 状态条命中检测（不依赖 Element.closest，兼容老内核） */
+function ivFindSeg(node, root) {
+  while (node && node !== root) {
+    if (node.getAttribute && node.getAttribute('data-stage')) return node;
+    node = node.parentNode;
+  }
+  return null;
+}
+
+/* 状态条点击 = 用户驱动的阶段跳转（含三条回退路径） */
+function ivJumpToStage(target) {
+  if (!target) return;
+  if (target === currentStage) { ivToast('当前已在「' + (IV_STAGE_LABEL[currentStage] || '') + '」阶段'); return; }
+  if (!ivCanGoto(target)) {
+    ivToast('不能从「' + (IV_STAGE_LABEL[currentStage] || '') + '」跳到「' + (IV_STAGE_LABEL[target] || '') + '」');
+    return;
+  }
+  var key = currentStage + '->' + target;
+  if (key === 'setup->reading') { startInterview(); return; }
+  if (key === 'reading->preparing') { finishReading(); return; }
+  if (key === 'preparing->reading') { backToReading(); return; }
+  if (key === 'preparing->answering') { beginAnswering(); return; }
+  if (key === 'answering->preparing') { backToPreparing(); return; }
+  if (key === 'answering->submitting') { sendMessage(); return; }
+  if (key === 'reviewing->answering') { reanswerCurrent(); return; }
+}
+
+function ivBindStageBar() {
+  var bar = document.getElementById('stageBar');
+  if (!bar || bar.getAttribute('data-bound') === '1') return;
+  bar.setAttribute('data-bound', '1');
+  bar.addEventListener('click', function (ev) {
+    var seg = ivFindSeg(ev.target || ev.srcElement, bar);
+    if (seg) ivJumpToStage(seg.getAttribute('data-stage'));
+  });
+  bar.addEventListener('keydown', function (ev) {
+    var k = ev.key || '';
+    if (k !== 'Enter' && k !== ' ' && k !== 'Spacebar') return;
+    var seg = ivFindSeg(ev.target || ev.srcElement, bar);
+    if (!seg) return;
+    if (ev.preventDefault) ev.preventDefault();
+    ivJumpToStage(seg.getAttribute('data-stage'));
+  });
+}
+
+/* ===================== 阶段动作（每阶段唯一主按钮 / 三条回退） ===================== */
+
+/* reading → preparing（主按钮「开始准备」或读题 1.5s 自动） */
+function finishReading() {
+  if (currentStage !== 'reading') return;
+  if (readingTimer) { clearTimeout(readingTimer); readingTimer = null; }
+  ivGotoStage('preparing');
+  startTimer(currentQ().prep || 15, 'prep');
+}
+
+/* 回退 R1 · preparing → reading（不丢任何输入） */
+function backToReading() {
+  if (currentStage !== 'preparing' && currentStage !== 'answering') return;
+  ivGotoStage('reading');
+  armReadingAutoAdvance();
+  scrollChat();
+  ivToast('已回到读题：重新审题后再进入准备');
+}
+
+/* 回退 R2 · answering → preparing（输入框内容保留） */
+function backToPreparing() {
+  if (currentStage !== 'answering') return;
+  ivGotoStage('preparing');
+  startTimer(currentQ().prep || 15, 'prep');
+  ivToast('已回到准备：思路理清后再「开始回答」');
+}
+
+/* 回退 R3 · reviewing → answering（出栈本题上一次答案与点评） */
+function reanswerCurrent() {
+  if (currentStage !== 'reviewing') return;
+  if (userResults.length > currentQuestion) userResults.length = currentQuestion;
+  if (userAnswers.length > currentQuestion) userAnswers.length = currentQuestion;
+  var messages = document.getElementById('chatMessages');
+  if (messages) {
+    var cards = messages.querySelectorAll('.feedback-card');
+    if (cards.length) messages.removeChild(cards[cards.length - 1]);
+    var umsgs = messages.querySelectorAll('.message.user');
+    if (umsgs.length) messages.removeChild(umsgs[umsgs.length - 1]);
+  }
+  var input = document.getElementById('inputBox');
+  if (input) {
+    input.value = '';
+    input.style.height = 'auto';
+    try { input.focus(); } catch (e) { /* 忽略 */ }
+  }
+  ivGotoStage('answering');
+  startTimer(currentQ().time, 'answer');
+  ivToast('已回到回答：可重写本题答案并重新提交');
+}
+
+/* 读题自动推进：1.5s 后自动进入准备（保留原节奏，同时给出主按钮） */
+function armReadingAutoAdvance() {
+  if (readingTimer) { clearTimeout(readingTimer); readingTimer = null; }
+  readingTimer = setTimeout(function () {
+    readingTimer = null;
+    if (currentStage === 'reading' && interviewStarted) finishReading();
+  }, 1500);
+}
+
+/* ===================== 计时 ===================== */
+function startTimer(seconds, mode) {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timeLeft = parseInt(seconds, 10);
+  if (!(timeLeft > 0)) timeLeft = 0;
+  currentTotal = timeLeft > 0 ? timeLeft : 1;
+  timerMode = mode || 'answer';
+  updateTimerDisplay();
+  timerInterval = setInterval(function () {
+    timeLeft--;
+    updateTimerDisplay();
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      if (timerMode === 'prep') { beginAnswering(); }
+      else { autoSubmit(); }
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  var timerValue = document.getElementById('timerValue');
+  var timerFill = document.getElementById('timerFill');
+  if (!timerValue || !timerFill) return;
+  if (timeLeft < 0) timeLeft = 0;
+  timerValue.textContent = timeLeft;
+  timerFill.style.width = Math.max(0, timeLeft / currentTotal * 100) + '%';
+  timerValue.classList.remove('warning', 'danger');
+  if (timerMode === 'answer') {
+    if (timeLeft <= 10) timerValue.classList.add('danger');
+    else if (timeLeft <= 20) timerValue.classList.add('warning');
+  }
+}
+
+/* ===================== 面试主流程 ===================== */
+function startInterview() {
+  interviewStarted = true;
+  currentQuestion = 0;
+  userAnswers = [];
+  userResults = [];
+  if (readingTimer) { clearTimeout(readingTimer); readingTimer = null; }
+  if (pendingFeedbackTimer) { clearTimeout(pendingFeedbackTimer); pendingFeedbackTimer = null; }
+  clearInterval(timerInterval);
+  timerInterval = null;
+
+  document.getElementById('setupPanel').classList.add('hidden');
+  document.getElementById('chatContainer').classList.remove('hidden');
+  document.getElementById('evalPanel').classList.add('hidden');
+  var tp = document.getElementById('topProgress');
+  if (tp) tp.classList.remove('hidden');
+
+  SESSION_QUESTIONS = ivBuildSessionQuestions();
+
+  var messages = document.getElementById('chatMessages');
+  var interviewerArea = messages.querySelector('.interviewer-area');
+  messages.innerHTML = '';
+  if (interviewerArea) messages.appendChild(interviewerArea);
+
+  updateProgress();
+  setTimeout(function () { loadQuestion(0); }, 600);
+}
+
+function loadQuestion(idx) {
+  if (readingTimer) { clearTimeout(readingTimer); readingTimer = null; }
+  clearInterval(timerInterval);
+  timerInterval = null;
+  var q = currentQ();
+  var tv = document.getElementById('timerValue');
+  var tf = document.getElementById('timerFill');
+  if (tv) tv.textContent = q.time;
+  if (tf) tf.style.width = '100%';
+  addQuestionMessage(idx, q.q);
+  ivGotoStage('reading');
+  updateProgress();
+  armReadingAutoAdvance();
+}
+
+function beginAnswering() {
+  if (currentStage !== 'preparing') return;
+  ivGotoStage('answering');
+  startTimer(currentQ().time, 'answer');
+  var input = document.getElementById('inputBox');
+  if (input) { try { input.focus(); } catch (e) { /* 忽略 */ } }
+}
+
+/* 「结束回答 / 回车 / 倒计时归零」三条入口统一到 submitAnswer */
+function submitAnswer(text, timedOut) {
+  if (currentStage !== 'answering') return;
+  clearInterval(timerInterval);
+  timerInterval = null;
+  ivGotoStage('submitting');
+  if (text) addUserMessage(text);
+  else addUserMessage(timedOut ? '（时间到，未作答）' : '（未作答）');
+  userAnswers.push(text);
+  var input = document.getElementById('inputBox');
+  if (input) { input.value = ''; input.style.height = 'auto'; }
+  showTyping();
+  pendingFeedbackTimer = setTimeout(function () {
+    pendingFeedbackTimer = null;
+    hideTyping();
+    var fb = generateFeedback(text, currentQ());
+    userResults.push(fb);
+    renderFeedbackCard(fb);
+    ivGotoStage('reviewing');   /* submitting → reviewing：系统自动转移 */
+    scrollChat();
+  }, 1300);
+}
+
+function sendMessage() {
+  if (!interviewStarted || currentStage !== 'answering') return;
+  var input = document.getElementById('inputBox');
+  submitAnswer(input ? input.value.replace(/^\s+|\s+$/g, '') : '', false);
+}
+
+function autoSubmit() {
+  if (currentStage !== 'answering') return;
+  var input = document.getElementById('inputBox');
+  var text = input ? input.value.replace(/^\s+|\s+$/g, '') : '';
+  submitAnswer(text, text === '');
+}
+
+/* 点评阶段唯一主按钮：下一题 / 查看面试结果 */
+function nextFromReview() {
+  if (!interviewStarted || currentStage !== 'reviewing') return;
+  if (currentQuestion >= SESSION_QUESTIONS.length - 1) {
+    addAIMessage('好的，今天的面试就到这里。正在生成本次模拟的评定报告——');
+    markAllStagesDone();
+    setTimeout(showEvaluation, 1200);
+  } else {
+    currentQuestion++;
+    loadQuestion(currentQuestion);
+  }
+}
+
+/* 兼容旧函数名，避免隐性死链 */
+function nextQuestion() { nextFromReview(); }
+
+/* ===================== 消息渲染 ===================== */
+function addQuestionMessage(idx, text) {
+  var messages = document.getElementById('chatMessages');
+  var div = document.createElement('div');
+  div.className = 'message ai';
+  div.id = 'qMsg' + idx;
+  var q = currentQ();
+  div.innerHTML =
+    '<div class="msg-avatar">' + owlSvg(28) + '</div>'
+    + '<div class="msg-main">'
+    + '<div class="msg-bubble">' + text + '</div>'
+    + '<div class="q-actions">'
+    + '<button class="q-sub-btn" type="button" onclick="toggleQBlock(\'tip' + idx + '\')">' + ico('lightbulb', 14) + '答题提示</button>'
+    + '<button class="q-sub-btn" type="button" onclick="toggleQBlock(\'demo' + idx + '\')">' + ico('file-text', 14) + '查看示范回答</button>'
+    + '</div>'
+    + '<div class="q-block hidden" id="tip' + idx + '"><div class="q-block-t">' + ico('lightbulb', 14) + '答题提示</div><p>' + q.tip + '</p></div>'
+    + '<div class="q-block hidden" id="demo' + idx + '"><div class="q-block-t">' + ico('file-text', 14) + '示范回答</div><p>' + q.demo + '</p></div>'
+    + '</div>';
+  messages.appendChild(div);
+  scrollChat();
+}
+
+function addAIMessage(text) {
+  var messages = document.getElementById('chatMessages');
+  var msgDiv = document.createElement('div');
+  msgDiv.className = 'message ai';
+  msgDiv.innerHTML =
+    '<div class="msg-avatar">' + owlSvg(28) + '</div>'
+    + '<div class="msg-main"><div class="msg-bubble">' + text + '</div></div>';
+  messages.appendChild(msgDiv);
+  scrollChat();
+}
+
+function addUserMessage(text) {
+  var messages = document.getElementById('chatMessages');
+  var msgDiv = document.createElement('div');
+  msgDiv.className = 'message user';
+  msgDiv.innerHTML =
+    '<div class="msg-avatar">' + ico('user', 16) + '</div>'
+    + '<div class="msg-bubble">' + text + '</div>';
+  messages.appendChild(msgDiv);
+  scrollChat();
+}
+
+function showTyping() {
+  var messages = document.getElementById('chatMessages');
+  var typingDiv = document.createElement('div');
+  typingDiv.className = 'message ai';
+  typingDiv.id = 'typingIndicator';
+  typingDiv.innerHTML =
+    '<div class="msg-avatar">' + owlSvg(28) + '</div>'
+    + '<div class="msg-main"><div class="msg-bubble"><div class="typing-indicator"><span class="typing-text">AI 正在点评</span><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div></div>';
+  messages.appendChild(typingDiv);
+  scrollChat();
+}
+
+function hideTyping() {
+  var typing = document.getElementById('typingIndicator');
+  if (typing && typing.parentNode) typing.parentNode.removeChild(typing);
+}
+
+/* 题目卡内次级按钮：展开 / 收起（页内区块，替代悬浮球与弹窗） */
+function toggleQBlock(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('hidden');
+  if (!el.classList.contains('hidden')) scrollChat();
+}
+
+/* ===================== 单题点评（三维评分条 + 文本反馈） ===================== */
+function generateFeedback(answer, question) {
+  var a = String(answer || '');
+  var len = a.length;
+  var kws = question.keywords || [];
+  var matched = [];
+  var missing = [];
+  var i;
+  for (i = 0; i < kws.length; i++) {
+    if (a.indexOf(kws[i]) >= 0) matched.push(kws[i]);
+    else missing.push(kws[i]);
+  }
+  var structWords = ['第一', '第二', '第三', '首先', '其次', '再次', '最后', '总之', '背景', '行动', '结果'];
+  var hasStruct = false;
+  for (i = 0; i < structWords.length; i++) { if (a.indexOf(structWords[i]) >= 0) { hasStruct = true; break; } }
+  var exampleWords = ['例如', '比如', '曾经', '一次', '项目', '实习', '案例', '举例'];
+  var hasExample = false;
+  for (i = 0; i < exampleWords.length; i++) { if (a.indexOf(exampleWords[i]) >= 0) { hasExample = true; break; } }
+
+  var empty = len === 0;
+  var expr = empty ? 12 : (len >= 120 ? 88 : len >= 80 ? 78 : len >= 50 ? 66 : len >= 25 ? 52 : 34);
+  if (hasStruct && !empty) expr = Math.min(96, expr + 8);
+  var depth = empty ? 10 : Math.min(96, (len >= 150 ? 85 : len >= 90 ? 74 : len >= 50 ? 60 : len >= 25 ? 46 : 30) + (hasExample ? 8 : 0) + Math.min(8, matched.length * 2));
+  /* 自选题目无内置关键词 → 关键词覆盖维度退化为「篇幅 + 事例」，避免除零得 NaN */
+  var kwRatio = kws.length ? (matched.length / kws.length) : 0;
+  var match = empty ? 12 : Math.min(96, Math.round(kwRatio * 62) + (len >= 40 ? 16 : 6) + (hasExample ? 10 : 4) + 8);
+
+  var good = [];
+  var bad = [];
+  if (!empty) {
+    if (len >= 50) good.push('回答篇幅适中，能把要点展开讲清楚');
+    else bad.push('回答偏短（约 ' + len + ' 字），建议把每个要点展开成 2-3 句话');
+    if (hasStruct) good.push('有分点/分层意识，表达条理清晰');
+    else bad.push('缺少明显的分点结构，建议用"第一/其次/最后"组织内容');
+    if (hasExample) good.push('结合了具体事例，内容更有说服力');
+    else bad.push('缺少具体事例或数据支撑，说服力不足');
+    if (matched.length >= 3) good.push('覆盖了 ' + matched.length + ' 个关键要点（' + matched.slice(0, 3).join('、') + ' 等）');
+    else if (matched.length > 0) bad.push('只覆盖了 ' + matched.length + ' 个关键要点，还可补充：' + missing.slice(0, 3).join('、'));
+    else if (kws.length) bad.push('几乎没有触及本题关键要点，可围绕：' + kws.slice(0, 3).join('、'));
+    else bad.push('本题为自选题目，无内置要点清单；建议补一句落点，把经历挂到岗位要求上');
+  } else {
+    good.push('未作答，暂无明显亮点；完成作答后可生成针对性点评');
+    bad.push('本题未作答，只能得到底分，实战中这是最影响印象分的情况');
+  }
+
+  return { expr: expr, depth: depth, match: match, good: good, bad: bad, advice: question.tip, demo: question.demo };
+}
+
+function renderFeedbackCard(fb) {
+  var messages = document.getElementById('chatMessages');
+  var div = document.createElement('div');
+  div.className = 'feedback-card';
+  var isLast = currentQuestion >= SESSION_QUESTIONS.length - 1;
+
+  function bar(label, v) {
+    return '<div class="fb-bar-row"><span class="fb-bar-label">' + label + '</span>'
+      + '<span class="fb-bar-track"><span class="fb-bar-fill" style="width:' + v + '%"></span></span>'
+      + '<span class="fb-bar-val">' + v + '</span></div>';
+  }
+  function lis(arr) {
+    var s2 = '';
+    for (var i = 0; i < arr.length; i++) s2 += '<li>' + arr[i] + '</li>';
+    return s2;
+  }
+
+  div.innerHTML =
+    '<div class="fb-title">' + ico('chart-bar', 16) + '<span>本题点评 · 第 ' + (currentQuestion + 1) + ' 题</span></div>'
+    + '<div class="fb-bars">'
+    + bar('表达逻辑', fb.expr)
+    + bar('内容深度', fb.depth)
+    + bar('岗位匹配度', fb.match)
+    + '</div>'
+    + '<div class="fb-sec"><div class="fb-sec-t good">' + ico('check-circle', 15) + '做得好的</div><ul>' + lis(fb.good) + '</ul></div>'
+    + '<div class="fb-sec"><div class="fb-sec-t bad">' + ico('info', 15) + '待改进</div><ul>' + lis(fb.bad) + '</ul></div>'
+    + '<div class="fb-sec"><div class="fb-sec-t">' + ico('zap', 15) + '改进建议</div><p>' + fb.advice + '</p></div>'
+    + '<div class="fb-sec"><div class="fb-sec-t">' + ico('book-open', 15) + '参考回答</div><p>' + fb.demo + '</p></div>'
+    + '<div class="answer-aux">'
+    + '<button class="q-sub-btn" type="button" onclick="reanswerCurrent()">' + ico('rotate-ccw', 14) + '重答本题</button>'
+    + '</div>'
+    + '<button class="fb-next" type="button" onclick="nextFromReview()">' + (isLast ? '查看面试结果' : '下一题') + '</button>';
+  messages.appendChild(div);
+}
+
+/* ===================== 输入模式 Tab：文字 / 语音（灰显） ===================== */
+function switchInputMode(mode) {
+  if (mode === 'voice') {
+    var hint = document.getElementById('modeHint');
+    if (hint) {
+      hint.classList.remove('hidden');
+      setTimeout(function () { hint.classList.add('hidden'); }, 2200);
+    }
+    return;
+  }
+  var t = document.getElementById('tabText');
+  var v = document.getElementById('tabVoice');
+  if (t) t.classList.add('active');
+  if (v) v.classList.remove('active');
+}
+
+/* ===================== 面试评定报告（终态 eval） ===================== */
+function showEvaluation() {
+  ivGotoStage(IV_TERMINAL);
+  document.getElementById('chatContainer').classList.add('hidden');
+  document.getElementById('evalPanel').classList.remove('hidden');
+
+  var n = userResults.length || 1;
+  var sumE = 0, sumD = 0, sumM = 0, i;
+  for (i = 0; i < userResults.length; i++) {
+    sumE += userResults[i].expr;
+    sumD += userResults[i].depth;
+    sumM += userResults[i].match;
+  }
+  var expr = Math.round(sumE / n);
+  var depth = Math.round(sumD / n);
+  var match = Math.round(sumM / n);
+  var overall = Math.round((expr + depth + match) / 3);
+
+  var bar = function (label, v) {
+    return '<div class="fb-bar-row"><span class="fb-bar-label">' + label + '</span>'
+      + '<span class="fb-bar-track"><span class="fb-bar-fill" style="width:' + v + '%"></span></span>'
+      + '<span class="fb-bar-val">' + v + '</span></div>';
+  };
+  document.getElementById('evalScores').innerHTML =
+    '<div class="fb-bars">'
+    + bar('表达逻辑', expr)
+    + bar('内容深度', depth)
+    + bar('岗位匹配度', match)
+    + '</div>';
+
+  var totalLength = 0;
+  for (i = 0; i < userAnswers.length; i++) totalLength += String(userAnswers[i] || '').length;
+  var avgLength = Math.round(totalLength / n);
+
+  document.getElementById('evalGood').innerHTML =
+    '① 完成了 ' + userAnswers.length + ' 道题的模拟流程<br>'
+    + '② 平均回答长度约 ' + avgLength + ' 字，' + (avgLength > 30 ? '表达较为充分' : '可进一步展开') + '<br>'
+    + '③ 三维均分 ' + overall + ' 分，' + (overall >= 70 ? '整体表现稳定' : '仍有明确的提升空间');
+
+  document.getElementById('evalImprove').innerHTML =
+    '① 用STAR法则回答行为类问题（背景-任务-行动-结果）<br>'
+    + '② 多举具体例子和数据，避免空泛观点<br>'
+    + '③ 回答前先分点，"第一/其次/最后"让逻辑更清晰<br>'
+    + '④ 对照每题的参考回答，补齐遗漏的关键要点';
+
+  document.getElementById('evalOverall').innerHTML =
+    '综合评定：' + (overall >= 80 ? '优秀' : overall >= 65 ? '良好' : overall >= 45 ? '中等' : '有待提高')
+    + '（' + overall + ' 分）。'
+    + (overall >= 80 ? '表现全面，继续保持，可在真实面试前再打磨自我介绍和STAR细节。'
+      : overall >= 65 ? '已有不错的面试基础，重点补齐关键词覆盖和事例支撑。'
+        : overall >= 45 ? '有一定基础但套路不熟，建议逐题对照参考回答重练一遍。'
+          : '建议先系统学习面试技巧，从自我介绍开始，逐题模仿参考回答练习。');
+
+  window.scrollTo(0, 0);
+}
+
+/* 回到 setup（六阶段起点）；保留旧函数名 */
+function restartInterview() {
+  document.getElementById('evalPanel').classList.add('hidden');
+  document.getElementById('setupPanel').classList.remove('hidden');
+  var tp = document.getElementById('topProgress');
+  if (tp) tp.classList.add('hidden');
+
+  if (readingTimer) { clearTimeout(readingTimer); readingTimer = null; }
+  if (pendingFeedbackTimer) { clearTimeout(pendingFeedbackTimer); pendingFeedbackTimer = null; }
+  clearInterval(timerInterval);
+  timerInterval = null;
+  interviewStarted = false;
+  currentQuestion = 0;
+  userAnswers = [];
+  userResults = [];
+
+  hideTyping();
+  var messages = document.getElementById('chatMessages');
+  if (messages) {
+    var leftovers = messages.querySelectorAll('.feedback-card, .message.user');
+    var k;
+    for (k = 0; k < leftovers.length; k++) {
+      if (leftovers[k].parentNode) leftovers[k].parentNode.removeChild(leftovers[k]);
+    }
+  }
+  var input = document.getElementById('inputBox');
+  if (input) { input.value = ''; input.style.height = 'auto'; }
+  var tv = document.getElementById('timerValue');
+  var tf = document.getElementById('timerFill');
+  if (tv) tv.textContent = '—';
+  if (tf) tf.style.width = '0%';
+
+  ivGotoStage('setup');
+}
+
+/* ===================== 键盘 ===================== */
+function handleKeyDown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+  var textarea = e.target;
+  textarea.style.height = 'auto';
+  textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+}
+
+/* N9-25（2026-09-15）：返回改为「智能返回」——有历史记录就回到跳转前页面
+   （从个人中心进来就回个人中心），无历史时兜底回首页。原实现硬跳首页，会丢失来处。 */
+function goBack() {
+  if (history.length > 1) { history.back(); return; }
+  var ref = document.referrer || '';
+  if (ref.indexOf('个人中心.html') >= 0) { location.href = '个人中心.html'; return; }
+  location.href = '学习工作台.html';
+}
+
+/* ===================== 轻提示（全站禁原生 alert/confirm/prompt） ===================== */
+function ivToast(msg, state) {
+  var s2 = state || 'info';
+  try {
+    if (typeof window.xtToast === 'function') { window.xtToast(s2, msg); return; }
+    if (typeof window.showToast === 'function') { window.showToast(msg); return; }
+  } catch (e) { /* 继续本地兜底 */ }
+  var el = document.getElementById('ivToast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'ivToast';
+    el.className = 'iv-toast';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg == null ? '' : String(msg);
+  el.classList.add('on');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { el.classList.remove('on'); }, 1800);
+}
+
+/* ===================== 与「面试准备」（assets/iv-prep.js）的交接载荷 ===================== */
+
+/* 解析 ?q=（面试准备页的「去 AI 模拟面试练这道题」会带上题干）；
+   手写解析，不用 URLSearchParams，兼容老内核 */
+function ivReadQuery() {
+  var out = { q: '' };
+  try {
+    var qs = String(window.location.search || '');
+    if (qs.charAt(0) === '?') qs = qs.substring(1);
+    if (!qs) return out;
+    var parts = qs.split('&');
+    for (var i = 0; i < parts.length; i++) {
+      if (!parts[i]) continue;
+      var kv = parts[i].split('=');
+      var k = decodeURIComponent(kv[0] || '');
+      if (k !== 'q') continue;
+      var v = kv.length > 1 ? kv.slice(1).join('=') : '';
+      out.q = decodeURIComponent(v.replace(/\+/g, ' '));
+    }
+  } catch (e) { /* 非法 query 一律忽略 */ }
+  return out;
+}
+
+/* 本次面试题目 = 内置 5 题；若带 ?q= 则把自选题目前置为第 1 题 */
+function ivBuildSessionQuestions() {
+  var list = [];
+  var i;
+  for (i = 0; i < INTERVIEW_QUESTIONS.length; i++) list.push(INTERVIEW_QUESTIONS[i]);
+  if (PENDING_PREP_Q) {
+    list.unshift({
+      q: PENDING_PREP_Q,
+      keywords: [],
+      tip: '这道题来自「面试准备」页。作答要点：先明确问题在问什么 → 用 STAR（背景-任务-行动-结果）组织 → 最后落到岗位匹配度上。',
+      demo: '（本题为你在「面试准备」中自选的题目，暂无内置参考回答。建议先用「第一/其次/最后」分点作答，再对照本题的答题提示自查。）',
+      time: 90,
+      prep: 20,
+      fromPrep: true
+    });
+  }
+  return list;
+}
+
+/* 状态机只读快照：供 QA 脚本 / 其它同域脚本断言六阶段推进（不改 DOM） */
+function ivSnapshot() {
+  return {
+    stage: currentStage,
+    index: ivStageNo(currentStage),
+    inBar: ivBarIndex(currentStage),
+    question: currentQuestion + 1,
+    total: SESSION_QUESTIONS.length || INTERVIEW_QUESTIONS.length,
+    answered: userAnswers.length,
+    reviewed: userResults.length,
+    fromPrep: !!PENDING_PREP_Q
+  };
+}
+
+/* 对外只读句柄（已存在则不覆盖）：
+   window.IV_SNAPSHOT()      → 当前状态机快照
+   window.IV_CAN_GOTO(stage) → 当前是否可主动跳到该阶段
+   window.IV_GOTO(stage)     → 按状态机跳转（不可跳则弹轻提示，不抛错） */
+function ivExportApi() {
+  if (typeof window.IV_SNAPSHOT !== 'function') window.IV_SNAPSHOT = ivSnapshot;
+  if (typeof window.IV_CAN_GOTO !== 'function') {
+    window.IV_CAN_GOTO = function (stage) { return ivCanGoto(stage); };
+  }
+  if (typeof window.IV_GOTO !== 'function') {
+    window.IV_GOTO = function (stage) { ivJumpToStage(stage); };
+  }
+}
+
+/* ===================== 初始化 ===================== */
+function ivInit() {
+  ivBindStageBar();
+  var qs = ivReadQuery();
+  PENDING_PREP_Q = qs.q || '';
+  SESSION_QUESTIONS = ivBuildSessionQuestions();
+  ivExportApi();
+
+  if (PENDING_PREP_Q) {
+    var desc = document.querySelector('#setupPanel .setup-desc');
+    if (desc) desc.innerHTML = '来自「面试准备」的自选题目已作为第 1 题加入本次面试。' + desc.innerHTML;
+  }
+
+  var avatar = document.getElementById('aiAvatar');
+  if (avatar) avatar.innerHTML = owlSvg(40);
+
+  ivGotoStage('setup');
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ivInit);
+else ivInit();
+

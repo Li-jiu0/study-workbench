@@ -1,0 +1,95 @@
+================================================================================
+R91-A 报告 —— 「AI对话记录」页移除服务端记录展示 + 服务端 DELETE 端点 + 角标本机口径
+执行人：software-engineer-任务一（寇豆码）｜代码树：D:\下载的文件\学习工作台
+================================================================================
+
+一、改动文件与字节/行尾
+--------------------------------------------------------------------------------
+1. assets/xt-profile.js
+   BEFORE: 143050 B, crlf=2829, loneLF=0, loneCR=0（纯 CRLF）
+   AFTER : 141684 B, crlf=2788, loneLF=0, loneCR=0（纯 CRLF，回读一致，delta -1366 B）
+2. server/routers/ai.py
+   BEFORE: 17773 B, crlf=336, loneLF=0, loneCR=0（纯 CRLF）
+   AFTER : 18969 B, crlf=361, loneLF=0, loneCR=0（纯 CRLF，回读一致，delta +1196 B）
+3. 新增脚本（本线工具，非站点代码）：tools/qa/r91_edit_a.py、r91_verify.py、
+   r91_jsdom_smoke.js、r91_edit_result.txt、r91_verify.txt、r91_jsdom_report.txt、本报告。
+
+二、xt-profile.js 改动明细（行号为改前原行号；二进制逐条替换+唯一命中断言+写后回读）
+--------------------------------------------------------------------------------
+R1  L570-574  chatBadge()：删除 `AI_CHAT.phase==='ok' && AI_CHAT.total>0` 分支，
+    只按 localChatCount() 显示（本机口径=本机消息总条数）。
+R2  L1531-1540 chatServerHtml() 整体移除（含「本页暂不支持删除」写死文案），原地留
+    R91-A 说明注释；其调用点 chatBodyHtml() 同步重写（见 R3）。
+R3  L1541-1569 chatBodyHtml() 重写：不再有 loading/err/guest 三态分支，直接返回
+    m5PanelHtml()；不再发起 GET /api/ai/history（登录与否均可用）。
+R4  L1572-1598 bindChatView()/paintChat() 重写：打开子视图仅本地渲染 + renderPage()
+    同步角标；删除 fetchAiChat 调用与 #xtpChatRetry 重试路径。
+R5  L1599-1608 prefetchAiChat() 函数移除（原为角标预热拉服务端条数）。
+R6  L2816     boot() 中 prefetchAiChat() 调用点替换为注释。
+R7  L1909-1914 m5PanelHtml()：删除 `var srv = num(AI_CHAT.total)` 与空态中的
+    「服务端还有 N 条…暂不支持在本页删除」文案；空态改为「本机暂无会话记录。去 AI
+    问答页对话后，会自动出现在这里。」
+R8  L1919     列表头副标题删除「（服务端 N 条仅供查看）」。
+R9  L1894     quicktip 改为：「清空全部」会同时删除本机与服务端记录；单条/批量删除
+    仅作用于本机会话。
+R10 L1928-1943 m5ClearAll() 升级：
+    - 清本机（ai_chat_history + META_KEY）后，在线则调 window.api('/api/ai/history',
+      {method:'DELETE'})；成功 toast「已清空本机与服务端对话记录」并 renderPage()；
+    - DELETE 失败降级：只清本机，toast「已清空本机会话；服务端记录删除失败，请稍后重试」；
+    - 未登录：确认框如实提示「服务端记录无法在此删除」，toast「未登录，服务端记录未处理」；
+    - 本机为空但在线时也允许单独清服务端（修复旧版「本已无对话记录」直接 return
+      导致换设备/清过本机后服务端永远清不掉的问题）。
+R11 L1618-1619 R88-M5 头注释更新：服务端现已有 DELETE /api/ai/history；服务端记录
+    不再展示，仅清空全部时同步删除。
+
+三、server/routers/ai.py 改动明细
+--------------------------------------------------------------------------------
+P1  在 GET /history（现 L181-196）之后、POST /chat 之前新增：
+    @router.delete("/history") def ai_history_delete(ids: str="", user, db)
+    - 鉴权与存储：与 GET /history 完全同套 —— get_current_user + SQLAlchemy AiLog，
+      按 user_id 过滤，只能删本人记录；
+    - 不带 ids → 清空本人全部记录；ids=1,2,3（可选）→ 仅删指定主键 id 的本人记录，
+      他人 id 静默忽略；非法 id 返回 400；
+    - 返回 {"ok": True, "deleted": 删除条数}；q.delete(synchronize_session=False)+commit；
+    - 未改 GET /history 与 POST /chat 任何行为；
+    - 设计假设：ai_logs 是扁平消息表（无 session_id 列），故 DELETE 不支持 session_id
+      维度（任务清单中的「session_id 或 ids」取 ids 实现），假设已在上游 docstring 注明；
+      AiUsage 每日计数与模型用量账本不受影响。
+
+四、AI_CHAT 取舍结论（任务 A5）
+--------------------------------------------------------------------------------
+全文件 Grep AI_CHAT：服务端数据（items/groups/total）的全部消费方 = chatServerHtml
+（已移除）、chatBadge 角标分支（已删）、m5PanelHtml 的 srv 文案（已删）、
+prefetchAiChat 角标预热（已删）。没有任何其他 view 依赖 → 结论：GET /api/ai/history
+拉取整体停用（省请求）。jsdom 实测打开 chat 视图全程 0 次 /api/ai/history 请求。
+- fetchAiChat 函数定义保留（已无任何调用点，属死代码），AI_CHAT.total 仅剩函数定义
+  内的 3 处赋值 + 1 处注释，无任何展示读；如需彻底删除可后续单独清理（见「遗留」）。
+- chatGroupHtml/chatMsgRow/chatLocalHtml 为改动前就未被调用的历史兜底代码，本次未动
+  （chatGroupHtml 因 chatServerHtml 移除而新变为死代码），控制改动面故保留。
+
+五、验证结果（各跑一次即判定）
+--------------------------------------------------------------------------------
+1. escheck（node tools/qa/escheck_es2017.js，subprocess 捕获）：rc=0，输出含 "DONE 0" → PASS
+2. ai.py ast.parse → PASS
+3. xt-profile.js 回读：纯 CRLF；「暂不支持删除」=0；chatServerHtml( =0；
+   method:'DELETE' ≥1；「已清空本机与服务端对话记录」≥1；旧 quicktip/「服务端记录
+   仍保留」文案=0 → 全 PASS
+4. jsdom 冒烟（个人资料.html，NODE_PATH 方式加载 jsdom，stub window.api 记录调用）：
+   - 预置 1 个本机会话（2 条消息）→ 主页「AI对话记录」角标显示 "2"
+     （localChatCount 口径为消息总条数，非会话数；首跑断言误写 '1'，属测试脚本
+     预期错误而非产品代码问题，已修正断言）→ HOME PASS
+   - 点击进入 chat 视图：视图打开、M5 面板完整（本机对话记录头 + 种子会话可见 +
+     新 quicktip 文案）、无 xtp-m5-srvnote / 「暂不支持删除」/「服务端记录共」、
+     全程 0 次 /api/ai/history 请求、无 qaErrors/jsdomErrors → CHAT PASS
+   - m5ClearAll 的 confirmBox→DELETE 调用链为页内私有函数，jsdom 侧未触发端到端，
+     该路径为源码级核验（method:'DELETE' 命中 + 文案命中），已在报告如实标注。
+
+六、假设与遗留
+--------------------------------------------------------------------------------
+- 假设 1：DELETE 用查询参数 ids 删部分（ai_logs 无会话维度，session_id 不适用）。
+- 假设 2：角标保留既有「本机消息总条数」口径（未改为会话数），仅去掉服务端分支。
+- 遗留 1：fetchAiChat/AI_CHAT/chatGroupHtml/chatMsgRow/chatLocalHtml 为死代码，
+  建议后续版本统一清理（本次按最小改动原则未动）。
+- 遗留 2：历史已入库的服务端记录在页面上已无处可见；如管理员需人工核查，仍可直接
+  查询 ai_logs 表（页内不再提供只读入口，符合本次产品要求）。
+================================================================================

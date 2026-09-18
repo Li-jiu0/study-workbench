@@ -1,0 +1,12 @@
+obj 4: W=? H=? F=none BPC=?
+obj 6: W=1380 H=162 F=DCTDecode BPC=8
+obj 7: W=1380 H=162 F=FlateDecode BPC=8
+obj 8: W=1380 H=315 F=DCTDecode BPC=8
+obj 9: W=1380 H=315 F=FlateDecode BPC=8
+obj 10: W=134 H=70 F=DCTDecode BPC=8
+obj 11: W=134 H=70 F=FlateDecode BPC=8
+obj 13: W=? H=? F=none BPC=?
+obj 14: W=1380 H=523 F=DCTDecode BPC=8
+obj 15: W=1380 H=523 F=FlateDecode BPC=8
+obj 16: W=97 H=70 F=DCTDecode BPC=8
+obj 17: W=97 H=70 F=FlateDecode BPC=8

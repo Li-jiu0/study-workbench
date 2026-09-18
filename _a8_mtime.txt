@@ -1,0 +1,16 @@
+=== 本任务独占文件（应有改动）===
+学习概括.html                                      bytes=45023   CRLF=837   bareLF=0     mtime=2026-09-16 14:31:34
+学习概括.html.bak-a8-lf2crlf                       bytes=44186   CRLF=0     bareLF=837   mtime=2026-09-16 13:52:19
+assets\notify.js                               bytes=21408   CRLF=0     bareLF=552   mtime=2026-09-16 13:48:46
+
+=== 越界自查：不应被改动 P0 文件 ===
+更多.html                                        bytes=25758   CRLF=419   bareLF=0     mtime=2026-09-16 13:21:42
+工具.html                                        bytes=28247   CRLF=436   bareLF=0     mtime=2026-09-16 13:45:42
+设置.html                                        bytes=138452  CRLF=2016  bareLF=0     mtime=2026-09-16 12:18:13
+个人中心.html                                      bytes=102718  CRLF=1748  bareLF=0     mtime=2026-09-16 13:52:21
+学习工作台.html                                     bytes=52029   CRLF=874   bareLF=0     mtime=2026-09-16 12:57:10
+
+=== 结论 ===
+仅 学习概括.html 被修改（LF->CRLF）+ 新增 .bak-a8-lf2crlf 备份；
+assets/notify.js 未被修改（仍纯 LF / 顶层 0 声明）。
+更多.html / 工具.html 未被写入 —— 入口卡以补丁形式交付，待主理人转派。

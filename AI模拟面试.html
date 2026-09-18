@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>AI模拟面试 - 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260917b">
+<link rel="stylesheet" href="assets/common.css?v=20260918d">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 /* common.css 会锁 html/body 高度并隐藏滚动，本页为独立长页面，恢复滚动 */
@@ -880,6 +880,255 @@ function scrollChat() {
   if (m) m.scrollTop = m.scrollHeight;
 }
 
+/* =====================================================================
+   R88-M4：AI 真实面试接入
+   ---------------------------------------------------------------------
+   目标：把「模拟面试」的【出题 / 多轮追问 / 点评】从本地固定题库 + 确定性公式
+   升级为调用 assets/ai-service.js 的真 AI 链路（window.callAI）。
+
+   硬约束遵守：
+   1. 保留既有 DOM id 与全局函数名（iv* 系列 / ivExportApi 暴露的 3 个全局）。
+   2. 不顶层重复声明已有全局名 —— 本段所有新名字统一 ivAI* 前缀 + 下方 IIFE 内。
+   3. 禁原生 alert/confirm/prompt —— 一律 ivToast。
+   4. 异步流程防重入 —— ivAIState.busy 守卫。
+   5. 老 WebView ES2017 —— 仅 var + function，禁 ?. / ?? / 对象展开 / 模板串 等。
+
+   降级原则（与站点「展示即真可用」一致）：
+   - 真 AI 结果：res.degraded !== true && res.fromPreset !== true。
+   - 底座降级（所有模型失败 -> 本地预设）或调用异常 ->【明确标注】为「本地模拟」，
+     绝不冒充 AI 结果；并在 UI 顶部给出「AI 暂不可用」提示条。
+   ===================================================================== */
+
+/* AI 运行时状态（不污染既有全局名，统一 ivAIPrefix） */
+var ivAIState = {
+  busy: false,          /* 出题 / 点评 进行中，防重入 */
+  aiQuestioned: {},     /* idx -> true：该题题干是否已由 AI 生成 */
+  lastModel: '',        /* 最近一次真实使用的模型名（UI 可展示） */
+  lastDegraded: false   /* 最近一次是否走了本地降级 */
+};
+
+/* 岗位 / 类型 的中文名（用于 prompt，与 DOM data-pos/data-type 对齐） */
+var IVAI_POS_LABEL = {
+  'general': '通用岗', 'operation': '运营岗', 'product': '产品岗',
+  'tech': '技术岗', 'market': '市场岗'
+};
+var IVAI_TYPE_LABEL = {
+  'structured': '结构化面试', 'semi': '半结构化面试', 'behavior': '行为面试'
+};
+
+/* AI 是否可用：callAI 已加载（脚本在 body 末尾，交互时必然已就绪） */
+function ivAIAvailable() {
+  try { return typeof window.callAI === 'function'; } catch (e) { return false; }
+}
+
+/* 统一调用 AI：返回 {ok, text, modelUsed}；ok=false 表示【不可信为 AI 结果】（含底座降级/异常） */
+function ivAICall(funcType, messages, opts, cb) {
+  var done = (typeof cb === 'function') ? cb : function () {};
+  if (!ivAIAvailable()) { done({ ok: false, reason: 'unavailable', text: '' }); return; }
+  var o = opts || {};
+  var settled = false;
+  function finish(res) {
+    if (settled) return;
+    settled = true;
+    done(res);
+  }
+  try {
+    window.callAI(funcType, messages, o).then(function (res) {
+      var text = '';
+      var degraded = false;
+      if (typeof res === 'string') {
+        text = res;
+      } else if (res && typeof res === 'object') {
+        text = (res.text != null) ? String(res.text) : '';
+        degraded = (res.degraded === true || res.fromPreset === true);
+      }
+      if (degraded || !text) {
+        /* 底座降级 / 空文本：不当作 AI 结果 */
+        ivAIState.lastDegraded = true;
+        finish({ ok: false, reason: degraded ? 'degraded' : 'empty', text: text });
+        return;
+      }
+      ivAIState.lastDegraded = false;
+      var used = (res && res.modelUsedName) ? String(res.modelUsedName)
+        : ((res && res.model) ? String(res.model) : '');
+      ivAIState.lastModel = used;
+      finish({ ok: true, text: text, modelUsed: used });
+    })['catch'](function (err) {
+      var msg = (err && err.message) ? String(err.message) : 'AI 调用失败';
+      ivAIState.lastDegraded = true;
+      finish({ ok: false, reason: 'error', message: msg, text: '' });
+    });
+  } catch (e) {
+    finish({ ok: false, reason: 'error', message: (e && e.message) ? String(e.message) : '', text: '' });
+  }
+}
+
+/* 从 AI 文本里抽取 JSON（容错：可能被 ```json 包裹或带前后说明） */
+function ivAIParseJSON(text) {
+  if (!text) return null;
+  var s = String(text);
+  var fence = s.indexOf('```');
+  if (fence >= 0) {
+    s = s.replace(/```[a-zA-Z]*/g, '').replace(/```/g, '');
+  }
+  var i = s.indexOf('{');
+  var j = s.lastIndexOf('}');
+  if (i < 0 || j <= i) return null;
+  var seg = s.substring(i, j + 1);
+  try { return JSON.parse(seg); } catch (e) { return null; }
+}
+
+/* 把任意值安全转成 1-100 的整数分（AI 可能给字符串 / 越界值） */
+function ivAIScore(v, def) {
+  var n = parseInt(v, 10);
+  if (isNaN(n)) return def;
+  if (n < 1) n = 1;
+  if (n > 100) n = 100;
+  return n;
+}
+
+/* 把任意值转成字符串数组（过滤空项、统一 String） */
+function ivAIStrList(v) {
+  var out = [];
+  if (Object.prototype.toString.call(v) === '[object Array]') {
+    for (var i = 0; i < v.length; i++) {
+      var t = (v[i] == null) ? '' : String(v[i]).replace(/^\s+|\s+$/g, '');
+      if (t) out.push(t);
+    }
+  } else if (v != null && String(v).replace(/^\s+|\s+$/g, '')) {
+    out.push(String(v).replace(/^\s+|\s+$/g, ''));
+  }
+  return out;
+}
+
+/* 会话上下文：岗位 / 类型 / 当前是第几题 / 上一题作答（供出题与追问引用） */
+function ivAICtx() {
+  var idx = currentQuestion;
+  return {
+    posLabel: IVAI_POS_LABEL[selectedPos] || '通用岗',
+    typeLabel: IVAI_TYPE_LABEL[selectedType] || '结构化面试',
+    idx: idx,
+    no: idx + 1,
+    total: SESSION_QUESTIONS.length || INTERVIEW_QUESTIONS.length,
+    lastAnswer: (userAnswers.length && idx > 0) ? String(userAnswers[idx - 1] || '') : ''
+  };
+}
+
+/* 在会话区顶部插入一条「AI 状态条」（用于明确告知 AI 可用性/降级），可复用 */
+function ivAIBanner(text, kind) {
+  var messages = document.getElementById('chatMessages');
+  if (!messages) return;
+  var id = 'ivAiBanner';
+  var el = document.getElementById(id);
+  if (!el) {
+    el = document.createElement('div');
+    el.id = id;
+    el.className = 'iv-ai-banner';
+    messages.appendChild(el);
+  }
+  el.className = 'iv-ai-banner ' + (kind || 'info');
+  el.innerHTML = ico(kind === 'warn' ? 'alert-triangle' : 'sparkles', 14)
+    + '<span>' + String(text == null ? '' : text) + '</span>';
+  ivAIEnsureBannerCss();
+  scrollChat();
+}
+function ivAIRemoveBanner() {
+  var el = document.getElementById('ivAiBanner');
+  if (el && el.parentNode) el.parentNode.removeChild(el);
+}
+/* 首次用到才注入样式（避免改既有 CSS 块） */
+var ivAIbannerCssDone = false;
+function ivAIEnsureBannerCss() {
+  if (ivAIbannerCssDone) return;
+  ivAIbannerCssDone = true;
+  try {
+    var st = document.createElement('style');
+    st.id = 'ivAiBannerCss';
+    st.textContent =
+      '.iv-ai-banner{display:flex;align-items:center;gap:6px;margin:8px 12px;padding:8px 10px;' +
+      'border-radius:8px;font-size:13px;line-height:1.4;}' +
+      '.iv-ai-banner.info{background:#E8F0FE;color:#1765CC;}' +
+      '.iv-ai-banner.warn{background:#FEF7E0;color:#B06000;}' +
+      '.iv-ai-banner svg{flex:0 0 auto;}' +
+      '.fb-ai-tag{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:6px;' +
+      'font-size:11px;font-weight:400;background:#E8F0FE;color:#1765CC;vertical-align:middle;}' +
+      '.fb-ai-tag.local{background:#FEF7E0;color:#B06000;}';
+    (document.head || document.getElementsByTagName('head')[0]).appendChild(st);
+  } catch (e) { /* 样式注入失败不影响功能 */ }
+}
+
+/* ---------------- AI 出题（真 AI，按 岗位/类型/阶段 动态生成） ---------------- */
+function ivAIGenQuestion(idx, cb) {
+  var done = (typeof cb === 'function') ? cb : function () {};
+  var ctx = ivAICtx();
+  var sys = '你是一位专业、友好的中文面试官，正在对我进行模拟面试。'
+    + '请严格只输出 JSON，不要任何解释、不要 Markdown 代码块以外的文字。';
+  var prompt = '面试类型：' + ctx.typeLabel + '；应聘岗位：' + ctx.posLabel + '。'
+    + '这是本次面试的第 ' + ctx.no + ' 题（共 ' + ctx.total + ' 题）。'
+    + (ctx.lastAnswer ? ('我上一题的回答要点：' + ctx.lastAnswer.slice(0, 120) + '。') : '')
+    + '请生成一道适合该岗位与面试类型的面试题，'
+    + '并根据我的上一题回答自然地承上启下（若为第 1 题则做开场问候）。'
+    + '输出 JSON：{"q":"题干","keywords":["关键要点1","关键要点2","关键要点3"],'
+    + '"tip":"答题提示(简述作答思路)","demo":"一段示范回答"}';
+  ivAICall('general', [
+    { role: 'system', content: sys },
+    { role: 'user', content: prompt }
+  ], { onFallback: function () { /* 静默，不打断面试 */ } }, function (res) {
+    if (!res || !res.ok) { done({ ok: false, reason: res ? res.reason : 'error' }); return; }
+    var obj = ivAIParseJSON(res.text);
+    if (!obj || !obj.q) { done({ ok: false, reason: 'parse' }); return; }
+    done({
+      ok: true,
+      q: String(obj.q),
+      keywords: ivAIStrList(obj.keywords),
+      tip: obj.tip ? String(obj.tip) : '',
+      demo: obj.demo ? String(obj.demo) : '',
+      modelUsed: res.modelUsed || ''
+    });
+  });
+}
+
+/* ---------------- AI 点评（真 AI，替换字数/关键词公式） ---------------- */
+function ivAIGenFeedback(answer, question, cb) {
+  var done = (typeof cb === 'function') ? cb : function () {};
+  var ctx = ivAICtx();
+  var ans = String(answer == null ? '' : answer);
+  var sys = '你是一位资深中文面试教练。请针对我的作答给出具体、个性化、可执行的点评。'
+    + '严格只输出 JSON，不要任何解释文字。';
+  var prompt = '岗位：' + ctx.posLabel + '；面试类型：' + ctx.typeLabel + '。\n'
+    + '题目：' + String(question && question.q ? question.q : '') + '\n'
+    + '我的回答：' + (ans ? ans : '（本题我没有作答）') + '\n'
+    + '请输出 JSON：{"expr":0-100 表达逻辑分,"depth":0-100 内容深度分,"match":0-100 岗位匹配度分,'
+    + '"good":["做得好的点"],"bad":["待改进的点"],"advice":"一句改进建议",'
+    + '"followup":"针对我的回答再追问一个问题（若无需追问则为空字符串）"}。'
+    + '分数要贴合我这份回答的真实水平，不要千篇一律。';
+  ivAICall('general', [
+    { role: 'system', content: sys },
+    { role: 'user', content: prompt }
+  ], { onFallback: function () { /* 静默 */ } }, function (res) {
+    if (!res || !res.ok) { done({ ok: false, reason: res ? res.reason : 'error' }); return; }
+    var obj = ivAIParseJSON(res.text);
+    if (!obj) { done({ ok: false, reason: 'parse' }); return; }
+    var good = ivAIStrList(obj.good);
+    var bad = ivAIStrList(obj.bad);
+    if (!good.length) good = ['作答已提交，AI 未给出具体亮点'];
+    if (!bad.length) bad = ['AI 未给出具体不足，建议对照参考回答自查'];
+    done({
+      ok: true,
+      expr: ivAIScore(obj.expr, 60),
+      depth: ivAIScore(obj.depth, 60),
+      match: ivAIScore(obj.match, 60),
+      good: good,
+      bad: bad,
+      advice: obj.advice ? String(obj.advice) : (question && question.tip ? String(question.tip) : ''),
+      demo: question && question.demo ? String(question.demo) : '',
+      followup: obj.followup ? String(obj.followup).replace(/^\s+|\s+$/g, '') : '',
+      modelUsed: res.modelUsed || '',
+      source: 'ai'
+    });
+  });
+}
+
 /* ===================== 设置面板选项 ===================== */
 (function bindSetupOptions() {
   function bind(groupId, attrName, setter) {
@@ -1233,6 +1482,55 @@ function loadQuestion(idx) {
   ivGotoStage('reading');
   updateProgress();
   armReadingAutoAdvance();
+  /* R88-M4：真 AI 出题。默认先渲染内置题干（保证「展示即真可用」），
+     再异步请 AI 按 岗位/类型/阶段 + 上文 生成题干并就地替换；失败则保留内置题。 */
+  ivAIQuestion(idx);
+}
+
+/* R88-M4：异步用 AI 生成第 idx 题题干，成功后替换该题卡的题干气泡文本。
+   防重入：同一题只请求一次（ivAIState.aiQuestioned）；AI 不可用时静默保留内置题。 */
+function ivAIQuestion(idx) {
+  if (ivAIState.aiQuestioned[idx]) return;
+  if (!ivAIAvailable()) return;              /* 无 AI：不打扰，保留内置题（不谎称 AI 出题） */
+  ivAIState.aiQuestioned[idx] = true;
+  var el = document.getElementById('qMsg' + idx);
+  var bubble = el ? el.querySelector('.msg-bubble') : null;
+  var builtinText = bubble ? bubble.textContent : '';
+  if (bubble) bubble.setAttribute('data-ai-pending', '1');
+  ivAIGenQuestion(idx, function (res) {
+    if (!res || !res.ok) {
+      /* AI 出题失败：保留内置题，并明确标注本题为内置题库（不冒充 AI 生成）。 */
+      if (bubble) {
+        bubble.removeAttribute('data-ai-pending');
+        bubble.setAttribute('data-ai-src', 'builtin');
+      }
+      return;
+    }
+    /* 仅在用户仍停留在「本题的 reading 阶段」时替换，避免异步返回晚于阶段推进时错位 */
+    if (currentQuestion !== idx || currentStage !== 'reading') return;
+    var cur = currentQ();
+    cur.q = res.q;
+    if (res.keywords && res.keywords.length) cur.keywords = res.keywords;
+    if (res.tip) cur.tip = res.tip;
+    if (res.demo) cur.demo = res.demo;
+    if (bubble) {
+      bubble.removeAttribute('data-ai-pending');
+      bubble.setAttribute('data-ai-src', 'ai');
+      bubble.textContent = res.q;
+    }
+    /* 同步刷新题干卡内 提示 / 示范回答 */
+    var tipEl = document.getElementById('tip' + idx);
+    if (tipEl && res.tip) {
+      var tp = tipEl.querySelector('p');
+      if (tp) tp.textContent = res.tip;
+    }
+    var demoEl = document.getElementById('demo' + idx);
+    if (demoEl && res.demo) {
+      var dp = demoEl.querySelector('p');
+      if (dp) dp.textContent = res.demo;
+    }
+    scrollChat();
+  });
 }
 
 function beginAnswering() {
@@ -1255,15 +1553,32 @@ function submitAnswer(text, timedOut) {
   var input = document.getElementById('inputBox');
   if (input) { input.value = ''; input.style.height = 'auto'; }
   showTyping();
+  /* R88-M4：真 AI 点评（替换原 1300ms 假延迟 + 同步本地公式）。
+     防重入：ivAIState.busy 守卫；AI 不可用时明确降级为「本地模拟点评」并提示。 */
+  var fbQuestion = currentQ();
+  ivAIState.busy = true;
   pendingFeedbackTimer = setTimeout(function () {
     pendingFeedbackTimer = null;
-    hideTyping();
-    var fb = generateFeedback(text, currentQ());
-    userResults.push(fb);
-    renderFeedbackCard(fb);
-    ivGotoStage('reviewing');   /* submitting → reviewing：系统自动转移 */
-    scrollChat();
-  }, 1300);
+    ivAIGenFeedback(text, fbQuestion, function (res) {
+      if (ivAIState.busy !== true) return;   /* 已被 restart 等中断 */
+      ivAIState.busy = false;
+      hideTyping();
+      var fb;
+      if (res && res.ok) {
+        fb = res;
+        ivAIRemoveBanner();
+      } else {
+        /* AI 不可用：不冒充 AI —— 用本地公式兜底，并在卡面 + 顶部明确标注「本地模拟点评」 */
+        fb = ivLocalFeedback(text, fbQuestion);
+        fb.source = 'local';
+        ivAIBanner('AI 暂不可用，本次为本地模拟点评（非 AI 生成）', 'warn');
+      }
+      userResults.push(fb);
+      renderFeedbackCard(fb);
+      ivGotoStage('reviewing');   /* submitting → reviewing：系统自动转移 */
+      scrollChat();
+    });
+  }, 400);
 }
 
 function sendMessage() {
@@ -1365,7 +1680,22 @@ function toggleQBlock(id) {
 }
 
 /* ===================== 单题点评（三维评分条 + 文本反馈） ===================== */
-function generateFeedback(answer, question) {
+/* R88-M4：generateFeedback 保留原签名（对外契约不破），但改为「异步调真 AI」。
+   同步调用方若仍按旧方式取返回值会拿到 undefined —— 全页唯一调用点已改为 cb 形态
+   （见 submitAnswer）。新代码请用 ivAIGenFeedback(answer, question, cb)。 */
+function generateFeedback(answer, question, cb) {
+  ivAIGenFeedback(answer, question, function (res) {
+    if (res && res.ok) { if (typeof cb === 'function') cb(res); return; }
+    /* 兜底：本地模拟点评（明确 source='local'，调用方据此标注，绝不冒充 AI） */
+    var fb = ivLocalFeedback(answer, question);
+    fb.source = 'local';
+    if (typeof cb === 'function') cb(fb);
+  });
+}
+
+/* 本地确定性评分器（原 generateFeedback 逻辑原样保留，现仅作 AI 不可用时的
+   显式降级路径；调用方必须依据 source==='local' 在 UI 上标注「本地模拟点评」）。 */
+function ivLocalFeedback(answer, question) {
   var a = String(answer || '');
   var len = a.length;
   var kws = question.keywords || [];
@@ -1429,8 +1759,17 @@ function renderFeedbackCard(fb) {
     return s2;
   }
 
+  var isLocal = (fb && fb.source === 'local');
+  var srcTag = isLocal
+    ? '<span class="fb-ai-tag local">本地模拟点评</span>'
+    : '<span class="fb-ai-tag">AI 点评</span>';
+  var followupHtml = (fb && fb.followup)
+    ? ('<div class="fb-sec"><div class="fb-sec-t">' + ico('help-circle', 15)
+      + 'AI 追问</div><p>' + fb.followup + '</p></div>')
+    : '';
   div.innerHTML =
-    '<div class="fb-title">' + ico('chart-bar', 16) + '<span>本题点评 · 第 ' + (currentQuestion + 1) + ' 题</span></div>'
+    '<div class="fb-title">' + ico('chart-bar', 16) + '<span>本题点评 · 第 ' + (currentQuestion + 1) + ' 题</span>'
+    + srcTag + '</div>'
     + '<div class="fb-bars">'
     + bar('表达逻辑', fb.expr)
     + bar('内容深度', fb.depth)
@@ -1440,6 +1779,7 @@ function renderFeedbackCard(fb) {
     + '<div class="fb-sec"><div class="fb-sec-t bad">' + ico('info', 15) + '待改进</div><ul>' + lis(fb.bad) + '</ul></div>'
     + '<div class="fb-sec"><div class="fb-sec-t">' + ico('zap', 15) + '改进建议</div><p>' + fb.advice + '</p></div>'
     + '<div class="fb-sec"><div class="fb-sec-t">' + ico('book-open', 15) + '参考回答</div><p>' + fb.demo + '</p></div>'
+    + followupHtml
     + '<div class="answer-aux">'
     + '<button class="q-sub-btn" type="button" onclick="reanswerCurrent()">' + ico('rotate-ccw', 14) + '重答本题</button>'
     + '</div>'
@@ -1536,6 +1876,9 @@ function restartInterview() {
   userResults = [];
 
   hideTyping();
+  ivAIState.busy = false;          /* R88-M4：中断在途 AI 点评 */
+  ivAIState.aiQuestioned = {};
+  ivAIRemoveBanner();
   var messages = document.getElementById('chatMessages');
   if (messages) {
     var leftovers = messages.querySelectorAll('.feedback-card, .message.user');
@@ -1667,6 +2010,11 @@ function ivExportApi() {
 /* ===================== 初始化 ===================== */
 function ivInit() {
   ivBindStageBar();
+  /* R88-M4：AI 会话状态复位 */
+  ivAIState.busy = false;
+  ivAIState.aiQuestioned = {};
+  ivAIState.lastModel = '';
+  ivAIState.lastDegraded = false;
   var qs = ivReadQuery();
   PENDING_PREP_Q = qs.q || '';
   SESSION_QUESTIONS = ivBuildSessionQuestions();
@@ -1688,8 +2036,16 @@ else ivInit();
 
 </script>
 
-<script src="assets/ai-config.js?v=20260918b"></script>
+<script src="assets/ai-config.js?v=20260918c"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260918b"></script>
+<script src="assets/ai-service.js?v=20260918d"></script>
+<script src="assets/ai-cap-registry.js?v=20260918c"></script>
+<script src="assets/ai-cap-image.js?v=20260918c"></script>
+<script src="assets/ai-cap-vision.js?v=20260918c"></script>
+<script src="assets/ai-cap-audio.js?v=20260918c"></script>
+<script src="assets/ai-cap-embed.js?v=20260918c"></script>
+<script src="assets/ai-cap-translate.js?v=20260918c"></script>
+<script src="assets/ai-cap-video.js?v=20260918c"></script>
+<script src="assets/ai-cap-3d.js?v=20260918c"></script>
 </body>
 </html>

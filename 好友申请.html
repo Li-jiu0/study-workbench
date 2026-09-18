@@ -3,8 +3,8 @@
 <head data-page-node-id="fJomWV7v3RBRPEx0RUq9DO">
 <meta charset="UTF-8" data-page-node-id="Dm3mxT6LpVN8XXkKxiV3Zr">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="EX5g2ip0isH3SdQKFF3fnn">
-<title>加好友 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260917b" data-page-node-id="c7p5rq1mDkvvJq2cCDe855">
+<title>添加好友 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260918d" data-page-node-id="c7p5rq1mDkvvJq2cCDe855">
 <style>
   /* common.css 会锁 html/body 高度并隐藏滚动，本页为独立长页面（好友申请列表），恢复滚动 */
   html{height:auto;overflow:auto}
@@ -44,7 +44,7 @@
   <div class="af-head" data-page-node-id="gbSD25B57ZTgM0YMwIZ4Xi">
     <!-- N9-25（2026-09-15）：返回改为「智能返回」——有历史就回上一页，无历史时兜底回私聊页（本页唯一入口） -->
     <button class="af-back" onclick="if(history.length>1){history.back()}else{location.href='私聊.html'}" title="返回" aria-label="返回" data-page-node-id="Az9XrdxnUW3JlrDVi5h1Oz"><span data-icon="arrow-left" data-icon-size="18"></span></button>
-    <div class="af-title" data-page-node-id="7s49AzquiJN8MifzFZOXQU"><span data-icon="plus" data-icon-size="18" style="vertical-align:-3px"></span> 加好友</div>
+    <div class="af-title" data-page-node-id="7s49AzquiJN8MifzFZOXQU"><span data-icon="plus" data-icon-size="18" style="vertical-align:-3px"></span> 添加好友</div>
   </div>
 
   <!-- 搜索找人 -->
@@ -111,7 +111,7 @@
          删除好友入口统一收敛到对方公开主页（个人中心.html?user=id → api.js renderUserHome，uiConfirm 二次确认）。 */
       if (u.isFriend) act = '<button class="af-btn" onclick="afOpenChat(' + u.id + ')">💬 发消息</button>';
       else if (u.blockedMe) act = '<button class="af-btn gray">不可添加</button>';
-      else act = '<button class="af-btn" onclick="addFriend(' + u.id + ',' + i + ')" id="addBtn' + i + '">➕ 加好友</button>';
+      else act = '<button class="af-btn" onclick="addFriend(' + u.id + ',' + i + ')" id="addBtn' + i + '">➕ 添加好友</button>';
       return '<div class="af-row"><div class="af-av" style="cursor:pointer" onclick="openUserHome(' + u.id + ')">' + avatar(u) + '</div>' +
         '<div class="af-info"><div class="af-name" style="cursor:pointer" onclick="openUserHome(' + u.id + ')">' + esc(u.nickname) + '</div><div class="af-sub">@' + esc(u.username) + (u.motto ? ' · ' + esc(u.motto) : '') + '</div></div>' +
         '<div class="af-act">' + act + '</div></div>';
@@ -130,7 +130,7 @@
 
   function loadRequests() {
     var box = document.getElementById('requests');
-    if (!tok()) { box.innerHTML = '<div class="af-empty">🔒 请先<a href="登录.html" style="color:var(--primary)">登录</a>后使用加好友功能</div>'; return; }
+    if (!tok()) { box.innerHTML = '<div class="af-empty">🔒 请先<a href="登录.html" style="color:var(--primary)">登录</a>后使用添加好友功能</div>'; return; }
     req('/api/friends/requests')
       .then(function (d) {
         var inc = d.incoming || [];

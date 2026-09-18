@@ -1,0 +1,39 @@
+[统计] 根目录 HTML 含 assets/ai-service.js 的文件数 = 29 / 总 37
+  含：AI.html, AI模拟面试.html, PPT案例拆解.html, PPT版式库.html, PPT训练.html, blog_wechat.html, 万能金句库.html, 个人中心.html, 企业定向库.html, 动态.html, 商务礼仪.html, 商务礼仪面试.html, 四级备考.html, 四级词汇.html, 场景话术库.html, 央国企笔试.html, 学习博客.html, 学习工作台.html, 工具.html, 时政热点.html, 更多.html, 申论刷题.html, 私聊.html, 管理员.html, 行测刷题.html, 设置.html, 错题本.html, 面试题库.html, 高情商表达.html
+
+[未引入清单] 共 8 个：
+  - PPT素材库.html :: 未在任务清单内（不在指定 27+1 范围）
+  - mock_exam.html :: 考试进行页，刻意跳过
+  - mock_exam_result.html :: 考试成绩页，刻意跳过
+  - mock_exam_run.html :: 考试进行页，刻意跳过
+  - 四级经验分享.html :: 未在任务清单内（不在指定 27+1 范围）
+  - 好友申请.html :: 未在任务清单内（不在指定 27+1 范围）
+  - 学途.html :: 未在任务清单内（不在指定 27+1 范围）
+  - 登录.html :: 登录页，刻意跳过
+
+[抽查] 学习工作台.html
+  命中 3 个：<script src="assets/ai-config.js"> | <script src="assets/ai-presets.js"> | <script src="assets/ai-service.js">
+  顺序：config -> presets -> service
+  重复引入：无
+  带?v=：无
+  带 module/defer/async：无
+  位于 </body> 前：是
+
+[抽查] blog_wechat.html
+  命中 3 个：<script src="assets/ai-config.js"> | <script src="assets/ai-presets.js"> | <script src="assets/ai-service.js">
+  顺序：config -> presets -> service
+  重复引入：无
+  带?v=：无
+  带 module/defer/async：无
+  位于 </body> 前：是
+
+[抽查] 设置.html
+  命中 3 个：<script src="assets/ai-config.js"> | <script src="assets/ai-presets.js"> | <script src="assets/ai-service.js">
+  顺序：config -> presets -> service
+  重复引入：无
+  带?v=：无
+  带 module/defer/async：无
+  位于 </body> 前：是
+
+[全量复检] 新注入标签属性检查：
+  异常标签数 = 0

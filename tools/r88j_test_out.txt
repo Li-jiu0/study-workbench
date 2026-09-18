@@ -1,0 +1,39 @@
+=== T1: xt-region.js 底座（openPicker / 常用城市 LRU / 搜索） ===
+ok   T1 XT_LOC_PICK.openPicker 存在
+ok   T1 recent + RECENT_KEY 契约
+ok   T1 常用城市 LRU ≤8 (got=8)
+ok   T1 最新置顶 (got=黑龙江省 期望=黑龙江省)
+ok   T1 搜索「天河」命中 (广东省 广州市 天河区)
+ok   T1 openPicker 确认回传 text (got=北京市)
+ok   T1 确认前 ok 存在
+ok   T1 openPicker 取消回传 null (got=null)
+ok   T1 未选位置时确认按钮 disabled
+
+=== T2: 个人资料页 地区跳转 + 回写 profile.city + TTL ===
+ok   T2 进入页面消费回写 → profile.city (got=广东省 广州市 天河区)
+ok   T2 回写值一次性消费（已 remove）
+ok   T2 TTL 过期(11min) → 不回写 (got=)
+ok   T2 编辑视图渲染出「地区」行 (frows=5)
+ok   T2 window.xtpOpenRegionPicker 已导出（可测）
+ok   T2 点「地区」行 → 跳转 地区选择.html?cur=..&back=.. (got=地区选择.html?cur=&back=%E4%B8%AA%E4%BA%BA%E8%B5%84%E6%96%99.html)
+
+=== T3: 朋友圈 两按钮统一语义 + _failToast 别名 ===
+ok   T3 _failToast 别名 window.toast 已注入
+ok   T3 两位置按钮都绑定了 onclick
+ok   T3 两按钮指向同一处理函数（统一语义）
+
+=== T4: 私聊 item8 定位入口 + M7 imUploadFile 类型分流 ===
+ok   T4 imPlusPickLocation 已定义
+ok   T4 定位走 openPicker(confirmText=发送)
+ok   T4 确认回调 → imSendLocation
+ok   T4 M7 端点常量就绪
+ok   T4 M7 脚本段可抽取
+ok   T4 imUploadFile 从 私聊.html 段可加载
+ok   T4 .png → image 分流
+ok   T4 .mp4 → video 分流
+ok   T4 .m4a → voice 分流
+ok   T4 .pdf → file 分流（文档降级）
+ok   T4 超限(21MB pdf) → too_large
+
+ALL PASS (29 assertions)
+EXIT=0

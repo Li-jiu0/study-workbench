@@ -1,0 +1,503 @@
+{
+ "ok": true,
+ "value": {
+  "vp": {
+   "w": 320,
+   "h": 400
+  },
+  "composer": {
+   "rect": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0,
+    "top": 0,
+    "bottom": 0,
+    "left": 0,
+    "right": 0
+   },
+   "scrollWidth": 0,
+   "clientWidth": 0,
+   "overflowX": 0,
+   "display": "flex",
+   "flexWrap": "nowrap",
+   "overflowX_css": "visible",
+   "gap": "6px",
+   "padding": "8px",
+   "childCount": 11,
+   "children": [
+    {
+     "i": 0,
+     "tag": "TEXTAREA",
+     "id": "imInput",
+     "cls": "",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "top": 0,
+      "bottom": 0,
+      "left": 0,
+      "right": 0
+     },
+     "display": "block",
+     "title": ""
+    },
+    {
+     "i": 1,
+     "tag": "BUTTON",
+     "id": "",
+     "cls": "im-icon",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "top": 0,
+      "bottom": 0,
+      "left": 0,
+      "right": 0
+     },
+     "display": "block",
+     "title": "表情"
+    },
+    {
+     "i": 2,
+     "tag": "DIV",
+     "id": "imEmojiPanel",
+     "cls": "im-emoji-panel",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "top": 0,
+      "bottom": 0,
+      "left": 0,
+      "right": 0
+     },
+     "display": "none",
+     "title": ""
+    },
+    {
+     "i": 3,
+     "tag": "BUTTON",
+     "id": "imPlusBtn",
+     "cls": "im-icon",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "top": 0,
+      "bottom": 0,
+      "left": 0,
+      "right": 0
+     },
+     "display": "block",
+     "title": "更多"
+    },
+    {
+     "i": 4,
+     "tag": "BUTTON",
+     "id": "imLocBtn",
+     "cls": "im-icon",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "top": 0,
+      "bottom": 0,
+      "left": 0,
+      "right": 0
+     },
+     "display": "block",
+     "title": "定位"
+    },
+    {
+     "i": 5,
+     "tag": "INPUT",
+     "id": "imImgInput",
+     "cls": "",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "top": 0,
+      "bottom": 0,
+      "left": 0,
+      "right": 0
+     },
+     "display": "none",
+     "title": ""
+    },
+    {
+     "i": 6,
+     "tag": "INPUT",
+     "id": "imCameraInput",
+     "cls": "",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "top": 0,
+      "bottom": 0,
+      "left": 0,
+      "right": 0
+     },
+     "display": "none",
+     "title": ""
+    },
+    {
+     "i": 7,
+     "tag": "INPUT",
+     "id": "imFileInput",
+     "cls": "",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "top": 0,
+      "bottom": 0,
+      "left": 0,
+      "right": 0
+     },
+     "display": "none",
+     "title": ""
+    },
+    {
+     "i": 8,
+     "tag": "DIV",
+     "id": "imPlusMask",
+     "cls": "im-plus-mask",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "top": 0,
+      "bottom": 0,
+      "left": 0,
+      "right": 0
+     },
+     "display": "block",
+     "title": ""
+    },
+    {
+     "i": 9,
+     "tag": "DIV",
+     "id": "imPlusMenu",
+     "cls": "im-plus-menu",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "top": 0,
+      "bottom": 0,
+      "left": 0,
+      "right": 0
+     },
+     "display": "block",
+     "title": ""
+    },
+    {
+     "i": 10,
+     "tag": "BUTTON",
+     "id": "",
+     "cls": "im-send",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "top": 0,
+      "bottom": 0,
+      "left": 0,
+      "right": 0
+     },
+     "display": "block",
+     "title": ""
+    }
+   ],
+   "childrenBeyondRight": [],
+   "overlap": []
+  },
+  "locBtn": {
+   "exists": true,
+   "rect": {
+    "x": 0,
+    "y": 0,
+    "w": 0,
+    "h": 0,
+    "top": 0,
+    "bottom": 0,
+    "left": 0,
+    "right": 0
+   },
+   "title": "定位",
+   "onclick": "imPlusPickLocation()",
+   "visible": false,
+   "parentId": "",
+   "parentCls": "im-composer"
+  },
+  "composerIconOrder": [
+   {
+    "id": "",
+    "title": "表情",
+    "x": 0
+   },
+   {
+    "id": "imPlusBtn",
+    "title": "更多",
+    "x": 0
+   },
+   {
+    "id": "imLocBtn",
+    "title": "定位",
+    "x": 0
+   },
+   {
+    "id": "",
+    "title": "",
+    "x": 0
+   }
+  ],
+  "regionFn": {
+   "XTRegion": "undefined",
+   "keys": null,
+   "XT_LOC_PICK": "object",
+   "locPickKeys": [
+    "pick",
+    "last",
+    "isCoordinateText",
+    "LAST_KEY",
+    "RECENT_KEY",
+    "openPicker",
+    "recent"
+   ],
+   "openPicker": "undefined"
+  },
+  "xtlpBeforeOpen": false,
+  "openAttempt": {
+   "opened": true,
+   "err": ""
+  },
+  "xtlpExists": true,
+  "xtlp": {
+   "rect": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 400,
+    "top": 0,
+    "bottom": 400,
+    "left": 0,
+    "right": 320
+   },
+   "position": "fixed",
+   "inset": "0px",
+   "top": "0px",
+   "left": "0px",
+   "right": "0px",
+   "bottom": "0px",
+   "display": "block",
+   "flexDirection": "row",
+   "zIndex": "1200",
+   "overflow": "hidden"
+  },
+  "xtlpBody": {
+   "rect": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 400,
+    "top": 0,
+    "bottom": 400,
+    "left": 0,
+    "right": 320
+   },
+   "display": "flex",
+   "flexDirection": "column",
+   "overflowY": "visible",
+   "minHeight": "0px",
+   "height": "400px",
+   "scrollHeight": 400,
+   "clientHeight": 400,
+   "overflowYpx": 0
+  },
+  "parts": {
+   "head": {
+    "sel": ".xtlp-head",
+    "label": "头部",
+    "found": true,
+    "rect": {
+     "x": 0,
+     "y": 0,
+     "w": 320,
+     "h": 50,
+     "top": 0,
+     "bottom": 50,
+     "left": 0,
+     "right": 320
+    },
+    "height": "50px",
+    "minHeight": "auto",
+    "maxHeight": "none",
+    "overflowY": "visible",
+    "scrollHeight": 49,
+    "clientHeight": 49
+   },
+   "search": {
+    "sel": ".xtlp-search",
+    "label": "搜索",
+    "found": true,
+    "rect": {
+     "x": 12,
+     "y": 57,
+     "w": 296,
+     "h": 33,
+     "top": 57,
+     "bottom": 90,
+     "left": 12,
+     "right": 308
+    },
+    "height": "33px",
+    "minHeight": "auto",
+    "maxHeight": "none",
+    "overflowY": "visible",
+    "scrollHeight": 31,
+    "clientHeight": 31
+   },
+   "map": {
+    "sel": ".xtlp-map",
+    "label": "地图",
+    "found": true,
+    "rect": {
+     "x": 12,
+     "y": 97,
+     "w": 296,
+     "h": 56,
+     "top": 97,
+     "bottom": 153,
+     "left": 12,
+     "right": 308
+    },
+    "height": "56px",
+    "minHeight": "auto",
+    "maxHeight": "none",
+    "overflowY": "hidden",
+    "scrollHeight": 60,
+    "clientHeight": 54
+   },
+   "list": {
+    "sel": ".xtlp-list",
+    "label": "列表",
+    "found": true,
+    "rect": {
+     "x": 12,
+     "y": 160,
+     "w": 296,
+     "h": 180,
+     "top": 160,
+     "bottom": 340,
+     "left": 12,
+     "right": 308
+    },
+    "height": "180px",
+    "minHeight": "180px",
+    "maxHeight": "120px",
+    "overflowY": "auto",
+    "scrollHeight": 602,
+    "clientHeight": 178
+   },
+   "foot": {
+    "sel": ".xtlp-foot",
+    "label": "底部",
+    "found": true,
+    "rect": {
+     "x": 0,
+     "y": 340,
+     "w": 320,
+     "h": 60,
+     "top": 340,
+     "bottom": 400,
+     "left": 0,
+     "right": 320
+    },
+    "height": "60px",
+    "minHeight": "auto",
+    "maxHeight": "none",
+    "overflowY": "visible",
+    "scrollHeight": 59,
+    "clientHeight": 59
+   }
+  },
+  "core": {
+   "innerHeight": 400,
+   "footBottom": 400,
+   "footOverflowPx": 0,
+   "footVisible": true,
+   "listClientHeight": 178,
+   "listMinOK": false,
+   "listScrollable": true,
+   "listScrollTopBefore": 0,
+   "listScrollTopAfter": 424,
+   "listScrollReallyWorks": true
+  },
+  "overheadAbove": {
+   "sumBlocks": 139,
+   "gaps": [
+    7,
+    7
+   ],
+   "fromLayerTopToListTop": 160
+  },
+  "xtlpClass": "xtlp",
+  "xtlpHtmlHead": "<div id=\"__xtLocPicker0\" class=\"xtlp\"><style>.xtlp{position:fixed;inset:0;z-index:1200;background:#f5f7fb;overflow:hidden}.xtlp-body{position:absolute;inset:0;display:flex;flex-direction:column}.xtlp *{box-sizing:border-box}.xtlp-head{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#fff;border-bottom:1px solid #e6e9f0}.xtlp-back{border:1px solid #e6e9f0;background:transparent;border-radius:10px;padding:6px 10px;font-size:13px;color:#6b7280;cursor:pointer}.xtlp-title{font-size:16px;font-weight:700;color:#1f2937}.xtlp-ok{margin-left:auto;border:none;border-radius:10px;padding:8px 16px;font-size:14px;font-weight:700;color:#fff;background:#5B8DEF;cursor:pointer}.xtlp-ok[disabled]{opacity:.45;cursor:default}.xtlp-search{display:flex;align-items:center;gap:8px;margin:10px 12px;padding:9px 12px;border-radius:12px;background:#fff;border:1px solid #e6e9f0}.xtlp-search input{f",
+  "causal": {
+   "mediaBreakpointsWithXtlp": [
+    {
+     "cond": "(max-height: 560px)",
+     "sel": 560,
+     "rules": [
+      ".xtlp-head { padding: 7px 10px; }",
+      ".xtlp-search { margin: 7px 12px; padding: 6px 10px; }",
+      ".xtlp-map { height: 110px; }",
+      ".xtlp-list { margin: 7px 12px 0px; }",
+      ".xtlp-foot { padding: 8px 12px 10px; }"
+     ]
+    }
+   ],
+   "disabledConds": [
+    "(max-height: 560px)"
+   ],
+   "afterDisable": {
+    "footBottom": 400,
+    "footOverflowPx": 0,
+    "footOverflowing": false,
+    "listClientHeight": 178,
+    "mapHeight": 27,
+    "headHeight": 56,
+    "footHeight": 68
+   },
+   "beforeDisable": {
+    "footBottom": 400,
+    "footOverflowing": false,
+    "mapHeight": 56,
+    "headHeight": 50,
+    "footHeight": 60,
+    "listClientHeight": 178
+   }
+  }
+ },
+ "viewport": {
+  "w": 320,
+  "h": 400
+ }
+}

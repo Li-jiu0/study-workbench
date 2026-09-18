@@ -1,0 +1,11 @@
+removed:
+_b3_finish.py
+_b3_out_probe2.txt
+_b3_out_probe3.txt
+_b3_out_qa.txt
+_b3_probe2.py
+_b3_probe3.py
+_b3_probe_out.txt
+_b3_qa.js
+_b3_selfcheck.py
+report appended bytes=16687

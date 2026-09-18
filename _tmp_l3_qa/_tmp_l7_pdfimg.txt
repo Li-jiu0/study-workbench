@@ -1,0 +1,11 @@
+total jpg=5 raw=5
+JPEG 1 -> 5799 bytes
+JPEG 2 -> 7180 bytes
+JPEG 3 -> 2832 bytes
+JPEG 4 -> 9333 bytes
+JPEG 5 -> 2616 bytes
+RAW 1 -> W=1380 H=162 raw=223560 bytes
+RAW 2 -> W=1380 H=315 raw=434700 bytes
+RAW 3 -> W=134 H=70 raw=9380 bytes
+RAW 4 -> W=1380 H=523 raw=721740 bytes
+RAW 5 -> W=97 H=70 raw=6790 bytes

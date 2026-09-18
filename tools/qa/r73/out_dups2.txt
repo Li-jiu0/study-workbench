@@ -1,0 +1,186 @@
+live files = 57
+
+===== REAL 冲突（跨文件 或 同文件多实现） (38) =====
+### MINI_BANK   files=5 occ=5
+     [window] mini-cet.js:2
+     [window] mini-comm.js:2
+     [window] mini-exam.js:2
+     [window] mini-interview.js:2
+     [window] mini-ppt.js:2
+### editProfile   files=2 occ=3
+     [function] api.js:358
+     [function] api.js:1514
+     [function] app.js:8351
+### exportAllNotesMd   files=2 occ=3
+     [function] api.js:859
+     [function] api.js:1630
+     [function] app.js:7829
+### onProfileAvatarFile   files=2 occ=3
+     [function] api.js:372
+     [function] api.js:1556
+     [function] app.js:8387
+### renderPeAvatarPreview   files=2 occ=3
+     [function] api.js:366
+     [function] api.js:1548
+     [function] app.js:8378
+### renderProfilePage   files=2 occ=3
+     [function] api.js:220
+     [function] api.js:1327
+     [function] app.js:8102
+### resetProfileAvatar   files=2 occ=3
+     [function] api.js:386
+     [function] api.js:1584
+     [function] app.js:8421
+### saveProfileEditor   files=2 occ=3
+     [function] api.js:392
+     [function] api.js:1595
+     [function] app.js:8425
+### addBlogComment   files=2 occ=2
+     [function] api.js:729
+     [function] app.js:7805
+### archiveNote   files=2 occ=2
+     [function] api.js:789
+     [function] app.js:7849
+### clearAiProviderConfig   files=2 occ=2
+     [function] api.js:1094
+     [function] app.js:3013
+### closeLogoutConfirm   files=2 occ=2
+     [function] api.js:413
+     [function] app.js:432
+### closeProfileEditor   files=2 occ=2
+     [function] api.js:403
+     [function] app.js:8436
+### confirmLogout   files=2 occ=2
+     [function] api.js:416
+     [function] app.js:435
+### deleteBlogComment   files=2 occ=2
+     [function] api.js:742
+     [function] app.js:7813
+### deleteNote   files=2 occ=2
+     [function] api.js:797
+     [function] app.js:7851
+### doLogout   files=2 occ=2
+     [function] api.js:408
+     [function] app.js:420
+### editorInsertImage   files=2 occ=2
+     [function] api.js:871
+     [function] app.js:7914
+### exportCurrentNoteMd   files=2 occ=2
+     [function] api.js:852
+     [function] app.js:7822
+### globalSearch   files=2 occ=2
+     [function] api.js:891
+     [function] app.js:8516
+### noteCardHtml   files=2 occ=2
+     [function] api.js:419
+     [function] app.js:7491
+### openBlogDetail   files=2 occ=2
+     [function] api.js:561
+     [function] app.js:7662
+### quickSelectModel   files=2 occ=2
+     [function] api.js:1034
+     [function] app.js:8672
+### renderBlogDetail   files=2 occ=2
+     [function] api.js:569
+     [function] app.js:7742
+### renderBlogList   files=2 occ=2
+     [function] api.js:457
+     [function] app.js:7592
+### renderBlogMine   files=2 occ=2
+     [function] api.js:498
+     [function] app.js:7649
+### renderBlogStats   files=2 occ=2
+     [function] api.js:826
+     [function] app.js:8066
+### saveAiProviderForm   files=2 occ=2
+     [function] api.js:1083
+     [function] app.js:8732
+### saveBlogNote   files=2 occ=2
+     [function] api.js:767
+     [function] app.js:7930
+### sendAiMsg   files=2 occ=2
+     [function] api.js:939
+     [function] app.js:3633
+### startEditNote   files=2 occ=2
+     [function] api.js:752
+     [function] app.js:7973
+### testAiConnection   files=2 occ=2
+     [function] api.js:1088
+     [function] app.js:8753
+### toggleNoteFavorite   files=2 occ=2
+     [function] api.js:706
+     [function] app.js:7798
+### toggleNoteLike   files=2 occ=2
+     [function] api.js:698
+     [function] app.js:7793
+### unarchiveNote   files=2 occ=2
+     [function] api.js:793
+     [function] app.js:7850
+### updateProfileUI   files=2 occ=2
+     [function] api.js:210
+     [function] app.js:8446
+### getTodayStr   files=1 occ=2
+     [function] app.js:5663
+     [function] app.js:6463
+### updateGoalProgress   files=1 occ=2
+     [function] app.js:1760
+     [function] app.js:9135
+
+===== 别名导出（同文件 function + window 同号） (18) =====
+### apiGetChatConversations   files=1 occ=2
+     [function] api.js:1195
+     [window] api.js:1205
+### apiSetFriendRemark   files=1 occ=2
+     [function] api.js:1199
+     [window] api.js:1206
+### formatPresence   files=1 occ=2
+     [function] api.js:186
+     [window] api.js:207
+### getTodayStudySeconds   files=1 occ=2
+     [function] app.js:9211
+     [window] app.js:9357
+### getTodayStudyText   files=1 occ=2
+     [function] app.js:9216
+     [window] app.js:9358
+### initStudyTimer   files=1 occ=2
+     [function] app.js:9301
+     [window] app.js:9323
+### lsKey   files=1 occ=2
+     [function] app.js:15
+     [window] app.js:16
+### renderPostStatsOnly   files=1 occ=2
+     [function] app.js:8300
+     [window] app.js:8338
+### resetTodayStudyTime   files=1 occ=2
+     [function] app.js:9234
+     [window] app.js:9242
+### seedStudyLimitUI   files=1 occ=2
+     [function] app.js:9361
+     [window] app.js:9369
+### showAbout   files=1 occ=2
+     [function] app.js:9145
+     [window] app.js:9151
+### showAboutDialog   files=1 occ=2
+     [function] app.js:9154
+     [window] app.js:9189
+### showStudyLimitModal   files=1 occ=2
+     [function] app.js:9275
+     [window] app.js:9298
+### syncStudyLimitUI   files=1 occ=2
+     [function] app.js:9326
+     [window] app.js:9356
+### uiAlert   files=1 occ=2
+     [function] app.js:8820
+     [window] app.js:8859
+### uiConfirm   files=1 occ=2
+     [function] app.js:8802
+     [window] app.js:8858
+### uiPrompt   files=1 occ=2
+     [function] app.js:8836
+     [window] app.js:8860
+### xtRefreshExamBankUI   files=1 occ=2
+     [function] app.js:700
+     [window] app.js:720
+
+===== 顶层 let/const 跨文件重复（潜在 SyntaxError）=====
+(无)

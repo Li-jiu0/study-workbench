@@ -1,0 +1,33 @@
+== ai-page.js (86839 bytes) ==
+  CTX_USAGE_TIP 已删 => True
+  pctTxt 已删 => True
+  短 title 逻辑存在 => True
+  usedTxt K 换算存在 => True
+  旧 title 前缀已删 => True
+  关键词「估算值」0 命中 => True
+  关键词「变橙色」0 命中 => True
+  关键词「变红色」0 命中 => True
+  CTX_RING_C 保留 => True
+  fmtCtxLimitK 保留 => True
+  dasharray 保留 => True
+  阈值 class 保留 => True
+  plainModeLabel 保留 => True
+== AI.html (54284 bytes) ==
+  静态短 title => True
+  旧长 title 已删 => True
+  关键词「估算值」0 命中 => True
+  关键词「变橙色」0 命中 => True
+  圆环在模型钮左侧 => True
+  margin-right:-2px 紧邻 => True
+  圆环 CSS 保留 => True
+EOL ai-page.js CRLF=0 loneLF=1751 loneCR=0 OK=True
+EOL AI.html CRLF=939 loneLF=0 loneCR=0 OK=True
+== 交付行号 ==
+  ai-page.js R67/D 提示注释: 879
+  ai-page.js renderCtxUsage: 884
+  ai-page.js usedTxt 行: 901
+  ai-page.js 短 title 行: 902
+  AI.html 圆环 span: 711
+  AI.html .ai-ctx-usage CSS: 312
+  ai-page.js 总行数: 1752  AI.html 总行数: 940
+ALL DONE

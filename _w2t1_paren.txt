@@ -1,0 +1,20 @@
+line 4 open=0 close=1 ::    1) 每阶段只有一个主按钮：准备=开始回答 / 回答=结束回答 / 点评=下一题
+line 5 open=0 close=1 ::    2) 语音/文字 Tab 二选一，默认文字高亮、语音灰显
+line 6 open=0 close=1 ::    3) AI 面试官降级为 40px 小头像，题目移入文字气泡
+line 7 open=0 close=1 ::    4) AI 画像删除，辅助改为「答题提示」次级按钮
+line 8 open=0 close=1 ::    5) 演示悬浮球删除，改为题目卡内「查看示范回答」次级按钮
+line 9 open=0 close=1 ::    6) 提交后必有反馈：三维评分条 + 优点 + 不足 + 改进建议 + 参考回答
+line 94 open=2 close=1 :: (function bindSetupOptions() {
+line 98 open=2 close=1 ::       opts[i].addEventListener('click', function () {
+line 103 open=0 close=1 ::       });
+line 108 open=1 close=2 :: })();
+line 170 open=2 close=1 ::   timerInterval = setInterval(function () {
+line 178 open=0 close=1 ::   }, 1000);
+line 228 open=2 close=1 ::   setTimeout(function () {
+line 233 open=0 close=1 ::   }, 1500);
+line 254 open=2 close=1 ::   setTimeout(function () {
+line 261 open=0 close=1 ::   }, 1300);
+line 504 open=1 close=0 ::     + (overall >= 80 ? '表现全面，继续保持，可在真实面试前再打磨自我介绍和STAR细节。'
+line 507 open=0 close=1 ::       : '建议先系统学习面试技巧，从自我介绍开始，逐题模仿参考回答练习。');
+line 543 open=2 close=1 :: (function initAvatar() {
+line 546 open=1 close=2 :: })();

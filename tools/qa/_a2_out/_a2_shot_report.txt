@@ -1,0 +1,55 @@
+############################################################
+# 数据源 ORIGIN = http://127.0.0.1:8914
+# 来源         = 本脚本自启的本地静态服务（端口 8914）
+# 是否本地     = 是（验的是本地工作区代码）
+# 时间         = 2026-09-16T06:38:21.710Z
+############################################################
+
+CHROME = C:\Program Files\Google\Chrome\Application\chrome.exe  exists=true
+== 结果 ==
+[
+  {
+    "vp": "1280",
+    "welcomeWrapWidth": 768,
+    "steps": [
+      "drawer_before_open=false",
+      "after_click={\"overlayOpen\":false,\"drawerOpen\":false,\"panelOpen\":true,\"panelZ\":\"330\"}"
+    ],
+    "sideLabel": "模型 · 自动",
+    "panelOpen": true,
+    "overlayAfter": {
+      "overlayOpen": false,
+      "drawerOpen": false,
+      "panelOpen": true,
+      "panelZ": "330"
+    },
+    "labelFollow": {
+      "side": "模型 · GLM-4.7-Flash",
+      "inputLabel": "GLM-4.7-Flash"
+    },
+    "errs": [
+      "CONSOLE_ERR: Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ]
+  },
+  {
+    "vp": "375",
+    "welcomeWrapWidth": 343,
+    "steps": [
+      "drawer_before_open=true",
+      "after_click={\"overlayOpen\":false,\"drawerOpen\":false,\"panelOpen\":true,\"panelZ\":\"330\"}"
+    ],
+    "sideLabel": "模型 · 自动",
+    "panelOpen": true,
+    "overlayAfter": {
+      "overlayOpen": false,
+      "drawerOpen": false,
+      "panelOpen": true,
+      "panelZ": "330"
+    },
+    "labelFollow": {
+      "side": "模型 · GLM-4.7-Flash",
+      "inputLabel": "GLM-4.7-Flash"
+    },
+    "errs": []
+  }
+]

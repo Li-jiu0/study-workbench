@@ -1,0 +1,72 @@
+R93-4 交付报告 —— 视频生成结果始终内嵌播放器，绝不退化成链接
+工程师：寇豆码（software-engineer-任务一）
+日期：2026-09-18
+状态：✅ 完成，escheck DONE 0，jsdom 双路径 24/24 PASS
+
+================================================================
+一、问题定位（先读码核实的结论）
+1. 保存格式：ai-page.js routeCapabilityModel 成功回调里，视频结果以
+   纯文本入 history——'🎬 视频已生成（链接约 24 小时内有效，请及时观看 / 保存）：' + url
+   （state.messages.push + saveCurrentChat，键 ai_chat_history）。
+   首屏播放器是运行时用 doc.createElement('video') 直插 DOM 的，不落盘。
+2. 重渲染入口：loadChat(id)（点历史条目/刷新后恢复会话）→
+   b.mdEl.innerHTML = renderMarkdown(m.content)。
+3. 关键事实：当前 renderMarkdown/inlineMd【没有任何 URL 自动加链逻辑】
+   （全文无 <a> 自动生成），所以重渲染后 URL 实际是「裸 URL 文本」——
+   播放器消失，用户看到一长串链接，感知与「变成链接」一致。
+   修法不依赖加链逻辑，直接在 renderMarkdown 识别视频 URL 输出播放器。
+4. URL 形态（以 ai-cap-video.js 实际产出为准）：结果在 content.video_url，
+   为 .mp4 + X-Tos-Expires=86400 查询串（火山方舟 TOS）。
+
+================================================================
+二、改动文件（仅 2 个）
+1. assets/ai-page.js：138586 → 139831 B，纯 LF（crlf=0/loneCR=0 读回验证）
+   - 新增 videoUrlSplit(text)：按视频后缀（.mp4/.webm/.mov，大小写不敏感，
+     可带查询串）从文本中识别视频 URL，返回 [URL 前文本, 视频URL, URL 后文本]
+     或 null。新消息与旧存量消息走同一条识别路径。
+   - renderMarkdown 增加视频分支（紧跟 R81 图片分支之后）：命中视频 URL →
+     前缀文本正常成段 + <video class="ai-md-video" controls preload="metadata"
+     src="...">（src 经 escHtml 转义，样式与运行时首显播放器一致）+ 后缀文本
+     正常成段。URL 前后无内容时不产空段。
+   - 运行时首显路径（DOM 直插 <video>）原样保留；3D 的 .zip 不在视频后缀
+     名单内，下载链路不受影响；失败/进度态文案不经过视频分支，不受影响。
+   - 存储格式未改（URL 特征识别已足够精确），旧存量消息零迁移自动生效。
+2. AI.html：56608 B（CRLF 975 保持），仅 ai-page.js 版本号
+   v=20260918e → v=20260918f 强刷。
+
+================================================================
+三、验证结果
+1. escheck_es2017.js：DONE 0（文内既有反引号均为 markdown 围栏字符串/
+   正则字面量，非模板串；新增代码无 ?. ?? replaceAll .at( catch{ 模板串）。
+2. 字节/行尾回读：ai-page.js 写前 138586 B crlf=0 → 写后 139831 B
+   crlf=0 loneCR=0；AI.html CRLF 975 保持；全部替换锚点 old_count=1 才落盘。
+3. jsdom 双路径 24/24 PASS（真实 ai-config.js + 改后 ai-page.js，
+   AI_SERVICE.xtRunCapability 桩返回 .mp4+X-Tos-Expires URL）：
+   ① 运行时成功路径：<video> 在、src=能力 URL、带 controls、无 <a>；
+      保存格式保持旧纯文本（'🎬 ...：URL'），向后兼容。
+   ② 历史重渲染路径（模拟 reload：重跑 ai-page.js + 点历史条目 loadChat）：
+      - 旧存量纯文本消息 → 输出 <video class="ai-md-video">，src 正确，
+        controls+preload=metadata 在，无 <a>，「视频已生成」前缀文案保留，
+        URL 不再以正文文本形式倾倒（textContent 无 URL）；
+      - 新保存消息重渲染 → 同样输出播放器。
+   ③ 不误伤：3D .zip URL、普通网页 URL、失败文案（⚠️ 视频生成失败）
+      均零 <video> 产生，文本完整保留，无 <a> 引入。
+4. 开发期发现并修复自测 bug：视频分支首版误用 vidM[1]/[2]/[3]（数组实际
+   下标 0/1/2），jsdom 抓出后当场修正，最终 24/24 全绿。
+
+================================================================
+四、不改动清单与备注
+- 本次只写 ai-page.js 与 AI.html。ai-config.js（44754 B）、ai-service.js
+  （150566 B）、ai-settings.js（137022 B）、ai-settings.html（46638 B）
+  读回与此前完全一致，未动。
+- 注意：xt-update.js（39089→39084 B）与 更新.html 的 md5 与我 R93-1 收尾
+  时的快照不同——我从未写过这两个文件，应为其他线（任务二/三）的改动，
+  请知悉核对。
+- URL 识别按后缀名单（.mp4/.webm/.mov）而非域名，理由：能力模块实际
+  产出为 TOS .mp4，后缀判定对旧存量消息同样有效；若未来出现无后缀的
+  视频地址，可在保存格式加轻量标记（本期不引入，避免过度设计）。
+
+================================================================
+五、遗留 / 建议
+- 无阻塞项。可选项（本期未做）：仿 R86 生图本地化，把 24h 有效期视频
+  落 IndexedDB Blob 永久化——涉及存储体积权衡，建议单独立项评估。

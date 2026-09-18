@@ -1,0 +1,52 @@
+﻿==== A TA模式 (?user=2002, 已登录) ====
+  PASS 含「小明」
+  PASS 含「杭州」
+  PASS 含「在线」
+  PASS 含「考公上岸」(goal)
+  PASS 含「入驻于 2026-01-02」(createdAt)
+  PASS 不含 13800000000
+  PASS 不含 a@b.com
+  PASS 不含「男」
+  PASS 不含 xiaoming_secret(username)
+  PASS 不含「学习记录」
+  PASS 不含「我的笔记」
+  PASS 不含「我的收藏」
+  PASS 不含「学习数据」
+  PASS 不含「作品集」
+  PASS 不含「AI对话记录」
+  PASS 不含「退出登录」
+  PASS 不含 data-act="edit"
+  PASS 含「加好友」(isFriend=false)
+  PASS 含「TA 的动态」
+  PASS 含「TA 的资料」
+  PASS page errors 为空
+  api/users/2002 请求数=1
+  page errors=[]
+  [A] ROOT 片段: <section class="xtp-hero" id="xtpHeroOther" style="cursor:default"><div class="xtp-hero-avatar" id="xtpOtherAvatar" style="cursor:default">小</div><div class="xtp-hero-main"><div class="xtp-hero-name-row"><div class="xtp-hero-name">小明</div></div><div class="xtp-hero-id">ID：<b>2002</b></div><div class="xtp-hero-motto">南风知我意</div><div class="xtp-hero-id" style="color:var(--xtp-aux)">杭州 · 入驻于 2026-01-02 · 在线</div></div><
+==== B 本人模式零回归 (无 user 参数) ====
+  PASS 含「学习记录」
+  PASS 含「我的笔记」
+  PASS 含「我的收藏」
+  PASS 含「作品集」
+  PASS 含「退出登录」
+  PASS page errors 为空
+  page errors=[]
+==== C 未登录 (?user=2002, 无 token) ====
+  PASS 含「去登录」
+  PASS 含「TA 的资料」
+  PASS /api/users/ 请求数==0
+  PASS 不含「退出登录」
+  PASS page errors 为空
+  /api/users/ 请求数=0
+  全部请求=["关于.html?v=20260917"]
+  page errors=[]
+==== D 非法参数 (应走本人视角) ====
+  PASS ?user=abc 走本人视角(含「学习记录」)
+  PASS ?user=abc 不含「去登录」
+  PASS ?user=abc page errors 为空
+  PASS ?user=../../etc 走本人视角(含「学习记录」)
+  PASS ?user=../../etc 不含「去登录」
+  PASS ?user=../../etc page errors 为空
+  D1 errors=[]
+  D2 errors=[]
+exit=0

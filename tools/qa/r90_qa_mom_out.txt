@@ -1,0 +1,166 @@
+  651| 
+  652|   /* ============================ 发布编辑页 ============================ */
+  653|   var P = null;
+  654|   /* R89-B: 草稿键（跳转「地区选择.html」往返必须不丢内容）。此键与 M3 本地视频草稿约定一致。 */
+  655|   var XTM_DRAFT_KEY = 'study_workbench_moment_draft2';
+  656|   var XTM_REGION_PICK_KEY = 'xt_region_pick';
+  657|   /* R89-B: 地区选择回写值 TTL（同 xt-profile.js / 地区选择.html 协议） */
+  658|   var XTM_REGION_TTL = 10 * 60 * 1000;
+  659|   /** 跳转缝（可被测试覆写：window.xtmNavHook / window.xtpNavHook）。 */
+  660|   function xtmNav(url) {
+  661|     try {
+  662|       if (window.xtmNavHook && typeof window.xtmNavHook === 'function') { window.xtmNavHook(url); return; }
+  663|     } catch (e0) { /* 忽略 hook 异常，回退真实跳转 */ }
+  664|     try {
+  665|       if (window.xtpNavHook && typeof window.xtpNavHook === 'function') { window.xtpNavHook(url); return; }
+  666|     } catch (e1) { /* 忽略 */ }
+  667|     location.href = url;
+  668|   }
+  669|   /** 消费地区选择回写值（一次性 + TTL），返回地址文本或 ''。 */
+  670|   function xtmTakeRegionPick() {
+  671|     var raw = '';
+  672|     try { raw = localStorage.getItem(XTM_REGION_PICK_KEY) || ''; } catch (e) { return ''; }
+  673|     if (!raw) return '';
+  674|     var obj = null;
+  675|     try { obj = JSON.parse(raw); } catch (e2) { obj = null; }
+  676|     try { localStorage.removeItem(XTM_REGION_PICK_KEY); } catch (e3) { /* 忽略 */ }
+  677|     if (!obj || !obj.text) return '';
+  678|     try { if (obj.ts && (Date.now() - obj.ts > XTM_REGION_TTL)) return ''; } catch (e4) { return ''; }
+  679|     return String(obj.text).slice(0, 64);
+  680|   }
+  681|   /** 写入地址到草稿 P.location + 刷新显示（不发送）。坐标绝不进任何字符串。 */
+  682|   function xtmApplyLocation(text) {
+  683|     if (!P) return false;
+  684|     var t = String(text || '').replace(/^\s+|\s+$/g, '');
+  685|     if (!t) return false;
+  686|     P.location = t.slice(0, 64);
+  687|     if (typeof renderChosen === 'function') renderChosen();
+  688|     return true;
+  689|   }
+  690|   function newP() {
+  691|     return { picked: [], video: '', linkUrl: '', linkTitle: '', location: '', visScope: '', visIds: [], visNames: [], mentionIds: [], mentionNames: [], textMode: false };
+  692|   }
+  693|   function imgCompress(dataUrl) {
+  694|     return new Promise(function (resolve) {
+  695|       var img = new Image();
+  696|       img.onload = function () {
+  697|         var max = 1280, w = img.width, h = img.height;
+  698|         if (Math.max(w, h) > max) { var k = max / Math.max(w, h); w = Math.round(w * k); h = Math.round(h * k); }
+  699|         var cv = document.createElement('canvas');
+  700|         cv.width = w; cv.height = h;
+...
+  961|   function initPublishPage() {
+  962|     S.page = 'publish';
+  963|     P = newP();
+  964|     /* R89-B：若从「地区选择.html」跳回，消费一次回写值（TTL 10 分钟）并写入草稿位置。 */
+  965|     var __rp = xtmTakeRegionPick();
+  966|     if (__rp) { P.location = __rp; }
+  967|     var params = '';
+  968|     try { params = location.search || ''; } catch (e) {}
+  969|     if (params.indexOf('mode=text') !== -1) {
+  970|       P.textMode = true;
+  971|       var bar = $('xtmFuncbar'); if (bar) bar.style.display = 'none';
+  972|     }
+  973|     var cancel = $('xtmCancel');
+  974|     if (cancel) cancel.onclick = function () {
+  975|       var text = ($('xtmText') || {}).value || '';
+  976|       if (!text.trim() && !P.picked.length && !P.video && !P.linkUrl) { history.back(); return; }
+  977|       confirmBox('放弃本次编辑？', '放弃').then(function (ok) { if (ok) history.back(); });
+  978|     };
+  979|     var submit = $('xtmSubmit');
+  980|     if (submit) submit.onclick = pubSubmit;
+  981|     var file = $('xtmFileImg');
+  982|     if (file) file.addEventListener('change', function () {
+  983|       var files = Array.prototype.slice.call(this.files || []);
+  984|       this.value = '';
+  985|       files.forEach(function (f) {
+  986|         if (P.picked.length >= 9) { toast('最多 9 张图片'); return; }
+  987|         var rd = new FileReader();
+  988|         rd.onload = function (e) {
+  989|           imgCompress(e.target.result).then(function (dataUrl) {
+  990|             P.picked.push({ dataUrl: dataUrl, url: '' });
+  991|             renderPicked();
+  992|           });
+  993|         };
+  994|         rd.readAsDataURL(f);
+  995|       });
+  996|     });
+  997|     /* R90：点「位置」/「所在位置」→ 首选【跳转整页 地区选择.html】（用户明确要求跳转，非页内弹层）。
+  998|        R89-B 曾把首选做成同页半屏弹层（XT_LOC_PICK.openPicker），用户实测反馈要的是整页跳转，
+  999|        故此处将优先级倒过来：整页跳转优先，半屏层降级为兜底。
+ 1000|        回写链路同 xt-profile.js / 地区选择.html 协议（localStorage['xt_region_pick'] + TTL 10 分钟）。
+ 1001|        全程绝不弹原生对话框，坐标绝不进字符串。跳转走 xtmNav() 可测缝，便于 jsdom 断言。 */
+ 1002|     function xtmPickLocation() {
+ 1003|       /* 1) 首选【跳整页 地区选择.html?cur=<当前已选>&back=朋友圈发布.html】。
+ 1004|             先写草稿防止往返丢内容；选完由地区选择页回写 localStorage['xt_region_pick']，
+ 1005|             回到本页后 initPublishPage() 消费一次并回填「位置」显示区。 */
+ 1006|       var okNav = xtmOpenRegionPage();
+ 1007|       if (okNav) return;
+ 1008|       /* 2) 整页跳转不可用（环境受限）→ 降级到同页半屏选择器 XT_LOC_PICK.openPicker。 */
+ 1009|       var LP = window.XT_LOC_PICK;
+ 1010|       if (LP && typeof LP.openPicker === 'function') {
+ 1011|         try {
+ 1012|           LP.openPicker({ title: '选择位置', confirmText: '确定', current: P ? P.location : '' }, function (text) {
+ 1013|             if (text) { xtmApplyLocation(text); toast('已记录位置'); }
+ 1014|           });
+ 1015|           return;
+ 1016|         } catch (e) { /* openPicker 异常 → 继续降级本页手动输入 */ }
+ 1017|       }
+ 1018|       /* 3) 都不可用（极端环境）→ 本页手动输入兜底（不白屏、不静默） */
+ 1019|       toast('定位服务不可用，请手动填写');
+ 1020|       inputSheet('所在位置', '如：图书馆 / 自习室', P ? P.location : '', function (v) {
+ 1021|         xtmApplyLocation(v);
+ 1022|       });
+ 1023|     }
+ 1024|     /* R89-B：跳整页「地区选择.html」。返回 true 表示跳转已发起。 */
+ 1025|     function xtmOpenRegionPage() {
+ 1026|       var back = '朋友圈发布.html';
+ 1027|       try {
+ 1028|         var pn = location.pathname || '';
+ 1029|         var k = pn.lastIndexOf('/');
+ 1030|         if (k >= 0 && pn.length > k + 1) back = decodeURIComponent(pn.substring(k + 1));
+ 1031|       } catch (e) { /* 保持默认 */ }
+ 1032|       if (P && typeof xtmSaveDraft === 'function') { try { xtmSaveDraft(); } catch (ed) { /* 忽略 */ } }
+ 1033|       var cur = (P && P.location) ? P.location : '';
+ 1034|       var url = '地区选择.html?cur=' + encodeURIComponent(cur) + '&back=' + encodeURIComponent(back);
+ 1035|       /* 跳转成功判定：hook 存在但抛异常 / 返回 false 都视为失败，交由上层降级。 */
+ 1036|       try {
+ 1037|         var hook = (typeof window.xtmNavHook === 'function') ? window.xtmNavHook :
+ 1038|                    ((typeof window.xtpNavHook === 'function') ? window.xtpNavHook : null);
+ 1039|         if (hook) {
+ 1040|           var res = hook(url);
+ 1041|           return res === false ? false : true;
+ 1042|         }
+ 1043|         xtmNav(url);
+ 1044|         return true;
+ 1045|       } catch (e2) { return false; }
+ 1046|     }
+ 1047|     var locBtn = $('xtmLocBtn');
+ 1048|     if (locBtn) locBtn.onclick = xtmPickLocation;
+ 1049|     var locSelf = $('xtmAtBtn');
+ 1050|     if (locSelf) locSelf.onclick = xtmPickLocation;
+ 1051|     var visBtn = $('xtmVisBtn');
+ 1052|     if (visBtn) visBtn.onclick = chooseVis;
+ 1053|     var menBtn = $('xtmMentionBtn');
+ 1054|     if (menBtn) menBtn.onclick = function () {
+ 1055|       pickerSheet('提醒谁看', P.mentionIds, function (ids, names) { P.mentionIds = ids; P.mentionNames = names || []; renderChosen(); });
+ 1056|     };
+ 1057|     var vidBtn = $('xtmVidBtn');
+ 1058|     if (vidBtn) vidBtn.onclick = function () { videoSheet(); };
+ 1059|     var vidFile = $('xtmFileVid');
+ 1060|     if (vidFile) vidFile.addEventListener('change', function () { onVideoPicked(this); });
+ 1061|     var linkBtn = $('xtmLinkBtn');
+ 1062|     if (linkBtn) linkBtn.onclick = function () {
+ 1063|       inputSheet('链接地址', 'https://…', P.linkUrl, function (v) {
+ 1064|         P.linkUrl = v.slice(0, 512);
+ 1065|         inputSheet('链接标题', '可留空', P.linkTitle, function (t) { P.linkTitle = t.slice(0, 200); renderPicked(); });
+ 1066|       });
+ 1067|     };
+ 1068|     var ta = $('xtmText');
+ 1069|     if (ta) setTimeout(function () { try { ta.focus(); } catch (e) {} }, 80);
+ 1070|     renderPicked();
+ 1071|   }
+ 1072| 
+ 1073|   /* ============================ R78：页顶背景自定义（动态空间信息流页） ============================
+ 1074|      #xtmHero 存在时启用（R84 后 feed 页已无入口，仅保留能力）：选本地图片（≤2MB）→ FileReader dataURL → localStorage
+ 1075|      study_workbench_moments_bg；恢复默认（清 key）图标 rotate-ccw。有背景时加半透明遮罩保证可读性。

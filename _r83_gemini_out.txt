@@ -1,0 +1,19 @@
+backup created: ai-config.js.bak-pre-r83-20260917 (33148 B)
+backup created: ai-service.js.bak-pre-r83-20260917 (93892 B)
+backup created: ai-settings.js.bak-pre-r83-20260917 (108160 B)
+---- ai-config.js gemini provider（磁盘回读）----
+apiUrl       = https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent
+apiKey       = ***REMOVED-BY-R2C***
+apiKey 行号  = L60
+keyInQuery   = true
+needVPN      = true
+needProxy    = true
+apiUrl 含 {model} 模板 = True
+apiUrl 含 :generateContent = True
+---- 复测（proxy=127.0.0.1:7897, model=gemini-3.5-flash-lite）----
+HTTP 200 | 1556ms | 回复: Hello! How can I help you today?
+ASSERT 200 = PASS
+对照 gemini-3.5-flash: HTTP 429 | 770ms | {
+  "error": {
+    "code": 429,
+    "message": "You exceeded your current quota, please check your plan and billing details. For more information on t

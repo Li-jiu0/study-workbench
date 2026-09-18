@@ -1,91 +1,73 @@
 sequenceDiagram
     autonumber
     participant U as 用户
-    participant P as 私聊.html(chat-local.js)
-    participant C as config.js(STUDY_API_BASE)
-    participant API as FastAPI
-    participant DB as SQLite
+    participant IM as 私聊.html
+    participant CL as chat-local.js
+    participant LOC as XT_LOC_PICK(xt-region.js)
+    participant GEO as XT_REGION
 
-    rect rgb(238,246,255)
-    note over U,API: A6 在线修改密码
-    U->>P: 设置页 点「修改密码」→ 填 旧/新/确认
-    P->>API: POST /api/auth/change-password {oldPassword,newPassword}
-    API->>DB: 查 User(id) by token
-    API->>API: verify_password(old) / 强度校验
-    alt 旧密码错误
-        API-->>P: 400 "当前密码不正确"
-        P-->>U: toast 错误
-    else 通过
-        API->>API: hash_password(new)
-        API->>DB: UPDATE users.password_hash
-        API-->>P: {ok:true}
-        P-->>U: toast「密码已修改」
-    end
-    end
+    note over U,GEO: ① 私聊点加号 → 菜单 → 三条分支
+    U->>IM: 点击「+」(#imPlusBtn)
+    IM->>IM: imTogglePlusMenu() 显示 #imPlusMenu
+    Note over IM: 菜单项 = 图片 / 位置
 
-    rect rgb(238,255,238)
-    note over U,API: A7 聊天语音消息（在线）
-    U->>P: 长按 🎤 录制
-    P->>P: MediaRecorder 采集(<=60s/<=2MB)
-    P->>C: 读 STUDY_API_BASE
-    P->>API: POST /api/uploads/voice (FormData, Bearer)
-    API->>API: ext_for_audio 魔数校验
-    API-->>P: {url:/uploads/voice/x.webm}
-    P->>API: POST /api/chat/{peer}/messages {kind:voice,content:url}
-    API->>API: kind in (text,image,voice) 放行
-    API->>DB: INSERT messages(kind=voice)
-    API-->>P: {id,kind:voice,content:url}
-    P->>P: renderMsgs → 语音条 ▶
-    U->>P: 点语音条
-    P->>P: imTogglePlayVoice 播放/暂停/续播
+    alt 分支1：图片
+        U->>IM: 点「图片」(data-icon=image)
+        IM->>CL: imPickImage()
+        CL->>CL: 校验 S.group||S.peer，否则 toast 并 return
+        CL->>IM: 触发 #imImgInput
+        U->>IM: 选图
+        IM->>CL: onchange=imSendImage(this)
+        CL->>CL: 上传/离线 dataURL → 追加 kind='image' 消息
+    else 分支2：拍摄（复用图片链路，accept=image/*）
+        U->>IM: 点「拍摄」(data-icon=camera)
+        IM->>CL: imPickImage()（同一链路，WebView 弹相机/相册）
+        CL->>IM: 触发 #imImgInput → imSendImage(this)
+    else 分支3：位置
+        U->>IM: 点「位置」(data-icon=map-pin)
+        IM->>LOC: pick({onManual: IM 页内 sheet}, cb)
+        LOC->>GEO: locate(cb)
+        alt 定位成功
+            GEO-->>LOC: {ok:true, lat, lng}
+            LOC->>GEO: reverseGeocode(lat,lng,cb)
+            GEO-->>LOC: {text,province,city,district} 或 null
+        else 失败/超时/拒绝/不支持
+            GEO-->>LOC: {ok:false, reason}
+        end
+        Note over LOC: 失败或编码为空 → onManual 手动输入
+        LOC-->>IM: cb(LocObj|null)
+        IM->>CL: imSendLocation(text)
+        CL->>CL: 追加 kind='location' 消息（仅文字，无坐标）
     end
+    IM->>IM: 收起菜单 imTogglePlusMenu()
 
-    rect rgb(255,248,238)
-    note over U,API: A4/A5 已是好友 & 删除好友
-    U->>P: 打开 个人中心.html?user=9001
-    P->>API: GET /api/users/9001
-    API-->>P: {..., isFriend:true}  (users.py:150)
-    P->>P: isFriend=!!u.isFriend → 渲染「发消息/删除好友」
-    U->>P: 点「删除好友」→ 二次确认(含 清空本地记录勾选)
-    P->>API: DELETE /api/friends/9001
-    API->>DB: DELETE friends(a,b)
-    API-->>P: {ok:true}
-    P->>P: 刷新列表 + toast + 跳回
-    opt 勾选清空
-        P->>P: 删 study_im_local_data.messages[9001]/chats[9001]
-    end
-    end
+    note over U,GEO: ② 发布时选位置（含三个降级分支）
+    U->>LOC: 点「所在位置」(xtmAtBtn / blogLocBtn)
+    LOC->>LOC: toast('正在定位…')，入口 loading
+    LOC->>GEO: locate(cb)
 
-    rect rgb(250,240,255)
-    note over U,P: A3 加好友模态（与群聊同源，无后端降级）
-    U->>P: 私聊页点「➕ 加好友」
-    P->>P: imOpenAddFriendModal()
-    alt 无 token(离线)
-        P-->>U: 入口置灰「加好友需要联网」
-    else 在线
-        U->>P: 输入关键词(防抖300ms)
-        P->>API: GET /api/friends/search?q=
-        API-->>P: {items:[{...,isFriend}]}
-        P->>P: imRenderFriendRows → 加好友/发消息/已发送
-        U->>P: 点「加好友」
-        P->>API: POST /api/friends/requests {toUserId}
-        API-->>P: {ok} / {autoAccepted}
-        P->>P: 行内变「已发送」+ toast
-    end
+    alt 降级1：授权被拒 / 超时 / 无 geolocation
+        GEO-->>LOC: {ok:false, reason:'denied'|'timeout'|'unsupported'}
+        LOC->>LOC: toast('定位失败，请手动填写')
+        LOC->>U: onManual('所在位置','如：图书馆 / 自习室')
+        alt 输入非空
+            U-->>LOC: LocObj{text:v, source:'manual'}
+        else 输入为空
+            LOC-->>U: cb(null) → 不写位置，chip 隐藏
+        end
+    else 定位成功
+        GEO-->>LOC: {ok:true, lat, lng}
+        LOC->>GEO: reverseGeocode(lat, lng, cb)
+        alt 降级2：逆编码失败/空
+            GEO-->>LOC: null
+            LOC->>LOC: toast('定位失败，请手动填写')
+            LOC->>U: onManual(...) 同上手动兜底
+        else 编码成功
+            GEO-->>LOC: {text:'武汉市·洪山区', province, city, district}
+            LOC->>LOC: 写 xt_loc_last
+        end
     end
 
-    rect rgb(245,245,245)
-    note over U,P: A9 首页学习数据真实化（离线优先）
-    U->>P: 打开 学习工作台.html
-    P->>P: StudyStats.getSummary()(本地 study_workbench_stats)
-    P->>P: 读 appData.stats(本地做题/词汇)
-    opt 在线可静默
-        P->>API: GET /api/study/summary
-        API-->>P: {totalMinutes, totalEvents, days}
-        P->>P: max(本地, 云端) 合并(只增不减)
-    end
-    P->>P: renderStats/renderWeekChart 渲染真实值
-    alt 无任何记录
-        P-->>U: 显示 0 + 「还没有学习记录，去学一章吧」
-    end
-    end
+    LOC-->>U: cb(LocObj)。只取 text 渲染文字 chip
+    U->>U: 点「发布 / 存草稿」→ 持久化 location(String)
+    Note over U,LOC: 断言：DOM 与载荷均无 /\d+\.\d{3},/ 坐标

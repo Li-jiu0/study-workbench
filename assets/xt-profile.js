@@ -289,6 +289,29 @@
   function favoriteArr() { var d = getAppData(); return isArr(d.favoriteQuestions) ? d.favoriteQuestions : []; }
   function aiChatArr() { var a = readJSON('ai_chat_history', []); return isArr(a) ? a : []; }
 
+
+  /** 时间戳 → 'YYYY-MM-DD HH:MM' */
+  function tsText(ts) {
+    var d = new Date(ts);
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) +
+      ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  }
+  /** 本机 ai_chat_history 的消息总条数（会话结构：逐会话累加 messages.length） */
+  function localChatCount() {
+    var arr = aiChatArr(), n = 0, i;
+    for (i = 0; i < arr.length; i++) {
+      var ms = (arr[i] && isArr(arr[i].messages)) ? arr[i].messages : [];
+      n += ms.length;
+    }
+    return n;
+  }
+  /** 是否可走服务端：api.js 已加载 + 有登录态（游客态请求必然 401，故直接跳过不发请求） */
+  function aiApiReady() {
+    if (typeof window.isOnlineSession !== 'function') { return false; }
+    if (!window.isOnlineSession()) { return false; }
+    return typeof window.api === 'function';
+  }
+
   /* ============================ 个人信息编辑 · 扩展字段的真实数据源 ============================ */
   /* 三个既有字段直接复用 appData.profile（与 设置.html / 个人中心.html 的资料编辑同源，单一真相）：
        地区 = profile.city ｜ 生日 = profile.birthday ｜ 目标 = profile.goal
@@ -321,6 +344,47 @@
 
   /** 地区 / 生日 / 目标：直接读既有 profile 字段 */
   function regionVal() { var p = getProfile(); return (p.city && String(p.city).trim()) || ''; }
+
+  /* R88-J item1：地区选择跳转 + 回写消费（自建，不依赖个人中心.html 作用域）。 */
+  var XTP_REGION_PICK_KEY = 'xt_region_pick';
+  var XTP_REGION_TTL = 10 * 60 * 1000;   // 10 分钟 TTL（沿用既有协议）
+
+  /** 页面跳转（可被测试覆写：window.xtpNavHook）。默认写 location.href。 */
+  function xtpNav(url) {
+    try {
+      if (window.xtpNavHook && typeof window.xtpNavHook === 'function') { window.xtpNavHook(url); return; }
+    } catch (e0) { /* 忽略 hook 异常，回退真实跳转 */ }
+    location.href = url;
+  }
+
+  /** 跳转到「地区选择.html」，current=当前地区，back=本页文件名（供回跳）。 */
+  function xtpOpenRegionPicker() {
+    var back = '个人资料.html';
+    try {
+      var pn = location.pathname || '';
+      var k = pn.lastIndexOf('/');
+      if (k >= 0 && pn.length > k + 1) { back = decodeURIComponent(pn.substring(k + 1)); }
+    } catch (e) { /* 保持默认 */ }
+    var cur = regionVal();
+    try {
+      xtpNav('地区选择.html?cur=' + encodeURIComponent(cur) + '&back=' + encodeURIComponent(back));
+    } catch (e2) {
+      toast('无法打开地区选择页', true);
+    }
+  }
+
+  /** 消费地区选择回写值（一次性 + 10 分钟 TTL），返回地区文本或 ''。 */
+  function xtpTakeRegionPick() {
+    var raw = '';
+    try { raw = localStorage.getItem(XTP_REGION_PICK_KEY) || ''; } catch (e) { return ''; }
+    if (!raw) return '';
+    var obj = null;
+    try { obj = JSON.parse(raw); } catch (e2) { obj = null; }
+    try { localStorage.removeItem(XTP_REGION_PICK_KEY); } catch (e3) { /* 忽略 */ }
+    if (!obj || !obj.text) return '';
+    try { if (obj.ts && (Date.now() - obj.ts > XTP_REGION_TTL)) return ''; } catch (e4) { return ''; }
+    return String(obj.text).slice(0, 40);
+  }
   function birthdayVal() { var p = getProfile(); return (p.birthday && String(p.birthday).trim()) || ''; }
   function goalVal() { var p = getProfile(); return (p.goal && String(p.goal).trim()) || ''; }
   /** 手机号：后端无手机号能力 → 本页自填优先，其次 设置页本地绑定表（同为“未验证”本地数据） */
@@ -362,7 +426,11 @@
 
   function notesBadge() { var n = notesArr().length; return n > 0 ? String(n) : ''; }
   function favBadge() { var n = favoriteArr().length; return n > 0 ? String(n) : ''; }
-  function chatBadge() { var n = aiChatArr().length; return n > 0 ? String(n) : ''; }
+  function chatBadge() {
+    /* R91-A：角标改本机口径——不再读取服务端条数（AI_CHAT.total），只按本机会话数显示 */
+    var n = localChatCount();
+    return n > 0 ? String(n) : '';
+  }
   /** 学习数据右侧小字：本周 X.Xh（真实值；0 或取不到则返回空 → 不显示） */
   function weekText(m) { return m.weekHours > 0 ? ('本周 ' + m.weekHours.toFixed(1) + 'h') : ''; }
 
@@ -1058,6 +1126,7 @@
   function afterRenderView(id, el) {
     if (id === 'edit') { bindEditView(el); }
     if (id === 'data') { animateNumbers(el); }
+    if (id === 'chat') { bindChatView(el); }
   }
 
   /* -------------------------------------------- 编辑页：扩展字段行（地区/手机号/邮箱/生日/目标） */
@@ -1263,24 +1332,670 @@
   }
 
   /* ---------------------------------------------------------- AI对话记录 */
-  function chatBody() {
-    var arr = aiChatArr();
-    if (!arr.length) { return '<div class="xtp-empty">暂无 AI 对话记录<br>在 AI 问答页对话后会自动出现在这里</div>'; }
-    var s = '<section class="xtp-sec"><div class="xtp-list">', i;
-    var shown = 0;
-    for (i = arr.length - 1; i >= 0 && shown < 40; i--) {
-      var msg = arr[i] || {};
-      var role = (msg.role === 'user') ? '我' : (msg.role === 'assistant' ? 'AI' : '记录');
-      var text = String(msg.content || msg.text || msg.message || '').replace(/\s+/g, ' ').trim();
-      if (text.length > 120) { text = text.slice(0, 120) + '…'; }
-      s += '<div class="xtp-li">' +
-        '<div class="xtp-li-title">' + esc(role) + '<span class="xtp-li-meta" style="margin-left:6px">' + esc(fmtTime(msg.time || msg.ts || '') || '') + '</span></div>' +
-        '<div class="xtp-li-body">' + esc(text || '（无文本内容）') + '</div>' +
-        '</div>';
-      shown++;
+  /** R91-A：服务端记录区块 chatServerHtml 已按产品要求整体移除——服务端聊天记录
+   *  不再展示在「AI对话记录」页，本页仅保留 M5 本机会话管理；
+   *  「清空全部」会同步调用 DELETE /api/ai/history 删除服务端记录。 */
+  /** R91-A：不再有服务端三态（loading/err/guest），本视图只渲染 M5 本机会话管理面板，
+   *  也不再发起 GET /api/ai/history 拉取（登录与否均可用）。 */
+  function chatBodyHtml() {
+    return m5PanelHtml();
+  }
+  /** 子视图 body：外壳固定，内容由 paintChat() 就地重绘（三态切换不重建视图） */
+  function chatBody() { return '<div id="xtpChatBody">' + chatBodyHtml() + '</div>'; }
+  /** 打开子视图后：本地渲染 M5 面板并同步一次主页「AI对话记录」角标（R91-A：不再拉服务端） */
+  function bindChatView(el) {
+    var box = el.querySelector('#xtpChatBody');
+    if (!box) { return; }
+    paintChat(box);
+    renderPage();
+  }
+  function paintChat(box) {
+    box.innerHTML = chatBodyHtml();
+    m5Bind(box);
+  }
+  /* R91-A：prefetchAiChat 已移除——角标改本机口径，不再为角标预拉 GET /api/ai/history */
+  /* ==================================================================== R88-M5
+   * 个人资料页「AI 对话记录管理」（清空全部 / 分类标签 / 关键字搜索 / 单条删除 /
+   * 批量删除 / 时间范围筛选 / 一键导出 / 本地备份与恢复 / 标记收藏）。
+   * ---------------------------------------------------------------------------
+   * 数据源与边界（调研结论，务必先读）：
+   *   ① 本机 localStorage.ai_chat_history = 会话数组
+   *      [{id:'chat_...', title, createdAt(ms), updatedAt(ms), messages:[{role,content,hasImage?}]}]
+   *      （写入方 assets/ai-page.js:1286；最多 50 会话）。**有稳定 id** → 可单条删/打标/批量/导出/备份。
+   *   ② 服务端 GET /api/ai/history 只返回**扁平消息**（无 id / 无标题 / 无标签），且服务端
+   *      **有 GET + POST(chat) + DELETE(history)（R91-A 新增 DELETE）** → 前端可清空服务端记录。
+   *      故本页「管理」作用于【本机会话】；服务端记录不再展示（R91-A 移除 chatServerHtml），
+   *      仅在「清空全部」时同步调用 DELETE /api/ai/history。
+   *   ③ 标签 / 收藏等扩展信息写入本页自有键 xt_ai_chat_meta_v1（按会话 id 索引），
+   *      不污染 ai_chat_history 的既有结构（否则会破坏 ai-page.js 的读取）。
+   * ---------------------------------------------------------------------------
+   * 覆盖策略（备份恢复）：**按 id 合并**（导入中已存在的 id 以导入数据覆盖，不存在的新增）；
+   *   理由：导入是「恢复备份」语义，合并可避免一键误操作把当前数据整体抹掉；同 id 覆盖保证
+   *   备份里更新过的会话能还原。全量替换风险高（一次误点即丢全部现网数据），故不采用。
+   * ------------------------------------------------------------------ */
+
+  var META_KEY = 'xt_ai_chat_meta_v1';   // { [chatId]: { tags:[String], fav:Boolean } } */
+
+  /** 会话列表（规范化，保证每条都有 id/title/createdAt/updatedAt/messages） */
+  function chatSessions() {
+    var arr = aiChatArr(), out = [], i;
+    for (i = 0; i < arr.length; i++) {
+      var c = arr[i] || {};
+      if (!c || typeof c !== 'object') { continue; }
+      var id = (c.id === undefined || c.id === null) ? '' : String(c.id);
+      if (!id) { continue; }
+      var msgs = isArr(c.messages) ? c.messages : [];
+      var title = (c.title === undefined || c.title === null) ? '' : String(c.title);
+      if (!title) { title = '未命名对话'; }
+      out.push({
+        id: id,
+        title: title,
+        createdAt: num(c.createdAt),
+        updatedAt: num(c.updatedAt || c.createdAt),
+        messages: msgs
+      });
     }
-    s += '</div></section><div class="xtp-tip">共 ' + arr.length + ' 条记录（数据来自本机 localStorage.ai_chat_history）。</div>';
+    return out;
+  }
+  /** 会话最后活动时间（用于排序 / 时间筛选） */
+  function sessionTs(s) { return num(s.updatedAt || s.createdAt); }
+  /** 会话纯文本（标题 + 全部消息文本），用于关键字搜索 */
+  function sessionText(s) {
+    var t = (s.title || '') + ' ', ms = s.messages || [], i;
+    for (i = 0; i < ms.length; i++) {
+      var m = ms[i] || {};
+      if (m.content) { t += String(m.content) + ' '; }
+    }
+    return t;
+  }
+  /** 会话预览（前 2 条消息各截 60 字） */
+  function sessionPreview(s) {
+    var ms = s.messages || [], out = [], i, n = 0;
+    for (i = 0; i < ms.length && n < 2; i++) {
+      var m = ms[i] || {};
+      var txt = String(m.content || '').replace(/\s+/g, ' ').trim();
+      if (!txt) { continue; }
+      if (txt.length > 60) { txt = txt.slice(0, 60) + '…'; }
+      out.push((m.role === 'user' ? '我：' : 'AI：') + txt);
+      n++;
+    }
+    return out.length ? out.join(' / ') : '（无文本内容）';
+  }
+  /** 读会话扩展信息表 */
+  function chatMetaAll() {
+    var m = readJSON(META_KEY, {});
+    return (m && typeof m === 'object' && !isArr(m)) ? m : {};
+  }
+  /** 取某会话扩展信息（始终返回对象，缺省 tags=[] fav=false） */
+  function chatMetaOf(id) {
+    var all = chatMetaAll(), k = String(id), e = all[k];
+    if (!e || typeof e !== 'object') { e = {}; }
+    return { tags: isArr(e.tags) ? e.tags : [], fav: !!e.fav };
+  }
+  /** 写某会话扩展信息（tags 去空去重、截断到 8 个；空标签与未收藏则删除该键，保持存储干净） */
+  function chatMetaSet(id, patch) {
+    var all = chatMetaAll(), k = String(id);
+    var cur = chatMetaOf(k);
+    if (patch && has(patch, 'tags')) {
+      var t = [], seen = {}, i, j;
+      var src = isArr(patch.tags) ? patch.tags : [];
+      for (i = 0; i < src.length; i++) {
+        var v = String(src[i] === null || src[i] === undefined ? '' : src[i]).trim();
+        if (!v || v.length > 12) { continue; }
+        var dup = false;
+        for (j = 0; j < t.length; j++) { if (t[j] === v) { dup = true; break; } }
+        if (!dup) { t.push(v); }
+        if (t.length >= 8) { break; }
+      }
+      cur.tags = t;
+    }
+    if (patch && has(patch, 'fav')) { cur.fav = !!patch.fav; }
+    if ((!cur.tags || !cur.tags.length) && !cur.fav) { delete all[k]; }
+    else { all[k] = { tags: cur.tags || [], fav: !!cur.fav }; }
+    writeJSON(META_KEY, all);
+    return cur;
+  }
+  /** 清理扩展表中已不存在会话的孤儿键 */
+  function chatMetaPrune(aliveIds) {
+    var all = chatMetaAll(), keep = {}, i, k;
+    for (i = 0; i < aliveIds.length; i++) { keep[String(aliveIds[i])] = true; }
+    var next = {}, n = 0;
+    for (k in all) {
+      if (has(all, k) && keep[k]) { next[k] = all[k]; n++; }
+    }
+    writeJSON(META_KEY, next);
+    return n;
+  }
+  /** 全部已用标签（去重、按出现顺序） */
+  function chatAllTags(sessions) {
+    var seen = {}, out = [], i, j;
+    for (i = 0; i < sessions.length; i++) {
+      var meta = chatMetaOf(sessions[i].id);
+      for (j = 0; j < meta.tags.length; j++) {
+        if (!seen[meta.tags[j]]) { seen[meta.tags[j]] = true; out.push(meta.tags[j]); }
+      }
+    }
+    return out;
+  }
+
+  /* -------------------------------------------------- M5 视图状态（不跨会话持久化） */
+  var M5 = {
+    kw: '',            // 关键字
+    tag: '',           // 标签筛选（'' = 全部）
+    range: 'all',      // all | today | d7 | d30 | custom
+    from: '',          // 自定义起始（YYYY-MM-DD）
+    to: '',            // 自定义结束（YYYY-MM-DD）
+    favOnly: false,    // 只看收藏
+    selMode: false,    // 多选模式
+    sel: {},           // 选中集合 { id:true }
+    panel: ''          // '' | 'filter' | 'backup'
+  };
+  function m5Reset() { M5.sel = {}; }
+  /** 时间范围 → [fromTs, toTs]（toTs 含当天末刻；0/-1 表示不限） */
+  function m5RangeBounds() {
+    var now = new Date();
+    var endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime(); // 明日 0 点（当天含）
+    if (M5.range === 'today') {
+      return { from: new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(), to: endOfToday };
+    }
+    if (M5.range === 'd7') { return { from: endOfToday - 7 * 86400000, to: endOfToday }; }
+    if (M5.range === 'd30') { return { from: endOfToday - 30 * 86400000, to: endOfToday }; }
+    if (M5.range === 'custom') {
+      return { from: m5DayTs(M5.from, false), to: m5DayTs(M5.to, true) };
+    }
+    return { from: 0, to: 0 };
+  }
+  /** 'YYYY-MM-DD' → 时间戳；endOfDay=true 取当天 23:59:59.999；空/非法返回 0（不限） */
+  function m5DayTs(s, endOfDay) {
+    var m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) { return 0; }
+    var d = new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10),
+      endOfDay ? 23 : 0, endOfDay ? 59 : 0, endOfDay ? 59 : 0, endOfDay ? 999 : 0);
+    var t = d.getTime();
+    return isFinite(t) ? t : 0;
+  }
+  /** 过滤后的会话（最新在前） */
+  function m5Filtered() {
+    var all = chatSessions(), kw = M5.kw.trim().toLowerCase();
+    var b = m5RangeBounds(), out = [], i;
+    for (i = 0; i < all.length; i++) {
+      var s = all[i], meta = chatMetaOf(s.id);
+      if (M5.favOnly && !meta.fav) { continue; }
+      if (M5.tag && meta.tags.indexOf(M5.tag) < 0) { continue; }
+      if (b.from || b.to) {
+        var ts = sessionTs(s);
+        if (b.from && ts < b.from) { continue; }
+        if (b.to && ts >= b.to) { continue; }
+      }
+      if (kw) {
+        var hay = (sessionText(s) + ' ' + meta.tags.join(' ')).toLowerCase();
+        if (hay.indexOf(kw) < 0) { continue; }
+      }
+      out.push(s);
+    }
+    out.sort(function (a, c) { return sessionTs(c) - sessionTs(a); });
+    return out;
+  }
+
+  /* -------------------------------------------------- M5 渲染 */
+  function m5RangeLabel() {
+    if (M5.range === 'today') { return '今天'; }
+    if (M5.range === 'd7') { return '近 7 天'; }
+    if (M5.range === 'd30') { return '近 30 天'; }
+    if (M5.range === 'custom') {
+      if (M5.from || M5.to) { return (M5.from || '…') + '~' + (M5.to || '…'); }
+      return '自定义';
+    }
+    return '全部时间';
+  }
+  /** 顶部工具条：搜索 + 时间 + 标签 + 收藏 + 管理动作 */
+  function m5ToolbarHtml() {
+    var tags = chatAllTags(chatSessions());
+    var tagOpts = '<option value="">全部标签</option>', i;
+    for (i = 0; i < tags.length; i++) {
+      tagOpts += '<option value="' + esc(tags[i]) + '"' + (M5.tag === tags[i] ? ' selected' : '') + '>' + esc(tags[i]) + '</option>';
+    }
+    var s = '<div class="xtp-m5-tools">' +
+      '<div class="xtp-m5-search">' +
+        '<span class="nav-icon" data-icon="search" data-icon-size="16"></span>' +
+        '<input type="text" id="xtpM5Kw" placeholder="搜索标题 / 内容 / 标签" value="' + esc(M5.kw) + '">' +
+        (M5.kw ? '<button type="button" class="xtp-m5-sclear" id="xtpM5Clear" title="清空">&times;</button>' : '') +
+      '</div>' +
+      '<div class="xtp-m5-filters">' +
+        '<select id="xtpM5Range" class="xtp-m5-select" title="时间范围">' +
+          '<option value="all"' + (M5.range === 'all' ? ' selected' : '') + '>全部时间</option>' +
+          '<option value="today"' + (M5.range === 'today' ? ' selected' : '') + '>今天</option>' +
+          '<option value="d7"' + (M5.range === 'd7' ? ' selected' : '') + '>近 7 天</option>' +
+          '<option value="d30"' + (M5.range === 'd30' ? ' selected' : '') + '>近 30 天</option>' +
+          '<option value="custom"' + (M5.range === 'custom' ? ' selected' : '') + '>自定义</option>' +
+        '</select>' +
+        '<select id="xtpM5Tag" class="xtp-m5-select" title="标签筛选">' + tagOpts + '</select>' +
+        '<button type="button" class="xtp-m5-toggle' + (M5.favOnly ? ' on' : '') + '" id="xtpM5Fav"><span class="nav-icon" data-icon="star" data-icon-size="14"></span> 收藏</button>' +
+        '<button type="button" class="xtp-m5-toggle' + (M5.selMode ? ' on' : '') + '" id="xtpM5SelBtn">' + (M5.selMode ? '取消多选' : '多选') + '</button>' +
+      '</div>' +
+      (M5.range === 'custom'
+        ? '<div class="xtp-m5-custom">' +
+            '<label>从 <input type="date" id="xtpM5From" value="' + esc(M5.from) + '"></label>' +
+            '<label>到 <input type="date" id="xtpM5To" value="' + esc(M5.to) + '"></label>' +
+          '</div>'
+        : '') +
+      '</div>';
     return s;
+  }
+  /** 底部动作条：清空全部 / 导出 / 备份 / 恢复（多选模式下换成批量操作条） */
+  function m5ActionsHtml() {
+    if (M5.selMode) {
+      var cnt = m5SelCount();
+      return '<div class="xtp-m5-batch">' +
+        '<button type="button" class="xtp-m5-abtn" id="xtpM5SelAll">' + (m5AllSelected() ? '取消全选' : '全选') + '</button>' +
+        '<span class="xtp-m5-selcnt">已选 ' + cnt + ' 条</span>' +
+        '<button type="button" class="xtp-m5-abtn danger" id="xtpM5DelSel"' + (cnt ? '' : ' disabled') + '>删除所选</button>' +
+        '</div>';
+    }
+    return '<div class="xtp-m5-actions">' +
+      '<button type="button" class="xtp-m5-abtn" id="xtpM5Export"><span class="nav-icon" data-icon="download" data-icon-size="15"></span> 导出</button>' +
+      '<button type="button" class="xtp-m5-abtn" id="xtpM5Backup"><span class="nav-icon" data-icon="save" data-icon-size="15"></span> 备份</button>' +
+      '<button type="button" class="xtp-m5-abtn" id="xtpM5Restore"><span class="nav-icon" data-icon="upload" data-icon-size="15"></span> 恢复</button>' +
+      '<button type="button" class="xtp-m5-abtn danger" id="xtpM5ClearAll"><span class="nav-icon" data-icon="trash" data-icon-size="15"></span> 清空全部</button>' +
+      '</div>';
+  }
+  function m5SelCount() { var k, n = 0; for (k in M5.sel) { if (has(M5.sel, k) && M5.sel[k]) { n++; } } return n; }
+  function m5AllSelected() {
+    var list = m5Filtered(), i;
+    if (!list.length) { return false; }
+    for (i = 0; i < list.length; i++) { if (!M5.sel[list[i].id]) { return false; } }
+    return true;
+  }
+  /** 单条会话卡 */
+  function m5CardHtml(s) {
+    var meta = chatMetaOf(s.id);
+    var tagsHtml = '', i;
+    for (i = 0; i < meta.tags.length; i++) {
+      tagsHtml += '<span class="xtp-m5-tag">' + esc(meta.tags[i]) + '</span>';
+    }
+    var checked = M5.sel[s.id] ? ' checked' : '';
+    var selBox = M5.selMode
+      ? '<label class="xtp-m5-check"><input type="checkbox" class="xtpM5Cb" data-id="' + esc(s.id) + '"' + checked + '></label>'
+      : '';
+    var star = M5.selMode ? ''
+      : '<button type="button" class="xtp-m5-icon' + (meta.fav ? ' on' : '') + ' xtpM5Fav" data-id="' + esc(s.id) + '" title="收藏"><span class="nav-icon" data-icon="star" data-icon-size="15"></span></button>';
+    var tagBtn = M5.selMode ? ''
+      : '<button type="button" class="xtp-m5-icon xtpM5Tag" data-id="' + esc(s.id) + '" title="标签"><span class="nav-icon" data-icon="tag" data-icon-size="15"></span></button>';
+    var delBtn = M5.selMode ? ''
+      : '<button type="button" class="xtp-m5-icon danger xtpM5Del" data-id="' + esc(s.id) + '" title="删除"><span class="nav-icon" data-icon="trash" data-icon-size="15"></span></button>';
+    return '<div class="xtp-li xtp-m5-card" data-id="' + esc(s.id) + '">' +
+      selBox +
+      '<div class="xtp-m5-body">' +
+        '<div class="xtp-li-title">' + esc(s.title) +
+          '<span class="xtp-m5-cnt">' + esc(String((s.messages || []).length)) + ' 条</span></div>' +
+        '<div class="xtp-li-meta">' + esc(fmtTime(tsText(sessionTs(s)))) + (tagsHtml ? '' : '') + '</div>' +
+        '<div class="xtp-li-body">' + esc(sessionPreview(s)) + '</div>' +
+        (tagsHtml ? '<div class="xtp-m5-tags">' + tagsHtml + '</div>' : '') +
+      '</div>' +
+      '<div class="xtp-m5-ops">' + star + tagBtn + delBtn + '</div>' +
+      '</div>';
+  }
+  /** 快捷入口：跳转 AI 问答页（本页不会发起对话，推荐到 AI 页） */
+  function m5QuickHtml() {
+    return '<div class="xtp-m5-quick">' +
+      '<button type="button" class="xtp-m5-abtn" id="xtpM5GoAi">'
+        + '<span class="nav-icon" data-icon="message-circle" data-icon-size="15"></span> 去 AI 问答页对话</button>' +
+      '<span class="xtp-m5-quicktip">「清空全部」会同时删除本机与服务端记录；单条/批量删除仅作用于本机会话。</span></div>';
+  }
+  /** 当前生效的筛选条件摘要（用于空态文案，消除「清不掉」的困惑） */
+  function m5ActiveFilterLabel() {
+    var parts = [];
+    if (M5.range !== 'all') { parts.push(m5RangeLabel()); }
+    if (M5.tag) { parts.push('标签' + M5.tag); }
+    if (M5.favOnly) { parts.push('仅收藏'); }
+    if (M5.kw.trim()) { parts.push('关键词「' + M5.kw.trim() + '」'); }
+    return parts.length ? parts.join(' + ') : '无';
+  }
+  /** M5 管理列表（含工具条 + 列表 + 动作条） */
+  function m5PanelHtml() {
+    var list = m5Filtered(), i, s = '';
+    for (i = 0; i < list.length; i++) { s += m5CardHtml(list[i]); }
+    var total = chatSessions().length;
+    var hasFilter = !!(M5.kw.trim() || M5.tag || M5.favOnly || M5.range !== 'all');
+    var emptyTip = (total === 0)
+      ? '本机暂无会话记录。去 AI 问答页对话后，会自动出现在这里。'
+      : '没有符合条件的对话（当前筛选：' + esc(m5ActiveFilterLabel()) + '，本机共 ' + total + ' 条）。';
+    var emptyExtra = (!list.length && total > 0 && hasFilter)
+      ? '<div class="xtp-m5-emptyact"><button type="button" class="xtp-m5-abtn" id="xtpM5ResetFilter">查看全部本机记录（重置筛选）</button></div>'
+      : '';
+    return m5ToolbarHtml() +
+      '<div class="xtp-chat-sub">本机对话记录<span>可管理 · 共 ' + total + ' 条 · 当前 ' + list.length + ' 条</span></div>' +
+      m5QuickHtml() +
+      (list.length
+        ? '<section class="xtp-sec"><div class="xtp-list">' + s + '</div></section>'
+        : '<div class="xtp-empty">' + esc(emptyTip) + '</div>' + emptyExtra) +
+      m5ActionsHtml();
+  }
+
+  /* -------------------------------------------------- M5 动作 */
+  /** 清空全部（二次确认，说明后果：不可恢复、条数；R91-A：同步删除服务端记录） */
+  function m5ClearAll() {
+    var n = chatSessions().length;
+    var online = aiApiReady();
+    if (!n && !online) { toast('本已无对话记录'); return; }
+    var totalMsg = 0, arr = chatSessions(), i;
+    for (i = 0; i < arr.length; i++) { totalMsg += (arr[i].messages || []).length; }
+    var tip;
+    if (n && online) {
+      tip = '将删除本机全部 ' + n + ' 条会话（共 ' + totalMsg + ' 条消息），并同时删除服务端的全部对话记录，此操作不可恢复。\n建议先「备份」。确定继续吗？';
+    } else if (n) {
+      tip = '将删除本机全部 ' + n + ' 条会话（共 ' + totalMsg + ' 条消息），此操作不可恢复。\n（当前未登录，服务端记录无法在此删除）\n建议先「备份」。确定继续吗？';
+    } else {
+      tip = '本机已无会话记录。将删除服务端的全部对话记录，此操作不可恢复。确定继续吗？';
+    }
+    confirmBox('清空全部对话记录', tip, '清空', true, function () {
+      localStorage.removeItem('ai_chat_history');
+      writeJSON(META_KEY, {});
+      m5Reset();
+      m5Repaint();
+      if (!online) { toast('已清空本机会话（未登录，服务端记录未处理）'); renderPage(); return; }
+      /* R91-A：同步删除服务端记录；失败则降级为只清本机并在 toast 如实说明 */
+      window.api('/api/ai/history', { method: 'DELETE' }).then(function () {
+        toast(n ? '已清空本机与服务端对话记录' : '已清空服务端对话记录');
+        renderPage();
+      })['catch'](function () {
+        toast(n ? '已清空本机会话；服务端记录删除失败，请稍后重试' : '服务端记录删除失败，请稍后重试');
+        renderPage();
+      });
+    });
+  }
+  /** 单条删除（二次确认） */
+  function m5DelOne(id) {
+    var s = null, arr = chatSessions(), i;
+    for (i = 0; i < arr.length; i++) { if (arr[i].id === String(id)) { s = arr[i]; break; } }
+    if (!s) { return; }
+    confirmBox('删除这条对话',
+      '将删除「' + s.title + '」（' + (s.messages || []).length + ' 条消息），不可恢复。确定删除吗？',
+      '删除', true, function () {
+        var list = chatSessions(), out = [], j;
+        for (j = 0; j < list.length; j++) { if (list[j].id !== String(id)) { out.push(list[j]); } }
+        m5WriteSessions(out);
+        var meta = chatMetaAll(); if (has(meta, String(id))) { delete meta[String(id)]; writeJSON(META_KEY, meta); }
+        delete M5.sel[String(id)];
+        m5Repaint();
+        toast('已删除');
+      });
+  }
+  /** 批量删除所选（二次确认） */
+  function m5DelSelected() {
+    var ids = [], k;
+    for (k in M5.sel) { if (has(M5.sel, k) && M5.sel[k]) { ids.push(k); } }
+    if (!ids.length) { toast('未选择任何对话'); return; }
+    confirmBox('批量删除对话',
+      '将删除所选 ' + ids.length + ' 条对话，此操作不可恢复。确定删除吗？',
+      '删除', true, function () {
+        var list = chatSessions(), out = [], i, j, del = {}, meta = chatMetaAll();
+        for (i = 0; i < ids.length; i++) { del[ids[i]] = true; }
+        for (i = 0; i < list.length; i++) { if (!del[list[i].id]) { out.push(list[i]); } }
+        m5WriteSessions(out);
+        for (j = 0; j < ids.length; j++) { if (has(meta, ids[j])) { delete meta[ids[j]]; } }
+        writeJSON(META_KEY, meta);
+        M5.sel = {};
+        M5.selMode = false;
+        m5Repaint();
+        toast('已删除 ' + ids.length + ' 条');
+      });
+  }
+  /** 打标（输入框弹层，逗号分隔） */
+  function m5EditTags(id) {
+    var s = null, arr = chatSessions(), i;
+    for (i = 0; i < arr.length; i++) { if (arr[i].id === String(id)) { s = arr[i]; break; } }
+    if (!s) { return; }
+    var meta = chatMetaOf(s.id);
+    var cur = meta.tags.join(', ');
+    var mask = openModal(
+      '<div class="xtp-modal-title">编辑标签</div>' +
+      '<div class="xtp-modal-tip">为「' + esc(s.title) + '」设置标签，多个标签用逗号分隔（最多 8 个，每个 ≤12 字）。</div>' +
+      '<input type="text" class="xtp-modal-input" id="xtpM5TagInput" style="margin-top:12px" value="' + esc(cur) + '" placeholder="如：学习 / 重要 / 待整理">' +
+      '<div class="xtp-modal-actions"><button type="button" id="xtpM5TagCancel">取消</button>' +
+      '<button type="button" class="primary" id="xtpM5TagOk">保存</button></div>'
+    );
+    var inp = mask.querySelector('#xtpM5TagInput');
+    if (inp && inp.focus) { inp.focus(); }
+    mask.querySelector('#xtpM5TagCancel').addEventListener('click', closeModal);
+    mask.querySelector('#xtpM5TagOk').addEventListener('click', function () {
+      var parts = String((inp && inp.value) || '').split(/[,，]/);
+      chatMetaSet(s.id, { tags: parts });
+      closeModal();
+      m5Repaint();
+      toast('标签已更新');
+    });
+  }
+  /** 切换收藏 */
+  function m5ToggleFav(id) {
+    var meta = chatMetaOf(id);
+    chatMetaSet(id, { fav: !meta.fav });
+    m5Repaint();
+  }
+
+  /* -------------------------------------------------- 导出 / 备份 / 恢复 */
+  function m5Stamp() {
+    var d = new Date();
+    return d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + '_' + pad2(d.getHours()) + pad2(d.getMinutes());
+  }
+  /** 组装导出/备份包（exports：'full'=全部本机会话+元信息；'filtered'=当前筛选结果） */
+  function m5Pack(scope) {
+    var sessions = (scope === 'filtered') ? m5Filtered() : chatSessions();
+    var meta = chatMetaAll(), metaOut = {}, i;
+    for (i = 0; i < sessions.length; i++) {
+      var id = sessions[i].id;
+      if (has(meta, id)) { metaOut[id] = meta[id]; }
+    }
+    return {
+      type: 'xt-ai-chat-backup',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      count: sessions.length,
+      sessions: sessions,
+      meta: metaOut
+    };
+  }
+  /** 触发浏览器下载（file:// 下 a[download] 亦可用；失败回退复制） */
+  function m5Download(obj, filename) {
+    var text = JSON.stringify(obj, null, 2);
+    try {
+      var blob = new Blob([text], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { try { document.body.removeChild(a); URL.revokeObjectURL(url); } catch (e) { } }, 0);
+      toast('已导出：' + filename);
+      return true;
+    } catch (e) {
+      // 老内核无 Blob/URL 或下载被拦：回退复制到剪贴板
+      copyText(text, '导出数据');
+      return false;
+    }
+  }
+  function m5Export() {
+    var all = chatSessions();
+    if (!all.length) { toast('暂无可导出的记录'); return; }
+    m5Download(m5Pack('full'), 'ai-chat-export_' + m5Stamp() + '.json');
+  }
+  function m5Backup() {
+    var all = chatSessions();
+    if (!all.length) { toast('暂无可备份的记录'); return; }
+    m5Download(m5Pack('full'), 'ai-chat-backup_' + m5Stamp() + '.json');
+  }
+  /** 恢复：选择 JSON 文件 → 解析校验 → 二次确认（说明覆盖策略）→ 按 id 合并 */
+  function m5Restore() {
+    var inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = '.json,application/json';
+    inp.style.display = 'none';
+    document.body.appendChild(inp);
+    inp.addEventListener('change', function () {
+      var f = inp.files && inp.files[0];
+      try { document.body.removeChild(inp); } catch (e) { }
+      if (!f) { return; }
+      var rdr = new FileReader();
+      rdr.onload = function () {
+        var data = null;
+        try { data = JSON.parse(String(rdr.result || '')); } catch (e) { data = null; }
+        var sessions = (data && isArr(data.sessions)) ? data.sessions : null;
+        if (!sessions) { toast('文件格式不正确，未导入', true); return; }
+        // 校验：至少要有若干可用会话
+        var ok = [], i;
+        for (i = 0; i < sessions.length; i++) {
+          var c = sessions[i] || {};
+          if (c && typeof c === 'object' && (c.id !== undefined && c.id !== null) && String(c.id)) { ok.push(c); }
+        }
+        if (!ok.length) { toast('文件中没有可导入的对话记录', true); return; }
+        var curN = chatSessions().length;
+        confirmBox('恢复对话记录',
+          '文件含 ' + ok.length + ' 条对话。将与本机现有 ' + curN + ' 条【按 id 合并】：' +
+          '相同 id 以文件数据覆盖，新 id 追加。此操作会改写本机记录，确定导入吗？',
+          '导入', false, function () {
+            var merged = m5Merge(ok, data && data.meta);
+            m5Repaint();
+            toast('已导入，合并后共 ' + merged + ' 条');
+          });
+      };
+      rdr.onerror = function () { toast('读取文件失败', true); };
+      try { rdr.readAsText(f); } catch (e) { toast('无法读取该文件', true); }
+    });
+    inp.click();
+  }
+  /** 按 id 合并导入会话 + 元信息；返回合并后总条数 */
+  function m5Merge(importSessions, importMeta) {
+    var cur = chatSessions(), idx = {}, out = [], i;
+    for (i = 0; i < cur.length; i++) { idx[cur[i].id] = i; out.push(cur[i]); }
+    for (i = 0; i < importSessions.length; i++) {
+      var c = importSessions[i] || {};
+      var id = String(c.id);
+      var msgs = isArr(c.messages) ? c.messages : [];
+      var rec = {
+        id: id,
+        title: (c.title === undefined || c.title === null || c.title === '') ? '未命名对话' : String(c.title),
+        createdAt: num(c.createdAt),
+        updatedAt: num(c.updatedAt || c.createdAt),
+        messages: msgs
+      };
+      if (has(idx, id)) { out[idx[id]] = rec; } else { idx[id] = out.length; out.push(rec); }
+    }
+    m5WriteSessions(out);
+    // 合并元信息
+    if (importMeta && typeof importMeta === 'object' && !isArr(importMeta)) {
+      var all = chatMetaAll(), k;
+      for (k in importMeta) {
+        if (!has(importMeta, k)) { continue; }
+        var e = importMeta[k] || {};
+        var tags = isArr(e.tags) ? e.tags : [];
+        var fav = !!e.fav;
+        if (tags.length || fav) { all[k] = { tags: tags, fav: fav }; }
+      }
+      writeJSON(META_KEY, all);
+    }
+    // 清理孤儿元信息
+    var ids = [], j;
+    for (j = 0; j < out.length; j++) { ids.push(out[j].id); }
+    chatMetaPrune(ids);
+    return out.length;
+  }
+  /** 写回 ai_chat_history（仅用规范化字段，保持 ai-page.js 可读） */
+  function m5WriteSessions(list) {
+    writeJSON('ai_chat_history', list);
+  }
+
+  /* -------------------------------------------------- M5 重绘与事件绑定 */
+  function m5Repaint() {
+    var box = $('xtpChatBody');
+    if (box) { paintChat(box); }
+  }
+  function m5Bind(root) {
+    if (!root) { return; }
+    // ⚠️ 事件处理器一律用局部 const el 捕获元素，绝不复用共享 var（否则闭包读到最后一个赋值元素）。
+    // 搜索框（输入防抖 200ms）
+    var kwEl = root.querySelector('#xtpM5Kw');
+    if (kwEl) {
+      var kwT = null;
+      kwEl.addEventListener('input', function () {
+        if (kwT) { clearTimeout(kwT); }
+        kwT = setTimeout(function () {
+          M5.kw = String(kwEl.value || '');
+          m5Reset();
+          m5Repaint();
+          var nk = $('xtpM5Kw');
+          if (nk && nk.focus && nk.setSelectionRange) {
+            try { nk.focus(); nk.setSelectionRange(nk.value.length, nk.value.length); } catch (e) { /* 忽略 */ }
+          }
+        }, 200);
+      });
+    }
+    var clearEl = root.querySelector('#xtpM5Clear');
+    if (clearEl) { clearEl.addEventListener('click', function () { M5.kw = ''; m5Reset(); m5Repaint(); }); }
+    var rangeEl = root.querySelector('#xtpM5Range');
+    if (rangeEl) { rangeEl.addEventListener('change', function () { M5.range = rangeEl.value || 'all'; m5Reset(); m5Repaint(); }); }
+    var tagEl = root.querySelector('#xtpM5Tag');
+    if (tagEl) { tagEl.addEventListener('change', function () { M5.tag = tagEl.value || ''; m5Reset(); m5Repaint(); }); }
+    var fromEl = root.querySelector('#xtpM5From');
+    if (fromEl) { fromEl.addEventListener('change', function () { M5.from = fromEl.value || ''; m5Reset(); m5Repaint(); }); }
+    var toEl = root.querySelector('#xtpM5To');
+    if (toEl) { toEl.addEventListener('change', function () { M5.to = toEl.value || ''; m5Reset(); m5Repaint(); }); }
+    var favEl = root.querySelector('#xtpM5Fav');
+    if (favEl) { favEl.addEventListener('click', function () { M5.favOnly = !M5.favOnly; m5Reset(); m5Repaint(); }); }
+    var selBtnEl = root.querySelector('#xtpM5SelBtn');
+    if (selBtnEl) { selBtnEl.addEventListener('click', function () { M5.selMode = !M5.selMode; M5.sel = {}; m5Repaint(); }); }
+    var selAllEl = root.querySelector('#xtpM5SelAll');
+    if (selAllEl) { selAllEl.addEventListener('click', function () {
+      if (m5AllSelected()) { M5.sel = {}; }
+      else { var list = m5Filtered(), i; for (i = 0; i < list.length; i++) { M5.sel[list[i].id] = true; } }
+      m5Repaint();
+    }); }
+    var delSelEl = root.querySelector('#xtpM5DelSel');
+    if (delSelEl) { delSelEl.addEventListener('click', m5DelSelected); }
+    var clearAllEl = root.querySelector('#xtpM5ClearAll');
+    if (clearAllEl) { clearAllEl.addEventListener('click', m5ClearAll); }
+    var goAiEl = root.querySelector('#xtpM5GoAi');
+    if (goAiEl) { goAiEl.addEventListener('click', function () { location.href = 'AI.html'; }); }
+    var resetFEl = root.querySelector('#xtpM5ResetFilter');
+    if (resetFEl) { resetFEl.addEventListener('click', function () {
+      M5.kw = ''; M5.tag = ''; M5.favOnly = false; M5.range = 'all'; M5.from = ''; M5.to = '';
+      m5Reset(); m5Repaint();
+    }); }
+    var exportEl = root.querySelector('#xtpM5Export');
+    if (exportEl) { exportEl.addEventListener('click', m5Export); }
+    var backupEl = root.querySelector('#xtpM5Backup');
+    if (backupEl) { backupEl.addEventListener('click', m5Backup); }
+    var restoreEl = root.querySelector('#xtpM5Restore');
+    if (restoreEl) { restoreEl.addEventListener('click', m5Restore); }
+    // 列表内：多选框 / 收藏 / 标签 / 删除（用 currentTarget/闭包元素，避免共享变量）
+    var boxes = root.querySelectorAll('.xtpM5Cb'), i;
+    for (i = 0; i < boxes.length; i++) {
+      boxes[i].addEventListener('change', function (ev) {
+        var id = ev.target.getAttribute('data-id');
+        if (ev.target.checked) { M5.sel[id] = true; } else { delete M5.sel[id]; }
+        m5Repaint();
+      });
+    }
+    var favs = root.querySelectorAll('.xtpM5Fav'), j;
+    for (j = 0; j < favs.length; j++) {
+      favs[j].addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        m5ToggleFav(ev.currentTarget.getAttribute('data-id'));
+      });
+    }
+    var tagbs = root.querySelectorAll('.xtpM5Tag'), m;
+    for (m = 0; m < tagbs.length; m++) {
+      tagbs[m].addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        m5EditTags(ev.currentTarget.getAttribute('data-id'));
+      });
+    }
+    var dels = root.querySelectorAll('.xtpM5Del'), p;
+    for (p = 0; p < dels.length; p++) {
+      dels[p].addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        m5DelOne(ev.currentTarget.getAttribute('data-id'));
+      });
+    }
   }
 
   /* ================================================== 数字 0 → 真实值 动画 */
@@ -1361,42 +2076,74 @@
     } else { fallback(); }
   }
 
-  /* ============================================================ 头像裁剪 */
+  /* ============================================================ 头像裁剪
+   * R86-C 微信风格改造（只改 UI 与裁剪交互；状态管理、图片选取、落库逻辑不变）：
+   *   1) 全屏暗色裁剪台：顶部「取消 / 完成」+ 中间大图裁剪区 + 底部缩放滑杆；
+   *      裁剪区占满可用空间、四周留白压到最小（不再受 .xtp-modal 400px 限制）；
+   *   2) 交互只保留：单指拖动移动图片、双指捏合缩放；桌面端额外保留滚轮缩放与滑杆；
+   *      已移除旋转 / 滤镜 / 比例切换等控件与全部说明性文案，仅保留一个放大镜像标；
+   *   3) 默认正方形裁剪区 + 圆形头像遮罩，点「完成」直接生成头像；
+   *   4) 输出仍为正方形图片（正方形 canvas + 圆形 clip），与原实现一致。
+   */
+  var cropResizeFn = null;
+  var CROP_ZOOM_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>';
+
   function openCropper(dataUrl) {
-    var mask = openModal(
-      '<div class="xtp-modal-title">裁剪头像</div>' +
-      '<div class="xtp-crop-stage" id="xtpCropStage"><img id="xtpCropImg" src="' + dataUrl + '" alt="">' +
-        '<div class="xtp-crop-ring" id="xtpCropRing"></div></div>' +
-      '<input class="xtp-crop-zoom" id="xtpCropZoom" type="range" min="100" max="500" value="100">' +
-      '<div class="xtp-modal-tip">拖动调整位置；双指 / 滚轮 / 滑动条缩放，双击在 1x / 2x 间切换；圆形区域为最终头像。</div>' +
-      '<div class="xtp-modal-actions"><button type="button" id="xtpCropCancel">取消</button>' +
-        '<button type="button" class="primary" id="xtpCropOk">确定</button></div>'
-    );
+    closeModal();
+    detachCropResize();
+    var host = $('xtpModalHost') || document.body;
+    var mask = document.createElement('div');
+    mask.className = 'xtp-mask xtp-crop-mask';
+    mask.id = 'xtpMask';   // 沿用统一关闭口 closeModal() / window.xtpCloseModal
+    mask.innerHTML =
+      '<div class="xtp-cropper">' +
+        '<div class="xtp-crop-topbar" id="xtpCropTopbar">' +
+          '<button class="xtp-crop-btn" type="button" id="xtpCropCancel">取消</button>' +
+          '<button class="xtp-crop-btn primary" type="button" id="xtpCropOk">完成</button>' +
+        '</div>' +
+        '<div class="xtp-crop-stage" id="xtpCropStage">' +
+          '<img id="xtpCropImg" src="' + String(dataUrl) + '" alt="">' +
+          '<div class="xtp-crop-frame" id="xtpCropFrame"></div>' +
+          '<div class="xtp-crop-hole" id="xtpCropHole"></div>' +
+        '</div>' +
+        '<div class="xtp-crop-bottom" id="xtpCropBottom">' +
+          '<span class="xtp-crop-zi">' + CROP_ZOOM_SVG + '</span>' +
+          '<input class="xtp-crop-zoom" id="xtpCropZoom" type="range" min="100" max="500" value="100">' +
+        '</div>' +
+      '</div>';
+    host.appendChild(mask);
+
     var stage = mask.querySelector('#xtpCropStage');
     var img = mask.querySelector('#xtpCropImg');
-    var ring = mask.querySelector('#xtpCropRing');
+    var hole = mask.querySelector('#xtpCropHole');
+    var frame = mask.querySelector('#xtpCropFrame');
     var zoom = mask.querySelector('#xtpCropZoom');
-    var modalEl = mask.querySelector('.xtp-modal');
-    if (modalEl) { modalEl.classList.add('xtp-modal-crop'); }   // 裁剪弹层放宽到 400px，让舞台更大
-    var ZMIN = 1, ZMAX = 5;                                     // 缩放范围与滑杆 min=100 / max=500 对齐
+    var topbar = mask.querySelector('#xtpCropTopbar');
+    var bottom = mask.querySelector('#xtpCropBottom');
+    var ZMIN = 1, ZMAX = 5;                                     // 与滑杆 min=100 / max=500 对齐
     var STATE = { scale: 1, x: 0, y: 0, natW: 0, natH: 0, stageW: 340, stageH: 340, ring: 292 };
 
+    /* 裁剪区占满可用空间：整屏宽 ×（视口高 - 顶栏 - 底栏），取短边作为正方形裁剪区边长 */
     function fitStage() {
-      var modal = mask.querySelector('.xtp-modal');
-      var avail = 340;
-      try {
-        var w = modal ? (modal.clientWidth - 36) : 0;   // 扣除弹层左右 padding
-        if (w > 0) { avail = Math.min(340, w); }
-      } catch (e) { /* 忽略 */ }
-      if (avail < 150) { avail = 150; }
-      var r = Math.round(avail * 0.86);
-      STATE.stageW = avail; STATE.stageH = avail; STATE.ring = r;
-      stage.style.width = avail + 'px';
-      stage.style.height = avail + 'px';
-      if (ring) {
-        ring.style.width = r + 'px';
-        ring.style.height = r + 'px';
-        ring.style.margin = (-r / 2) + 'px 0 0 ' + (-r / 2) + 'px';
+      var vw = window.innerWidth || (document.documentElement && document.documentElement.clientWidth) || 340;
+      var vh = window.innerHeight || (document.documentElement && document.documentElement.clientHeight) || 480;
+      var topH = topbar ? (topbar.offsetHeight || 48) : 48;
+      var botH = bottom ? (bottom.offsetHeight || 56) : 56;
+      var sw = Math.max(160, Math.round(vw));
+      var sh = Math.max(160, Math.round(vh - topH - botH));
+      var side = Math.max(120, Math.min(sw, sh));
+      STATE.stageW = sw; STATE.stageH = sh; STATE.ring = side;
+      if (stage) { stage.style.width = sw + 'px'; stage.style.height = sh + 'px'; }
+      if (hole) {
+        hole.style.width = side + 'px';
+        hole.style.height = side + 'px';
+        hole.style.margin = (-side / 2) + 'px 0 0 ' + (-side / 2) + 'px';
+      }
+      if (frame) {
+        frame.style.width = side + 'px';
+        frame.style.height = side + 'px';
+        frame.style.margin = (-side / 2) + 'px 0 0 ' + (-side / 2) + 'px';
       }
     }
     function layout() {
@@ -1441,6 +2188,9 @@
       layout();
     };
     if (img.complete && img.naturalWidth) { img.onload(); }
+
+    cropResizeFn = function () { fitStage(); layout(); };
+    window.addEventListener('resize', cropResizeFn);
 
     var dragging = false, lastX = 0, lastY = 0;
 
@@ -1554,8 +2304,11 @@
 
     /* 滑杆：以舞台中心为锚点缩放（沿用 layout 的边界 clamp） */
     if (zoom) { zoom.addEventListener('input', function () { zoomAt(num(zoom.value) / 100, STATE.stageW / 2, STATE.stageH / 2); }); }
+
     var cancel = mask.querySelector('#xtpCropCancel');
-    if (cancel) { cancel.addEventListener('click', closeModal); }
+    if (cancel) {
+      cancel.addEventListener('click', function () { detachCropResize(); closeModal(); });
+    }
     var ok = mask.querySelector('#xtpCropOk');
     if (ok) {
       ok.addEventListener('click', function () {
@@ -1587,9 +2340,17 @@
         } catch (e) {
           toast('头像处理失败，请换一张图片', true);
         } finally {
+          detachCropResize();
           closeModal();   // 阻断bug修复：无论成功/失败都关闭全屏遮罩，杜绝残留导致整页不可点
         }
       });
+    }
+  }
+  /** 摘掉裁剪台的 resize 监听（关闭弹层 / 重开裁剪台时调用，避免监听泄漏） */
+  function detachCropResize() {
+    if (cropResizeFn) {
+      try { window.removeEventListener('resize', cropResizeFn); } catch (e) { /* 忽略 */ }
+      cropResizeFn = null;
     }
   }
 
@@ -1650,11 +2411,9 @@
       return;
     }
     if (key === 'region') {
-      openFieldEditor({
-        title: '地区', value: regionVal(), placeholder: '如：广东 深圳', maxLen: 24,
-        validate: function (v) { return v.length > 24 ? '地区最多 24 个字' : ''; },
-        onSave: function (v) { saveProfile({ city: v }); renderPage(); toast(v ? '地区已保存' : '地区已清空'); }
-      });
+      /* R88-J item1：地区改为跳「地区选择.html」选择器（原为通用文本编辑层，无法跳转）。
+         选中后经 localStorage['xt_region_pick'] 回写，本页 boot 时消费（10 分钟 TTL）。 */
+      xtpOpenRegionPicker();
       return;
     }
     if (key === 'birthday') {
@@ -1785,6 +2544,8 @@
   window.xtpCloseModal = closeModal;
   window.xtpOpenView = openView;
   window.xtpCloseView = backView;
+  window.xtpOpenRegionPicker = xtpOpenRegionPicker;
+  window.xtpTakeRegionPick = xtpTakeRegionPick;
 
   window.xtProfile = {
     render: renderPage,
@@ -1808,6 +2569,14 @@
     applyThemeClass();
     var otherUid = viewUid();
     if (otherUid) { renderOtherEntry(otherUid); } else { renderPage(); }
+    /* R88-J item1：若从「地区选择.html」跳回，消费回写值 → 写入 profile.city。 */
+    var pendingRegion = xtpTakeRegionPick();
+    if (pendingRegion) {
+      saveProfile({ city: pendingRegion });
+      renderPage();
+      toast('地区已更新：' + pendingRegion);
+    }
+    /* R91-A：不再预拉服务端对话记录（prefetchAiChat 已移除，角标改本机口径） */
     loadAppVersion(function () { /* 版本号就绪，供「关于」弹层使用 */ });
     loadRemoteEmail(function () {
       // 服务端邮箱态就绪：若编辑页正打开则刷新其状态（已绑定 → 只读）

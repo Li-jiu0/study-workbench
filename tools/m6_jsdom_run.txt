@@ -1,0 +1,22 @@
+PASS 菜单项数 = 4（期望 4）
+PASS 每项均含 .im-plus-ico 色块容器 + 内部 nav-icon
+PASS 4 项均带配色类 im-plus-ico--iN: im-plus-ico--i1,im-plus-ico--i2,im-plus-ico--i3,im-plus-ico--i4
+PASS 配色类互不相同（成体系）: im-plus-ico--i1,im-plus-ico--i2,im-plus-ico--i3,im-plus-ico--i4
+PASS 源码内 4 个色块配色类集中定义（一处管理，linear-gradient 体系）
+PASS 4 项 onclick 语义保持（image/camera/file/location）
+PASS 4 项 data-icon 语义保持
+PASS common.css 定义 .bm-icon > .nav-icon 色块
+PASS common.css 属性选择器配色分组数 = 23（>=20）
+PASS 未引入真实 :has() 选择器（仅注释出现 1 次）
+PASS common.css 含 R88-M6 标记
+PASS xtp-crop-mask 有 animation 过渡声明
+PASS 存在 xtpCropMaskIn 关键帧
+PASS 存在 xtpCropperIn 关键帧
+PASS topbar::after 有引导文案 content
+PASS 引导文案含「拖动/缩放」字样 DOM 级存在（CSS content）
+PASS 安全边距 env(safe-area-inset-*) 存在
+PASS xt-profile.css 无 clamp()/min()/max()
+PASS xtpPickAvatar() 定义与签名未变
+PASS openCropper(dataUrl) 定义与签名未变
+PASS closeModal() 定义与签名未变
+PASS xtpPickAvatar 内仍调用 openCropper(url)（行为链未断）

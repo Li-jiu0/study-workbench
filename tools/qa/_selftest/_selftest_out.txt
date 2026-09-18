@@ -1,0 +1,83 @@
+================================================================================================
+星途 一波多线统一验收报告   wave_check_20260916m.py
+工作区 ROOT = D:\下载的文件\学习工作台
+本次被测文件 = tools/qa/_selftest/_bad.js, tools/qa/_selftest/_bad.html, tools/qa/_selftest/_good.html
+================================================================================================
+
+文件                                 检查项                      结果     详情
+------------------------------------------------------------------------------------------------
+tools\qa\_selftest\_bad.js         文件存在性                    PASS   1159 bytes
+tools\qa\_selftest\_bad.js         换行符                      INFO   CRLF=0 裸LF=18（白名单外，未判定）
+tools\qa\_selftest\_bad.js         版本戳分布                    INFO   本文件无 ?v= 引用
+tools\qa\_selftest\_bad.js         禁用语法<文件>                 FAIL   命中 11 处
+                                                                    [optional-chain] 可选链 ?. x1  例: L6: var a = obj?.b;
+                                                                    [nullish] 空值合并 ?? x1  例: L7: var c = d ?? e;
+                                                                    [replaceAll] String.prototype.replaceAll x1  例: L8: var f =   .replaceAll(  ,  );
+                                                                    [fromEntries] Object.fromEntries x1  例: L9: var g = Object.fromEntries(p);
+                                                                    [array-at] Array.prototype.at x1  例: L10: var h = arr.at(-1);
+                                                                    [object-spread] 对象展开 {...obj} x1  例: L12: var j = {...obj};
+                                                                    [object-rest] 对象剩余解构 ...rest} x2  例: L12: var j = {...obj};
+                                                                    [exponent] 指数运算符 ** x1  例: L5: var n = 2**3;
+                                                                    [optional-catch] 可选 catch 绑定 catch { x1  例: L14: try { q(); } catch { }
+                                                                    [top-await] 顶层 await x1  例: L15: await fetch(     );
+tools\qa\_selftest\_bad.js         原生弹窗<文件>                 FAIL   命中 1 处: window.alert(
+tools\qa\_selftest\_bad.html       文件存在性                    PASS   367 bytes
+tools\qa\_selftest\_bad.html       换行符                      INFO   CRLF=0 裸LF=18（白名单外，未判定）
+tools\qa\_selftest\_bad.html       版本戳分布                    INFO   20260916L x1
+tools\qa\_selftest\_bad.html       注释配对 <!--/-->            PASS   0 / 0
+tools\qa\_selftest\_bad.html       div 开闭配对                 FAIL   开 3 / 闭 2
+tools\qa\_selftest\_bad.html       script 开闭配对              PASS   开 2 / 闭 2
+tools\qa\_selftest\_bad.html       <head> 数量=1              PASS   实际 1
+tools\qa\_selftest\_bad.html       </head> 数量=1             PASS   实际 1
+tools\qa\_selftest\_bad.html       <body 数量=1               PASS   实际 1
+tools\qa\_selftest\_bad.html       </body> 数量=1             PASS   实际 1
+tools\qa\_selftest\_bad.html       版本戳损坏特征                  FAIL   命中 1 处
+tools\qa\_selftest\_bad.html       原生弹窗<HTML全文>             FAIL   命中 2 处: alert(, confirm(
+tools\qa\_selftest\_bad.html       禁用语法<内联#1>               FAIL   命中 3 处
+                                                                    [optional-chain] 可选链 ?. x1  例: L3: var a = obj?.b;
+                                                                    [nullish] 空值合并 ?? x1  例: L4: var c = d ?? e;
+                                                                    [exponent] 指数运算符 ** x1  例: L2: var n = 2**3;
+tools\qa\_selftest\_good.html      文件存在性                    PASS   310 bytes
+tools\qa\_selftest\_good.html      换行符                      INFO   CRLF=15 裸LF=0（白名单外，未判定）
+tools\qa\_selftest\_good.html      版本戳分布                    INFO   20260916L x1
+tools\qa\_selftest\_good.html      注释配对 <!--/-->            PASS   0 / 0
+tools\qa\_selftest\_good.html      div 开闭配对                 PASS   开 1 / 闭 1
+tools\qa\_selftest\_good.html      script 开闭配对              PASS   开 2 / 闭 2
+tools\qa\_selftest\_good.html      <head> 数量=1              PASS   实际 1
+tools\qa\_selftest\_good.html      </head> 数量=1             PASS   实际 1
+tools\qa\_selftest\_good.html      <body 数量=1               PASS   实际 1
+tools\qa\_selftest\_good.html      </body> 数量=1             PASS   实际 1
+tools\qa\_selftest\_good.html      版本戳损坏特征                  PASS   命中 0 处
+tools\qa\_selftest\_good.html      原生弹窗<HTML全文>             PASS   0 命中
+tools\qa\_selftest\_good.html      禁用语法<内联#1>               PASS   0 命中
+------------------------------------------------------------------------------------------------
+检查项总数 = 31    FAIL = 6    WARN = 0    (INFO 不计入判定)
+
+---- FAIL 明细 ----
+[FAIL] tools\qa\_selftest\_bad.js :: 禁用语法<文件>
+      命中 11 处
+        [optional-chain] 可选链 ?. x1  例: L6: var a = obj?.b;
+        [nullish] 空值合并 ?? x1  例: L7: var c = d ?? e;
+        [replaceAll] String.prototype.replaceAll x1  例: L8: var f =   .replaceAll(  ,  );
+        [fromEntries] Object.fromEntries x1  例: L9: var g = Object.fromEntries(p);
+        [array-at] Array.prototype.at x1  例: L10: var h = arr.at(-1);
+        [object-spread] 对象展开 {...obj} x1  例: L12: var j = {...obj};
+        [object-rest] 对象剩余解构 ...rest} x2  例: L12: var j = {...obj};
+        [exponent] 指数运算符 ** x1  例: L5: var n = 2**3;
+        [optional-catch] 可选 catch 绑定 catch { x1  例: L14: try { q(); } catch { }
+        [top-await] 顶层 await x1  例: L15: await fetch(     );
+[FAIL] tools\qa\_selftest\_bad.js :: 原生弹窗<文件>
+      命中 1 处: window.alert(
+[FAIL] tools\qa\_selftest\_bad.html :: div 开闭配对
+      开 3 / 闭 2
+[FAIL] tools\qa\_selftest\_bad.html :: 版本戳损坏特征
+      命中 1 处
+[FAIL] tools\qa\_selftest\_bad.html :: 原生弹窗<HTML全文>
+      命中 2 处: alert(, confirm(
+[FAIL] tools\qa\_selftest\_bad.html :: 禁用语法<内联#1>
+      命中 3 处
+        [optional-chain] 可选链 ?. x1  例: L3: var a = obj?.b;
+        [nullish] 空值合并 ?? x1  例: L4: var c = d ?? e;
+        [exponent] 指数运算符 ** x1  例: L2: var n = 2**3;
+
+===== 总结: 6 项 FAIL =====

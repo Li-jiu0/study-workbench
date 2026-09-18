@@ -1,0 +1,62 @@
+[PASS] BAN iv-prep ?.
+[PASS] BAN iv-prep ??
+[PASS] BAN iv-prep replaceAll
+[PASS] BAN iv-prep Object.fromEntries
+[PASS] BAN iv-prep .at(
+[PASS] BAN iv-prep (?<=
+[PASS] BAN iv-prep (?<!
+[PASS] BAN iv-prep **
+[PASS] BAN iv-prep catch{}
+[PASS] BAN iv-prep =>
+[PASS] BAN iv-prep {...
+[PASS] BAN iv-prep alert(
+[PASS] BAN iv-prep confirm(
+[PASS] BAN iv-prep prompt(
+[PASS] KEEP id ipHero
+[PASS] KEEP id ipProgBox
+[PASS] KEEP id ipList
+[PASS] KEEP id ipLegacyQuiz
+[PASS] KEEP id ivPrepBody
+[PASS] KEEP id ivPrepCount
+[PASS] KEEP name IP_render
+[PASS] KEEP name IP_openV2
+[PASS] KEEP name IP_itemHtml
+[PASS] KEEP name IP_answerInfo
+[PASS] KEEP name IP_gotoAI
+[PASS] KEEP name IP_speak
+[PASS] KEEP name IP_copy
+[PASS] KEEP name IP_stageLegend
+[PASS] KEEP name IP_shareStages
+[PASS] KEEP name window.ivQuizMount
+[PASS] KEEP name window.IvPrep
+[PASS] KEEP act data-act="fold"
+[PASS] KEEP act data-act="speak"
+[PASS] KEEP act data-act="copy"
+[PASS] KEEP act data-act="ai"
+[PASS] KEEP act data-act="saveAns"
+[PASS] KEEP act data-act="clearAns"
+[PASS] KEEP act data-act="chk"
+[PASS] KEEP act data-act="foldAll"
+[PASS] KEEP LS 前缀 xtc:lib:ip:
+[PASS] KEEP version 升级为 2.1.0
+[PASS] NEW stages 出口
+[PASS] R1 IvPrep 句柄存在 | 2.1.0
+[PASS] R2 共享六阶段词汇 window.IV_STAGES | ["setup","reading","preparing","answering","submitting","reviewing"]
+[PASS] R3 共享五段词汇 window.IV_BAR_STAGES | ["reading","preparing","answering","submitting","reviewing"]
+[PASS] R4 stages 出口字段齐备
+[PASS] R5 渲染出 ip-root
+[PASS] R6 渲染出 2 个题目卡 | 2
+[PASS] R7 折叠态下仅展开题含五段预览 | 1
+[PASS] R8 展开第二题后五段预览 2 处 / 徽标 10 个 | flow=2 seg=10
+[PASS] R9 ⑤ 段落标题存在
+[PASS] R10 回退说明写入
+[PASS] R11 每卡新增「按五段流程练这道题」按钮 | 5
+[PASS] R12 手风琴展开态跨重渲染保留（展开后 2 题同开） | 2
+[PASS] R13 ④ 自查清单章节仍在
+[PASS] R14 ② 示范回答章节仍在
+[PASS] R15 原题库容器保留
+[PASS] R16 指南卡仍渲染
+[PASS] R17 完成度进度区仍渲染
+[PASS] R18 点击 AI 交接按钮不抛错
+----
+RESULT: IS_PASS YES (60 pass, 0 fail)

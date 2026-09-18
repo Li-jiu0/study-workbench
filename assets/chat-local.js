@@ -169,7 +169,7 @@
       var peerId = msg.peerId != null ? msg.peerId : msg.senderId;
       if (peerId == null) return;
       if (window.currentChatUserId != null && String(peerId) === String(window.currentChatUserId)) return; // 正在跟对方聊：不打扰
-      var name = msg.nickname || msg.senderName || msg.name || ('用户' + peerId);
+      var name = imFriendName({ peerRemark: msg.peerRemark, nickname: (msg.nickname || msg.senderName || msg.name) }, '用户' + peerId);
       var raw = msg.preview != null ? msg.preview : (msg.text != null ? msg.text : (msg.content != null ? msg.content : (msg.last || '')));
       var text = String(raw).slice(0, 140);
       var count = Number(msg.count) || 1;
@@ -658,7 +658,7 @@
     imCloseMsgMenu();
     imCloseRecallConfirm();
     var canRecall = imRecallEligible(m);
-    var txt = (m.kind === 'image' || m.kind === 'voice') ? '' : (m.content || '');
+    var txt = (m.kind === 'image' || m.kind === 'voice' || m.kind === 'location' || m.kind === 'file') ? '' : (m.content || '');
     var html = '';
     if (canRecall) html += '<div class="im-menu-item" onclick="imMenuRecall(\'' + esc(m.id) + '\')">撤回</div>';
     if (txt) html += '<div class="im-menu-item" onclick="imMenuCopy(\'' + esc(m.id) + '\')">复制</div>';
@@ -718,7 +718,7 @@
     imCloseMsgMenu();
     var m = imFindMsg(id);
     if (!m) return;
-    var txt = (m.kind === 'image' || m.kind === 'voice') ? '' : (m.content || '');
+    var txt = (m.kind === 'image' || m.kind === 'voice' || m.kind === 'location' || m.kind === 'file') ? '' : (m.content || '');
     if (!txt) { toast('这条消息没有可复制的文字'); return; }
     imCopyText(txt, function (ok) { toast(ok ? '已复制' : '复制失败'); });
   };
@@ -744,7 +744,7 @@
         break;
       }
       data.chats[pid].last = lastReal
-        ? (lastReal.kind === 'image' ? '[图片]' : (lastReal.kind === 'voice' ? '[语音]' : (lastReal.content || '')))
+        ? (lastReal.kind === 'image' ? '[图片]' : (lastReal.kind === 'voice' ? '[语音]' : (lastReal.kind === 'location' ? '[位置]' : (lastReal.kind === 'file' ? '[文件]' : (lastReal.content || '')))))
         : '';
     }
     saveData(data);
@@ -824,7 +824,7 @@
         var lastReal = null;
         for (var i = arr.length - 1; i >= 0; i--) { if (!hidden[i]) { lastReal = arr[i]; break; } }
         data.chats[pid].last = lastReal
-          ? (lastReal.kind === 'image' ? '[图片]' : (lastReal.kind === 'voice' ? '[语音]' : (lastReal.content || '')))
+          ? (lastReal.kind === 'image' ? '[图片]' : (lastReal.kind === 'voice' ? '[语音]' : (lastReal.kind === 'location' ? '[位置]' : (lastReal.kind === 'file' ? '[文件]' : (lastReal.content || '')))))
           : '你撤回了一条消息';
       }
     }
@@ -873,12 +873,47 @@
     }
   }
 
-  /* 备注显示名：有备注 → 「备注名（原名）」；无备注 / 与原名相同 → 原名。 */
+  /* 需求D（2026-09-17）：好友展示名统一取值 —— 备注名 > 昵称 > 兜底。
+     旧行为「有备注 → 备注名（原名）」已按需求废弃：设备注后一律只显示备注名，不再拼原名。
+     统一走 api.js 的公共封装 window.friendDisplayName；api.js 未加载时降级为本地同逻辑实现，
+     两处取值顺序完全一致，绝不出现「列表显示备注、标题显示昵称」的撕裂。
+     签名：imFriendName(friendObj, fallback) / imFriendName(remark, nickname, fallback) */
+  function imFriendName(friend, nickname, fallback) {
+    if (typeof window.friendDisplayName === 'function') {
+      return window.friendDisplayName(friend, nickname, fallback);
+    }
+    var r = '';
+    var n = '';
+    var fb;
+    if (friend !== null && typeof friend === 'object') {
+      r = (friend.peerRemark == null ? '' : String(friend.peerRemark)).replace(/^\s+|\s+$/g, '');
+      n = (friend.nickname == null ? '' : String(friend.nickname)).replace(/^\s+|\s+$/g, '');
+      fb = (typeof nickname === 'undefined') ? undefined : nickname;
+    } else {
+      r = (friend == null ? '' : String(friend)).replace(/^\s+|\s+$/g, '');
+      n = (nickname == null ? '' : String(nickname)).replace(/^\s+|\s+$/g, '');
+      fb = (typeof fallback === 'undefined') ? undefined : fallback;
+    }
+    if (r) return r;
+    if (n) return n;
+    return (fb === undefined || fb === null) ? '未设置昵称' : String(fb);
+  }
+  /* 需求D：接口未回 peerRemark 的位置（/api/friends/search、/api/friends/requests、
+     /api/users/{id}、/api/admin/users 等），回落到本地备注缓存 imRemarkOf 再取值。
+     仅「服务器实体」才查缓存：AI 伙伴 / 本地好友没有 serverId 与 username，
+     拿它们的本地小号 id 去查会把同号服务器用户的备注错配过去。 */
+  function imFriendNameOf(u, fallback) {
+    var o = u || {};
+    var r = (o.peerRemark != null && o.peerRemark !== '') ? o.peerRemark : '';
+    if (!r) {
+      var sid = Number(o.serverId || ((o.username || o.userId) ? (o.id || o.userId) : 0) || 0);
+      if (sid) r = imRemarkOf(sid);
+    }
+    return imFriendName({ peerRemark: r, nickname: o.nickname }, fallback);
+  }
+  /* 备注显示名（保留旧函数名与全部旧调用点）：有备注 → 备注名；无备注 → 昵称。 */
   function imDisplayName(remark, nickname) {
-    var r = (remark == null ? '' : String(remark)).trim();
-    var n = (nickname == null ? '' : String(nickname));
-    if (r && r !== n) return r + '（' + n + '）';
-    return n;
+    return imFriendName(remark, nickname, '');
   }
 
   /* 离线 / 接口不可用时的本地构建（旧逻辑，行为保持不变）。 */
@@ -1097,9 +1132,9 @@
         : '';
       return '<div class="im-swipe" data-tid="' + esc(ck) + '">' +
         '<div class="im-sess' + (active ? ' on' : '') + '" data-tid="' + esc(ck) + '" onclick="imOpenChat(' + c.id + ')">' +
-        '<div class="im-av" style="position:relative;cursor:' + (c.isServer ? 'pointer' : 'default') + '" onclick="' + avClick + '">' + renderAvatar(c.avatar, c.nickname) +
+        '<div class="im-av" style="position:relative;cursor:' + (c.isServer ? 'pointer' : 'default') + '" onclick="' + avClick + '">' + renderAvatar(c.avatar, imFriendNameOf(c)) +
         (c.unread > 0 ? '<span class="im-av-badge">' + (c.unread > 99 ? '99+' : c.unread) + '</span>' : '') + '</div>' +
-        '<div class="im-si"><div class="im-n">' + esc(imDisplayName(c.peerRemark, c.nickname)) + (c.pinned ? ' <span class="im-pin-tag" title="已置顶">📌</span>' : '') + '</div><div class="im-sub">' + esc(c.last || '') + '</div></div>' +
+        '<div class="im-si"><div class="im-n">' + esc(imFriendNameOf(c)) + (c.pinned ? ' <span class="im-pin-tag" title="已置顶">📌</span>' : '') + '</div><div class="im-sub">' + esc(c.last || '') + '</div></div>' +
         (c.muted ? '<div class="im-mute-tag" title="免打扰">🔕</div>' : '') +
         presHtml +
         (c.unread > 0 ? '<div class="im-badge">' + (c.unread > 99 ? '99+' : c.unread) + '</div>' : '') +
@@ -1132,6 +1167,8 @@
   function previewText(kind, content) {
     if (kind === 'image') return '[图片]';
     if (kind === 'voice') return '[语音]';
+    if (kind === 'location') return '[位置]';
+    if (kind === 'file') return '[文件]';
     return content || '';
   }
 
@@ -1236,7 +1273,7 @@
   window.imShowPeerHint = function (serverId) {
     var f = (SERVER_FRIENDS || []).find(function (x) { return x.serverId === serverId; });
     if (!f) f = (S.chats || []).find(function (x) { return x.isServer && x.serverId === serverId; });
-    toast('「' + (f ? f.nickname : '好友') + '」点整行开始聊天 · 查看资料请到好友列表');
+    toast('「' + (f ? imFriendNameOf(f, '好友') : '好友') + '」点整行开始聊天 · 查看资料请到好友列表');
   };
 
   /* 缺口3修复（2026-09-17）：会话列表点对方头像 → 打开其公开主页。
@@ -1377,7 +1414,7 @@
       var avSrc = u.avatarUrl || u.avatar || '';
       var av = avSrc
         ? '<img src="' + (function (x) { return (x.indexOf('http') === 0 ? x : apiBase() + x); })(avSrc) + '" alt="" style="cursor:pointer" onclick="event.stopPropagation();imShowUserProfile(' + u.id + ')">'
-        : '<span style="cursor:pointer" onclick="event.stopPropagation();imShowUserProfile(' + u.id + ')">' + esc((u.nickname || '友').slice(0, 1)) + '</span>';
+        : '<span style="cursor:pointer" onclick="event.stopPropagation();imShowUserProfile(' + u.id + ')">' + esc(imFriendNameOf(u, '友').slice(0, 1)) + '</span>';
       var fid = 10000 + u.id;
       var isAdminRow = !!(u.isAdmin || u.is_admin);
       var tag = isAdminRow ? ' <span style="font-size:11px;color:#e05040">[管理员]</span>' : '';
@@ -1388,7 +1425,7 @@
       var ocArgs = u.id + ', \'' + imStrArg(u.nickname) + '\', \'' + imStrArg(u.avatarUrl || u.avatar) + '\'';
       return '<div class="im-sess" onclick="imOpenChatWithUser(' + ocArgs + ')">' +
         '<div class="im-av" style="position:relative">' + av + '<span class="im-dot" data-uid="' + u.id + '"></span></div>' +
-        '<div class="im-si"><div class="im-n" style="cursor:pointer" onclick="event.stopPropagation();imShowUserProfile(' + u.id + ')">' + esc(u.nickname || '用户') + tag + (u.username ? ' <span style="font-size:11px;color:#999;font-weight:400">@' + esc(u.username) + '</span>' : '') + '</div>' +
+        '<div class="im-si"><div class="im-n" style="cursor:pointer" onclick="event.stopPropagation();imShowUserProfile(' + u.id + ')">' + esc(imFriendNameOf(u, '用户')) + tag + (u.username ? ' <span style="font-size:11px;color:#999;font-weight:400">@' + esc(u.username) + '</span>' : '') + '</div>' +
         '<div class="im-sub">' + act + '</div></div>' +
         '<div style="color:#667eea;font-size:12px;cursor:pointer" onclick="event.stopPropagation();imOpenChatWithUser(' + ocArgs + ')">发消息</div>' +
         '</div>';
@@ -1401,25 +1438,25 @@
   function imRegFriendsHtml(friends) {
     var list = friends || [];
     if (!list.length) {
-      return '<div class="im-group-title">👥 我的好友 (0)</div>' +
-        '<div class="im-empty2">还没有好友<br>在上方搜索框输入用户名找人加好友</div>';
+      return '<div class="im-group-title">👥 我的通讯录 (0)</div>' +
+        '<div class="im-empty2">还没有好友<br>在上方搜索框输入用户名找人添加好友</div>';
     }
     var rows = list.map(function (f) {
       var av = f.avatarUrl || f.avatar
         ? '<img src="' + (function (u) { return (u.indexOf('http') === 0 ? u : apiBase() + u); })(f.avatarUrl || f.avatar) + '" alt="" style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + f.serverId + ')">'
-        : '<span style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + f.serverId + ')">' + esc((f.nickname || '友').slice(0, 1)) + '</span>';
+        : '<span style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + f.serverId + ')">' + esc(imFriendNameOf(f, '友').slice(0, 1)) + '</span>';
       /* 批次二 需求11（2026-09-11h）：好友行只保留「发消息」，删除好友入口统一收敛到
          对方公开主页（个人中心.html?user=id → api.js renderUserHome 的「🗑 删除好友」，uiConfirm 二次确认）。 */
       return '<div class="im-sess" onclick="imOpenChat(' + f.id + ')">' +
         '<div class="im-av" style="position:relative">' + av + '<span class="im-dot" data-uid="' + f.serverId + '"></span></div>' +
-        '<div class="im-si"><div class="im-n" style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + f.serverId + ')">' + esc(imDisplayName(f.peerRemark, f.nickname)) + ' <span style="font-size:11px;color:#999">@' + esc(f.username) + '</span></div>' +
+        '<div class="im-si"><div class="im-n" style="cursor:pointer" onclick="event.stopPropagation();openUserHome(' + f.serverId + ')">' + esc(imFriendNameOf(f)) + ' <span style="font-size:11px;color:#999">@' + esc(f.username) + '</span></div>' +
         '<div class="im-sub">' + esc(f.motto) + ' <span class="im-presence" data-uid="' + f.serverId + '"></span></div></div>' +
         '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0">' +
           '<div style="color:#667eea;font-size:12px;cursor:pointer" onclick="event.stopPropagation();imOpenChat(' + f.id + ')">发消息</div>' +
         '</div>' +
         '</div>';
     }).join('');
-    return '<div class="im-group-title">👥 我的好友 (' + list.length + ')</div>' + rows;
+    return '<div class="im-group-title">👥 我的通讯录 (' + list.length + ')</div>' + rows;
   }
 
   function renderFriends(box) {
@@ -1437,7 +1474,7 @@
       aiHtml += activeAi.map(function (f) {
         return '<div class="im-sess" onclick="imOpenChat(' + f.id + ')">' +
           '<div class="im-av">' + f.avatar + '</div>' +
-          '<div class="im-si"><div class="im-n">' + esc(f.nickname) + '</div><div class="im-sub">' + esc(f.motto) + '</div></div>' +
+          '<div class="im-si"><div class="im-n">' + esc(imFriendNameOf(f)) + '</div><div class="im-sub">' + esc(f.motto) + '</div></div>' +
           '<div style="color:#667eea;font-size:12px;cursor:pointer" onclick="event.stopPropagation();imOpenChat(' + f.id + ')">发消息</div>' +
           '</div>';
       }).join('');
@@ -1453,7 +1490,7 @@
        旧代码每次 renderFriends 都先把好友区清空成「加载中…」，而 30s loadGroups() 在好友 tab 下
        会触发 renderFriends()，于是用户每 30 秒看到一次列表闪空。现在只有「从未加载过」才显示占位。 */
     if (!token) {
-      box.innerHTML = aiHtml + '<div class="im-group-title">👥 我的好友</div><div class="im-empty2">登录后可添加注册用户为好友</div>';
+      box.innerHTML = aiHtml + '<div class="im-group-title">👥 我的通讯录</div><div class="im-empty2">登录后可添加注册用户为好友</div>';
       if (window.lucideAutoRender) window.lucideAutoRender();
       return;
     }
@@ -1464,7 +1501,7 @@
       lastFriendsSig = imFriendsSig();   // R49：签名为准到「真正写进 DOM 的那一刻」
       if (window.lucideAutoRender) window.lucideAutoRender();
     } else {
-      box.innerHTML = aiHtml + '<div class="im-group-title">👥 我的好友</div><div class="im-empty2">加载中…</div>';
+      box.innerHTML = aiHtml + '<div class="im-group-title">👥 我的通讯录</div><div class="im-empty2">加载中…</div>';
       // 占位态哨兵：异步结果无论「有没有变化」都必须回写一次（否则 0 好友时永远停在「加载中…」）
       lastFriendsSig = '__pending__';
       if (window.lucideAutoRender) window.lucideAutoRender();
@@ -1512,7 +1549,7 @@
   /* ============ A5：删除好友（二次确认含昵称；可选清空本机聊天记录） ============ */
   window.imRemoveFriend = function (serverId) {
     var f = (SERVER_FRIENDS || []).find(function (x) { return x.serverId === serverId; });
-    var name = f ? f.nickname : '该好友';
+    var name = f ? imFriendNameOf(f, '该好友') : '该好友';
     var ov = document.createElement('div');
     ov.className = 'im-overlay';
     ov.innerHTML = '<div class="im-modal">' +
@@ -1575,7 +1612,7 @@
       var isAdded = added.indexOf(a.id) !== -1;
       return '<div style="display:flex;align-items:center;padding:12px 0;border-bottom:1px solid #f0f0f0">' +
         '<div style="width:44px;height:44px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:22px;margin-right:12px">' + a.avatar + '</div>' +
-        '<div style="flex:1"><div style="font-size:14px;font-weight:500">' + esc(a.nickname) + '</div>' +
+        '<div style="flex:1"><div style="font-size:14px;font-weight:500">' + esc(imFriendNameOf(a)) + '</div>' +
         '<div style="font-size:12px;color:#999">' + esc(a.motto) + '</div></div>' +
         (isAdded
           ? '<button style="font-size:12px;padding:4px 12px;border:1px solid #ddd;background:#fff;color:#999;border-radius:6px" onclick="toggleAiFriend(' + a.id + ')">已添加</button>'
@@ -1655,7 +1692,7 @@
       markRequestsSeen(token, API_BASE);
       var all = inc.concat(out);
       if (all.length === 0) {
-        box.innerHTML = '<div class="im-empty2">暂无好友申请<br><span style="font-size:12px;color:#999">在上方搜索框输入用户名找人加好友</span></div>';
+        box.innerHTML = '<div class="im-empty2">暂无好友申请<br><span style="font-size:12px;color:#999">在上方搜索框输入用户名找人添加好友</span></div>';
         return;
       }
       // 状态标签
@@ -1685,11 +1722,11 @@
         var u = r.user || {};
         var av = (u.avatarUrl && /^(https?:|\/uploads\/|data:)/.test(u.avatarUrl))
           ? '<img src="' + (u.avatarUrl.startsWith('http') ? u.avatarUrl : API_BASE + u.avatarUrl) + '" alt="">'
-          : esc((u.nickname || '友').slice(0, 1));
+          : esc(imFriendNameOf(u, '友').slice(0, 1));
         var me = r.fromMe ? ' <span style="font-size:11px;color:#999">（我发出的）</span>' : '';
         return '<div class="im-sess">' +
           '<div class="im-av">' + av + '</div>' +
-          '<div class="im-si"><div class="im-n">' + esc(u.nickname || '用户') + me + ' <span style="font-size:11px;color:#999">@' + esc(u.username || '') + '</span> ' + statusTag(r.status, r.fromMe) + '</div>' +
+          '<div class="im-si"><div class="im-n">' + esc(imFriendNameOf(u, '用户')) + me + ' <span style="font-size:11px;color:#999">@' + esc(u.username || '') + '</span> ' + statusTag(r.status, r.fromMe) + '</div>' +
           '<div class="im-sub">' + esc(u.motto || '') + '</div></div>' +
           actionBtns(r) +
           '</div>';
@@ -1879,7 +1916,7 @@
       imEnsureRemarkBtn(false); // R73 需求18③：群聊不显示备注入口
       return;
     }
-    if (avEl) avEl.innerHTML = renderAvatar(S.peer.avatar, S.peer.nickname);
+    if (avEl) avEl.innerHTML = renderAvatar(S.peer.avatar, imFriendNameOf(S.peer));
     var nameEl = $id('imCName');
     if (nameEl) {
       var aiCfg = getAiConfig();
@@ -1888,10 +1925,8 @@
       var tag = aiCfg && aiCfg.apiKey
         ? '<span style="font-size:10px;color:#4caf50;background:#E8F5E9;padding:1px 6px;border-radius:4px;margin-left:6px;font-weight:400">AI在线</span>'
         : '';
-      /* R73 需求18③：头部标题按「备注名（原名）」渲染，保存备注后即时反映。 */
-      var dispName = (S.peer && S.peer.isServer)
-        ? imDisplayName(imRemarkOf(S.peer.serverId), S.peer.nickname)
-        : S.peer.nickname;
+      /* 需求D：头部标题按「备注名 > 昵称」渲染（原「备注名（原名）」拼接已废弃），保存备注后即时反映。 */
+      var dispName = imFriendNameOf(S.peer, '');
       nameEl.innerHTML = esc(dispName) + tag;
     }
     imEnsureRemarkBtn(!!(S.peer && S.peer.isServer)); // R73 需求18③：服务器好友显示「✎」备注入口
@@ -1930,12 +1965,20 @@
   function renderMsgs() {
     var box = $id('imMsgs');
     if (!box) return;
-    var title = S.group ? S.group.name : (S.peer ? S.peer.nickname : '好友');
+    var title = S.group ? S.group.name : (S.peer ? imFriendNameOf(S.peer, '好友') : '好友');
     if (S.msgs.length === 0) {
       box.innerHTML = '<div class="im-empty2">开始和' + esc(title) + '聊天吧</div>';
       return;
     }
     var isGroup = !!S.group;
+    /* 需求D（2026-09-17）：群消息发送者展示名也走「备注名 > 昵称」；
+       备注查一次即缓存，避免每条消息重复扫描 S.chats / SERVER_FRIENDS。 */
+    var _rmap = {};
+    function gRemark(uid) {
+      var k = String(uid || 0);
+      if (!(k in _rmap)) _rmap[k] = imRemarkOf(uid);
+      return _rmap[k];
+    }
     var key = imThreadKey();
     /* R73 需求19（2026-09-15）：整表重建前先记录滚动位置，重建后据「贴底与否」决定回滚策略，
        避免 2s 轮询 / 服务端回包每次把用户从历史翻阅处甩回底部。 */
@@ -1972,6 +2015,29 @@
           '<span class="im-voice-ic">▶</span><span class="im-voice-bar"><i></i></span>' +
           '<span class="im-voice-dur">' + (m.duration ? m.duration + '″' : '语音') + '</span></div>' +
           '<div class="im-mt">' + timeStr + '</div>' + readTag;
+      } else if (m.kind === 'location') {
+        /* R88-I（2026-09-18）：位置消息 —— 纯文字卡片，无坐标、不可跳转（设计 §7-7 硬规则）。
+           图标走 lucideIcon('map-pin')（零 emoji），content 仅存文字地址。 */
+        var locIcon = (typeof window.lucideIcon === 'function') ? window.lucideIcon('map-pin', 18) : '';
+        inner = '<div class="im-loc-card">' +
+          '<span class="im-loc-ic">' + locIcon + '</span>' +
+          '<span class="im-loc-text">' + esc(m.content || '') + '</span>' +
+        '</div>' +
+          '<div class="im-mt">' + timeStr + '</div>' + readTag;
+      } else if (m.kind === 'file') {
+        /* R88-I 增量（2026-09-18）：文件消息 —— 本地元数据卡片（文件名 + 大小），无 emoji、不可跳转。
+           ❗不读文件内容（不落 base64），仅存 name/size/type 元数据，避免撑爆 localStorage。 */
+        var fileIcon = (typeof window.lucideIcon === 'function') ? window.lucideIcon('file', 20) : '';
+        var fname = m.name || m.content || '文件';
+        var fsize = (typeof m.size === 'number' && m.size >= 0) ? imFormatFileSize(m.size) : '';
+        inner = '<div class="im-file-card">' +
+          '<span class="im-file-ic">' + fileIcon + '</span>' +
+          '<span class="im-file-meta">' +
+            '<span class="im-file-name">' + esc(fname) + '</span>' +
+            (fsize ? '<span class="im-file-size">' + esc(fsize) + '</span>' : '') +
+          '</span>' +
+        '</div>' +
+          '<div class="im-mt">' + timeStr + '</div>' + readTag;
       } else {
         inner = renderContent(m.content) + '<div class="im-mt">' + timeStr + '</div>' + readTag;
       }
@@ -1985,8 +2051,9 @@
       // stopPropagation 防止冒泡触发消息区其他行为。
       if (isGroup && !isMe) {
         var uhClick = 'event.stopPropagation();openUserHome(' + Number(m.senderId || 0) + ')';
-        var av = '<div class="im-gav" style="cursor:pointer" onclick="' + uhClick + '">' + renderAvatar(m.senderAvatar, m.senderNickname) + '</div>';
-        var name = '<div class="im-gsender" style="cursor:pointer" onclick="' + uhClick + '">' + esc(m.senderNickname || '') + '</div>';
+        var sndName = imFriendName({ peerRemark: gRemark(Number(m.senderId || 0)), nickname: m.senderNickname }, '');
+        var av = '<div class="im-gav" style="cursor:pointer" onclick="' + uhClick + '">' + renderAvatar(m.senderAvatar, sndName) + '</div>';
+        var name = '<div class="im-gsender" style="cursor:pointer" onclick="' + uhClick + '">' + esc(sndName) + '</div>';
         return '<div class="im-grow">' + av + '<div class="im-gcol">' + name + body + '</div></div>';
       }
       return body;
@@ -2458,7 +2525,7 @@
     if (box) { box.appendChild(typingEl); box.scrollTop = box.scrollHeight; }
 
     var historyMsgs = S.msgs.map(function (m) {
-      return { role: m.senderId === S.myId ? 'user' : 'assistant', content: m.kind === 'image' ? '[图片]' : m.content };
+      return { role: m.senderId === S.myId ? 'user' : 'assistant', content: m.kind === 'image' ? '[图片]' : (m.kind === 'location' ? '[位置] ' + (m.content || '') : (m.kind === 'file' ? '[文件] ' + (m.name || m.content || '') : m.content)) };
     });
 
     callFriendAi(S.peer, historyMsgs, function (reply) {
@@ -2539,6 +2606,126 @@
     triggerAiReply(text);
   };
 
+  /* R88-I（2026-09-18）：发送位置消息（纯文字，无坐标）。
+     复用 imSendText 的本地消息追加链路；消息体仅 { id, senderId, content:text, kind:'location', time }，
+     ❗绝不把 lat/lng 放进消息体（设计 §7-7）。未选会话时沿用既有守卫 toast 并 return。 */
+  window.imSendLocation = function (text) {
+    var t = (text == null) ? '' : String(text);
+    t = t.replace(/^\s+|\s+$/g, '');
+    if (!t) return;
+    if (!S.group && !S.peer) { toast('请先选择一个会话再发送位置'); return; }
+    // 群聊：与文字消息同走群发送分支（kind 由 imSendGroupText 内部决定，此处仅保证入口不炸）
+    if (S.group) { toast('群聊暂不支持发送位置'); return; }
+    if (!S.peer) return;
+
+    var now = Date.now();
+    var uid = genMsgId();
+    S.msgs.push({ id: uid, senderId: S.myId, content: t, kind: 'location', time: now });
+
+    var data = loadData();
+    if (!data.messages[S.peer.id]) data.messages[S.peer.id] = [];
+    data.messages[S.peer.id].push({ id: uid, senderId: S.myId, content: t, kind: 'location', time: now });
+    if (!data.chats[S.peer.id]) data.chats[S.peer.id] = {};
+    data.chats[S.peer.id].last = '[位置] ' + t;
+    data.chats[S.peer.id].time = now;
+    data.chats[S.peer.id].nickname = S.peer.nickname;
+    data.chats[S.peer.id].avatar = S.peer.avatar;
+    saveData(data);
+
+    renderMsgs();
+    loadChats();
+
+    // 服务器好友：同步到服务端（content 只发文字，不发坐标）
+    if (S.peer.isServer) {
+      var token = getToken();
+      if (token) {
+        fetch(apiBase() + '/api/chat/' + S.peer.serverId + '/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ content: t, kind: 'location' })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (m) {
+          if (m && m.id) {
+            S.msgs.push({ id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read });
+            renderMsgs();
+          }
+          fetchPeerMsgs(true);
+          if (typeof window.loadChatUnread === 'function') window.loadChatUnread();
+        })
+        .catch(function () {});
+      }
+      return;
+    }
+    triggerAiReply('发送了位置：' + t);
+  };
+
+  /* R88-I 增量（2026-09-18）：文件大小人性化（B/KB/MB）。 */
+  function imFormatFileSize(n) {
+    var s = Number(n) || 0;
+    if (s < 1024) return s + ' B';
+    if (s < 1024 * 1024) return (s / 1024).toFixed(1) + ' KB';
+    return (s / 1024 / 1024).toFixed(1) + ' MB';
+  }
+
+  /* R88-I 增量：发送文件消息（本地元数据卡片，kind:'file'）。
+     ❗设计取舍：本批不动服务端，无通用文件上传接口（仅有 /api/uploads/image|voice），
+        故文件消息【只发元数据 name/size/type】，不读文件内容、不落 base64、不写 localStorage 正文，
+        避免大文件撑爆 localStorage（任务书硬约束）。接收侧展示为「文件名 + 大小」卡片，不含可下载正文。
+     与 imSendImage 的适配点一致：输入为 file input 元素。 */
+  var MAX_FILE_BYTES = 20 * 1024 * 1024;
+  window.imSendFile = function (input) {
+    if (!input || !input.files || !input.files[0]) return;
+    var file = input.files[0];
+    try { input.value = ''; } catch (e) { /* 老 WebView 重置失败不影响发送 */ }
+    imSendFileMeta(file);
+  };
+
+  function imSendFileMeta(file) {
+    if (!file) return;
+    if (!S.group && !S.peer) { toast('请先选择一个会话再发送文件'); return; }
+    if (file.size && file.size > MAX_FILE_BYTES) { toast('文件超过 20MB，暂不支持发送'); return; }
+    if (S.group) { toast('群聊暂不支持发送文件'); return; }
+    if (!S.peer) return;
+    var name = String(file.name || '文件');
+    var size = (typeof file.size === 'number') ? file.size : 0;
+    var ftype = String(file.type || '');
+    var now = Date.now();
+    var uid = genMsgId();
+    var rec = { id: uid, senderId: S.myId, content: name, kind: 'file', name: name, size: size, type: ftype, time: now };
+    S.msgs.push(rec);
+
+    var data = loadData();
+    if (!data.messages[S.peer.id]) data.messages[S.peer.id] = [];
+    data.messages[S.peer.id].push({ id: uid, senderId: S.myId, content: name, kind: 'file', name: name, size: size, type: ftype, time: now });
+    if (!data.chats[S.peer.id]) data.chats[S.peer.id] = {};
+    data.chats[S.peer.id].last = '[文件] ' + name;
+    data.chats[S.peer.id].time = now;
+    data.chats[S.peer.id].nickname = S.peer.nickname;
+    data.chats[S.peer.id].avatar = S.peer.avatar;
+    saveData(data);
+
+    renderMsgs();
+    loadChats();
+
+    // 服务器好友：仅同步元数据文本（无二进制），失败静默（本地卡片仍在）
+    if (S.peer.isServer) {
+      var token = getToken();
+      if (token) {
+        fetch(apiBase() + '/api/chat/' + S.peer.serverId + '/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ content: '[文件] ' + name, kind: 'text' })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function () { fetchPeerMsgs(true); })
+        .catch(function () {});
+      }
+      return;
+    }
+    triggerAiReply('发送了文件：' + name);
+  }
+
   window.imSwitchTab = function (tab) {
     S.tab = tab;
     document.querySelectorAll('.im-tab').forEach(function (t) { t.classList.toggle('active', t.dataset.tab === tab); });
@@ -2568,7 +2755,7 @@
       box.innerHTML = presetResults.map(function (f) {
         return '<div class="im-sess" onclick="imOpenChat(' + f.id + ')">' +
           '<div class="im-av">' + f.avatar + '</div>' +
-          '<div class="im-si"><div class="im-n">' + esc(f.nickname) + '</div><div class="im-sub">' + esc(f.motto) + '</div></div>' +
+          '<div class="im-si"><div class="im-n">' + esc(imFriendNameOf(f)) + '</div><div class="im-sub">' + esc(f.motto) + '</div></div>' +
           '</div>';
       }).join('');
       return;
@@ -2578,7 +2765,7 @@
     var html = presetResults.map(function (f) {
       return '<div class="im-sess" onclick="imOpenChat(' + f.id + ')">' +
         '<div class="im-av">' + f.avatar + '</div>' +
-        '<div class="im-si"><div class="im-n">' + esc(f.nickname) + '</div><div class="im-sub">' + esc(f.motto) + '</div></div>' +
+        '<div class="im-si"><div class="im-n">' + esc(imFriendNameOf(f)) + '</div><div class="im-sub">' + esc(f.motto) + '</div></div>' +
         '</div>';
     }).join('');
     box.innerHTML = html + '<div class="im-empty2">🔍 正在搜索注册用户…</div>';
@@ -2643,7 +2830,7 @@
     return items.map(function (u) {
       var av = (u.avatarUrl && /^(https?:|\/uploads\/|data:)/.test(u.avatarUrl))
         ? '<img src="' + (u.avatarUrl.indexOf('http') === 0 ? u.avatarUrl : apiBase() + u.avatarUrl) + '" alt="">'
-        : esc((u.nickname || '友').slice(0, 1));
+        : esc(imFriendNameOf(u, '友').slice(0, 1));
       var act;
       if (u.isFriend) {
         act = '<button class="im-af-btn" onclick="window.imAfOpenChat(' + u.id + ')">💬 发消息</button>';
@@ -2652,11 +2839,11 @@
       } else if (u.blockedMe) {
         act = '<button class="im-af-btn gray" disabled>不可添加</button>';
       } else {
-        act = '<button class="im-af-btn" onclick="window.imAfSendRequest(' + u.id + ',this)">➕ 加好友</button>';
+        act = '<button class="im-af-btn" onclick="window.imAfSendRequest(' + u.id + ',this)">➕ 添加好友</button>';
       }
       return '<div class="im-sess">' +
         '<div class="im-av">' + av + '</div>' +
-        '<div class="im-si"><div class="im-n">' + esc(u.nickname || '用户') + ' <span style="font-size:11px;color:#999">@' + esc(u.username || '') + '</span></div>' +
+        '<div class="im-si"><div class="im-n">' + esc(imFriendNameOf(u, '用户')) + ' <span style="font-size:11px;color:#999">@' + esc(u.username || '') + '</span></div>' +
         '<div class="im-sub">' + esc(u.motto || '') + '</div></div>' + act + '</div>';
     }).join('');
   }
@@ -2664,7 +2851,7 @@
 
   // 打开「添加好友」模态（与群聊弹层同源；离线置灰）
   window.imOpenAddFriendModal = function () {
-    if (!getToken()) { toast('加好友需要联网，请先登录'); return; }
+    if (!getToken()) { toast('添加好友需要联网，请先登录'); return; }
     var m = $id('imAddFriendModal');
     if (!m) { location.href = '好友申请.html'; return; } // 兼容：新页未加载时回退旧整页
     var q = $id('imAfInput'); if (q) q.value = '';
@@ -2701,7 +2888,7 @@
   // 发好友申请（保持在模态内，不改整页）
   window.imAfSendRequest = function (uid, btn) {
     var token = getToken();
-    if (!token) { toast('加好友需要联网，请先登录'); return; }
+    if (!token) { toast('添加好友需要联网，请先登录'); return; }
     if (btn) { btn.disabled = true; btn.textContent = '发送中…'; }
     fetch(apiBase() + '/api/friends/requests', {
       method: 'POST',
@@ -2718,7 +2905,7 @@
       })
       .catch(function (e) {
         toast('失败：' + (e.message || '网络错误'));
-        if (btn) { btn.disabled = false; btn.textContent = '➕ 加好友'; }
+        if (btn) { btn.disabled = false; btn.textContent = '➕ 添加好友'; }
       });
   };
 
@@ -3028,15 +3215,15 @@
       : list.map(function (f) {
           var idx = GC.selected.indexOf(f.serverId);
           return '<div class="im-sess" onclick="window.imToggleGroupMember(' + f.serverId + ')">' +
-            '<div class="im-av" onclick="event.stopPropagation();window.imToggleGroupMember(' + f.serverId + ')">' + renderAvatar(f.avatarUrl || f.avatar, f.nickname) + '</div>' +
-            '<div class="im-si"><div class="im-n">' + esc(f.nickname) + ' <span style="font-size:11px;color:#999">@' + esc(f.username || '') + '</span></div></div>' +
+            '<div class="im-av" onclick="event.stopPropagation();window.imToggleGroupMember(' + f.serverId + ')">' + renderAvatar(f.avatarUrl || f.avatar, imFriendNameOf(f, '')) + '</div>' +
+            '<div class="im-si"><div class="im-n">' + esc(imFriendNameOf(f, '')) + ' <span style="font-size:11px;color:#999">@' + esc(f.username || '') + '</span></div></div>' +
             '<div class="im-gcheck' + (idx >= 0 ? ' on' : '') + '">' + (idx >= 0 ? '✓' : '') + '</div></div>';
         }).join('');
     var selHtml = GC.selected.length === 0
       ? '<div style="font-size:12px;color:#999;padding:4px 0">至少选择 2 位好友</div>'
       : GC.selected.map(function (uid) {
           var f = (GC.friends || []).find(function (x) { return x.serverId === uid; }) || {};
-          return '<div class="im-gsel">' + renderAvatar(f.avatarUrl || f.avatar, f.nickname) + '<span onclick="window.imToggleGroupMember(' + uid + ')">✕</span></div>';
+          return '<div class="im-gsel">' + renderAvatar(f.avatarUrl || f.avatar, imFriendNameOf(f, '')) + '<span onclick="window.imToggleGroupMember(' + uid + ')">✕</span></div>';
         }).join('');
     body.innerHTML = '<div class="im-gsearch"><input id="imGroupKw" placeholder="搜索好友…" value="' + esc(GC.kw || '') + '" oninput="window.imGroupFilter(this.value)"></div>' +
       '<div class="im-gsel-row">' + selHtml + '</div>' +
@@ -3064,8 +3251,8 @@
       listEl.innerHTML = list.length === 0 ? '<div class="im-empty2">没有可邀请的好友</div>' : list.map(function (f) {
         var idx = GC.selected.indexOf(f.serverId);
         return '<div class="im-sess" onclick="window.imToggleGroupMember(' + f.serverId + ')">' +
-          '<div class="im-av" onclick="event.stopPropagation();window.imToggleGroupMember(' + f.serverId + ')">' + renderAvatar(f.avatarUrl || f.avatar, f.nickname) + '</div>' +
-          '<div class="im-si"><div class="im-n">' + esc(f.nickname) + ' <span style="font-size:11px;color:#999">@' + esc(f.username || '') + '</span></div></div>' +
+          '<div class="im-av" onclick="event.stopPropagation();window.imToggleGroupMember(' + f.serverId + ')">' + renderAvatar(f.avatarUrl || f.avatar, imFriendNameOf(f, '')) + '</div>' +
+          '<div class="im-si"><div class="im-n">' + esc(imFriendNameOf(f, '')) + ' <span style="font-size:11px;color:#999">@' + esc(f.username || '') + '</span></div></div>' +
           '<div class="im-gcheck' + (idx >= 0 ? ' on' : '') + '">' + (idx >= 0 ? '✓' : '') + '</div></div>';
       }).join('');
     }
@@ -3081,7 +3268,7 @@
     var foot = modal.querySelector('.im-group-foot');
     var selNames = GC.selected.map(function (uid) {
       var f = (GC.friends || []).find(function (x) { return x.serverId === uid; }) || {};
-      return esc(f.nickname || '');
+      return esc(imFriendNameOf(f, ''));
     }).join('、');
     body.innerHTML = '<div class="im-gname-tip">已选 ' + GC.selected.length + ' 位成员：' + selNames + '</div>' +
       '<div class="form-group"><div class="form-label">群名称（≤20 字）</div>' +
@@ -3238,6 +3425,8 @@
         }
         var username = u.username || '';
         var nickname = u.nickname || ('用户' + uid);
+        /* 需求D：资料卡标题同样「备注名 > 昵称」；/api/users/{id} 不回 peerRemark，回落本地备注缓存。 */
+        var dispName = imFriendName({ peerRemark: ((u && u.peerRemark) ? u.peerRemark : imRemarkOf(uid)), nickname: nickname }, '');
         var created = u.createdAt || u.created_at || '';
         var last = u.lastActive || u.last_active || '';
         var online = (u.isOnline === true || u.is_online === true);
@@ -3254,8 +3443,8 @@
         body.innerHTML =
           '<div style="text-align:center;padding:6px 0 12px">' +
             '<div style="width:64px;height:64px;border-radius:50%;margin:0 auto 8px;overflow:hidden;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--primary)">' +
-              renderAvatar(u.avatarUrl || u.avatar || '', nickname) + '</div>' +
-            '<div style="font-size:16px;font-weight:700">' + esc(nickname) + (isAdmin ? ' <span style="font-size:11px;color:#e05040">[管理员]</span>' : '') + '</div>' +
+              renderAvatar(u.avatarUrl || u.avatar || '', dispName) + '</div>' +
+            '<div style="font-size:16px;font-weight:700">' + esc(dispName) + (isAdmin ? ' <span style="font-size:11px;color:#e05040">[管理员]</span>' : '') + '</div>' +
             (username ? '<div style="font-size:12px;color:#999;margin-top:2px">@' + esc(username) + '</div>' : '') +
           '</div>' +
           row('账号', username ? ('@' + esc(username)) : '—') +
@@ -3263,7 +3452,7 @@
           row('最近活跃', online ? '<span style="color:#0a8f4b;font-weight:600">● 在线</span>' : esc(imFmtLastActive(last))) +
           row('笔记数', esc(String(notesN))) +
           row('学习事件', esc(String(studyN)));
-        body.setAttribute('data-nick', nickname);
+        body.setAttribute('data-nick', dispName);
         body.setAttribute('data-avatar', u.avatarUrl || u.avatar || '');
         var btn = $id('imUserProfileChatBtn');
         if (btn) { btn.disabled = false; btn.onclick = function () {
@@ -3446,7 +3635,7 @@
 
     // 段2：成员管理（D2）
     var memRows = members.map(function (m) {
-      var nm = m.groupNickname || m.nickname || '已注销用户';
+      var nm = imFriendName({ peerRemark: imRemarkOf(Number(m.id || 0)), nickname: (m.groupNickname || m.nickname) }, '已注销用户');
       var uid = Number(m.id || 0);
       var canKick = isOwner && String(m.id) !== String(S.myId);
       /* R54（2026-09-14）：群主转让 —— 仅群主可见，且不能转给自己（自己本就是群主）。
@@ -3500,7 +3689,7 @@
     var nm = '';
     try {
       var mm = ((GS.detail && GS.detail.members) || []).find(function (x) { return Number(x.id) === uid; });
-      if (mm) nm = mm.groupNickname || mm.nickname || '';
+      if (mm) nm = imFriendName({ peerRemark: imRemarkOf(uid), nickname: (mm.groupNickname || mm.nickname) }, '');
     } catch (e) { }
     var msg = '确定把「' + (nm || '该成员') + '」移出群聊吗？';
     var ok = await window.uiConfirm(msg, '移出');
@@ -3680,7 +3869,7 @@
     var nm = '';
     try {
       var mm = ((GS.detail && GS.detail.members) || []).filter(function (x) { return Number(x.id) === uid; })[0];
-      if (mm) nm = mm.groupNickname || mm.nickname || '';
+      if (mm) nm = imFriendName({ peerRemark: imRemarkOf(uid), nickname: (mm.groupNickname || mm.nickname) }, '');
     } catch (e) { /* 取不到昵称用占位 */ }
     var msg = '确定把群主转让给「' + (nm || '该成员') + '」吗？转让后你将变为管理员。';
     var ok = await window.uiConfirm(msg, '转让');
@@ -3889,7 +4078,19 @@
       '.im-tn-text{font-size:12px;line-height:1.5;color:var(--text-secondary,#636E72);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}' +
       '.im-tn-close{flex:0 0 auto;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text-secondary,#999);cursor:pointer}' +
       '.im-tn-close:hover{background:var(--bg,#F5F7FA);color:var(--text,#2D3436)}' +
-      'body.reduce-motion .im-tn{transition:none}';
+      'body.reduce-motion .im-tn{transition:none}' +
+      /* R88-I（2026-09-18）：私聊位置消息卡片（纯文字，无坐标，不可跳转）。样式随脚本注入，不改 common.css。 */
+      '.im-loc-card{display:inline-flex;align-items:flex-start;gap:8px;max-width:240px;padding:8px 12px;background:var(--card,#fff);border:1px solid var(--border,#eee);border-radius:10px}' +
+      '.im-loc-ic{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;color:var(--primary,#5B8DEF);margin-top:1px}' +
+      '.im-loc-ic svg{width:18px;height:18px;display:block}' +
+      '.im-loc-text{font-size:14px;line-height:1.5;color:var(--text,#2D3436);word-break:break-word;white-space:pre-wrap}' +
+      /* R88-I 增量（2026-09-18）：文件消息卡片（元数据卡，无 emoji、不可跳转）。 */
+      '.im-file-card{display:inline-flex;align-items:center;gap:10px;max-width:240px;padding:10px 12px;background:var(--card,#fff);border:1px solid var(--border,#eee);border-radius:10px}' +
+      '.im-file-ic{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;color:var(--primary,#5B8DEF)}' +
+      '.im-file-ic svg{width:20px;height:20px;display:block}' +
+      '.im-file-meta{display:inline-flex;flex-direction:column;min-width:0}' +
+      '.im-file-name{font-size:14px;line-height:1.4;color:var(--text,#2D3436);word-break:break-all}' +
+      '.im-file-size{font-size:12px;line-height:1.4;color:var(--text-secondary,#8a8f99);margin-top:2px}';
     document.head.appendChild(style);
 
     /* R60：本页已持有聊天轮询（2.5s 会话 + 5s 未读 + 30s 群/在线），
@@ -4016,7 +4217,8 @@
               if (idChanged && imUnreadBaseline) {
                 xtNotify({
                   peerId: item.peerId,
-                  nickname: chat.nickname || item.nickname || '',
+                  nickname: imFriendNameOf(chat, item.nickname || ''),
+                  peerRemark: chat.peerRemark || item.peerRemark || '',
                   avatar: chat.avatar || item.avatar || '',
                   preview: item.last || '',
                   count: Number(cnt) || 0
@@ -4152,6 +4354,8 @@
     imBuildChatsFromConversations: imBuildChatsFromConversations,
     imBuildLocalChats: imBuildLocalChats,
     imDisplayName: imDisplayName,
+    imFriendName: imFriendName,
+    imFriendNameOf: imFriendNameOf,
     imRemarkOf: imRemarkOf,
     lsK: lsK,
     imOfflineFallback: imOfflineFallback,

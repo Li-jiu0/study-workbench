@@ -1,0 +1,44 @@
+[xt-profile] AI对话记录：未登录或 api.js 未就绪，跳过 GET /api/ai/history，仅展示本机兜底
+=== R88-M5 行为验收（jsdom）===
+ok   1) 搜索框 #xtpM5Kw 存在
+ok   1) 初始 6 条会话卡 (got=6)
+ok   2) 清空全部弹二次确认
+ok   2) 取消 → 不删除 (len=6)
+ok   2) 确认 → 清空全部 (len=0)
+ok   3) 标签编辑弹层出现
+ok   3) chat_a 显示标签「数学」
+ok   3) 标签下拉含「数学」
+ok   3) 按「数学」筛选 → 1 条 (got=1)
+ok   4) 搜索「矩阵」→ chat_d (got=1)
+ok   4) 搜索标题「英语作文」→ chat_b
+ok   4) 搜索标签词「数学」→ chat_a
+ok   4) 无命中 → 空态
+ok   4) 清空搜索 → 6 条
+ok   5) 单条删除弹二次确认
+ok   5) chat_b 已删，剩 5 条
+ok   5) 其余未受影响
+ok   6) 多选模式出现「全选」
+ok   6) 已选 2 条
+ok   6) 批量删除弹二次确认
+ok   6) 批量删除后剩 3 条 (got=3)
+ok   6) chat_c/chat_d 已删
+ok   7) 今天 → 2 条 (got=2)
+ok   7) 近7天 → 3 条 (got=3)
+ok   7) 近30天 → 3 条 (got=3)
+ok   7) 全部时间 → 3 条
+ok   7) 自定义显示 from/to
+ok   7) 自定义昨天 → 仅 chat_e (got=1)
+ok   8) 导出触发文件生成
+ok   8) 导出可 JSON 解析且结构正确
+ok   8) 导出 3 条 (got=3)
+ok   9) 导入前清空 → 0 条
+ok   9) 恢复创建了文件选择框
+ok   9) 导入前弹二次确认
+ok   9) 导入后还原 3 条 (got=3)
+ok   9) 逐条 id 一致 期望[chat_a,chat_e,chat_f] 实得[chat_a,chat_e,chat_f]
+ok   9) chat_a 关键字段还原 (title/messages/content)
+ok   9) 标签随备份一并还原
+
+
+ALL PASS (38 assertions)
+EXIT=0

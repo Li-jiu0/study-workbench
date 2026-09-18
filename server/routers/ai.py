@@ -6,15 +6,20 @@
 - 可选 temperature / maxTokens：透传给模型（限制在安全范围）。
 """
 import json
+import os
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
 from config import AI_DAILY_LIMIT, configured_providers
 from database import (AiLog, AiUsage, Note, SessionLocal, User, get_db,
                       now_iso)
+from quota_ledger import (check_quota, force_exhaust, known_model_ids,
+                          ledger_snapshot, record_usage, reset_usage,
+                          resolve_model_name, resolve_model_name_lenient,
+                          tokens_from_usage)
 from rate_limit import rate_limit
 from schemas import ChatIn
 from security import get_current_user, get_current_user_optional
@@ -23,6 +28,9 @@ router = APIRouter(prefix="/api/ai", tags=["ai"])
 
 _MAX_NOTE_CTX = 4000
 _MAX_MSGS = 20
+
+# 单次上报的用量上限（防恶意刷大数字把模型一次打停），与 quota_ledger 保持一致
+_MAX_CONSUME_AMOUNT = 100000
 
 # R73j：上游非 200 的友好提示（key=HTTP 状态码）。未命中的状态码仍回退为原始报文。
 _STATUS_HINTS = {
@@ -67,20 +75,107 @@ def _note_system(note: Note) -> str:
 
 @router.get("/models")
 def list_models(user: User = Depends(get_current_user_optional)):
-    """前端下拉框数据源：只返回已配置密钥的服务商（名称 + 模型名），绝不含密钥。"""
+    """前端下拉框数据源：只返回已配置密钥的服务商（名称 + 默认模型），绝不含密钥。
+
+    R88-M1：name 改为**中性平台名**（如「火山方舟（豆包/DeepSeek）」），不再拼上
+    「（.env 默认模型串）」——此前它被前端当作「已用模型名」记进账本，导致不管选哪个
+    模型都显示成同一个默认模型（用户投诉的 bug）。真实模型名改由 /chat 响应头
+    X-Ai-Model-Used 回传（见下），这里只负责「平台级」信息。
+    model 字段保留，供前端在拿不到真实模型名时做兜底展示。
+    """
     return {
         "models": [
-            {"id": pid, "name": f"{cfg['name']}（{cfg['model']}）", "model": cfg["model"]}
+            {"id": pid, "name": cfg["name"], "model": cfg["model"]}
             for pid, cfg in configured_providers().items()
         ]
     }
 
 
 @router.get("/usage")
-def ai_usage(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """今日用量：used / limit / date。"""
-    row = db.query(AiUsage).filter(AiUsage.user_id == user.id, AiUsage.day == _today()).first()
-    return {"used": row.count if row else 0, "limit": AI_DAILY_LIMIT, "date": _today()}
+def ai_usage(user: User = Depends(get_current_user_optional),
+             db: Session = Depends(get_db)):
+    """模型用量总账 + 当前登录用户的今日调用数（兼容旧字段）。
+
+    R88-F 安全修复：接口仍允许游客访问（前端「关于 → 用量」面板设计为免登录），
+    但**游客不再能看到全站账本明细**——只返回中性的空 models 与本人今日计数（=0），
+    避免免登录泄露各平台配额、剩余额度、真实模型名与全局调用量。
+    登录用户返回全量快照（原行为不变）。
+
+    - models：服务端全局累计（仅登录用户）。火山方舟免费额度是账号级共享的，
+      多用户必须累计到同一个账本，否则前端 localStorage 各算各的会超量欠费。
+    - used / limit / date：本用户今日调用数（游客为 0），旧客户端与冒烟脚本仍在用。
+    """
+    used = 0
+    if user:
+        row = db.query(AiUsage).filter(AiUsage.user_id == user.id, AiUsage.day == _today()).first()
+        used = row.count if row else 0
+        snap = ledger_snapshot()
+    else:
+        # 游客：不回账本明细（脱敏），只给最小骨架，前端据此渲染「游客模式」空态
+        snap = {"ok": True, "serverTime": now_iso(), "models": {}}
+    snap["used"] = used
+    snap["limit"] = AI_DAILY_LIMIT
+    snap["date"] = _today()
+    return snap
+
+
+@router.post("/usage/consume")
+def ai_usage_consume(body: dict, _rl: None = Depends(rate_limit("consume"))):
+    """前端直连模型平台（生图 / 视频 / 3D 等）后上报消耗。
+
+    入参：{"modelId": "ark-xxx", "amount": 1234, "ok": true, "unit": "tokens"}
+      - modelId 必填，且必须命中 server/data/model_registry.json 白名单
+        （R88-F：防止刷不存在的模型名污染账本 / 无意义增长）
+      - amount 缺省按 1 计（生图按张、视频按个）
+      - ok=false 只累加 failCalls，不累加 used
+    出参：{"ok": true, "used": 新累计用量, "status": "ok|low|exhausted"}
+    防护（R88-F）：按 IP 限流（默认 60 次/分钟）+ modelId 白名单 + amount 上限。
+    注：本接口服务端无法强制登录（前端视频/3D 上报不带令牌），仅做服务端加固。
+    """
+    if not isinstance(body, dict):
+        raise HTTPException(400, "请求体必须是 JSON 对象")
+    model_id = str(body.get("modelId") or "").strip()
+    if not model_id:
+        raise HTTPException(400, "缺少 modelId")
+    # 白名单校验：仅在白名单非空时生效（未初始化/表全空时放行，避免误拦正常上报）
+    known = known_model_ids()
+    if known and model_id not in known:
+        raise HTTPException(400, "未知的 modelId（不在服务端模型注册表中）")
+    amount = body.get("amount", 1)
+    try:
+        amount = int(amount)
+    except (TypeError, ValueError):
+        amount = 1
+    amount = min(max(amount, 0), _MAX_CONSUME_AMOUNT)
+    ok = body.get("ok", True)
+    ok = True if ok is None else bool(ok)
+    status = record_usage(model_id, amount, ok=ok)
+    return {"ok": True, "used": status["used"], "status": status["status"]}
+
+
+@router.post("/usage/reset")
+def ai_usage_reset(body: dict, x_admin_token: str | None = Header(default=None)):
+    """充值后重置用量并重新启用模型（管理用）。
+
+    入参：{"modelId": "ark-xxx"} 或 {"all": true}
+    保护（R88-F 改为 fail-closed）：请求头 X-Admin-Token 必须等于环境变量
+    ADMIN_TOKEN；**未配置 ADMIN_TOKEN 时直接拒绝（503），不再放行**——重置接口
+    能清零全站配额，是比用量上报更直接的破坏力，必须拒绝而非默认开放。
+    """
+    required = os.getenv("ADMIN_TOKEN", "").strip()
+    if not required:
+        raise HTTPException(503, "服务端未配置 ADMIN_TOKEN，用量重置接口已禁用（fail-closed）")
+    if x_admin_token != required:
+        raise HTTPException(403, "X-Admin-Token 无效，禁止重置用量")
+    if not isinstance(body, dict):
+        raise HTTPException(400, "请求体必须是 JSON 对象")
+    model_id = str(body.get("modelId") or "").strip()
+    reset_all = bool(body.get("all"))
+    if not model_id and not reset_all:
+        raise HTTPException(400, "需要 modelId 或 all=true")
+    result = reset_usage(model_id=model_id, reset_all=reset_all)
+    # R88-F：fail-closed 后 required 必非空，authBypass 恒为 False（保留字段兼容旧客户端）
+    return {"ok": True, "reset": result["reset"], "authBypass": False}
 
 
 @router.get("/history")
@@ -100,6 +195,31 @@ def ai_history(limit: int = 200, user: User = Depends(get_current_user), db: Ses
         for r in rows
     ]}
 
+@router.delete("/history")
+def ai_history_delete(ids: str = "", user: User = Depends(get_current_user),
+                      db: Session = Depends(get_db)):
+    """R91-A：删除我的 AI 对话记录（与 GET /history 同库同鉴权，按 user_id 隔离）。
+
+    - 不带 ids：清空本人全部记录（前端「AI对话记录管理 → 清空全部」调用）；
+    - ids=1,2,3（可选）：仅删除指定主键 id 的本人记录，他人 id 静默忽略（不报错）。
+    说明：ai_logs 为扁平消息表（无会话维度），故不支持按 session_id 删除；
+    AiUsage（每日调用计数）与模型用量账本不受影响。
+    """
+    id_list: list[int] = []
+    for part in ids.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        try:
+            id_list.append(int(part))
+        except ValueError:
+            raise HTTPException(400, f"非法的记录 id：{part}")
+    q = db.query(AiLog).filter(AiLog.user_id == user.id)
+    if id_list:
+        q = q.filter(AiLog.id.in_(id_list))
+    deleted = q.delete(synchronize_session=False)
+    db.commit()
+    return {"ok": True, "deleted": deleted}
 
 @router.post("/chat")
 async def chat(body: ChatIn, user: User = Depends(get_current_user_optional),
@@ -110,6 +230,15 @@ async def chat(body: ChatIn, user: User = Depends(get_current_user_optional),
     cfg = providers.get(body.provider)
     if not cfg:
         raise HTTPException(400, "该模型未在服务端配置密钥，请在 server/.env 中填写对应 API Key")
+
+    # 服务端统一额度：优先按 modelId（前端 ai-config.js 的 id）计，没带则按 provider 兜底。
+    # 额度用完直接返回 200 + exhausted，**绝不转发**，以免产生真实费用。
+    quota_key = (getattr(body, "modelId", "") or "").strip() or body.provider
+    allowed, reason = check_quota(quota_key)
+    if not allowed:
+        return JSONResponse({"ok": False, "error": reason, "exhausted": True,
+                             "modelId": quota_key})
+
     if user:
         _record_usage(db, user.id)  # 先计数、超限直接 429，避免空耗
 
@@ -133,7 +262,22 @@ async def chat(body: ChatIn, user: User = Depends(get_current_user_optional),
                      provider=body.provider, created_at=now_iso()))
         db.commit()
 
-    payload: dict = {"model": cfg["model"], "messages": messages, "stream": True}
+    # 模型名：优先用 modelId 解析出的【真实模型名】转发；解析不到才退回 .env 默认模型。
+    # R88-M1：quota_key 来自 body.modelId（前端 relayChat 现已带上），经 registry 解析后
+    # 才能真正「选哪个跑哪个」——此前前端不带 modelId，这里恒回退 .env 默认，用户看着像
+    # 「选什么都跑同一个模型」。展示名用宽松版（忽略 provider 校验），拿不到就如实回落。
+    resolved_name = resolve_model_name(body.provider, quota_key)
+    model_name = resolved_name or cfg["model"]
+    # 展示用真实模型名：严格解析不到时用宽松解析；仍拿不到则用实际转发用的 model_name
+    # （即 .env 默认），如实反映「实际执行的模型」，绝不编造一个看起来正常的假名字。
+    display_model_name = (resolved_name
+                          or resolve_model_name_lenient(quota_key)
+                          or model_name)
+    payload: dict = {"model": model_name, "messages": messages, "stream": True}
+    # 火山方舟支持 stream_options.include_usage：最后一个 chunk 回传本次 token 消耗，
+    # 够服务端账本精确累加。其余平台保守不加，避免个别平台对未知字段报 400。
+    if "volces.com" in cfg["base_url"]:
+        payload["stream_options"] = {"include_usage": True}
     if body.temperature is not None:
         payload["temperature"] = min(max(body.temperature, 0.0), 2.0)
     if body.maxTokens is not None:
@@ -141,6 +285,8 @@ async def chat(body: ChatIn, user: User = Depends(get_current_user_optional),
 
     async def gen():
         acc: list[str] = []
+        upstream_ok = False
+        used_tokens = 0
         try:
             async with httpx.AsyncClient(timeout=120) as client:
                 async with client.stream(
@@ -158,9 +304,13 @@ async def chat(body: ChatIn, user: User = Depends(get_current_user_optional),
                             msg = "⚠️ " + hint + f"（模型服务返回 {resp.status_code}：{text}）"
                         else:
                             msg = f"⚠️ 模型服务返回 {resp.status_code}：{text}"
+                        if resp.status_code == 402:
+                            # 上游明确欠费：直接把该模型标记为耗尽，后续请求本地就拦下
+                            force_exhaust(quota_key)
                         acc.append(msg)
                         yield msg.encode("utf-8")
                         return
+                    upstream_ok = True
                     async for line in resp.aiter_lines():
                         line = line.strip()
                         if not line.startswith("data:"):
@@ -170,6 +320,10 @@ async def chat(body: ChatIn, user: User = Depends(get_current_user_optional),
                             break
                         try:
                             j = json.loads(data)
+                            # 带 stream_options 时最后一个 chunk 带 usage（choices 为空）
+                            chunk_tokens = tokens_from_usage(j.get("usage"))
+                            if chunk_tokens:
+                                used_tokens = max(used_tokens, chunk_tokens)
                             delta = j.get("choices", [{}])[0].get("delta", {})
                             piece = delta.get("content") or ""
                             if piece:
@@ -182,6 +336,9 @@ async def chat(body: ChatIn, user: User = Depends(get_current_user_optional),
             acc.append(msg)
             yield msg.encode("utf-8")
         finally:
+            # 服务端账本：成功累加真实 token（拿不到就按 1 次计），失败只记 failCalls
+            record_usage(quota_key, used_tokens if used_tokens > 0 else 1,
+                         ok=upstream_ok)
             # 保存完整回答到数据库（登录用户才落库，游客不入库；失败不影响已输出的内容）
             if user:
                 reply = "".join(acc)
@@ -195,4 +352,10 @@ async def chat(body: ChatIn, user: User = Depends(get_current_user_optional),
                 finally:
                     db2.close()
 
-    return StreamingResponse(gen(), media_type="text/plain; charset=utf-8")
+    # R88-M1：把「实际执行的模型名」通过响应头回传前端，供前端如实记账（用量明细显示
+    # 真实调用的模型名，而非平台默认模型）。header 值须为 latin-1 可编码，模型名均为 ASCII。
+    _safe_model = "".join(ch for ch in str(display_model_name) if ord(ch) < 128) or "unknown"
+    return StreamingResponse(
+        gen(), media_type="text/plain; charset=utf-8",
+        headers={"X-Ai-Model-Used": _safe_model},
+    )

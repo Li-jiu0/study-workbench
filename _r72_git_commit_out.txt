@@ -1,0 +1,29 @@
+git rm --cached APK rc=0 
+提交候选 167 个文件，合计 2.68 MB
+跳过: [('assets/app.js', 'TOO_BIG 7081581')]
+ADD FAIL chunk 120 rc=1 The following paths are ignored by one of your .gitignore files:
+tools/r72_engineer/__pycache__
+hint: Use -f if you really want to add them.
+hint: Disable this message with "git config set advice.addIgnoredFile false"
+warning: in the working copy of '_r72_git_commit.py', LF will be replaced by CRLF 
+git add 完成（3 批）
+git commit rc=0
+stdout: [main 2ca7781] feat(R72): 聊天Bug修复 + 我的文件页 + 模型设置优化 + 登录页 + 安卓通知
+ 167 files changed, 10887 insertions(+), 1796 deletions(-)
+ create mode 100644 _r72_git_commit.py
+ create mode 100644 _r72_git_plan.py
+ create mode 100644 _r72_git_plan.txt
+ create mode 100644 _r72_lead_check_stamp.py
+ create mode 100644 _r72_lead_check_stamp.txt
+ create mode 100644 _r72_lead_check_task1.py
+ create mode 100644 _r72_le
+stderr: 
+git log rc=0
+2ca7781 feat(R72): 聊天Bug修复 + 我的文件页 + 模型设置优化 + 登录页 + 安卓通知
+8c6fca8 docs: 交接三件套更新至 R70 收尾状态（§0.5 增补 + 日志§八 + 新开场指令 20260917a）
+f34939d fix: 设置页连通性检测可用 + APK 恢复联网能力（R70）
+HEAD: 2ca7781ef60841864ef853c4be37639b7d1e7473
+jiu_cai
+Thu Sep 17 16:41:17 2026 +0800
+凭据/垃圾入库命中: NONE
+APK 是否仍被跟踪: YES(异常)

@@ -1,0 +1,24 @@
+optional-chain ?.: 0
+nullish ??: 0
+replaceAll: 0
+Object.fromEntries: 0
+.at(: 0
+lookbehind (?<=: 0
+lookbehind (?<!: 0
+alert(: 0
+confirm(: 0
+prompt(: 0
+emoji: 0
+style: open=1 close=1 selfclose=0 [OK]
+script: open=3 close=3 selfclose=0 [OK]
+div: open=88 close=88 selfclose=0 [OK]
+button: open=10 close=10 selfclose=0 [OK]
+span: open=39 close=39 selfclose=0 [OK]
+textarea: open=1 close=1 selfclose=0 [OK]
+ul: open=2 close=2 selfclose=0 [OK]
+li: open=1 close=1 selfclose=0 [OK]
+p: open=4 close=4 selfclose=3 [MISMATCH]
+svg: open=1 close=1 selfclose=0 [OK]
+inline script blocks: 1
+JS braces {=85 }=85 [OK]
+JS parens (=342 )=348 [MISMATCH]node --check: rc=0

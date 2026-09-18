@@ -1,0 +1,61 @@
+===== 工具.html | bytes=28247 CRLF=436 bareLF=0 =====
+total lines=437
+?v= stamps: ?v=20260916L
+-- lines mentioning 学习概括 / 数据概括 / 学习数据 --
+-- structural markers (tool cards / grids) --
+  L49: <div class="nav-item" onclick="location.href='AI.html'">
+  L89: <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心">
+  L120: <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='学习工作台.html'}" title="返回" aria-label="返回"><span data-icon="arrow-left" data-
+  L132: <div class="morepage-card morepage-list-item" onclick="location.href='PPT版式库.html'">
+  L137: <div class="morepage-card morepage-list-item" onclick="location.href='PPT素材库.html'">
+  L142: <div class="morepage-card morepage-list-item" onclick="location.href='PPT案例拆解.html'">
+  L147: <div class="morepage-card morepage-list-item" onclick="location.href='四级经验分享.html'">
+  L152: <div class="morepage-card morepage-list-item" onclick="location.href='四级词汇.html'">
+  L157: <div class="morepage-card morepage-list-item" onclick="location.href='面试题库.html'">
+  L162: <div class="morepage-card morepage-list-item" onclick="location.href='商务礼仪.html'">
+  L167: <div class="morepage-card morepage-list-item" onclick="location.href='行测刷题.html'">
+  L172: <div class="morepage-card morepage-list-item" onclick="location.href='申论刷题.html'">
+  L177: <div class="morepage-card morepage-list-item" onclick="location.href='时政热点.html'">
+  L182: <div class="morepage-card morepage-list-item" onclick="location.href='企业定向库.html'">
+  L218: if (!window.openImporter) { location.href = '设置.html'; return; }
+  L308: <div class="bottom-nav-item" onclick="location.href='AI.html'"><div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div clas
+  L309: <div class="bottom-nav-item" onclick="location.href='更多.html'">
+  L319: <div class="bottom-more-panel" id="morePanel">
+  L321: <div class="bottom-more-grid">
+  L341: <div class="more-overlay" onclick="toggleToolsPanel()" id="toolsOverlay"></div>
+  L342: <div class="bottom-more-panel" id="toolsPanel">
+  L344: <div class="bottom-more-grid">
+  L345: <div class="bottom-more-item" onclick="location.href='AI模拟面试.html';toggleToolsPanel()">
+  L348: <div class="bottom-more-item" onclick="location.href='PPT版式库.html';toggleToolsPanel()">
+  L351: <div class="bottom-more-item" onclick="location.href='四级经验分享.html';toggleToolsPanel()">
+  L354: <div class="bottom-more-item" onclick="if(window.openQuest){openQuest()}else{location.href='工具.html'};toggleToolsPanel()">
+  L402: <div class="ai-panel" id="aiPanel">
+
+===== 更多.html | bytes=25758 CRLF=419 bareLF=0 =====
+total lines=420
+?v= stamps: ?v=20260916L
+-- lines mentioning 学习概括 / 数据概括 / 学习数据 --
+-- structural markers (tool cards / grids) --
+  L87: <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心">
+  L118: <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='学习工作台.html'}" title="返回" aria-label="返回">←</button>
+  L130: <div class="morepage-card morepage-list-item" onclick="gotoBlogMine()">
+  L135: <div class="morepage-card morepage-list-item" onclick="navigateTo('wrong-book')">
+  L144: <div class="morepage-card morepage-list-item" onclick="navigateTo('settings')">
+  L150: <div class="morepage-card morepage-list-item" id="adminEntryCard" style="display:none" onclick="location.href='管理员.html'">
+  L155: <div class="morepage-card morepage-list-item" onclick="showAbout()">
+  L160: <div class="morepage-card morepage-list-item" onclick="openImporterView()">
+  L165: <div class="morepage-card morepage-list-item" onclick="location.href='AI模拟面试.html'">
+  L170: <div class="morepage-card morepage-list-item" onclick="if(window.openQuest){openQuest()}else{location.href='学习工作台.html'}">
+  L203: if (!window.openImporter) { location.href = '设置.html'; return; }
+  L293: <div class="bottom-nav-item" onclick="location.href='AI.html'"><div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div clas
+  L294: <div class="bottom-nav-item active" onclick="location.href='更多.html'">
+  L304: <div class="bottom-more-panel" id="morePanel">
+  L306: <div class="bottom-more-grid">
+  L323: <div class="more-overlay" onclick="toggleToolsPanel()" id="toolsOverlay"></div>
+  L324: <div class="bottom-more-panel" id="toolsPanel">
+  L326: <div class="bottom-more-grid">
+  L327: <div class="bottom-more-item" onclick="location.href='AI模拟面试.html';toggleToolsPanel()">
+  L330: <div class="bottom-more-item" onclick="location.href='PPT版式库.html';toggleToolsPanel()">
+  L333: <div class="bottom-more-item" onclick="location.href='四级经验分享.html';toggleToolsPanel()">
+  L336: <div class="bottom-more-item" onclick="if(window.openQuest){openQuest()}else{location.href='工具.html'};toggleToolsPanel()">
+  L384: <div class="ai-panel" id="aiPanel">

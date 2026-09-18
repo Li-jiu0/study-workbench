@@ -1,0 +1,16 @@
+[换行符] size=53584 CRLF=808 bareLF=0  PASS
+[配对] 注释  <!--=24  -->=24  PASS
+[配对] div  <div=187  </div>=187  PASS
+[配对] script  <script=25  </script>=25  PASS
+[残留] "16 组" 命中=1  FAIL
+    L465
+[对齐] "27 组正反例" 出现=2  PASS
+[禁用语法] 检查完成（无输出行=0 命中）
+[禁用语法] ** 命中=3  FAIL
+    L459 :: 顺序铁律：data-ppt-tips.js 必须在 assets/mini-ppt.js **之后**（ADR-1 后置覆盖同名 key），
+    L485 :: 旧键 study_workbench_ppt_portfolio 由该模块一次性升迁读取且**保留不清空**。
+    L715 :: 只调用 XTC.registerView('PPTV2', id, fn) 注册渲染函数，**禁止再改本 HTML**（规避并行覆盖）。
+[原生弹窗] alert(/confirm(/prompt( = 0  PASS
+[越界] ppt-tips.js       size=67624 mtime=1789540691.116
+[越界] data-ppt-tips.js  size=42681 mtime=1789481849.368
+[改动] 演示.html         size=53584 mtime=1789540909.050

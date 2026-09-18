@@ -1,0 +1,49 @@
+[SCAN] files=284
+
+=== 新增全局名的声明者（应仅出现在本任务 2 个文件中）===
+  IV_STAGES                    AI模拟面试.html, _tmp_l7_inline_1.js, assets\iv-prep.js  <<< 冲突：_tmp_l7_inline_1.js
+  IV_BAR_STAGES                AI模拟面试.html, _tmp_l7_inline_1.js, assets\iv-prep.js  <<< 冲突：_tmp_l7_inline_1.js
+  IV_TERMINAL                  AI模拟面试.html, _tmp_l7_inline_1.js, assets\iv-prep.js  <<< 冲突：_tmp_l7_inline_1.js
+  IV_STAGE_LABEL               AI模拟面试.html, _tmp_l7_inline_1.js, assets\iv-prep.js  <<< 冲突：_tmp_l7_inline_1.js
+  IV_STAGE_MACHINE             AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  IV_TRANSITIONS               AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  IV_BACK_HINT                 AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  IV_SNAPSHOT                  AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  IV_CAN_GOTO                  AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  IV_GOTO                      AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  SESSION_QUESTIONS            AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  PENDING_PREP_Q               AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  readingTimer                 AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  pendingFeedbackTimer         AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  toastTimer                   AI模拟面试.html, _tmp_l7_inline_1.js, assets\app.js  <<< 冲突：_tmp_l7_inline_1.js, assets\app.js
+  ivToast                      AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  ivGotoStage                  AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  ivCanGoto                    AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  ivRenderStageBar             AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  ivRenderStageTip             AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  ivJumpToStage                AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  ivBindStageBar               AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  ivFindSeg                    AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  ivToggleClass                AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  ivStageNo                    AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  ivBarIndex                   AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  currentQ                     AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  finishReading                AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  backToReading                AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  backToPreparing              AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  reanswerCurrent              AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  armReadingAutoAdvance        AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  ivSnapshot                   AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  ivExportApi                  AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  ivReadQuery                  AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  ivBuildSessionQuestions      AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  ivInit                       AI模拟面试.html, _tmp_l7_inline_1.js  <<< 冲突：_tmp_l7_inline_1.js
+  IV_MACHINE_CLIENT            assets\iv-prep.js
+  IV_BAR_STAGES_CLIENT         assets\iv-prep.js
+  IV_TERMINAL_CLIENT           assets\iv-prep.js
+  IV_STAGE_LABELS_CLIENT       assets\iv-prep.js
+  IV_BACK_PATHS_CLIENT         assets\iv-prep.js
+  IP_shareStages               assets\iv-prep.js
+  IP_stageLegend               assets\iv-prep.js
+
+RESULT: CONFLICT (conflicts=37)

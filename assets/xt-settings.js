@@ -64,3 +64,89 @@
   if (typeof window.getSetting !== 'function') window.getSetting = get;
   if (typeof window.setSetting !== 'function') window.setSetting = set;
 })();
+
+/* ============================================================
+ * R86-B：资料变更频率限制 —— 离线 / 本地单机模式的本地兜底
+ * 背景：需求「每位用户每月最多变更一次」。服务端
+ *       （server/routers/users.py  PUT /api/users/me）已有权威校验；
+ *       这里只做「未登录 / 后端不可用」时的同口径本地兜底，避免离线被绕过。
+ * 存储：复用 settings 的 profileChangeAt 字段，结构 { 字段名: 毫秒时间戳 }，
+ *       与线上表 profile_change_log 语义一致。
+ * 口径：首次修改（无记录）不受限；值未发生变化不计一次（幂等）。
+ * 兼容：ES5 语法，全部挂 window，不使用 const/let/箭头函数。
+ * ============================================================ */
+(function () {
+  var FIELDS = ['nickname', 'motto', 'bio', 'gender', 'birthday', 'city', 'phone', 'goal', 'tags'];
+  var KEY = 'profileChangeAt';
+  var DAY = 24 * 60 * 60 * 1000;
+
+  function readMap() {
+    var o = {};
+    try {
+      var raw = localStorage.getItem('study_workbench_settings');
+      if (raw) {
+        var s = JSON.parse(raw) || {};
+        o = s[KEY] || {};
+      }
+    } catch (e) { o = {}; }
+    if (!o || typeof o !== 'object') o = {};
+    return o;
+  }
+
+  function writeMap(m) {
+    try {
+      var s = {};
+      var raw = localStorage.getItem('study_workbench_settings');
+      if (raw) { try { s = JSON.parse(raw) || {}; } catch (e2) { s = {}; } }
+      s[KEY] = m;
+      localStorage.setItem('study_workbench_settings', JSON.stringify(s));
+    } catch (e) { /* 隐私模式下 setItem 可能抛异常，忽略即可 */ }
+  }
+
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+  function isoOf(ms) {
+    try {
+      var d = new Date(ms);
+      return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+        ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    } catch (e) { return ''; }
+  }
+
+  /** 本地锁定态：{ 字段: { locked, changedAt, nextAvailableAt } } */
+  window.xtLocalLocks = function (cooldownDays) {
+    var days = cooldownDays || 30;
+    var m = readMap();
+    var now = Date.now();
+    var out = {};
+    for (var i = 0; i < FIELDS.length; i++) {
+      var f = FIELDS[i];
+      var at = parseInt(m[f], 10);
+      if (!at) { out[f] = { locked: false, changedAt: '', nextAvailableAt: '' }; continue; }
+      var next = at + days * DAY;
+      out[f] = { locked: now < next, changedAt: isoOf(at), nextAvailableAt: isoOf(next) };
+    }
+    return out;
+  };
+
+  /** 记录本次变更：仅对传入字段写入当前时间 */
+  window.xtLocalRecord = function (fields) {
+    var m = readMap();
+    var now = Date.now();
+    var list = fields || [];
+    for (var i = 0; i < list.length; i++) { m[list[i]] = now; }
+    writeMap(m);
+    return window.xtLocalLocks(30);
+  };
+
+  /** 清掉指定字段的本地变更记录（以服务端为准纠偏时用） */
+  window.xtLocalClear = function (fields) {
+    var m = readMap();
+    var list = fields || [];
+    for (var i = 0; i < list.length; i++) { delete m[list[i]]; }
+    writeMap(m);
+  };
+
+  window.XT_PROFILE_LOCK_FIELDS = FIELDS;
+  window.XT_PROFILE_COOLDOWN_DAYS = 30;
+})();

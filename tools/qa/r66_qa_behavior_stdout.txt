@@ -1,0 +1,41 @@
+[ai-config] 结构校验通过：24 个模型 / 6 个平台
+[ai-service] 已清理 1 条平台密钥副本
+[ai-service] 请求失败/超时 {
+  modelId: 'glm-4.7-flash',
+  modelName: 'GLM-4.7-Flash',
+  model: 'glm-4.7-flash',
+  provider: 'zhipu',
+  apiFormat: 'openai',
+  apiUrl: 'https://example.com/v1',
+  temperature: 0.7,
+  max_tokens: 1,
+  stream: true,
+  messageCount: 1,
+  hasImage: false,
+  shape: 'user:text:2'
+} fetch is not a function
+[PASS] ① 接口暴露: aiGetModelSettings
+[PASS] ④ 接口暴露: AI_SERVICE.buildChain/findModel/applyOverrides
+[PASS] ③ 接口暴露: aiHealthCheck（2 参签名）  length=2
+[PASS] ① 清洗: 平台相等 apiKey 已从 overrides[glm-4.7-flash] 删除  entry={"model":"glm-4.7-flash","apiUrl":"https://x","apiFormat":"openai","extraHeaders":{},"temperature":0.5,"maxTokens":1500,"name":"X","provider":"zhipu","tag":"t"}
+[PASS] ① 清洗: 其余 9 字段无损（glm-4.7-flash）
+[PASS] ① 清洗: 用户自填 key 保留（glm-4.5-flash）
+[PASS] ① 写回: localStorage ai_model_settings 不含任何平台密钥明文
+[PASS] ① 幂等: 二次调用后仍无平台密钥明文
+[PASS] ① 幂等: 二次读取结构稳定（glm-4.5-flash 仍保留用户 key）
+[PASS] ① 全量 dump: 所有 localStorage key 值均不含 6 平台密钥明文
+[PASS] ② 契约: aiGetModelSettings 返回 7 字段对象  disabled/order/overrides/catModels/categories/health/stars 齐全
+[PASS] ③ 健康: 缺端点返回 err=no_endpoint  err=no_endpoint
+[PASS] ③ 健康: 缺密钥返回 err=no_key  err=no_key
+[PASS] ③ 健康: 临时配置（带 apiUrl+apiKey）未返回 no_key/no_endpoint（走真实请求路径）  err=network
+[PASS] ③ 健康: 临时配置未写入 overrides（无持久化）  overrides[glm-4.7-flash].apiKey=undefined
+[PASS] ④ 集成: 禁用模型（glm-flash）不进入 buildChain 链  chain=glm-4.7-flash>glm-4.5-flash>ark-v4-flash>qwen2.5-7b
+[PASS] ④ 集成: applyOverrides 合并 override 温度  t=0.25
+[PASS] ④ 集成: applyOverrides 合并 override 上限  mt=2222
+[PASS] ④ 集成: override 标记 ownTemp/ownMaxT
+[PASS] ④ 集成: catModels 自定义链置顶（首模型 glm-4.5-flash）  head=glm-4.5-flash
+[PASS] ④ 集成: 选中模型（glm-4.7-flash）置 buildChain 链首  head=glm-4.7-flash
+[PASS] ④ 集成: settings.order 经 aiGetModelSettings 正确回显
+
+===== 行为测试汇总: PASS=22 FAIL=0 =====
+EXIT 0

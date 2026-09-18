@@ -1,0 +1,13 @@
+=== assets/notify.js 结构 ===
+total lines=553 bytes=21408
+TOP-LEVEL decls (depth0, string/comment-aware) = 1
+   L2     function  function () {   'use strict';    var W = window;   var D = document;    /* ---------------
+
+IIFE headline: /* =====================================================================
+last non-empty line: })();
+
+=== 学习概括.html top-level 声明检查 ===
+inline <script> blocks = 2
+  script#1 top-level decls=1
+     function  function () {   'use strict';    /* ---------- 常量表 ---------- */   var MODULES = ['cet
+TOTAL inline top-level decls = 1

@@ -1,0 +1,15 @@
+obj 6 W=1380 H=162 F=DCTDecode len=5799 smask=7
+obj 7 W=1380 H=162 F=FlateDecode len=720 smask=-
+  decomp=223560 expect_gray=223560 expect_rgb=670680
+obj 8 W=1380 H=315 F=DCTDecode len=7180 smask=9
+obj 9 W=1380 H=315 F=FlateDecode len=1236 smask=-
+  decomp=434700 expect_gray=434700 expect_rgb=1304100
+obj 10 W=134 H=70 F=DCTDecode len=2832 smask=11
+obj 11 W=134 H=70 F=FlateDecode len=830 smask=-
+  decomp=9380 expect_gray=9380 expect_rgb=28140
+obj 14 W=1380 H=523 F=DCTDecode len=9333 smask=15
+obj 15 W=1380 H=523 F=FlateDecode len=1938 smask=-
+  decomp=721740 expect_gray=721740 expect_rgb=2165220
+obj 16 W=97 H=70 F=DCTDecode len=2616 smask=17
+obj 17 W=97 H=70 F=FlateDecode len=815 smask=-
+  decomp=6790 expect_gray=6790 expect_rgb=20370

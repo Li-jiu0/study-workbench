@@ -1,0 +1,7 @@
+BEFORE: size=95502 crlf=1524 loneLF=0 loneCR=0
+[OK] FIX1 xtInjectAccountRow row.textContent (old 55 B -> new 405 B)
+[OK] FIX2 xtRenderAccount peAccount.textContent (old 127 B -> new 266 B)
+AFTER: size=95991 crlf=1530 loneLF=0 loneCR=0 (delta=+489 B)
+[OK] 回读一致，纯行尾不变（与改前相同：CRLF）
+[PASS] 新串命中、旧串清零
+EDIT_ALL=PASS

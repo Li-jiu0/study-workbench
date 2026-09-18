@@ -1,0 +1,7 @@
+escheck rc=0
+escheck tail: DONE 0
+escheck => PASS
+ai.py ast.parse => PASS
+AI_CHAT.total 引用=4（注释 1 + fetchAiChat 定义内赋值 3 → 展示引用=0）
+AI_CHAT.total 展示引用 => PASS
+VERIFY_ALL=PASS

@@ -42,7 +42,16 @@ server/backups/
 
 # 反馈等后端运行数据目录（免登录反馈落盘 server/data/feedback.json，属运行时数据，
 # 每次真实提交都会追写，绝不入库；2026-09-13 需求01 收尾补充）
-server/data/
+server/data/*
+!server/data/model_quota.json
+!server/data/model_registry.json
+
+# ===== 2026-09-18：服务端用量账本（多用户累计，绝不能随部署覆盖）=====
+# model_usage.json 是运行时累计账本：服务器上的才是真实用量，
+# 一旦入库，下次部署会把真实用量覆盖成 0 -> 所有人用量归零 -> 直接超量欠费。
+# 注意：model_quota.json / model_registry.json 是配置，必须入库（见上方 ! 放行）。
+# 用量账本（运行时累计，服务器上的才是真实数据）
+server/data/model_usage.json
 
 # 后端真实配置（含 JWT 密钥与各家大模型 API Key，只留 .env.example 模板入库）
 server/.env

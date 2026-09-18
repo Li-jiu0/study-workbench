@@ -1,0 +1,159 @@
+== 重复顶层符号总数: 38 ==
+== live 文件数: 57 ==
+
+### MINI_BANK   (files=5, occ=5, kinds=window)
+    [window] mini-cet.js:2
+    [window] mini-comm.js:2
+    [window] mini-exam.js:2
+    [window] mini-interview.js:2
+    [window] mini-ppt.js:2
+
+### editProfile   (files=2, occ=3, kinds=function)
+    [function] api.js:358
+    [function] api.js:1514
+    [function] app.js:8351
+
+### renderPeAvatarPreview   (files=2, occ=3, kinds=function)
+    [function] api.js:366
+    [function] api.js:1548
+    [function] app.js:8378
+
+### clearAiProviderConfig   (files=2, occ=2, kinds=function)
+    [function] api.js:1094
+    [function] app.js:3013
+
+### closeLogoutConfirm   (files=2, occ=2, kinds=function)
+    [function] api.js:413
+    [function] app.js:432
+
+### closeProfileEditor   (files=2, occ=2, kinds=function)
+    [function] api.js:403
+    [function] app.js:8436
+
+### confirmLogout   (files=2, occ=2, kinds=function)
+    [function] api.js:416
+    [function] app.js:435
+
+### doLogout   (files=2, occ=2, kinds=function)
+    [function] api.js:408
+    [function] app.js:420
+
+### exportAllNotesMd   (files=2, occ=2, kinds=function)
+    [function] api.js:1630
+    [function] app.js:7829
+
+### exportCurrentNoteMd   (files=2, occ=2, kinds=function)
+    [function] api.js:852
+    [function] app.js:7822
+
+### globalSearch   (files=2, occ=2, kinds=function)
+    [function] api.js:891
+    [function] app.js:8516
+
+### noteCardHtml   (files=2, occ=2, kinds=function)
+    [function] api.js:419
+    [function] app.js:7491
+
+### onProfileAvatarFile   (files=2, occ=2, kinds=function)
+    [function] api.js:1556
+    [function] app.js:8387
+
+### quickSelectModel   (files=2, occ=2, kinds=function)
+    [function] api.js:1034
+    [function] app.js:8672
+
+### renderBlogDetail   (files=2, occ=2, kinds=function)
+    [function] api.js:569
+    [function] app.js:7742
+
+### renderBlogStats   (files=2, occ=2, kinds=function)
+    [function] api.js:826
+    [function] app.js:8066
+
+### renderProfilePage   (files=2, occ=2, kinds=function)
+    [function] api.js:1327
+    [function] app.js:8102
+
+### resetProfileAvatar   (files=2, occ=2, kinds=function)
+    [function] api.js:1584
+    [function] app.js:8421
+
+### saveProfileEditor   (files=2, occ=2, kinds=function)
+    [function] api.js:1595
+    [function] app.js:8425
+
+### updateProfileUI   (files=2, occ=2, kinds=function)
+    [function] api.js:210
+    [function] app.js:8446
+
+### formatPresence   (files=1, occ=2, kinds=function,window)
+    [function] api.js:186
+    [window] api.js:207
+
+### getTodayStr   (files=1, occ=2, kinds=function)
+    [function] app.js:5663
+    [function] app.js:6463
+
+### getTodayStudySeconds   (files=1, occ=2, kinds=function,window)
+    [function] app.js:9211
+    [window] app.js:9357
+
+### getTodayStudyText   (files=1, occ=2, kinds=function,window)
+    [function] app.js:9216
+    [window] app.js:9358
+
+### initStudyTimer   (files=1, occ=2, kinds=function,window)
+    [function] app.js:9301
+    [window] app.js:9323
+
+### lsKey   (files=1, occ=2, kinds=function,window)
+    [function] app.js:15
+    [window] app.js:16
+
+### renderPostStatsOnly   (files=1, occ=2, kinds=function,window)
+    [function] app.js:8300
+    [window] app.js:8338
+
+### resetTodayStudyTime   (files=1, occ=2, kinds=function,window)
+    [function] app.js:9234
+    [window] app.js:9242
+
+### seedStudyLimitUI   (files=1, occ=2, kinds=function,window)
+    [function] app.js:9361
+    [window] app.js:9369
+
+### showAbout   (files=1, occ=2, kinds=function,window)
+    [function] app.js:9145
+    [window] app.js:9151
+
+### showAboutDialog   (files=1, occ=2, kinds=function,window)
+    [function] app.js:9154
+    [window] app.js:9189
+
+### showStudyLimitModal   (files=1, occ=2, kinds=function,window)
+    [function] app.js:9275
+    [window] app.js:9298
+
+### syncStudyLimitUI   (files=1, occ=2, kinds=function,window)
+    [function] app.js:9326
+    [window] app.js:9356
+
+### uiAlert   (files=1, occ=2, kinds=function,window)
+    [function] app.js:8820
+    [window] app.js:8859
+
+### uiConfirm   (files=1, occ=2, kinds=function,window)
+    [function] app.js:8802
+    [window] app.js:8858
+
+### uiPrompt   (files=1, occ=2, kinds=function,window)
+    [function] app.js:8836
+    [window] app.js:8860
+
+### updateGoalProgress   (files=1, occ=2, kinds=function)
+    [function] app.js:1760
+    [function] app.js:9135
+
+### xtRefreshExamBankUI   (files=1, occ=2, kinds=function,window)
+    [function] app.js:700
+    [window] app.js:720

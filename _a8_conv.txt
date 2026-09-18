@@ -1,0 +1,6 @@
+[BEFORE] 学习概括.html bytes=44186 CRLF=0 bareLF=837
+[BEFORE] notify.js bytes=21408 CRLF=0 bareLF=552
+[BAK] 学习概括.html.bak-a8-lf2crlf
+[AFTER ] 学习概括.html bytes=45023 CRLF=837 bareLF=0
+[ASSERT] CRLF>0 and bareLF==0 -> PASS
+[ASSERT] notify.js still pure LF -> PASS (CRLF=0 bareLF=552)

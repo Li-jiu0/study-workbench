@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>更多功能 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260917b">
+<link rel="stylesheet" href="assets/common.css?v=20260918d">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O">
@@ -60,8 +60,8 @@
         <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
       </div>
       <div class="nav-section">互动</div>
-      <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
-        <span class="nav-icon" data-icon="users"></span><span>好友</span>
+      <div class="nav-item" data-external="1" onclick="gotoChat()" title="通讯录 · 添加好友（需在线模式）">
+        <span class="nav-icon" data-icon="users"></span><span>通讯录</span>
       </div>
       <div class="nav-section">中心</div>
       <div class="nav-item" data-page="wrong-book">
@@ -124,15 +124,10 @@
             <div class="mpc-title">动态空间</div>
             <div class="mpc-desc">朋友圈信息流 · 我的动态</div>
           </div>
-          <div class="morepage-card morepage-list-item" onclick="gotoBlogMine()">
-            <div class="mpc-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div>
-            <div class="mpc-title">互动广场</div>
-            <div class="mpc-desc">我的发贴 · 草稿 · 收藏</div>
-          </div>
-          <div class="morepage-card morepage-list-item" onclick="navigateTo('wrong-book')">
-            <div class="mpc-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div>
-            <div class="mpc-title">错题本</div>
-            <div class="mpc-desc">按模块与错因筛选，集中复盘重做</div>
+          <div class="morepage-card morepage-list-item" onclick="location.href='赞助.html'">
+            <div class="mpc-icon"><span class="nav-icon" data-icon="heart" data-icon-size="20"></span></div>
+            <div class="mpc-title">赞助</div>
+            <div class="mpc-desc">支持星途 · 扫码请作者喝杯咖啡</div>
           </div>
 
           <!-- 2026-09-16 用户反馈：「学习动态」改名「动态」。 -->
@@ -154,15 +149,16 @@
             <div class="mpc-title">关于</div>
             <div class="mpc-desc">版本 · 功能清单与说明</div>
           </div>
-          <div class="morepage-card morepage-list-item" onclick="location.href='赞助.html'">
-            <div class="mpc-icon"><span class="nav-icon" data-icon="heart" data-icon-size="20"></span></div>
-            <div class="mpc-title">赞助</div>
-            <div class="mpc-desc">支持星途 · 扫码请作者喝杯咖啡</div>
+          <!-- R88-G（R88-M2）：检测更新入口。版本号由 assets/xt-update.js 写回 #xtMoreUpdateVer。 -->
+          <div class="morepage-card morepage-list-item" id="morepageUpdateCard" onclick="XTUpdate.openUpdatePage()">
+            <div class="mpc-icon"><span class="nav-icon" data-icon="download" data-icon-size="20"></span></div>
+            <div class="mpc-title">检测更新</div>
+            <div class="mpc-desc" id="xtMoreUpdateVer">当前版本 v— · 查看是否有新版本</div>
           </div>
-          <div class="morepage-card morepage-list-item" onclick="location.href='导入题库.html'">
-            <div class="mpc-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div>
-            <div class="mpc-title">导入题库</div>
-            <div class="mpc-desc">Excel/CSV 一键导入</div>
+          <div class="morepage-card morepage-list-item" onclick="navigateTo('wrong-book')">
+            <div class="mpc-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div>
+            <div class="mpc-title">错题本</div>
+            <div class="mpc-desc">按模块与错因筛选，集中复盘重做</div>
           </div>
           <div class="morepage-card morepage-list-item" onclick="location.href='AI模拟面试.html'">
             <div class="mpc-icon"><span class="nav-icon" data-icon="mic" data-icon-size="20"></span></div>
@@ -205,9 +201,6 @@
     <div class="bottom-more-grid">
       <div class="bottom-more-item" onclick="navigateTo('moments');toggleMorePanel()">
         <div class="bm-icon"><span class="nav-icon" data-icon="rss" data-icon-size="20"></span></div><div class="bm-label">动态空间</div>
-      </div>
-      <div class="bottom-more-item" onclick="gotoBlogMine()">
-        <div class="bm-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div><div class="bm-label">互动广场</div>
       </div>
       <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
         <div class="bm-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div><div class="bm-label">错题本</div>
@@ -307,11 +300,20 @@
 <script src="assets/app.js?v=20260917b" defer></script>
 <script src="assets/quest.js?v=20260916O" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/xt-update.js?v=20260918d" defer></script>
 <script src="assets/api.js?v=20260917b" defer></script>
 <script src="assets/admin.js?v=20260916O" defer></script>
 <script src="assets/study-stats.js?v=20260916O" defer></script>
-<script src="assets/ai-config.js?v=20260918b"></script>
+<script src="assets/ai-config.js?v=20260918c"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260918b"></script>
+<script src="assets/ai-service.js?v=20260918d"></script>
+<script src="assets/ai-cap-registry.js?v=20260918c"></script>
+<script src="assets/ai-cap-image.js?v=20260918c"></script>
+<script src="assets/ai-cap-vision.js?v=20260918c"></script>
+<script src="assets/ai-cap-audio.js?v=20260918c"></script>
+<script src="assets/ai-cap-embed.js?v=20260918c"></script>
+<script src="assets/ai-cap-translate.js?v=20260918c"></script>
+<script src="assets/ai-cap-video.js?v=20260918c"></script>
+<script src="assets/ai-cap-3d.js?v=20260918c"></script>
 </body>
 </html>

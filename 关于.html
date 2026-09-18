@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>关于 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260917b">
+<link rel="stylesheet" href="assets/common.css?v=20260918d">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O">
@@ -110,8 +110,8 @@
         <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
       </div>
       <div class="nav-section">互动</div>
-      <div class="nav-item" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
-        <span class="nav-icon" data-icon="users"></span><span>好友</span>
+      <div class="nav-item" onclick="gotoChat()" title="通讯录 · 添加好友（需在线模式）">
+        <span class="nav-icon" data-icon="users"></span><span>通讯录</span>
       </div>
       <div class="nav-section">中心</div>
       <div class="nav-item" onclick="location.href='错题本.html'">
@@ -193,7 +193,7 @@
               <span class="ab-chip">我的文件</span>
               <span class="ab-chip">万能金句 / 场景话术</span>
               <span class="ab-chip">动态社区</span>
-              <span class="ab-chip">好友私信</span>
+              <span class="ab-chip">通讯录私信</span>
             </div>
           </div>
 
@@ -251,13 +251,6 @@
             <div class="ab-text" style="margin-top:6px">2. AI 回答由大模型生成，可能存在不准确或过时之处；涉及报考条件、政策条款、成绩与录取等关键事项，请务必以官方文件为准，AI 结果不作为决策依据。</div>
             <div class="ab-text" style="margin-top:6px">3. 本站不收集与学习无关的个人信息，也不出售任何数据；账号相关数据的使用范围仅限为你提供同步与备份服务。</div>
             <div class="ab-text" style="margin-top:6px">4. 请勿在本站发布违反法律法规或侵犯他人权益的内容，违规内容会被移除。</div>
-          </div>
-
-          <!-- ===== 更新日志 ===== -->
-          <div class="ab-card">
-            <div class="ab-card-title"><span class="ab-ti"><span class="nav-icon" data-icon="clock" data-icon-size="16"></span></span>更新日志</div>
-            <div class="ab-text">v2.3 更新：全新「我的文件」页上线，统一归集题库 / 作品 / 笔记 ·「演示」功能下线，作品集迁入「我的文件」 · 导入题库独立成页，导入即同步登记 · 会话通知接入原生桥、模型设置优化 · 其他界面细节打磨</div>
-            <div class="ab-log">v2.2：AI 问答页上线（模型列表面板 · 倍率 · MAX 模式 · 深度思考 · 上下文长度）· AI 伙伴改版为小助手与暖心学伴，接入全站统一 AI 底座 ·「关于」改为独立页面 · 全站导航接入 AI<br>v2.1：错题本按模块与错因筛选 · 学习数据轮播 · 倒计时置顶<br>v2.0：学习工作台改版 · 底部导航统一为 首页 / 互动 / 我的 / AI / 更多</div>
           </div>
 
           <div class="ab-sign">——树枝子</div>
@@ -403,9 +396,17 @@
 <script src="assets/config.js?v=20260916O" defer></script>
 <script src="assets/api.js?v=20260917b" defer></script>
 <script src="assets/study-stats.js?v=20260916O" defer></script>
-<script src="assets/ai-config.js?v=20260918b"></script>
+<script src="assets/ai-config.js?v=20260918c"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260918b"></script>
+<script src="assets/ai-service.js?v=20260918d"></script>
+<script src="assets/ai-cap-registry.js?v=20260918c"></script>
+<script src="assets/ai-cap-image.js?v=20260918c"></script>
+<script src="assets/ai-cap-vision.js?v=20260918c"></script>
+<script src="assets/ai-cap-audio.js?v=20260918c"></script>
+<script src="assets/ai-cap-embed.js?v=20260918c"></script>
+<script src="assets/ai-cap-translate.js?v=20260918c"></script>
+<script src="assets/ai-cap-video.js?v=20260918c"></script>
+<script src="assets/ai-cap-3d.js?v=20260918c"></script>
 <script>
 /* 关于页：把版本号写回页面（与 app.js 的 showAbout 口径保持一致） */
 (function () {

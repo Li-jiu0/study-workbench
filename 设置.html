@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" data-page-node-id="ppAOS1DYQGgIIySlO2fdxi">
 <meta name="theme-color" content="#5B8DEF" data-page-node-id="EXvc7QppIKtHC8PUM71nFK">
 <title>设置 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260917b" data-page-node-id="oNplQZjsSu34O6b7wLTk3t">
+<link rel="stylesheet" href="assets/common.css?v=20260918d" data-page-node-id="oNplQZjsSu34O6b7wLTk3t">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O" data-page-node-id="gZ2lwtNBjEq5CgqQTlbjFi">
@@ -59,8 +59,8 @@
         <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
       </div>
       <div class="nav-section" data-page-node-id="62IraBitJHEEuHbz3ikLXg">互动</div>
-      <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）" data-page-node-id="aRHuZziE37CzDXzVSpuzLp">
-        <span class="nav-icon" data-page-node-id="UfPubWfBVnWQCCK18VHIbF" data-icon="users"></span><span data-page-node-id="FJ6cJs19JUXpu7ErWAIPFf">好友</span>
+      <div class="nav-item" data-external="1" onclick="gotoChat()" title="通讯录 · 添加好友（需在线模式）" data-page-node-id="aRHuZziE37CzDXzVSpuzLp">
+        <span class="nav-icon" data-page-node-id="UfPubWfBVnWQCCK18VHIbF" data-icon="users"></span><span data-page-node-id="FJ6cJs19JUXpu7ErWAIPFf">通讯录</span>
       </div>
       <div class="nav-section" data-page-node-id="ePW0ZBqDVKXZScQqa1uCpu">中心</div>
       <div class="nav-item" data-page="wrong-book" data-page-node-id="cDwGyUqeA6dJMNegwo1L3i">
@@ -510,7 +510,7 @@
           <div class="fb-faq" id="fbFaq">
             <div class="fb-faq-item">
               <div class="fb-faq-q" onclick="fbToggleFaq(this)"><span class="nav-icon" data-icon="message-square" data-icon-size="16"></span> 消息发不出去怎么办？<span>▾</span></div>
-              <div class="fb-faq-a">① 确认后端已启动（设置页右上角能收到通知说明在线）；② 只能与好友互发消息，先在「好友」页添加；③ 若被对方拉黑会提示「无法发送消息」。离线时聊天会自动切到本地演示模式。</div>
+              <div class="fb-faq-a">① 确认后端已启动（设置页右上角能收到通知说明在线）；② 只能与好友互发消息，先在「通讯录」页添加；③ 若被对方拉黑会提示「无法发送消息」。离线时聊天会自动切到本地演示模式。</div>
             </div>
             <div class="fb-faq-item">
               <div class="fb-faq-q" onclick="fbToggleFaq(this)"><span class="nav-icon" data-icon="image" data-icon-size="16"></span> 图片 / 头像不显示？<span>▾</span></div>
@@ -688,7 +688,7 @@
               <button class="st-quick-it" onclick="openImporter()" data-page-node-id="ktNGYLWUAT12GwDjLmC98D"><span class="sq-ic" data-page-node-id="BqfxQ0BEzXLYboGHEoZ0jf" data-icon="inbox" data-icon-size="16"></span>导入题库</button>
               <button class="st-quick-it" onclick="openFocusTimer()" data-page-node-id="MbONyy1dnrSLi2NxZEwFhr"><span class="sq-ic" data-page-node-id="nAfgSM9UgUrpWjvS6YUEba" data-icon="clock" data-icon-size="16"></span>专注计时</button>
               <button class="st-quick-it" onclick="openBlogStats()" data-page-node-id="6oFa7YzjMZVaew2IdC0EHL"><span class="sq-ic" data-page-node-id="1FqvhtNlrqAYclQDNnA994" data-icon="chart-bar" data-icon-size="16"></span>学习统计</button>
-              <button class="st-quick-it" onclick="gotoChat()" data-page-node-id="LfJXwWr8Syn7tvQOmdyf9R"><span class="sq-ic" data-page-node-id="jDCMH1PciHiJXbPqrGjXHa" data-icon="message-circle" data-icon-size="16"></span>好友私信</button>
+              <button class="st-quick-it" onclick="gotoChat()" data-page-node-id="LfJXwWr8Syn7tvQOmdyf9R"><span class="sq-ic" data-page-node-id="jDCMH1PciHiJXbPqrGjXHa" data-icon="message-circle" data-icon-size="16"></span>通讯录私信</button>
             </div>
           </div>
         </div>
@@ -700,6 +700,17 @@
           <div class="card-header" data-page-node-id="EeEIxOsyUcFtEEkkIPNzgT">
             <div class="card-title" data-page-node-id="C7LpCY2GrXOU67gyiOeqna"><span class="title-icon" data-page-node-id="fOV291NvnPQCXVc7FwJc7c" data-icon="wrench"></span>维护与重置</div>
           </div>
+          <!-- 检测更新（R86-F）：进入设置页自动检测一次，结果由 assets/xt-update.js 写回本行的 #xtUpdateDesc / #xtUpdateBtn -->
+          <div class="setting-row" id="xtUpdateRow" onclick="XTUpdate.openUpdatePage()">
+            <div class="setting-info">
+              <div class="setting-name">检测更新</div>
+              <div class="setting-desc" id="xtUpdateDesc">当前版本 v1.23 · 进入设置页会自动检测一次</div>
+            </div>
+            <div class="setting-actions">
+              <button class="btn btn-outline" id="xtUpdateBtn" onclick="XTUpdate.openUpdatePage()"><span class="nav-icon" data-icon="download" data-icon-size="14"></span> 检测更新</button>
+            </div>
+          </div>
+
           <div class="setting-row" data-page-node-id="eoiIGkTDfuU3fs5bGZRqpW">
             <div class="setting-info" data-page-node-id="bTDCQD8xwgBgWCHroArRYb">
               <div class="setting-name" data-page-node-id="AFIEMt7T7sbmXSQAEpNJts">清理缓存与临时数据</div>
@@ -887,7 +898,7 @@
             <div style="font-size:var(--xt-font-md);font-weight:800;color:var(--text)" data-page-node-id="cebfOtFTEwudkshNDRmtpw"><span class="nav-icon" data-icon="rocket" data-icon-size="16"></span> 星途 · 学习工作台 v2.2 · 致追梦的人->修身</div>
             <div style="margin-top:6px" data-page-node-id="BKe1rLTpXIQ0FqOJ4JZE9P">一款面向在校生与求职者的<b data-page-node-id="UMbLDaqutazwD7WYrwd692">全流程学习与备考工具箱</b>：从日常打卡、词汇记忆到刷题模考、面试表达，再到 AI 辅助与社区互动，学习记录默认保存在本机浏览器；登录服务器后，发贴/私信/AI 记录可多端同步（数据库存服务器）。</div>
             <div style="margin-top:8px;font-weight:600;color:var(--text)" data-page-node-id="MjyN21aAMXf0HRWdcpw2ur"><span class="nav-icon" data-icon="inbox" data-icon-size="16"></span> 学习模块</div>
-            <div data-page-node-id="mi6yoar3f5KakALoBUL75p">首页学习台(每日任务/专注计时/学习提醒) · 四级词汇(间隔重复) · 听说训练(情景口语/听力精听) · 英语(听力/口语/阅读/翻译) · 行测刷题 · 错题本 · 行测(企业定向库/时政热点/真题模考/话题表达训练) · 面试题库 · 表达 · 面测 · 演示(设计基础/版式库/案例拆解/实战模板) · 万能金句/场景话术 · 社区(发贴/评论/点赞) · 好友私信</div>
+            <div data-page-node-id="mi6yoar3f5KakALoBUL75p">首页学习台(每日任务/专注计时/学习提醒) · 四级词汇(间隔重复) · 听说训练(情景口语/听力精听) · 英语(听力/口语/阅读/翻译) · 行测刷题 · 错题本 · 行测(企业定向库/时政热点/真题模考/话题表达训练) · 面试题库 · 表达 · 面测 · 演示(设计基础/版式库/案例拆解/实战模板) · 万能金句/场景话术 · 社区(发贴/评论/点赞) · 通讯录私信</div>
             <div style="margin-top:8px;font-weight:600;color:var(--text)" data-page-node-id="3Go179ureNmpTmQEArBbZo"><span class="nav-icon" data-icon="wrench" data-icon-size="16"></span> 便捷能力</div>
             <div data-page-node-id="vsfN2AkFnyTSLv1V5dZjUJ">导入题库(Word/Excel/文本选目标导入) · 各题库“我的题库”自建/导入导出 · AI(多模型/用量/记录/读发贴) · 学习统计 · 数据备份与迁移 · 发贴回收站 · Markdown 导出 · 外观(主题跟随系统+配色皮肤) · 数据总览 · 每日学习提醒 · 账号与隐私安全 · 反馈直达创作者</div>
             <div style="margin-top:10px;border-top:1px dashed var(--border);padding-top:8px;color:var(--text-muted);font-size:var(--xt-font-sm)" data-page-node-id="sA7LgG0fY7DvUL0lu3V6vv">版本 20260913k · 更新日期 2026-09-13：英语「听力训练」升级为页内面板（听力精听+口语跟读双模块，场景台词扩充）· 表达（案例拆解/i人伙伴团/角色扮演）、面测（面试准备/面试后）、演示（设计基础/实战模板库/技巧提升）由弹窗改页面并重构版式 · 社区评论支持回复嵌套与收起展开、修复评论头像显示 · 我的文章改列表导航、分类筛选改下拉 · 个人中心学习偏好支持页内直设、修复发贴统计入口 · 全站图标矢量化的查漏补缺与顶栏升级。</div>
@@ -1016,6 +1027,7 @@
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
 <script src="assets/app.js?v=20260917b" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/xt-update.js?v=20260918d" defer></script>
 <script src="assets/api.js?v=20260917b" defer></script>
 <script src="assets/subpage-router.js?v=20260917b" defer></script>
 <script src="assets/qbank.js?v=20260916O" defer></script>
@@ -2495,8 +2507,16 @@ if (typeof stInitAccount === 'function') {
   else bootSubpage();
 })();
 </script>
-<script src="assets/ai-config.js?v=20260918b"></script>
+<script src="assets/ai-config.js?v=20260918c"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260918b"></script>
+<script src="assets/ai-service.js?v=20260918d"></script>
+<script src="assets/ai-cap-registry.js?v=20260918c"></script>
+<script src="assets/ai-cap-image.js?v=20260918c"></script>
+<script src="assets/ai-cap-vision.js?v=20260918c"></script>
+<script src="assets/ai-cap-audio.js?v=20260918c"></script>
+<script src="assets/ai-cap-embed.js?v=20260918c"></script>
+<script src="assets/ai-cap-translate.js?v=20260918c"></script>
+<script src="assets/ai-cap-video.js?v=20260918c"></script>
+<script src="assets/ai-cap-3d.js?v=20260918c"></script>
 </body>
 </html>

@@ -1,0 +1,32 @@
+=== 备份（改前）62-80 行 ===
+  62|     <div class="xtm-nav">
+  63|       <button class="xtm-nav-btn" id="xtmBack" type="button" title="返回" aria-label="返回"><span class="nav-icon" data-icon="chevron-left"></span></button>
+  64|       <div class="xtm-nav-title">动态空间</div>
+  65|       <button class="xtm-nav-btn" id="xtmCam" type="button" title="点击发图文/视频，长按发纯文字" aria-label="发表">📷</button>
+  66|     </div>
+  67| 
+  68|     <!-- R78：页顶背景自定义 hero +「我的动态」列表按钮（替换原 R74 入口卡）。
+  69|          换背景按钮图标=data-icon「image」：本地图片 ≤2MB，dataURL 存 localStorage study_workbench_moments_bg，逻辑在 assets/xt-moments.js
+  70|          一键还原默认按钮图标=data-icon「rotate-ccw」（清 localStorage 背景键）；有背景时遮罩层保证文字可读。 -->
+  71|     <div class="xtm-hero" id="xtmHero">
+  72|       <div class="xtm-hero-mask" id="xtmHeroMask"></div>
+  73|       <button class="xtm-hero-btn" id="xtmBgBtn" type="button" title="更换页顶背景" aria-label="换背景"><span class="nav-icon" data-icon="image"></span></button>
+  74|       <button class="xtm-hero-btn" id="xtmBgReset" type="button" title="恢复默认背景" aria-label="还原背景" style="display:none"><span class="nav-icon" data-icon="rotate-ccw"></span></button>
+  75|       <input type="file" id="xtmBgFile" accept="image/*" style="display:none">
+  76|       <a class="xtm-listrow" id="xtmMineRow" href="我的动态.html">
+  77|         <div class="xtm-listrow-icon"><span class="nav-icon" data-icon="user"></span></div>
+  78|         <div class="xtm-listrow-main">
+  79|           <div class="xtm-listrow-t">我的动态</div>
+  80|           <div class="xtm-listrow-s">我 → 头像 → 动态</div>
+
+=== 备份（改前）含 hero 样式的行 ===
+  16|   .xtm-hero{position:relative;margin:12px 0 14px;padding:6px 46px 6px 0;background-size:cover;background-position:center;border-radius:16px}
+  17|   .xtm-hero.has-bg{background-color:#1b2432}
+  18|   .xtm-hero-mask{position:absolute;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,.45);border-radius:16px;display:none}
+  19|   .xtm-hero.has-bg .xtm-hero-mask{display:block}
+  20|   .xtm-hero-btn{position:absolute;top:8px;width:30px;height:30px;border:none;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;font-size:14px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+  21|   .xtm-hero-btn:active{background:rgba(0,0,0,.55)}
+  22|   #xtmBgBtn{right:8px}
+  23|   #xtmBgReset{right:44px}
+  31|   .xtm-nav-btn .nav-icon, .xtm-hero-btn .nav-icon, .xtm-listrow-icon .nav-icon{display:flex;align-items:center;justify-content:center}
+  32|   .xtm-hero-btn .nav-icon svg{stroke:#fff}

@@ -186,6 +186,7 @@ class CommentIn(BaseModel):
 
 class ChatIn(BaseModel):
     provider: str
+    modelId: str | None = None   # 可选：前端 ai-config.js 的模型 id（额度账本 / 模型路由）
     messages: list[dict]
     noteId: int | None = None        # 可选：让 AI 读取这篇笔记作为上下文（作者本人笔记或公开笔记）
     temperature: float | None = None  # 0~2，缺省用服务商默认

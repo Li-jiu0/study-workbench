@@ -41,6 +41,12 @@
   var HEALTH_BOOT_DELAY = 1500;              // 页面加载后延迟启动，避免抢首屏
   var DATA_VERSION = 'R67 · v20260916';      // 数据版本（关于 Tab 展示）
   var PG_CUSTOM_KEY = 'custom';              // R67 服务商分组：「自定义/兼容接口」组 key
+  var CAT_SCHEMA = 2;                        // R87：分类迁移 schema 版本（<2 才跑 migrateCatSchema）
+  // R87：成本保护——一次「检测全部」若不排除 video/3D 约烧 2*103818 + 3*30000 ≈ 297636 tokens ≈ 15% 额度。
+  var CAP_CONFIRM_TIP = '将向火山方舟提交真实任务并真实计费：\n' +
+    '· 视频约 103,818 tokens / 次\n' +
+    '· 3D 约 30,000 tokens / 次\n' +
+    '200 万额度约够 19 个视频。\n\n确认继续检测吗？';
 
   /* ---------------- R67 图标库：统一内联 SVG（stroke=currentColor，与页头返回按钮同风格；替换 emoji 混用） ---------------- */
   function svgWrap(inner, size) {
@@ -70,35 +76,75 @@
     lock: svgWrap('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>', 13)
   };
 
-  // 能力标签 -> 展示名（8 类原始标签）
+  // 能力标签 -> 展示名（14 类原始标签；R87 新增 imagegen / video / 3d）
+  // 与 ALL_TYPE_KEYS 一一对应，renderFormTypes 与 typeChipsOf 都按本表取展示名，
+  // 缺键会导致表单 chip 渲染成 undefined，故必须与 ALL_TYPE_KEYS 完全对齐。
   var TYPE_LABELS = {
-    general: '文本', reasoning: '推理', math: '数学', image: '识图',
-    translate: '翻译', longtext: '长文本', creative: '创作', interview: '面试'
+    general: '文本', reasoning: '推理', math: '数学', image: '识图', imagegen: '生图',
+    translate: '翻译', longtext: '长文本', creative: '创作', interview: '面试',
+    audio: '语音识别', embedding: '向量嵌入', rerank: '结果重排', video: '视频生成', '3d': '3D 生成'
   };
-  var ALL_TYPE_KEYS = ['general', 'reasoning', 'math', 'image', 'translate', 'longtext', 'creative', 'interview'];
-
-  // R72-15：原始能力标签 -> 3 个内置能力分类（C5 映射；translate 停用后并入 general）
-  var CAT_OF_TYPE = {
-    general: 'general', longtext: 'general', creative: 'general', interview: 'general', translate: 'general',
-    math: 'reasoning', reasoning: 'reasoning',
-    image: 'vision'
-  };
-
-  // R72-15：内置能力分类收敛为 3 类（文本 / 识图 / 推理），停用「翻译」分类。
-  // 注意：vision 的 key 不能改名（ai-service.js 硬编码依赖），仅 label 改「识图」。
-  var BUILTIN_CATS = [
-    { key: 'general', label: '文本' },
-    { key: 'vision', label: '识图' },
-    { key: 'reasoning', label: '推理' }
+  // R87：自定义模型表单的类型 chip 与保存时按本数组顺序回写 types 都依赖它。
+  // 扩为 14：补 imagegen（生图）/ video（视频生成）/ 3d（3D 生成）。
+  var ALL_TYPE_KEYS = [
+    'general', 'reasoning', 'math', 'image', 'imagegen', 'translate', 'longtext',
+    'creative', 'interview', 'audio', 'embedding', 'rerank', 'video', '3d'
   ];
 
+  // R87：原始能力标签 -> 内置能力分类（C5 映射，14 键，不留隐式兜底）。
+  // translate 恢复成卡（撤销 R72-15 停用）；audio/embedding/rerank/imagegen/video/3d 各自成桶。
+  // ⚠️ 模型 type 保持 '3d' 不变（ai-cap-3d 的 types 已是 ['3d']），仅分类 key 用 three_d，
+  //    避免数字开头 key 作 data-cat 选择器。
+  var CAT_OF_TYPE = {
+    general: 'general', longtext: 'longtext',
+    creative: 'content', interview: 'content',
+    math: 'reasoning', reasoning: 'reasoning',
+    translate: 'translate',
+    image: 'vision', imagegen: 'imagegen',
+    audio: 'audio', embedding: 'embedding', rerank: 'rerank',
+    video: 'video',
+    '3d': 'three_d'
+  };
+
+  // R87：内置能力分类 10 -> 12 类（视频生成 / 3D 生成本期真接入，与其余 10 类完全同等对待）。
+  // 注意：vision 的 key 不能改名（ai-service.js 硬编码依赖），仅 label 改「视觉识图」。
+  var BUILTIN_CATS = [
+    { key: 'general', label: '文本对话', family: 'text' },
+    { key: 'longtext', label: '长文本理解', family: 'text' },
+    { key: 'content', label: '内容创作', family: 'text' },
+    { key: 'reasoning', label: '推理与数学', family: 'text' },
+    { key: 'translate', label: '翻译', family: 'text' },
+    { key: 'vision', label: '视觉识图', family: 'vision' },
+    { key: 'imagegen', label: '图像生成', family: 'vision' },
+    { key: 'audio', label: '语音识别', family: 'audio' },
+    { key: 'embedding', label: '向量嵌入', family: 'retrieval' },
+    { key: 'rerank', label: '结果重排', family: 'retrieval' },
+    { key: 'video', label: '视频生成', family: 'video' },
+    { key: 'three_d', label: '3D 生成', family: 'three_d' }
+  ];
+  // 常量名保留（便于将来再加预留类）；本期无预留类。
+  var RESERVED_KEYS = [];
+
+  // R87：分类 -> 展示族（6 组），组展示顺序固定，空组不渲染。
+  var FAMILY_OF_CAT = {
+    general: 'text', longtext: 'text', content: 'text', reasoning: 'text', translate: 'text',
+    vision: 'vision', imagegen: 'vision',
+    audio: 'audio',
+    embedding: 'retrieval', rerank: 'retrieval',
+    video: 'video', three_d: 'three_d'
+  };
+  var FAMILY_ORDER = ['text', 'vision', 'audio', 'retrieval', 'video', 'three_d'];
+  var FAMILY_LABEL = { text: '文本', vision: '视觉', audio: '语音', retrieval: '检索', video: '视频', three_d: '3D' };
+
   // 健康检查错误码 -> 用户可读文案（err==='cors' 如实区分，不误导）
+  // R87/T02：新增 unsupported_probe（该能力未实现自动探测，不再误报 http_400）。
   var ERR_TEXT = {
     network: '网络异常',
     cors: '跨域受限（浏览器直连）',
     timeout: '超时',
     empty: '空响应',
-    truncated: '输出被上限截断'
+    truncated: '输出被上限截断',
+    unsupported_probe: '该能力暂不支持自动检测'
   };
 
   // Tab 映射：name -> 面板 id / 按钮 id（5 个平级 Tab）
@@ -277,7 +323,24 @@
 
   /* ---------------- 设置存储（C1 契约，线2 helper 优先，缺失降级直读写） ---------------- */
   function defaultSettings() {
-    return { disabled: {}, order: [], overrides: {}, catModels: {}, categories: [], health: {}, stars: {} };
+    return {
+      disabled: {}, order: [], overrides: {}, catModels: {}, categories: [], health: {}, stars: {},
+      // R87 新增 3 字段（其余字段一律不删不改名）
+      catSchema: 0,                                  // 迁移幂等闸门（<CAT_SCHEMA 才跑迁移）
+      hideUnavailable: true,                          // AI 页隐藏不可用模型开关（默认 true）
+      lastSort: { mode: '', catKey: '', innerMode: '' } // 排序弹窗记忆
+    };
+  }
+
+  /* R87：lastSort 归一（缺字段补默认，非法值回落） */
+  function normLastSort(v) {
+    var out = { mode: '', catKey: '', innerMode: '' };
+    if (v && typeof v === 'object') {
+      if (typeof v.mode === 'string') { out.mode = v.mode; }
+      if (typeof v.catKey === 'string') { out.catKey = v.catKey; }
+      if (typeof v.innerMode === 'string') { out.innerMode = v.innerMode; }
+    }
+    return out;
   }
 
   /* disabled 兼容旧版数组与新版 id->true 映射 */
@@ -347,17 +410,14 @@
         }
       }
     }
-    // R72-15 存量数据清洗（幂等）：停用「翻译」分类 -> 清 catModels.translate，
-    // 并过滤掉用户自建里 key 为 translate 的分类项（不误伤其它自定义分类）。
-    if (s.catModels && hasOwn(s.catModels, 'translate')) { delete s.catModels.translate; }
-    if (isArray(s.categories)) {
-      var keptCats = [];
-      for (var ci = 0; ci < s.categories.length; ci++) {
-        if (s.categories[ci] && s.categories[ci].key === 'translate') { continue; }
-        keptCats.push(s.categories[ci]);
-      }
-      s.categories = keptCats;
-    }
+    // R87 新增字段归一（catSchema / hideUnavailable / lastSort）
+    s.catSchema = (typeof obj.catSchema === 'number') ? obj.catSchema : 0;
+    if (typeof obj.hideUnavailable === 'boolean') { s.hideUnavailable = obj.hideUnavailable; }
+    s.lastSort = normLastSort(obj.lastSort);
+    // R87：撤销 R72-15 对 translate 的存量清洗——不再删除 catModels.translate /
+    // categories 里的 translate 项（translate 分类恢复成卡）。历史已删的用户数据不恢复，
+    // 仅恢复内置分类与能力映射；把 general 桶里「能力归属无歧义」的模型迁出交由
+    // migrateCatSchema() 处理（见下）。
     return s;
   }
 
@@ -377,7 +437,78 @@
 
   function getSettings() {
     if (!settings) { settings = readSettings(); }
+    // R87：幂等分类迁移——catSchema<CAT_SCHEMA 且配置已就绪才执行（有变更才落盘）。
+    // 闸门在 migrateCatSchema 内部，第 2、3 次调用零写入。
+    if (settings && settings.catSchema < CAT_SCHEMA && cfgReady()) {
+      if (migrateCatSchema(settings)) { saveSettings(); }
+    }
     return settings;
+  }
+
+  /* ---------------- R87：分类 schema 幂等迁移（§5.4） ---------------- */
+  /* 保序去重（不改相对顺序） */
+  function dedupKeepOrder(arr) {
+    var out = [];
+    var seen = {};
+    if (!isArray(arr)) { return out; }
+    for (var i = 0; i < arr.length; i++) {
+      if (typeof arr[i] !== 'string') { continue; }
+      if (seen[arr[i]]) { continue; }
+      seen[arr[i]] = true;
+      out.push(arr[i]);
+    }
+    return out;
+  }
+
+  /* 该模型「能力归属无歧义」判定：所有 types 经 CAT_OF_TYPE 映到【同一个】分类，
+     且该分类不是 general，才返回该分类；否则返回 null（如混合类型 ['general','translate']）。
+     注意：general 亦参与判定——['general','translate'] 会映到 general 与 translate 两个
+     不同分类，故返回 null，留在原地（不误迁）。 */
+  function soleCategoryOfModel(id) {
+    var m = findAnyModel(id);
+    if (!m) { return null; }
+    var t = typeKeysOf(m);
+    if (!t.length) { return null; }
+    var cat = null;
+    for (var i = 0; i < t.length; i++) {
+      var c = CAT_OF_TYPE[t[i]];
+      if (!c) { return null; }              // 含未知 type -> 保守不判定
+      if (cat === null) { cat = c; }
+      else if (cat !== c) { return null; }  // 映到不同分类 -> 有歧义
+    }
+    if (!cat || cat === 'general') { return null; }
+    return cat;
+  }
+
+  /* 幂等迁移：把「能力归属无歧义」的模型从 general 迁出（只搬不删、只追加尾部、保序去重）。
+     返回 true = 本次发生了变更（含 schema 升级），调用方据此 saveSettings()；
+     已迁移（catSchema>=CAT_SCHEMA）立即 return false，零写入。 */
+  function migrateCatSchema(s) {
+    if (!s || typeof s !== 'object') { return false; }
+    var cur = (typeof s.catSchema === 'number') ? s.catSchema : 0;
+    if (cur >= CAT_SCHEMA) { return false; }   // 幂等闸门：第 2、3 次执行无任何写入
+    if (s.catModels && typeof s.catModels === 'object') {
+      if (isArray(s.catModels.general)) {
+        var gen = s.catModels.general.slice();  // 遍历快照，搬移只作用 general
+        for (var i = 0; i < gen.length; i++) {
+          var id = gen[i];
+          var cat = soleCategoryOfModel(id);
+          if (cat && cat !== 'general') {
+            var gi = s.catModels.general.indexOf(id);
+            if (gi >= 0) { s.catModels.general.splice(gi, 1); }
+            if (!isArray(s.catModels[cat])) { s.catModels[cat] = []; }
+            if (s.catModels[cat].indexOf(id) === -1) { s.catModels[cat].push(id); }  // 追加尾部
+          }
+        }
+      }
+      // 保序去重：所有 s.catModels[*]
+      for (var k in s.catModels) {
+        if (!hasOwn(s.catModels, k)) { continue; }
+        if (isArray(s.catModels[k])) { s.catModels[k] = dedupKeepOrder(s.catModels[k]); }
+      }
+    }
+    s.catSchema = CAT_SCHEMA;
+    return true;
   }
 
   function saveSettings() {
@@ -696,7 +827,7 @@
   function errText(err) {
     if (!err) { return '不可用'; }
     if (err === 'network' || err === 'cors' || err === 'timeout' || err === 'empty' ||
-        err === 'truncated') { return ERR_TEXT[err]; }
+        err === 'truncated' || err === 'unsupported_probe') { return ERR_TEXT[err]; }
     if (String(err).indexOf('http_') === 0) { return 'HTTP ' + String(err).slice(5); }
     return String(err);
   }
@@ -721,6 +852,7 @@
     if (s === 'not_found') { return '未找到该模型配置'; }
     if (s === 'no_endpoint') { return '未配置接口地址'; }
     if (s === 'no_key') { return '未配置密钥'; }
+    if (s === 'unsupported_probe') { return ERR_TEXT.unsupported_probe; }
     return s || '未知错误';
   }
 
@@ -762,6 +894,19 @@
   function isImageGenId(id) {
     var m = findAnyModel(id);
     return !!(m && m.types && isArray(m.types) && m.types.indexOf('imagegen') >= 0);
+  }
+
+  /* R86：非对话类模型（生图 / 语音识别 / 向量嵌入 / 结果重排）。
+     这些模型的端点都不是 chat/completions，探测耗时普遍长于普通对话，
+     统一走「检测中(60s)」文案，避免用户误以为卡死。 */
+  var NON_CHAT_TYPES = ['imagegen', 'audio', 'embedding', 'rerank'];
+  function isNonChatId(id) {
+    var m = findAnyModel(id);
+    if (!(m && m.types && isArray(m.types))) { return false; }
+    for (var i = 0; i < NON_CHAT_TYPES.length; i++) {
+      if (m.types.indexOf(NON_CHAT_TYPES[i]) >= 0) { return true; }
+    }
+    return false;
   }
 
   /* R73p：失败文案分场景——需代理网络类 / Key 失效 / 模型 ID 无效 / 跨域拦截 / 输出截断。
@@ -851,6 +996,50 @@
       esc(id) + '" title="' + esc(healthTitleOf(id)) + '">' + healthBadgeInner(id) + '</button></span>';
   }
 
+  /* ---------- R93-5b：视频「带声音」小开关（模型列表行内、检测状态旁） ----------
+     支持集：types 含 video 且模型条目 audio:true（ai-config.js 轻量标记，本期 Seedance 1.0 pro/fast）。
+     状态按模型 id 记忆在 localStorage ai_audio_models_v1（{modelId:true}），默认关；
+     消费端 ai-page.js 发送视频任务时读同一 map 决定 generate_audio。 */
+  var AUDIO_MODELS_KEY = 'ai_audio_models_v1';
+  function audioMapRead() {
+    try {
+      var v = localStorage.getItem(AUDIO_MODELS_KEY);
+      var o = v ? JSON.parse(v) : null;
+      return (o && typeof o === 'object' && !isArray(o)) ? o : {};
+    } catch (e) { return {}; }
+  }
+  function audioCapableOf(id) {
+    var m = findAnyModel(id);
+    if (!m) { return false; }
+    var t = typeKeysOf(m);
+    var isVideo = false;
+    for (var i = 0; i < t.length; i++) { if (t[i] === 'video') { isVideo = true; break; } }
+    return isVideo && m.audio === true;
+  }
+  function audioOnFor(id) { return audioMapRead()[id] === true; }
+  function toggleAudioFor(id) {
+    var map = audioMapRead();
+    if (map[id] === true) { delete map[id]; } else { map[id] = true; }
+    try { localStorage.setItem(AUDIO_MODELS_KEY, JSON.stringify(map)); } catch (e) { warnStorage(); }
+    renderModels();
+    var on = map[id] === true;
+    toast('success', on ? '已开启「带声音」（更耗额度，部分型号不支持）' : '已关闭「带声音」');
+  }
+  /* 小尺寸开关（高 16px，行内 flex，紧跟检测状态；不挤压行内其他元素） */
+  function audioToggleHtml(id) {
+    if (!audioCapableOf(id)) { return ''; }
+    var on = audioOnFor(id);
+    return '<span class="xt-audio-sw' + (on ? ' on' : '') + '" data-vidaudio="' + esc(id) +
+      '" role="switch" aria-checked="' + (on ? 'true' : 'false') +
+      '" title="生成的视频带声音（更耗额度，部分型号不支持）；点击切换"' +
+      ' style="display:inline-flex;align-items:center;gap:3px;margin-left:6px;vertical-align:middle;cursor:pointer;user-select:none;">' +
+      '<span style="font-size:11px;color:var(--ai-muted);line-height:1;">有声</span>' +
+      '<span style="width:26px;height:16px;border-radius:999px;background:' + (on ? '#e8734a' : 'rgba(128,128,128,.35)') +
+      ';position:relative;display:inline-block;">' +
+      '<span style="position:absolute;top:2px;left:' + (on ? '12px' : '2px') + ';width:12px;height:12px;border-radius:50%;background:#fff;"></span>' +
+      '</span></span>';
+  }
+
   /* 只更新对应行的健康按钮文案与置灰态，不整页重渲染 */
   function updateHealthDot(id) {
     var host = $('setModelList');
@@ -881,12 +1070,39 @@
       ok: !!(r && r.ok),
       ms: (r && typeof r.ms === 'number') ? r.ms : 0,
       err: (r && r.err) ? String(r.err) : null,
-      at: new Date().getTime()
+      at: new Date().getTime(),
+      kind: (r && r.kind) ? String(r.kind) : ''   // R87/T02：探测所用能力 key（缺省空串，勿硬依赖）
     };
     getSettings().health[id] = rec;
     saveSettings();
     updateHealthDot(id);
     renderAbout();
+    // R87：派发健康变更事件（跨线契约，事件名固定）。T04 的 AI 页据此重算可见性；
+    // 不新增全局函数名，仅 document 事件。CustomEvent 由 typeof 守卫，老内核缺失时静默跳过。
+    try {
+      if (typeof document !== 'undefined' && document.dispatchEvent && typeof CustomEvent === 'function') {
+        document.dispatchEvent(new CustomEvent('xt:health-changed', {
+          detail: { modelId: id, ok: !!rec.ok }
+        }));
+      }
+    } catch (eEv) { /* 事件派发失败绝不影响主流程 */ }
+  }
+
+  /* R87：成本保护——该模型是否属于「探针不进自动批量」的能力（video / 3D）。
+     判定走只读调用 XT_AI_CAPS.byType()（注册表未加载时 typeof 守卫，返回 false）。
+     video / 3D 单次约 10 万 / 3 万 tokens，一次「检测全部」若不排除约烧 ≈297,636 tokens ≈ 15% 额度。 */
+  function isProbeNoAutoId(id) {
+    var m = findAnyModel(id);
+    if (!m) { return false; }
+    var reg = (typeof window !== 'undefined' && window.XT_AI_CAPS) ? window.XT_AI_CAPS : null;
+    if (!reg || typeof reg.byType !== 'function') { return false; }
+    var t = typeKeysOf(m);
+    for (var i = 0; i < t.length; i++) {
+      var c = null;
+      try { c = reg.byType(t[i]); } catch (e) { c = null; }
+      if (c && c.probeNoAuto === true) { return true; }
+    }
+    return false;
   }
 
   function pendingHealthIds() {
@@ -894,6 +1110,7 @@
     var out = [];
     for (var i = 0; i < all.length; i++) {
       var id = all[i].id;
+      if (isProbeNoAutoId(id)) { continue; }   // R87 成本保护：video / 3D 不进后台自动队列
       if (!healthFresh(id)) { out.push(id); }
     }
     return out;
@@ -922,10 +1139,24 @@
     healthTimer = setTimeout(pumpHealth, HEALTH_BOOT_DELAY);
   }
 
-  /* 单行检测：写 health + 弹窗反馈 */
+  /* 单行检测：写 health + 弹窗反馈。
+     R87 成本保护：video / 3D 属真计费能力，单独检测前必须前置 pageConfirm 二次确认
+     （一次 video ≈103,818 / 3D ≈30,000 tokens；200 万额度约够 19 个视频）。 */
   function runHealthCheck(id) {
     if (!id) { return; }
     if (typeof window.aiHealthCheck !== 'function') { toast('warning', '当前环境不支持连通性检测'); return; }
+    if (isProbeNoAutoId(id)) {
+      var m = findAnyModel(id);
+      var nm = displayName(id, m) || id;
+      pageConfirm('检测「' + nm + '」' + CAP_CONFIRM_TIP, '确认检测').then(function (ok) {
+        if (ok) { doRunHealthCheck(id); }
+      });
+      return;
+    }
+    doRunHealthCheck(id);
+  }
+
+  function doRunHealthCheck(id) {
     setTesting(id, true);
     var p;
     try { p = window.aiHealthCheck(id); } catch (e) { p = null; }
@@ -966,7 +1197,7 @@
       for (i = 0; i < btns.length; i++) {
         if (btns[i].getAttribute('data-test') === id) {
           btns[i].disabled = !!flag;
-          btns[i].textContent = flag ? (isImageGenId(id) ? '检测中(60s)' : '检测中…') : '检测';
+          btns[i].textContent = flag ? (isNonChatId(id) ? '检测中(60s)' : '检测中…') : '检测';
         }
       }
       var hb = host.querySelectorAll('[data-health]');
@@ -987,8 +1218,13 @@
     if (typeof window.aiHealthCheck !== 'function') { toast('warning', '当前环境不支持连通性检测'); return; }
     var all = allModelsList();
     var ids = [];
-    for (var i = 0; i < all.length; i++) { ids.push(all[i].id); }
+    for (var i = 0; i < all.length; i++) {
+      if (isProbeNoAutoId(all[i].id)) { continue; }   // R87 成本保护：video / 3D 不进「检测全部」批量
+      ids.push(all[i].id);
+    }
     if (!ids.length) { toast('warning', '没有可检测的模型'); return; }
+    // R87：优先走批量入口（其内部对 probeNoAuto 能力二次兜底），缺失时回落 aiHealthCheck
+    var chk = (typeof window.aiHealthCheckBatch === 'function') ? window.aiHealthCheckBatch : window.aiHealthCheck;
 
     batchRunning = true;
     var btn = $('setBatchHealth');
@@ -1026,7 +1262,7 @@
     function one(id) {
       setTesting(id, true);
       var p;
-      try { p = window.aiHealthCheck(id); } catch (e) { p = null; }
+      try { p = chk(id); } catch (e) { p = null; }
       if (p && typeof p.then === 'function') {
         return p.then(function (r) { after(id, r); }, function () { after(id, { ok: false, ms: 0, err: 'network' }); });
       }
@@ -1071,8 +1307,13 @@
 
   function selectModel(id) {
     if (!id) { return; }
-    try { localStorage.setItem(SEL_MODEL_KEY, id); } catch (e) { warnStorage(); return; }
     var m = findAnyModel(id);
+    // R87：即将下线的退役型号禁止设为默认/当前模型，明确 toast 反馈（不静默失败）。
+    if (isRetiredModel(m)) {
+      toast('warning', '「' + displayName(id, m) + '」即将下线，不能设为当前模型');
+      return;
+    }
+    try { localStorage.setItem(SEL_MODEL_KEY, id); } catch (e) { warnStorage(); return; }
     toast('success', '已设为当前模型：' + displayName(id, m));
     renderModels();
   }
@@ -1149,9 +1390,20 @@
     return '<span class="xt-set-badge-vpn">需梯子</span>';
   }
 
-  /* R72-15：列表/说明卡片的类型 chip 隐藏「翻译」（该分类已停用）；
-     能力标签本身（TYPE_LABELS / ALL_TYPE_KEYS / 表单多选）保持不变，避免存量数据丢失。 */
-  var CHIP_HIDDEN_TYPE = { translate: true };
+  /* R87：退役模型语义（tag 承载状态，如 '即将下线'）。
+     1) 打角标；2) 排序时降级排最后；3) 禁止设为默认/当前模型。 */
+  function isRetiredModel(model) {
+    if (!model) { return false; }
+    return String(model.tag || '').indexOf('下线') !== -1;
+  }
+  function isRetiredId(id) { return isRetiredModel(findAnyModel(id)); }
+  function retiredBadgeOf(id, model) {
+    if (!isRetiredModel(model)) { return ''; }
+    return '<span class="xt-set-badge-retire" title="该型号即将下线，建议改用同能力的在售型号">即将下线</span>';
+  }
+
+  /* R87：translate 分类恢复，不再隐藏任何类型 chip（常量名保留，便于将来再用）。 */
+  var CHIP_HIDDEN_TYPE = {};
   function typeChipsOf(model) {
     var t = typeKeysOf(model);
     var out = '';
@@ -1245,11 +1497,11 @@
     html += '<div class="xt-set-row-main">';
     html += '<div class="xt-set-row-name">' + esc(displayName(id, model));
     if (custom) { html += ' <span class="xt-set-chip">自定义</span>'; }
-    html += rateChipOf(id, model) + vpnBadge(model);
+    html += retiredBadgeOf(id, model) + rateChipOf(id, model) + vpnBadge(model);
     if (used) { html += ' <span class="xt-set-used">当前使用</span>'; }
     html += '</div>';
     html += '<div class="xt-set-row-sub">' +
-      '<span class="xt-speed">' + speedHtml(id, model) + '</span>' + healthBoxHtml(id) + '</div>';
+      '<span class="xt-speed">' + speedHtml(id, model) + '</span>' + healthBoxHtml(id) + audioToggleHtml(id) + '</div>';
     html += '</div>';
     html += '<div class="xt-set-row-right">';
     html += starsHtmlOf(id, effStars(id, model));
@@ -1276,15 +1528,33 @@
     }
     var kw = fieldVal('setModelSearch').toLowerCase().trim();
     var selId = getSelectedModelId();
+    // R88-M1（R88-C）：按当前功能分类筛选——与「不可用自动隐藏」是【交集】关系：
+    //   先按分类跳过不匹配者（本条，由用户选择驱动），
+    //   行内仍照旧渲染停用/不可用态（R87 健康态，由健康检查驱动），两者互不覆盖。
+    //   纯渲染期过滤：不写 disabled、不删 catModels/overrides，切回立即恢复。
+    var catFilter = activeCatFilter();
     var html = '';
     var shown = 0;
+    var catHidden = 0;
     for (var i = 0; i < list.length; i++) {
       if (!matchModel(list[i], list[i].id, kw)) { continue; }
+      if (!modelInCategory(list[i].id, catFilter)) { catHidden++; continue; }
       html += modelRowHtml(list[i], selId);
       shown++;
     }
-    if (!shown) { host.innerHTML = '<div class="xt-set-empty">没有匹配的模型</div>'; return; }
-    host.innerHTML = html;
+    var banner = catFilter
+      ? ('<div class="xt-set-catfilter">仅显示「' + esc(catLabelOf(catFilter)) +
+         '」分类的模型（已按分类隐藏 ' + catHidden + ' 个；数据未删除，切换即恢复）' +
+         '<button type="button" class="xt-set-btn" data-sort-act="catclear" style="margin-left:8px;">显示全部</button></div>')
+      : '';
+    if (!shown) {
+      var emptyMsg = catFilter
+        ? ('「' + esc(catLabelOf(catFilter)) + '」分类下暂无匹配模型')
+        : '没有匹配的模型';
+      host.innerHTML = banner + '<div class="xt-set-empty">' + emptyMsg + '</div>';
+      return;
+    }
+    host.innerHTML = banner + html;
   }
 
   function toggleModel(id) {
@@ -1348,6 +1618,33 @@
     return out;
   }
 
+  /* R87：usableIds() = health[id].ok === true 的 id 集合（未检测不算可用）。
+     跨线契约（§3.8）：mapToAiList 只映射这批 id。 */
+  function usableIds() {
+    var list = orderedModels();
+    var out = [];
+    for (var i = 0; i < list.length; i++) {
+      if (healthOk(list[i].id)) { out.push(list[i].id); }
+    }
+    return out;
+  }
+
+  /* R87：visibleModels(ids)——渲染期可见性过滤（跨线契约 §3.8）。
+     hideUnavailable===false -> 原样返回；
+     hideUnavailable!==false -> 剔除「有 health 记录且 ok===false」的项；
+     无 health 记录 -> 视为可见（保留）。不写持久化、不改 disabled、不删模型。 */
+  function visibleModels(ids) {
+    if (!isArray(ids)) { return []; }
+    if (getSettings().hideUnavailable === false) { return ids.slice(); }
+    var out = [];
+    for (var i = 0; i < ids.length; i++) {
+      var h = healthOf(ids[i]);
+      if (h && h.ok === false) { continue; }
+      out.push(ids[i]);
+    }
+    return out;
+  }
+
   /* 速率 -> 粗排等级（快 1 / 中 2 / 慢 3 / 待检测 4） */
   function speedRank(id, model) {
     var sp = String(effSpeed(id, model) || '');
@@ -1368,53 +1665,169 @@
     return 999999;
   }
 
-  /* (1) 按可用模型排序：健康正常在前（按实测 ms 升序），未测/失败在后（按 ms 升序） */
+  /* R87：记住上次排序方式（含选中的分类）。字段名 lastSort 为跨线契约字面量。 */
+  function saveLastSort(mode, catKey, innerMode) {
+    var s = getSettings();
+    s.lastSort = {
+      mode: String(mode || ''),
+      catKey: String(catKey || ''),
+      innerMode: String(innerMode || '')
+    };
+    saveSettings();
+  }
+
+  /* R87：退役（tag 含「下线」）型号统一排在最后——优先级低于不可用/失败模型：
+     即「先按正常/失败/待检测分档，退役型号整体再后移一档」。 */
+  function retiredRank(id) { return isRetiredId(id) ? 1 : 0; }
+
+  /* (1) 按可用模型排序：健康正常在前（按实测 ms 升序），未测/失败在后（按 ms 升序）；
+         退役型号整体再排最后。 */
   function sortByAvailability() {
     var ids = availableIds();
     ids.sort(function (a, b) {
       var oa = healthOk(a) ? 0 : 1;
       var ob = healthOk(b) ? 0 : 1;
       if (oa !== ob) { return oa - ob; }
+      var ta = retiredRank(a);
+      var tb = retiredRank(b);
+      if (ta !== tb) { return ta - tb; }
       return healthMs(a) - healthMs(b);
     });
     getSettings().order = ids;
     saveSettings();
+    saveLastSort('avail', '', '');
     renderModels();
     renderSortPreview();
     toast('success', '已按可用模型排序（' + ids.length + ' 个）');
   }
 
-  /* (2) 按速率排序：快 > 中 > 慢 > 待检测；同档按健康实测 ms 升序 */
+  /* (2) 按速率排序：快 > 中 > 慢 > 待检测；同档按健康实测 ms 升序；退役型号整体再排最后 */
   function sortBySpeed() {
     var ids = availableIds();
     ids.sort(function (a, b) {
       var ra = speedRank(a, findAnyModel(a));
       var rb = speedRank(b, findAnyModel(b));
       if (ra !== rb) { return ra - rb; }
+      var ta = retiredRank(a);
+      var tb = retiredRank(b);
+      if (ta !== tb) { return ta - tb; }
       return healthMs(a) - healthMs(b);
     });
     getSettings().order = ids;
     saveSettings();
+    saveLastSort('speed', '', '');
     renderModels();
     renderSortPreview();
     toast('success', '已按速率排序（' + ids.length + ' 个）');
   }
 
-  /* (3) 映射到 AI 页模型下拉：写 ai_model_settings.order + overrides[id].name，
-        并对「健康可用」的模型清掉 disabled（让其在 AI 页下拉出现）。
-        注意：只改 overrides[id].name 子字段，apiUrl/apiKey/apiFormat 等原样保留。 */
+  /* R88-M1（R88-C）：模型是否属于某功能分类——任一 type 经 CAT_OF_TYPE 映到该分类即匹配。
+     自定义分类（不在 CAT_OF_TYPE 值域内）视为「无能力映射」，一律不匹配，避免误隐藏。 */
+  function modelInCategory(id, catKey) {
+    if (!catKey) { return true; }                    // 未选分类 -> 全部匹配
+    var m = findAnyModel(id);
+    if (!m) { return false; }
+    if (catKey === 'proxy') {                        // R93：梯子 = 平台需代理
+      return isNeedVPN(m) || providerNeedProxy(m);
+    }
+    var t = typeKeysOf(m);
+    for (var i = 0; i < t.length; i++) {
+      if (CAT_OF_TYPE[t[i]] === catKey) { return true; }
+    }
+    return false;
+  }
+
+  /* R88-M1：当前生效的分类筛选（来自排序弹窗选择，持久化在 lastSort.catKey）。
+     空串 = 不筛选（全部显示）。只读，不改数据。 */
+  function activeCatFilter() {
+    return normLastSort(getSettings().lastSort).catKey || '';
+  }
+
+  /* R88-M1：清除分类筛选（恢复显示全部；数据从未删除，立即恢复） */
+  function clearCatFilter() {
+    saveLastSort(getSettings().lastSort && getSettings().lastSort.mode || '', '', '');
+    renderModels();
+    renderSortPreview();
+    restoreSortUI();
+    toast('success', '已清除分类筛选，显示全部模型');
+  }
+
+  /* R87：模型 -> 首个可映射的内置分类 key（无则空串） */
+  function catKeyOfModel(id) {
+    var m = findAnyModel(id);
+    var t = typeKeysOf(m);
+    for (var i = 0; i < t.length; i++) {
+      var c = CAT_OF_TYPE[t[i]];
+      if (c) { return c; }
+    }
+    return '';
+  }
+
+  function catOrderIndex(catKey) {
+    for (var i = 0; i < BUILTIN_CATS.length; i++) {
+      if (BUILTIN_CATS[i].key === catKey) { return i; }
+    }
+    return BUILTIN_CATS.length;   // 未知分类排最后
+  }
+
+  function catLabelOf(key) {
+    if (key === 'proxy') { return '梯子'; }          // R93：梯子筛选显示名
+    for (var i = 0; i < BUILTIN_CATS.length; i++) {
+      if (BUILTIN_CATS[i].key === key) { return BUILTIN_CATS[i].label; }
+    }
+    return key || '全部分类';
+  }
+
+  /* (3) 按功能分类排序：catKey 为空 -> 按 BUILTIN_CATS 声明顺序归组；catKey 指定 ->
+       该分类的模型排最前，其余随后。分类内按健康 ms 升序，退役型号整体再排最后。 */
+  function sortByCategory(catKey) {
+    var ids = availableIds();
+    var useProxy = (catKey === 'proxy');             // R93：梯子排序按平台代理判定
+    ids.sort(function (a, b) {
+      var ca = useProxy ? (modelInCategory(a, 'proxy') ? 'proxy' : '') : catKeyOfModel(a);
+      var cb = useProxy ? (modelInCategory(b, 'proxy') ? 'proxy' : '') : catKeyOfModel(b);
+      var ra = catKey ? ((ca === catKey) ? 0 : 1) : catOrderIndex(ca);
+      var rb = catKey ? ((cb === catKey) ? 0 : 1) : catOrderIndex(cb);
+      if (ra !== rb) { return ra - rb; }
+      var ta = retiredRank(a);
+      var tb = retiredRank(b);
+      if (ta !== tb) { return ta - tb; }
+      return healthMs(a) - healthMs(b);
+    });
+    getSettings().order = ids;
+    saveSettings();
+    saveLastSort('cat', catKey || '', '');
+    // R88-M1：切分类 -> 列表实时更新（renderModels 按 activeCatFilter 过滤）；
+    // 传入空串表示清除筛选，显示全部。
+    renderModels();
+    renderSortPreview();
+    toast('success', catKey
+      ? ('仅显示「' + catLabelOf(catKey) + '」分类的可用模型')
+      : ('已清除分类筛选，显示全部模型（' + ids.length + ' 个）'));
+  }
+
+  /* (4) 映射到 AI 页模型下拉：R87 收窄为「仅检测可用（usableIds = health[id].ok===true）」。
+        写 ai_model_settings.order + overrides[id].name（仅子字段），并对「检测可用」的模型
+        清掉 disabled。绝不整体覆盖 overrides[id]、绝不清除不可用模型的 disabled、绝不删模型。 */
   function mapToAiList() {
     var s = getSettings();
-    var ids = availableIds();
+    var catFilter = activeCatFilter();
+    // R88-M1（R88-C）：映射到 AI 页时同样尊重分类筛选——只映射「匹配当前分类」且
+    // 「检测可用」的模型（分类与健康两条件取交集）；未选分类时等价于原行为。
+    var ids = [];
+    var allUsable = usableIds();
+    for (var u = 0; u < allUsable.length; u++) {
+      if (modelInCategory(allUsable[u], catFilter)) { ids.push(allUsable[u]); }
+    }
     var all = fullOrderIds();
     var mapped = [];
     var i, id, m, nm, ov;
-    // order：可用模型按当前排序在前，其余（被停用的）保留在尾部，顺序不丢
+    // order：检测可用的模型按当前排序在前，其余保留在尾部，顺序不丢
     for (i = 0; i < ids.length; i++) { mapped.push(ids[i]); }
     for (i = 0; i < all.length; i++) { if (mapped.indexOf(all[i]) === -1) { mapped.push(all[i]); } }
     s.order = mapped;
-    for (i = 0; i < mapped.length; i++) {
-      id = mapped[i];
+    for (i = 0; i < ids.length; i++) {
+      id = ids[i];
       m = findAnyModel(id);
       nm = displayName(id, m);
       if (nm) {
@@ -1425,15 +1838,17 @@
           s.overrides[id] = { name: nm };
         }
       }
-      if (healthOk(id)) { delete s.disabled[id]; }        // 健康可用的模型确保出现在下拉
+      if (healthOk(id)) { delete s.disabled[id]; }        // 仅对「检测可用」的模型清 disabled（不扩大）
     }
     saveSettings();
     renderModels();
     renderSortPreview();
-    toast('success', '已映射到 AI 页模型下拉（' + ids.length + ' 个名称与顺序）');
+    toast('success', catFilter
+      ? ('已映射「' + catLabelOf(catFilter) + '」分类的 ' + ids.length + ' 个可用模型到 AI 页')
+      : ('已映射到 AI 页模型下拉（' + ids.length + ' 个检测可用模型的名称与顺序）'));
   }
 
-  /* 排序预览（只读）：显示当前顺序、启用态与健康态 */
+  /* 排序预览（只读）：显示当前顺序、启用态与健康态；退役型号带「即将下线」角标 */
   function sortPreviewItemHtml(id, idx) {
     var m = findAnyModel(id);
     var name = displayName(id, m);
@@ -1441,11 +1856,45 @@
     var badge = healthOk(id) ? '正常' : (healthOf(id) ? '失败' : '待检测');
     var h = '<div class="xt-sort-item' + (off ? ' off' : '') + '">';
     h += '<span class="xt-sort-idx">' + (idx + 1) + '</span>';
-    h += '<span class="xt-sort-name">' + esc(name) + '</span>';
+    h += '<span class="xt-sort-name">' + esc(name) + retiredBadgeOf(id, m) + '</span>';
     h += '<span class="xt-sort-tag">' + (off ? '已停用' : '已启用') + '</span>';
     h += '<span class="xt-sort-tag">' + esc(badge) + '</span>';
     h += '</div>';
     return h;
+  }
+
+  /* R87：排序弹窗「按功能分类」下拉数据源（按 FAMILY_ORDER 分组用 optgroup 展示） */
+  function buildSortCatOptions() {
+    var sel = $('setSortCatInner');
+    if (!sel) { return; }
+    var html = '<option value="">（按内置分类归组）</option>';
+    for (var gi = 0; gi < FAMILY_ORDER.length; gi++) {
+      var fam = FAMILY_ORDER[gi];
+      var opts = '';
+      for (var ci = 0; ci < BUILTIN_CATS.length; ci++) {
+        var c = BUILTIN_CATS[ci];
+        if (FAMILY_OF_CAT[c.key] !== fam) { continue; }
+        opts += '<option value="' + esc(c.key) + '">' + esc(c.label) + '</option>';
+      }
+      if (opts) {
+        html += '<optgroup label="' + esc(FAMILY_LABEL[fam] || fam) + '">' + opts + '</optgroup>';
+      }
+    }
+    /* R93：「梯子」筛选项——存在需代理模型时才追加，与功能分类 Tab 空组不渲染同口径 */
+    if (proxyModelsList().length) {
+      html += '<optgroup label="梯子"><option value="proxy">梯子（需科学上网）</option></optgroup>';
+    }
+    sel.innerHTML = html;
+  }
+
+  /* R87：进页面/开弹窗时用 lastSort + hideUnavailable 恢复控件状态 */
+  function restoreSortUI() {
+    var s = getSettings();
+    var ls = normLastSort(s.lastSort);
+    var sel = $('setSortCatInner');
+    if (sel) { sel.value = ls.catKey; }
+    var cb = $('setHideUnavail');
+    if (cb) { cb.checked = (s.hideUnavailable !== false); }
   }
 
   function renderSortPreview() {
@@ -1461,6 +1910,8 @@
   function openSortModal() {
     var mask = $('setSortModal');
     if (!mask) { restoreDefaults(); return; }   // 兜底：无弹窗 DOM 时退回原确认流程
+    buildSortCatOptions();
+    restoreSortUI();
     renderSortPreview();
     mask.style.display = 'flex';
   }
@@ -1468,6 +1919,14 @@
   function closeSortModal() {
     var mask = $('setSortModal');
     if (mask) { mask.style.display = 'none'; }
+  }
+
+  /* hideUnavailable 开关（跨线契约字段名，布尔）；T04 的 AI 页按此决定是否隐藏不可用模型 */
+  function toggleHideUnavailable(on) {
+    var s = getSettings();
+    s.hideUnavailable = !!on;
+    saveSettings();
+    toast('success', s.hideUnavailable ? '将在 AI 页隐藏不可用模型' : '将在 AI 页显示全部模型');
   }
 
   /* 弹窗交互（事件委托，无内联 onclick，与设置页既有写法一致） */
@@ -1481,10 +1940,26 @@
       var act = el.getAttribute('data-sort-act');
       if (act === 'avail') { sortByAvailability(); }
       else if (act === 'speed') { sortBySpeed(); }
+      else if (act === 'cat') { sortByCategory(fieldVal('setSortCatInner')); }
       else if (act === 'map') { mapToAiList(); }
+      else if (act === 'catclear') { clearCatFilter(); }
       else if (act === 'reset') { restoreDefaults(); }
       else if (act === 'close') { closeSortModal(); }
     });
+    /* R93 修复（R88-M1 遗留）：分类筛选条「显示全部」按钮（data-sort-act="catclear"）
+       渲染在模型列表横幅里、不在弹窗遮罩内，遮罩上的委托收不到它的点击。
+       补 document 级委托且只认 catclear（弹窗内无此按钮，不会重复响应）。 */
+    document.addEventListener('click', function (e) {
+      var t = e.target;
+      while (t && t !== document) {
+        if (t.getAttribute && t.getAttribute('data-sort-act') === 'catclear') { clearCatFilter(); return; }
+        t = t.parentNode;
+      }
+    });
+    var cb = $('setHideUnavail');
+    if (cb && cb.addEventListener) {
+      cb.addEventListener('change', function () { toggleHideUnavailable(!!cb.checked); });
+    }
   }
 
   /* 删除自定义模型（内置模型只能禁用，不提供删除） */
@@ -1700,13 +2175,78 @@
     return html;
   }
 
+  /* R93：需要梯子（海外代理）的模型清单——渲染层按 provider 推导，不改 ai-config.js。
+     needVPN（模型级或平台级）与 needProxy（平台级）任一命中即入组。 */
+  function proxyModelsList() {
+    var all = allModelsList();
+    var out = [];
+    for (var i = 0; i < all.length; i++) {
+      if (isNeedVPN(all[i]) || providerNeedProxy(all[i])) { out.push(all[i]); }
+    }
+    return out;
+  }
+
+  /* R87：按 FAMILY_ORDER 分组渲染内置分类（6 组，空组不渲染）。
+     某组「既无候选模型、又无用户配置链」时整组标题与卡片都不渲染。 */
+  function familyGroupsHtml() {
+    var html = '';
+    for (var gi = 0; gi < FAMILY_ORDER.length; gi++) {
+      var fam = FAMILY_ORDER[gi];
+      var famCats = [];
+      var groupHas = false;
+      var ci, c;
+      for (ci = 0; ci < BUILTIN_CATS.length; ci++) {
+        c = BUILTIN_CATS[ci];
+        if (FAMILY_OF_CAT[c.key] !== fam) { continue; }
+        famCats.push(c);
+        if (modelsOfCategory(c.key).length > 0 || chainModelsOf(c.key).length > 0) { groupHas = true; }
+      }
+      if (!famCats.length || !groupHas) { continue; }   // 空组不渲染
+      html += '<div class="xt-set-group"><div class="xt-set-group-h">' + esc(FAMILY_LABEL[fam] || fam) +
+        '<span class="xt-set-group-count">' + famCats.length + '</span></div>';
+      for (ci = 0; ci < famCats.length; ci++) {
+        html += catCardHtml({ key: famCats[ci].key, label: famCats[ci].label, custom: false });
+      }
+      html += '</div>';
+    }
+    /* R93：「梯子」组——归拢所有需科学上网（海外代理）才能用的模型。
+       与内置 6 族同层级渲染在功能分类 Tab；仅展示不参与路由，空组不渲染。 */
+    var proxyM = proxyModelsList();
+    if (proxyM.length) {
+      html += '<div class="xt-set-group"><div class="xt-set-group-h">梯子' +
+        '<span class="xt-set-group-count">' + proxyM.length + '</span></div>';
+      html += '<div class="xt-set-card">';
+      html += '<div class="xt-set-card-h"><div class="xt-set-card-t">需要梯子的模型</div>' +
+        '<div class="xt-set-card-key">proxy</div></div>';
+      html += '<div class="xt-set-card-desc">以下模型所属平台在境内需科学上网（海外代理）才能访问，按平台归拢展示</div>';
+      html += '<div class="xt-cat-pool">';
+      for (var pi = 0; pi < proxyM.length; pi++) {
+        var pm = proxyM[pi];
+        html += '<span class="xt-cat-addchip" style="cursor:default;">' + esc(displayName(pm.id, pm)) +
+          ' · ' + esc(providerNameOf(pm.id)) + ' ' + vpnBadge(pm) + '</span>';
+      }
+      html += '</div></div></div>';
+    }
+    return html;
+  }
+
   function renderFuncTypes() {
     var host = $('setFuncList');
     if (!host) { return; }
-    var cats = allCategories();
-    var html = '';
-    for (var i = 0; i < cats.length; i++) { html += catCardHtml(cats[i]); }
-    html += '<div class="xt-set-note">内置 3 类按能力划分：文本 / 识图 / 推理；「代码」等更多分类可自行新建，新建分类即新的功能路由槽。</div>';
+    var html = familyGroupsHtml();
+    // 自定义分类（settings.categories）单独成组，保留原上移/下移/删除交互
+    var cs = getSettings().categories;
+    if (cs && cs.length) {
+      html += '<div class="xt-set-group"><div class="xt-set-group-h">自定义' +
+        '<span class="xt-set-group-count">' + cs.length + '</span></div>';
+      for (var i = 0; i < cs.length; i++) {
+        html += catCardHtml({ key: cs[i].key, label: cs[i].label, custom: true });
+      }
+      html += '</div>';
+    }
+    html += '<div class="xt-set-note">内置 12 类按能力分组（文本 / 视觉 / 语音 / 检索 / 视频 / 3D），' +
+      '每组按声明顺序展示并各自维护优先级链；「梯子」组归拢所有需科学上网的海外平台模型；' +
+      '「作文批改」等更多分类可自行新建，新建分类即新的功能路由槽。</div>';
     host.innerHTML = html;
   }
 
@@ -1798,6 +2338,15 @@
     return hay.indexOf(kw) !== -1;
   }
 
+  /* R87：说明卡「五段式」小节（标题 + 正文；正文缺失的段落由调用方决定是否渲染） */
+  function introSec(title, body) {
+    return '<div class="xt-set-intro-sec"><div class="xt-set-intro-sec-t">' + esc(title) + '</div>' +
+      '<div class="xt-set-intro-sec-v">' + body + '</div></div>';
+  }
+
+  /* R87：五段式说明卡——1 这是什么 / 2 能做什么 / 3 怎么用 / 4 耗时与计费 / 5 建议与替代。
+     数据全部取自 modelDetails[id]（platform/params/type/stars/speed/advantage/applicable/recommend）
+     与模型自身 fallback 字段；缺失字段则省略该段或写「暂无实测数据」，绝不臆造数值。 */
   function introCardHtml(model) {
     var id = model.id;
     var d = detailOf(model);
@@ -1807,16 +2356,46 @@
     html += '<div><div class="xt-set-intro-name">' + esc(displayName(id, model)) + '</div>';
     html += '<div class="xt-set-intro-meta"><span class="xt-set-chip">' + esc(platform) + '</span>' +
       typeChipsOf(model) + '</div></div>';
-    html += '<div class="xt-set-intro-badges">' + rateChipOf(id, model) + vpnBadge(model) + healthBoxHtml(id) + '</div>';
+    html += '<div class="xt-set-intro-badges">' + retiredBadgeOf(id, model) + rateChipOf(id, model) +
+      vpnBadge(model) + healthBoxHtml(id) + '</div>';
     html += '</div>';
+    // 星级（可调，保留既有交互）
     html += '<div class="xt-set-intro-line"><span class="xt-set-intro-k">星级</span>' +
       '<span class="xt-set-intro-v">' + starsHtmlOf(id, effStars(id, model)) +
       '<span class="xt-star-note">（可自行调整）</span></span></div>';
-    html += '<div class="xt-set-intro-line"><span class="xt-set-intro-k">速度</span>' +
-      '<span class="xt-set-intro-v">' + esc(speedText(id, model)) + '</span></div>';
-    var desc = effDesc(id, model);
-    html += '<div class="xt-set-intro-line"><span class="xt-set-intro-k">说明</span>' +
-      '<span class="xt-set-intro-v">' + esc(desc || '暂无说明') + '</span></div>';
+
+    // 1) 这是什么（能力定位）
+    var posi = [];
+    if (d && d.type) { posi.push(esc(d.type)); }
+    posi.push('平台：' + esc(platform));
+    html += introSec('这是什么', posi.join('　·　'));
+
+    // 2) 能做什么（能力清单；回落用户自填说明）
+    var ability = (d && d.advantage) ? d.advantage : effDesc(id, model);
+    html += introSec('能做什么', ability ? esc(ability) : '暂无实测数据');
+
+    // 3) 怎么用（输入 / 输出形态 · 适用场景）——缺 applicable 时省略本段
+    if (d && d.applicable) {
+      html += introSec('怎么用', esc(d.applicable));
+    }
+
+    // 4) 耗时与计费（速度档 + 规格 + 实测耗时）
+    var cost = [];
+    cost.push('速度档：' + esc(effSpeed(id, model)));
+    if (d && d.params) { cost.push('规格：' + esc(d.params)); }
+    var hh = healthOf(id);
+    if (hh && hh.ok && typeof hh.ms === 'number') { cost.push('实测耗时：' + hh.ms + 'ms'); }
+    html += introSec('耗时与计费', cost.join('　·　'));
+
+    // 5) 建议与替代（推荐语 + 降级/替代模型）——无任一数据时省略本段
+    var tips = [];
+    if (d && d.recommend) { tips.push(esc(d.recommend)); }
+    if (model && model.fallback) {
+      var fb = findAnyModel(model.fallback);
+      tips.push('降级/替代：' + esc(fb ? displayName(model.fallback, fb) : model.fallback));
+    }
+    if (tips.length) { html += introSec('建议与替代', tips.join('　·　')); }
+
     html += '<div class="xt-set-intro-id">' + esc(model.model || id) + '</div>';
     html += '</div>';
     return html;
@@ -2484,10 +3063,6 @@
       'border-radius:12px;text-align:left;';
     var html = '';
     html += '<div style="font-size:14px;font-weight:700;margin-bottom:8px;">海外平台代理访问</div>';
-    html += '<div style="font-size:12.5px;color:var(--ai-sub,#5a6068);line-height:1.6;margin-bottom:10px;">' +
-      'OpenRouter / Gemini 需自备网络。auto=自动探测，不可达平台离线、调用自动降级国内链；' +
-      'relay=请求改走自建中转；direct=始终直连。' +
-      '中转约定：中转地址前缀 + encodeURIComponent(目标完整URL)，body/headers 原样透传。</div>';
     html += '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">' +
       '<label style="font-size:13px;">模式</label>' +
       '<select id="setProxyMode" style="min-height:34px;border-radius:8px;border:1px solid var(--ai-border,#e7e9ee);padding:0 8px;background:var(--ai-card,#fff);color:var(--ai-text,#1f2329);">' +
@@ -2560,6 +3135,8 @@
     if (el) { runHealthCheck(el.getAttribute('data-test')); return; }
     el = closestAttr(t, 'data-toggle', host);
     if (el) { toggleModel(el.getAttribute('data-toggle')); return; }
+    el = closestAttr(t, 'data-vidaudio', host);
+    if (el) { toggleAudioFor(el.getAttribute('data-vidaudio')); return; }   // R93-5b：有声小开关
     el = closestAttr(t, 'data-edit', host);
     if (el) { startEdit(el.getAttribute('data-edit')); return; }
     el = closestAttr(t, 'data-del', host);
@@ -2796,6 +3373,11 @@
       refresh: renderAll,
       switchTab: switchTab
     };
+  }
+  // R87：导出可见性契约（§3.8），供跨线只读消费；属性级守卫，不新增全局名
+  if (window.xtAiSettings) {
+    if (typeof window.xtAiSettings.usableIds !== 'function') { window.xtAiSettings.usableIds = usableIds; }
+    if (typeof window.xtAiSettings.visibleModels !== 'function') { window.xtAiSettings.visibleModels = visibleModels; }
   }
 
   // defer 脚本：DOMContentLoaded 可能已过，双保险

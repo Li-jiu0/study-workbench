@@ -1,0 +1,49 @@
+=== 1. 个人中心.html subpage-group-card 成员 ===
+  L86    SubpageRouter.navigate('profile')      | 个人资料 | 头像、昵称、签名、城市、生日等
+  L91    SubpageRouter.navigate('posts')        | 发贴统计 | 发贴数、点赞、评论等数据
+  L96    SubpageRouter.navigate('moments')      | 我的动态 | 本人发布的动态列表（含删除）
+  L101   SubpageRouter.navigate('prefs')        | 学习偏好 | 每日新增、专注时长、朗读、提醒
+  L106   SubpageRouter.navigate('local-data')   | 本机数据 | 总学习时、刷题、错题、连续打卡
+
+=== 2.发帖统计 分布 ===
+
+=== 2.发贴统计 分布 ===
+  个人中心.html                L15    leBox——进入 posts 时给 profileBox 加 .posts-mode，    隐藏其余资料卡、只保留「发贴统计」卡（id="ppStatsCard" 由 assets/app.js renderProfilePage 添加
+  个人中心.html                L93    v>             <div class="sgc-main"><div class="sgc-title">发贴统计</div><div class="sgc-desc">发贴数、点赞、评论等数据</div></div>    
+  个人中心.html                L115   ero-desc" data-page-node-id="hcTWuEhLCGrmJdWA8L8V32">个人资料 · 发贴统计 · 数据导出 · 退出登录</div>           </div>         </div>    
+  个人中心.html                L796         进入 posts 时给 profileBox 加 .posts-mode（页首 <style> 据此只保留「发贴统计」卡          #ppStatsCard，隐藏其余 .pp-card）；离开 posts（含 profi
+  个人中心.html                L809     } else if (key === 'posts') {         /* 【R61】posts 子页只渲染「发贴统计」内容到 #profileBoxPostsHost，            不再把整块 #profileBox（
+  设置.html                  L854   支持回复嵌套与收起展开、修复评论头像显示 · 我的文章改列表导航、分类筛选改下拉 · 个人中心学习偏好支持页内直设、修复发贴统计入口 · 全站图标矢量化的查漏补缺与顶栏升级。</div>             <div style="ma
+
+=== 2.学习统计 分布 ===
+  PPT案例拆解.html             L128   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 
+  PPT版式库.html              L133   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 
+  PPT训练.html               L255   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 
+  blog_wechat.html         L231   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>                     <div class="bott
+  万能金句库.html               L139   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 
+  个人中心.html                L306   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 
+  企业定向库.html               L252   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 
+  动态.html                  L145   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 
+  商务礼仪.html                L137   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 
+  商务礼仪面试.html              L383   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 
+  四级备考.html                L338   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 
+  四级词汇.html                L179   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 
+  场景话术库.html               L136   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 
+  央国企笔试.html               L246   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 
+  学习博客.html                L337   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 
+  学习工作台.html               L341   class="bm-label" data-page-node-id="saAb9IkJyZG06IJmgbULJS">学习统计</div>       </div>       <div class="bottom-more-item" 
+  学途.html                  L536    +       '<div class="xt-card"><div class="xt-card-title">📊 学习统计</div><div class="xt-stat-row">' +         '<div class="
+  工具.html                  L309   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 
+  时政热点.html                L262   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 
+  更多.html                  L107   -size="20"></span></div>             <div class="mpc-title">学习统计</div>             <div class="mpc-desc">学习概况 · 本周报告</di
+  更多.html                  L197   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 
+  申论刷题.html                L238   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 
+  私聊.html                  L228   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 
+  管理员.html                 L174   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 
+  行测刷题.html                L171   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 
+  设置.html                  L681   lQDNnA994" data-icon="chart-bar" data-icon-size="16"></span>学习统计</button>               <button class="st-quick-it" oncl
+  设置.html                  L853   ord/Excel/文本选目标导入) · 各题库“我的题库”自建/导入导出 · AI(多模型/用量/记录/读发贴) · 学习统计 · 数据备份与迁移 · 发贴回收站 · Markdown 导出 · 外观(主题跟随系统+配色皮肤) · 数据总
+  设置.html                  L887   class="bm-label" data-page-node-id="HX2aG0Qdd0sOwRiRFMAAfi">学习统计</div>       </div>       <div class="bottom-more-item" 
+  错题本.html                 L150   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 
+  面试题库.html                L128   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 
+  高情商表达.html               L190   bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>       </div>       <div class="bottom-more-item" 

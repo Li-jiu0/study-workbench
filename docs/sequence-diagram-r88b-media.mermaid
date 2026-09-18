@@ -1,0 +1,133 @@
+%% R88-B 服务端中转端点 · 时序图
+%% 作者：架构师 高见远（Gao）  2026-09-18
+%% 对应文档：docs/design-r88b-服务端中转端点与真可用修复.md
+
+%% ============ 图 1：生图（同步中转） ============
+sequenceDiagram
+    autonumber
+    participant U as 用户
+    participant P as ai-page.js
+    participant SVC as ai-service.js<br/>(xtCallCapability)
+    participant CAP as ai-cap-image.js
+    participant API as server/routers/media.py
+    participant PRV as media_providers.py
+    participant ST as media_store.py
+    participant LED as quota_ledger
+    participant UP as 火山方舟 images/generations
+
+    U->>P: 输入提示词，选 ark-seedream-4-0
+    P->>SVC: callAI('imagegen', msgs, {model})
+    SVC->>SVC: selIsImageGen=true
+    SVC->>CAP: xtCallCapability(cap, mc, input)
+    Note over SVC,CAP: T02 后：命中服务端中转优先分支
+    CAP->>API: POST /api/media/image<br/>{modelId,prompt,size,batch}
+    API->>LED: check_quota(modelId)
+    alt 额度耗尽
+        LED-->>API: (False, reason)
+        API-->>CAP: 200 {ok:false,code:ERR_QUOTA_EXHAUSTED}
+    else 额度可用
+        LED-->>API: (True, "")
+        API->>PRV: resolve(modelId) + build_image_body()
+        PRV-->>API: {url, headers(ARK key 服务端), body}
+        API->>UP: POST images/generations
+        UP-->>API: {data:[{url: S3 预签名, X-Amz-Expires=3600}]}
+        API->>ST: save_from_url('img', url)
+        ST-->>API: /uploads/media/img_20260918_ab12cd.png
+        API->>LED: record_usage(modelId, n, ok=True)
+        API-->>CAP: 200 {ok:true,data:{urls:[...],stored:true}}
+    end
+    CAP-->>SVC: result {urls, stored}
+    SVC->>SVC: sink.capUsage = usage
+    SVC-->>P: 图片 markdown（相对 URL 拼 relayBase）
+    P->>U: 渲染图片
+
+%% ============ 图 2：视频（异步 · 创建 + 服务端代轮询） ============
+sequenceDiagram
+    autonumber
+    participant U as 用户
+    participant CAP as ai-cap-video.js<br/>(run)
+    participant API as /api/media
+    participant TASK as media.py 任务缓存<br/>(TTL 30min / 节流 3s)
+    participant UP as 火山方舟 tasks
+    participant ST as media_store
+    participant LED as quota_ledger
+
+    Note over CAP: run() = 创建 → 轮询 → 取结果（前端驱动）
+    CAP->>API: POST /api/media/video {modelId,prompt,duration,...}
+    API->>LED: check_quota(modelId)（未过则 200 exhausted，不转发）
+    API->>UP: POST /contents/generations/tasks
+    UP-->>API: {id:"cgt-xxxx"}
+    API->>TASK: 建缓存 {status:created, createdAt}
+    API->>LED: record_usage(modelId, 0, ok=True)  ← 预记 calls（创建即计费）
+    API-->>CAP: {ok:true,data:{taskId,pollUrl,pollAfterMs:5000}}
+
+    loop 每 5s，最多 120 次（10 分钟）
+        CAP->>API: GET /api/media/tasks/cgt-xxxx
+        API->>TASK: 命中？终态？距上次<3s？
+        alt 终态缓存 或 距上次查询 <3s
+            TASK-->>API: 缓存状态（不打上游）
+        else 需刷新
+            API->>UP: GET /contents/generations/tasks/cgt-xxxx
+            UP-->>API: {status, content, usage}
+            API->>TASK: 更新缓存
+        end
+        alt status=succeeded
+            API->>ST: 下载产物 → /uploads/media/vid_xxx.mp4
+            API->>LED: record_usage(modelId, outTok≈103818, ok=True)
+            API-->>CAP: {ok:true,data:{status:succeeded,result:{url,coverUrl,usage}}}
+        else status=running
+            API-->>CAP: {ok:true,data:{status:running,attempts}}
+        else status=failed/cancelled/expired
+            API->>LED: record_usage(modelId, 1, ok=False)
+            API-->>CAP: {ok:true,data:{status:failed}}
+        end
+    end
+    CAP-->>U: 播放/下载 MP4（自有 URL，24h 后仍可访问）
+
+%% ============ 图 3：前端能力分派（E1/E2 修复后） ============
+sequenceDiagram
+    autonumber
+    participant P as ai-page.js
+    participant CR as capRunner()
+    participant SVC as AI_SERVICE
+    participant RUN as xtRunCapability
+    participant CALL as xtCallCapability
+    participant CAP as ai-cap-*.js
+    participant API as /api/media/*
+
+    P->>CR: capRunner()
+    CR->>SVC: window.AI_SERVICE.xtRunCapability
+    Note over CR,SVC: E1 修复：T02 导出后此处由 null → function
+    SVC-->>CR: function
+    CR-->>P: runner 可用（ASR 不再退 callAI）
+    P->>RUN: runner(modelId, input, {})
+    RUN->>RUN: findModel + xtResolveCapability
+    alt cap.async && cap.run（视频/3D）
+        RUN->>CAP: cap.run(ctx, onProgress)
+        CAP->>API: POST /api/media/video|model3d + GET /tasks/{id}
+    else 同步能力
+        RUN->>CALL: xtCallCapability(cap, mc, input, opt, sink)
+        CALL->>API: POST /api/media/image|asr|embed|rerank|translate
+    end
+    API-->>RUN: {ok,data,error,code}
+    RUN-->>P: {ok, kind, result, usage}
+    Note over RUN: 前端不再 reportUsage（服务端已记账）
+
+%% ============ 图 4：用量记账（服务端唯一来源） ============
+sequenceDiagram
+    autonumber
+    participant FE as 前端 (ai-cap-*.js)
+    participant API as media.py 中转层
+    participant LED as quota_ledger
+    participant FILE as data/model_usage.json
+    participant DASH as GET /api/ai/usage (R88-F)
+
+    Note over FE: 改造前：FE 轮询完成后 POST /api/ai/usage/consume（不带 token，可伪造/漏报）
+    Note over FE,API: 改造后 ↓
+    API->>LED: check_quota(modelId)  ← 转发前闸门，未过不转发
+    API->>LED: record_usage(modelId, amount, ok)
+    LED->>LED: 内存累加 + _mark_dirty
+    LED->>FILE: 5s 定时原子落盘（.tmp + os.replace）
+    DASH->>LED: ledger_snapshot()
+    LED-->>DASH: 全站账本（含媒体用量，游客脱敏由 R88-F 负责）
+    Note over FE: 前端删除 reportUsage()，不再双记账

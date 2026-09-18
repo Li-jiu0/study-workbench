@@ -1,0 +1,11 @@
+ccount) acct = a.account; } catch (e) { /* 忽略 */ }
+  if (!acct) { try { acct = localStorage.getItem('study_workbench_last_account') || ''; } catch (e2) { /* 忽略 */ } }
+  return acct || 'shared';
+})();
+function lsKey(name) { return window.CURRENT_ACCOUNT ? name + '@' + window.CURRENT_ACCOUNT : name; }
+window.lsKey = lsKey;
+
+/* A 类业务键一次性迁移：旧无前缀键 → 当前账号前缀键。
+   主理人拍板：归「迁移时当前登录账号」，新键不存在才复制，全部处理完后删除旧键（一次性）。
+   动态键（study_workbench_ai_chat_<partner> / study_workbench_tool_<tool>）按前缀扫描。 */
+(function migra

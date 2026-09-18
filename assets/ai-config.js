@@ -5,6 +5,7 @@
 // R63（2026-09-16）新增 4 平台 13 模型：24 个内置模型 / 6 平台。
 // R64/R65（2026-09-16）：modelDetails 全量补 stars（整数 1-5 参考评分）与 speed（13 个新模型按 R63 实测回填，11 个旧模型「待检测」）；
 // FUNC_TYPES desc 能力化（去场景字样）；新增 modelModes 三模式链（AI 页 快速/均衡/极致）。
+// R86（2026-09-18）：重新接入硅基流动 1 平台 12 模型（翻译/OCR/生图/ASR/嵌入/重排），provider 改为单 key 挂多端点字段。
 
 var AI_CONFIG = {
   // ---------- R77（2026-09-17）海外平台代理访问 ----------
@@ -22,7 +23,7 @@ var AI_CONFIG = {
       apiUrl: "https://open.bigmodel.cn/api/paas/v4/chat/completions",
       apiKey: "339ab396568541d0b7c0be4a577e5e53.VM5HxadQcgew1JdB"
     },
-    // R73k：硅基流动 provider 已移除（欠费 402 且前端 models 为空，保留只会误导排查）
+    // R86：硅基流动重新接入（2026-09-18 实测 12 个模型全部 200）；多端点字段由能力模块按需读取。
     // ===== R63 新增 4 平台（2026-09-16 联网实测通过）=====
     qianfan: {
       name: "百度千帆",
@@ -50,10 +51,21 @@ var AI_CONFIG = {
       },
       needProxy: true
     },
+    // ===== R86（2026-09-18）硅基流动：12 个模型逐个实测全部 HTTP 200（含付费对照），不做欠费降级 =====
+    // 单 provider 挂多端点字段（imageUrl/audioUrl/embedUrl/rerankUrl），由 ai-cap-* 能力模块自行读取。
+    siliconflow: {
+      name: "硅基流动",
+      apiUrl: "https://api.siliconflow.cn/v1/chat/completions",
+      apiKey: "***REMOVED-BY-R2C***",
+      imageUrl: "https://api.siliconflow.cn/v1/images/generations",
+      audioUrl: "https://api.siliconflow.cn/v1/audio/transcriptions",
+      embedUrl: "https://api.siliconflow.cn/v1/embeddings",
+      rerankUrl: "https://api.siliconflow.cn/v1/rerank"
+    },
     gemini: {
       name: "Google Gemini",
       apiUrl: "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
-      apiKey: "AQ.REDACTED-GEMINI-KEY",
+      apiKey: "***REMOVED-BY-R2C***",
       apiFormat: "gemini",
       keyInQuery: true,
       needVPN: true,
@@ -144,6 +156,29 @@ var AI_CONFIG = {
       models: [
         { id: "gm-flash-lite", name: "Gemini-3.5-Flash-Lite", types: ["general"] },
         { id: "gm-flash", name: "Gemini-3.5-Flash", types: ["general","reasoning"] }
+      ]
+    },
+    {
+      key: "siliconflow",
+      label: "硅基免费",
+      builtin: true,
+      apiUrl: "https://api.siliconflow.cn/v1/chat/completions",
+      apiFormat: "openai",
+      needKey: false,
+      note: "",
+      models: [
+        { id: "sf-hunyuan-mt-7b", name: "Hunyuan-MT-7B", types: ["general","translate"] },
+        { id: "sf-paddleocr-vl-1.5", name: "PaddleOCR-VL-1.5", types: ["image"] },
+        { id: "sf-kolors", name: "Kolors", types: ["imagegen"] },
+        { id: "sf-sensevoice", name: "SenseVoice", types: ["audio"] },
+        { id: "sf-asr-v32", name: "XingChen-ASR-V3.2", types: ["audio"] },
+        { id: "sf-asr-ultra", name: "XingChen-ASR-Ultra", types: ["audio"] },
+        { id: "sf-asr-diarize", name: "XingChen-Diarize", types: ["audio"] },
+        { id: "sf-qwen-asr", name: "Qwen-ASR-1.7B", types: ["audio"] },
+        { id: "sf-bge-m3", name: "bge-m3", types: ["embedding"] },
+        { id: "sf-bge-zh", name: "bge-large-zh", types: ["embedding"] },
+        { id: "sf-bge-en", name: "bge-large-en", types: ["embedding"] },
+        { id: "sf-bge-reranker", name: "bge-reranker-m3", types: ["rerank"] }
       ]
     },
     {
@@ -241,14 +276,14 @@ var AI_CONFIG = {
   // 系统提示词（可配）
   systemPrompt: "你是星途学习助手，回答简洁务实、条理清晰，结合用户当前的学习场景给出可操作建议。",
 
-  // 自动模式选择器里的“自动（推荐）”占位项（不计入内置模型 28 个）
+  // 自动模式选择器里的“自动（推荐）”占位项（不计入内置模型 47 个）
   autoOption: { id: "auto", name: "自动（推荐）" },
 
   // MAX 模式：开启后提升输出上限，回答更详细（按 funcType 的 maxTokens 放大，不低于此下限）
   maxMode: { maxTokens: 4000, temperatureDelta: -0.1 },
 
-  // 内置免费模型列表（28 个，含 fallback 链；顺序即模型下拉分组顺序：火山方舟 → 智谱 → 百度千帆 → OpenRouter → Gemini → 图片生成）
-  // R73k：硅基流动已整体移除（provider/平台卡/自检）；seedream 图片模型走 arkimage（images/generations），失败不再降级文本模型。
+  // 内置免费模型列表（47 个，含 fallback 链；顺序即模型下拉分组顺序：火山方舟 → 智谱 → 百度千帆 → OpenRouter → Gemini → 图片生成 → 硅基流动）
+  // R86：硅基流动 12 模型重新接入（types 见上表；端点走 provider 多字段）；seedream 图片模型走 arkimage（images/generations），失败不再降级文本模型。
   builtinModels: [
     {
       id: "ark-v4-flash",
@@ -431,6 +466,69 @@ var AI_CONFIG = {
       fallback: "ark-doubao-mini"
     },
     {
+      id: "ark-seedance-1-0-pro",
+      name: "Doubao-Seedance-1.0-pro",
+      provider: "ark",
+      model: "doubao-seedance-1-0-pro-250528",
+      types: ["video"],
+      audio: true,                   /* R93-5b：支持 generate_audio（设置页「有声」小开关数据源） */
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.7,
+      maxTokens: 1000,
+      fallback: "ark-seedance-1-0-pro-fast"
+    },
+    {
+      id: "ark-seedance-1-0-pro-fast",
+      name: "Doubao-Seedance-1.0-pro-fast",
+      provider: "ark",
+      model: "doubao-seedance-1-0-pro-fast-251015",
+      types: ["video"],
+      audio: true,                   /* R93-5b：支持 generate_audio（设置页「有声」小开关数据源） */
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.7,
+      maxTokens: 1000,
+      fallback: "ark-seedance-1-0-pro"
+    },
+
+    {
+      id: "ark-seed3d-2-0",
+      name: "Doubao-Seed3D-2.0",
+      provider: "ark",
+      model: "doubao-seed3d-2-0-260328",
+      types: ["3d"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.7,
+      maxTokens: 1000,
+      fallback: "ark-hitem3d-2-0"
+    },
+    {
+      id: "ark-hyper3d-gen2",
+      name: "Hyper3D-Gen2",
+      provider: "ark",
+      model: "hyper3d-gen2-260112",
+      types: ["3d"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.7,
+      maxTokens: 1000,
+      fallback: "ark-seed3d-2-0"
+    },
+    {
+      id: "ark-hitem3d-2-0",
+      name: "Hitem3D-2.0",
+      provider: "ark",
+      model: "hitem3d-2-0-251223",
+      types: ["3d"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.7,
+      maxTokens: 1000,
+      fallback: "ark-seed3d-2-0"
+    },
+    {
       id: "glm-4.7",
       name: "GLM-4.7",
       provider: "zhipu",
@@ -577,14 +675,146 @@ var AI_CONFIG = {
       fallback: null
     },
     {
-      id: "ark-seedream-5-pro",
-      name: "Seedream-5-Pro",
-      provider: "arkimage",
-      model: "doubao-seedream-5-0-pro-260628",
+      id: "sf-hunyuan-mt-7b",
+      name: "Hunyuan-MT-7B",
+      provider: "siliconflow",
+      model: "tencent/Hunyuan-MT-7B",
+      types: ["general","translate"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.7,
+      maxTokens: 2000,
+      fallback: "ark-v4-flash"
+    },
+    {
+      id: "sf-paddleocr-vl-1.5",
+      name: "PaddleOCR-VL-1.5",
+      provider: "siliconflow",
+      model: "PaddlePaddle/PaddleOCR-VL-1.5",
+      types: ["image"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.7,
+      maxTokens: 2000,
+      fallback: null
+    },
+    {
+      id: "sf-kolors",
+      name: "Kolors",
+      provider: "siliconflow",
+      model: "Kwai-Kolors/Kolors",
       types: ["imagegen"],
       tag: "免费",
       rate: "1x",
       temperature: 0.7,
+      maxTokens: 1000,
+      fallback: "ark-seedream-4-0828"
+    },
+    {
+      id: "sf-sensevoice",
+      name: "SenseVoice",
+      provider: "siliconflow",
+      model: "FunAudioLLM/SenseVoiceSmall",
+      types: ["audio"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.3,
+      maxTokens: 1000,
+      fallback: null
+    },
+    {
+      id: "sf-asr-v32",
+      name: "XingChen-ASR-V3.2",
+      provider: "siliconflow",
+      model: "XingChenAGI/XingChenASR-V3.2",
+      types: ["audio"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.3,
+      maxTokens: 1000,
+      fallback: null
+    },
+    {
+      id: "sf-asr-ultra",
+      name: "XingChen-ASR-Ultra",
+      provider: "siliconflow",
+      model: "XingChenAGI/XingChenASR-V3.2-Ultra",
+      types: ["audio"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.3,
+      maxTokens: 1000,
+      fallback: null
+    },
+    {
+      id: "sf-asr-diarize",
+      name: "XingChen-Diarize",
+      provider: "siliconflow",
+      model: "XingChenAGI/XingChenASR-Diarize-V3.0",
+      types: ["audio"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.3,
+      maxTokens: 1000,
+      fallback: null
+    },
+    {
+      id: "sf-qwen-asr",
+      name: "Qwen-ASR-1.7B",
+      provider: "siliconflow",
+      model: "Qwen/Qwen3-ASR-1.7B",
+      types: ["audio"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.3,
+      maxTokens: 1000,
+      fallback: null
+    },
+    {
+      id: "sf-bge-m3",
+      name: "bge-m3",
+      provider: "siliconflow",
+      model: "BAAI/bge-m3",
+      types: ["embedding"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.3,
+      maxTokens: 1000,
+      fallback: null
+    },
+    {
+      id: "sf-bge-zh",
+      name: "bge-large-zh",
+      provider: "siliconflow",
+      model: "BAAI/bge-large-zh-v1.5",
+      types: ["embedding"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.3,
+      maxTokens: 1000,
+      fallback: null
+    },
+    {
+      id: "sf-bge-en",
+      name: "bge-large-en",
+      provider: "siliconflow",
+      model: "BAAI/bge-large-en-v1.5",
+      types: ["embedding"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.3,
+      maxTokens: 1000,
+      fallback: null
+    },
+    {
+      id: "sf-bge-reranker",
+      name: "bge-reranker-m3",
+      provider: "siliconflow",
+      model: "BAAI/bge-reranker-v2-m3",
+      types: ["rerank"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.3,
       maxTokens: 1000,
       fallback: null
     }
@@ -621,7 +851,25 @@ var AI_CONFIG = {
     "gm-flash": { platform: "Google Gemini", params: "", type: "通用对话（推理）", stars: 4, speed: "中", advantage: "通用能力强（实测约 2.9 秒）；需自备网络", applicable: "日常问答、推理" },
     "ark-seedream-4-0415": { platform: "火山方舟·图片生成", params: "", type: "图片生成", stars: 4, speed: "中", advantage: "文生图；走 images/generations 接口，调用链路待评估", applicable: "文生图（v4 初版）" },
     "ark-seedream-4-0828": { platform: "火山方舟·图片生成", params: "", type: "图片生成（最快）", stars: 4, speed: "快", advantage: "文生图最快版（实测 4.2 秒）；走 images/generations 接口，调用链路待评估", applicable: "文生图（速度优先）" },
-    "ark-seedream-5-pro": { platform: "火山方舟·图片生成", params: "", type: "图片生成（质量最好）", stars: 5, speed: "慢", advantage: "文生图最新版，质量最好；走 images/generations 接口，调用链路待评估", applicable: "文生图（质量优先）" }
+    "sf-hunyuan-mt-7b": { platform: "硅基流动", params: "", type: "通用翻译", stars: 4, speed: "快", advantage: "腾讯混元翻译专用模型，实测中英互译流畅，术语保留好", applicable: "题目/资料中英互译、长句翻译" },
+    "sf-paddleocr-vl-1.5": { platform: "硅基流动", params: "", type: "视觉识别·OCR", stars: 5, speed: "快", advantage: "实测 0.6 秒，中文印刷体识别准，版式还原好", applicable: "拍题识图、试卷与课件截图 OCR" },
+    "sf-kolors": { platform: "硅基流动", params: "", type: "图片生成", stars: 4, speed: "中", advantage: "实测 4 秒出图，1024x1024，中文语义理解较好", applicable: "文生图、学习配图与示意插画" },
+    "sf-sensevoice": { platform: "硅基流动", params: "", type: "语音识别", stars: 4, speed: "快", advantage: "实测 1 秒内返回，中英日韩多语种，识别稳定", applicable: "课堂录音转写、口语练习转文字" },
+    "sf-asr-v32": { platform: "硅基流动", params: "", type: "语音识别", stars: 4, speed: "快", advantage: "实测 1 秒内返回，中文语音识别准确率高", applicable: "听课录音转写、口述笔记" },
+    "sf-asr-ultra": { platform: "硅基流动", params: "", type: "语音识别", stars: 4, speed: "快", advantage: "实测 1 秒内返回，V3.2 增强版，长音频更稳", applicable: "长录音转写、会议与课程记录" },
+    "sf-asr-diarize": { platform: "硅基流动", params: "", type: "语音识别", stars: 4, speed: "快", advantage: "实测 1 秒内返回，支持说话人分离", applicable: "多人对话/小组讨论录音转写" },
+    "sf-qwen-asr": { platform: "硅基流动", params: "", type: "语音识别", stars: 4, speed: "快", advantage: "实测 1 秒内返回，方言与口音鲁棒性较好", applicable: "带口音的语音转写、口语评测前置" },
+    "sf-bge-m3": { platform: "硅基流动", params: "", type: "向量嵌入", stars: 4, speed: "快", advantage: "实测响应快，多语种+长文本通用 embeddings，免费额度充足", applicable: "笔记/题库向量化、语义检索召回" },
+    "sf-bge-zh": { platform: "硅基流动", params: "", type: "向量嵌入", stars: 4, speed: "快", advantage: "实测响应快，中文语义向量效果稳定", applicable: "中文资料向量化、错题相似题检索" },
+    "sf-bge-en": { platform: "硅基流动", params: "", type: "向量嵌入", stars: 4, speed: "快", advantage: "实测响应快，英文语义向量效果稳定", applicable: "英文语料向量化、双语检索" },
+    "sf-bge-reranker": { platform: "硅基流动", params: "", type: "结果重排", stars: 4, speed: "快", advantage: "实测响应快，对召回结果二次精排，top1 命中率明显提升", applicable: "检索结果精排、RAG 答案排序" },
+    "ark-seedance-1-0-pro": { platform: "火山方舟", params: "", type: "视频生成", stars: 5, speed: "慢", advantage: "文生视频 / 图生视频；输入文字提示词（图生视频再传一张首帧图），输出 5～10 秒 MP4 视频；分钟级异步返回；单次消耗约 10 万 tokens 量级（5s/720p ≈ 103,818）；生成结果地址约 24 小时有效", applicable: "文生视频、图生视频" },
+    "ark-seedance-1-0-pro-fast": { platform: "火山方舟", params: "", type: "视频生成（快速版）", stars: 4, speed: "慢", advantage: "文生视频 / 图生视频快速版；输入与输出同标准版，出片更快；分钟级异步返回；单次消耗约 10 万 tokens 量级", applicable: "文生视频、图生视频（速度优先）" },
+
+    "ark-seed3d-2-0": { platform: "火山方舟", params: "", type: "3D 生成", stars: 5, speed: "慢", advantage: "图生 3D；输入一张图片（可再配文字），输出 glb 模型（打包为 zip 下载）；分钟级异步返回；单次消耗约 3 万 tokens 量级；结果地址约 24 小时有效", applicable: "图生 3D 模型" },
+    "ark-hyper3d-gen2": { platform: "火山方舟", params: "", type: "3D 生成", stars: 4, speed: "慢", advantage: "图生 3D；输入一张图片，输出 3D 模型文件；分钟级异步返回；单次消耗约 3 万 tokens 量级", applicable: "图生 3D 模型" },
+    "ark-hitem3d-2-0": { platform: "火山方舟", params: "", type: "3D 生成", stars: 4, speed: "慢", advantage: "图生 3D；输入一张图片，输出 3D 模型文件；分钟级异步返回；单次消耗约 3 万 tokens 量级", applicable: "图生 3D 模型" }
+
   },
 
   // ===== 三模式链（AI 对话页「快速/均衡/极致」；链内模型按序尝试，均不可用回退默认链）=====
@@ -712,11 +960,46 @@ var AI_CONFIG = {
     },
     imagegen: {
       desc: "图片生成",
-      // R73p：seedream 走 images/generations 专用链路（2026-09-18 三模型直连实测全部 200 出图）。
+      // R73p / R86k：seedream 走 images/generations 专用链路（2026-09-18 两模型直连实测全部 200 出图）。
       // 选中生图模型时 ai-service 会跳过服务端文本中转，直连 images/generations，绝不进 chat/completions。
       primary: "ark-seedream-4-0828",
-      fallback: ["ark-seedream-5-pro", "ark-seedream-4-0415"],
+      fallback: ["ark-seedream-4-0415"],
       temperature: 0.8,
+      maxTokens: 1000
+    },
+    audio: {
+      desc: "语音识别",
+      primary: "sf-sensevoice",
+      fallback: ["sf-asr-v32", "sf-qwen-asr"],
+      temperature: 0.3,
+      maxTokens: 1000
+    },
+    embedding: {
+      desc: "向量嵌入",
+      primary: "sf-bge-m3",
+      fallback: ["sf-bge-zh", "sf-bge-en"],
+      temperature: 0.3,
+      maxTokens: 1000
+    },
+    rerank: {
+      desc: "结果重排",
+      primary: "sf-bge-reranker",
+      fallback: [],
+      temperature: 0.3,
+      maxTokens: 1000
+    },
+    video: {
+      desc: "视频生成",
+      primary: "ark-seedance-1-0-pro",
+      fallback: ["ark-seedance-1-0-pro-fast"],
+      temperature: 0.7,
+      maxTokens: 1000
+    },
+    three_d: {
+      desc: "3D 生成",
+      primary: "ark-seed3d-2-0",
+      fallback: ["ark-hitem3d-2-0"],
+      temperature: 0.7,
       maxTokens: 1000
     }
   }
