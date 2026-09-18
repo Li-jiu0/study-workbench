@@ -1,0 +1,64 @@
+===== 0. 默认（cover）：完全覆盖裁剪区 =====
+PASS  data-scale = base(cover)  data-scale=0.375
+PASS  默认即覆盖裁剪区（无黑边）  w=375.0 h=750.0 crop=375
+
+===== 1. 根因1 修复：竖拍图区间不逆序 =====
+PASS  minY <= maxY（垂直区间不逆序）  minY=-253.00 maxY=122.00
+PASS  minX <= maxX（水平区间不逆序）  minX=0.00 maxX=0.00
+
+===== 2. 核心：上下拖动必须生效（用户报的 bug） =====
+PASS  向下拖 dy=+60 后 img.top 变化  top 0 -> 60
+PASS  向上拖 dy=-60 后 img.top 反向变化  top 60 -> 0
+
+===== 3. 横向拖动（放大后有空隙时可用） =====
+PASS  向右拖 dx=+60 后 img.left 变化  left -335.25 -> -275.25
+PASS  向左拖 dx=-60 后反向变化  left -275.25 -> -335.25
+
+===== 4. 使劲往四边拖 → 始终覆盖裁剪区（不露黑边） =====
+PASS  猛向下拖后仍覆盖  top=122.0
+PASS  猛向上拖后仍覆盖  top=-1153.0
+PASS  猛向左拖后仍覆盖  left=-450.0
+PASS  猛向右拖后仍覆盖  left=0.0
+
+===== 5. 可缩小：捏合到 scale=0.4 =====
+PASS  捏合缩小：data-scale 减小  1.87500 -> 0.75000
+PASS  缩小比例 ≈ ×0.4  ratio=0.4000
+
+===== 6. 缩到明显小于裁剪区：退化居中锁定，不越界、不 NaN =====
+PASS  缩到底 x/y 非 NaN  x=0 y=122
+PASS  缩到底尺寸非 NaN
+PASS  缩到底命中 ZMIN=0.4（total=base*0.4）  data-scale=0.15000000000000002 期望=0.15000000000000002
+
+===== 7. 任意序列后 STATE 均非 NaN =====
+PASS  x 非 NaN  x=0
+PASS  y 非 NaN  y=122
+PASS  data-scale 非 NaN 且 > 0  data-scale=0.15000000000000002
+
+===== 8. 回归红线 =====
+PASS  手势绑定齐全(>=11)  got 13
+PASS  ZMIN=0.4, ZMAX=5
+PASS  baseScale() cover 语义
+PASS  layout/zoomAt 共用 baseScale
+PASS  退化分支存在
+PASS  相对缩放语义保留
+PASS  完成路径无 ctx.arc
+PASS  ActionSheet 未动
+PASS  九宫格仍 4 条 linear-gradient
+
+===== 修复 E 手算用例 (natW=1000,natH=2000,sw=375,sh=619,crop=375,scale=1) =====
+PASS  sSize <= natW（取样框不越出原图）  sSize=1000.00
+PASS  sSize <= natH（取样框不越出原图）  sSize=1000.00
+
+===== 关键数值 =====
+sw=375 sh=619 crop=375
+natW=1000 natH=2000
+base(max)=max(0.37500,0.30950)=0.37500
+LEFT=0 TOP=122
+默认 scale=1: total=0.37500 w=375.00 h=750.00 data-scale=0.375
+缩到底：data-scale=0.15000 w=150.00 h=300.00 (crop=375)
+total=base*scale=0.37500*1=0.37500
+sSize=crop/total=375/0.37500=1000.00
+sSize<=natW? true (natW=1000)
+sSize<=natH? true (natH=2000)
+
+PASS=31  FAIL=0

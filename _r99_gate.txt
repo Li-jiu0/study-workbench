@@ -1,0 +1,54 @@
+assets/xt-profile.js     B=134368 md5=c015910b4ca18b402f2b6e0165fa8ba7 crlf=2639 loneLF=0
+assets/xt-profile.css    B=40729 md5=cd0e9c0519bfa715c59ae9443178e29a crlf=1244 loneLF=0
+
+=== JS 禁用语法（已剔注释+字符串）===
+  ?.                   0
+  ??                   0
+  arr spread           0
+  obj spread           0
+  .replaceAll(         0
+  Object.fromEntries   0
+  .at(                 0
+  lookbehind           0
+  exponent             0
+  optional catch       0
+  prompt(              0
+  alert(               0
+  confirm(             0
+  TOTAL=0
+
+=== CSS 禁用函数（已剔注释）===
+  clamp(     0
+  min(       0
+  max(       0
+  （calc() 允许，不计入）
+
+=== 关键结构确认 ===
+  ZMIN=0.4               1
+  ZMAX=5                 1
+  baseScale 定义           1
+  退化防御 maxX<minX         1
+  退化防御 maxY<minY         1
+  夹紧 var nw              1
+  夹紧 var nh              1
+  ActionSheet 定义         1
+  PickFile 定义            1
+  capture 属性             1
+  完成无 arc                0
+  完成有 drawImage          1
+
+=== 九宫格 / 已移除项 ===
+  .xtp-crop-frame{ 内 linear-gradient = 4
+  已移除项 #xtpCropZoom       JS=0 CSS=0
+  已移除项 .xtp-crop-bottom   JS=0 CSS=0
+  已移除项 .xtp-crop-zi       JS=0 CSS=0
+
+=== 头像圆角 ===
+  .xtp-hero-avatar                   border-radius: 12px
+  .xtp-avatar-row .xtp-avatar-sm     border-radius: 12px
+
+=== 版本戳 ===
+  xt-profile.css   v=20260917     页面数=1  .\tools\_preview_fetch.html
+  xt-profile.css   v=20260919b    页面数=1  .\个人资料.html
+  xt-profile.js    v=20260917     页面数=1  .\tools\_preview_fetch.html
+  xt-profile.js    v=20260919b    页面数=1  .\个人资料.html

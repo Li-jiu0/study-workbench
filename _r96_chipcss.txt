@@ -1,0 +1,33 @@
+=== .ai-chip 全部 CSS 规则 ===
+--- L294 ---
+.ai-chip{
+  display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 12px;border-radius:18px;
+  border:1px solid var(--ai-border);background:var(--ai-bg);color:var(--ai-sub);font-size:13px;
+  cursor:pointer;transition:all .15s;font-weight:500;
+}
+--- L299 ---
+.ai-chip svg{width:15px;height:15px;}
+--- L300 ---
+.ai-chip.active{border-color:var(--ai-orange);color:var(--ai-orange);background:rgba(255,140,0,.08);font-weight:600;}
+--- L562 ---
+  .ai-chip{height:28px;padding:0 9px;font-size:12px;gap:4px;border-radius:14px;}
+--- L563 ---
+  .ai-chip svg{width:13px;height:13px;}
+--- L578 ---
+  .ai-chip{padding:0 8px;font-size:11.5px;}
+
+=== .ai-chip 里 svg 相关规则 ===
+--- L299 ---
+.ai-chip svg{width:15px;height:15px;}
+--- L563 ---
+  .ai-chip svg{width:13px;height:13px;}
+
+=== .ai-foot-left / ai-input-foot CSS ===
+--- L284 ---
+.ai-foot-left{display:flex;align-items:center;gap:8px;}
+--- L560 ---
+  .ai-foot-left{flex:0 1 auto;min-width:0;}
+
+=== 移动端 <768 里 chip 相关 ===
+  .ai-popup-close svg{width:18px;height:18px;}
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235a6068' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");

@@ -202,9 +202,9 @@
    * 未配置 Key 时自动降级到 nominatim；都失败则回调 null，由调用方降级为手动选择。
    */
   var GEO = {
-    provider: 'amap',
+    provider: 'tencent',
     amapKey: '',
-    tencentKey: '',
+    tencentKey: 'RRTBZ-GNGKQ-3KD5W-2SS5K-YIHG5-S4BAP',
     timeoutMs: 9000
   };
 
@@ -331,6 +331,57 @@
     return String(v);
   }
 
+  /**
+   * 规整腾讯 POI 数组 → [{title, address, category, distance}]。
+   * distance 保留腾讯原始值（可能是数字或文案），绝不自行按经纬度计算。
+   * @param {Array} pa
+   * @returns {Array}
+   */
+  function _poiList(pa) {
+    if (Object.prototype.toString.call(pa) !== '[object Array]') return [];
+    var out = [], i, p;
+    for (i = 0; i < pa.length; i++) {
+      p = pa[i] || {};
+      if (!p.title) continue;
+      out.push({
+        title: String(p.title),
+        address: p.address ? String(p.address) : '',
+        category: p.category ? String(p.category) : '',
+        distance: (p._distance == null || String(p._distance) === '') ? '' : String(p._distance)
+      });
+    }
+    return out;
+  }
+
+  /**
+   * 解析腾讯 WebService 逆地理结果（geocoder/v1）。
+   * 目标：街道级地址 + 周边 POI。
+   * @param {Object} d 腾讯原始响应
+   * @returns {Object|null} { text, recommend, province, city, district, street, pois }
+   */
+  function _parseTencentGeo(d) {
+    if (!d) return null;
+    try {
+      var rs = (d.result && typeof d.result === 'object') ? d.result : d;
+      var rc = rs.address_component || {};
+      var fa = rs.formatted_addresses || {};
+      var street = _first(rc.street);
+      var num = _first(rc.street_number);
+      if (street && num) street = '' + street + ' ' + num;
+      return {
+        text: _first(rs.address) || _first(fa.recommend),
+        recommend: _first(fa.recommend),
+        province: _first(rc.province),
+        city: _first(rc.city),
+        district: _first(rc.district),
+        street: street,
+        pois: _poiList(rs.pois)
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+
   function _parseGeo(provider, d) {
     if (!d) return null;
     try {
@@ -347,15 +398,7 @@
         };
       }
       if (provider === 'tencent') {
-        var rs = d.result || {};
-        var rc = rs.address_component || {};
-        return {
-          text: _first(rs.address) || _first((rs.formatted_addresses || {}).recommend),
-          province: _first(rc.province),
-          city: _first(rc.city),
-          district: _first(rc.district),
-          street: _first(rc.street)
-        };
+        return _parseTencentGeo(d);
       }
       var ad = d.address || {};
       return {
@@ -376,27 +419,75 @@
    * @param {number} lng 经度
    * @param {function} cb 回调（失败 / 超时一律给 null，绝不抛异常）
    */
-  function reverseGeocode(lat, lng, cb) {
-    var provider = GEO.provider;
-    if (provider === 'amap' && !GEO.amapKey) provider = 'nominatim';
-    if (provider === 'tencent' && !GEO.tencentKey) provider = 'nominatim';
-    var cbName = '__xtGeoCb' + (Date.now()) + '_' + (_geoSeq++);
+  /**
+   * 解析可用 provider 降级链：显式 provider 打头，按其配置的 key 决定是否可用，
+   * 依次追加其余可用 provider，最后兜底 nominatim（免 Key）。有 key 就用，
+   * 请求失败由调用方继续降级。
+   * @param {String} lat
+   * @param {String} lng
+   * @returns {Array<String>}
+   */
+  function _providerChain() {
+    var cfg = GEO || {};
+    var pref = cfg.provider || 'nominatim';
+    var order = [pref];
+    var all = ['tencent', 'amap', 'nominatim'];
+    var i;
+    for (i = 0; i < all.length; i++) { if (all[i] !== pref) order.push(all[i]); }
+    var out = [];
+    for (i = 0; i < order.length; i++) {
+      var p = order[i];
+      if (p === 'tencent' && cfg.tencentKey) out.push('tencent');
+      else if (p === 'amap' && cfg.amapKey) out.push('amap');
+      else if (p === 'nominatim') out.push('nominatim');
+    }
+    if (!out.length) out.push('nominatim');
+    return out;
+  }
+
+  /** 单次逆地理请求（按 provider 组 URL + JSONP）。 */
+  function _reqGeo(provider, sKey, lat, lng, cb) {
+    var cbName = '__xtGeoCb' + sKey + '_' + (_geoSeq++);
     var url = '';
     if (provider === 'amap') {
       url = 'https://restapi.amap.com/v3/geocode/regeo?output=JSON&extensions=base&key=' +
         encodeURIComponent(GEO.amapKey) + '&location=' + encodeURIComponent(lng + ',' + lat) +
         '&callback=' + cbName;
     } else if (provider === 'tencent') {
-      url = 'https://apis.map.qq.com/ws/geocoder/v1/?output=jsonp&key=' +
+      url = 'https://apis.map.qq.com/ws/geocoder/v1/?key=' +
         encodeURIComponent(GEO.tencentKey) + '&location=' + encodeURIComponent(lat + ',' + lng) +
-        '&callback=' + cbName;
+        '&get_poi=1&poi_options=page_size=20&output=jsonp&callback=' + cbName;
     } else {
       url = 'https://nominatim.openstreetmap.org/reverse?format=json&addressdetails=1&zoom=18&accept-language=zh-CN' +
         '&lat=' + encodeURIComponent(lat) + '&lon=' + encodeURIComponent(lng) + '&json_callback=' + cbName;
     }
-    _jsonp(url, cbName, GEO.timeoutMs, function (raw) {
+    _jsonp(url, cbName, (GEO && GEO.timeoutMs) || 9000, function (raw) {
       cb(_parseGeo(provider, raw));
     });
+  }
+
+  /**
+   * 逆地理编码（链式降级）：经纬度 → 街道级中文地址 + 周边 POI。
+   * 腾讯优先（含 get_poi=1 一次取回地址与周边 POI）；腾讯失败降级 amap →
+   * nominatim；全失败回调 null，由调用方降级手动选择。坐标 lat,lng 按腾讯
+   * 「纬度,经度」顺序拼接（与既有实现一致）。
+   * @param {number} lat 纬度
+   * @param {number} lng 经度
+   * @param {function} cb 回调（失败 / 超时一律给 null，绝不抛异常）
+   */
+  function reverseGeocode(lat, lng, cb) {
+    var chain = _providerChain();
+    var idx = 0;
+    var sKey = '' + (Date.now()) + '_' + (_geoSeq);
+    function next() {
+      if (idx >= chain.length) { cb(null); return; }
+      var p = chain[idx++];
+      _reqGeo(p, sKey, lat, lng, function (g) {
+        if (g && g.text) { cb(g); return; }
+        next();
+      });
+    }
+    next();
   }
 
   /** 浏览器定位（失败不抛异常，统一走 err 回调）。 */
@@ -411,22 +502,84 @@
       settled = true;
       cb(res);
     }
-    var timer = setTimeout(function () { once({ ok: false, reason: 'timeout' }); }, 12000);
-    try {
-      navigator.geolocation.getCurrentPosition(function (pos) {
-        clearTimeout(timer);
-        var c = (pos && pos.coords) || {};
-        if (c.latitude == null || c.longitude == null) { once({ ok: false, reason: 'nopos' }); return; }
-        once({ ok: true, lat: c.latitude, lng: c.longitude });
-      }, function (err) {
-        clearTimeout(timer);
-        var code = err && err.code;
-        once({ ok: false, reason: code === 1 ? 'denied' : (code === 2 ? 'unavailable' : (code === 3 ? 'timeout' : 'error')) });
-      }, { enableHighAccuracy: true, timeout: 11000, maximumAge: 60000 });
-    } catch (e) {
-      clearTimeout(timer);
-      once({ ok: false, reason: 'error' });
+    // 最多尝试 2 次（首次 + 自动重试 1 次）。手机首次定位常因 GPS 冷启动
+    // 报 timeout(code 3)；重试放宽 timeout、调小 maximumAge 可显著提升成功率。
+    // 权限被拒（code 1 / denied）不再重试，直接降级。
+    var attempt = 0;
+    var MAX_ATTEMPTS = 2;
+    var timer = null;
+    function doGet() {
+      attempt++;
+      var innerMs = (attempt === 1) ? 11000 : 15000;
+      var maxAge = (attempt === 1) ? 30000 : 0;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(function () { retryOrFail('timeout'); }, innerMs + 1000);
+      try {
+        navigator.geolocation.getCurrentPosition(function (pos) {
+          if (timer) clearTimeout(timer);
+          var c = (pos && pos.coords) || {};
+          if (c.latitude == null || c.longitude == null) { retryOrFail('nopos'); return; }
+          once({ ok: true, lat: c.latitude, lng: c.longitude });
+        }, function (err) {
+          if (timer) clearTimeout(timer);
+          var code = err && err.code;
+          if (code === 1) { once({ ok: false, reason: 'denied' }); return; }
+          retryOrFail(code === 2 ? 'unavailable' : (code === 3 ? 'timeout' : 'error'));
+        }, { enableHighAccuracy: true, timeout: innerMs, maximumAge: maxAge });
+      } catch (e) {
+        if (timer) clearTimeout(timer);
+        retryOrFail('error');
+      }
     }
+    function retryOrFail(reason) {
+      if (settled) return;
+      if (reason === 'denied') { once({ ok: false, reason: 'denied' }); return; }
+      if (attempt < MAX_ATTEMPTS) { doGet(); return; }
+      once({ ok: false, reason: reason });
+    }
+    doGet();
+  }
+
+  /**
+   * 周边 POI 查询：{title, address, category, distance}[]。
+   * 主经 reverseGeocode（腾讯 get_poi=1 已带回 POI）；结果为空时用
+   * 不额外打任何请求——腾讯「周边搜索」类接口（place/v1/search、
+   * place/v1/explore）个人开发者额度仅 200 次/日，极易被打爆并连带
+   * 影响其它功能，故一律不调用；失败一律给 []，绝不抛异常。
+   * 距离一律保留腾讯原始值，绝不自行按经纬度计算。
+   * @param {number} lat
+   * @param {number} lng
+   * @param {function} cb 回调 cb(list)，list 为数组（可能为空）
+   */
+  function nearby(lat, lng, cb) {
+    var done = (typeof cb === 'function') ? cb : function () {};
+    try {
+      reverseGeocode(lat, lng, function (g) {
+        /* 腾讯 get_poi=1 已在同一次请求里带回周边 POI，直接复用；
+           无 POI 时给空数组，由调用方展示「附近位置」为空即隐藏该分组。
+           【刻意不调 place/v1】理由见函数头注释：该接口额度仅 200/日。 */
+        if (g && g.pois && g.pois.length) { done(g.pois); return; }
+        done([]);
+      });
+    } catch (e2) {
+      done([]);
+    }
+  }
+
+  /** 折叠逆向结果为单一文本（text + recommend + street 去重合并，≤64 字符）。 */
+  function _terseGeo(g) {
+    if (!g) return '';
+    var parts = [], seen = {}, i;
+    var arr = [g.text, g.recommend, g.street];
+    for (i = 0; i < arr.length; i++) {
+      var v = (arr[i] == null) ? '' : String(arr[i]).replace(/^\s+|\s+$/g, '');
+      if (!v || seen[v]) continue;
+      seen[v] = 1;
+      parts.push(v);
+    }
+    var s = parts.join(' ');
+    if (s.length > 64) s = _safeCut(s, 63) + '…';
+    return s;
   }
 
   window.XT_REGION = {
@@ -439,7 +592,8 @@
     search: search,
     parseText: parseText,
     reverseGeocode: reverseGeocode,
-    locate: locate
+    locate: locate,
+    nearby: nearby
   };
 
   /* ============================================================
@@ -469,10 +623,24 @@
     return null;
   }
 
-  /** 截断文本到 TEXT_MAX 字符（超长加省略号）。 */
+  /**
+   * 安全截断：不切开代理对（surrogate pair），避免末尾出现孤立代理项渲染成乱码。
+   * @param {String}  s 原串
+   * @param {number}  n 期望长度上限
+   * @returns {String}
+   */
+  function _safeCut(s, n) {
+    if (s.length <= n) return s;
+    var cut = s.slice(0, n);
+    // 若末尾是高代理项（U+D800~U+DBFF），说明正好把一对字符切开了 -> 回退一位
+    if (/[\uD800-\uDBFF]$/.test(cut)) cut = cut.slice(0, n - 1);
+    return cut;
+  }
+
+  /** 截断文本到 TEXT_MAX 字符（超长加省略号，不切开代理对）。 */
   function _clipText(s) {
     var t = (s == null) ? '' : String(s);
-    if (t.length > TEXT_MAX) t = t.slice(0, TEXT_MAX - 1) + '…';
+    if (t.length > TEXT_MAX) t = _safeCut(t, TEXT_MAX - 1) + '…';
     return t;
   }
 
@@ -763,6 +931,8 @@
     var chosen = '';
     var kw = '';
     var closed = false;
+    var nearbyResults = [];  // 最近一次定位得到的周边 POI
+    var locBusy = false;     // 定位中：置位后不再启动第二次，防止并发重复请求
 
     function setChosen(text, sub) {
       chosen = (text == null) ? '' : String(text).replace(/^\s+|\s+$/g, '');
@@ -801,6 +971,14 @@
         }
         listEl.innerHTML = html2;
         return;
+      }
+      if (nearbyResults.length) {
+        html2 += '<div class="xtlp-sec">附近位置</div>';
+        for (i = 0; i < nearbyResults.length; i++) {
+          var poi = nearbyResults[i] || {};
+          var psub = poi.address || poi.category || '';
+          html2 += itemRow(poi.title, psub);
+        }
       }
       var recent = recentList();
       if (recent.length) {
@@ -858,6 +1036,7 @@
       if (act === 'cancel') { finish(null); return; }
       if (act === 'ok') { if (chosen) finish(chosen); return; }
       if (act === 'loc') {
+        if (locBusy) return;
         locBusy = true;
         setChosen('', '正在定位…');
         locate(function (r) {
@@ -868,13 +1047,18 @@
             if (closed) return;
             locBusy = false;
             if (!g || !g.text) { setChosen('', '地址解析失败，可搜索或手动输入'); return; }
-            var txt = g.text;
-            var RR = window.XT_REGION;
-            if ((g.province || g.city) && RR && typeof RR.textOf === 'function') {
-              var t2 = RR.textOf(g.province, g.city, g.district);
-              if (t2) txt = t2;
+            var list = (g.pois && g.pois.length) ? g.pois : [];
+            nearbyResults = list;
+            var txt = _terseGeo(g);
+            if (!txt) {
+              var RR = window.XT_REGION;
+              if ((g.province || g.city) && RR && typeof RR.textOf === 'function') {
+                var t2 = RR.textOf(g.province, g.city, g.district);
+                if (t2) txt = t2;
+              }
             }
             setChosen(_clipText(txt), '');
+            renderList();
           });
         });
         return;
@@ -894,7 +1078,6 @@
       }
     }
     window.addEventListener('resize', onResize);
-    var locBusy = false;
     document.addEventListener('keydown', onKey);
 
     /* R89-B\uff1a\u8d85\u5c4f\u5e03\u5c40\u517c\u5bb9\u515c\u5e95\u3002

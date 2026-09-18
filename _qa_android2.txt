@@ -1,0 +1,20 @@
+L63    private static final int REQ_LOCATION_PERM = 2004;
+L861   }, REQ_LOCATION_PERM);
+L953   } else if (requestCode == REQ_LOCATION_PERM) {
+
+=== WebChromeClient 实例化行 ===
+L21    import android.webkit.WebChromeClient;
+L114   //   必须显式 setGeolocationEnabled(true)，并配合 WebChromeClient.onGeolocationPermissionsShowPrompt
+L540   web.setWebChromeClient(new WebChromeClient() {
+
+=== geolocationDatabasePath / setGeolocationEnabled 附近 ===
+L91    // 【定位】R96：启动即申请一次定位权限（WebView geolocation 依赖系统定位权限）。
+L112   // 【定位】R96：WebView 默认【禁止】geolocation（navigator.geolocation 会立刻拿到
+L114   //   必须显式 setGeolocationEnabled(true)，并配合 WebChromeClient.onGeolocationPermissionsShowPrompt
+L116   s.setGeolocationEnabled(true);
+L566   /** 【定位】R96：WebView geolocation 权限回调。
+L567   *  WebView 默认拒绝 navigator.geolocation 请求（页面会立刻拿到 PERMISSION_DENIED），
+L572   public void onGeolocationPermissionsShowPrompt(String origin,
+L573   android.webkit.GeolocationPermissions.Callback callback) {
+L846   /* ================= 【定位】R96：WebView geolocation 所需的运行时权限 ================= */
+L848   /** R96：启动时申请定位权限（WebView geolocation 依赖系统定位权限）。

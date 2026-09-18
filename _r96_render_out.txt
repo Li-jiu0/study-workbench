@@ -1,0 +1,45 @@
+===== 1. 结构：SVG 已删除、文案保留 =====
+PASS  chip 元素存在
+PASS  chip 内 svg 数 = 0  (实际 0)
+PASS  按钮直接文本 === "深度思考"  (实际 "深度思考")
+PASS  按钮 textContent 无 emoji  (实际 "深度思考")
+PASS  chip 无任何子元素（纯文本按钮）  (实际子元素 0)
+
+===== 2. 属性完整性（不能因删 SVG 而丢） =====
+PASS  id 保留
+PASS  class 含 ai-chip  (class="ai-chip")
+PASS  type=button
+PASS  title 保留  (title="开启后强制深度推理")
+PASS  未被禁用
+
+===== 3. 交互：click 仍能触发（等价 ai-page.js 的 bindEl + toggleDeepThink） =====
+PASS  点击不抛异常
+PASS  点击后 toggles===1  (实际 1)
+PASS  点击后开关值 = 1（开启）
+PASS  点击后 class 含 active  (class="ai-chip active")
+PASS  toast 文案正确（无 emoji 前缀）  (实际 "已开启深度思考")
+PASS  二次点击不抛异常
+PASS  二次点击后 toggles===2  (实际 2)
+PASS  二次点击后开关值 = 0（关闭）
+PASS  二次点击后 active 已移除  (class="ai-chip")
+PASS  toast 文案（关闭）  (实际 "已关闭深度思考")
+
+===== 4. 选中态视觉：CSS 规则仍可命中（.ai-chip.active 存在） =====
+PASS  CSS 含 .ai-chip.active 规则
+PASS  CSS 含 .ai-chip 基础规则
+PASS  .ai-chip 固定高度（不依赖子元素撑高）  (css:  display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 12px;border-radius:1)
+PASS  .ai-chip 为 inline-flex
+PASS  .ai-chip 有水平内边距（删图标后不贴边）
+
+===== 5. 回归：其它 ai-chip 使用点未被波及 =====
+页面内 .ai-chip 总数 = 1
+  [0] id=aiDeepThinkChip svg=0 text="深度思考"
+
+===== 6. HTML 结构完整性（删 SVG 未破坏标签配对） =====
+PASS  <button> 与 </button> 配对  (26 / 26)
+PASS  <svg> 与 </svg> 配对  (12 / 12)
+PASS  input-foot 容器仍完整
+PASS  foot-left 容器仍存在
+PASS  foot-right 未被破坏
+
+===== 汇总: PASS=30 FAIL=0 => ALL PASS =====

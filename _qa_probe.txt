@@ -1,0 +1,9 @@
+step1 ok
+src len=44730
+load ok, XT_REGION=object
+SCRIPT_INJECT https://apis.map.qq.com/ws/geocoder/v1/?key=RRTBZ-GNGKQ-3KD5
+reverseGeocode returned sync
+invoking __xtGeoCb1789749946312_0_0
+SCRIPT_INJECT https://nominatim.openstreetmap.org/reverse?format=json&addr
+injected callbacks n=1
+FINAL val="NOT_CALLED"

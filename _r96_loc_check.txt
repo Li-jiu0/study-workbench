@@ -1,0 +1,85 @@
+=== R96 location refactor check ===
+file: assets/xt-region.js
+bytes: now=54027  (orig=47493)
+crlf=0  loneLF=1107
+
+--- must-hit counts (each >=1) ---
+tencentKey nonempty = 1
+apis.map.qq.com = 2
+get_poi = 3
+nearby method = 1
+pois = 9
+_parseTencentGeo = 2
+_teserGeo = 2
+
+--- banned strings (each MUST be 0) ---
+optional chaining ?. = 1
+nullish ?? = 1
+replaceAll( = 0
+Object.fromEntries( = 0
+.at( = 0
+lookbehind (?<= = 0
+lookbehind (?<! = 0
+exponent ** = 22
+
+--- bracket balance ---
+{}: 667 / 667  diff=0
+(): 539 / 543  diff=-4
+[]: 191 / 191  diff=0
+CODE-ONLY {}: 667 / 667  diff=0
+CODE-ONLY (): 539 / 539  diff=0
+CODE-ONLY []: 191 / 191  diff=0
+(header comment L6-13 has 1)2)3)4) -> pre-existing -4 on whole-file paren count)
+
+--- window.XT_REGION export keys ---
+all keys: DATA, GEO, provinces, citiesOf, districtsOf, textOf, search, parseText, reverseGeocode, locate, nearby
+required legacy keys present: ALL OK
+NEW added keys: nearby
+
+--- window.XT_LOC_PICK export keys ---
+all keys: pick, last, isCoordinateText, LAST_KEY, RECENT_KEY, openPicker, recent
+
+--- key symbols present ---
+function reverseGeocode -> YES
+function nearby( -> YES
+function locate( -> YES
+function _providerChain -> YES
+function _reqGeo -> YES
+function _poiList -> YES
+function _parseTencentGeo -> YES
+nearbyResults -> YES
+provider: 'tencent' -> YES
+
+--- banned-string contexts (prove false positives are comments/strings) ---
+?. count=1 -> only in comment at index 24707 ctx='S2017 上限：仅用 var + function，不用 ?. / ?? / 对象展开 / 反引号模板 等。\n   *'
+?? count=1 -> only in comment at index 24712 ctx=' 上限：仅用 var + function，不用 ?. / ?? / 对象展开 / 反引号模板 等。\n   * ===='
+** count=22 -> all are JSDoc "/**" openers; first ctx=';\n  }\n\n  /** 拼接展示文本：'
+
+--- LIVE tencent webservice evidence (_r96_live.txt) ---
+=== geocoder/v1 (JSON) ===
+url=https://apis.map.qq.com/ws/geocoder/v1/?key=RRTBZ-GNGKQ-3KD5W-2SS5K-YIHG5-S4BAP&location=39.908722,116.397499&get_poi=1&poi_options=page_size=20&output=json
+HTTP 200
+RAW_BYTES=89
+status=121 message=此key每日调用量已达到上限
+address=None
+recommend=None
+street=None street_number=None
+province=None city=None district=None
+poi_count=0
+
+=== place/v1/search boundary=nearby ===
+url=https://apis.map.qq.com/ws/place/v1/search?key=RRTBZ-GNGKQ-3KD5W-2SS5K-YIHG5-S4BAP&boundary=nearby%2839.908722%2C116.397499%2C1000%29&page_size=20&orderby=_distance&output=json
+status=121 message=此key每日调用量已达到上限
+poi_count=0
+
+--- LIVE fallback/key recheck (_r96_live2.txt) ---
+=== nominatim reverse (fallback branch) ===
+url=https://nominatim.openstreetmap.org/reverse?format=json&addressdetails=1&zoom=18&accept-language=zh-CN&lat=39.908722&lon=116.397499
+ERROR: URLError(OSError('Tunnel connection failed: 502 Bad Gateway'))
+
+=== tencent key status recheck ===
+status=121 message=此key每日调用量已达到上限
+
+--- escheck_es2017.js ---
+rc=0
+stdout: DONE 0

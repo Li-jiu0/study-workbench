@@ -1,0 +1,41 @@
+=== Manifest 检查 ===
+L4    android:versionCode="24"
+L5    android:versionName="1.23">
+L12   注意：刻意【不】声明 <uses-feature android:name="android.hardware.location.gps" android:required="true">，
+L14   <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+L15   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+uses-feature 真实标签数(去注释) = 0
+ACCESS_FINE_LOCATION 真实 = 1
+ACCESS_COARSE_LOCATION 真实 = 1
+受 maxSdkVersion 限制的定位权限 = 0
+versionCode=24 versionName=1.23
+
+=== MainActivity 检查（去注释后） ===
+setGeolocationEnabled(true)            n=1 [96]
+onGeolocationPermissionsShowPrompt     n=1 [501]
+@Override 总数                           n=52 [60, 166, 186, 217, 238, 258, 276, 296, 358, 367, 382, 385, 406, 411, 425, 426, 427, 428, 429, 430, 439, 445, 446, 468, 480, 490, 500, 522, 538, 573, 603, 615, 616, 617, 618, 631, 649, 655, 660, 692, 720, 794, 807, 817, 828, 839, 861, 891, 906, 916, 922, 928]
+maybeRequestLocationPermission 定义+调用   n=2 [74, 777]
+onRequestPermissionsResult             n=2 [862, 888]
+requestPermissions(                    n=0 []
+ACCESS_FINE_LOCATION                   n=2 [780, 785]
+ACCESS_COARSE_LOCATION                 n=2 [782, 786]
+checkSelfPermission                    n=5 [724, 768, 780, 782, 853]
+shouldShowRequestPermissionRationale   n=0 []
+
+--- 关键片段（原始行，含注释以便定位） ---
+L91    // 【定位】R96：启动即申请一次定位权限（WebView geolocation 依赖系统定位权限）。
+L94    maybeRequestLocationPermission();
+L112   // 【定位】R96：WebView 默认【禁止】geolocation（navigator.geolocation 会立刻拿到
+L114   //   必须显式 setGeolocationEnabled(true)，并配合 WebChromeClient.onGeolocationPermissionsShowPrompt
+L116   s.setGeolocationEnabled(true);
+L566   /** 【定位】R96：WebView geolocation 权限回调。
+L567   *  WebView 默认拒绝 navigator.geolocation 请求（页面会立刻拿到 PERMISSION_DENIED），
+L572   public void onGeolocationPermissionsShowPrompt(String origin,
+L573   android.webkit.GeolocationPermissions.Callback callback) {
+L785   *  API 33+ 未授权时先申请（本次不弹），授权后在 onRequestPermissionsResult 补弹。 */
+L828   /** 申请通知权限（仅 API 33+ 需要），授权结果在 onRequestPermissionsResult 处理 */
+L846   /* ================= 【定位】R96：WebView geolocation 所需的运行时权限 ================= */
+L848   /** R96：启动时申请定位权限（WebView geolocation 依赖系统定位权限）。
+L851   private void maybeRequestLocationPermission() {
+L936   public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+L962   super.onRequestPermissionsResult(requestCode, permissions, grantResults);

@@ -1,0 +1,49 @@
+=== 全站页面里 ai-page.js / ai-service.js 的版本戳分布 ===
+ai-page.js 戳分布: {'20260918g': 1}
+ai-service.js 戳分布: {'20260918e': 1, '20260918d': 36}
+
+引用页清单 (37):
+AI.html                      ai-page=20260918g ai-service=20260918e
+AI模拟面试.html                  ai-page=- ai-service=20260918d
+PPT案例拆解.html                 ai-page=- ai-service=20260918d
+PPT版式库.html                  ai-page=- ai-service=20260918d
+ai-settings.html             ai-page=- ai-service=20260918d
+blog_wechat.html             ai-page=- ai-service=20260918d
+万能金句库.html                   ai-page=- ai-service=20260918d
+个人中心.html                    ai-page=- ai-service=20260918d
+企业定向库.html                   ai-page=- ai-service=20260918d
+关于.html                      ai-page=- ai-service=20260918d
+动态空间.html                    ai-page=- ai-service=20260918d
+商务礼仪.html                    ai-page=- ai-service=20260918d
+四级词汇.html                    ai-page=- ai-service=20260918d
+场景话术库.html                   ai-page=- ai-service=20260918d
+学习工作台.html                   ai-page=- ai-service=20260918d
+学习概括.html                    ai-page=- ai-service=20260918d
+导入题库.html                    ai-page=- ai-service=20260918d
+工具.html                      ai-page=- ai-service=20260918d
+我的动态.html                    ai-page=- ai-service=20260918d
+我的文件.html                    ai-page=- ai-service=20260918d
+时政热点.html                    ai-page=- ai-service=20260918d
+更多.html                      ai-page=- ai-service=20260918d
+朋友圈发布.html                   ai-page=- ai-service=20260918d
+演示.html                      ai-page=- ai-service=20260918d
+申论刷题.html                    ai-page=- ai-service=20260918d
+社区.html                      ai-page=- ai-service=20260918d
+私聊.html                      ai-page=- ai-service=20260918d
+管理员.html                     ai-page=- ai-service=20260918d
+英语.html                      ai-page=- ai-service=20260918d
+行测.html                      ai-page=- ai-service=20260918d
+行测刷题.html                    ai-page=- ai-service=20260918d
+表达.html                      ai-page=- ai-service=20260918d
+设置.html                      ai-page=- ai-service=20260918d
+赞助.html                      ai-page=- ai-service=20260918d
+错题本.html                     ai-page=- ai-service=20260918d
+面测.html                      ai-page=- ai-service=20260918d
+面试题库.html                    ai-page=- ai-service=20260918d
+
+=== 当前文件指纹 ===
+assets/ai-page.js           141094  md5=9213097435c091c4ac8fc77b7d57a350
+assets/ai-service.js        152843  md5=b7a6683f7fc62de4ae7ec21b0bc6c387
+assets/xt-region.js          54521  md5=502cdce860160a19924d98aeebfa5ee8
+AI.html                      56290  md5=1afcdf87bbd176e01a4e0e1ca15d5868
+地区选择.html                    20613  md5=8a6057df7ab652207c9ebd5d55da3630

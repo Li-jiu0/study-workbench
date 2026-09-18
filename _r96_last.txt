@@ -1,0 +1,16 @@
+=== AI.html 最终确认 ===
+size=56290 md5=dbfe57baeba5b4dcda6c1c62023e05d7 crlf=972 loneLF=0
+
+>
+              <div class="ai-input-foot">
+                <div class="ai-foot-left">
+                  <button type="button" class="ai-chip" id="aiDeepThinkChip" title="开启后强制深度推理">深度思考</button>
+                </div>
+                <div class="ai-foot-right">
+                  <span class="ai-ctx-usage" id="aiCtxUsage" title="已用 0% · 0 / 1
+
+=== 备份文件是否已建 ===
+  AI.html.bak-pre-r72-20260917  55667 B
+  AI.html.bak-pre-r87-20260918  56349 B
+  AI.html.bak-pre-stamp-20260917b  55854 B
+  AI.html.bak-pre-stamp-20260918a  55854 B

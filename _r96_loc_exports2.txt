@@ -1,0 +1,27 @@
+window.XT_REGION;
+              if ((g.province || g.city) && RR && typeof RR.textOf === 'function') {
+                var t2 = RR.textOf(g.province, g.city, g.district);
+                if (t2) txt = t2;
+              }
+            }
+            setChosen(_clipText(txt), '');
+            renderList();
+          });
+        });
+        return;
+      }
+    });
+
+    /* R89-B\uff1a\u7a97\u53e3\u5c3a\u5bf8\u53d8\u5316\uff08\u65cb\u5c4f / \u8f6f\u952e\u76d8\uff09\u65f6\u91cd\u7b97\u5217\u8868\u9ad8\u5ea6\u4e0a\u9650\u3002 */
+    function onResize() {
+      if (closed || !listEl) return;
+      var h = 0;
+      try { h = window.innerHeight || 0; } catch (e) { h = 0; }
+      if (h && h >= 120) {
+        var maxH = h - 300;
+        if (maxH < 120) maxH = 120;
+        listEl.style.maxHeight = maxH + 'px';
+        listEl.style.overflowY = 'auto';
+      }
+    }
+    window.addEventListener('resize', 

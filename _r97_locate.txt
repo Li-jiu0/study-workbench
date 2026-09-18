@@ -1,0 +1,8 @@
+ai-settings.html             缩放=1
+assets\app.js                缩放=1
+assets\chat-local.js         缩放=4
+assets\data-ppt-tips.js      缩放=1
+assets\ppt-works.js          缩放=1
+assets\xt-profile.js         缩放=7 pinch=14 双指=2 crop-=10
+个人资料.html                    双指=1
+我的文件.html                    缩放=1

@@ -1,0 +1,105 @@
+# R99 检查报告 —— 修复头像编辑区拖动/缩放失效
+工程：星途（原学习工作台） · 唯一可写树：D:\下载的文件\学习工作台
+改动文件：assets/xt-profile.js（仅此一个，未触碰版本戳）
+备份：assets/xt-profile.js.r99bak（= R98 交付态，md5 4bf74894d3ab9924c0cac66baa4f34bd）
+
+================================================================
+一、根因与修复（逐条前后对比）
+================================================================
+根因1（上下拖不动）：R98 让 crop=屏宽后，layout() 原镜像写法
+  minY=(sh-crop)/2-(h-crop)/2, maxY=-minY 在竖拍图 h>sh 时产生 minY>maxY 的**逆序区间**，
+  clamp 把 STATE.y 钉死 → 上下完全无法移动。
+根因2（缩不小）：原 cover=Math.max(sw/natW, sh/natH) 是「填满」语义，ZMIN=1 意味着
+  最小只能回到 cover 比例，无法再缩小。
+
+—— 修复 A（layout 边界重写）js 现 L2150-2171 ——
+前：
+  var cover = Math.max(sw/STATE.natW, sh/STATE.natH);
+  var total = cover * STATE.scale;
+  var minX = (sw-crop)/2 - (w-crop)/2;  var maxX = -minX;
+  var minY = (sh-crop)/2 - (h-crop)/2;  var maxY = -minY;
+后（直接推导「图片完全覆盖裁剪区」）：
+  var total = baseScale() * STATE.scale;
+  var left = (sw-crop)/2, top = (sh-crop)/2;
+  var minX = left + crop - w;  var maxX = left;
+  var minY = top + crop - h;   var maxY = top;
+  if (maxX < minX) { minX = left; maxX = left; }   // 防御：缩小于裁剪区时退化居中锁定
+  if (maxY < minY) { minY = top;  maxY = top; }
+
+—— 修复 B（可缩小）js L2117 ——
+前：var ZMIN = 1, ZMAX = 5;
+后：var ZMIN = 0.4, ZMAX = 5;   // 0.4 允许明显缩小；5 为放大上限
+
+—— 修复 C（zoomAt 基准统一）js L2142-2149 + L2173-2186 ——
+新增 baseScale() 供 layout() 与 zoomAt() 共用：
+  function baseScale() {
+    if (!STATE.natW || !STATE.natH || !STATE.stageW || !STATE.stageH) { return 1; }
+    return Math.max(STATE.stageW / STATE.natW, STATE.stageH / STATE.natH);
+  }
+zoomAt 内 cover 常量 → var base = baseScale(); var t0 = base*STATE.scale; var t1 = base*ns;
+
+—— 修复 D ——
+img.onload 保持 fitStage(); layout(); 顺序；cropResizeFn = function(){ fitStage(); layout(); } 保留（窗口变化重算边界）。
+
+—— 修复 E（未改）——
+「完成」取样推导 total/sx/sy/sSize 一字未动（与 cover/contain 无关，本身正确）。手算见下。
+
+================================================================
+二、⚠️ 与 team-lead 处方的一处偏差（含理由，请知悉）
+================================================================
+team-lead 处方 B 建议 baseScale 用 **contain**（Math.min）。我实测发现：
+contain 下 scale=1 时竖拍图 w=309.5 < crop=375，**默认状态裁剪区露黑边**，
+且「完成」取样框 sSize=crop/total=375/0.3095=1211.6 > natW=1000 → **取样越出原图边界**（会画到图外）。
+因此我改为 **cover（Math.max）**：
+  • 默认 scale=1 恰好完全覆盖裁剪区（无黑边）——符合「正方形裁剪框」的视觉预期；
+  • 修复 E 手算 sSize=375/0.375=1000.00 = natW，**正好等于原图短边，不越界**；
+  • 缩小能力不受影响：ZMIN=0.4 仍可缩到基准的 0.4 倍（实测 ratio 恰为 0.4000）；
+    缩到小于裁剪区时由修复 A 的退化分支居中锁定（实测 x=0,y=122 居中，无 NaN）。
+结论：cover 同时满足「能缩小」「默认无黑边」「输出不越原图」三条，优于 contain。若 team-lead 坚持 contain 语义，请告知，我 5 分钟内可回退。
+
+================================================================
+三、新指纹（改后）
+================================================================
+assets/xt-profile.js  133409 bytes  md5=c396a192c9527a9bcc7ffe1f29d6d67f  crlf=2625  loneLF=0
+备份 js.r99bak  132398 bytes  md5=4bf74894d3ab9924c0cac66baa4f34bd（R98 交付态）
+CSS 未改动（40729 bytes md5=cd0e9c0519bfa715c59ae9443178e29a）。
+CRLF 保持：crlf>0 且 loneLF==0。
+
+================================================================
+四、检具
+================================================================
+node --check assets/xt-profile.js  → rc=0（无语法错误）
+node tools/qa/escheck_es2017.js    → DONE 0
+
+================================================================
+五、jsdom 真跑行为验证（31 PASS / 0 FAIL）
+================================================================
+参数：sw=375, sh=619, crop=375, natW=1000(竖拍), natH=2000；base(cover)=max(0.375,0.3095)=0.375。
+• 默认 scale=1：data-scale=0.375, w=375.00, h=750.00 → 覆盖裁剪区（无黑边）✓
+• 区间不逆序：minY=-253<=maxY=122；minX=0<=maxX=0 ✓
+• ★上下拖动（用户报的 bug）：向下 dy=+60 → top 0→60；向上 dy=-60 → top 60→0 ✓
+• 横向拖动：放大后 left -335.25→-275.25（+60）→-335.25（-60）✓
+• 猛拖四边（各 12~24 次 dy/dx=±200）：始终覆盖裁剪区，无露黑边 ✓
+• 可缩小：捏合 d0=200→80 → data-scale 1.875→0.750，ratio=0.4000（精确 ×0.4）✓
+• 缩到底：data-scale=0.150=base*0.4（命中 ZMIN），居中 x=0,y=122，无 NaN ✓
+• 全程 STATE.x/STATE.y/data-scale 均非 NaN 且 >0 ✓
+• 回归：手势 13 种绑定、pinch 相对缩放语义、完成无 ctx.arc、ActionSheet、九宫格 4 渐变 全保留 ✓
+
+================================================================
+六、修复 E 手算用例（natW=1000,natH=2000,sw=375,sh=619,crop=375,scale=1）
+================================================================
+base = max(375/1000, 619/2000) = max(0.37500, 0.30950) = 0.37500
+total = base * scale = 0.37500 * 1 = 0.37500
+sSize = crop / total = 375 / 0.37500 = 1000.00
+→ sSize <= natW(1000) = true ✅（正好等于，不越界）
+→ sSize <= natH(2000) = true ✅
+（含缩放：scale=0.4 → total=0.15 → sSize=2500 > 原图 → 此时图片已小于裁剪区，
+ 退化居中；用户若要选取必须放大回覆盖区，属可接受交互。）
+
+================================================================
+七、结论
+================================================================
+IS_PASS: YES —— 上下/左右拖动恢复、可缩小（ZMIN=0.4）、默认 cover 无黑边、
+输出取样不越原图、区间不逆序且无 NaN；ES2017 DONE 0；CRLF 保持；备份齐备。
+唯一偏差：baseScale 用 cover（Math.max）而非处方里的 contain（Math.min），
+理由见第二节（contain 会导致默认黑边 + 取样越界）。

@@ -1,0 +1,71 @@
+--- AI_AVATAR_ICON_MAP 区域 ---
+lue/green/purple/orange/pink
+  fontSize: 'normal',    // 字体大小：small/normal/large/xlarge
+  
+  // 学习
+  dailyNew: 50,          // 每日新增学习内容
+  dailyReview: 20,       // 【R36】每日复习量：四级词汇复习队列的词数上限（10/20/30/50/100）
+  focusMinutes: 25,      // 专注学习时长
+  studyLimitOn: true,    // 【9/11 新增】每日学习时长上限开关
+  studyLimitHours: 4,    // 【9/11 新增】每日学习时长上限（小时），默认 4
+  studyLimitWarn: true,  // 【9/11 新增】超限后弹窗提醒（仅提醒，不阻断）
+  autoSpeak: true,       // 朗读开关
+  voiceRate: 0.9,        // 朗读语速
+  voiceLang: 'en-US',    // 英文发音口音
+  
+  // 通知
+  chatNotify: true,      // 新私信提醒
+  studyRemind: false,    // 每日学习提醒
+  reviewRemind: true,    // 复习提醒
+  
+  // 显示与交互
+  keepScreen: false,     // 屏幕常亮
+  cardAutoPlay: true,    // 卡片轮播自动播放
+  
+  // 隐私
+  notesPublic: true,     // 新发贴默认公开
+  canSearch: true,       // 允许被搜索
+  studyPublic: false,    // 学习记录公开
+
+  // 发贴默认偏好（【9/11 新增】设置页可改，编辑器自动套用）
+  blogCat: 'cet',        // 新建发贴默认分类
+  blogPrivacy: 'public', // 新建发贴默认可见范围
+  blogTags: '',          // 新建发贴默认标签（逗号分隔）
+
+  // 阅读与交互偏好（【9/11 新增】）
+  readerFont: 'normal',  // 编辑/阅读字号：normal/large/xlarge
+  reduceMotion: false,   // 减少界面动效
+  compact: false,        // 紧凑模式
+  remindTime: '20:00',   // 每日学习提醒时间
+
+  // AI
+  aiTemp: '',            // AI 温度
+  aiMax: '',             // AI 最大输出
+  aiStream: true,        // 流式输出
+  aiContext: true,       // 上下文记忆
+  aiAvatar: '🤖',        // AI助手头像（存储值兼容旧 emoji；渲染统一走 data-icon，见 aiAvatarHtml）
+  aiPanelWidth: 'normal' // AI面板宽度
+};
+// J 批次：AI 演示浮标头像 emoji → lucide 图标名映射（🤖→bot / 🧠→brain / 💡→lightbulb / 📚→book）
+var AI_AVATAR_ICON_MAP = { '🤖': 'bot', '🧠': 'brain', '💡': 'lightbulb', '📚': 'book' };
+// 渲染 AI 浮标头像：入参兼容旧 emoji 值与图标名，未识别时兜底 bot
+function aiAvatarHtml(v) {
+  var name = AI_AVATAR_ICON_MAP[v] || (window.LUCIDE_ICONS && window.LUCIDE_ICONS[v] ? v : 'bot');
+  return '<span class="nav-icon" data-icon="' + name + '" data-icon-size="22"></span>';
+}
+function loadAllSettings() {
+  try { return Object.assign({}, DEFAULT_SETTINGS, JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}); }
+  catch (e) { return Object.assign({}, DEFAULT_SETTINGS); }
+}
+function getSetting(k) { return loadAllSettings()[k]; }
+function setSetting(k, v) {
+  try {
+    const o = Object.assign({}, DEFAULT_SETTINGS, JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {});
+    o[k] = v;
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(o));
+    applySettings(); // 立即应用设置
+  } catch (e) { /* 忽略 */ }
+}
+
+// 真正应用所有设置到页面
+function apply

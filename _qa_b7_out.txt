@@ -1,0 +1,6 @@
+=== B7 locBusy 并发闸门 ===
+  定位按钮存在 = true
+  --- 连点两次「用当前位置」---
+    [getCurrentPosition 第 1 次被调用]
+  getCurrentPosition 总调用次数 = 1   (期望 1)
+  B7 判定: PASS（第二次被 locBusy 拦下）

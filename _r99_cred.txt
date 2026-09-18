@@ -1,0 +1,17 @@
+=== 凭据文件 upload_v23.ps1 ===
+存在=True
+  解析到 host=110.42.134.62  pwd长度=9
+
+=== 探活工具存在性 ===
+  tools/plink.exe        True 1036448 B
+  tools/pscp.exe         True 1035400 B
+
+=== 环境变量 SW_HOST/SW_PASS ===
+  SW_HOST=None
+  SW_PASS=未设置
+
+=== 是否有 r95 工装脚本 ===
+  _r95_prod_diff.py      False
+  _r95_gap.py            False
+  _r95_prod_ref.py       False
+  _r94_deploy.py         False

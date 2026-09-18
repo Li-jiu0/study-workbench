@@ -1,0 +1,46 @@
+四级经验分享.html                279 | <strong>💡 最后一周：</strong>用近2年真题进行全真模拟，严格按考试时间（上午9:00-11:25），培养考试状态，熟悉时间分配。
+四级经验分享.html                313 | <strong>💡 提分关键：</strong>根据分数性价比，优先突破听力和阅读两大板块，这两块占70%分值。
+四级经验分享.html                334 | <strong>💡 冲击高分：</strong>在关键位置适当插入高级句式，如倒装句（Only in this way can we...）、强调句（It is...that...）、虚拟语气（If I were you, I would...）。
+四级经验分享.html                366 | <strong>💡 小技巧：</strong>也可以通过最简单的方式就是"听到什么就选什么"，四级听力答案通常就是原文的同义替换。
+四级经验分享.html                398 | <strong>💡 时间分配建议：</strong>听力30分钟（边听边涂卡），阅读40分钟（仔细阅读25分钟+匹配10分钟+词汇5分钟），写作30分钟，翻译30分钟。
+四级经验分享.html                429 | <strong>💡 注意：</strong>不要死背模板，要学会灵活运用，把模板句改成自己的话，避免千篇一律。
+四级经验分享.html                459 | <strong>💡 零基础建议：</strong>先背高频词汇（前1000个），再练听力和阅读，写作翻译最后突击模板。不要一开始就做整套真题，会打击信心。
+四级经验分享.html                484 | <strong>💡 冲击高分：</strong>在关键位置适当插入高级句式，如倒装句、强调句、虚拟语气、非谓语动词等，让文章更有亮点。
+四级经验分享.html                515 | <strong>💡 最后一个月小目标：</strong>先把四级高频词汇（约2000个）背完，不需要会拼写，看到认识就行。听力和阅读中反复出现的词重点记。
+四级经验分享.html                550 | <strong>💡 学霸忠告：</strong>不要追求完美，四级是通过性考试，425分就过了。把会做的题都做对，不会的题蒙一个，就够了。
+登录.html                    184 | <div class="login-notice" id="loginNotice">💡 正在检测运行模式……</div>
+assets\app.js              306 | // J 批次：AI 演示浮标头像 emoji → lucide 图标名映射（🤖→bot / 🧠→brain / 💡→lightbulb / 📚→book）
+assets\app.js              307 | var AI_AVATAR_ICON_MAP = { '🤖': 'bot', '🧠': 'brain', '💡': 'lightbulb', '📚': 'book' };
+assets\app.js             3125 | { id: 'explain', name: '讲解知识点', emoji: '💡', desc: '不懂的知识点让AI用大白话讲清楚',
+assets\app.js             4545 | <div style="font-weight:700;margin-bottom:6px">💡 改进建议：</div>
+assets\app.js             6046 | <div style="font-size:13px;font-weight:700;color:var(--warning);margin-bottom:6px">💡 答题要点</div>
+assets\app.js             6862 | document.getElementById('ecTipText').innerHTML = xtRenderQText('💡 ' + q.tip);
+assets\app.js             8906 | console.log('💡 提示：所有数据保存在本地浏览器中');
+assets\chat-local.js      3792 | var GS_AV_EMOJI = ['🎉', '📚', '🚀', '💡', '🎯', '🏆', '🍀', '🎨', '🐱', '🌟'];
+assets\group-discussion.js    40 | items: ['🥇 业绩王A', '🐂 老黄牛B', '💡 创新者C', '🤝 凝聚者D', '🎓 资深者E'],
+assets\group-discussion.js   130 | 💡 小提示：讨论中可以随时输入你的观点，角色会根据你的发言回应。结束后会有总结评定。
+assets\group-discussion.js   208 | if (userMessages.length < 3) tips.push('💡 可以更积极地表达观点，至少发言3次以上才能让面试官记住你');
+assets\group-discussion.js   209 | if (userRatio < 20) tips.push('💡 你的发言占比偏低，建议在讨论中更主动地引导话题或总结观点');
+assets\group-discussion.js   210 | tips.push('💡 群面技巧：① 首次发言要亮明观点 ② 中间可以做协调者或总结者 ③ 最后争取做总结陈词');
+assets\group-discussion.js   211 | tips.push('💡 注意倾听他人观点，在别人基础上补充，比单纯反对更有说服力');
+assets\group-discussion.js   247 | <div class="gd-section-title">💡 改进建议</div>
+assets\icon-map.js         353 | - brain / lightbulb：AI 助手外观四选一头像（🧠/💡）补齐
+assets\mini-cet.js          76 | { icon: '💡', title: '临场策略', body: '听力听不懂跳过别恋战；阅读每篇控制在8-10分钟；翻译不确定的词用上义词替代，别空题。' }
+assets\mini-exam.js         87 | { icon: '💡', title: '新质生产力', body: '以科技创新为主导的生产力。常考其内涵与例子(人工智能、高端制造、低空经济等)。答法：创新驱动+产业升级。' },
+assets\mini-ppt.js          29 | { icon: '💡', title: '使用建议', body: '模板先选“用途”再选“色系”；换内容时保持三处一致(标题字、强调色、版式间距)，整体才不会散。' }
+assets\topic-express.js    219 | <div class="te-section-title">💡 不同立场</div>
+assets\topic-express.js    419 | tips.push('💡 建议开头先亮明观点，中间分点论述，结尾总结升华');
+assets\topic-express.js    420 | tips.push('💡 可以使用"第一、第二、第三"这样的连接词，让逻辑更清晰');
+assets\topic-express.js    437 | <div class="te-tips-title">💡 改进建议</div>
+
+--- AI.html aiDeepThinkChip 上下文 ---
+       </div>
+              <textarea id="aiInput" class="ai-input" placeholder="问我任何学习问题..." rows="1"></textarea>
+              <div class="ai-input-foot">
+                <div class="ai-foot-left">
+                  <button type="button" class="ai-chip" id="aiDeepThinkChip" title="开启后强制深度推理">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1h6c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+                    深度思考
+                  </button>
+                </div>
+                <div class="ai-fo

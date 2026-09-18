@@ -1,0 +1,35 @@
+version.json                             (不存在)
+server/routers/version.json              v=['1.24', '25']
+android/AndroidManifest.xml              v=['1.0', '1.23', '24']
+assets/xt-update.js                      v=[]
+
+APK 实体:
+  web/static/apk\README.md                 1266 B
+  学习工作台-安卓App.apk                          86532523 B
+  星途-安卓App.apk                             86812087 B
+
+地区选择.html 长度 17333
+   92 | <div class="xtr-loc-t" id="xtrLocText">定位中…<small>正在获取你的位置</small></div>
+   93 | <button class="xtr-reloc" type="button" id="xtrRelocBtn" style="display:none" onclick="XtrPage.locate()">重新定位</button>
+  106 | <div class="xtr-tip">点选「省 → 市 → 区」逐级选择，或直接搜索关键词快速定位；选中后立即返回个人信息页，点「保存」生效。<br>地区每 30 天仅可修改一次。</div>
+  116 | ② 自动定位：navigator.geolocation + 逆地理编码（高德 / 腾讯 / Nominatim），
+  118 | 拒绝授权 / 定位失败 / 服务不可用 → 一律降级为手动选择，并给「重新定位」入口；
+  124 | var R = window.XT_REGION;
+  130 | /* R88-J：常用城市（LRU ≤8），与 XT_LOC_PICK 共用同一键。 */
+  178 | locItem: null      // 定位结果 {text, province, city, district}
+  275 | box.innerHTML = '<div class="xtr-empty">暂无该省的城市数据，可返回用搜索定位</div>';
+  288 | box.innerHTML = '<div class="xtr-empty">该市暂无区县数据，可返回用搜索定位</div>';
+  301 | /* ---------------- 定位 ---------------- */
+  309 | function locate() {
+  310 | if (!R || typeof R.locate !== 'function') { setLocBox('bad', '定位服务不可用，请手动选择', '', true); return; }
+  314 | setLocBox('bad', '定位中…', '正在获取你的位置', false);
+  315 | R.locate(function (res) {
+  319 | var msg = reason === 'denied' ? '定位权限被拒绝' :
+  320 | (reason === 'unavailable' ? '无法获取位置信息（请检查系统定位开关）' :
+  321 | (reason === 'timeout' ? '定位超时' :
+  322 | (reason === 'unsupported' ? '当前浏览器不支持定位' : '定位失败')));
+  323 | setLocBox('bad', msg + '，可直接手动选择', '也可点「重新定位」再试一次', true);
+  327 | R.reverseGeocode(res.lat, res.lng, function (g) {
+  330 | setLocBox('bad', '地址解析服务不可用，可直接手动选择', '也可点「重新定位」再试一次', true);
+  381 | locate: locate,
+  400 | locate();

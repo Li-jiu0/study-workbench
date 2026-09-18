@@ -1,0 +1,19 @@
+===== PART-A 静态契约 =====
+ai-page.js 传 forceReasoning : YES
+ai-service 读 opts.forceReasoning : YES
+vision 不抢 : YES
+生图不抢 : YES
+
+===== PART-B 排序算法等价性 =====
+源码含关键行1 : YES
+源码含关键行2 : YES
+
+用例1 勾深度思考 + 手动选普通模型 -> 链首 = rl-reason  期望 rl-reason  => PASS
+      链顺序 = [rl-reason, gpt-x, dl-flash]  长度 3 (原 3，不得丢) => PASS
+用例2 不勾 -> 链首 = gpt-x  期望 gpt-x（行为不变）  => PASS
+用例3 拍题(vision) + 勾深度思考 -> 链首 = gpt-x  期望 gpt-x（vision 优先，不抢）  => PASS
+用例4 手动选中生图模型 + 勾 -> 链首 = gpt-x  期望 gpt-x（不抢）  => PASS
+用例5 推理模型被禁用 -> 链首 = gpt-x  期望 gpt-x（无推理模型时不动）  => PASS
+用例6 推理模型不在链中 -> 链首 = gpt-x  期望 gpt-x（不注入未知模型）  => PASS
+用例7 catModels.reasoning=[dl-flash] -> 链首 = dl-flash  期望 dl-flash  => PASS
+用例8 幂等（连跑两次） -> PASS  [rl-reason, gpt-x, dl-flash]

@@ -1,0 +1,4 @@
+path=assets/xt-region.js
+size=54027
+md5=8028e2922a93d703f6009e45d112ce9e
+crlf=0 loneLF=1107 loneCR=0

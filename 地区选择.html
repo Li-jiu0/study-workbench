@@ -108,7 +108,7 @@ body.theme-home { height: auto; min-height: 100%; overflow-y: auto; overflow-x: 
 
 <div class="xtr-toast" id="xtrToast"></div>
 
-<script src="assets/xt-region.js?v=20260918a"></script>
+<script src="assets/xt-region.js?v=20260919a"></script>
 <script src="assets/icon-map.js?v=20260916O"></script>
 <script>
 /* ==================== R86-B：地区选择页交互（ES5，老 WebView 兼容） ====================
@@ -330,12 +330,38 @@ body.theme-home { height: auto; min-height: 100%; overflow-y: auto; overflow-x: 
           setLocBox('bad', '地址解析服务不可用，可直接手动选择', '也可点「重新定位」再试一次', true);
           return;
         }
-        var text = g.text;
-        // 优先用「省 市 区」结构化结果，缺失则用完整地址文本
-        if (g.province || g.city) text = R.textOf(g.province, g.city, g.district);
+        /* 街道级优先：能拿到「省 市 区 + 街道」就拼成完整到街道的展示文本。
+           注意 g.text / g.street / g.recommend 都是腾讯返回的中文语义字段，
+           坐标（res.lat/res.lng）【绝不】进入任何字符串输出。 */
+        var base = '';
+        if (g.province || g.city) base = R.textOf(g.province, g.city, g.district);
+        var detail = '';
+        if (g.street) detail = g.street;
+        else if (g.recommend) detail = g.recommend;
+        // 街道级展示：基准地址 + 街道（去重），拿不到街道时退回完整地址文本
+        var text = '';
+        if (base && detail && base.indexOf(detail) < 0) text = base + ' ' + detail;
+        else if (base) text = base;
         if (!text) text = g.text;
-        state.locItem = { text: text, detail: g.text };
-        setLocBox('', '当前位置：' + text, g.text && g.text !== text ? ('详细：' + g.text) : '点击即可选中', false);
+        // 副标题：优先展示完整地址（含街道门牌），它比 base 更精确
+        var sub = g.text && g.text !== text ? g.text : '';
+        if (!sub && detail && text.indexOf(detail) < 0) sub = detail;
+        state.locItem = { text: text, detail: sub || g.text };
+        /* 周边位置：geocoder 的 get_poi 已随同一次请求带回，直接复用，不额外发请求。
+           展示为副标题的第二行提示，点选仍落到当前地址（不引入不可选中的伪条目）。 */
+        var pois = (g.pois && g.pois.length) ? g.pois : [];
+        var poiTip = '';
+        if (pois.length) {
+          var names = [];
+          for (var pi = 0; pi < pois.length && pi < 3; pi++) {
+            var nm = pois[pi] && pois[pi].title;
+            if (nm) names.push(nm);
+          }
+          if (names.length) poiTip = '周边：' + names.join(' · ');
+        }
+        var line2 = sub ? ('详细：' + sub) : '点击即可选中';
+        if (poiTip) line2 = poiTip + (sub ? '　|　' + sub : '');
+        setLocBox('', '当前位置：' + text, line2, false);
         var box = $('xtrLocBox');
         if (box) box.onclick = function () { if (state.locItem) XtrPage.pick(state.locItem.text); };
       });

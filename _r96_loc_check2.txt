@@ -1,0 +1,50 @@
+=== R96 P2 (surrogate-safe truncation) check ===
+file: assets/xt-region.js
+bytes=54521  md5=502cdce860160a19924d98aeebfa5ee8
+crlf=0  loneLF=1117
+
+--- must-hit counts ---
+_safeCut def = 1
+_safeCut call in _terseGeo = 1
+_safeCut call in _clipText = 1
+high-surrogate regex = 1
+old slice(_terseGeo) gone = 0
+old slice(_clipText) gone = 0
+
+--- banned strings (each MUST be 0 in CODE; comments allowed) ---
+replaceAll( = 0
+Object.fromEntries( = 0
+.at( = 0
+lookbehind (?<= = 0
+lookbehind (?<! = 0
+optional chain ?. = 1
+nullish ?? = 1
+
+?. first ctx: 'S2017 上限：仅用 var + function，不用 ?. / ?? / 对象展开 / 反引号模板 等。\n   *'
+?? first ctx: ' 上限：仅用 var + function，不用 ?. / ?? / 对象展开 / 反引号模板 等。\n   * ===='
+
+--- bracket balance (code region) ---
+{}: 667 / 667 diff=0
+(): 533 / 533 diff=0
+[]: 190 / 190 diff=0
+
+--- surrogate-pair self test (node, mirror of shipped logic) ---
+a70 len=64 viol=0 tail="aa…"
+emoji70 len=63 viol=0 tail="😀…"
+terse-emoji70 len=63 viol=0
+clip n=63 a.len=63 a.viol=0 | emoji.len=63 emoji.viol=0
+clip n=64 a.len=64 a.viol=0 | emoji.len=63 emoji.viol=0
+clip n=65 a.len=64 a.viol=0 | emoji.len=63 emoji.viol=0
+terse n=63 a.len=63 a.viol=0 | emoji.len=63 emoji.viol=0
+terse n=64 a.len=64 a.viol=0 | emoji.len=63 emoji.viol=0
+terse n=65 a.len=64 a.viol=0 | emoji.len=63 emoji.viol=0
+emoji70 clipText length == 64 ? false
+rc=0
+
+--- escheck_es2017.js (node) ---
+rc=0
+stdout: DONE 0
+
+--- escheck_es2017.js (site-wide: no args) ---
+rc=0
+stdout: DONE 0

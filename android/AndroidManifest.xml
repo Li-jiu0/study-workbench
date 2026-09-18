@@ -8,6 +8,11 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- 语音跟读/语音输入：系统 SpeechRecognizer 需要麦克风（Android 6.0+ 运行时申请） -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- 定位：App 内「一键定位 / 获取周边位置」需要网络定位与 GPS 定位（Android 6.0+ 需运行时申请）。
+         注意：刻意【不】声明 <uses-feature android:name="android.hardware.location.gps" android:required="true">，
+         否则无 GPS 硬件的设备会被应用市场判定为不兼容而无法安装；如需声明必须 required="false"。 -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <!-- 需求5：系统级消息通知横幅（Android 13 / API 33+ 需运行时申请 POST_NOTIFICATIONS） -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- R73-18①：退到后台/退出界面后仍能收到新消息 —— 前台服务（原生侧轮询未读） -->

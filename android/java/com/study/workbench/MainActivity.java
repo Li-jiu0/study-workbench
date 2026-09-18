@@ -60,6 +60,7 @@ public class MainActivity extends Activity {
     private static final String NOTIFY_CHANNEL_ID = "xt_msg";
     private static final int NOTIFY_ID = 101;
     private static final int REQ_NOTIFY_PERM = 2003;
+    private static final int REQ_LOCATION_PERM = 2004;
     private volatile String pendingNotifyTitle = null;
     private volatile String pendingNotifyText = null;
     private volatile String xtAndroidJs = null;   // R73：桥接胶水 assets/xt-android.js 内容缓存（注入前读一次）
@@ -87,6 +88,10 @@ public class MainActivity extends Activity {
         initTts();
         // R73-18①：启动即申请一次通知权限（退后台新消息横幅必需；拒绝也不影响其它功能）
         maybeRequestNotifyPermission();
+        // 【定位】R96：启动即申请一次定位权限（WebView geolocation 依赖系统定位权限）。
+        //   Android 6.0+ ACCESS_FINE/COARSE_LOCATION 属危险权限，仅在 Manifest 声明不够，
+        //   必须运行时申请；拒绝也不影响其它功能（页面侧会降级为手动填写地区）。
+        maybeRequestLocationPermission();
 
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);            // 全站逻辑为原生 JS
@@ -104,6 +109,11 @@ public class MainActivity extends Activity {
         s.setUseWideViewPort(true);
         // https 页面下允许访问 http://localhost:8000(登录页探测后端/将来连局域网后端)，单机无后端时立即失败并降级本地
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
+        // 【定位】R96：WebView 默认【禁止】geolocation（navigator.geolocation 会立刻拿到
+        //   PERMISSION_DENIED，页面侧表现为「定位权限被拒绝 / 定位服务无法启动」）。
+        //   必须显式 setGeolocationEnabled(true)，并配合 WebChromeClient.onGeolocationPermissionsShowPrompt
+        //   授予来源站点权限，二者缺一不可。数据存放在 WebView localStorage，无需额外存储权限。
+        s.setGeolocationEnabled(true);
 
         // R73-20B（需求20-B「文字显示」）：刻意【不调用】WebSettings.setTextZoom()。
         //   Chromium 明确：未调用 setTextZoom 时，WebView 等价于 setTextZoom(android_font_scale_factor)，
@@ -552,6 +562,22 @@ public class MainActivity extends Activity {
                     return false;
                 }
             }
+
+            /** 【定位】R96：WebView geolocation 权限回调。
+             *  WebView 默认拒绝 navigator.geolocation 请求（页面会立刻拿到 PERMISSION_DENIED），
+             *  必须在此回调里显式授予，否则「定位服务无法启动」。
+             *  retain=false：不长期记住授权（用户/系统可随时在设置里收回）。
+             *  真正的系统级弹窗由 Android 在运行时权限已授予后自行处理。 */
+            @Override
+            public void onGeolocationPermissionsShowPrompt(String origin,
+                    android.webkit.GeolocationPermissions.Callback callback) {
+                try {
+                    callback.invoke(origin, true, false);
+                } catch (Throwable t) {
+                    // 授权失败不得影响 WebView；交由页面侧降级为手动填写
+                    callback.invoke(origin, false, false);
+                }
+            }
         });
     }
 
@@ -817,6 +843,25 @@ public class MainActivity extends Activity {
         } catch (Throwable e) { /* 静默 */ }
     }
 
+    /* ================= 【定位】R96：WebView geolocation 所需的运行时权限 ================= */
+
+    /** R96：启动时申请定位权限（WebView geolocation 依赖系统定位权限）。
+     *  Android 6.0(API 23)+ ACCESS_FINE/COARSE_LOCATION 为危险权限，必须运行时申请。
+     *  已授予则直接跳过；拒绝也不影响其它功能（页面侧降级为手动填写地区）。 */
+    private void maybeRequestLocationPermission() {
+        try {
+            if (Build.VERSION.SDK_INT < 23) return; // 6.0 以下安装即授予，无需运行时申请
+            if (checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                    == android.content.pm.PackageManager.PERMISSION_GRANTED) return;
+            if (checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION)
+                    == android.content.pm.PackageManager.PERMISSION_GRANTED) return;
+            requestPermissions(new String[] {
+                    android.Manifest.permission.ACCESS_FINE_LOCATION,
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION
+            }, REQ_LOCATION_PERM);
+        } catch (Throwable e) { /* 申请失败：静默，不得影响其它功能 */ }
+    }
+
     // 原生 TTS 播放完成 → 回调网页 window.__nativeTtsDone(utteranceId)，让依赖 onend 的流程继续
     private void notifyTtsDone(final String utteranceId) {
         runOnUiThread(new Runnable() {
@@ -904,6 +949,14 @@ public class MainActivity extends Activity {
                 pendingNotifyTitle = null;
                 pendingNotifyText = null;
                 if (pt != null) showNotify(pt, pb);
+            }
+        } else if (requestCode == REQ_LOCATION_PERM) {
+            // R96：定位权限结果。拒绝也不影响其它功能；WebView 侧会降级为「无法自动定位」，
+            // 页面 xt-region.js 的 locate() 返回失败后引导用户手动选择地区。
+            boolean granted = (grantResults != null && grantResults.length > 0
+                    && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED);
+            if (!granted) {
+                toast("未授予定位权限，可在 系统设置→应用→星途→权限 中开启；此前仍可手动选择地区");
             }
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);

@@ -1,0 +1,124 @@
+assets/xt-profile.js B=132398 md5=4bf74894d3ab9924c0cac66baa4f34bd crlf=2613 loneLF=0
+assets/xt-profile.css B=40729 md5=cd0e9c0519bfa715c59ae9443178e29a crlf=1244 loneLF=0
+
+=== 1) fitStage 边长公式 ===
+function fitStage() {
+      var vw = window.innerWidth || (document.documentElement && document.documentElement.clientWidth) || 340;
+      var vh = window.innerHeight || (document.documentElement && document.documentElement.clientHeight) || 480;
+      var topH = topbar ? (topbar.offsetHeight || 48) : 48;
+      var sw = Math.max(160, Math.round(vw));
+      var sh = Math.max(160, Math.round(vh - topH));   // 底栏已移除，可用高 = 视口高 - 顶栏
+      var side = Math.max(120, Math.min(sw, Math.max(120, sh) - 24));  // 正方形边长：占满屏宽，上下各留 12px 呼吸
+      STATE.stageW = sw; STATE.stageH = sh; STATE.ring = side;
+      if (stage) { stage.style.width = sw + 'px'; stage.style.height = sh + 'px'; }
+      if (hole) {
+        hole.style.width = side + 'px';
+        hole.style.height = side + 'px';
+        hole.style.margin = (-side / 2) + 'px 0 0 ' + (-side / 2) + 'px';
+      }
+      if (frame) {
+        f
+
+=== 2) 完成路径是否还有 arc/clip/restore ===
+  arc(           0
+  clip()         0
+  beginPath      0
+  restore()      0
+  save()         0
+  drawImage      1
+  fillRect       1
+  toDataURL      1
+  saveProfile    1
+  renderPage     1
+--- 完成段原文 ---
+mask.querySelector('#xtpCropOk');
+    if (ok) {
+      ok.addEventListener('click', function () {
+        try {
+          var total = num(img.getAttribute('data-scale')) || 1;
+          var crop = STATE.ring, sw = STATE.stageW, sh = STATE.stageH;
+          var out = clamp(Math.round(STATE.ring * (window.devicePixelRatio || 1) * 1.2), 320, 1024);
+          var sx = (((sw - crop) / 2) - STATE.x) / total;
+          var sy = (((sh - crop) / 2) - STATE.y) / total;
+          var sSize = crop / total;
+          var cv = document.createElement('canvas');
+          cv.width = out; cv.height = out;
+          var ctx = cv.getContext('2d');
+          ctx.fillStyle = '#fff';                 // 白色底：防透明 PNG 出黑边
+          ctx.fillRect(0, 0, out, out);
+          ctx.drawImage(img, sx, sy, sSize, sSize, 0, 0, out, out);   // 全幅正方形，不做圆形裁剪
+          var data = cv.toDataURL('image/jpeg', 0.92);
+          saveProfile({ avatarImg: data });
+          renderPage();
+          var ev = $('xtpView_edit');
+          if (ev && ev.classList.contains('on')) { renderView('edit', ev); }
+          toast('头像已更新并保存到本机');
+        } catch (e) {
+          toast('头像处理失败，请换一张图片', true);
+        } fin
+
+=== 3) .xtp-crop-hole ===
+.xtp-crop-hole {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.62);
+  pointer-events: none;
+}
+
+=== 4) hero / avatar-sm 圆角 ===
+--- .xtp-hero-avatar
+.xtp-hero-avatar {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--xtp-ic-bg);
+  color: var(--xtp-ic-fg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  position: relative;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 2px 8px rgba(31, 35, 41, 0.10);
+}
+--- .xtp-avatar-row .xtp-avatar-sm
+.xtp-avatar-row .xtp-avatar-sm {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  overflow: hidden;
+  flex: none;
+  background: var(--xtp-ic-bg);
+  color: var(--xtp-ic-fg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+=== 5) 九宫格仍在 ===
+linear-gradient 计数 = 0
+
+=== 6) 手势绑定计数（js 全文）===
+  pointerdown    1
+  pointermove    1
+  pointerup      1
+  pointercancel  1
+  touchstart     1
+  touchmove      1
+  touchend       1
+  touchcancel    1
+  mousedown      1
+  dblclick       1
+  wheel          1
+
+=== 7) 头像语义处是否还有 50% ===
+L314 border-radius: 50%;   <<上下文: box-sizing: border-box; | } | .xtp-dot { | width: 8px; | height: 8px; | border-radius: 50%;
+L789 border-radius: 50%;   <<上下文: width: 22px; | height: 22px; | margin-bottom: 10px; | border: 2px solid var(--xtp-line); | border-top-color: var(--xtp-brand); | border-radius: 50%;
+L1172 border: none; border-radius: 50%; background: var(--xtp-chip); color: var(--xtp-sub);   <<上下文:  none; width: 20px; height: 20px; line-height: 18px; text-align: center; | border: none; border-radius: 50%; background: var(--xtp-chip); color: var(--xtp-sub);

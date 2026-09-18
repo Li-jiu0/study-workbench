@@ -1,0 +1,10 @@
+=== R96 交付物最终指纹复核 ===
+AI.html                      56290  dbfe57baeba5b4dcda6c1c62023e05d7
+assets/ai-page.js           141094  9213097435c091c4ac8fc77b7d57a350
+assets/ai-service.js        152843  b7a6683f7fc62de4ae7ec21b0bc6c387
+assets/xt-region.js          54521  502cdce860160a19924d98aeebfa5ee8
+地区选择.html                    20613  7cde3e3b1d332c73237a59788cbf43d1
+
+按钮终态: class="ai-chip" id="aiDeepThinkChip" title="开启后强制深度推理">深度思考</button>
+
+AI.html 备份: 存在

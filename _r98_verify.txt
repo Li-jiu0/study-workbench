@@ -1,0 +1,43 @@
+===== 1. fitStage：正方形边长由宽度决定（占满屏宽，上下各留 12px） =====
+PASS  stageW === 屏宽 (375)  (got 375px)
+PASS  frame 边长 === min(屏宽, 可用高-24) = 375  (got 375)
+PASS  frame 为正方形（w===h）
+PASS  hole 与 frame 同尺寸  (hole 375 / frame 375)
+
+===== 2. 横屏/窄高兜底：边长不超可用高度-24 =====
+PASS  边长 <= 可用高-24 (595)
+PASS  边长 === 屏宽（竖屏典型）
+
+===== 3. .xtp-crop-hole 无 border-radius（正方形遮罩） =====
+PASS  .xtp-crop-hole 块存在
+PASS  hole 无 border-radius  position: absolute; left: 50%; top: 50%; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.62); pointer-events: none;
+PASS  hole 无 inset 内描边
+PASS  hole 保留外圈 62% 暗色蒙层
+
+===== 4. 「完成」路径不再有 ctx.arc（无圆形裁剪） =====
+PASS  完成逻辑内无 ctx.arc
+PASS  完成逻辑内无 Math.PI * 2
+PASS  完成逻辑全幅 drawImage(...,0,0,out,out)
+PASS  保留白色底 fillRect
+PASS  out 计算保留 clamp(...,320,1024)
+
+===== 5. 回归红线：九宫格 + 手势 + 缩放边界 =====
+PASS  九宫格仍 4 条 linear-gradient
+PASS  九宫格线色 rgba(255,255,255,0.28)
+PASS  手势绑定齐全（>=11 种）  (got 13)
+PASS  ZMIN=1, ZMAX=5 边界保留
+PASS  zoomAt 不涉及滑杆
+PASS  ActionSheet 未动
+PASS  顶栏只剩取消/完成
+
+===== 6. 全站头像显示方块化（assets/xt-profile.css 内） =====
+PASS  .xtp-hero-avatar border-radius: 12px
+PASS  .xtp-avatar-row .xtp-avatar-sm border-radius: 12px
+PASS  hero 头像不再是圆形
+PASS  编辑页头像行不再是圆形
+
+===== 7. 拖动 + 捏合仍真实生效（端到端） =====
+PASS  拖动改变 img.left（+40）  (0→40)
+PASS  捏合放大 data-scale  (0.77375→1.5475)
+
+PASS=28  FAIL=0

@@ -1,0 +1,193 @@
+=== 裁剪台段（.xtp-crop-mask 起 3600 字符）===
+.xtp-crop-mask {
+  padding: 0;
+  background: #000;
+  align-items: stretch;
+  justify-content: flex-start;
+  animation: xtpCropMaskIn 0.22s ease-out both;
+}
+@keyframes xtpCropMaskIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.xtp-cropper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  /* R88-M6：进入时的轻微放大过渡（0.96 → 1），配合 mask 淡入，观感更柔和。 */
+  animation: xtpCropperIn 0.22s ease-out both;
+  /* R88-M6：安全边距 —— 适配刘海屏 / 底部手势条。 */
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
+}
+@keyframes xtpCropperIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .xtp-crop-mask, .xtp-cropper { animation: none; }
+}
+.xtp-crop-topbar {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 0 10px;
+  padding-top: env(safe-area-inset-top, 0px);
+  box-sizing: border-box;
+  background: #000;
+}
+.xtp-crop-btn {
+  min-width: 58px;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #fff;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.xtp-crop-btn:active { background: rgba(255, 255, 255, 0.14); }
+.xtp-crop-btn.primary { color: #07c160; font-weight: 600; }
+.xtp-crop-btn.primary:active { background: rgba(7, 193, 96, 0.16); }
+.xtp-crop-stage {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
+  background: #000;
+  touch-action: none;
+  cursor: move;
+}
+.xtp-crop-stage img { position: absolute; left: 0; top: 0; user-select: none; -webkit-user-drag: none; }
+/* 圆形头像遮罩：圆外 62% 暗色蒙层 + 内描边白圈（最终头像范围） */
+.xtp-crop-hole {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 50%;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.62), inset 0 0 0 1px rgba(255, 255, 255, 0.9);
+  pointer-events: none;
+}
+/* 正方形裁剪区（输出的方形范围）+ 3x3 淡灰九宫格参考线（纯 CSS 渐变绘制，便于对齐人脸）。
+   九宫格线用两条竖线 + 两条横线（各 1px，rgba(255,255,255,.28) 在暗底上呈淡灰）；
+   超出圆形遮罩范围的部分由叠加其上的 .xtp-crop-hole 暗色蒙层自然盖住，符合微信观感。 */
+.xtp-crop-frame {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  box-sizing: border-box;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, transparent calc(33.333% - 0.5px), rgba(255, 255, 255, 0.28) calc(33.333% - 0.5px), rgba(255, 255, 255, 0.28) calc(33.333% + 0.5px), transparent calc(33.333% + 0.5px)),
+    linear-gradient(to right, transparent calc(66.666% - 0.5px), rgba(255, 255, 255, 0.28) calc(66.666% - 0.5px), rgba(255, 255, 255, 0.28) calc(66.666% + 0.5px), transparent calc(66.666% + 0.5px)),
+    linear-gradient(to bottom, transparent calc(33.333% - 0.5px), rgba(255, 255, 255, 0.28) calc(33.333% - 0.5px), rgba(255, 255, 255, 0.28) calc(33.333% + 0.5px), transparent calc(33.333% + 0.5px)),
+    linear-gradient(to bottom, transparent calc(66.666% - 0.5px), rgba(255, 255, 255, 0.28) calc(66.666% - 0.5px), rgba(255, 255, 255, 0.28) calc(66.666% + 0.5px), transparent calc(66.666% + 0.5px));
+}
+/* 底部选择弹窗（ActionSheet）：对标微信「编辑头像」来源选择。白底圆角顶部、三项纵向排列、
+   「取消」与上面两项之间留灰色间隙独立成块，底部适配 env(safe-area-inset-bottom)。 */
+.xtp-sheet-mask {
+  padding: 0;
+  background: rgba(0, 0, 0, 0.4);
+  align-items: flex-end;
+  justify-content: center;
+  animation: xtpSheetMaskIn 0.18s ease-out both;
+}
+@keyframes xtpSheetMaskIn {
+  from { opacity: 0
+
+=== 弹窗段（.xtp-sheet 起至其后续 2600 字符）===
+.xtp-sheet {
+  width: 100%;
+  background: var(--xtp-card, #ffffff);
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+  overflow: hidden;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  animation: xtpSheetIn 0.22s ease-out both;
+  box-sizing: border-box;
+}
+@keyframes xtpSheetIn {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.xtp-sheet-list {
+  display: flex;
+  flex-direction: column;
+}
+.xtp-sheet-item {
+  display: block;
+  width: 100%;
+  min-height: 52px;
+  padding: 14px 16px;
+  border: 0;
+  border-top: 1px solid var(--xtp-line, #ececec);
+  background: transparent;
+  color: var(--xtp-text, #1f2329);
+  font-size: 16px;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+.xtp-sheet-list .xtp-sheet-item:first-child,
+.xtp-sheet-cancel { border-top: 0; }
+.xtp-sheet-item:active { background: var(--xtp-press, #ececec); }
+.xtp-sheet-cancel { color: var(--xtp-sub, #8a9099); }
+.xtp-sheet-gap {
+  height: 8px;
+  background: var(--xtp-bg, #f2f2f2);
+  border-top: 1px solid var(--xtp-line, #ececec);
+}
+.xtp-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 64px;
+  z-index: 90;
+  transform: translateX(-50%) translateY(12px);
+  max-width: 80vw;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: rgba(17, 17, 17, 0.9);
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.xtp-toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+.xtp-toast.err { background: rgba(214, 48, 49, 0.94); }
+
+/* ------------------------------------------------------- 9. 深色主题 */
+body.dark .xtp-wrap,
+body.dark .xtp-view,
+body.dark .xtp-mask {
+  --xtp-bg: #16181d;                /* 事2 规格 */
+  --xtp-card: #1f2228;              /* 事2 规格 */
+  --xtp-text: #e8eaed;              /* 事2 规格 */
+  --xtp-sub: #9aa3ad;
+  --xtp-aux: #8b939c;
+  --xtp-line: #2c3038;              /* 事2 规格（border） */
+  --xtp-brand: #6f9cf2;             /* 事2：深色下品牌色提亮 */
+  --xtp-brand-ink: #9dc0ff;
+  --xtp-brand-8: rgba(111, 156, 242, 0.14);
+  --xtp-head-a: #202836;            /* 事2：深色头部渐变遮罩 */
+  --xtp-head-b: #16181d;
+  --xtp-shadow: 0 6px 20px rgba(0, 0, 0, 0.32), 0 2px 6px rgba(0, 0, 0, 0.24);
+  --xtp-shadow-hero: 0 10px 28px rgba(0, 0, 0, 0.42), 0 3px 10px rgba(0, 0, 0, 0.28);
+  --xtp-ico-tile: rgba(111, 156, 242, 0.14);
+  --xtp-ico-fg: #6

@@ -2077,17 +2077,16 @@
   }
 
   /* ============================================================ 头像裁剪
-   * R86-C 微信风格改造（只改 UI 与裁剪交互；状态管理、图片选取、落库逻辑不变）：
-   *   1) 全屏暗色裁剪台：顶部「取消 / 完成」+ 中间大图裁剪区 + 底部缩放滑杆；
+   * R97 微信头像设置页对标（只改 UI 与裁剪交互；状态管理、图片选取、落库逻辑不变）：
+   *   1) 全屏暗色裁剪台：顶部仅左「取消」+ 右「完成」两个按钮，中间留空；
    *      裁剪区占满可用空间、四周留白压到最小（不再受 .xtp-modal 400px 限制）；
-   *   2) 交互只保留：单指拖动移动图片、双指捏合缩放；桌面端额外保留滚轮缩放与滑杆；
-   *      已移除旋转 / 滤镜 / 比例切换等控件与全部说明性文案，仅保留一个放大镜像标；
-   *   3) 默认正方形裁剪区 + 圆形头像遮罩，点「完成」直接生成头像；
-   *   4) 输出仍为正方形图片（正方形 canvas + 圆形 clip），与原实现一致。
+   *   2) 交互只保留：单指拖动移动图片、双指捏合缩放；桌面端额外保留滚轮缩放；
+   *      已移除底部缩放滑杆与全部说明性文案，对齐微信极简观感；
+   *   3) 正方形裁剪框内叠加 3x3 淡灰九宫格参考线（纯 CSS 绘制，便于对齐人脸）；
+   *   4) 圆形头像遮罩（圆外暗色蒙层 + 白色内描边），点「完成」直接生成头像；
+   *   5) 输出仍为正方形图片（正方形 canvas + 圆形 clip），与原实现一致。
    */
   var cropResizeFn = null;
-  var CROP_ZOOM_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-    '<circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>';
 
   function openCropper(dataUrl) {
     closeModal();
@@ -2107,10 +2106,6 @@
           '<div class="xtp-crop-frame" id="xtpCropFrame"></div>' +
           '<div class="xtp-crop-hole" id="xtpCropHole"></div>' +
         '</div>' +
-        '<div class="xtp-crop-bottom" id="xtpCropBottom">' +
-          '<span class="xtp-crop-zi">' + CROP_ZOOM_SVG + '</span>' +
-          '<input class="xtp-crop-zoom" id="xtpCropZoom" type="range" min="100" max="500" value="100">' +
-        '</div>' +
       '</div>';
     host.appendChild(mask);
 
@@ -2118,21 +2113,19 @@
     var img = mask.querySelector('#xtpCropImg');
     var hole = mask.querySelector('#xtpCropHole');
     var frame = mask.querySelector('#xtpCropFrame');
-    var zoom = mask.querySelector('#xtpCropZoom');
     var topbar = mask.querySelector('#xtpCropTopbar');
-    var bottom = mask.querySelector('#xtpCropBottom');
-    var ZMIN = 1, ZMAX = 5;                                     // 与滑杆 min=100 / max=500 对齐
-    var STATE = { scale: 1, x: 0, y: 0, natW: 0, natH: 0, stageW: 340, stageH: 340, ring: 292 };
+    var ZMIN = 0.4, ZMAX = 5;                                   // 缩放比例上下限（0.4 允许明显缩小；5 为放大上限）
+    var STATE = { scale: 1, x: 0, y: 0, natW: 0, natH: 0, stageW: 340, stageH: 340, ring: 292 };  // ring 现为「正方形裁剪边长」
 
-    /* 裁剪区占满可用空间：整屏宽 ×（视口高 - 顶栏 - 底栏），取短边作为正方形裁剪区边长 */
+    /* 裁剪区占满可用空间：整屏宽 ×（视口高 - 顶栏）。
+       正方形边长由屏幕宽度决定（占满屏宽、上下各留 12px 呼吸），仅当可用高度不足时取高度兜底。 */
     function fitStage() {
       var vw = window.innerWidth || (document.documentElement && document.documentElement.clientWidth) || 340;
       var vh = window.innerHeight || (document.documentElement && document.documentElement.clientHeight) || 480;
       var topH = topbar ? (topbar.offsetHeight || 48) : 48;
-      var botH = bottom ? (bottom.offsetHeight || 56) : 56;
       var sw = Math.max(160, Math.round(vw));
-      var sh = Math.max(160, Math.round(vh - topH - botH));
-      var side = Math.max(120, Math.min(sw, sh));
+      var sh = Math.max(160, Math.round(vh - topH));   // 底栏已移除，可用高 = 视口高 - 顶栏
+      var side = Math.max(120, Math.min(sw, Math.max(120, sh) - 24));  // 正方形边长：占满屏宽，上下各留 12px 呼吸
       STATE.stageW = sw; STATE.stageH = sh; STATE.ring = side;
       if (stage) { stage.style.width = sw + 'px'; stage.style.height = sh + 'px'; }
       if (hole) {
@@ -2146,16 +2139,28 @@
         frame.style.margin = (-side / 2) + 'px 0 0 ' + (-side / 2) + 'px';
       }
     }
+    /* 基准缩放：cover 语义 —— 让图片在 scale=1 时恰好完全覆盖正方形裁剪区（取宽/高比例的较大者）。
+       这样默认状态裁剪区不含黑边，且取样框正好等于原图短边（sSize<=natW 且 sSize<=natH）。
+       配合 ZMIN<1，用户仍可在基准之下继续缩小（缩到小于裁剪区时由 layout 的退化分支居中锁定）。
+       layout() 与 zoomAt() 共用此基准，保证锚点缩放不跳变。 */
+    function baseScale() {
+      if (!STATE.natW || !STATE.natH || !STATE.stageW || !STATE.stageH) { return 1; }
+      return Math.max(STATE.stageW / STATE.natW, STATE.stageH / STATE.natH);
+    }
     function layout() {
       var sw = STATE.stageW, sh = STATE.stageH;
-      var cover = Math.max(sw / STATE.natW, sh / STATE.natH);
-      var total = cover * STATE.scale;
+      var total = baseScale() * STATE.scale;
       var w = STATE.natW * total, h = STATE.natH * total;
-      var crop = STATE.ring;                            // 图片必须覆盖裁剪圆
-      var minX = (sw - crop) / 2 - (w - crop) / 2;
-      var maxX = -minX;
-      var minY = (sh - crop) / 2 - (h - crop) / 2;
-      var maxY = -minY;
+      var crop = STATE.ring;                            // 正方形裁剪边长
+      var left = (sw - crop) / 2, top = (sh - crop) / 2;   // 裁剪区左上角（舞台坐标）
+      /* 边界：图片完全覆盖裁剪区 —— 左/上边缘不得内缩，右/下边缘不得内缩 */
+      var minX = left + crop - w;
+      var maxX = left;
+      var minY = top + crop - h;
+      var maxY = top;
+      /* 防御：若图片显示尺寸小于裁剪区（缩得很小时），区间会逆序 —— 退化为居中锁定，杜绝 NaN/钉死 */
+      if (maxX < minX) { minX = left; maxX = left; }
+      if (maxY < minY) { minY = top; maxY = top; }
       STATE.x = clamp(STATE.x, minX, maxX);
       STATE.y = clamp(STATE.y, minY, maxY);
       img.style.width = w + 'px';
@@ -2168,16 +2173,15 @@
     function zoomAt(ns, px, py) {
       if (!STATE.natW || !STATE.natH) { return; }
       ns = clamp(ns, ZMIN, ZMAX);
-      var cover = Math.max(STATE.stageW / STATE.natW, STATE.stageH / STATE.natH);
-      var t0 = cover * STATE.scale;
-      var t1 = cover * ns;
+      var base = baseScale();
+      var t0 = base * STATE.scale;
+      var t1 = base * ns;
       if (t0 <= 0) { return; }
       var ux = (px - STATE.x) / t0;
       var uy = (py - STATE.y) / t0;
       STATE.scale = ns;
       STATE.x = px - ux * t1;
       STATE.y = py - uy * t1;
-      if (zoom) { zoom.value = String(Math.round(ns * 100)); }
       layout();
     }
     img.onload = function () {
@@ -2302,9 +2306,6 @@
       try { e.preventDefault(); } catch (e2) { /* 忽略 */ }
     }, { passive: false });
 
-    /* 滑杆：以舞台中心为锚点缩放（沿用 layout 的边界 clamp） */
-    if (zoom) { zoom.addEventListener('input', function () { zoomAt(num(zoom.value) / 100, STATE.stageW / 2, STATE.stageH / 2); }); }
-
     var cancel = mask.querySelector('#xtpCropCancel');
     if (cancel) {
       cancel.addEventListener('click', function () { detachCropResize(); closeModal(); });
@@ -2319,18 +2320,26 @@
           var sx = (((sw - crop) / 2) - STATE.x) / total;
           var sy = (((sh - crop) / 2) - STATE.y) / total;
           var sSize = crop / total;
+          /* R99-P1：缩小时 total 变小 → sSize 变大，可能超过原图；越界部分会被当作透明，
+             叠加白色底后产出白边/白角。把正方形取样框整体夹进原图边界（尽量保持 sSize 不变，
+             只平移 sx/sy）；若原图短边本身小于 sSize，则把 sSize 收到原图短边，杜绝白边。 */
+          var nw = STATE.natW || img.naturalWidth || 0;
+          var nh = STATE.natH || img.naturalHeight || 0;
+          if (nw > 0 && nh > 0) {
+            if (sSize > nw || sSize > nh) { sSize = Math.min(nw, nh); }  // 收到原图短边
+            if (sx < 0) { sx = 0; }
+            if (sy < 0) { sy = 0; }
+            if (sx + sSize > nw) { sx = nw - sSize; }
+            if (sy + sSize > nh) { sy = nh - sSize; }
+            if (sx < 0) { sx = 0; }   // 二次兜底（sSize 已被收到短边时 sx 可能仍 <0）
+            if (sy < 0) { sy = 0; }
+          }
           var cv = document.createElement('canvas');
           cv.width = out; cv.height = out;
           var ctx = cv.getContext('2d');
-          ctx.fillStyle = '#fff';
+          ctx.fillStyle = '#fff';                 // 白色底：防透明 PNG 出黑边
           ctx.fillRect(0, 0, out, out);
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(out / 2, out / 2, out / 2, 0, Math.PI * 2);
-          ctx.closePath();
-          ctx.clip();
-          ctx.drawImage(img, sx, sy, sSize, sSize, 0, 0, out, out);
-          ctx.restore();
+          ctx.drawImage(img, sx, sy, sSize, sSize, 0, 0, out, out);   // 全幅正方形，不做圆形裁剪
           var data = cv.toDataURL('image/jpeg', 0.92);
           saveProfile({ avatarImg: data });
           renderPage();
@@ -2436,10 +2445,43 @@
     }
   }
 
-  function xtpPickAvatar() {
+  /* 底部选择弹窗（ActionSheet）：点「编辑头像」后先弹出「拍照 / 从手机相册选择 / 取消」三项，
+     选定后再创建 file input 触发选图。选择来源后的处理链路复用原有 FileReader → openCropper(url)。
+     自建遮罩：复用统一关闭口 id="xtpMask"（与 openModal 一致），关闭时整体摘除以杜绝「遮罩残留导致整页不可点」。 */
+  function xtpOpenAvatarSheet() {
+    closeModal();   // 先清理任何残留遮罩，避免叠加
+    var host = $('xtpModalHost') || document.body;
+    var mask = document.createElement('div');
+    mask.className = 'xtp-mask xtp-sheet-mask';
+    mask.id = 'xtpMask';   // 沿用统一关闭口 closeModal() / window.xtpCloseModal
+    mask.innerHTML =
+      '<div class="xtp-sheet" id="xtpAvatarSheet">' +
+        '<div class="xtp-sheet-list">' +
+          '<button class="xtp-sheet-item" type="button" id="xtpSheetCamera">拍照</button>' +
+          '<button class="xtp-sheet-item" type="button" id="xtpSheetAlbum">从手机相册选择</button>' +
+        '</div>' +
+        '<div class="xtp-sheet-gap"></div>' +
+        '<button class="xtp-sheet-item xtp-sheet-cancel" type="button" id="xtpSheetCancel">取消</button>' +
+      '</div>';
+    mask.addEventListener('click', function (ev) { if (ev.target === mask) { closeModal(); } });
+    host.appendChild(mask);
+
+    var cam = mask.querySelector('#xtpSheetCamera');
+    var alb = mask.querySelector('#xtpSheetAlbum');
+    var can = mask.querySelector('#xtpSheetCancel');
+    if (cam) { cam.addEventListener('click', function () { xtpPickAvatarFile(true); }); }
+    if (alb) { alb.addEventListener('click', function () { xtpPickAvatarFile(false); }); }
+    if (can) { can.addEventListener('click', closeModal); }
+  }
+
+  /* 创建隐藏 file input 并触发选图；useCamera=true 时加 capture 调起相机（桌面浏览器忽略 capture，退化为普通选图，可接受）。
+     useCamera=false 时不带 capture，走「从手机相册选择」。change 处理链路与原实现一致。 */
+  function xtpPickAvatarFile(useCamera) {
+    closeModal();   // 选毕先关面板，再打开裁剪台
     var inp = document.createElement('input');
     inp.type = 'file';
     inp.accept = 'image/*';
+    if (useCamera) { inp.setAttribute('capture', 'environment'); }
     inp.style.display = 'none';
     inp.addEventListener('change', function () {
       var f = inp.files && inp.files[0];
@@ -2456,6 +2498,11 @@
     });
     document.body.appendChild(inp);
     inp.click();
+  }
+
+  /* 对外入口：点「编辑头像」先弹底部选择面板，而不是直接进相册。 */
+  function xtpPickAvatar() {
+    xtpOpenAvatarSheet();
   }
 
   function xtpCopyUid() { copyText(userId(), '用户ID'); }

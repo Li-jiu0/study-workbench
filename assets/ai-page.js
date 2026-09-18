@@ -1274,7 +1274,8 @@
     scrollBottom();
     var funcType = predictFuncType(text, !!image);
     /* R92-A：选中模型 types 含 'video' / '3d' 时走能力直连链路（详见 routeCapabilityModel） */
-    if (routeCapabilityModel(aiB, text, image)) { return; }    // 上下文长度：只带最近 N 轮（1 轮 = 1 条用户 + 1 条 AI），0 表示全部
+    if (routeCapabilityModel(aiB, text, image)) { return; }
+    // 上下文长度：只带最近 N 轮（1 轮 = 1 条用户 + 1 条 AI），0 表示全部
     var all = state.messages.map(function (m) { return { role: m.role, content: m.content }; });
     var turns = getCtxTurns();
     var apiMessages = all;
@@ -1316,6 +1317,11 @@
       image: image ? image : null,
       model: getSelectedModelId(),
       max: getMaxMode(),
+      /* 用户勾了「深度思考」且当次未被判为 vision（拍题优先走视觉模型）时，
+         显式把强制推理意图传给服务层。funcType 只是按文字猜的默认值，
+         服务层最终选模还要看用户手动选中的模型；带上这个标志才能保证
+         手动选中的非推理模型也能被深度思考覆盖（与 UI 文案一致）。 */
+      forceReasoning: (!image && getDeepThink()) ? 1 : 0,
       onChunk: function (delta, full) {
         if (firstChunk) { removeTyping(aiB); firstChunk = false; }
         fullText = full;

@@ -1,0 +1,104 @@
+js B=134368 md5=c015910b4ca18b402f2b6e0165fa8ba7 crlf=2639 loneLF=0
+css B=40729 md5=cd0e9c0519bfa715c59ae9443178e29a
+
+=== #xtpCropOk 完整取样段 ===
+mask.querySelector('#xtpCropOk');
+    if (ok) {
+      ok.addEventListener('click', function () {
+        try {
+          var total = num(img.getAttribute('data-scale')) || 1;
+          var crop = STATE.ring, sw = STATE.stageW, sh = STATE.stageH;
+          var out = clamp(Math.round(STATE.ring * (window.devicePixelRatio || 1) * 1.2), 320, 1024);
+          var sx = (((sw - crop) / 2) - STATE.x) / total;
+          var sy = (((sh - crop) / 2) - STATE.y) / total;
+          var sSize = crop / total;
+          /* R99-P1：缩小时 total 变小 → sSize 变大，可能超过原图；越界部分会被当作透明，
+             叠加白色底后产出白边/白角。把正方形取样框整体夹进原图边界（尽量保持 sSize 不变，
+             只平移 sx/sy）；若原图短边本身小于 sSize，则把 sSize 收到原图短边，杜绝白边。 */
+          var nw = STATE.natW || img.naturalWidth || 0;
+          var nh = STATE.natH || img.naturalHeight || 0;
+          if (nw > 0 && nh > 0) {
+            if (sSize > nw || sSize > nh) { sSize = Math.min(nw, nh); }  // 收到原图短边
+            if (sx < 0) { sx = 0; }
+            if (sy < 0) { sy = 0; }
+            if (sx + sSize > nw) { sx = nw - sSize; }
+            if (sy + sSize > nh) { sy = nh - sSize; }
+            if (sx < 0) { sx = 0; }   // 二次兜底（sSize 已被收到短边时 sx 可能仍 <0）
+            if (sy < 0) { sy = 0; }
+          }
+          var cv = document.createElement('canvas');
+          cv.width = out; cv.height = out;
+          var ctx = cv.getContext('2d');
+          ctx.fillStyle = '#fff';                 // 白色底：防透明 PNG 出黑边
+          ctx.fillRect(0, 0, out, out);
+          ctx.drawImage(img, sx, sy, sSize, sSize, 0, 0, out, out);   // 全幅正方形，不做圆形裁剪
+          var data = cv.toDataURL('image/jpeg', 0.92);
+          saveProfile({ avatarImg: data });
+          renderPage();
+          var ev = $('xtpView_edit');
+          if (ev && ev.classList.contains('on')) { renderView('edit', ev); }
+          toast('头像已更新并保存到本机');
+        } catch (e) {
+          toast('头像处理失败，请换一张图片', true);
+        } finally {
+          detachCropResize();
+          closeModal();   // 阻断bug修复：无论成功/失败都关闭全屏遮罩，杜绝残留导致整页不可点
+        }
+      });
+    }
+  }
+  /** 摘掉裁剪台的 resize 监听（关闭弹层 / 重开裁剪台时调用，避免监听泄漏） */
+  function detachCropResize() {
+    if (cropResizeFn) {
+      try { window.removeEventListener('resize', cropResizeFn); } catch (e) { /* 忽略 */ }
+      cropResizeFn = null;
+    }
+
+=== 独立复现夹紧逻辑（我自己实现，不引用工程师代码）===
+--- 舞台 sw=375 sh=619 ---
+  竖9:16    nat=1000x2000 crop=375 base=0.3750 | scale0.4 rawS=2500.0 -> S=1000.0 sx=0.0 sy=0.0 | S+sx=1000.0<=1000 OK
+  竖3:4     nat=1000x1333 crop=375 base=0.4644 | scale0.4 rawS=2018.9 -> S=1000.0 sx=0.0 sy=0.0 | S+sx=1000.0<=1000 OK
+  方图       nat=1000x1000 crop=375 base=0.6190 | scale0.4 rawS=1514.5 -> S=1000.0 sx=0.0 sy=0.0 | S+sx=1000.0<=1000 OK
+  横拍       nat=2000x1000 crop=375 base=0.6190 | scale0.4 rawS=1514.5 -> S=1000.0 sx=0.0 sy=0.0 | S+sx=1000.0<=2000 OK
+  超宽       nat=3000x1000 crop=375 base=0.6190 | scale0.4 rawS=1514.5 -> S=1000.0 sx=0.0 sy=0.0 | S+sx=1000.0<=3000 OK
+  小图       nat=400x600 crop=375 base=1.0317 | scale0.4 rawS=908.7 -> S=400.0 sx=0.0 sy=0.0 | S+sx=400.0<=400 OK
+  极窄高      nat=100x4000 crop=375 base=3.7500 | scale0.4 rawS=250.0 -> S=100.0 sx=0.0 sy=81.3 | S+sx=100.0<=100 OK
+  极宽扁      nat=4000x100 crop=375 base=6.1900 | scale0.4 rawS=151.5 -> S=100.0 sx=0.0 sy=0.0 | S+sx=100.0<=4000 OK
+  大图       nat=8000x6000 crop=375 base=0.1032 | scale0.4 rawS=9087.2 -> S=6000.0 sx=0.0 sy=0.0 | S+sx=6000.0<=8000 OK
+  极小图      nat=50x50 crop=375 base=12.3800 | scale0.4 rawS=75.7 -> S=50.0 sx=0.0 sy=0.0 | S+sx=50.0<=50 OK
+--- 舞台 sw=320 sh=568 ---
+  竖9:16    nat=1000x2000 crop=320 base=0.3200 | scale0.4 rawS=2500.0 -> S=1000.0 sx=0.0 sy=0.0 | S+sx=1000.0<=1000 OK
+  竖3:4     nat=1000x1333 crop=320 base=0.4261 | scale0.4 rawS=1877.5 -> S=1000.0 sx=0.0 sy=0.0 | S+sx=1000.0<=1000 OK
+  方图       nat=1000x1000 crop=320 base=0.5680 | scale0.4 rawS=1408.5 -> S=1000.0 sx=0.0 sy=0.0 | S+sx=1000.0<=1000 OK
+  横拍       nat=2000x1000 crop=320 base=0.5680 | scale0.4 rawS=1408.5 -> S=1000.0 sx=0.0 sy=0.0 | S+sx=1000.0<=2000 OK
+  超宽       nat=3000x1000 crop=320 base=0.5680 | scale0.4 rawS=1408.5 -> S=1000.0 sx=0.0 sy=0.0 | S+sx=1000.0<=3000 OK
+  小图       nat=400x600 crop=320 base=0.9467 | scale0.4 rawS=845.1 -> S=400.0 sx=0.0 sy=0.0 | S+sx=400.0<=400 OK
+  极窄高      nat=100x4000 crop=320 base=3.2000 | scale0.4 rawS=250.0 -> S=100.0 sx=0.0 sy=96.9 | S+sx=100.0<=100 OK
+  极宽扁      nat=4000x100 crop=320 base=5.6800 | scale0.4 rawS=140.8 -> S=100.0 sx=0.0 sy=0.0 | S+sx=100.0<=4000 OK
+  大图       nat=8000x6000 crop=320 base=0.0947 | scale0.4 rawS=8450.7 -> S=6000.0 sx=0.0 sy=0.0 | S+sx=6000.0<=8000 OK
+  极小图      nat=50x50 crop=320 base=11.3600 | scale0.4 rawS=70.4 -> S=50.0 sx=0.0 sy=0.0 | S+sx=50.0<=50 OK
+--- 舞台 sw=414 sh=896 ---
+  竖9:16    nat=1000x2000 crop=414 base=0.4480 | scale0.4 rawS=2310.3 -> S=1000.0 sx=0.0 sy=0.0 | S+sx=1000.0<=1000 OK
+  竖3:4     nat=1000x1333 crop=414 base=0.6722 | scale0.4 rawS=1539.8 -> S=1000.0 sx=0.0 sy=0.0 | S+sx=1000.0<=1000 OK
+  方图       nat=1000x1000 crop=414 base=0.8960 | scale0.4 rawS=1155.1 -> S=1000.0 sx=0.0 sy=0.0 | S+sx=1000.0<=1000 OK
+  横拍       nat=2000x1000 crop=414 base=0.8960 | scale0.4 rawS=1155.1 -> S=1000.0 sx=0.0 sy=0.0 | S+sx=1000.0<=2000 OK
+  超宽       nat=3000x1000 crop=414 base=0.8960 | scale0.4 rawS=1155.1 -> S=1000.0 sx=0.0 sy=0.0 | S+sx=1000.0<=3000 OK
+  小图       nat=400x600 crop=414 base=1.4933 | scale0.4 rawS=693.1 -> S=400.0 sx=0.0 sy=0.0 | S+sx=400.0<=400 OK
+  极窄高      nat=100x4000 crop=414 base=4.1400 | scale0.4 rawS=250.0 -> S=100.0 sx=0.0 sy=145.5 | S+sx=100.0<=100 OK
+  极宽扁      nat=4000x100 crop=414 base=8.9600 | scale0.4 rawS=115.5 -> S=100.0 sx=0.0 sy=0.0 | S+sx=100.0<=4000 OK
+  大图       nat=8000x6000 crop=414 base=0.1493 | scale0.4 rawS=6930.8 -> S=6000.0 sx=0.0 sy=0.0 | S+sx=6000.0<=8000 OK
+  极小图      nat=50x50 crop=414 base=17.9200 | scale0.4 rawS=57.8 -> S=50.0 sx=0.0 sy=0.0 | S+sx=50.0<=50 OK
+--- 舞台 sw=800 sh=400 ---
+  竖9:16    nat=1000x2000 crop=376 base=0.8000 | scale0.4 rawS=1175.0 -> S=1000.0 sx=0.0 sy=37.5 | S+sx=1000.0<=1000 OK
+  竖3:4     nat=1000x1333 crop=376 base=0.8000 | scale0.4 rawS=1175.0 -> S=1000.0 sx=0.0 sy=37.5 | S+sx=1000.0<=1000 OK
+  方图       nat=1000x1000 crop=376 base=0.8000 | scale0.4 rawS=1175.0 -> S=1000.0 sx=0.0 sy=0.0 | S+sx=1000.0<=1000 OK
+  横拍       nat=2000x1000 crop=376 base=0.4000 | scale0.4 rawS=2350.0 -> S=1000.0 sx=0.0 sy=0.0 | S+sx=1000.0<=2000 OK
+  超宽       nat=3000x1000 crop=376 base=0.4000 | scale0.4 rawS=2350.0 -> S=1000.0 sx=650.0 sy=0.0 | S+sx=1650.0<=3000 OK
+  小图       nat=400x600 crop=376 base=2.0000 | scale0.4 rawS=470.0 -> S=400.0 sx=0.0 sy=15.0 | S+sx=400.0<=400 OK
+  极窄高      nat=100x4000 crop=376 base=8.0000 | scale0.4 rawS=117.5 -> S=100.0 sx=0.0 sy=3.8 | S+sx=100.0<=100 OK
+  极宽扁      nat=4000x100 crop=376 base=4.0000 | scale0.4 rawS=235.0 -> S=100.0 sx=132.5 sy=0.0 | S+sx=232.5<=4000 OK
+  大图       nat=8000x6000 crop=376 base=0.1000 | scale0.4 rawS=9400.0 -> S=6000.0 sx=0.0 sy=0.0 | S+sx=6000.0<=8000 OK
+  极小图      nat=50x50 crop=376 base=16.0000 | scale0.4 rawS=58.8 -> S=50.0 sx=0.0 sy=0.0 | S+sx=50.0<=50 OK
+
+=== 越界 FAIL 总数 = 0 ===
+  无 —— 全部 (4 舞台 x 10 图片 x 5 档缩放) = 200 组合均不越界

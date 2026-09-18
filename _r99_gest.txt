@@ -1,0 +1,78 @@
+assets/xt-profile.js B=132398 md5=4bf74894d3ab9924c0cac66baa4f34bd crlf=2613 loneLF=0
+assets/xt-profile.css B=40729 md5=cd0e9c0519bfa715c59ae9443178e29a crlf=1244 loneLF=0
+
+=== layout() 边界计算 ===
+function layout() {
+      var sw = STATE.stageW, sh = STATE.stageH;
+      var cover = Math.max(sw / STATE.natW, sh / STATE.natH);
+      var total = cover * STATE.scale;
+      var w = STATE.natW * total, h = STATE.natH * total;
+      var crop = STATE.ring;                            // 图片必须覆盖裁剪方框
+      var minX = (sw - crop) / 2 - (w - crop) / 2;
+      var maxX = -minX;
+      var minY = (sh - crop) / 2 - (h - crop) / 2;
+      var maxY = -minY;
+      STATE.x = clamp(STATE.x, minX, maxX);
+      STATE.y = clamp(STATE.y, minY, maxY);
+      img.style.width = w + 'px';
+      img.style.height = h + 'px';
+      img.style.left = STATE.x + 'px';
+      img.style.top = STATE.y + 'px';
+      img.setAttribute('data-scale', String(total));
+    }
+    /* 以舞台坐标 (px,py) 为锚点缩放到 ns（锚点下的图像点保持不动），随后 layout() 统一 clamp 边界 */
+    function zoomAt(ns, px, py) {
+      if (!STATE.natW || !STATE.natH) { return; }
+      ns = clamp(ns, ZMIN, ZMAX);
+      var cover = Math.max(STATE.stageW / STATE.natW, STATE.stageH / STATE.natH);
+      var t0 = cover * STATE.scale;
+      var t1 = cover * ns;
+      if (t0 <= 0) { return; }
+      var ux = (px - STATE.x) / t0;
+      var uy = (py - STATE.y) / 
+
+=== zoomAt + ZMIN/ZMAX ===
+function zoomAt(ns, px, py) {
+      if (!STATE.natW || !STATE.natH) { return; }
+      ns = clamp(ns, ZMIN, ZMAX);
+      var cover = Math.max(STATE.stageW / STATE.natW, STATE.stageH / STATE.natH);
+      var t0 = cover * STATE.scale;
+      var t1 = cover * ns;
+      if (t0 <= 0) { return; }
+      var ux = (px - STATE.x) / t0;
+      var uy = (py - STATE.y) / t0;
+      STATE.scale = ns;
+      STATE.x = px - ux * t1;
+      STATE.y = py - uy * t1;
+      layout();
+    }
+    img.onload = function () {
+      STATE.natW = img.naturalWidth || img.width;
+      STATE.natH = img.naturalHeight || img.height;
+      STATE.x = 0; STATE.y = 0;
+      fitStage();
+      layout();
+    };
+    if (img.complete && img.naturalWidth) { img.onload(); }
+
+    cropResizeFn = function () { fitStage(); layout(); };
+    window.addEventListener('resize', cropResizeFn);
+
+    var dragging = false, lastX = 0, lastY = 0;
+
+    /* 单指 / 单指针拖动 */
+    function down(px, py) { dragging = true; lastX = px; lastY = py; }
+    function move(px, py) {
+      if (!dragging) { return; }
+      STATE.x += (px - lastX); STATE.y += (py - lastY);
+      lastX = px; lastY = py;
+      layout();
+    }
+    function up() { dragging = false; }
+
+    /* 双击 / 双击触摸：在 1x 与 2x 间切换（以舞台中心为锚点） */
+    var lastTapT = 0, downX = 0, downY = 0;
+    function markDown(x, y) { downX = x; downY = y; }
+    function tap(x,
+
+ZMIN 行:     var ZMIN = 1, ZMAX = 5;                                     // 双指捏合 / 滚轮缩放的比例上下限

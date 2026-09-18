@@ -149,7 +149,7 @@ html, body{
   flex: none;
   width: 64px;
   height: 64px;
-  border-radius: 50%;
+  border-radius: 12px;
   overflow: hidden;
   background: var(--xtp-ic-bg);
   color: var(--xtp-ic-fg);
@@ -555,7 +555,7 @@ html, body{
 .xtp-avatar-row .xtp-avatar-sm {
   width: 56px;
   height: 56px;
-  border-radius: 50%;
+  border-radius: 12px;
   overflow: hidden;
   flex: none;
   background: var(--xtp-ic-bg);
@@ -875,9 +875,10 @@ html, body{
 .xtp-modal-actions button.primary { background: var(--xtp-primary, #5b8def); border-color: var(--xtp-primary, #5b8def); color: #fff; }
 .xtp-modal-actions button.danger { background: var(--xtp-danger, #ff4d4f); border-color: var(--xtp-danger, #ff4d4f); color: #fff; }
 
-/* 头像裁剪（R86-C 微信风格全屏暗色裁剪台）
-   结构：.xtp-cropper（全屏 flex 列）= 顶栏（取消 / 完成）+ 裁剪区（占满剩余空间）+ 底栏（滑杆）。
-   裁剪区不再有固定 340/400px 限制，四周留白压到最小；控件只剩拖动 / 捏合 / 滑杆，无说明文案。 */
+/* 头像裁剪（R97 微信头像设置页对标：全屏暗色裁剪台）
+   结构：.xtp-cropper（全屏 flex 列）= 顶栏（左「取消」+ 右「完成」，中间留空）+ 裁剪区（占满剩余空间）。
+   裁剪区不再有固定 340/400px 限制，四周留白压到最小；底栏缩放滑杆与全部说明文案已移除，
+   控件只剩拖动 / 双指捏合（桌面端滚轮），裁剪框内叠加 3x3 淡灰九宫格参考线。 */
 /* R88-M6（2026-09-18）：进入裁剪台的过渡 —— 由透明 + 轻微缩放淡入，避免「啪一下全屏」的突兀感。 */
 .xtp-crop-mask {
   padding: 0;
@@ -922,23 +923,6 @@ html, body{
   box-sizing: border-box;
   background: #000;
 }
-/* R88-M6：进入引导文案（R86-C 原设计「无说明文案」，但实测用户会困惑，补一行轻量引导）。
-   纯 CSS ::after，绝对居中，不占用两侧按钮空间，不改任何 DOM / JS。 */
-.xtp-crop-topbar::after {
-  content: "拖动 / 双指缩放调整头像";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  max-width: 60%;
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 12px;
-  line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  pointer-events: none;
-}
 .xtp-crop-btn {
   min-width: 58px;
   min-height: 32px;
@@ -965,16 +949,16 @@ html, body{
   cursor: move;
 }
 .xtp-crop-stage img { position: absolute; left: 0; top: 0; user-select: none; -webkit-user-drag: none; }
-/* 圆形头像遮罩：圆外 62% 暗色蒙层 + 内描边白圈（最终头像范围） */
+/* 正方形头像遮罩：正方形外 62% 暗色蒙层（最终头像范围；内描边由 .xtp-crop-frame 的外边框承担） */
 .xtp-crop-hole {
   position: absolute;
   left: 50%;
   top: 50%;
-  border-radius: 50%;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.62), inset 0 0 0 1px rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.62);
   pointer-events: none;
 }
-/* 正方形裁剪区（输出的方形范围） */
+/* 正方形裁剪区（输出的方形范围）+ 3x3 淡灰九宫格参考线（纯 CSS 渐变绘制，便于对齐人脸）。
+   九宫格线用两条竖线 + 两条横线（各 1px，rgba(255,255,255,.28) 在暗底上呈淡灰）。 */
 .xtp-crop-frame {
   position: absolute;
   left: 50%;
@@ -982,45 +966,68 @@ html, body{
   border: 1px solid rgba(255, 255, 255, 0.24);
   box-sizing: border-box;
   pointer-events: none;
+  background-image:
+    linear-gradient(to right, transparent calc(33.333% - 0.5px), rgba(255, 255, 255, 0.28) calc(33.333% - 0.5px), rgba(255, 255, 255, 0.28) calc(33.333% + 0.5px), transparent calc(33.333% + 0.5px)),
+    linear-gradient(to right, transparent calc(66.666% - 0.5px), rgba(255, 255, 255, 0.28) calc(66.666% - 0.5px), rgba(255, 255, 255, 0.28) calc(66.666% + 0.5px), transparent calc(66.666% + 0.5px)),
+    linear-gradient(to bottom, transparent calc(33.333% - 0.5px), rgba(255, 255, 255, 0.28) calc(33.333% - 0.5px), rgba(255, 255, 255, 0.28) calc(33.333% + 0.5px), transparent calc(33.333% + 0.5px)),
+    linear-gradient(to bottom, transparent calc(66.666% - 0.5px), rgba(255, 255, 255, 0.28) calc(66.666% - 0.5px), rgba(255, 255, 255, 0.28) calc(66.666% + 0.5px), transparent calc(66.666% + 0.5px));
 }
-.xtp-crop-bottom {
-  flex: none;
+/* 底部选择弹窗（ActionSheet）：对标微信「编辑头像」来源选择。白底圆角顶部、三项纵向排列、
+   「取消」与上面两项之间留灰色间隙独立成块，底部适配 env(safe-area-inset-bottom)。 */
+.xtp-sheet-mask {
+  padding: 0;
+  background: rgba(0, 0, 0, 0.4);
+  align-items: flex-end;
+  justify-content: center;
+  animation: xtpSheetMaskIn 0.18s ease-out both;
+}
+@keyframes xtpSheetMaskIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.xtp-sheet {
+  width: 100%;
+  background: var(--xtp-card, #ffffff);
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+  overflow: hidden;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  animation: xtpSheetIn 0.22s ease-out both;
+  box-sizing: border-box;
+}
+@keyframes xtpSheetIn {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.xtp-sheet-list {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 16px 12px;
-  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-  background: #000;
+  flex-direction: column;
 }
-.xtp-crop-zi { flex: none; width: 18px; height: 18px; color: rgba(255, 255, 255, 0.7); }
-.xtp-crop-zi svg { display: block; width: 100%; height: 100%; }
-.xtp-crop-zoom {
-  flex: 1;
-  min-width: 0;
-  height: 22px;
-  margin: 0;
-  -webkit-appearance: none;
-  appearance: none;
-  background: transparent;
-}
-.xtp-crop-zoom::-webkit-slider-runnable-track {
-  height: 2px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.28);
-}
-.xtp-crop-zoom::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  margin-top: -7px;
+.xtp-sheet-item {
+  display: block;
+  width: 100%;
+  min-height: 52px;
+  padding: 14px 16px;
   border: 0;
-  border-radius: 50%;
-  background: #fff;
+  border-top: 1px solid var(--xtp-line, #ececec);
+  background: transparent;
+  color: var(--xtp-text, #1f2329);
+  font-size: 16px;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
 }
-.xtp-crop-zoom::-moz-range-track { height: 2px; border-radius: 2px; background: rgba(255, 255, 255, 0.28); }
-.xtp-crop-zoom::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: #fff; }
-
+.xtp-sheet-list .xtp-sheet-item:first-child,
+.xtp-sheet-cancel { border-top: 0; }
+.xtp-sheet-item:active { background: var(--xtp-press, #ececec); }
+.xtp-sheet-cancel { color: var(--xtp-sub, #8a9099); }
+.xtp-sheet-gap {
+  height: 8px;
+  background: var(--xtp-bg, #f2f2f2);
+  border-top: 1px solid var(--xtp-line, #ececec);
+}
 .xtp-toast {
   position: fixed;
   left: 50%;

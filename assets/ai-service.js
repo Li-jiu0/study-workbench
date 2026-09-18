@@ -769,6 +769,53 @@
       if (!mc) continue;
       chain.push(cloneModel(mc, temp, maxT));
     }
+
+    // ----- R96：深度思考强制优先 -----
+    // 页面勾选「深度思考」时会把意图以 opts.forceReasoning=1 传下来。为什么需要这一步：
+    // 页面传的 funcType 只是【按输入文字猜】的默认值（predictFuncType），而 buildChain 会
+    // 把手动选中的模型置为链首；若用户手动选了非推理模型，仅靠 funcType='reasoning' 仍会被
+    // 手动选中模型盖掉，UI 文案「强制走推理模型」即失效。此处显式把推理链首提到最前。
+    // 边界：拍题（vision）优先，不抢；生图模型不抢；未配推理模型时不改动原链。
+    var wantReasoning = !!(opts && opts.forceReasoning);
+    if (wantReasoning && funcType !== "vision" && !manualIsImageGen && cfg.FUNC_TYPES) {
+      var rft = cfg.FUNC_TYPES.reasoning;
+      var rids = [];
+      if (rft && rft.primary) rids.push(rft.primary);
+      if (rft && rft.fallback && rft.fallback.length) {
+        for (var rf = 0; rf < rft.fallback.length; rf++) rids.push(rft.fallback[rf]);
+      }
+      // 自定义分类（设置页推理 Tab）已配置时同样尊重
+      if (settings.catModels && Array.isArray(settings.catModels.reasoning) && settings.catModels.reasoning.length) {
+        rids = settings.catModels.reasoning.slice();
+      }
+      var rhead = null;
+      for (var rp = 0; rp < rids.length; rp++) {
+        var rm = rids[rp];
+        if (!rm || isModelDisabled(settings, rm)) continue;
+        var rmc = findModel(rm);
+        if (!rmc) continue;
+        // 纯生图/3D 模型不能承载文本推理
+        if (isImageGenModel(rmc)) continue;
+        rhead = rmc;
+        break;
+      }
+      if (rhead) {
+        var rIds = [rhead.id];
+        for (var rq = 0; rq < chain.length; rq++) {
+          if (chain[rq] && chain[rq].id !== rhead.id) rIds.push(chain[rq].id);
+        }
+        var rChain = [];
+        var rSeen = {};
+        for (var rz = 0; rz < rIds.length; rz++) {
+          if (!rIds[rz] || rSeen[rIds[rz]]) continue;
+          rSeen[rIds[rz]] = true;
+          for (var ry = 0; ry < chain.length; ry++) {
+            if (chain[ry] && chain[ry].id === rIds[rz]) { rChain.push(chain[ry]); break; }
+          }
+        }
+        if (rChain.length) chain = rChain;
+      }
+    }
     return chain;
   }
 

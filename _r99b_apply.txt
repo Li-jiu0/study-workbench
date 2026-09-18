@@ -1,0 +1,5 @@
+BEFORE js  133167 bytes, md5=c8e01cc6b3e7a3fae0dcc9281814aade, crlf=2623, loneLF=0
+OK  [js-baseScale-cover] x1
+AFTER  js  133409 bytes, md5=c396a192c9527a9bcc7ffe1f29d6d67f, crlf=2625, loneLF=0
+LONE-LF-OK js=True
+DONE

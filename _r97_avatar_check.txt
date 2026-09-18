@@ -1,0 +1,105 @@
+# R97 头像编辑功能改造 —— 检查报告
+工程：星途（原学习工作台） · 唯一可写树：D:\下载的文件\学习工作台
+改动文件：assets/xt-profile.js、assets/xt-profile.css（仅此两个，未触碰版本戳）
+备份：assets/xt-profile.js.bak-pre-r97-20260919、assets/xt-profile.css.bak-pre-r97-20260919
+
+================================================================
+一、改了什么（逐条对应 4 项调整）
+================================================================
+调整1 · 移除底部缩放进度条
+  JS：
+    - 删除常量 CROP_ZOOM_SVG（原 L2089-2090）。
+    - openCropper DOM 模板里删除整个 <div class="xtp-crop-bottom" id="xtpCropBottom">…</div>（含放大镜图标 + #xtpCropZoom range）。
+    - 删除 DOM 引用 var zoom = .../var bottom = ...；ZMIN/ZMAX 注释更新（不再提滑杆）。
+    - fitStage()：删除 botH，可用高 = 视口高 - 顶栏（sh = vh - topH）。
+    - zoomAt()：删除 `if (zoom) { zoom.value = ... }` 滑杆同步行。
+    - 删除滑杆 input 监听（原 L2305-2306）。
+  CSS：
+    - 删除 .xtp-crop-bottom / .xtp-crop-zi / .xtp-crop-zoom 及 ::-webkit-slider-runnable-track / ::-webkit-slider-thumb / ::-moz-range-track / ::-moz-range-thumb 全部规则。
+  → 双指捏合 + 拖动 + 桌面滚轮缩放全部保留并且已真跑验证（见四）。
+
+调整2 · 裁剪框加 3×3 淡灰九宫格
+  CSS（纯 CSS，无额外 DOM/JS）：.xtp-crop-frame 增加 background-image，4 条 linear-gradient：
+    2 条竖线（to right，33.333% / 66.666%）+ 2 条横线（to bottom，33.333% / 66.666%），
+    线宽 1px（calc ±0.5px），颜色 rgba(255,255,255,0.28)（暗底上的淡灰观感，未用纯白）。
+  层级：frame 在 hole 之下（DOM 顺序 frame → hole），九宫格超出圆的部分被 hole 的 62% 暗色蒙层 box-shadow 自然盖住，符合微信观感。
+  未引入 clamp()/min()/max()（本项目禁用），仅用 calc()。
+
+调整3 · 顶部只留「取消」「完成」
+  CSS：删除 .xtp-crop-topbar::after 整块（即「拖动 / 双指缩放调整头像」提示，原 L925-941）。
+  保留 .xtp-crop-topbar 的 justify-content: space-between → 两按钮分居左右，中间留空（未改居中）。
+  完成按钮仍为微信绿 #07c160（.xtp-crop-btn.primary 未动）。
+  JS：同步更新块注释，去掉「底部缩放滑杆」等已删设计描述（不写冗余版本信息、不含带版本号的资源路径）。
+
+调整4 · 点「编辑头像」先弹底部选择弹窗（新增 ActionSheet）
+  JS 新增：
+    xtpOpenAvatarSheet()：自建遮罩 .xtp-mask.xtp-sheet-mask，id="xtpMask"（复用统一关闭口 closeModal/xtpCloseModal）；
+      面板 .xtp-sheet 含「拍照」(#xtpSheetCamera) /「从手机相册选择」(#xtpSheetAlbum) 两项 + 独立分隔的「取消」(#xtpSheetCancel)；
+      点遮罩空白（target===mask）关闭，与微信一致。
+    xtpPickAvatarFile(useCamera)：关闭面板 → 创建隐藏 file input（accept=image/*）；
+      useCamera=true 加 capture="environment" 调起相机（桌面浏览器忽略 capture 退化为普通选图，注释已写明）；
+      useCamera=false 不带 capture；change 后复用原有 FileReader → openCropper(url) 链路，未重写。
+    xtpPickAvatar()：改为只调用 xtpOpenAvatarSheet()（不再直接进相册）。
+  CSS 新增：.xtp-sheet-mask / @keyframes xtpSheetMaskIn / .xtp-sheet / @keyframes xtpSheetIn /
+    .xtp-sheet-list / .xtp-sheet-item / .xtp-sheet-cancel / .xtp-sheet-gap；
+    白底（var(--xtp-card)）圆角顶部、三项纵向、取消与上两项间 8px 灰隙独立成块、padding-bottom: env(safe-area-inset-bottom)。
+  未使用 prompt/alert/confirm（遵守产品硬约束）；仅 ES2017（var/function）。
+
+未改动（严格遵守纪律）：
+  - 「完成」按钮的 canvas 裁剪 + saveProfile({avatarImg}) + renderPage + toast 逻辑（原 L2314-2346）一字未动。
+  - 圆形遮罩 .xtp-crop-hole 保留。
+  - 版本戳等其它文件未触碰。
+
+================================================================
+二、新指纹（改后）
+================================================================
+assets/xt-profile.js   132274 bytes  md5=4fcd5a2bd0142d32718208cb45188659  crlf=2618  loneLF=0
+assets/xt-profile.css   40871 bytes  md5=106f241f0550dec0d49bcdd773773df2  crlf=1246  loneLF=0
+备份一致性：两个 .bak-pre-r97-20260919 与改动前指纹完全一致
+  js  bak 130720  md5=63b12967bee21fe3b665a2a638fade63
+  css bak  39598  md5=f73ed77be4eeb1bf1a25d7173f8b0faf
+CRLF 保持：均 crlf>0 且 loneLF==0（串行二进制替换，无行尾污染）。
+
+================================================================
+三、静态检具（node 绝对路径）
+================================================================
+node --check assets/xt-profile.js   → rc=0（无语法错误）
+node tools/qa/escheck_es2017.js     → DONE 0（ES2017 合规，0 违规）
+
+================================================================
+四、行为级自测（真跑，非只读代码）
+================================================================
+[A] 静态 0 命中（_r97_checks.py / _r97_chk_out.txt）
+  .xtp-crop-bottom / #xtpCropZoom / CROP_ZOOM_SVG / var zoom / zoom.value / 滑杆 input 监听 → JS 全 0 命中
+  .xtp-crop-bottom / .xtp-crop-zoom / .xtp-crop-zi / .xtp-crop-topbar::after / 提示文案 → CSS 全 0 命中
+  保留：.xtp-crop-hole、space-between、#07c160、canvas 裁剪保存逻辑、toast 文案
+  （残留的 "bottom" 仅 L827 无关功能的 padding-bottom:2px，与本改造无关）
+
+[B] jsdom 功能验证（r97_avatar_test.js，39 PASS / 0 FAIL）
+  - xtpPickAvatar() 调用 → 先弹 #xtpMask 面板，未立即创建 input、未立即 input.click() ✓
+  - 面板三项纵向顺序 拍照→相册→取消 ✓
+  - 点「取消」→ 面板摘除、DOM 无残留、未创建 input ✓
+  - 点「拍照」→ 面板关闭 + 创建 input + click()，input 带 capture="environment" ✓
+  - 点「从手机相册选择」→ 创建 input 且无 capture 属性 ✓
+  - 点遮罩空白 → 关闭 ✓
+  - 九宫格：.xtp-crop-frame 内 4 条 linear-gradient、含 calc()、淡灰 rgba(255,255,255,.28)、未用纯白 ✓
+  - 顶部只有取消/完成两个按钮，模板相邻无文本节点；CSS 无 topbar::after ✓
+
+[C] 手势事件绑定存在（r97_gesture_test.js，9 PASS / 0 FAIL）
+  pointerdown/move/up/cancel + mousedown/move/up + touchstart/move/end/cancel + wheel 全部绑定在 stage；
+  pDown 两指进 pinch、pMove/tMove 以两指中点为锚点调 zoomAt；单指拖动 down/move/up 保留；
+  fitStage 已无 bottom.offsetHeight；zoomAt 已无 zoom.value。
+
+[D] 端到端真跑手势（r97_e2e_test.js，10 PASS / 0 FAIL）
+  经真实入口 拍照/相册 → FileReader 桩 → openCropper 打开裁剪台：
+  - 裁剪台 #xtpCropStage / #xtpCropImg / #xtpCropFrame / #xtpCropHole 均在；#xtpCropBottom / #xtpCropZoom 不存在 ✓
+  - 单指拖动：img.left 0 → 40（+40，与拖动量一致）✓
+  - 双指捏合：data-scale 0.77375 → 1.5475（恰好 ×2，两指距离 100→200）✓
+  → 证明「移除滑杆」后双指捏合缩放与拖动仍真实生效。
+
+================================================================
+五、结论
+================================================================
+四项调整全部落实；双指捏合/拖动/滚轮缩放保留且端到端真跑通过；
+语法与 ES2017 检具全绿；CRLF 保持；备份齐备；仅改动指定两个文件。
+IS_PASS: YES
