@@ -3,6 +3,7 @@
 分组上限（次/分钟，见 config.py）：
 - auth：注册 / 登录（默认 10）
 - ai：AI 流式对话（默认 30）
+- geo：定位代理 /api/geo/*（默认 30）
 - 其余默认全局（默认 600）
 
 用法（在路由签名里挂依赖）：
@@ -26,13 +27,16 @@ from collections import defaultdict, deque
 from fastapi import HTTPException, Request
 
 from config import (RATE_AI_CONSUME_PER_MIN, RATE_AI_PER_MIN,
-                    RATE_AUTH_PER_MIN, RATE_GLOBAL_PER_MIN)
+                    RATE_AUTH_PER_MIN, RATE_GEO_PER_MIN,
+                    RATE_GLOBAL_PER_MIN)
 
 _LIMITS = {
     "auth": RATE_AUTH_PER_MIN,
     "ai": RATE_AI_PER_MIN,
     # R88-F：用量上报（无人登录态的前端直连场景）单独限流，防刷账本
     "consume": RATE_AI_CONSUME_PER_MIN,
+    # R100：定位代理（/api/geo/*，免登录公开，防刷腾讯配额）
+    "geo": RATE_GEO_PER_MIN,
     "default": RATE_GLOBAL_PER_MIN,
 }
 _buckets: dict[str, deque[float]] = defaultdict(deque)

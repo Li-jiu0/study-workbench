@@ -56,6 +56,21 @@ body.theme-home { height: auto; min-height: 100%; overflow-y: auto; overflow-x: 
 .xtr-loc .xtr-reloc { flex: 0 0 auto; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--primary, #5B8DEF);
   background: transparent; color: var(--primary, #5B8DEF); font-size: 12px; cursor: pointer; }
 
+/* R100：周边位置（≤10 条，列表自身滚动，不撑爆移动端） */
+.xtr-poi { margin-top: 8px; border: 1px solid var(--border, #e6e9f0); border-radius: 12px;
+  background: var(--card, #fff); max-height: 216px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.xtr-poi-item { display: flex; align-items: center; gap: 8px; padding: 10px 12px; font-size: 13px;
+  color: var(--text, #1f2937); border-bottom: 1px solid var(--border, #eef1f6); }
+.xtr-poi-item:last-child { border-bottom: none; }
+.xtr-poi-item .xtr-poi-n { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.xtr-poi-item .xtr-poi-d { flex: 0 0 auto; color: var(--text-muted, #9aa3b2); font-size: 12px; }
+/* R100：第 4 级街道 / 乡镇手动输入（腾讯无街道数据的区县） */
+.xtr-street { display: flex; align-items: center; gap: 8px; padding: 12px 16px; }
+.xtr-street input { flex: 1 1 auto; min-width: 0; padding: 9px 12px; border-radius: 10px;
+  border: 1px solid var(--border, #e6e9f0); background: var(--bg, #f5f7fb); font-size: 14px;
+  color: var(--text, #1f2937); outline: none; }
+.xtr-street button { flex: 0 0 auto; padding: 9px 16px; border-radius: 10px; border: none;
+  background: var(--primary, #5B8DEF); color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; }
 .xtr-recent { display: flex; flex-wrap: wrap; gap: 8px; padding: 2px 0 2px; }
 .xtr-recent .xtr-chip { display: inline-flex; align-items: center; gap: 4px; padding: 7px 12px; border-radius: 999px;
   border: 1px solid var(--border, #e6e9f0); background: var(--card, #fff); color: var(--text, #1f2937);
@@ -94,6 +109,11 @@ body.theme-home { height: auto; min-height: 100%; overflow-y: auto; overflow-x: 
     </div>
   </div>
 
+  <div class="xtr-sec" id="xtrPoiSec" style="display:none">
+    <div class="xtr-sec-t">周边位置</div>
+    <div class="xtr-poi" id="xtrPoiList"></div>
+  </div>
+
   <div class="xtr-sec" id="xtrRecentSec" style="display:none">
     <div class="xtr-sec-t">常用城市</div>
     <div class="xtr-recent" id="xtrRecent"></div>
@@ -103,20 +123,22 @@ body.theme-home { height: auto; min-height: 100%; overflow-y: auto; overflow-x: 
 
   <div class="xtr-list" id="xtrList"></div>
 
-  <div class="xtr-tip">点选「省 → 市 → 区」逐级选择，或直接搜索关键词快速定位；选中后立即返回个人信息页，点「保存」生效。<br>地区每 30 天仅可修改一次。</div>
+  <div class="xtr-tip">点选「省 → 市 → 区 → 街道」逐级选择，或直接搜索关键词快速定位；选中后立即返回个人信息页，点「保存」生效。无街道数据的区县可手动输入或跳过街道。<br>地区每 30 天仅可修改一次。</div>
 </div>
 
 <div class="xtr-toast" id="xtrToast"></div>
 
-<script src="assets/xt-region.js?v=20260919a"></script>
+<script src="assets/xt-region.js?v=20260919b"></script>
 <script src="assets/icon-map.js?v=20260916O"></script>
 <script>
 /* ==================== R86-B：地区选择页交互（ES5，老 WebView 兼容） ====================
    ① 搜索：省 / 市 / 区 三级关键词匹配，最多 60 条；
-   ② 自动定位：navigator.geolocation + 逆地理编码（高德 / 腾讯 / Nominatim），
-      解析成「省 / 市 / 区 + 街道」的可读地址，作为「当前位置」可直接选中；
+   ② 自动定位：navigator.geolocation + 逆地理编码（R100 起优先后端 /api/geo
+      代理，失败降级前端 JSONP 链），定位成功自动选中「省 / 市 / 区」并预填
+      街道；纯 HTTP 非安全上下文自动改走后端 IP 定位（按城市级精度给口径）；
       拒绝授权 / 定位失败 / 服务不可用 → 一律降级为手动选择，并给「重新定位」入口；
-   ③ 逐级点选：省 → 市 → 区，已保存地区默认高亮（打勾）；
+   ③ 逐级点选：省 → 市 → 区 → 街道（R100 四级；无街道数据的区县改手动输入，
+      也可跳过街道仅选到区县），已保存地区默认高亮（打勾）；
    ④ 结果回写：localStorage['xt_region_pick'] + 跳回 back 页面（默认 个人中心.html）。
    禁用 alert / confirm / prompt，提示一律走页内 toast。 */
 (function () {
@@ -169,13 +191,20 @@ body.theme-home { height: auto; min-height: 100%; overflow-y: auto; overflow-x: 
   var state = {
     cur: '',           // 已保存的地区文本（高亮用）
     back: '个人中心.html',
-    level: 0,          // 0=省 1=市 2=区
+    level: 0,          // 0=省 1=市 2=区 3=街道/乡镇（R100 四级）
     province: '',
     city: '',
     district: '',
+    street: '',        // R100：第 4 级选中 / 预填的街道名
+    streetDraft: '',   // R100：街道输入框草稿
+    adcode: '',        // R100：区县级 adcode（定位获得，用于拉取街道列表）
+    adcodeFor: '',     // R100：adcode 归属的区名（换区即失效）
+    children: null,    // R100：街道列表 [{id,name}]；null=未知 → 手动输入模式
+    childrenBusy: false,
     keyword: '',
     locBusy: false,
-    locItem: null      // 定位结果 {text, province, city, district}
+    locItem: null,     // 定位结果 {text, detail}
+    locPois: []        // R100：周边 POI（≤10 条）
   };
 
   var toastTimer = null;
@@ -231,6 +260,10 @@ body.theme-home { height: auto; min-height: 100%; overflow-y: auto; overflow-x: 
       html += '<span>›</span><span class="xtr-cb' + (state.level === 2 ? ' on' : '') + '" onclick="XtrPage.goLevel(2)">' +
         (state.district ? esc(state.district) : '请选择区 / 县') + '</span>';
     }
+    if (state.district) {
+      html += '<span>›</span><span class="xtr-cb' + (state.level === 3 ? ' on' : '') + '" onclick="XtrPage.goLevel(3)">' +
+        (state.street ? esc(state.street) : '请选择街道 / 乡镇') + '</span>';
+    }
     box.innerHTML = html;
   }
 
@@ -282,15 +315,40 @@ body.theme-home { height: auto; min-height: 100%; overflow-y: auto; overflow-x: 
           ? "XtrPage.pickCity('" + esc(names[i]).replace(/'/g, "\\'") + "')"
           : "XtrPage.pick('" + esc(txt).replace(/'/g, "\\'") + "')") });
       }
-    } else {
+    } else if (state.level === 2) {
       names = R.districtsOf(state.province, state.city);
       if (!names.length) {
         box.innerHTML = '<div class="xtr-empty">该市暂无区县数据，可返回用搜索定位</div>';
         return;
       }
       for (i = 0; i < names.length; i++) {
-        var full = R.textOf(state.province, state.city, names[i]);
-        html += itemHtml(names[i], { onclick: "XtrPage.pick('" + esc(full).replace(/'/g, "\\'") + "')" });
+        html += itemHtml(names[i], { arrow: true, onclick: "XtrPage.pickDistrict('" + esc(names[i]).replace(/'/g, "\\'") + "')" });
+      }
+    } else if (state.level === 3) {
+      /* R100 第 4 级：街道 / 乡镇。有 adcode 且腾讯有数据 → 列表点选；
+         否则 → 文本输入手动填（两种模式均可「跳过街道」仅选到区县）。 */
+      var dName = state.district || state.city || '';
+      html += itemHtml('不需要街道，仅选到「' + dName + '」', { onclick: 'XtrPage.skipStreet()' });
+      if (state.childrenBusy) {
+        html += '<div class="xtr-empty">正在加载街道 / 乡镇数据…</div>';
+      } else if (state.children && state.children.length) {
+        for (i = 0; i < state.children.length; i++) {
+          var snm = String(state.children[i].name || '');
+          if (!snm) continue;
+          var scls = 'xtr-item' + (snm === state.street ? ' on' : '');
+          var stick = (snm === state.street) ? '<span class="xtr-tick">✓</span>' : '';
+          html += '<div class="' + scls + '" onclick="XtrPage.pickStreet(\'' + esc(snm).replace(/'/g, "\\'") + '\')">' +
+            esc(snm) + stick + '</div>';
+        }
+      } else {
+        html += '<div class="xtr-street">' +
+          '<input type="text" id="xtrStreetInput" placeholder="输入街道/乡镇名，如可选则下方直接选" autocomplete="off" value="' + esc(state.street) + '"' +
+          ' oninput="XtrPage.onStreetInput(this.value)" onkeydown="XtrPage.streetKey(event)">' +
+          '<button type="button" onclick="XtrPage.confirmStreet()">确认</button></div>';
+        if (state.street) {
+          html += '<div class="xtr-item on" onclick="XtrPage.pickStreet(\'' + esc(state.street).replace(/'/g, "\\'") + '\')">' +
+            esc(state.street) + '<span class="xtr-tick">✓</span></div>';
+        }
       }
     }
     box.innerHTML = html;
@@ -306,23 +364,99 @@ body.theme-home { height: auto; min-height: 100%; overflow-y: auto; overflow-x: 
     if (btn) btn.style.display = showBtn ? '' : 'none';
   }
 
+  /* ---------------- R100：周边位置 + 第 4 级（街道 / 乡镇） ---------------- */
+
+  /** 渲染周边 POI（≤10 条，独立滚动区；空则整节隐藏）。坐标绝不进入字符串。 */
+  function renderPois() {
+    var sec = $('xtrPoiSec'), box = $('xtrPoiList');
+    if (!sec || !box) return;
+    var list = state.locPois || [];
+    if (!list.length) { sec.style.display = 'none'; box.innerHTML = ''; return; }
+    var html = '', i;
+    for (i = 0; i < list.length && i < 10; i++) {
+      var p = list[i] || {};
+      var t = p.title ? String(p.title) : '';
+      if (!t) continue;
+      var ds = (p.distance == null) ? '' : String(p.distance);
+      if (ds && /^[0-9]+(\.[0-9]+)?$/.test(ds)) ds = ds + 'm';
+      html += '<div class="xtr-poi-item"><span class="xtr-poi-n">' + esc(t) + '</span>' +
+        (ds ? '<span class="xtr-poi-d">' + esc(ds) + '</span>' : '') + '</div>';
+    }
+    if (!html) { sec.style.display = 'none'; box.innerHTML = ''; return; }
+    box.innerHTML = html;
+    sec.style.display = '';
+  }
+
+  /** 街道基础名（不含门牌号），用于第 4 级匹配与预填。 */
+  function _streetBase(g) {
+    var s = (g && g.streetBase) ? String(g.streetBase) : ((g && g.street) ? String(g.street) : '');
+    return s.replace(/^\s+|\s+$/g, '');
+  }
+
+  /** 拉取第 4 级街道列表（需定位得到的区县 adcode）；无 adcode → 手动输入模式。 */
+  function loadChildren() {
+    if (!R || typeof R.children !== 'function' || !state.adcode) {
+      state.children = null;
+      state.childrenBusy = false;
+      return;
+    }
+    state.childrenBusy = true;
+    state.children = null;
+    R.children(state.adcode, function (list) {
+      state.childrenBusy = false;
+      state.children = (list && list.length) ? list : [];
+      /* 定位得到的街道与列表相似项对齐（双向包含即命中，以列表项为准） */
+      if (state.street && state.children.length) {
+        for (var i = 0; i < state.children.length; i++) {
+          var nm = String(state.children[i].name || '');
+          if (nm && (nm.indexOf(state.street) >= 0 || state.street.indexOf(nm) >= 0)) {
+            state.street = nm;
+            break;
+          }
+        }
+      }
+      if (state.level === 3) renderList();
+    });
+  }
+
+  /** 选中街道 → 拼四级完整文本并回写。 */
+  function pickStreet(name) {
+    var nm = String(name || '').replace(/^\s+|\s+$/g, '');
+    if (!nm) { toast('请输入或选择街道 / 乡镇名'); return; }
+    state.street = nm;
+    var base = R.textOf(state.province, state.city, state.district);
+    pick(base ? (base + ' ' + nm) : nm);
+  }
+
+  /** 跳过街道，仅选到区县。 */
+  function skipStreet() {
+    pick(R.textOf(state.province, state.city, state.district));
+  }
+
   function locate() {
     if (!R || typeof R.locate !== 'function') { setLocBox('bad', '定位服务不可用，请手动选择', '', true); return; }
     if (state.locBusy) return;
     state.locBusy = true;
     state.locItem = null;
+    state.locPois = [];
+    renderPois();
     setLocBox('bad', '定位中…', '正在获取你的位置', false);
     R.locate(function (res) {
       if (!res || !res.ok) {
         state.locBusy = false;
         var reason = (res && res.reason) || 'error';
+        /* R100：非安全上下文且 IP 定位也失败 → 「当前网络环境无法自动定位」口径
+           （不再误报「权限被拒绝」）；安全上下文下被拒 → 维持原口径。 */
         var msg = reason === 'denied' ? '定位权限被拒绝' :
-          (reason === 'unavailable' ? '无法获取位置信息（请检查系统定位开关）' :
-            (reason === 'timeout' ? '定位超时' :
-              (reason === 'unsupported' ? '当前浏览器不支持定位' : '定位失败')));
+          (reason === 'ip_fail' ? '当前网络环境无法自动定位' :
+            (reason === 'unavailable' ? '无法获取位置信息（请检查系统定位开关）' :
+              (reason === 'timeout' ? '定位超时' :
+                (reason === 'unsupported' ? '当前浏览器不支持定位' : '定位失败'))));
         setLocBox('bad', msg + '，可直接手动选择', '也可点「重新定位」再试一次', true);
         return;
       }
+      /* R100：后端 IP 定位降级路径（纯 HTTP 环境浏览器 geolocation 恒拒时）。 */
+      if (res.source === 'ip') { handleIpLoc(res); return; }
       setLocBox('bad', '已获取坐标，正在解析地址…', '', false);
       R.reverseGeocode(res.lat, res.lng, function (g) {
         state.locBusy = false;
@@ -331,7 +465,7 @@ body.theme-home { height: auto; min-height: 100%; overflow-y: auto; overflow-x: 
           return;
         }
         /* 街道级优先：能拿到「省 市 区 + 街道」就拼成完整到街道的展示文本。
-           注意 g.text / g.street / g.recommend 都是腾讯返回的中文语义字段，
+           注意 g.text / g.street / g.recommend 都是后端 / 腾讯返回的中文语义字段，
            坐标（res.lat/res.lng）【绝不】进入任何字符串输出。 */
         var base = '';
         if (g.province || g.city) base = R.textOf(g.province, g.city, g.district);
@@ -347,25 +481,70 @@ body.theme-home { height: auto; min-height: 100%; overflow-y: auto; overflow-x: 
         var sub = g.text && g.text !== text ? g.text : '';
         if (!sub && detail && text.indexOf(detail) < 0) sub = detail;
         state.locItem = { text: text, detail: sub || g.text };
-        /* 周边位置：geocoder 的 get_poi 已随同一次请求带回，直接复用，不额外发请求。
-           展示为副标题的第二行提示，点选仍落到当前地址（不引入不可选中的伪条目）。 */
-        var pois = (g.pois && g.pois.length) ? g.pois : [];
-        var poiTip = '';
-        if (pois.length) {
-          var names = [];
-          for (var pi = 0; pi < pois.length && pi < 3; pi++) {
-            var nm = pois[pi] && pois[pi].title;
-            if (nm) names.push(nm);
-          }
-          if (names.length) poiTip = '周边：' + names.join(' · ');
-        }
-        var line2 = sub ? ('详细：' + sub) : '点击即可选中';
-        if (poiTip) line2 = poiTip + (sub ? '　|　' + sub : '');
-        setLocBox('', '当前位置：' + text, line2, false);
+        /* R100：定位成功自动驱动四级选择——省 / 市 / 区自动选中，街道预填，
+           adcode 记录归属区（换区即失效），周边 POI ≤10 条独立滚动展示。 */
+        if (g.province) state.province = g.province;
+        if (g.city) state.city = g.city;
+        if (g.district) state.district = g.district;
+        if (g.adcode) { state.adcode = String(g.adcode); state.adcodeFor = state.district; }
+        state.street = _streetBase(g);
+        state.keyword = '';
+        var si = $('xtrSearch'); if (si) si.value = '';
+        state.level = 3;
+        state.children = null;
+        state.childrenBusy = false;
+        state.locPois = (g.pois && g.pois.length) ? g.pois.slice(0, 10) : [];
+        renderPois();
+        loadChildren();
+        render();
+        setLocBox('', '当前位置：' + text, (sub ? '详细：' + sub : '点击即可选中'), false);
         var box = $('xtrLocBox');
         if (box) box.onclick = function () { if (state.locItem) XtrPage.pick(state.locItem.text); };
       });
     });
+  }
+
+  /* R100：IP 定位结果处理（纯 HTTP 降级）。前三级自动选中；拿到坐标再走一次
+     逆地理取「参考街道 + 周边 POI」（IP 精度只到城市级，街道仅作参考预填，
+     不作为定位结论）；locBox 文案按「网络定位 + HTTP 环境局限」口径。
+     坐标只走内部链路，绝不进入任何面向用户的字符串。 */
+  function handleIpLoc(res) {
+    state.province = res.province || '';
+    state.city = res.city || '';
+    state.district = res.district || '';
+    state.street = '';
+    state.adcode = res.adcode || '';
+    state.adcodeFor = state.district;
+    state.level = 3;
+    state.keyword = '';
+    state.children = null;
+    state.childrenBusy = false;
+    var si = $('xtrSearch'); if (si) si.value = '';
+    var base = R.textOf(state.province, state.city, state.district);
+    state.locItem = { text: base, detail: '' };
+    setLocBox('', '已按网络定位到 ' + (res.city || '') + (res.district || ''),
+      'HTTP 环境无法精确定位到街道；换 App 或 HTTPS 访问可精确定位', true);
+    var box = $('xtrLocBox');
+    if (box) box.onclick = function () { if (state.locItem) XtrPage.pick(state.locItem.text); };
+    var hasCoords = (typeof res.lat === 'number' && isFinite(res.lat) &&
+                     typeof res.lng === 'number' && isFinite(res.lng));
+    if (hasCoords && R && typeof R.reverseGeocode === 'function') {
+      R.reverseGeocode(res.lat, res.lng, function (g) {
+        state.locBusy = false;
+        if (g) {
+          if (g.adcode) { state.adcode = String(g.adcode); state.adcodeFor = state.district; }
+          state.street = _streetBase(g);
+          state.locPois = (g.pois && g.pois.length) ? g.pois.slice(0, 10) : [];
+        }
+        renderPois();
+        loadChildren();
+        render();
+      });
+      return;
+    }
+    state.locBusy = false;
+    loadChildren();
+    render();
   }
 
   /* ---------------- 对外 API ---------------- */
@@ -377,15 +556,20 @@ body.theme-home { height: auto; min-height: 100%; overflow-y: auto; overflow-x: 
     goLevel: function (lv) {
       state.keyword = '';
       var si = $('xtrSearch'); if (si) si.value = '';
-      if (lv === 0) { state.province = ''; state.city = ''; state.district = ''; }
-      else if (lv === 1) { state.city = ''; state.district = ''; }
+      if (lv === 0) { state.province = ''; state.city = ''; state.district = ''; state.street = ''; state.adcode = ''; state.adcodeFor = ''; }
+      else if (lv === 1) { state.city = ''; state.district = ''; state.street = ''; state.adcode = ''; state.adcodeFor = ''; }
+      else if (lv === 2) { state.street = ''; }
       state.level = lv;
+      if (lv === 3 && state.children === null && !state.childrenBusy && state.adcode) loadChildren();
       render();
     },
     pickProvince: function (p) {
       state.province = p;
       state.city = '';
       state.district = '';
+      state.street = '';
+      state.adcode = '';
+      state.adcodeFor = '';
       var cities = R.citiesOf(p);
       if (cities.length === 1 && !R.districtsOf(p, cities[0]).length) {
         // 只有一个市且无区县 → 直接完成（如台湾省各市）
@@ -398,6 +582,9 @@ body.theme-home { height: auto; min-height: 100%; overflow-y: auto; overflow-x: 
     pickCity: function (c) {
       state.city = c;
       state.district = '';
+      state.street = '';
+      state.adcode = '';
+      state.adcodeFor = '';
       var ds = R.districtsOf(state.province, c);
       if (!ds.length) { XtrPage.pick(R.textOf(state.province, c, '')); return; }
       state.level = 2;
@@ -405,6 +592,25 @@ body.theme-home { height: auto; min-height: 100%; overflow-y: auto; overflow-x: 
     },
     pick: pick,
     locate: locate,
+    pickDistrict: function (d) {
+      state.district = String(d || '');
+      state.street = '';
+      if (state.adcodeFor !== state.district) { state.adcode = ''; state.adcodeFor = ''; }
+      state.level = 3;
+      state.children = null;
+      state.childrenBusy = false;
+      loadChildren();
+      render();
+    },
+    pickStreet: pickStreet,
+    skipStreet: skipStreet,
+    onStreetInput: function (v) { state.streetDraft = String(v || ''); },
+    streetKey: function (e) { if (e && (e.keyCode === 13 || e.which === 13)) { XtrPage.confirmStreet(); } },
+    confirmStreet: function () {
+      var el = $('xtrStreetInput');
+      var v = el ? String(el.value || '') : state.streetDraft;
+      pickStreet(v);
+    },
     renderRecent: renderRecent,
     recentList: recentList,
     recentPush: recentPush,

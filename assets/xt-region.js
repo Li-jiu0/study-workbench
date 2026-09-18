@@ -375,6 +375,8 @@
         city: _first(rc.city),
         district: _first(rc.district),
         street: street,
+        streetBase: _first(rc.street),
+        adcode: _first((rs.ad_info || {}).adcode),
         pois: _poiList(rs.pois)
       };
     } catch (e) {
@@ -466,16 +468,144 @@
     });
   }
 
+  /* ---------------- R100：后端 geo 代理（/api/geo/*） ----------------
+   * 线上纯 HTTP 非安全上下文里浏览器 geolocation 恒拒，前端 JSONP 直连又受
+   * Key 配额限制，故逆地理 / IP 定位 / 行政区划下级优先走后端代理（同源
+   * fetch，无 CORS / 配额问题）；后端不可达或 ok:false 时降级回前端 JSONP
+   * 链（R96 能力原样保留，GEO.tencentKey 仍作降级使用）。基址拼法与
+   * admin-contact.js / ai-service.js 的既有模式完全一致：getApiBase() →
+   * API_BASE → http(s) 同源相对路径 → file://（APK）直连服务器。
+   * 坐标仅用于请求参数，绝不进入任何面向用户的字符串输出。 */
+  function _apiBase() {
+    try { if (typeof window.getApiBase === 'function') return window.getApiBase() || ''; } catch (e) { /* 忽略 */ }
+    try { if (window.API_BASE != null) return window.API_BASE; } catch (e2) { /* 忽略 */ }
+    try {
+      if (location.protocol === 'http:' || location.protocol === 'https:') return '';
+    } catch (e3) { /* 忽略 */ }
+    return 'http://110.42.134.62:8000';
+  }
+
+  /** GET fetch JSON（带超时兜底）；任何失败一律回调 null，绝不抛异常。 */
+  function _fetchJson(path, cb) {
+    var done = (typeof cb === 'function') ? cb : function () {};
+    if (typeof fetch !== 'function') { done(null); return; }
+    var settled = false;
+    var timer = setTimeout(function () {
+      if (settled) return;
+      settled = true;
+      done(null);
+    }, (GEO && GEO.timeoutMs) || 9000);
+    function finish(v) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      done(v);
+    }
+    try {
+      fetch(_apiBase() + path).then(function (r) {
+        if (!r || !r.ok) { finish(null); return null; }
+        return r.json();
+      }).then(function (j) {
+        finish(j || null);
+      }).catch(function (e) {
+        finish(null);
+      });
+    } catch (e2) {
+      finish(null);
+    }
+  }
+
+  /** 当前环境是否安全上下文（纯 HTTP 站点为 false，geolocation 按 Web 规范恒拒）。 */
+  function _isSecure() {
+    try { return window.isSecureContext === true; } catch (e) { return false; }
+  }
+
   /**
-   * 逆地理编码（链式降级）：经纬度 → 街道级中文地址 + 周边 POI。
-   * 腾讯优先（含 get_poi=1 一次取回地址与周边 POI）；腾讯失败降级 amap →
-   * nominatim；全失败回调 null，由调用方降级手动选择。坐标 lat,lng 按腾讯
-   * 「纬度,经度」顺序拼接（与既有实现一致）。
+   * IP 定位（后端 /api/geo/ip）：cb({ok,province,city,district,adcode,lat,lng,source})。
+   * 失败（网络错 / ok:false）一律回调 null，绝不抛异常。
+   */
+  function ipLocate(cb) {
+    var done = (typeof cb === 'function') ? cb : function () {};
+    _fetchJson('/api/geo/ip', function (j) {
+      if (!j || j.ok !== true) { done(null); return; }
+      done(j);
+    });
+  }
+
+  /**
+   * 行政区划下级（后端 /api/geo/children）：cb(children 数组 [{id,name}])。
+   * 部分区县腾讯无街道数据 → 空数组；失败（网络错 / ok:false）回调 null。
+   * 绝不抛异常。
+   */
+  function children(adcode, cb) {
+    var done = (typeof cb === 'function') ? cb : function () {};
+    var code = String(adcode == null ? '' : adcode);
+    code = code.replace(/[^0-9]/g, '');
+    if (!code) { done(null); return; }
+    _fetchJson('/api/geo/children?adcode=' + encodeURIComponent(code), function (j) {
+      if (!j || j.ok !== true || !j.children) { done(null); return; }
+      done(j.children);
+    });
+  }
+
+  /** 后端 /api/geo/reverse 结果 → 与 _parseGeo 同形的对象（含街道与周边 POI）。 */
+  function _parseProxyGeo(d) {
+    if (!d || d.ok !== true) return null;
+    try {
+      var street = String(d.street || '');
+      var num = String(d.street_number || '');
+      var st = street && num ? (street + ' ' + num) : (street || num);
+      var pois = [];
+      if (Object.prototype.toString.call(d.pois) === '[object Array]') {
+        for (var i = 0; i < d.pois.length && i < 10; i++) {
+          var p = d.pois[i] || {};
+          if (!p.title) continue;
+          pois.push({
+            title: String(p.title),
+            address: p.address ? String(p.address) : '',
+            category: '',
+            distance: (p._distance == null || String(p._distance) === '') ? '' : String(p._distance)
+          });
+        }
+      }
+      return {
+        text: String(d.address || ''),
+        recommend: String(d.address || ''),
+        province: String(d.province || ''),
+        city: String(d.city || ''),
+        district: String(d.district || ''),
+        street: st,
+        streetBase: street,
+        adcode: String(d.adcode || ''),
+        pois: pois,
+        source: 'proxy'
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /**
+   * 逆地理编码（R100 双路）：优先后端代理 /api/geo/reverse（HTTP 线上环境
+   * 的主路径，一次带回街道级地址 + 周边 POI ≤10 条）；失败（网络错 /
+   * ok:false）降级前端 JSONP 链（腾讯 → amap → nominatim，R96 原路径）；
+   * 全失败回调 null，由调用方降级手动选择。坐标 lat,lng 仅用于请求参数，
+   * 绝不进入任何面向用户的字符串。
    * @param {number} lat 纬度
    * @param {number} lng 经度
    * @param {function} cb 回调（失败 / 超时一律给 null，绝不抛异常）
    */
   function reverseGeocode(lat, lng, cb) {
+    var qs = '/api/geo/reverse?lat=' + encodeURIComponent(lat) + '&lng=' + encodeURIComponent(lng);
+    _fetchJson(qs, function (j) {
+      var g = _parseProxyGeo(j);
+      if (g && g.text) { cb(g); return; }
+      _reverseJsonp(lat, lng, cb);
+    });
+  }
+
+  /** 前端 JSONP 链降级（R96 原路径，后端代理不可用 / ok:false 时兜底）。 */
+  function _reverseJsonp(lat, lng, cb) {
     var chain = _providerChain();
     var idx = 0;
     var sKey = '' + (Date.now()) + '_' + (_geoSeq);
@@ -490,10 +620,43 @@
     next();
   }
 
-  /** 浏览器定位（失败不抛异常，统一走 err 回调）。 */
+  /** R100：失败语义分流。非安全上下文（纯 HTTP）里 geolocation 恒拒，
+   * 「denied / unsupported」并非用户真的拒绝或浏览器残缺，改走后端 IP 定位；
+   * IP 也失败才按 reason='ip_fail' 回调（调用方给「当前网络环境无法自动定位」
+   * 口径）。安全上下文下被拒维持「denied」原语义。settle 为 locate 的 once 闸门。 */
+  function _failOver(settle, reason) {
+    if ((reason === 'denied' || reason === 'unsupported') && !_isSecure()) {
+      ipLocate(function (ip) {
+        if (ip && ip.ok === true) {
+          settle({
+            ok: true,
+            lat: (typeof ip.lat === 'number') ? ip.lat : null,
+            lng: (typeof ip.lng === 'number') ? ip.lng : null,
+            province: String(ip.province || ''),
+            city: String(ip.city || ''),
+            district: String(ip.district || ''),
+            adcode: String(ip.adcode || ''),
+            source: 'ip'
+          });
+          return;
+        }
+        settle({ ok: false, reason: 'ip_fail' });
+      });
+      return;
+    }
+    settle({ ok: false, reason: reason });
+  }
+
+  /**
+   * 浏览器定位（失败不抛异常，统一走 err 回调）。
+   * R100：非安全上下文（纯 HTTP）失败时自动降级后端 IP 定位——成功回调
+   * {ok:true, lat, lng, province, city, district, adcode, source:'ip'}，
+   * IP 也失败回调 {ok:false, reason:'ip_fail'}；坐标只走内部链路，
+   * 绝不进入任何面向用户的字符串。
+   */
   function locate(cb) {
     if (!navigator || !navigator.geolocation || !navigator.geolocation.getCurrentPosition) {
-      cb({ ok: false, reason: 'unsupported' });
+      _failOver(cb, 'unsupported');
       return;
     }
     var settled = false;
@@ -523,7 +686,7 @@
         }, function (err) {
           if (timer) clearTimeout(timer);
           var code = err && err.code;
-          if (code === 1) { once({ ok: false, reason: 'denied' }); return; }
+          if (code === 1) { _failOver(once, 'denied'); return; }
           retryOrFail(code === 2 ? 'unavailable' : (code === 3 ? 'timeout' : 'error'));
         }, { enableHighAccuracy: true, timeout: innerMs, maximumAge: maxAge });
       } catch (e) {
@@ -533,7 +696,7 @@
     }
     function retryOrFail(reason) {
       if (settled) return;
-      if (reason === 'denied') { once({ ok: false, reason: 'denied' }); return; }
+      if (reason === 'denied') { _failOver(once, 'denied'); return; }
       if (attempt < MAX_ATTEMPTS) { doGet(); return; }
       once({ ok: false, reason: reason });
     }
@@ -593,7 +756,9 @@
     parseText: parseText,
     reverseGeocode: reverseGeocode,
     locate: locate,
-    nearby: nearby
+    nearby: nearby,
+    ipLocate: ipLocate,
+    children: children
   };
 
   /* ============================================================

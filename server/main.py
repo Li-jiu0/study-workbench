@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from config import AVATAR_DIR, BASE_DIR, FILE_DIR, IMAGE_DIR, UPLOAD_DIR, VIDEO_DIR
 from database import init_db
 from routers import (admin, ai, auth, chat, feedback, feedback_public, friends,
-                     groups, migrate, moments, news, notes, social, study,
+                     geo, groups, migrate, moments, news, notes, social, study,
                      uploads, users)
 from routers import update  # R86-F：客户端检测更新 GET /api/app/version
 import ws
@@ -43,6 +43,7 @@ app.include_router(social.router)
 app.include_router(friends.router)
 app.include_router(chat.router)
 app.include_router(groups.router)
+app.include_router(geo.router)  # R100：定位后端代理（/api/geo/*，免登录）
 app.include_router(moments.router)
 app.include_router(feedback.router)
 app.include_router(feedback_public.router)  # 20260913j：免登录创作者反馈（POST/GET /api/feedback）

@@ -29,6 +29,8 @@ RATE_GLOBAL_PER_MIN = int(_get("RATE_GLOBAL_PER_MIN", "600") or 600)    # 兜底
 AI_DAILY_LIMIT = int(_get("AI_DAILY_LIMIT", "200") or 200)
 # R88-F：前端直连平台后上报用量（POST /api/ai/usage/consume）的限流（次/分钟，按 IP）
 RATE_AI_CONSUME_PER_MIN = int(_get("RATE_AI_CONSUME_PER_MIN", "60") or 60)
+# R100：定位代理 /api/geo/*（IP 定位 / 逆地理 / 行政区划子级，免登录公开）
+RATE_GEO_PER_MIN = int(_get("RATE_GEO_PER_MIN", "30") or 30)
 DATABASE_PATH = _get("DATABASE_PATH", "data.db")
 DB_URL = f"sqlite:///{(BASE_DIR / DATABASE_PATH).as_posix()}"
 
@@ -119,3 +121,9 @@ SMTP_TLS = _get("SMTP_TLS", "true").lower() in ("1", "true", "yes", "on")
 def smtp_configured() -> bool:
     """邮箱发送是否已配置（host / user / pass 三者齐全才算配置好）。"""
     return bool(SMTP_HOST and SMTP_USER and SMTP_PASS)
+
+
+# ---- 腾讯位置服务（R100 定位代理）----
+# 腾讯位置服务 WebService Key，仅后端代理使用，前端不再显式下发。
+# 原先硬编码在前端 assets/xt-region.js 的 JSONP Key 迁移至此，配额按 Key 计共享。
+TENCENT_MAP_KEY = _get("TENCENT_MAP_KEY")

@@ -1,0 +1,294 @@
+# -*- coding: utf-8 -*-
+"""定位后端代理（R100）：/api/geo/* 三个免登录 GET 接口。
+
+背景：线上站点为纯 HTTP（http://110.42.134.62），浏览器 geolocation 被安全
+策略恒拒；且前端旧版把腾讯地图 Key 硬编码进 assets/xt-region.js 的 JSONP。
+本路由把腾讯位置服务 WebService 统一搬到后端代理：
+
+- Key 只从 server/.env 注入（config.TENCENT_MAP_KEY），响应绝不回传 Key；
+- 三接口统一返回 HTTP 200 + {"ok": bool}，错误不抛 5xx，方便前端降级；
+- 逆地理编码 / 行政区划子级带进程内缓存（腾讯配额按 Key 计，能省则省）。
+
+接口清单（均免登录，挂 rate_limit("geo") 限流）：
+- GET /api/geo/ip                 IP 定位降级（本机/内网调用直接 ip_local）
+- GET /api/geo/reverse?lat=&lng=  逆地理编码（街道级 + 周边 POI）
+- GET /api/geo/children?adcode=   行政区划子级（第 4 级「街道/乡镇」数据源）
+
+错误码约定（均 HTTP 200 + {"ok": false, "error": ...}）：
+- key_missing       .env 未配置 TENCENT_MAP_KEY
+- ip_local          客户端 IP 为私网/环回，IP 定位无意义（不外呼腾讯）
+- bad_params        参数缺失 / 非数字 / 超出中国范围粗校 / adcode 非法
+- tencent_<status>  腾讯侧业务错误（status 非 0）
+- upstream_error    网络 / 超时 / 响应解析失败
+
+写法参照 routers/ai.py（httpx 外呼）与 routers/news.py（免登录公开接口 + 降级）。
+"""
+from __future__ import annotations
+
+import ipaddress
+import re
+import time
+from typing import Any, Dict, List, Optional, Tuple
+
+import httpx
+from fastapi import APIRouter, Depends, Request
+
+from config import TENCENT_MAP_KEY
+from rate_limit import _client_ip, rate_limit
+
+router = APIRouter(prefix="/api/geo", tags=["geo"])
+
+# httpx 外呼统一超时（秒）；trust_env=False 避开系统代理变量（同 news.py）
+_TIMEOUT = 5
+
+# 腾讯位置服务 WebService 端点
+_IP_URL = "https://apis.map.qq.com/ws/location/v1/ip"
+_GEOCODER_URL = "https://apis.map.qq.com/ws/geocoder/v1/"
+_CHILDREN_URL = "https://apis.map.qq.com/ws/district/v1/getchildren"
+
+# 中国范围粗校（含余量）：纬度 [3, 54]，经度 [73, 136]
+_LAT_MIN, _LAT_MAX = 3.0, 54.0
+_LNG_MIN, _LNG_MAX = 73.0, 136.0
+
+# 逆地理编码缓存：键 (round(lat,3), round(lng,3))（约百米网格），TTL 10 分钟
+_REVERSE_TTL = 10 * 60
+_REVERSE_CACHE_MAX = 500  # 容量上限：超限淘汰最早插入的键（dict 保持插入序）
+_REVERSE_CACHE: Dict[Tuple[float, float], Tuple[float, Dict[str, Any]]] = {}
+
+# 行政区划子级缓存：键 adcode，永久缓存（街道/乡镇列表极少变；进程重启即清）
+_CHILDREN_CACHE: Dict[str, List[Dict[str, Any]]] = {}
+
+# adcode 为 2~6 位纯数字（省 2 位 / 市 4 位 / 区县 6 位）
+_ADCODE_RE = re.compile(r"^\d{2,6}$")
+
+
+def _is_local_ip(ip: str) -> bool:
+    """判断是否私网 / 环回等非公网地址（127.x / 10.x / 192.168.x / 172.16-31.x / ::1 等）。
+
+    Args:
+        ip: 待判定的 IP 字符串。
+
+    Returns:
+        True 表示本地或内网地址（IP 定位无意义，直接降级 ip_local）；
+        解析不了的串返回 False，交给腾讯侧报 tencent_<status>，不在这里拦截。
+    """
+    try:
+        addr = ipaddress.ip_address(ip)
+    except ValueError:
+        return False
+    return (addr.is_private or addr.is_loopback
+            or addr.is_link_local or addr.is_unspecified)
+
+
+async def _tencent_json(url: str, params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """GET 腾讯 WebService 并解析 JSON。
+
+    Args:
+        url: 腾讯接口地址。
+        params: 查询参数（含 key）。
+
+    Returns:
+        解析后的 dict；网络异常 / 超时 / 非 JSON / 非 dict 一律返回 None，
+        由上层统一降级为 upstream_error，绝不把异常透传给前端。
+    """
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT, trust_env=False) as client:
+            resp = await client.get(url, params=params)
+            data = resp.json()
+    except Exception:  # noqa: BLE001 —— 任何外呼失败都降级，不透传
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def _tencent_error(data: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """腾讯响应统一校验：可用（status==0）返回 None，否则返回对应错误响应。
+
+    Args:
+        data: _tencent_json 的返回值（None 表示外呼失败）。
+
+    Returns:
+        None 表示响应可用；否则为 {"ok": false, "error": ...} 错误载荷
+        （upstream_error 或 tencent_<status>）。
+    """
+    if data is None:
+        return {"ok": False, "error": "upstream_error"}
+    status = data.get("status")
+    if not isinstance(status, int):
+        # 正常腾讯响应必有整数 status；缺失说明响应结构异常，按上游错误处理
+        return {"ok": False, "error": "upstream_error"}
+    if status != 0:
+        return {"ok": False, "error": f"tencent_{status}"}
+    return None
+
+
+def _reverse_cache_get(key: Tuple[float, float]) -> Optional[Dict[str, Any]]:
+    """读逆地理缓存；过期则顺手删除并返回 None（下次请求重新打上游）。"""
+    hit = _REVERSE_CACHE.get(key)
+    if hit is None:
+        return None
+    fetched_at, payload = hit
+    if time.monotonic() - fetched_at >= _REVERSE_TTL:
+        _REVERSE_CACHE.pop(key, None)
+        return None
+    return payload
+
+
+def _reverse_cache_put(key: Tuple[float, float], payload: Dict[str, Any]) -> None:
+    """写逆地理缓存；超容量时淘汰最早插入的键，防止无界增长。"""
+    if len(_REVERSE_CACHE) >= _REVERSE_CACHE_MAX:
+        oldest = next(iter(_REVERSE_CACHE))
+        _REVERSE_CACHE.pop(oldest, None)
+    _REVERSE_CACHE[key] = (time.monotonic(), payload)
+
+
+@router.get("/ip")
+async def geo_ip(request: Request, _rl: None = Depends(rate_limit("geo"))) -> Dict[str, Any]:
+    """IP 定位降级：客户端公网 IP → 省市区（浏览器 geolocation 被拒时的兜底）。
+
+    Returns:
+        成功：{"ok": true, "province", "city", "district", "adcode",
+               "lat", "lng", "source": "ip"}
+        失败：{"ok": false, "error": "key_missing" | "ip_local"
+               | "tencent_<status>" | "upstream_error"}
+    """
+    if not TENCENT_MAP_KEY:
+        return {"ok": False, "error": "key_missing"}
+    # 复用限流模块的真实客户端 IP 解析：仅受信反代（本机 Nginx）才采信
+    # X-Forwarded-For 最后一跳，防伪造 XFF。
+    ip = _client_ip(request)
+    if _is_local_ip(ip):
+        # 本机 / 内网调用：IP 定位无意义，不消耗腾讯配额，直接降级
+        return {"ok": False, "error": "ip_local"}
+    data = await _tencent_json(_IP_URL, {"ip": ip, "key": TENCENT_MAP_KEY})
+    err = _tencent_error(data)
+    if err is not None:
+        return err
+    result = (data or {}).get("result") or {}
+    ad_info = result.get("ad_info") or {}
+    location = result.get("location") or {}
+    return {
+        "ok": True,
+        "province": ad_info.get("province") or "",
+        "city": ad_info.get("city") or "",
+        "district": ad_info.get("district") or "",
+        # 腾讯 IP 接口 adcode 为 int、geocoder 为 str，统一转 str 便于前端拼接
+        "adcode": str(ad_info.get("adcode") or ""),
+        "lat": location.get("lat"),
+        "lng": location.get("lng"),
+        "source": "ip",
+    }
+
+
+@router.get("/reverse")
+async def geo_reverse(lat: str = "", lng: str = "",
+                      _rl: None = Depends(rate_limit("geo"))) -> Dict[str, Any]:
+    """逆地理编码：坐标 → 街道级地址 + 周边 POI（前端「附近 / 打卡」等场景）。
+
+    Args:
+        lat: 纬度（字符串手动解析，避免 FastAPI 422，统一降级 bad_params）。
+        lng: 经度。
+
+    Returns:
+        成功：{"ok": true, "address", "province", "city", "district", "street",
+               "street_number", "adcode", "pois": [{title, address, _distance}]}
+        （pois 最多 10 条）
+        失败：{"ok": false, "error": "bad_params" | "key_missing"
+               | "tencent_<status>" | "upstream_error"}
+    """
+    # 参数校验：可转 float + 中国范围粗校（nan / inf 会被范围比较自然拦下）
+    try:
+        la, ln = float(lat), float(lng)
+    except (TypeError, ValueError):
+        return {"ok": False, "error": "bad_params"}
+    if not (_LAT_MIN <= la <= _LAT_MAX and _LNG_MIN <= ln <= _LNG_MAX):
+        return {"ok": False, "error": "bad_params"}
+
+    # 进程内缓存命中直接返回（键取 3 位小数网格 ≈ 百米级；TTL 10 分钟，省配额）
+    cache_key = (round(la, 3), round(ln, 3))
+    cached = _reverse_cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    if not TENCENT_MAP_KEY:
+        return {"ok": False, "error": "key_missing"}
+
+    # 后端直接收 JSON，不用前端旧版 JSONP 的 output=jsonp 参数
+    data = await _tencent_json(_GEOCODER_URL, {
+        "location": f"{la},{ln}",
+        "key": TENCENT_MAP_KEY,
+        "get_poi": 1,
+        "poi_options": "page_size=20",
+    })
+    err = _tencent_error(data)
+    if err is not None:
+        return err
+
+    result = (data or {}).get("result") or {}
+    comp = result.get("address_component") or {}
+    ad_info = result.get("ad_info") or {}
+    pois_raw = result.get("pois") or []
+    pois = [
+        {
+            "title": p.get("title") or "",
+            "address": p.get("address") or "",
+            "_distance": p.get("_distance"),
+        }
+        for p in pois_raw
+        if isinstance(p, dict)
+    ][:10]
+    payload = {
+        "ok": True,
+        "address": result.get("address") or "",
+        "province": comp.get("province") or "",
+        "city": comp.get("city") or "",
+        "district": comp.get("district") or "",
+        "street": comp.get("street") or "",
+        "street_number": comp.get("street_number") or "",
+        "adcode": str(comp.get("adcode") or ad_info.get("adcode") or ""),
+        "pois": pois,
+    }
+    _reverse_cache_put(cache_key, payload)
+    return payload
+
+
+@router.get("/children")
+async def geo_children(adcode: str = "",
+                       _rl: None = Depends(rate_limit("geo"))) -> Dict[str, Any]:
+    """行政区划子级：adcode → 直辖子级列表（第 4 级「街道/乡镇」选择数据源）。
+
+    Args:
+        adcode: 行政区划码（2~6 位纯数字，如 110108 = 北京市海淀区）。
+
+    Returns:
+        成功：{"ok": true, "children": [{"id", "name"}]}；
+              部分区县无街道数据时 children 为空数组（前端降级为手动输入）。
+        失败：{"ok": false, "error": "bad_params" | "key_missing"
+               | "tencent_<status>" | "upstream_error"}
+    """
+    code = (adcode or "").strip()
+    if not _ADCODE_RE.match(code):
+        return {"ok": False, "error": "bad_params"}
+
+    # 永久缓存命中直接返回（街道列表极少变；district 接口配额有限）
+    cached = _CHILDREN_CACHE.get(code)
+    if cached is not None:
+        return {"ok": True, "children": cached}
+
+    if not TENCENT_MAP_KEY:
+        return {"ok": False, "error": "key_missing"}
+
+    data = await _tencent_json(_CHILDREN_URL, {"id": code, "key": TENCENT_MAP_KEY})
+    err = _tencent_error(data)
+    if err is not None:
+        return err
+
+    # 腾讯 result[0] 是子级行政区数组；缺失 / 结构异常一律按空子级处理
+    result = (data or {}).get("result")
+    raw = result[0] if isinstance(result, list) and result and isinstance(result[0], list) else []
+    children = [
+        {"id": str(c.get("id") or ""), "name": c.get("name") or ""}
+        for c in raw
+        if isinstance(c, dict) and c.get("id") and c.get("name")
+    ]
+    _CHILDREN_CACHE[code] = children
+    return {"ok": True, "children": children}
