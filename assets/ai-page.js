@@ -428,7 +428,7 @@
       }
       if (/^```/.test(line)) { flushPara(); inCode = true; codeBuf = []; continue; }
       // R81：图片生成结果「![提示词](图片URL)」渲染为图片（文本链路上不会自然产生该语法）
-      var imgM = /^!\[([^\]]*)\]\(([^)\s]+)\)$/.exec(line.trim());
+      var imgM = /^!\[([^\]]*)\]\((\S+)\)$/.exec(line.trim());
       if (imgM) {
         flushPara();
         html += '<p><img class="ai-md-img" src="' + escHtml(imgM[2]) + '" alt="' +

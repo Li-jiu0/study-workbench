@@ -712,7 +712,8 @@ var AI_CONFIG = {
     },
     imagegen: {
       desc: "图片生成",
-      // 配置层登记：seedream 走 images/generations 接口，调用链路待评估（chat 调用会失败并按 fallback 降级）
+      // R73p：seedream 走 images/generations 专用链路（2026-09-18 三模型直连实测全部 200 出图）。
+      // 选中生图模型时 ai-service 会跳过服务端文本中转，直连 images/generations，绝不进 chat/completions。
       primary: "ark-seedream-4-0828",
       fallback: ["ark-seedream-5-pro", "ark-seedream-4-0415"],
       temperature: 0.8,

@@ -29,6 +29,11 @@
   var RATE_LIMIT_RESCUE = ["ark-v4-flash", "ark-doubao-mini", "qf-ernie-32k"];
   // 不降级、直接抛给上层的 HTTP 状态（请求本身有问题，换模型没用）
   var NO_FALLBACK_STATUS = [400, 403, 404, 422];
+  // R73p：Gemini 3.x（gemini-3.5-flash / gemini-3.5-flash-lite）为思考型模型，
+  // 思维链 token 计入 maxOutputTokens。文本模型常用的 1000~2500 上限（健康检查甚至压到 1）
+  // 会被思考 token 吃满，响应 finishReason=MAX_TOKENS 且正文为空 —— 前端表现为「连不上」。
+  // 实测佐证：平台探测 GET 源地址 1534ms 即成功，说明网络与跨域均正常，失败发生在 API 层。
+  var GEMINI_MIN_OUTPUT_TOKENS = 4096;
 
   // 会话内（内存态）限流记账：刷新页面即清零，不落盘
   var rate429 = {};   // 模型 id -> 连续 429 次数
@@ -671,7 +676,10 @@
     // 深度思考（reasoning）不走模式；vision 需图片模型、模式链为文本编排，同样不走（保守处理，见交付说明）
     var mode = getModelMode();
     var viaMode = false;
-    if (mode && funcType !== "reasoning" && funcType !== "vision" &&
+    // R73p：手动选中生图模型时，三模式链不得覆盖（模式链里全是文本模型，会把生图请求路由走）
+    var manualMc = manual ? findModel(manual) : null;
+    var manualIsImageGen = isImageGenModel(manualMc);
+    if (mode && funcType !== "reasoning" && funcType !== "vision" && !manualIsImageGen &&
         cfg.modelModes && cfg.modelModes[mode] &&
         Array.isArray(cfg.modelModes[mode].chain) && cfg.modelModes[mode].chain.length) {
       viaMode = true;
@@ -1312,6 +1320,36 @@
       mc.types.indexOf("imagegen") >= 0);
   }
 
+  // R73p：Gemini 输出上限不得小于 GEMINI_MIN_OUTPUT_TOKENS（否则被思考 token 吃满 -> 空响应）
+  function geminiOutputTokens(maxTok) {
+    var n = (maxTok != null && !isNaN(Number(maxTok))) ? Number(maxTok) : 0;
+    return (n > GEMINI_MIN_OUTPUT_TOKENS) ? n : GEMINI_MIN_OUTPUT_TOKENS;
+  }
+
+  // R73p：模型配置是否为 Gemini 协议（模型自带 apiFormat 优先，其次 provider）
+  function isGeminiFormat(mc) {
+    if (mc && typeof mc.apiFormat === "string" && mc.apiFormat) return mc.apiFormat === "gemini";
+    var cfg = getConfig();
+    var p = (mc && mc.provider && cfg && cfg.providers) ? cfg.providers[mc.provider] : null;
+    return !!(p && p.apiFormat === "gemini");
+  }
+
+  // R73p：取 Gemini 原始响应的 finishReason，用于把「被截断的空响应」与「网络失败」区分开
+  function geminiFinishReason(raw) {
+    var s = String(raw == null ? "" : raw);
+    if (!s) return "";
+    try {
+      var j = JSON.parse(s);
+      if (j && j.candidates && j.candidates[0] && j.candidates[0].finishReason) {
+        return String(j.candidates[0].finishReason);
+      }
+      if (j && j.promptFeedback && j.promptFeedback.blockReason) {
+        return "BLOCKED:" + String(j.promptFeedback.blockReason);
+      }
+    } catch (e) { /* 非 JSON：返回空串 */ }
+    return "";
+  }
+
   // 取最后一条用户消息作 prompt（兼容 content 为字符串或数组两种形态）
   function collectImagePrompt(messages) {
     var txt = "";
@@ -1417,7 +1455,14 @@
       throw eEmpty;
     }
     // 与现有渲染衔接：返回 Markdown 图片串，由 ai-page.js renderMarkdown 渲染成 <img>
-    var out = "![" + prompt.slice(0, 40) + "](" + imgUrl + ")";
+    // R73p：alt 必须剔掉 [ ] ( ) 与换行 —— 否则 renderMarkdown 的图片正则匹配不上，图片会退化成纯文本
+    var altText = String(prompt)
+      .replace(/[\r\n]+/g, " ")
+      .replace(/[\[\]()]/g, " ")
+      .replace(/\s+/g, " ")
+      .replace(/^ +| +$/g, "")
+      .slice(0, 40);
+    var out = "![" + altText + "](" + imgUrl + ")";
     if (onChunk) {
       try { onChunk(out, out); } catch (e4) { /* 渲染失败不影响结果 */ }
     }
@@ -1490,9 +1535,10 @@
         contents: [
           { role: "user", parts: [ { text: collectGeminiText(messages) } ] }
         ],
+        // R73p：思考型模型，输出上限不得低于 GEMINI_MIN_OUTPUT_TOKENS（否则被截断成空响应）
         generationConfig: {
           temperature: tempVal,
-          maxOutputTokens: maxTokVal
+          maxOutputTokens: geminiOutputTokens(maxTokVal)
         }
       };
     } else {
@@ -1692,6 +1738,19 @@
       }
     }
 
+    // R73p：Gemini 空响应单独归类 —— 多为思考 token 吃满 maxOutputTokens 被截断，
+    // 与「网络慢/超时」成因完全不同，必须区分，否则上层会谎报成「响应慢，检测超时」。
+    if (!fullText && isGemini) {
+      var gTruncErr = makeError("Gemini 返回空内容（finishReason=" +
+        (geminiFinishReason(whole) || "UNKNOWN") + "，多为输出上限过小被截断）", 0, "TRUNCATED");
+      gTruncErr.requestInfo = debugInfo;
+      gTruncErr.modelId = modelConfig.id;
+      gTruncErr.modelName = modelConfig.name;
+      warn("[ai-service] Gemini 返回空内容（疑似输出上限截断）", debugInfo);
+      abortInFlight();
+      throw gTruncErr;
+    }
+
     if (!fullText) {
       var emptyErr = makeError("模型返回空内容", 0, "EMPTY");
       emptyErr.requestInfo = debugInfo;
@@ -1748,8 +1807,14 @@
     }
 
     // 2. 服务端中转优先（无图 + 已登录时）：不存在跨域问题，密钥在服务端
-    var realType = opts.image ? "vision" : resolveFuncType(funcType, msgs, !!opts.image);
-    if (!opts.image) {
+    // R73p：选中生图模型（types 含 imagegen）时必须直连 images/generations ——
+    // 服务端中转只做 chat/completions，永远生不出图，此前正是被这条捷径吃掉导致「生图无图」。
+    var selId = (opts && opts.model && opts.model !== "auto") ? opts.model : getSelectedModelId();
+    var selModel = selId ? findModel(selId) : null;
+    var selIsImageGen = isImageGenModel(selModel);
+    var realType = opts.image ? "vision"
+      : (selIsImageGen ? "imagegen" : resolveFuncType(funcType, msgs, !!opts.image));
+    if (!opts.image && !selIsImageGen) {
       var provs = await relayProviders();
       if (provs.length) {
         var ftR = cfg.FUNC_TYPES[realType] || cfg.FUNC_TYPES.general;
@@ -1962,6 +2027,7 @@
     if (msg.indexOf("abort") !== -1) return "timeout";
     var st = (e.status != null) ? e.status : 0;
     if (st) return "http_" + st;
+    if (e.code === "TRUNCATED") return "truncated";
     if (e.code === "EMPTY" || msg.indexOf("空内容") !== -1 || msg.indexOf("empty") !== -1) return "empty";
     if (msg.indexOf("failed to fetch") !== -1 || msg.indexOf("cors") !== -1 ||
         msg.indexOf("networkerror") !== -1 || msg.indexOf("load failed") !== -1) return "cors";
@@ -2024,9 +2090,10 @@
         mc = applyOverrides(raw);
         mc = cloneModel(mc, null, null);
       }
-      // 极短 ping（"hi" + maxTokens=1）不烧 token
+      // 极短 ping（"hi" + maxTokens=1）不烧 token；
+      // R73p：Gemini 3.x 思考型模型不能压到 1（会被思考 token 吃满截断成空响应），改用下限值
       var ping = mc;
-      ping.maxTokens = 1;
+      ping.maxTokens = isGeminiFormat(ping) ? GEMINI_MIN_OUTPUT_TOKENS : 1;
       // R73n：按平台选检测窗口——needProxy 平台 15s，其余 5s
       var hTimeout = (mc && mc.provider && providerNeedProxy(mc.provider))
         ? HEALTH_TIMEOUT_PROXY : HEALTH_TIMEOUT;
