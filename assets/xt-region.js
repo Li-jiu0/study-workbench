@@ -1046,6 +1046,10 @@
       '.xtlp-ok[disabled]{opacity:.45;cursor:default}'+
       '.xtlp-search{flex:0 0 auto;display:flex;align-items:center;gap:8px;margin:10px 12px;padding:9px 12px;border-radius:12px;background:#fff;border:1px solid #e6e9f0}'+
       '.xtlp-search input{flex:1;border:none;outline:none;background:transparent;font-size:14px;color:#1f2937}'+
+      /* R104c：显式搜索按钮 + 熔断/失败提示（仅 UI；固定值，禁 clamp/min/max） */
+      '.xtlp-go{flex:0 0 auto;border:none;border-radius:9px;padding:7px 12px;font-size:13px;font-weight:700;color:#fff;background:#5B8DEF;cursor:pointer}'+
+      '.xtlp-go:active{opacity:.85}'+
+      '.xtlp-note{margin:8px 0 2px;padding:8px 12px;border-radius:10px;background:#FFF7E6;color:#B26B00;font-size:12px;line-height:1.4}'+
       '.xtlp-map{flex:0 0 auto;position:relative;height:168px;margin:0 12px;border-radius:14px;overflow:hidden;'+
         'background:linear-gradient(135deg,#dbe7f7,#eef4fb 55%,#e5f0e6);border:1px solid #e6e9f0}'+
       '.xtlp-map::before{content:"";position:absolute;left:-10%;top:38%;width:120%;height:10px;background:rgba(255,255,255,.75);'+
@@ -1090,7 +1094,8 @@
     html += '<span class="xtlp-title">' + _escAttr(title) + '</span>';
     html += '<button type="button" class="xtlp-ok" data-act="ok" disabled>' + _escAttr(confirmText) + '</button></div>';
     html += '<div class="xtlp-search">' + SEARCH_SVG +
-      '<input type="text" class="xtlp-input" placeholder="搜索地址 / 省 / 市 / 区，如：天河、杭州" autocomplete="off"></div>';
+      '<input type="text" class="xtlp-input" placeholder="搜索地址 / 省 / 市 / 区，如：天河、杭州" autocomplete="off">' +
+      '<button type="button" class="xtlp-go" data-act="search">搜索</button></div>';
     html += '<div class="xtlp-map"><div class="xtlp-pin">' + PIN_SVG + '</div>' +
       '<div class="xtlp-curline">尚未选择位置</div></div>';
     html += '<div class="xtlp-list"></div>';
@@ -1119,6 +1124,14 @@
     var curLng = null;      // R104 项3：当前选中项经度
     var nearbyResults = [];  // 最近一次定位得到的周边 POI
     var locBusy = false;     // 定位中：置位后不再启动第二次，防止并发重复请求
+    /* R104c：显式地点搜索（回车 / 点「搜索」）状态 —— 与「输入联想」两态分离。 */
+    var placeActive = false;   // 显式搜索命中态（true 且 placePois 非空时渲染 POI 组）
+    var placeLoading = false;  // 显式搜索进行中
+    var placePois = null;      // 显式搜索命中的 POI 组 [{title,address,category,lat,lng}]
+    var placeSeq = 0;          // 显式搜索请求序号（丢弃迟到响应）
+    var placeNote = '';        // 熔断/失败提示（仅 UI，绝不 alert/confirm/prompt）
+    var placeNoteTimer = null; // 提示自动消失计时器
+    var geoCtx = null;         // 最近定位/逆地理上下文 {adcode,city,province,lat,lng}（供 place boundary）
 
     function setChosen(text, sub, coord) {
       chosen = (text == null) ? '' : String(text).replace(/^\s+|\s+$/g, '');
@@ -1155,10 +1168,28 @@
     function renderList() {
       var html2 = '';
       var i, R;
+      // R104c：熔断/失败提示（仅 UI）
+      var noteHtml = placeNote ? '<div class="xtlp-note">' + _escAttr(placeNote) + '</div>' : '';
+      // R104c：显式搜索进行中
+      if (placeLoading) { listEl.innerHTML = noteHtml + '<div class="xtlp-empty">正在搜索…</div>'; return; }
+      // R104c：显式搜索命中 → POI 组（每条走 itemRow(title,address,lat,lng) → data-lat/lng）
+      if (placeActive && placePois && placePois.length) {
+        html2 += noteHtml;
+        html2 += '<div class="xtlp-sec">地点</div>';
+        for (i = 0; i < placePois.length; i++) {
+          var pp = placePois[i] || {};
+          var plSub = pp.address || pp.category || '';
+          html2 += itemRow(pp.title, plSub, pp.lat, pp.lng);
+        }
+        listEl.innerHTML = html2;
+        return;
+      }
+      // —— 以下为既有本地联想（输入 debounce / 显式搜索回退共用）——
       if (kw) {
         R = window.XT_REGION;
         var hits = (R && typeof R.search === 'function') ? R.search(kw, 40) : [];
-        if (!hits.length) { listEl.innerHTML = '<div class="xtlp-empty">没找到「' + _escAttr(kw) + '」，换个关键词试试</div>'; return; }
+        if (!hits.length) { listEl.innerHTML = noteHtml + '<div class="xtlp-empty">没找到「' + _escAttr(kw) + '」，换个关键词试试</div>'; return; }
+        html2 += noteHtml;
         html2 += '<div class="xtlp-sec">搜索结果</div>';
         for (i = 0; i < hits.length; i++) {
           var sub = (hits[i].province && hits[i].province !== hits[i].city) ? hits[i].province : '';
@@ -1167,6 +1198,7 @@
         listEl.innerHTML = html2;
         return;
       }
+      html2 += noteHtml;
       if (nearbyResults.length) {
         html2 += '<div class="xtlp-sec">附近位置</div>';
         for (i = 0; i < nearbyResults.length; i++) {
@@ -1190,9 +1222,94 @@
       listEl.innerHTML = html2;
     }
 
+    /* R104c：显式地点搜索（回车 / 点「搜索」触发；输入联想绝不触发）。
+       关键词 strip() 后 < 2 字符不发请求（省腾讯 place 配额）；6s 超时；
+       任何失败/空/熔断 → 回退本地省市区联想（不空白、不报错、不破版）。 */
+    var PLACE_MIN = 2;         // 关键词最小长度（hard guard）
+    var PLACE_TIMEOUT = 6000;  // 显式搜索超时（ms）
+
+    /** 计算 place 的 boundary：优先 adcode → city → 设备坐标；均无则不传。 */
+    function _placeBoundary() {
+      var b = {};
+      var adcode = (geoCtx && geoCtx.adcode) ? String(geoCtx.adcode) : '';
+      if (adcode) { b.adcode = adcode; return b; }
+      var pt = null;
+      try { pt = parseText(chosen || initText); } catch (e) { pt = null; }
+      var city = (pt && pt.city) ? pt.city : ((geoCtx && geoCtx.city) ? geoCtx.city : '');
+      if (city) { b.city = city; return b; }
+      if (geoCtx && typeof geoCtx.lat === 'number' && typeof geoCtx.lng === 'number') { b.lat = geoCtx.lat; b.lng = geoCtx.lng; }
+      return b;
+    }
+
+    /** GET {apiBase}/api/geo/place?keyword=&adcode|city|lat&lng；失败/超时一律 cb(null)，绝不抛异常。 */
+    function _placeSearch(keyword, boundary, cb) {
+      var doneCb = (typeof cb === 'function') ? cb : function () {};
+      if (typeof fetch !== 'function') { doneCb(null); return; }
+      var b = boundary || {};
+      var qs = '/api/geo/place?keyword=' + encodeURIComponent(keyword);
+      if (b.adcode) qs += '&adcode=' + encodeURIComponent(b.adcode);
+      else if (b.city) qs += '&city=' + encodeURIComponent(b.city);
+      else if (typeof b.lat === 'number' && typeof b.lng === 'number') qs += '&lat=' + encodeURIComponent(b.lat) + '&lng=' + encodeURIComponent(b.lng);
+      var settled = false;
+      var timer = setTimeout(function () { if (!settled) { settled = true; doneCb(null); } }, PLACE_TIMEOUT);
+      function settle(v) { if (settled) return; settled = true; try { clearTimeout(timer); } catch (e0) {} doneCb(v); }
+      try {
+        fetch(_apiBase() + qs).then(function (r) {
+          if (!r || !r.ok) { settle(null); return null; }
+          return r.json();
+        }).then(function (j) {
+          settle((j && typeof j === 'object') ? j : null);
+        }).catch(function () { settle(null); });
+      } catch (e2) { settle(null); }
+    }
+
+    /** 熔断/失败提示（仅 UI，自动 4s 消失）。 */
+    function _placeNote(msg) {
+      placeNote = msg ? String(msg) : '';
+      if (placeNoteTimer) { try { clearTimeout(placeNoteTimer); } catch (e) {} placeNoteTimer = null; }
+      if (placeNote) {
+        placeNoteTimer = setTimeout(function () {
+          placeNoteTimer = null;
+          if (closed) return;
+          placeNote = '';
+          renderList();
+        }, 4000);
+      }
+    }
+
+    /** 显式搜索入口（回车 / 点「搜索」，立即请求，不等 debounce）。 */
+    function doPlaceSearch() {
+      var q = String(inputEl.value || '').replace(/^\s+|\s+$/g, '');
+      kw = q;
+      if (q.length < PLACE_MIN) {   // 不足 2 字符：不发请求，回退本地联想
+        placeActive = false; placeLoading = false; placePois = null;
+        renderList();
+        return;
+      }
+      _placeNote('');
+      placeActive = true; placeLoading = true; placePois = null;
+      renderList();
+      var seq = ++placeSeq;
+      _placeSearch(q, _placeBoundary(), function (res) {
+        if (closed || seq !== placeSeq) return;   // 迟到 / 被新请求取代 → 丢弃
+        placeLoading = false;
+        if (res && res.pois && res.pois.length) {
+          placePois = res.pois;
+          placeActive = true;
+        } else {
+          // 失败 / 超时 / 空结果 / 熔断 → 回退本地省市区联想
+          placePois = null;
+          placeActive = false;
+          if (res && res.degraded === true) _placeNote('搜索能力今日已达上限');
+        }
+        renderList();
+      });
+    }
+
     function finish(text) {
       if (closed) return;
       closed = true;
+      if (placeNoteTimer) { try { clearTimeout(placeNoteTimer); } catch (e) {} placeNoteTimer = null; }
       try { if (root.parentNode) root.parentNode.removeChild(root); } catch (e) {}
       document.removeEventListener('keydown', onKey);
       window.removeEventListener('resize', onResize);
@@ -1219,8 +1336,19 @@
       if (kwTimer) clearTimeout(kwTimer);
       kwTimer = setTimeout(function () {
         kw = String(inputEl.value || '').replace(/^\s+|\s+$/g, '');
+        // R104c：输入联想（≥800ms debounce）只走本地省市区联想，绝不触发 place 请求（省配额硬保护）。
+        placeActive = false; placeLoading = false; placePois = null;
         renderList();
-      }, 160);
+      }, 800);
+    });
+
+    // R104c：显式触发 —— 回车立即请求 place（不等 debounce）
+    inputEl.addEventListener('keydown', function (e) {
+      var k = e && e.key;
+      if (k === 'Enter' || k === 'NumpadEnter') {
+        if (e && e.preventDefault) e.preventDefault();
+        doPlaceSearch();
+      }
     });
 
     listEl.addEventListener('click', function (ev) {
@@ -1246,6 +1374,7 @@
       var act = n.getAttribute('data-act');
       if (act === 'cancel') { finish(null); return; }
       if (act === 'ok') { if (chosen) finish(chosen); return; }
+      if (act === 'search') { doPlaceSearch(); return; }   // R104c：显式地点搜索
       if (act === 'loc') {
         if (locBusy) return;
         locBusy = true;
@@ -1260,6 +1389,8 @@
             if (!g || !g.text) { setChosen('', '地址解析失败，可搜索或手动输入'); return; }
             var list = (g.pois && g.pois.length) ? g.pois : [];
             nearbyResults = list;
+            // R104c：记录本次定位/逆地理上下文（adcode/city）供 place boundary 使用。
+            geoCtx = { adcode: g.adcode || '', city: g.city || '', province: g.province || '', lat: r.lat, lng: r.lng };
             var txt = _terseGeo(g);
             if (!txt) {
               var RR = window.XT_REGION;

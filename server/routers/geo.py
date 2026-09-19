@@ -14,6 +14,7 @@
 - GET /api/geo/reverse?lat=&lng=  逆地理编码（街道级 + 周边 POI）
 - GET /api/geo/children?adcode=   行政区划子级（第 4 级「街道/乡镇」数据源）
 - GET /api/geo/staticmap?lat=&lng=&zoom=  静态地图图片代理（返回图片二进制，前端 <img> 直引）
+- GET /api/geo/place?keyword=&city=&adcode=&lat=&lng=  地点搜索 POI 列表（腾讯 place/v1/search 代理）
 
 错误码约定（均 HTTP 200 + {"ok": false, "error": ...}）：
 - key_missing       .env 未配置 TENCENT_MAP_KEY
@@ -21,6 +22,7 @@
 - bad_params        参数缺失 / 非数字 / 超出中国范围粗校 / adcode 非法
 - tencent_<status>  腾讯侧业务错误（status 非 0）
 - upstream_error    网络 / 超时 / 响应解析失败
+- place_daily_cap   地点搜索当日额度耗尽（仅 /api/geo/place；响应另带 "degraded": true）
 
 写法参照 routers/ai.py（httpx 外呼）与 routers/news.py（免登录公开接口 + 降级）。
 """
@@ -28,6 +30,7 @@ from __future__ import annotations
 
 import ipaddress
 import json
+import os
 import re
 import time
 from typing import Any, Dict, List, Optional, Tuple
@@ -35,7 +38,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import httpx
 from fastapi import APIRouter, Depends, Request, Response
 
-from config import TENCENT_MAP_KEY
+from config import BASE_DIR, GEO_PLACE_DAILY_CAP, TENCENT_MAP_KEY
 from rate_limit import _client_ip, rate_limit
 
 router = APIRouter(prefix="/api/geo", tags=["geo"])
@@ -66,6 +69,26 @@ _CHILDREN_CACHE: Dict[str, List[Dict[str, Any]]] = {}
 _STATICMAP_TTL = 600
 _STATICMAP_CACHE_MAX = 200  # 容量上限：超限淘汰最早插入的键（dict 保持插入序）
 _STATICMAP_CACHE: Dict[Tuple[float, float, int], Tuple[float, bytes, str]] = {}
+
+# 地点搜索缓存：键 (归一化 keyword, boundary)（不含页码），TTL 24 小时（86400s），容量 500
+# 值 (抓取时刻 monotonic, 成功 payload)；只缓存成功结果，不缓存错误
+_PLACE_URL = "https://apis.map.qq.com/ws/place/v1/search"
+_PLACE_TTL = 24 * 60 * 60
+_PLACE_CACHE_MAX = 500
+_PLACE_CACHE: Dict[Tuple[str, str], Tuple[float, Dict[str, Any]]] = {}
+_PLACE_NEARBY_RADIUS = 5000  # nearby boundary 半径（米）
+
+# 地点搜索每日硬上限（按 Key 计的全局额度，非 rate_limit 的每 IP 每分钟窗）：
+# 取自 config.GEO_PLACE_DAILY_CAP（缺省 150，留腾讯约 200/日余量）。
+_PLACE_DAILY_MAX = GEO_PLACE_DAILY_CAP
+_PLACE_DAY = ""    # 模块级可变状态：当前计数所属日期（time.strftime("%Y-%m-%d")）
+_PLACE_COUNT = 0   # 模块级可变状态：当日已消耗次数
+_PLACE_LOADED = False  # 懒加载标志：首次用到时才从计数文件读取
+
+# 每日计数的持久化文件（**运行时数据：绝不入库 / 绝不进部署清单 / 已被 .gitignore 覆盖**）
+# 内容 {"day": "YYYY-MM-DD", "count": N}；目的：让「当日 150 次熔断」扛得住进程重启
+# （纯内存计数重启即清零 = 假保护）。缺失/损坏/解析失败一律当 {"day":"","count":0}，绝不抛异常。
+_PLACE_COUNT_FILE = BASE_DIR / "data" / "geo_place_count.json"
 
 # adcode 为 2~6 位纯数字（省 2 位 / 市 4 位 / 区县 6 位）
 _ADCODE_RE = re.compile(r"^\d{2,6}$")
@@ -192,6 +215,87 @@ def _staticmap_cache_put(key: Tuple[float, float, int], content: bytes,
         oldest = next(iter(_STATICMAP_CACHE))
         _STATICMAP_CACHE.pop(oldest, None)
     _STATICMAP_CACHE[key] = (time.monotonic(), content, media_type)
+
+
+def _place_cache_get(key: Tuple[str, str]) -> Optional[Dict[str, Any]]:
+    """读地点搜索缓存；过期则顺手删除并返回 None（下次请求重新打上游）。"""
+    hit = _PLACE_CACHE.get(key)
+    if hit is None:
+        return None
+    fetched_at, payload = hit
+    if time.monotonic() - fetched_at >= _PLACE_TTL:
+        _PLACE_CACHE.pop(key, None)
+        return None
+    return payload
+
+
+def _place_cache_put(key: Tuple[str, str], payload: Dict[str, Any]) -> None:
+    """写地点搜索缓存；超容量时淘汰最早插入的键，防止无界增长。"""
+    if len(_PLACE_CACHE) >= _PLACE_CACHE_MAX:
+        oldest = next(iter(_PLACE_CACHE))
+        _PLACE_CACHE.pop(oldest, None)
+    _PLACE_CACHE[key] = (time.monotonic(), payload)
+
+
+def _place_count_load() -> None:
+    """懒加载持久化计数（进程首次用到时读一次）。
+
+    文件缺失 / 损坏 / JSON 解析失败 / 结构非法 → 一律当 {"day": "", "count": 0}。
+    本函数**绝不抛异常**（读盘失败也不能阻断请求）。
+    """
+    global _PLACE_DAY, _PLACE_COUNT, _PLACE_LOADED
+    if _PLACE_LOADED:
+        return
+    _PLACE_LOADED = True
+    try:
+        with open(_PLACE_COUNT_FILE, "r", encoding="utf-8") as f:
+            obj = json.load(f)
+        if isinstance(obj, dict):
+            day = obj.get("day")
+            cnt = obj.get("count")
+            if (isinstance(day, str) and isinstance(cnt, int)
+                    and not isinstance(cnt, bool) and cnt >= 0):
+                _PLACE_DAY = day
+                _PLACE_COUNT = cnt
+    except Exception:  # noqa: BLE001 —— 任何读/解析异常都退回空计数
+        _PLACE_DAY = ""
+        _PLACE_COUNT = 0
+
+
+def _place_count_save() -> None:
+    """尽力把当日计数落盘（先写 .tmp 再原子替换）。
+
+    任何异常一律吞掉：写失败就退回纯内存计数，**绝不阻断请求**。
+    一天最多写 ≤ _PLACE_DAILY_MAX 次，开销可忽略。
+    """
+    try:
+        _PLACE_COUNT_FILE.parent.mkdir(parents=True, exist_ok=True)
+        tmp = str(_PLACE_COUNT_FILE) + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump({"day": _PLACE_DAY, "count": _PLACE_COUNT}, f)
+        os.replace(tmp, str(_PLACE_COUNT_FILE))
+    except Exception:  # noqa: BLE001 —— 落盘失败不影响计数与请求
+        pass
+
+
+def _place_quota_take() -> bool:
+    """取一次「地点搜索每日配额」；取不到返回 False（调用方直接降级、绝不出网）。
+
+    计数为按 Key 计的全局额度（**非** rate_limit 的每 IP 每分钟窗），持久化到
+    _PLACE_COUNT_FILE：跨进程重启续上、跨自然日（time.strftime 变化）自动重置为 0。
+    """
+    global _PLACE_DAY, _PLACE_COUNT
+    _place_count_load()
+    today = time.strftime("%Y-%m-%d")
+    if today != _PLACE_DAY:
+        _PLACE_DAY = today
+        _PLACE_COUNT = 0
+        _place_count_save()
+    if _PLACE_COUNT >= _PLACE_DAILY_MAX:
+        return False
+    _PLACE_COUNT += 1
+    _place_count_save()
+    return True
 
 
 @router.get("/ip")
@@ -419,3 +523,98 @@ async def geo_staticmap(lat: str = "", lng: str = "", zoom: str = "",
     if isinstance(status, int):
         return {"ok": False, "error": f"tencent_{status}"}
     return {"ok": False, "error": "upstream_error"}
+
+
+@router.get("/place")
+async def geo_place(keyword: str = "", city: str = "", adcode: str = "",
+                    lat: str = "", lng: str = "",
+                    _rl: None = Depends(rate_limit("geo"))) -> Dict[str, Any]:
+    """地点搜索：keyword + 地区/坐标 → 腾讯 place/v1/search 的 POI 列表。
+
+    仅代理 `place/v1/search`（`place/v1/explore` 等其它 place 端点一律不碰，配额红线）。
+    与前三个接口不同：本接口外呼受**按 Key 计的全局每日硬上限**约束
+    （config.GEO_PLACE_DAILY_CAP，缺省 150，留腾讯约 200/日余量）；`rate_limit("geo")`
+    仍作「每 IP 每分钟」突发闸保留，两者职责不同、不可互相替代。
+
+    调用顺序（错序 = 白烧配额）：
+      查缓存 → 命中直接返回（不计数、不出网）→ 未命中才取日配额
+      → 取不到直接降级 degraded（不出网）→ 取到才外呼。
+
+    Args:
+        keyword: 搜索关键词（strip 后 1..30 字符，必填）。
+        adcode: 行政区划码（2~6 位数字，优先级最高）→ region(adcode,0)。
+        city: 城市名（次优先）→ region(city,0)。
+        lat / lng: 坐标（末位降级）→ nearby(lat,lng,5000)（中国范围粗校）。
+        三者（adcode / city / lat+lng）至少给一个，否则 bad_params。
+
+    Returns:
+        成功：{"ok": true, "pois": [{title, address, category, lat, lng}],
+               "cached": bool, "quota_left": int}（pois 最多 20 条）。
+        失败：HTTP 200 + {"ok": false, "error": ...}；
+              日额度耗尽：{"ok": false, "degraded": true, "error": "place_daily_cap"}。
+    """
+    # 1) 关键词校验：strip 后 1..30 字符
+    kw = (keyword or "").strip()
+    if not (2 <= len(kw) <= 30):
+        return {"ok": False, "error": "bad_params"}
+
+    # 2) boundary 三选一（优先级：adcode > city > 坐标 nearby）
+    code = (adcode or "").strip()
+    cty = (city or "").strip()
+    if _ADCODE_RE.match(code):
+        boundary = f"region({code},0)"
+    elif cty:
+        boundary = f"region({cty},0)"
+    else:
+        # 坐标降级：可转 float 且落在中国范围粗校区间（nan/inf 被范围比较自然拦下）
+        try:
+            la, ln = float(lat), float(lng)
+        except (TypeError, ValueError):
+            return {"ok": False, "error": "bad_params"}
+        if not (_LAT_MIN <= la <= _LAT_MAX and _LNG_MIN <= ln <= _LNG_MAX):
+            return {"ok": False, "error": "bad_params"}
+        boundary = f"nearby({la},{ln},{_PLACE_NEARBY_RADIUS})"
+
+    # 3) 缓存命中 → 直接返回（不取日配额、不出网，省额度）
+    cache_key = (kw, boundary)
+    cached = _place_cache_get(cache_key)
+    if cached is not None:
+        return {"ok": True, "pois": cached.get("pois") or [], "cached": True,
+                "quota_left": _PLACE_DAILY_MAX - _PLACE_COUNT}
+
+    if not TENCENT_MAP_KEY:
+        return {"ok": False, "error": "key_missing"}
+
+    # 4) 未命中才取「按 Key 计的全局每日配额」；取不到直接降级（绝不出网）
+    if not _place_quota_take():
+        return {"ok": False, "degraded": True, "error": "place_daily_cap"}
+
+    # 5) 取到配额才外呼（只打 place/v1/search；page_size / page_index 固定）
+    data = await _tencent_json(_PLACE_URL, {
+        "keyword": kw,
+        "boundary": boundary,
+        "page_size": 20,
+        "page_index": 1,
+        "key": TENCENT_MAP_KEY,
+    })
+    err = _tencent_error(data)
+    if err is not None:
+        return err
+
+    # 列表落点在顶层 data（**不是** result.pois —— 那是 geocoder 的结构）
+    raw = (data or {}).get("data") or []
+    pois = [
+        {
+            "title": p.get("title") or "",
+            "address": p.get("address") or "",
+            "category": p.get("category") or "",
+            "lat": (p.get("location") or {}).get("lat"),
+            "lng": (p.get("location") or {}).get("lng"),
+        }
+        for p in raw
+        if isinstance(p, dict)
+    ][:20]
+    payload = {"ok": True, "pois": pois}
+    _place_cache_put(cache_key, payload)
+    return {"ok": True, "pois": pois, "cached": False,
+            "quota_left": _PLACE_DAILY_MAX - _PLACE_COUNT}

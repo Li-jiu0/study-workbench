@@ -127,3 +127,7 @@ def smtp_configured() -> bool:
 # 腾讯位置服务 WebService Key，仅后端代理使用，前端不再显式下发。
 # 原先硬编码在前端 assets/xt-region.js 的 JSONP Key 迁移至此，配额按 Key 计共享。
 TENCENT_MAP_KEY = _get("TENCENT_MAP_KEY")
+
+# R104c：地点搜索（/api/geo/place）按 Key 计的全局每日硬上限；缺省 150（留腾讯约 200/日余量）。
+# 注意：这是「全局日额度」，与 rate_limit("geo")（每 IP 每分钟突发闸）职责不同。
+GEO_PLACE_DAILY_CAP = int(_get("GEO_PLACE_DAILY_CAP", "150") or 150)
