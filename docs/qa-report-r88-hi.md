@@ -250,15 +250,15 @@ assets/app.js        : 0 条
 渲染分支原文（`chat-local.js:2017-2025`）：
 ```js
 } else if (m.kind === 'location') {
-  /* R88-I（2026-09-18）：位置消息 —— 纯文字卡片，无坐标、不可跳转（设计 §7-7 硬规则）。
-     图标走 lucideIcon('map-pin')（零 emoji），content 仅存文字地址。 */
-  var locIcon = (typeof window.lucideIcon === 'function') ? window.lucideIcon('map-pin', 18) : '';
-  inner = '<div class="im-loc-card">' +
-    '<span class="im-loc-ic">' + locIcon + '</span>' +
-    '<span class="im-loc-text">' + esc(m.content || '') + '</span>' +
-  '</div>' + '<div class="im-mt">' + timeStr + '</div>' + readTag;
+  /* R104 项3（2026-09-19，用户拍板解除 R88-I §7-7 红线）：位置消息 —— 有坐标渲染微信式地图卡，
+     无坐标（旧消息）回退纯文字卡（map-pin 图标，零 emoji）；地图图走后端 /api/geo/staticmap 代理。 */
+  var hasGeo = (typeof m.lat === 'number' && typeof m.lng === 'number');
+  // hasGeo → .im-loc-card > (.im-loc-addr>(.im-loc-title+.im-loc-sub)) + img.im-loc-map(src=apiBase()+'/api/geo/staticmap?...')
+  // !hasGeo → .im-loc-card.im-loc-plain > (.im-loc-ic + .im-loc-text)，即下方原纯文字卡（向后兼容）
 ```
-→ ✅ 卡片 HTML 模板**只有 `esc(text)` + map-pin 图标**，零坐标。
+→ ✅ 卡片 HTML 模板：有坐标时 title/sub 走 `esc()` + `<img class="im-loc-map">`（src 指后端代理）；无坐标时退化为原「`esc(text)` + map-pin 图标」纯文字卡。
+
+> **R104 项3 修订说明（2026-09-19）**：本报告 D3.7（`imSendLocation` 体内不含 lat/lng）与 D3.10（渲染分支无 lat/lng）为 R88-I 当时的验收快照，**已被 R104 项3 有意推翻**——现按用户拍板解除 §7-7 红线，位置消息体允许 `{content, sub, lat, lng}`（坐标仅用于地图缩略图，不经任何面向用户的文本输出/预览）。现行为以 `docs/design-r88-hi-位置定位与私聊加号菜单.md` §7-7（修订版）为准。
 
 #### D4. 社区 `location` 字段双链路（最易漏） ✅ 全通
 

@@ -429,7 +429,7 @@ graph TD
    - 失败：**「定位失败，请手动填写」**（四条路径一字不差）
    - 成功（聊天）：**「已记录当前位置」**
    - 手动输入占位：**「如：图书馆 / 自习室」**
-7. **消息类型**：私聊位置消息 `kind:'location'`，字段 `{kind:'location', text:String, ts:Number}`；**禁止** `lat/lng` 进消息体。
+7. **消息类型**：私聊位置消息 `kind:'location'`，字段 `{kind:'location', content:String, sub:String, lat:Number|null, lng:Number|null}`。**（R104 项3 · 2026-09-19 · 经用户拍板解除原「禁止 `lat/lng` 进消息体」红线）** 坐标仅用于接收端地图缩略图，统一经后端 `/api/geo/staticmap` 代理（Key 只存 `server/.env`，不落前端，前端**绝不**直连 `apis.map.qq.com`）；`lat/lng` **不进入**任何面向用户展示的文本 / 会话预览 / AI 上下文文案。无坐标（`lat`/`lng` 为 null 的旧消息）→ 接收端回退纯文字卡，向后兼容。
 8. **行尾铁律**：`xt-region.js`=**LF**；`icon-map.js`/`xt-moments.js`/`chat-local.js`/`app.js`/`api.js`/`地区选择.html`/`私聊.html`/`社区.html`/`朋友圈发布.html`=**CRLF**。一律**二进制读写**，改完复测 CR/LF 计数不变。
 9. **ES2017 上限**（老 WebView）：禁 `?.`/`??`/对象展开/对象剩余/`.replaceAll(`/`Object.fromEntries`/`.at(`/后行断言/`**`/可选 catch 绑定；CSS 禁 `clamp()/min()/max()`。用 `var` + `function`。**注意 `app.js`/`api.js` 是巨型共享文件，`api.js` 风格用 `var`+`function`、`app.js` 混有 `const`/箭头函数（既有代码），新增行请随该文件既有风格，不做格式化。**
 10. **禁原生弹窗**：一律 `toast()` 与项目 sheet 组件，禁 `alert/confirm/prompt`。
@@ -448,7 +448,7 @@ graph TD
 > - **(1) 服务端逆编码中转：本批不做**（nominatim 免 Key 兜底足够）。已按此写入 §3.5，并补「后续配高德 Key 仅改 `GEO.amapKey`，无需改架构」。
 > - **(2) 社区 `saveBlogNote`：允许工程师最小扩展**，精确行号已补（app.js:7929-7953 / api.js:810-831，见 §3.6、F5b/F5c、T04）。
 > - **(3) `.ac-composer`（联系管理员）本批不改** ✔
-> - **(4) 私聊位置消息 = 纯文字卡片不可跳转** ✔
+> - **(4) 私聊位置消息 = 纯文字卡片不可跳转** ✔ → **已由 R104 项3 修订（2026-09-19 · 用户拍板）**：升级为微信式地图卡片，消息体允许 `{kind:'location', content, sub, lat, lng}`（坐标仅用于地图缩略图，前端统一走后端 `/api/geo/staticmap` 代理，不直连地图服务商）；无坐标旧消息仍回退纯文字卡（向后兼容）。
 > - **(5) 「+」菜单不放假预留占位** ✔
 > - **(6) 本地验收 = 手动输入路径 + 代码级无坐标断言** ✔，并**新增测试钩子**（§7-12）供 QA 证明逆编码链路。
 
