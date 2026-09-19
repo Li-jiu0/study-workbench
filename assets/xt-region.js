@@ -332,8 +332,10 @@
   }
 
   /**
-   * 规整腾讯 POI 数组 → [{title, address, category, distance}]。
+   * 规整腾讯 POI 数组 → [{title, address, category, distance, lat, lng}]。
    * distance 保留腾讯原始值（可能是数字或文案），绝不自行按经纬度计算。
+   * R104 项3：额外保留腾讯 POI 的经纬度（p.location.lat/lng），供 openPicker 选中 POI 时回传；
+   *           无坐标 → null（不臆造）。新增字段不影响既有纯文字消费方。
    * @param {Array} pa
    * @returns {Array}
    */
@@ -343,11 +345,15 @@
     for (i = 0; i < pa.length; i++) {
       p = pa[i] || {};
       if (!p.title) continue;
+      var loc = p.location || {};
+      var pla = Number(loc.lat), pln = Number(loc.lng);
       out.push({
         title: String(p.title),
         address: p.address ? String(p.address) : '',
         category: p.category ? String(p.category) : '',
-        distance: (p._distance == null || String(p._distance) === '') ? '' : String(p._distance)
+        distance: (p._distance == null || String(p._distance) === '') ? '' : String(p._distance),
+        lat: (loc.lat != null && String(loc.lat) !== '' && isFinite(pla)) ? pla : null,
+        lng: (loc.lng != null && String(loc.lng) !== '' && isFinite(pln)) ? pln : null
       });
     }
     return out;
@@ -1005,6 +1011,14 @@
     });
   }
 
+  /**
+   * 打开「选择位置」面板。
+   * @param {Object}   opts { title?, confirmText?, current?, rich? }
+   *        rich（R104 项3，默认 false）：为真时确认回调回传对象 {text, sub, lat, lng}；
+   *        为假（默认）时【逐字保持】既有契约，只回传字符串文案或 null —— 保证
+   *        xt-moments.js 及既有 QA 脚本零改动。
+   * @param {Function} cb 回调 cb(textOrNull) 或（rich 时）cb({text,sub,lat,lng}|null)
+   */
   function openPicker(opts, cb) {
     var o = opts || {};
     var done = (typeof cb === 'function') ? cb : function () {};
@@ -1096,11 +1110,19 @@
     var chosen = '';
     var kw = '';
     var closed = false;
+    var curSub = '';        // R104 项3：当前选中项的副地址（「区 + 路」级，如「西湖区 · 文三路」）
+    var curLat = null;      // R104 项3：当前选中项纬度（拿不到坐标 → null）
+    var curLng = null;      // R104 项3：当前选中项经度
     var nearbyResults = [];  // 最近一次定位得到的周边 POI
     var locBusy = false;     // 定位中：置位后不再启动第二次，防止并发重复请求
 
-    function setChosen(text, sub) {
+    function setChosen(text, sub, coord) {
       chosen = (text == null) ? '' : String(text).replace(/^\s+|\s+$/g, '');
+      curSub = (sub == null) ? '' : String(sub);
+      if (coord && typeof coord.lat === 'number' && typeof coord.lng === 'number' &&
+          isFinite(coord.lat) && isFinite(coord.lng)) {
+        curLat = coord.lat; curLng = coord.lng;
+      } else { curLat = null; curLng = null; }
       if (chosen) {
         curlineEl.textContent = chosen;
         okEl.removeAttribute('disabled');
@@ -1115,10 +1137,14 @@
       }
     }
 
-    function itemRow(text, sub) {
+    function itemRow(text, sub, lat, lng) {
       var cls = 'xtlp-item' + (text === chosen ? ' on' : '');
       var subHtml = sub ? ' <span class="xtlp-sub">' + _escAttr(sub) + '</span>' : '';
-      return '<div class="' + cls + '" data-text="' + _escAttr(text) + '">' + _escAttr(text) + subHtml +
+      var coordAttr = '';
+      if (typeof lat === 'number' && typeof lng === 'number' && isFinite(lat) && isFinite(lng)) {
+        coordAttr = ' data-lat="' + _escAttr(lat) + '" data-lng="' + _escAttr(lng) + '"';
+      }
+      return '<div class="' + cls + '" data-text="' + _escAttr(text) + '"' + coordAttr + '>' + _escAttr(text) + subHtml +
         (text === chosen ? '<span class="xtlp-tick">✓</span>' : '') + '</div>';
     }
 
@@ -1142,7 +1168,7 @@
         for (i = 0; i < nearbyResults.length; i++) {
           var poi = nearbyResults[i] || {};
           var psub = poi.address || poi.category || '';
-          html2 += itemRow(poi.title, psub);
+          html2 += itemRow(poi.title, psub, poi.lat, poi.lng);
         }
       }
       var recent = recentList();
@@ -1167,6 +1193,15 @@
       document.removeEventListener('keydown', onKey);
       window.removeEventListener('resize', onResize);
       if (text) recentPush(text);
+      if (o.rich) {
+        // R104 项3：rich 模式回传结构化对象；无坐标时 lat/lng 回 null（前端退化为纯文字卡）。
+        if (text) {
+          done({ text: chosen || String(text), sub: curSub || '', lat: curLat, lng: curLng });
+        } else {
+          done(null);
+        }
+        return;
+      }
       done(text || null);
     }
 
@@ -1190,7 +1225,14 @@
       if (!node || node === listEl) return;
       var t = node.getAttribute('data-text');
       if (t == null) return;
-      setChosen(t, '');
+      // R104 项3：列表项若带经纬度（如附近 POI），选中时一并记录，供 rich 模式回传。
+      var dla = node.getAttribute('data-lat'), dln = node.getAttribute('data-lng');
+      var coord = null;
+      if (dla != null && dln != null) {
+        var nla = Number(dla), nln = Number(dln);
+        if (isFinite(nla) && isFinite(nln)) coord = { lat: nla, lng: nln };
+      }
+      setChosen(t, '', coord);
     });
 
     root.addEventListener('click', function (ev) {
@@ -1222,7 +1264,11 @@
                 if (t2) txt = t2;
               }
             }
-            setChosen(_clipText(txt), '');
+            // R104 项3：副地址取「区 + 路」级（如「西湖区 · 文三路」）；回传本次定位坐标 r.lat/r.lng。
+            var subParts = [];
+            if (g.district) subParts.push(g.district);
+            if (g.streetBase) subParts.push(g.streetBase);
+            setChosen(_clipText(txt), subParts.join(' · '), { lat: r.lat, lng: r.lng });
             renderList();
           });
         });

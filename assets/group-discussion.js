@@ -56,6 +56,8 @@
   let round = 0;
   let userHasSpoken = false;
   let isRunning = false;
+  // R104：消息区滚动跟随状态（true=贴底自动跟随；false=用户已上滑，暂停跟随）
+  let gdFollow = true;
 
   // ========== 工具函数 ==========
   function esc(str) {
@@ -117,10 +119,6 @@
     `).join('');
 
     return `
-      <div class="gd-header">
-        <div class="gd-title">👥 无领导小组讨论</div>
-        <div class="gd-subtitle">经典群面题目模拟，4个虚拟角色与你一起讨论，锻炼团队协作与表达能力</div>
-      </div>
       <div class="gd-actions">
         <button class="gd-btn gd-btn-primary" onclick="GroupDiscussion.random()">🎲 随机抽题</button>
         <span class="gd-count">共 ${TOPICS.length} 个经典题目</span>
@@ -302,7 +300,7 @@
     isRunning = true;
     
     document.getElementById('gdContent').innerHTML = renderDiscussion();
-    
+    bindMessagesScroll();
     // 第一轮：角色依次发言
     setTimeout(() => {
       CHARACTERS.forEach((char, i) => {
@@ -383,6 +381,29 @@
     });
   }
 
+  // ========== R104：消息区滚动感知（跟随/暂停 + 顶部渐隐） ==========
+  // 绑定 #gdMessages 的 scroll 监听；元素随讨论页（select 时）重建，故每次重绑（__gdScrollBound 去重）。
+  function bindMessagesScroll() {
+    var box = document.getElementById('gdMessages');
+    if (!box) return;
+    if (box.__gdScrollBound) return;
+    box.__gdScrollBound = true;
+    box.addEventListener('scroll', function () {
+      var gap = box.scrollHeight - box.scrollTop - box.clientHeight;
+      gdFollow = (gap < 24);   // 离底部超过 24px 视为用户上滑 -> 暂停跟随
+      syncFadeTop(box);
+    });
+    gdFollow = true;
+    syncFadeTop(box);
+  }
+
+  // 顶部渐隐遮罩开关：列表上方仍有被截断内容时显示（类挂在容器自身，innerHTML 重建不会清掉）
+  function syncFadeTop(box) {
+    if (!box) return;
+    if (box.scrollTop > 2) { box.classList.add('fade-top'); }
+    else { box.classList.remove('fade-top'); }
+  }
+
   // ========== 更新消息区域 ==========
   function updateMessages() {
     const msgsContainer = document.getElementById('gdMessages');
@@ -408,8 +429,19 @@
       }
     }).join('');
     
+    // R104：重建前记录位置——仅当处于跟随态且原本贴底时才自动贴底；
+    // 用户已上滑（暂停态）时保持视口不动，避免新消息把视口拽回底部。
+    var prevTop = msgsContainer.scrollTop;
+    var prevH = msgsContainer.scrollHeight;
+    var gap = prevH - prevTop - msgsContainer.clientHeight;
+    var atBottom = (prevH === 0) || (gap < 24);   // 首次渲染 prevH===0 视为贴底
     msgsContainer.innerHTML = msgsHtml;
-    msgsContainer.scrollTop = msgsContainer.scrollHeight;
+    if (gdFollow && atBottom) {
+      msgsContainer.scrollTop = msgsContainer.scrollHeight;
+    } else {
+      msgsContainer.scrollTop = prevTop + (msgsContainer.scrollHeight - prevH);
+    }
+    syncFadeTop(msgsContainer);
   }
 
   // ========== 返回题目列表 ==========
@@ -454,7 +486,6 @@
       
       .gd-header { padding: 24px 20px 12px; text-align: center; }
       .gd-title { font-size: 22px; font-weight: 800; color: var(--text, #333); margin-bottom: 6px; }
-      .gd-subtitle { font-size: 13px; color: var(--text-secondary, #888); line-height: 1.5; }
       .gd-actions { padding: 12px 20px; display: flex; align-items: center; gap: 12px; }
       .gd-count { font-size: 12px; color: var(--text-muted, #aaa); }
       .gd-list { padding: 0 16px 16px; flex: 1; overflow-y: auto; }
@@ -490,6 +521,8 @@
       .gd-user-chip { border-color: #4CAF50; }
       
       .gd-messages { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; }
+      /* R104：顶部渐隐遮罩——列表上方还有被截断内容时显示（mask 挂在容器自身，重建安全） */
+      .gd-messages.fade-top { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 26px); mask-image: linear-gradient(to bottom, transparent 0, #000 26px); }
       .gd-msg { display: flex; gap: 8px; max-width: 85%; }
       .gd-msg-user { align-self: flex-end; flex-direction: row-reverse; }
       .gd-msg-char { align-self: flex-start; }

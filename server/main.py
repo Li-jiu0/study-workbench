@@ -29,7 +29,9 @@ app.add_middleware(
     allow_headers=["*"],
     # R88-M1：APK（file:// 跨域）下前端需读取 /api/ai/chat 的 X-Ai-Model-Used 响应头，
     # 才能如实记账「实际执行的模型名」；不暴露的话跨域响应头对 JS 不可见。
-    expose_headers=["X-Ai-Model-Used"],
+    # R104-项4：新增 X-Ai-Model-Fallback（模型解析失败回退标志），同样必须暴露，
+    # 否则 APK 跨域下前端读不到、无法提示「已切换模型」。
+    expose_headers=["X-Ai-Model-Used", "X-Ai-Model-Fallback"],
 )
 
 init_db()

@@ -1,7 +1,7 @@
 """数据库：SQLAlchemy ORM 模型（表结构见 建表SQL.sql）。"""
 from datetime import datetime
 
-from sqlalchemy import (Boolean, Column, DateTime, ForeignKey, Integer, String,
+from sqlalchemy import (Boolean, Column, DateTime, Float, ForeignKey, Integer, String,
                         Text, UniqueConstraint, create_engine, or_, text)
 from sqlalchemy.orm import DeclarativeBase, Session, relationship, sessionmaker
 
@@ -198,8 +198,14 @@ class FriendRemark(Base):
 
 
 class Message(Base):
-    """聊天消息。kind: text / image。content: 文本内容或图片 URL。read_at NULL=对方未读。
-    group_id NULL=私聊（按 sender/receiver 查询）；group_id 非空=群消息（receiver_id 恒为 0）。"""
+    """聊天消息。kind: text / image / voice / location（location 为私聊位置消息）。
+    content: 文本内容，或图片 / 语音 URL（location 时可存地点名，亦允许空串）。
+    read_at NULL=对方未读。
+    group_id NULL=私聊（按 sender/receiver 查询）；group_id 非空=群消息（receiver_id 恒为 0）。
+
+    R104 项3（位置消息）：location 消息的坐标与地点副标题存于 sub / lat / lng；
+    旧消息 / 非位置消息此三列为空（sub=''、lat/lng=NULL），前端走纯文字回退。
+    """
     __tablename__ = "messages"
     id = Column(Integer, primary_key=True)
     sender_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
@@ -207,6 +213,9 @@ class Message(Base):
     group_id = Column(Integer, ForeignKey("chat_groups.id", ondelete="CASCADE"), nullable=True)
     kind = Column(String(16), nullable=False, default="text")
     content = Column(Text, nullable=False, default="")
+    sub = Column(Text, nullable=False, default="")  # 位置消息地点副标题（非位置消息恒为 ''）
+    lat = Column(Float, nullable=True)  # 位置消息纬度（旧消息 / 非位置消息为 NULL）
+    lng = Column(Float, nullable=True)  # 位置消息经度（旧消息 / 非位置消息为 NULL）
     read_at = Column(String(19), nullable=True)
     created_at = Column(String(19), nullable=False)
 
@@ -466,6 +475,18 @@ def _upgrade_legacy_schema() -> None:
     if "messages" in names and "group_id" not in _table_columns("messages"):
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE messages ADD COLUMN group_id INTEGER REFERENCES chat_groups(id) ON DELETE CASCADE"))
+    # R104 项3（位置消息）：messages 补 sub / lat / lng（守卫式、幂等、无损）。
+    # SQLite 无 ADD COLUMN IF NOT EXISTS，先 PRAGMA 判断列存在再 ALTER；
+    # sub 带 DEFAULT ''、lat/lng 允许 NULL，存量行自动填默认，老消息前端走纯文字回退。
+    if "messages" in names:
+        mcols = _table_columns("messages")
+        with engine.begin() as conn:
+            if "sub" not in mcols:
+                conn.execute(text("ALTER TABLE messages ADD COLUMN sub TEXT NOT NULL DEFAULT ''"))
+            if "lat" not in mcols:
+                conn.execute(text("ALTER TABLE messages ADD COLUMN lat REAL"))
+            if "lng" not in mcols:
+                conn.execute(text("ALTER TABLE messages ADD COLUMN lng REAL"))
     # 修复（2026-09-11）：comments.parent_id 缺失导致 social.py 评论接口 AttributeError（生产 500），此处无损补列
     if "comments" in names and "parent_id" not in _table_columns("comments"):
         with engine.begin() as conn:

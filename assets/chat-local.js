@@ -1787,7 +1787,7 @@
     if (data.chats[friendId]) { data.chats[friendId].unread = 0; saveData(data); }
 
     S.msgs = (data.messages[friendId] || []).map(function (m, i) {
-      return { id: i + 1, senderId: m.senderId, content: m.content, kind: m.kind, time: m.time, duration: m.duration };
+      return { id: i + 1, senderId: m.senderId, content: m.content, kind: m.kind, time: m.time, duration: m.duration, sub: m.sub, lat: m.lat, lng: m.lng };
     });
 
     // 显示聊天区域，隐藏空状态
@@ -1813,7 +1813,7 @@
         imHasMore = !!d.hasMore; // R73 需求19：记录是否还有更早历史，供滚动加载更多
         if (items.length > 0) {
           S.msgs = items.map(function (m) {
-            return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read };
+            return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, sub: m.sub, lat: m.lat, lng: m.lng, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read };
           });
           renderMsgs();
           // 标记最后一条消息为已读
@@ -2016,14 +2016,32 @@
           '<span class="im-voice-dur">' + (m.duration ? m.duration + '″' : '语音') + '</span></div>' +
           '<div class="im-mt">' + timeStr + '</div>' + readTag;
       } else if (m.kind === 'location') {
-        /* R88-I（2026-09-18）：位置消息 —— 纯文字卡片，无坐标、不可跳转（设计 §7-7 硬规则）。
-           图标走 lucideIcon('map-pin')（零 emoji），content 仅存文字地址。 */
-        var locIcon = (typeof window.lucideIcon === 'function') ? window.lucideIcon('map-pin', 18) : '';
-        inner = '<div class="im-loc-card">' +
-          '<span class="im-loc-ic">' + locIcon + '</span>' +
-          '<span class="im-loc-text">' + esc(m.content || '') + '</span>' +
-        '</div>' +
-          '<div class="im-mt">' + timeStr + '</div>' + readTag;
+        /* R104 项3（2026-09-19，用户拍板解除 R88-I §7-7 红线）：位置消息 —— 有坐标渲染微信式地图卡，
+           无坐标（旧消息）回退纯文字卡（向后兼容）。地图图片统一走后端 /api/geo/staticmap 代理，
+           前端绝不经 apis.map.qq.com（Key 不落前端）；onerror 隐藏图片、文字仍在、不破版。 */
+        var hasGeo = (typeof m.lat === 'number' && typeof m.lng === 'number' && isFinite(m.lat) && isFinite(m.lng));
+        if (hasGeo) {
+          var mapSrc = apiBase() + '/api/geo/staticmap?lat=' + encodeURIComponent(m.lat) +
+                       '&lng=' + encodeURIComponent(m.lng) + '&zoom=16';
+          var locSubHtml = m.sub ? '<div class="im-loc-sub">' + esc(m.sub) + '</div>' : '';
+          inner = '<div class="im-loc-card">' +
+              '<div class="im-loc-addr">' +
+                '<div class="im-loc-title">' + esc(m.content || '位置') + '</div>' +
+                locSubHtml +
+              '</div>' +
+              '<img class="im-loc-map" src="' + esc(mapSrc) + '" alt="地图" loading="lazy"' +
+                ' onerror="this.style.display=\'none\'">' +
+            '</div>' +
+            '<div class="im-mt">' + timeStr + '</div>' + readTag;
+        } else {
+          /* 旧消息（无坐标）兼容：沿用纯文字卡（map-pin 图标，零 emoji），content 仅存文字地址。 */
+          var locIcon = (typeof window.lucideIcon === 'function') ? window.lucideIcon('map-pin', 18) : '';
+          inner = '<div class="im-loc-card im-loc-plain">' +
+            '<span class="im-loc-ic">' + locIcon + '</span>' +
+            '<span class="im-loc-text">' + esc(m.content || '') + '</span>' +
+          '</div>' +
+            '<div class="im-mt">' + timeStr + '</div>' + readTag;
+        }
       } else if (m.kind === 'file') {
         /* R88-I 增量（2026-09-18）：文件消息 —— 本地元数据卡片（文件名 + 大小），无 emoji、不可跳转。
            ❗不读文件内容（不落 base64），仅存 name/size/type 元数据，避免撑爆 localStorage。 */
@@ -2606,11 +2624,14 @@
     triggerAiReply(text);
   };
 
-  /* R88-I（2026-09-18）：发送位置消息（纯文字，无坐标）。
-     复用 imSendText 的本地消息追加链路；消息体仅 { id, senderId, content:text, kind:'location', time }，
-     ❗绝不把 lat/lng 放进消息体（设计 §7-7）。未选会话时沿用既有守卫 toast 并 return。 */
-  window.imSendLocation = function (text) {
-    var t = (text == null) ? '' : String(text);
+  /* R104 项3（2026-09-19，经用户拍板解除 R88-I §7-7 红线）：发送位置消息（支持坐标）。
+     入参兼容：loc 可为 String（旧调用 → 纯文字位置）或 Object { text, sub, lat, lng }。
+     消息体 { id, senderId, kind:'location', content:text, sub, lat, lng, time }；坐标仅用于
+     接收端地图缩略图（统一经后端 /api/geo/staticmap 代理，前端绝不直连地图服务商）。
+     未选会话时沿用既有守卫 toast 并 return。 */
+  window.imSendLocation = function (loc) {
+    var o = (loc && typeof loc === 'object') ? loc : { text: loc };
+    var t = (o.text == null) ? '' : String(o.text);
     t = t.replace(/^\s+|\s+$/g, '');
     if (!t) return;
     if (!S.group && !S.peer) { toast('请先选择一个会话再发送位置'); return; }
@@ -2618,13 +2639,23 @@
     if (S.group) { toast('群聊暂不支持发送位置'); return; }
     if (!S.peer) return;
 
+    // 坐标仅在经纬度均为有限数时携带；副地址仅在非空时携带（避免脏值进消息体）。
+    var hasGeo = (typeof o.lat === 'number' && typeof o.lng === 'number' && isFinite(o.lat) && isFinite(o.lng));
+    var sub = (o.sub == null) ? '' : String(o.sub);
+
     var now = Date.now();
     var uid = genMsgId();
-    S.msgs.push({ id: uid, senderId: S.myId, content: t, kind: 'location', time: now });
+    var msg = { id: uid, senderId: S.myId, content: t, kind: 'location', time: now };
+    if (sub) msg.sub = sub;
+    if (hasGeo) { msg.lat = o.lat; msg.lng = o.lng; }
+    S.msgs.push(msg);
 
     var data = loadData();
     if (!data.messages[S.peer.id]) data.messages[S.peer.id] = [];
-    data.messages[S.peer.id].push({ id: uid, senderId: S.myId, content: t, kind: 'location', time: now });
+    var stored = { id: uid, senderId: S.myId, content: t, kind: 'location', time: now };
+    if (sub) stored.sub = sub;
+    if (hasGeo) { stored.lat = o.lat; stored.lng = o.lng; }
+    data.messages[S.peer.id].push(stored);
     if (!data.chats[S.peer.id]) data.chats[S.peer.id] = {};
     data.chats[S.peer.id].last = '[位置] ' + t;
     data.chats[S.peer.id].time = now;
@@ -2635,19 +2666,29 @@
     renderMsgs();
     loadChats();
 
-    // 服务器好友：同步到服务端（content 只发文字，不发坐标）
+    // 服务器好友：同步到服务端（body 带 sub/lat/lng，服务端加列后跨端可显示地图卡）
     if (S.peer.isServer) {
       var token = getToken();
       if (token) {
+        var payload = { content: t, kind: 'location' };
+        if (sub) payload.sub = sub;
+        if (hasGeo) { payload.lat = o.lat; payload.lng = o.lng; }
         fetch(apiBase() + '/api/chat/' + S.peer.serverId + '/messages', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-          body: JSON.stringify({ content: t, kind: 'location' })
+          body: JSON.stringify(payload)
         })
         .then(function (r) { return r.json(); })
         .then(function (m) {
           if (m && m.id) {
-            S.msgs.push({ id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read });
+            // 回包映射：优先用服务端回传坐标；老服务端未回传时回退本地值（保证卡片不丢坐标）
+            var rsub = (m.sub != null) ? String(m.sub) : sub;
+            var rlat = (typeof m.lat === 'number') ? m.lat : (hasGeo ? o.lat : null);
+            var rlng = (typeof m.lng === 'number') ? m.lng : (hasGeo ? o.lng : null);
+            var rec = { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read };
+            if (rsub) rec.sub = rsub;
+            if (typeof rlat === 'number' && typeof rlng === 'number') { rec.lat = rlat; rec.lng = rlng; }
+            S.msgs.push(rec);
             renderMsgs();
           }
           fetchPeerMsgs(true);
@@ -2973,7 +3014,7 @@
       mapper = function (m) { return { id: m.id, senderId: m.senderId, senderNickname: m.senderNickname, senderAvatar: m.senderAvatar, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true }; };
     } else if (S.peer && S.peer.isServer) {
       url = apiBase() + '/api/chat/' + S.peer.serverId + '/messages?before_id=' + firstId + '&limit=30&mark_read=0';
-      mapper = function (m) { return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read }; };
+      mapper = function (m) { return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, sub: m.sub, lat: m.lat, lng: m.lng, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read }; };
     } else {
       return;
     }
@@ -3011,7 +3052,7 @@
       var items = d.items || [];
       if (!items.length && silent) return;
       var list = items.map(function (m) {
-        return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read };
+        return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, sub: m.sub, lat: m.lat, lng: m.lng, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read };
       });
       // 保留已 prepend 的更早历史，避免被「最新 50 条」覆盖
       var merged = imMergeOlderMsgs(S.msgs, list);
@@ -4079,8 +4120,14 @@
       '.im-tn-close{flex:0 0 auto;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text-secondary,#999);cursor:pointer}' +
       '.im-tn-close:hover{background:var(--bg,#F5F7FA);color:var(--text,#2D3436)}' +
       'body.reduce-motion .im-tn{transition:none}' +
-      /* R88-I（2026-09-18）：私聊位置消息卡片（纯文字，无坐标，不可跳转）。样式随脚本注入，不改 common.css。 */
-      '.im-loc-card{display:inline-flex;align-items:flex-start;gap:8px;max-width:240px;padding:8px 12px;background:var(--card,#fff);border:1px solid var(--border,#eee);border-radius:10px}' +
+      /* R104 项3（2026-09-19）：私聊位置消息卡片 —— 有坐标=微信式地图卡（上地址 + 下缩略图），
+         无坐标=纯文字卡（.im-loc-plain）。样式随脚本注入，不改 common.css；固定 px + @media，禁 clamp/min/max。 */
+      '.im-loc-card{display:block;width:180px;max-width:60vw;overflow:hidden;background:var(--card,#fff);border:1px solid var(--border,#eee);border-radius:10px}' +
+      '.im-loc-card.im-loc-plain{display:inline-flex;align-items:flex-start;gap:8px;width:auto;max-width:240px;padding:8px 12px}' +
+      '.im-loc-addr{padding:8px 10px}' +
+      '.im-loc-title{font-size:15px;font-weight:700;color:var(--text,#2D3436);line-height:1.35;word-break:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}' +
+      '.im-loc-sub{font-size:12px;color:var(--text-secondary,#8a8f99);margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}' +
+      '.im-loc-map{display:block;width:100%;height:110px;object-fit:cover;border-bottom-left-radius:10px;border-bottom-right-radius:10px;background:var(--bg,#F5F7FA)}' +
       '.im-loc-ic{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;color:var(--primary,#5B8DEF);margin-top:1px}' +
       '.im-loc-ic svg{width:18px;height:18px;display:block}' +
       '.im-loc-text{font-size:14px;line-height:1.5;color:var(--text,#2D3436);word-break:break-word;white-space:pre-wrap}' +

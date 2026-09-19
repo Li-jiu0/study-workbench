@@ -3,7 +3,7 @@
 协议（JSON 文本帧）：
   客户端 → 服务端：
     {"type":"ping"}                                 心跳（每 ~25s）
-    {"type":"msg","to":<userId>,"content":"..","kind":"text|image"}
+    {"type":"msg","to":<userId>,"content":"..","kind":"text|image|location","sub":"..","lat":..,"lng":..}
     {"type":"read","peer":<userId>,"upToId":<消息id>} 已读回执
   服务端 → 客户端：
     {"type":"hello","userId":..}                    建立成功
@@ -38,11 +38,24 @@ def _authed_uid(ws: WebSocket) -> int | None:
         return None
 
 
+def _num(v):
+    """WS JSON 坐标值安全转 float（缺失 / 非法 → None，与 REST pydantic 同构）。"""
+    if v is None or v == "":
+        return None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
 async def _handle_msg(uid: int, msg: dict) -> None:
     to = int(msg.get("to") or 0)
-    kind = msg.get("kind") if msg.get("kind") in ("text", "image") else "text"
+    # R104 项3：kind 白名单加 location（仅私聊 WS；群聊走 groups.py，独立不受影响）。
+    # 注：voice 仍未纳入 WS 白名单（保持改动前行为，不在本次范围）。
+    kind = msg.get("kind") if msg.get("kind") in ("text", "image", "location") else "text"
     content = str(msg.get("content") or "").strip()
-    if not to or to == uid or not content:
+    # 位置消息允许「纯坐标、无文本」；其余 kind 仍禁止空消息。
+    if not to or to == uid or (not content and kind != "location"):
         return
     if len(content) > 5000:
         content = content[:5000]
@@ -55,7 +68,9 @@ async def _handle_msg(uid: int, msg: dict) -> None:
         if is_blocked(db, uid, to) or is_blocked(db, to, uid):
             await send_to(uid, {"type": "error", "detail": "无法发送消息（已被限制）"})
             return
-        m = await store_and_deliver(db, db.get(User, uid), to, kind, content)
+        sub = str(msg.get("sub") or "")
+        m = await store_and_deliver(db, db.get(User, uid), to, kind, content,
+                                    sub=sub, lat=_num(msg.get("lat")), lng=_num(msg.get("lng")))
         await send_to(uid, {"type": "msg", "message": msg_dict(m)})  # 自己的回显
     finally:
         db.close()

@@ -378,10 +378,10 @@
 <script src="assets/app.js?v=20260919c" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
 <!-- R88-H（2026-09-18）：位置能力底座 XT_LOC_PICK（跟 config.js，先于 chat-local.js，确保调用前就绪） -->
-<script src="assets/xt-region.js?v=20260919b" defer></script>
+<script src="assets/xt-region.js?v=20260919d" defer></script>
 <script src="assets/emoji/manifest.js?v=20260916O" defer></script>
 <script src="assets/api.js?v=20260917b" defer></script>
-<script src="assets/chat-local.js?v=20260917b" defer></script>
+<script src="assets/chat-local.js?v=20260919d" defer></script>
 <script src="assets/admin-contact.js?v=20260917b" defer></script>
 <style>
   /* R33（20260913r）：tab 视觉统一——去掉 .im-tab-add 的特殊填充/加粗与专属 hover，添加好友与其余 4 个 tab 同享 .im-tab/.im-tab.active；“im-tab-add” 类保留在 DOM 仅作语义标记，无样式副作用 */
@@ -987,7 +987,8 @@
   /* ---------- 分支3：位置定位（XT_LOC_PICK 主入口 + 手动兜底） ---------- */
   /* R88-J item8：加号菜单「定位」—— 打开微信式位置选择层（XT_LOC_PICK.openPicker）。
      两条路径都在：①「用当前位置」= 直接发当前定位；②「搜索地址」= 搜索选择后发送。
-     确认 = 立即 imSendLocation(text)。openPicker 缺失时降级 onLoc（旧链路）。 */
+     R104 项3：openPicker 传 rich:true → 确认回传对象 {text, sub, lat, lng}，带坐标发地图卡。
+     openPicker 缺失时降级 onLoc（旧链路）。 */
   window.imPlusPickLocation = function () {
     imClosePlusMenu();
     var LP = window.XT_LOC_PICK;
@@ -999,10 +1000,14 @@
     LP.openPicker({
       title: '发送位置',
       confirmText: '发送',
-      current: ''
-    }, function (text) {
-      var t = text == null ? '' : String(text).replace(/^\s+|\s+$/g, '');
-      if (t && typeof window.imSendLocation === 'function') window.imSendLocation(t);
+      current: '',
+      rich: true            // R104 项3：回传 {text, sub, lat, lng}（默认 false 时仅回文字，保持旧契约）
+    }, function (loc) {
+      if (!loc) return;
+      var t = loc.text == null ? '' : String(loc.text).replace(/^\s+|\s+$/g, '');
+      if (t && typeof window.imSendLocation === 'function') {
+        window.imSendLocation({ text: t, sub: loc.sub || '', lat: loc.lat, lng: loc.lng });
+      }
     });
   };
 
@@ -1020,7 +1025,10 @@
       onManual: function (title, placeholder, cb) { imShowLocInput(title, placeholder, cb); }
     };
     window.XT_LOC_PICK.pick(opts, function (r) {
-      if (r && r.text && typeof window.imSendLocation === 'function') window.imSendLocation(r.text);
+      // R104 项3：pick 的 LocObj 已含 lat/lng；sub 用区级（无街道信息时留空 → 纯文字副行省略）。
+      if (r && r.text && typeof window.imSendLocation === 'function') {
+        window.imSendLocation({ text: r.text, sub: r.district || '', lat: r.lat, lng: r.lng });
+      }
     });
   }
   window.imPickLocation = function () { onLoc('所在位置'); };
@@ -1167,7 +1175,7 @@
 </script>
 <script src="assets/ai-config.js?v=20260918c"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260919c"></script>
+<script src="assets/ai-service.js?v=20260919d"></script>
 <script src="assets/ai-cap-registry.js?v=20260918c"></script>
 <script src="assets/ai-cap-image.js?v=20260918c"></script>
 <script src="assets/ai-cap-vision.js?v=20260918c"></script>

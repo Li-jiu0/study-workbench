@@ -1300,12 +1300,17 @@
           // 跨域（APK）时需服务端 expose_headers 暴露才读得到；读不到就保持空串，
           // 由上层如实回落到本地可辨别的名字，绝不编造。
           var usedModel = "";
+          var usedFallback = "";
           try {
             if (resp.headers && typeof resp.headers.get === "function") {
               usedModel = String(resp.headers.get("X-Ai-Model-Used") || "");
+              // R104-项4：读取服务端「是否回退」标志（X-Ai-Model-Fallback，取值 "1"/"0"）。
+              // 跨域（APK）时需服务端 expose_headers 暴露才读得到；读不到按「未回退」处理。
+              usedFallback = String(resp.headers.get("X-Ai-Model-Fallback") || "");
             }
-          } catch (eH) { usedModel = ""; }
-          return { text: full, providerId: p.id, providerName: p.name, modelUsed: usedModel };
+          } catch (eH) { usedModel = ""; usedFallback = ""; }
+          return { text: full, providerId: p.id, providerName: p.name, modelUsed: usedModel,
+                   modelFallback: (usedFallback === "1") };
         }
         lastErr = makeError("中转空回复", 0, "EMPTY");
       } catch (e) {
@@ -2923,6 +2928,10 @@
             model: "relay:" + relayed.providerId,
             modelUsed: "relay:" + relayed.providerId,
             modelUsedName: relayed.providerName,
+            // R104-项4：把「是否回退」与「实际执行的模型名」一并回传页面，
+            // 供其显式提示「已切换为 X 回答」。modelUsedReal 即 X-Ai-Model-Used（真实模型串）。
+            modelFallback: !!(relayed && relayed.modelFallback),
+            modelUsedReal: relayUsedModel,
             fromPreset: false, degraded: false, funcType: realType
           };
         } catch (eRelay) {

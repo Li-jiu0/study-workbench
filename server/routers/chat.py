@@ -19,7 +19,11 @@ router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 class SendMsgIn(BaseModel):
     content: str = Field(max_length=5000)
-    kind: str = "text"  # text / image / voice
+    kind: str = "text"  # text / image / voice / location
+    # R104 项3（位置消息）：可选坐标字段；非位置消息 / 旧前端不传 → 默认空值，零影响
+    sub: str = ""
+    lat: float | None = None
+    lng: float | None = None
 
 
 class ReadIn(BaseModel):
@@ -33,16 +37,26 @@ def msg_dict(m: Message) -> dict:
         "receiverId": m.receiver_id,
         "kind": m.kind,
         "content": m.content,
+        # R104 项3：位置字段；旧消息 / 非位置消息返回 sub: 、lat/lng:null（前端纯文字回退）
+        "sub": getattr(m, "sub", "") or "",
+        "lat": getattr(m, "lat", None),
+        "lng": getattr(m, "lng", None),
         "createdAt": m.created_at,
         "read": bool(m.read_at),
     }
 
 
 async def store_and_deliver(db: Session, sender: User, receiver_id: int,
-                            kind: str, content: str) -> Message:
-    """写库并尝试实时推送给接收方；返回入库后的消息。"""
+                            kind: str, content: str, sub: str = "",
+                            lat: float | None = None, lng: float | None = None) -> Message:
+    """写库并尝试实时推送给接收方；返回入库后的消息。
+
+    R104 项3：新增可选 sub / lat / lng，仅位置消息携带；其余消息恒为 '' / None。
+    ws.py 既有的 5 参调用保持兼容（新增参数均有默认值）。
+    """
     m = Message(sender_id=sender.id, receiver_id=receiver_id,
-                kind=kind, content=content, read_at=None, created_at=now_iso())
+                kind=kind, content=content, sub=sub or "", lat=lat, lng=lng,
+                read_at=None, created_at=now_iso())
     db.add(m)
     db.commit()
     db.refresh(m)
@@ -96,12 +110,14 @@ async def send_message(peer_id: int, body: SendMsgIn, user: User = Depends(get_c
     if is_blocked(db, user.id, peer_id) or is_blocked(db, peer_id, user.id):
         raise HTTPException(403, "无法发送消息（已被限制）")
     content = body.content.strip()
-    if not content:
+    # R104 项3：kind 白名单加入 location（**仅私聊放行**；群聊路径 groups.py 本期保持不变）。
+    # 未知 kind 仍降级为 text（前向兼容）。
+    kind = body.kind if body.kind in ("text", "image", "voice", "location") else "text"
+    # 位置消息允许「纯坐标、无文本」；其余 kind 仍禁止空消息。
+    if not content and kind != "location":
         raise HTTPException(400, "消息不能为空")
-    # 放行 voice（A7）：kind 列已是 String(16)，无需改表；未知 kind 仍降级为 text（前向兼容）
-    if body.kind not in ("text", "image", "voice"):
-        body.kind = "text"
-    m = await store_and_deliver(db, user, peer_id, body.kind, content)
+    m = await store_and_deliver(db, user, peer_id, kind, content,
+                                sub=body.sub, lat=body.lat, lng=body.lng)
     return msg_dict(m)
 
 
@@ -174,6 +190,9 @@ def list_conversations(limit: int = 100, user: User = Depends(get_current_user),
                 "id": lm.id,
                 "kind": lm.kind,
                 "content": lm.content,
+                "sub": getattr(lm, "sub", "") or "",
+                "lat": getattr(lm, "lat", None),
+                "lng": getattr(lm, "lng", None),
                 "createdAt": lm.created_at,
                 "senderId": lm.sender_id,
             } if lm else None,
@@ -210,6 +229,8 @@ def unread(user: User = Depends(get_current_user), db: Session = Depends(get_db)
                 p["last"] = "[图片]"
             elif m.kind == "voice":
                 p["last"] = "[语音]"
+            elif m.kind == "location":
+                p["last"] = "[位置]"
             else:
                 p["last"] = m.content[:80]
         total += 1

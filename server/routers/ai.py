@@ -292,6 +292,11 @@ async def chat(body: _ChatIn, user: User = Depends(get_current_user_optional),
         _client_model = (getattr(body, "modelName", None) or "").strip()
         if _client_model:
             resolved_name = resolve_model_name(body.provider, _client_model)
+    # R104-项4：显式记录「是否发生回退」——按前端 id 与前端声明的真实模型名都解析不到时，
+    # resolved_name 为空，下面就会退回 .env 默认模型（cfg["model"]）。此前该回退完全静默，
+    # 用户看到用量明细/回答底部的模型名与实际所选不符却无从知晓；这里把该事实固化为布尔，
+    # 随后经响应头 X-Ai-Model-Fallback 如实回传前端，由前端显式提示。
+    fallback = (resolved_name == "")
     model_name = resolved_name or cfg["model"]
     # 展示用真实模型名：严格解析不到时用宽松解析；仍拿不到则用实际转发用的 model_name
     # （即 .env 默认），如实反映「实际执行的模型」，绝不编造一个看起来正常的假名字。
@@ -380,7 +385,11 @@ async def chat(body: _ChatIn, user: User = Depends(get_current_user_optional),
     # R88-M1：把「实际执行的模型名」通过响应头回传前端，供前端如实记账（用量明细显示
     # 真实调用的模型名，而非平台默认模型）。header 值须为 latin-1 可编码，模型名均为 ASCII。
     _safe_model = "".join(ch for ch in str(display_model_name) if ord(ch) < 128) or "unknown"
+    # R104-项4：与 X-Ai-Model-Used 并列回传「是否发生回退」。注意该响应头挂在 StreamingResponse
+    # 对象上，因此即便流式体内上游返回 4xx/5xx、或连接失败等错误路径，响应头同样会被下发
+    # （前端据此提示「您选的模型当前不可用，已切换为 X 回答」）。头值仅 "1"/"0"，恒为 ASCII。
     return StreamingResponse(
         gen(), media_type="text/plain; charset=utf-8",
-        headers={"X-Ai-Model-Used": _safe_model},
+        headers={"X-Ai-Model-Used": _safe_model,
+                 "X-Ai-Model-Fallback": "1" if fallback else "0"},
     )

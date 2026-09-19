@@ -13,6 +13,7 @@
 - GET /api/geo/ip                 IP 定位降级（本机/内网调用直接 ip_local）
 - GET /api/geo/reverse?lat=&lng=  逆地理编码（街道级 + 周边 POI）
 - GET /api/geo/children?adcode=   行政区划子级（第 4 级「街道/乡镇」数据源）
+- GET /api/geo/staticmap?lat=&lng=&zoom=  静态地图图片代理（返回图片二进制，前端 <img> 直引）
 
 错误码约定（均 HTTP 200 + {"ok": false, "error": ...}）：
 - key_missing       .env 未配置 TENCENT_MAP_KEY
@@ -26,12 +27,13 @@
 from __future__ import annotations
 
 import ipaddress
+import json
 import re
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 
 from config import TENCENT_MAP_KEY
 from rate_limit import _client_ip, rate_limit
@@ -45,6 +47,7 @@ _TIMEOUT = 5
 _IP_URL = "https://apis.map.qq.com/ws/location/v1/ip"
 _GEOCODER_URL = "https://apis.map.qq.com/ws/geocoder/v1/"
 _CHILDREN_URL = "https://apis.map.qq.com/ws/district/v1/getchildren"
+_STATICMAP_URL = "https://apis.map.qq.com/ws/staticmap/v2/"
 
 # 中国范围粗校（含余量）：纬度 [3, 54]，经度 [73, 136]
 _LAT_MIN, _LAT_MAX = 3.0, 54.0
@@ -57,6 +60,12 @@ _REVERSE_CACHE: Dict[Tuple[float, float], Tuple[float, Dict[str, Any]]] = {}
 
 # 行政区划子级缓存：键 adcode，永久缓存（街道/乡镇列表极少变；进程重启即清）
 _CHILDREN_CACHE: Dict[str, List[Dict[str, Any]]] = {}
+
+# 静态地图缓存：键 (round(lat,4), round(lng,4), zoom)（约十米网格），TTL 600s（10 分钟）
+# 值为 (抓取时刻 monotonic, 图片二进制, media_type)；只缓存成功的图片，不缓存错误
+_STATICMAP_TTL = 600
+_STATICMAP_CACHE_MAX = 200  # 容量上限：超限淘汰最早插入的键（dict 保持插入序）
+_STATICMAP_CACHE: Dict[Tuple[float, float, int], Tuple[float, bytes, str]] = {}
 
 # adcode 为 2~6 位纯数字（省 2 位 / 市 4 位 / 区县 6 位）
 _ADCODE_RE = re.compile(r"^\d{2,6}$")
@@ -121,6 +130,29 @@ def _tencent_error(data: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     return None
 
 
+async def _tencent_bytes(url: str, params: Dict[str, Any]) -> Optional[Tuple[bytes, str]]:
+    """GET 腾讯 WebService 并读取二进制响应（静态地图回图片，非 JSON）。
+
+    Args:
+        url: 腾讯接口地址。
+        params: 查询参数（含 key）。
+
+    Returns:
+        (content_bytes, content_type) 元组；网络异常 / 超时 / 空响应一律返回 None，
+        由上层统一降级为 {ok:false,...}，绝不把异常透传给前端。
+    """
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT, trust_env=False) as client:
+            resp = await client.get(url, params=params)
+            content = resp.content
+            ctype = resp.headers.get("content-type") or ""
+    except Exception:  # noqa: BLE001 —— 任何外呼失败都降级，不透传
+        return None
+    if not content:
+        return None
+    return content, ctype
+
+
 def _reverse_cache_get(key: Tuple[float, float]) -> Optional[Dict[str, Any]]:
     """读逆地理缓存；过期则顺手删除并返回 None（下次请求重新打上游）。"""
     hit = _REVERSE_CACHE.get(key)
@@ -139,6 +171,27 @@ def _reverse_cache_put(key: Tuple[float, float], payload: Dict[str, Any]) -> Non
         oldest = next(iter(_REVERSE_CACHE))
         _REVERSE_CACHE.pop(oldest, None)
     _REVERSE_CACHE[key] = (time.monotonic(), payload)
+
+
+def _staticmap_cache_get(key: Tuple[float, float, int]) -> Optional[Tuple[bytes, str]]:
+    """读静态地图缓存；过期则顺手删除并返回 None（下次请求重新打上游）。"""
+    hit = _STATICMAP_CACHE.get(key)
+    if hit is None:
+        return None
+    fetched_at, content, media_type = hit
+    if time.monotonic() - fetched_at >= _STATICMAP_TTL:
+        _STATICMAP_CACHE.pop(key, None)
+        return None
+    return content, media_type
+
+
+def _staticmap_cache_put(key: Tuple[float, float, int], content: bytes,
+                        media_type: str) -> None:
+    """写静态地图缓存；超容量时淘汰最早插入的键，防止无界增长。"""
+    if len(_STATICMAP_CACHE) >= _STATICMAP_CACHE_MAX:
+        oldest = next(iter(_STATICMAP_CACHE))
+        _STATICMAP_CACHE.pop(oldest, None)
+    _STATICMAP_CACHE[key] = (time.monotonic(), content, media_type)
 
 
 @router.get("/ip")
@@ -292,3 +345,73 @@ async def geo_children(adcode: str = "",
     ]
     _CHILDREN_CACHE[code] = children
     return {"ok": True, "children": children}
+
+
+@router.get("/staticmap")
+async def geo_staticmap(lat: str = "", lng: str = "", zoom: str = "",
+                        _rl: None = Depends(rate_limit("geo"))) -> Any:
+    """静态地图图片代理：坐标 → 腾讯静态地图图片二进制（前端 <img> 直接引用）。
+
+    Args:
+        lat: 纬度（字符串手动解析，避免 FastAPI 422，统一降级 bad_params）。
+        lng: 经度。
+        zoom: 缩放级别（4~18，缺省 16；非法 / 越界一律夹取到合法区间）。
+
+    Returns:
+        成功：HTTP 200 + image/* 图片二进制（Content-Type 原样透传）。
+        失败：HTTP 200 + {"ok": false, "error": "bad_params" | "key_missing"
+              | "tencent_<status>" | "upstream_error"}（前端 <img> onerror 兜底隐藏，不破版）。
+    """
+    # 参数校验：lat/lng 必填且数值合法（纬度 -90..90、经度 -180..180）
+    if lat == "" or lng == "":
+        return {"ok": False, "error": "bad_params"}
+    try:
+        la, ln = float(lat), float(lng)
+    except (TypeError, ValueError):
+        return {"ok": False, "error": "bad_params"}
+    if not (-90.0 <= la <= 90.0 and -180.0 <= ln <= 180.0):
+        return {"ok": False, "error": "bad_params"}
+    # zoom：缺省 16；非法 / 越界夹取到 [4, 18]
+    try:
+        z = int(zoom) if zoom != "" else 16
+    except (TypeError, ValueError):
+        z = 16
+    z = min(max(z, 4), 18)
+
+    # 进程内缓存命中直接返回（键取 4 位小数网格 ≈ 十米级；TTL 600s，省配额）
+    cache_key = (round(la, 4), round(ln, 4), z)
+    cached = _staticmap_cache_get(cache_key)
+    if cached is not None:
+        content, media_type = cached
+        return Response(content=content, media_type=media_type or "image/png")
+
+    if not TENCENT_MAP_KEY:
+        return {"ok": False, "error": "key_missing"}
+
+    # center 为「纬度,经度」顺序；markers 中的 | 由 httpx 自动 URL 编码为 %7C
+    got = await _tencent_bytes(_STATICMAP_URL, {
+        "center": f"{la},{ln}",
+        "zoom": z,
+        "size": "600*300",
+        "maptype": "roadmap",
+        "markers": f"size:large|color:red|{la},{ln}",
+        "key": TENCENT_MAP_KEY,
+    })
+    if got is None:
+        return {"ok": False, "error": "upstream_error"}
+    content, media_type = got
+    # 成功 = 上游回图片；失败 = 上游回 JSON 错误体（如 status 121 超配额）
+    if media_type.startswith("image/"):
+        _staticmap_cache_put(cache_key, content, media_type)
+        return Response(content=content, media_type=media_type)
+    # 非图片：尝试解析腾讯 JSON 错误码（绝不抛 500）
+    status = None
+    try:
+        err_data = json.loads(content.decode("utf-8", "replace"))
+        if isinstance(err_data, dict):
+            status = err_data.get("status")
+    except Exception:  # noqa: BLE001
+        status = None
+    if isinstance(status, int):
+        return {"ok": False, "error": f"tencent_{status}"}
+    return {"ok": False, "error": "upstream_error"}

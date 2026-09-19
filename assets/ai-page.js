@@ -1531,6 +1531,8 @@
         // 而该路径不会触发 onChunk，导致 fullText 恒为空 -> 气泡空白。此处改为优先取 res.text。
         ft = (res.text !== null && res.text !== undefined && res.text !== '') ? String(res.text) : fullText;
         degraded = (res.degraded === true || res.fromPreset === true);
+        /* R104-项4：服务端按所选模型解析失败并回退时，如实提示一次（每会话一次）。 */
+        if (res.modelFallback === true) { notifyModelFallbackOnce(res.modelUsedReal || ''); }
       } else {
         ft = fullText;
       }
@@ -1718,6 +1720,7 @@
 
   /* 新建对话：点击即创建，不弹任何确认；已有内容照常存进历史 */
   function startNewChat() {
+    _modelFallbackToasted = false;   /* R104-项4：新会话允许再次提示一次「模型已切换」 */
     if (state.messages.length > 0) { saveCurrentChat(); }
     resetToWelcome();
     try { aiInput.focus(); } catch (e) { /* 忽略 */ }
@@ -2595,6 +2598,18 @@
      两路来源都做存在性判断，任一路缺失都静默跳过：
        ① callAI 通过 opts.onModelUsed(id, name) 回调告知（流式开始即知）；
        ② callAI 返回值中的 modelUsed / model / modelId（结束后兜底读取）。 */
+  /* R104-项4：本次会话是否已提示过「模型不可用已切换」。每个会话（新建对话即重置）
+     最多提示一次，避免用户连续追问时反复弹同一条提示刷屏。 */
+  var _modelFallbackToasted = false;
+  /* R104-项4：服务端按所选模型 id/名都解析不到、回退到 .env 默认模型时（响应头
+     X-Ai-Model-Fallback=1），如实告知「已切换为 X 回答」；X 取服务端回传的真实模型名。 */
+  function notifyModelFallbackOnce(realName) {
+    if (_modelFallbackToasted) return;
+    _modelFallbackToasted = true;
+    var nm = realName ? String(realName) : '';
+    if (nm) { toast('您选的模型当前不可用，已切换为 ' + nm + ' 回答'); }
+    else { toast('您选的模型当前不可用，已自动切换其他模型回答'); }
+  }
   function setUsedModel(b, id, name) {
     if (!b || !b.bubble) return;
     var nm = name;
@@ -2614,6 +2629,8 @@
     var id = res.modelUsed || res.model || res.modelId || '';
     if (!id) return;
     setUsedModel(b, id, res.modelUsedName || res.modelName || '');
+    /* R104-项4：本次结果带「回退」标记时，单独提示一次（每会话一次）。 */
+    if (res.modelFallback === true) { notifyModelFallbackOnce(res.modelUsedReal || res.modelName || ''); }
   }
 
   /* ============ 确认 popover（页内，非原生 confirm） ============ */

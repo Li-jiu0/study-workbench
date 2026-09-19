@@ -92,10 +92,20 @@
   .gq-mindset-t{margin:0 0 8px;line-height:1.4}
   .gq-mindset-b{flex:1 1 auto;margin:0}
 
+  /* 【R104 项2】i人伙伴团 · 页内双 Tab（参照 mock_exam.html 合并页范式：同款类名 + .open 显隐语义） */
+  .gq-ip-tabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:4px;width:fit-content;max-width:100%}
+  .gq-ip-tab{border:none;background:transparent;padding:8px 14px;border-radius:9px;font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:6px;line-height:1.4}
+  .gq-ip-tab.on{background:var(--primary);color:#fff}
+  .gq-ip-tab:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  .gq-ip-panel{display:none}
+  .gq-ip-panel.open{display:block}
+
   @media (max-width:560px){
     #page-comm .feature-grid{grid-template-columns:1fr}
     #page-comm .feature-card{min-height:0}
     .gq-mindset-grid{grid-template-columns:1fr}
+    .gq-ip-tabs{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .gq-ip-tab{white-space:nowrap}
   }
 
 /* ===== R73 需求20-B 移动端适配（≤768px）=====
@@ -325,7 +335,20 @@
       <b>i人伙伴团</b>
     </div>
     <div class="gq-view-scroll">
-      <div class="gq-ip-slot" id="gqIpartnerSlot"></div>
+      <div class="gq-ip-tabs" role="tablist" aria-label="i人伙伴团分区">
+        <button type="button" class="gq-ip-tab on" id="gqIpTabBtnPartner" role="tab"
+                aria-selected="true" aria-controls="gqIpTabPartner" onclick="switchGqIpTab('partner')">
+          <span class="nav-icon" data-icon="users" data-icon-size="16"></span>i人伙伴团
+        </button>
+        <button type="button" class="gq-ip-tab" id="gqIpTabBtnMind" role="tab"
+                aria-selected="false" aria-controls="gqIpTabMind" onclick="switchGqIpTab('mind')">
+          <span class="nav-icon" data-icon="sparkles" data-icon-size="16"></span>i人心法 · 沟通专区
+        </button>
+      </div>
+      <div id="gqIpTabPartner" class="gq-ip-panel open" role="tabpanel">
+        <div class="gq-ip-slot" id="gqIpartnerSlot"></div>
+      </div>
+      <div id="gqIpTabMind" class="gq-ip-panel" role="tabpanel">
       <div class="gq-mindset">
         <div class="gq-mindset-head"><span class="nav-icon" data-icon="sparkles" data-icon-size="17"></span>i人心法 · 沟通专区</div>
         <p class="gq-mindset-sub">不用变e人！i人专属沟通策略，共7条。其中「提前准备」「文字辅助」是两个可以直接照做的小工具：开口前先写三行、说不出口就先打字。选好伙伴先聊两句，再看看下面几条心法。</p>
@@ -338,6 +361,7 @@
           <div class="gq-mindset-card"><div class="gq-mindset-ic"><span class="nav-icon" data-icon="clipboard" data-icon-size="17"></span></div><div class="gq-mindset-t">提前准备：开口前先写三行</div><div class="gq-mindset-b">i人临场组织语言慢，提前把“开场第一句”写死，节奏就稳了。重要对话（汇报、求助、拒绝、道歉）前花3分钟写三行：我要对方做什么／对方最可能担心什么／我第一句怎么说。万能开场句：「打扰你两分钟，关于__，我想跟你说下__，你现在方便吗？」再顺手给对方的追问各备一句，心里就不慌。</div></div>
           <div class="gq-mindset-card"><div class="gq-mindset-ic"><span class="nav-icon" data-icon="file-text" data-icon-size="17"></span></div><div class="gq-mindset-t">文字辅助：说不出就先打字</div><div class="gq-mindset-b">口头表达吃力时，用文字铺路：谈事前先发一段消息把背景和诉求写清楚，给对方缓冲，也省掉自己临时组织语言的压力；聊完再补一条文字小结，能补上口头遗漏。模板：「刚才说的__，我整理一下：__，有遗漏你随时纠正我。」「这事我有点想法，怕当面讲不清楚，先打字跟你说：__。」注意：涉及情绪和冲突的事别只用文字，先约个时间当面或通话说，避免被误读。</div></div>
         </div>
+      </div>
       </div>
     </div>
   </div>
@@ -379,7 +403,7 @@
 <script src="assets/icon-map.js?v=20260916O" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260917b" defer></script>
+<script src="assets/app.js?v=20260919c" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
 <script src="assets/api.js?v=20260917b" defer></script>
 
@@ -465,6 +489,22 @@
     closePanel('gqIpartnerView');
   };
 
+  /* ---------- ③ i人伙伴团 · 页内双 Tab（R104 项2；参照 mock_exam.html switchMockTab） ----------
+     仅切换外层容器显隐（class on/open + aria-selected），不重建任何 DOM：
+     伙伴选择/聊天/剧本状态因此得以保留，切回「i人伙伴团」即原样恢复。 */
+  window.switchGqIpTab = function (t) {
+    var isMind = (t === 'mind');
+    var bP = $id('gqIpTabBtnPartner'), bM = $id('gqIpTabBtnMind');
+    var pP = $id('gqIpTabPartner'), pM = $id('gqIpTabMind');
+    if (!bP || !bM || !pP || !pM) return;
+    bP.className = 'gq-ip-tab' + (isMind ? '' : ' on');
+    bM.className = 'gq-ip-tab' + (isMind ? ' on' : '');
+    bP.setAttribute('aria-selected', isMind ? 'false' : 'true');
+    bM.setAttribute('aria-selected', isMind ? 'true' : 'false');
+    pP.className = 'gq-ip-panel' + (isMind ? '' : ' open');
+    pM.className = 'gq-ip-panel' + (isMind ? ' open' : '');
+  };
+
   function setup() {
     // 入口改指新视图：包装 openMiniQuiz，本页「comm-cases」转由全屏面板承载，其余类目透传
     var raw = window.openMiniQuiz;
@@ -509,7 +549,7 @@
 </script>
 <script src="assets/ai-config.js?v=20260918c"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260919a"></script>
+<script src="assets/ai-service.js?v=20260919d"></script>
 <script src="assets/ai-cap-registry.js?v=20260918c"></script>
 <script src="assets/ai-cap-image.js?v=20260918c"></script>
 <script src="assets/ai-cap-vision.js?v=20260918c"></script>
