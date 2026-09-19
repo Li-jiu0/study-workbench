@@ -41,6 +41,13 @@
   var HEALTH_BOOT_DELAY = 1500;              // 页面加载后延迟启动，避免抢首屏
   var DATA_VERSION = 'R67 · v20260916';      // 数据版本（关于 Tab 展示）
   var PG_CUSTOM_KEY = 'custom';              // R67 服务商分组：「自定义/兼容接口」组 key
+  // R131 决策 B：软下线平台（服务端网络受限，不配置、不代理）。
+  // 与 ai-config.js 的 providerGroups 保持同口径；本页只用于文案提示，不作为路由依据。
+  var OFFLINE_PROVIDERS = { gemini: true, openrouter: true };
+  // R131 调整：内置平台中放开「自备 Key」输入的两家（与 ai-service.js 的 XT_BYOK_PROVIDERS 同口径）。
+  // 用户在设置页存的 Key 只写 localStorage（ai_user_key_<provider>，仅存本机、永不上行），
+  // 供服务端代理不可用时本地直连使用；其余内置平台仍隐藏密钥框。
+  var BYOK_PROVIDERS = { gemini: true, openrouter: true };
   var CAT_SCHEMA = 2;                        // R87：分类迁移 schema 版本（<2 才跑 migrateCatSchema）
   // R87：成本保护——一次「检测全部」若不排除 video/3D 约烧 2*103818 + 3*30000 ≈ 297636 tokens ≈ 15% 额度。
   var CAP_CONFIRM_TIP = '将向火山方舟提交真实任务并真实计费：\n' +
@@ -1722,7 +1729,18 @@
   }
 
   /* R88-M1（R88-C）：模型是否属于某功能分类——任一 type 经 CAT_OF_TYPE 映到该分类即匹配。
-     自定义分类（不在 CAT_OF_TYPE 值域内）视为「无能力映射」，一律不匹配，避免误隐藏。 */
+     自定义分类（settings.categories，key 形如 custom_*）不在 CAT_OF_TYPE 值域内，
+     改按优先级链 chainIdsOf（catModels[key]）判归属：链上含该模型即匹配。 */
+  function isCustomCatKey(key) {
+    if (!key) { return false; }
+    var cs = getSettings().categories;
+    if (!isArray(cs)) { return false; }
+    for (var i = 0; i < cs.length; i++) {
+      if (cs[i] && cs[i].key === key) { return true; }
+    }
+    return false;
+  }
+
   function modelInCategory(id, catKey) {
     if (!catKey) { return true; }                    // 未选分类 -> 全部匹配
     var m = findAnyModel(id);
@@ -1731,8 +1749,12 @@
       return isNeedVPN(m) || providerNeedProxy(m);
     }
     var t = typeKeysOf(m);
-    for (var i = 0; i < t.length; i++) {
+    var i;
+    for (i = 0; i < t.length; i++) {
       if (CAT_OF_TYPE[t[i]] === catKey) { return true; }
+    }
+    if (isCustomCatKey(catKey)) {                    // 自定义分类：按能力/类型链判归属
+      return chainIdsOf(catKey).indexOf(id) !== -1;
     }
     return false;
   }
@@ -1772,22 +1794,37 @@
 
   function catLabelOf(key) {
     if (key === 'proxy') { return '梯子'; }          // R93：梯子筛选显示名
-    for (var i = 0; i < BUILTIN_CATS.length; i++) {
+    var cs = getSettings().categories;
+    var i;
+    for (i = 0; i < BUILTIN_CATS.length; i++) {
       if (BUILTIN_CATS[i].key === key) { return BUILTIN_CATS[i].label; }
+    }
+    for (i = 0; i < cs.length; i++) {                // 自定义分类回查显示名
+      if (cs[i] && cs[i].key === key) { return cs[i].label || key; }
     }
     return key || '全部分类';
   }
 
   /* (3) 按功能分类排序：catKey 为空 -> 按 BUILTIN_CATS 声明顺序归组；catKey 指定 ->
-       该分类的模型排最前，其余随后。分类内按健康 ms 升序，退役型号整体再排最后。 */
+       该分类的模型排最前，其余随后（内置与自定义分类统一走 modelInCategory 归属判定，
+       自定义分类按 chainIdsOf 链匹配，同样参与排序）。分类内按健康 ms 升序，退役型号整体再排最后。 */
   function sortByCategory(catKey) {
     var ids = availableIds();
     var useProxy = (catKey === 'proxy');             // R93：梯子排序按平台代理判定
     ids.sort(function (a, b) {
       var ca = useProxy ? (modelInCategory(a, 'proxy') ? 'proxy' : '') : catKeyOfModel(a);
       var cb = useProxy ? (modelInCategory(b, 'proxy') ? 'proxy' : '') : catKeyOfModel(b);
-      var ra = catKey ? ((ca === catKey) ? 0 : 1) : catOrderIndex(ca);
-      var rb = catKey ? ((cb === catKey) ? 0 : 1) : catOrderIndex(cb);
+      var ra, rb;
+      if (useProxy) {
+        ra = modelInCategory(a, 'proxy') ? 0 : 1;    // R93：梯子=平台需代理
+        rb = modelInCategory(b, 'proxy') ? 0 : 1;
+      } else if (catKey) {
+        ra = modelInCategory(a, catKey) ? 0 : 1;     // 归属该分类（含自定义）排最前
+        rb = modelInCategory(b, catKey) ? 0 : 1;
+      } else {
+        ra = catOrderIndex(ca);
+        rb = catOrderIndex(cb);
+      }
       if (ra !== rb) { return ra - rb; }
       var ta = retiredRank(a);
       var tb = retiredRank(b);
@@ -1883,6 +1920,18 @@
     /* R93：「梯子」筛选项——存在需代理模型时才追加，与功能分类 Tab 空组不渲染同口径 */
     if (proxyModelsList().length) {
       html += '<optgroup label="梯子"><option value="proxy">梯子（需科学上网）</option></optgroup>';
+    }
+    /* 自定义分类（settings.categories）单独成组并入选项，归属判定走 modelInCategory/chainIdsOf */
+    var cs = getSettings().categories;
+    if (isArray(cs) && cs.length) {
+      var cOpts = '';
+      for (var k = 0; k < cs.length; k++) {
+        if (!cs[k] || !cs[k].key) { continue; }
+        cOpts += '<option value="' + esc(cs[k].key) + '">' + esc(cs[k].label || cs[k].key) + '</option>';
+      }
+      if (cOpts) {
+        html += '<optgroup label="自定义分类">' + cOpts + '</optgroup>';
+      }
     }
     sel.innerHTML = html;
   }
@@ -2526,12 +2575,14 @@
       if (g.key === PG_CUSTOM_KEY) {
         cHtml += '<option value="' + esc(g.key) + '">' + esc(lab) + '</option>';
       } else if (g.builtin === true) {
-        bHtml += '<option value="' + esc(g.key) + '">' + esc(lab) + '</option>';
+        /* R131 调整：gemini/openrouter 两家放开自备 Key，选项上加后缀区分 */
+        bHtml += '<option value="' + esc(g.key) + '">' + esc(lab) +
+          (BYOK_PROVIDERS[g.key] ? '（可选填自己的 Key）' : '') + '</option>';
       } else {
         kHtml += '<option value="' + esc(g.key) + '">' + esc(lab) + '（需自备 Key）</option>';
       }
     }
-    if (bHtml) { html += '<optgroup label="已接入 · 内置 Key 可直接用">' + bHtml + '</optgroup>'; }
+    if (bHtml) { html += '<optgroup label="已接入 · 服务端中转（海外两家可选填自己的 Key）">' + bHtml + '</optgroup>'; }
     if (kHtml) { html += '<optgroup label="主流厂商 · 需自备 Key">' + kHtml + '</optgroup>'; }
     if (cHtml) { html += '<optgroup label="手动填写">' + cHtml + '</optgroup>'; }
     sel.innerHTML = html;
@@ -2596,6 +2647,7 @@
     } else {
       setVal('setFmFormat', 'openai');
     }
+    renderKeyState();   // R131：内置组隐藏密钥输入框，自备 Key 组才开放
   }
 
   /* 切模型 ID（下拉）-> 同步隐藏输入框 + 自动预填名称与能力标签 */
@@ -2630,7 +2682,58 @@
     if (!!open !== formAdvOpen) { toggleAdv(); }
   }
 
-  /* Key 状态行：明文永不回填；此函数只展示「是否已有密钥」的语义 */
+  /* R131：当前表单所选服务商分组是否为「已接入内置」组（builtin:true）。
+     内置组走服务端中转（密钥在服务端），前端不提供、也不保存密钥输入框。 */
+  function currentGroupBuiltin() {
+    if (editTarget.kind === 'builtin') { return true; }
+    var g = findGroup(fieldVal('setFmProvider'));
+    return !!(g && g.builtin === true);
+  }
+
+  /* R131 调整：当前表单对应的 BYOK 平台名（gemini / openrouter），非 BYOK 返回空串。
+     内置分组默认隐藏密钥框；仅这两家放开为「内置平台 · 可选填自己的 Key」。 */
+  function currentByokProvider() {
+    var pn = '';
+    if (editTarget.kind === 'builtin') {
+      var m = findAnyModel(editTarget.id);
+      pn = (m && m.provider) ? String(m.provider) : '';
+    } else {
+      var g = findGroup(fieldVal('setFmProvider'));
+      pn = (g && g.key) ? String(g.key) : '';
+    }
+    return (pn && BYOK_PROVIDERS[pn]) ? pn : '';
+  }
+
+  /* R131 调整：某平台的自备 Key（ai_user_key_<provider>，仅存本机）是否已存在 */
+  function byokKeyExists(pn) {
+    if (!pn) { return false; }
+    try { return !!(localStorage.getItem('ai_user_key_' + pn) || ''); } catch (e) { return false; }
+  }
+
+  /* R131：自备 Key 保存前的风险二次确认（自定义 Modal，禁原生 confirm）。
+     文案要点：仅存本机 / 不上传星途服务器 / 额度损失由用户自行承担 /
+     R131 调整追加：内置海外平台仅在服务端代理不可用时用该 Key 本地直连。 */
+  var KEY_RISK_TIP = '你即将保存自己提供的 API Key，请确认：\n' +
+    '· 该密钥仅保存在本机浏览器（localStorage），不会上传到星途服务器；\n' +
+    '· 密钥仅用于本机直连对应平台（内置海外平台仅在服务端代理不可用时用它本地直连）；\n' +
+    '· 使用自备 Key 产生的费用由该密钥所属平台向你计费；\n' +
+    '· 因本机环境、第三方端点或密钥泄露导致的额度损失，由你自行承担。\n\n' +
+    '确认继续保存吗？';
+
+  /* 保存入口：自备 Key 组且填了密钥（含 BYOK 内置组 gemini/openrouter）
+     -> 先弹风险确认 Modal，再真正保存 */
+  function requestSaveForm() {
+    var key = fieldVal('setFmKey').trim();
+    if (key && (!currentGroupBuiltin() || currentByokProvider())) {
+      pageConfirm(KEY_RISK_TIP, '确认保存').then(function (ok) {
+        if (ok) { saveForm(); }
+      });
+      return;
+    }
+    saveForm();
+  }
+
+  /* Key 状态行：明文永不回填；内置组连输入框都不给，自备 Key 组才开放 */
   function keyOverrideExists(id) {
     var o = overrideOf(id);
     return !!(o && typeof o.apiKey === 'string' && o.apiKey);
@@ -2638,29 +2741,51 @@
 
   function renderKeyState() {
     var host = $('setFmKeyState');
+    var row = $('setFmKeyRow');
+    var input = $('setFmKey');
+    var eye = $('setFmKeyEye');
+    var builtin = currentGroupBuiltin();
+    var byokP = currentByokProvider();
+    /* R131 调整：内置组默认隐藏密钥框；仅 BYOK 两家（gemini/openrouter）放开输入 */
+    var keyHidden = builtin && !byokP;
+    if (row) { row.style.display = keyHidden ? 'none' : ''; }
+    if (input) { input.value = ''; input.disabled = !!keyHidden; }
+    if (eye) { eye.style.display = keyHidden ? 'none' : ''; }
     if (!host) { return; }
     var kind = editTarget.kind;
     var text = '';
     var showClear = false;
     var lockFlag = false;
-    if (kind === 'builtin') {
-      if (keyOverrideExists(editTarget.id)) {
-        text = '已自定义密钥（留空保持不变）';
+    if (keyHidden) {
+      if (kind === 'builtin' && keyOverrideExists(editTarget.id)) {
+        text = '已内置（服务端中转）；本机检测到历史密钥残留，建议清除';
         showClear = true;
       } else {
-        text = '已使用平台内置密钥';
-        lockFlag = true;
+        text = '内置模型由服务端中转，密钥仅保存在服务器，无需填写';
+      }
+      lockFlag = true;
+    } else if (byokP) {
+      /* R131 调整：内置海外平台 · 可选填自己的 Key（仅 gemini / openrouter） */
+      if (byokKeyExists(byokP)) {
+        text = '已保存该平台自备 Key（仅存本机，不会上传；服务端代理不可用时用于本地直连；留空保持不变）';
+        showClear = true;
+      } else {
+        text = '内置平台 · 可选填自己的 Key（用于服务端代理不可用时本地直连；仅存本机，不会上传）';
       }
     } else if (kind === 'custom') {
       var m = findAnyModel(editTarget.id);
-      if (m && m.apiKey) { text = '已保存密钥（留空保持不变）'; }
-      else { text = '尚未设置密钥（留空保存后仍为空）'; }
+      if (m && m.apiKey) {
+        text = '已保存密钥（仅存本机，不会上传到星途服务器；留空保持不变）';
+        showClear = true;
+      } else {
+        text = '尚未设置密钥（自备 Key 仅存本机，不会上传到星途服务器）';
+      }
     } else {
-      text = '新模型：填写后保存（留空则暂不保存密钥）';
+      text = '自备 Key：仅保存在本机浏览器，不会上传到星途服务器（留空则暂不保存）';
     }
     var html = '<span class="xt-key-state-txt">' + (lockFlag ? ICONS.lock + ' ' : '') + esc(text) + '</span>';
     if (showClear) {
-      html += '<button type="button" class="xt-key-clear" id="setFmKeyClear">清除密钥覆盖</button>';
+      html += '<button type="button" class="xt-key-clear" id="setFmKeyClear">清除本机密钥</button>';
     }
     host.innerHTML = html;
     if (showClear) {
@@ -2669,17 +2794,33 @@
     }
   }
 
-  /* 清除内置模型的密钥覆盖（二次确认） */
+  /* 清除本机已保存的密钥（内置覆盖 / BYOK 自备 Key / 自定义自备 Key），二次确认 */
   function clearKeyOverride() {
-    if (editTarget.kind !== 'builtin' || !editTarget.id) { return; }
     var id = editTarget.id;
-    pageConfirm('确定清除该内置模型的密钥覆盖，恢复使用平台内置密钥吗？', '清除').then(function (ok) {
+    if (!id) { return; }
+    var isCustom = isCustomId(id);
+    var byokP = currentByokProvider();   // R131 调整：gemini/openrouter 的自备 Key 存于 ai_user_key_*
+    pageConfirm('确定清除本机保存的该模型密钥吗？\n\n' +
+      (isCustom ? '自定义（自备 Key）模型清除后将无法调用，需要重新填写。'
+        : (byokP ? '清除后该平台在服务端代理不可用时将无法本地直连，需重新填写。'
+          : '内置模型清除后仍走服务端中转，不影响使用。')),
+      '清除').then(function (ok) {
       if (!ok) { return; }
-      var o = overrideOf(id);
-      if (o && typeof o === 'object') { delete o.apiKey; }
-      saveSettings();
+      if (isCustom) {
+        var arr = readCustomModels();
+        for (var i = 0; i < arr.length; i++) {
+          if (arr[i].id === id && arr[i].apiKey) { arr[i].apiKey = ''; }
+        }
+        writeCustomModels(arr);
+      } else {
+        if (byokP) {
+          try { localStorage.removeItem('ai_user_key_' + byokP); } catch (eB) { /* 存储不可用忽略 */ }
+        }
+        var o = overrideOf(id);
+        if (o && typeof o === 'object' && o.apiKey) { delete o.apiKey; saveSettings(); }
+      }
       renderKeyState();
-      toast('success', '已恢复使用平台内置密钥');
+      toast('success', '已清除本机保存的密钥');
     });
   }
 
@@ -2773,7 +2914,9 @@
       note.style.display = 'block';
       note.textContent = custom ?
         '自定义模型：保存后直接更新该模型配置。' :
-        '内置模型：保存后以覆盖方式生效（名称 / 端点 / Key / 参数等），不影响其他设备。Key 出于安全不回填，留空即表示保持不变。';
+        (currentByokProvider() ?
+          '内置海外平台：默认走服务端中转；可选填自己的 Key（仅存本机），服务端代理不可用时自动改为本地直连。' :
+          '内置模型：统一走服务端中转（密钥只保存在服务端），本页可覆盖名称 / 端点 / 参数等，不影响其他设备。')
     }
     populateFallback(id);
     renderFormTypes();
@@ -2804,13 +2947,13 @@
 
     var focusId = '';
     if (editTarget.kind === 'builtin') {
-      /* 内置模型：写 overrides[id] 覆盖项。Key 语义「空 = 保持原值」。 */
+      /* 内置模型：写 overrides[id] 覆盖项。
+         R131：内置模型统一走服务端中转，密钥只保存在服务端——
+         前端既不写入、也不继承历史遗留的 apiKey。 */
       var old = overrideOf(editTarget.id) || {};
       var o = {};
       o.name = name;
       o.apiUrl = url;
-      if (key) { o.apiKey = key; }
-      else if (old.apiKey) { o.apiKey = old.apiKey; }
       o.apiFormat = fmt;
       if (headers) { o.extraHeaders = headers; }
       if (formStars) { o.stars = formStars; }
@@ -2822,6 +2965,14 @@
       if (old && old.speed) { o.speed = old.speed; }
       getSettings().overrides[editTarget.id] = o;
       saveSettings();
+      /* R131 调整：gemini/openrouter 内置组放开自备 Key —— 只写 localStorage
+         （ai_user_key_<provider>，仅存本机、永不上行），绝不写进 overrides
+         （R131 清洗逻辑会删除内置模型 overrides 上的任何 Key 副本）。
+         语义「留空 = 保持不变」；删除请用「清除本机密钥」按钮。 */
+      var byokP = currentByokProvider();
+      if (byokP && key) {
+        try { localStorage.setItem('ai_user_key_' + byokP, key); } catch (eK) { /* 存储不可用忽略 */ }
+      }
       focusId = editTarget.id;
       toast('success', '已保存');
     } else {
@@ -2983,6 +3134,7 @@
     host.innerHTML = html;
     renderMemory();
     renderProxySection();
+    renderKeyClearSection();
   }
 
   /* ---------------- R77：海外平台代理访问设置（openrouter / gemini） ---------------- */
@@ -3105,6 +3257,80 @@
     var stEl = $('setProxyStatus');
     if (!stEl) { return; }
     stEl.innerHTML = proxyStatusRowsHtml();
+  }
+
+  /* ---------------- R131/Q6：全局「清除本机已保存密钥」 ---------------- */
+  /* 本机已保存密钥的模型数量（自定义模型 apiKey + 内置模型 overrides.apiKey
+     + R131 调整：BYOK 自备 Key，即 localStorage 里所有 ai_user_key_* 条目） */
+  function localKeyCount() {
+    var n = 0;
+    var cs = readCustomModels();
+    var i;
+    for (i = 0; i < cs.length; i++) { if (cs[i] && cs[i].apiKey) { n++; } }
+    var ov = getSettings().overrides;
+    for (var k in ov) {
+      if (hasOwn(ov, k) && ov[k] && typeof ov[k].apiKey === 'string' && ov[k].apiKey) { n++; }
+    }
+    try {
+      for (var i2 = 0; i2 < localStorage.length; i2++) {
+        var lk = localStorage.key(i2);
+        if (lk && lk.indexOf('ai_user_key_') === 0 && (localStorage.getItem(lk) || '')) { n++; }
+      }
+    } catch (eL) { /* localStorage 不可用忽略 */ }
+    return n;
+  }
+
+  /* 一次性清除本机保存的全部模型密钥：内置模型清除后仍走服务端中转，不影响使用 */
+  function clearAllLocalKeys() {
+    pageConfirm('确定清除本机保存的全部模型密钥吗？\n\n' +
+      '· 内置模型：清除后仍走服务端中转，不影响使用\n' +
+      '· 内置海外平台自备 Key（gemini / openrouter）：清除后代理不可用时无法本地直连\n' +
+      '· 自定义（自备 Key）模型：清除后无法调用，需重新填写\n\n' +
+      '密钥只保存在本机浏览器，清除后不可恢复。', '清除').then(function (ok) {
+      if (!ok) { return; }
+      var cs = readCustomModels();
+      var i;
+      for (i = 0; i < cs.length; i++) { if (cs[i] && cs[i].apiKey) { cs[i].apiKey = ''; } }
+      writeCustomModels(cs);
+      var s = getSettings();
+      for (var k in s.overrides) {
+        if (hasOwn(s.overrides, k) && s.overrides[k] && typeof s.overrides[k] === 'object') {
+          delete s.overrides[k].apiKey;
+        }
+      }
+      saveSettings();
+      /* R131 调整：一并清除 BYOK 自备 Key（ai_user_key_*） */
+      try {
+        var rm = [];
+        for (var i3 = 0; i3 < localStorage.length; i3++) {
+          var lk3 = localStorage.key(i3);
+          if (lk3 && lk3.indexOf('ai_user_key_') === 0) { rm.push(lk3); }
+        }
+        for (var i4 = 0; i4 < rm.length; i4++) { localStorage.removeItem(rm[i4]); }
+      } catch (eR) { /* localStorage 不可用忽略 */ }
+      renderAbout();
+      toast('success', '已清除本机保存的全部模型密钥');
+    });
+  }
+
+  /* 「关于」面板内注入本机密钥区（每次 renderAbout 重建，事件随节点重绑） */
+  function renderKeyClearSection() {
+    var host = $('setAboutList');
+    if (!host) { return; }
+    var box = document.createElement('div');
+    box.id = 'setKeyClearBox';
+    box.style.cssText = 'margin-top:18px;padding:14px;border:1px solid var(--ai-border,#e7e9ee);' +
+      'border-radius:12px;text-align:left;';
+    box.innerHTML = '<div style="font-size:14px;font-weight:700;margin-bottom:8px;">本机密钥</div>' +
+      '<div style="font-size:12.5px;color:var(--ai-sub,#5a6068);line-height:1.7;margin-bottom:10px;">' +
+      '内置模型由服务端中转，密钥只保存在服务器（gemini / openrouter 可选填自备 Key，' +
+      '用于服务端代理不可用时本地直连）；自备 Key 仅保存在本机浏览器，不会上传到星途服务器。' +
+      '当前本机已保存 <b>' + localKeyCount() + '</b> 个模型密钥。</div>' +
+      '<button type="button" id="setClearAllKeys" style="min-height:36px;padding:0 16px;border-radius:9px;' +
+      'cursor:pointer;font-size:13px;font-weight:600;border:1px solid var(--ai-border,#e7e9ee);' +
+      'background:transparent;color:var(--ai-text,#1f2329);">清除本机已保存密钥</button>';
+    host.appendChild(box);
+    on('setClearAllKeys', 'click', clearAllLocalKeys);
   }
 
   /* ---------------- 全量渲染 ---------------- */
@@ -3302,7 +3528,7 @@
       if (!el) { return; }
       el.type = (el.type === 'password') ? 'text' : 'password';
     });
-    on('setFmSave', 'click', function () { saveForm(); });
+    on('setFmSave', 'click', function () { requestSaveForm(); });
     on('setFmTest', 'click', function () { testFormConnection(); });
     on('setFmCancel', 'click', function () { resetForm(); switchTab('models'); });
   }
@@ -3339,6 +3565,7 @@
     var box = $('setConfigError');
     if (box) { box.style.display = 'none'; box.innerHTML = ''; }
     buildProviderOptions();
+    renderKeyState();   // R131：首屏即按「内置组不显示密钥框」归位，避免刷新瞬间露出输入框
     renderAll();
     applyHash();
     startHealthQueue();

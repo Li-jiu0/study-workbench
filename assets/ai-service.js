@@ -215,10 +215,16 @@
       var entry = ov[id];
       if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
       if (typeof entry.apiKey !== "string" || !entry.apiKey) continue;
-      var pk = platformApiKeyOf(findModel(id));
-      if (!pk) continue;
-      // 严格 === 且限定字符串：只删「与平台密钥完全相同」的复制品
-      if (entry.apiKey === pk) {
+      var owner = findModel(id);
+      var pk = platformApiKeyOf(owner);
+      // R131：内置平台已不持有任何 Key（platformApiKeyOf 恒返回 null）。
+      // 内置模型 override 里若仍残留 apiKey，必是明文密钥时期被设置页回填复制的历史残留——
+      // 既不能让它继续躺在 localStorage，也不能让用户误以为「自备 Key 覆盖了内置平台」。
+      var residualBuiltinCopy = xtIsBuiltinProvider((owner && owner.provider) ? owner.provider : null);
+      if (!pk && !residualBuiltinCopy) continue;
+      // 严格 === 且限定字符串：只删「与平台密钥完全相同」的复制品；
+      // R131 追加：内置模型上的任何 Key 副本一律删除。
+      if (residualBuiltinCopy || entry.apiKey === pk) {
         delete entry.apiKey;
         removed++;
         var hasField = false;
@@ -915,6 +921,112 @@
     try { return localStorage.getItem("study_workbench_token") || ""; } catch (e) { return ""; }
   }
 
+  // ==================== R131：中转统一请求头 / 通道判定 / 统一错误体 ====================
+  // 背景：provider key 已从 ai-config.js 全量删除，前端零密钥。
+  // 内置模型一律走 /api/ai/* 服务端中转；用户自备 Key 才本地直连，
+  // 且自备 Key 只出本机 localStorage、永不上行、不得覆盖内置平台。
+
+  // 内置平台白名单：与 ai-config.js 的 providers 一一对应（决策 B 后仍保留条目，但不再直连）。
+  var XT_BUILTIN_PROVIDERS = ["zhipu", "qianfan", "ark", "arkimage", "openrouter", "siliconflow", "gemini"];
+
+  // R131 调整：内置平台中允许「自备 Key 直连（BYOK）」的两家 —— gemini / openrouter。
+  // 语义：默认仍走服务端中转；中转因服务端未配海外代理失败（network_limited）时，
+  // 若用户在设置页存了该平台自备 Key 且代理模式未明确禁直连，则本地直连重试【一次】。
+  // 其余 5 家内置平台禁令不变 —— 禁止用自备 Key 覆盖内置平台。
+  var XT_BYOK_PROVIDERS = { gemini: true, openrouter: true };
+
+  function xtIsBuiltinProvider(pname) {
+    var s = String(pname == null ? "" : pname);
+    return inList(XT_BUILTIN_PROVIDERS, s);
+  }
+
+  // 用户自备 Key（决策 A）：非内置平台的自建/自定义模型，Key 直接用于本地直连。
+  // R131 调整：gemini/openrouter 放开 —— 存了自备 Key 就返回它（仅供 BYOK 回退分支使用）；
+  // 其余内置 5 家仍返回空串 —— 禁止用自备 Key 覆盖内置平台。
+  function xtUserOwnKey(modelCfg) {
+    var pname = String((modelCfg && modelCfg.provider) == null ? "" : modelCfg.provider);
+    if (!pname) return "";
+    if (xtIsBuiltinProvider(pname)) {
+      if (!XT_BYOK_PROVIDERS[pname]) return "";
+      var kb = "";
+      try { kb = localStorage.getItem("ai_user_key_" + pname) || ""; } catch (eB) { kb = ""; }
+      return kb;
+    }
+    var k = "";
+    try { k = localStorage.getItem("ai_user_key_" + pname) || ""; } catch (e) { k = ""; }
+    return k;
+  }
+
+  // 通道判定（跨调用点的唯一真源）：返回 { relay:boolean, key:string, from:string }。
+  //   relay:true  -> 走 /api/ai/* 服务端中转（前端零 key）
+  //   relay:false -> 本地直连，key 来自模型自带 apiKey 或 localStorage 里的用户自备 Key
+  // R131 调整：gemini/openrouter 存了自备 Key 时仍 relay:true（先中转），附
+  //   byokKey/byokProvider —— 仅供 callAI 的 BYOK 本地直连回退分支使用（一次性）。
+  function xtResolveChannel(modelCfg) {
+    var mc = modelCfg || {};
+    var own = (typeof mc.apiKey === "string" && mc.apiKey) ? String(mc.apiKey) : "";
+    if (own) return { relay: false, key: own, from: "model" };
+    var uk = xtUserOwnKey(mc);
+    if (uk) {
+      var pn = String((mc.provider == null) ? "" : mc.provider);
+      if (XT_BYOK_PROVIDERS[pn]) {
+        return { relay: true, key: "", from: "builtin", byokKey: uk, byokProvider: pn };
+      }
+      return { relay: false, key: uk, from: "user" };
+    }
+    return { relay: true, key: "", from: "builtin" };
+  }
+
+  // X-Client-Version：服务端据此让旧 APK 优雅降级（返回 kind:"version_outdated"），绝不静默失败。
+  function relayVersion() {
+    try {
+      var c = (typeof window !== "undefined" && window.AI_CONFIG) ? window.AI_CONFIG : null;
+      if (c && typeof c.clientVersion === "string" && c.clientVersion) return String(c.clientVersion);
+    } catch (e) { /* 忽略 */ }
+    return "";
+  }
+
+  // 所有 /api/ai/* 的共同请求头：用户登录 JWT（允许游客无）+ 客户端版本号。
+  // ⚠ 绝不拼 Authorization: Bearer <provider key> —— provider key 只存在于服务端 .env。
+  function relayHeaders(json) {
+    var h = {};
+    if (json) h["Content-Type"] = "application/json";
+    var token = relayToken();
+    if (token) h["Authorization"] = "Bearer " + token;
+    var v = relayVersion();
+    if (v) h["X-Client-Version"] = v;
+    return h;
+  }
+
+  // 服务端统一错误体 kind -> 面向用户的中文文案（见跨文件契约 2.5）。
+  // kind ∈ {quota_exhausted, network_limited, version_outdated, provider_error, bad_request, unavailable}
+  var XT_RELAY_KIND_TEXT = {
+    quota_exhausted: "额度已达上限",
+    network_limited: "服务端网络受限",
+    version_outdated: "当前版本已停用，请更新到最新版以继续使用 AI 功能",
+    provider_error: "上游服务返回错误",
+    bad_request: "请求参数有误",
+    unavailable: "该模型暂不可用"
+  };
+
+  // 统一错误体 {ok,kind,error,code,hint} -> 本地 Error，杜绝「裸错误码 / 静默失败」。
+  function xtRelayError(status, json, modelCfg, prefix) {
+    var kind = (json && typeof json.kind === "string") ? String(json.kind) : "";
+    var msg = (json && typeof json.error === "string" && json.error) ? String(json.error) : "";
+    if (!msg && json && typeof json.detail === "string" && json.detail) msg = String(json.detail);
+    if (!msg && kind && Object.prototype.hasOwnProperty.call(XT_RELAY_KIND_TEXT, kind)) {
+      msg = String(XT_RELAY_KIND_TEXT[kind]);
+    }
+    if (!msg) msg = String(prefix || "调用失败") + "（HTTP " + String(Number(status || 0) || 0) + "）";
+    var st = Number(status || 0) || 0;
+    var e = makeError(msg, st, kind ? kind : null);
+    e.kind = kind;
+    e.apiMessage = msg;
+    if (json && json.hint) e.hint = String(json.hint);
+    if (modelCfg) { e.modelId = modelCfg.id; e.modelName = modelCfg.name; }
+    return e;
+  }
+
   // 尝试续签 access 令牌（api.js 的 apiTryRefresh），成功返回 true
   function refreshAccess() {
     try {
@@ -950,9 +1062,8 @@
     if (_relayProviders) return _relayProviders;
     var list = [];
     try {
-      var hdrs = {};
-      var token = relayToken();
-      if (token) hdrs["Authorization"] = "Bearer " + token;
+      // R131：统一走 relayHeaders（含 X-Client-Version）
+      var hdrs = relayHeaders(false);
       var resp = await raceTimeout(
         fetch(relayBase() + "/api/ai/models", { headers: hdrs }),
         TIMEOUT_RESPONSE, null, "服务端模型列表超时", "TIMEOUT_RELAY"
@@ -961,9 +1072,7 @@
       if (resp.status === 401) {
         var ok = await refreshAccess();
         if (ok) {
-          var t2 = relayToken();
-          var h2 = t2 ? { "Authorization": "Bearer " + t2 } : {};
-          resp = await fetch(relayBase() + "/api/ai/models", { headers: h2 });
+          resp = await fetch(relayBase() + "/api/ai/models", { headers: relayHeaders(false) });
         }
       }
       if (resp.ok) {
@@ -1273,9 +1382,8 @@
       var p = providers[i];
       for (var attempt = 0; attempt < 2; attempt++) {
       try {
-        var token = relayToken();
-        var headers = { "Content-Type": "application/json" };
-        if (token) headers["Authorization"] = "Bearer " + token;
+        // R131：统一走 relayHeaders —— JWT + X-Client-Version（旧 APK 降级判定，缺了只会出现空白失败）
+        var headers = relayHeaders(true);
         var resp = await raceTimeout(
           fetch(relayBase() + "/api/ai/chat", {
             method: "POST",
@@ -1308,6 +1416,14 @@
         if (!resp.ok) {
           var errText = "";
           try { errText = await readResponseText(resp); } catch (e2) {}
+          // R131 调整：服务端统一错误体 {ok:false,kind,error,code,hint} 优先 —— 保留 kind/hint，
+          // 供 callAI 的 BYOK 回退判定（network_limited）与页面统一错误卡渲染，
+          // 不再退化成裸「HTTP xxx + 文本前 120 字」。
+          var relayJson = null;
+          try { relayJson = errText ? JSON.parse(errText) : null; } catch (eJ) { relayJson = null; }
+          if (relayJson && typeof relayJson === "object" && relayJson.ok === false && relayJson.kind) {
+            throw xtRelayError(resp.status, relayJson, null, "服务端中转");
+          }
           // R72：错误体若是 HTML 错误页，收敛成人类可读提示，不把整段 HTML 塞进 message
           var relayMsg = String(errText || "").replace(/\s+/g, " ").replace(/^ +| +$/g, "").slice(0, 120);
           if (looksLikeHtml(errText)) relayMsg = nonJsonMessage(resp.status, respCtype(resp), errText);
@@ -1372,6 +1488,9 @@
         relayLive = false;   // 需求12：停止接收迟到增量
         // 超时不重试同一个 provider（越等越久），直接换下一个
         if (e && e.timedOut) break;
+        // R131 调整：统一错误体（带 kind，如 network_limited / version_outdated）
+        // 换 provider 重试没有意义（服务端按 modelId 判定，结果相同），立即跳出
+        if (e && e.kind) break;
       }
       } /* end attempt loop */
     } /* end provider loop */
@@ -1609,11 +1728,118 @@
     return out;
   }
 
+  // 生图账本条目：优先用能力注册表的口径（与 ai-cap-image 一致），注册表缺失时本地兜底。
+  // 张数取真实响应数组长度、大小取本次实际使用值，绝不写死 1 / 1024x1024（R86 教训）。
+  function xtImageCapUsage(n, size) {
+    var capsU = xtCaps();
+    if (capsU && typeof capsU.usage === "function") {
+      try {
+        var u = capsU.usage({ kind: "imagegen", n: n, size: size });
+        if (u && typeof u === "object") return u;
+      } catch (eU) { /* 落本地兜底 */ }
+    }
+    return { kind: "imagegen", n: n, size: size,
+      inTok: 0, outTok: 0, exact: 0, chars: 0, seconds: 0, dim: 0, docs: 0 };
+  }
+
+  // 把图片 URL 数组拼成 Markdown，适配 ai-page.js renderMarkdown。
+  // R73p：alt 必须剔掉 [ ] ( ) 与换行 —— 否则图片正则匹配不上，图片会退化成纯文本。
+  function xtImagesMarkdown(urls, prompt, onChunk) {
+    var altText = String(prompt == null ? "" : prompt)
+      .replace(/[\r\n]+/g, " ")
+      .replace(/[\[\]()]/g, " ")
+      .replace(/\s+/g, " ")
+      .replace(/^ +| +$/g, "")
+      .slice(0, 40);
+    var parts = [];
+    for (var ui = 0; ui < urls.length; ui++) {
+      parts.push("![" + altText + "](" + urls[ui] + ")");
+    }
+    var out = parts.join("\n");
+    if (onChunk) {
+      try { onChunk(out, out); } catch (e4) { /* 渲染失败不影响结果 */ }
+    }
+    return out;
+  }
+
+  // ------------------------------------------------------------------
+  // R131：生图服务端中转 POST /api/ai/image/generate
+  // 请求 {modelId, prompt, size, n}；成功 {ok:true, data:[{url}], modelUsed}；
+  // 失败返回统一错误体 {ok:false, kind, error, code, hint}。服务端已直接记账。
+  // ------------------------------------------------------------------
+  async function relayImageGenerate(modelConfig, messages, onChunk, signal, options, sink) {
+    var opt = options || {};
+    var respMs = (opt.responseTimeout != null) ? opt.responseTimeout : IMAGE_TIMEOUT_RESPONSE;
+    var totalMs = (opt.totalTimeout != null) ? opt.totalTimeout : IMAGE_TIMEOUT_TOTAL;
+    var prompt = (opt.prompt != null && opt.prompt !== "") ? String(opt.prompt) : collectImagePrompt(messages);
+    // R86：分辨率取本次请求实际使用的值（调用方 opts.size > 模型 imageSize > 出厂默认）。
+    // 生图按「张数 × 分辨率」计费，账本必须记真实值，不能写死 1024x1024。
+    var usedSize = (opt.size != null && opt.size !== "") ? String(opt.size)
+      : ((modelConfig.imageSize != null && modelConfig.imageSize !== "") ? String(modelConfig.imageSize) : IMAGE_SIZE);
+    var n = 1;
+    if (opt.n != null) {
+      var nn = Number(opt.n);
+      if (nn > 0) n = nn;
+    }
+
+    var body = { modelId: String(modelConfig.id || ""), prompt: prompt, size: usedSize, n: n };
+    // R103：前端 id 与后端 registry 键不统一，带上真实模型名供服务端二次解析（仍受白名单约束）。
+    if (modelConfig.model) body.modelName = String(modelConfig.model);
+
+    var fetchOpts = { method: "POST", headers: relayHeaders(true), body: JSON.stringify(body) };
+    var ctrl = signal ? null : makeAbortController();
+    var effSignal = signal || (ctrl ? ctrl.signal : null);
+    if (effSignal) fetchOpts.signal = effSignal;
+
+    var resp = null;
+    try {
+      resp = await raceTimeout(fetch(relayBase() + "/api/ai/image/generate", fetchOpts), respMs, null,
+        "图片生成响应超时（" + respMs + "ms 未返回）", "TIMEOUT_RESPONSE");
+    } catch (e) {
+      if (ctrl) { try { ctrl.abort(); } catch (eA) { /* 忽略 */ } }
+      e.modelId = modelConfig.id;
+      e.modelName = modelConfig.name;
+      throw e;
+    }
+    var raw = "";
+    try {
+      raw = await raceTimeout(readResponseText(resp), totalMs, null,
+        "图片生成读取超时（总时长 " + totalMs + "ms）", "TIMEOUT_TOTAL");
+    } catch (e2) {
+      if (ctrl) { try { ctrl.abort(); } catch (eA2) { /* 忽略 */ } }
+      e2.modelId = modelConfig.id;
+      e2.modelName = modelConfig.name;
+      throw e2;
+    }
+    var json = null;
+    try { json = raw ? JSON.parse(raw) : null; } catch (e3) { json = null; }
+    if (!json || json.ok !== true) {
+      throw xtRelayError(respStatus(resp), json, modelConfig, "图片生成失败");
+    }
+    var urls = xtExtractImageUrls(json);
+    if (!urls.length) {
+      var eEmpty = makeError("图片生成返回空结果", 0, "EMPTY");
+      eEmpty.modelId = modelConfig.id;
+      eEmpty.modelName = modelConfig.name;
+      throw eEmpty;
+    }
+    // R131：用量回传外层（sink 为空 = 健康检查等内部探测，不记账）
+    if (sink && typeof sink === "object") {
+      sink.capUsage = xtImageCapUsage(urls.length, usedSize);
+      if (json.modelUsed) sink.modelUsedName = String(json.modelUsed);
+    }
+    return xtImagesMarkdown(urls, prompt, onChunk);
+  }
+
   async function requestImageGeneration(modelConfig, messages, onChunk, signal, options, sink) {
     var cfg = getConfig();
     var provider = (modelConfig.provider && cfg && cfg.providers) ? cfg.providers[modelConfig.provider] : null;
-    var apiKey = (typeof modelConfig.apiKey === "string" && modelConfig.apiKey)
-      ? modelConfig.apiKey : (provider ? provider.apiKey : null);
+    // R131：内置模型一律走服务端中转（前端零 key）；仅用户自备 Key 的模型保留本地直连。
+    var imgCh = xtResolveChannel(modelConfig);
+    if (imgCh.relay) {
+      return await relayImageGenerate(modelConfig, messages, onChunk, signal, options, sink);
+    }
+    var apiKey = imgCh.key;
     // R86：端点解析接入能力注册表 —— provider.imageUrl（硅基）> imageApiUrl > apiUrl（火山方舟 arkimage
     // 的 apiUrl 本身就是 images/generations）> 能力默认端点；模型自带 apiUrl 仍最优先。
     var apiUrl = (typeof modelConfig.apiUrl === "string" && modelConfig.apiUrl)
@@ -1716,37 +1942,11 @@
       eEmpty.modelName = modelConfig.name;
       throw eEmpty;
     }
-    if (!capUsage) {
-      var capsU = xtCaps();
-      if (capsU && typeof capsU.usage === "function") {
-        try { capUsage = capsU.usage({ kind: "imagegen", n: urls.length, size: usedSize }); } catch (eU) { capUsage = null; }
-      }
-      if (!capUsage) {
-        capUsage = {
-          kind: "imagegen", n: urls.length, size: usedSize,
-          inTok: 0, outTok: 0, exact: 0, chars: 0, seconds: 0, dim: 0, docs: 0
-        };
-      }
-    }
+    if (!capUsage) capUsage = xtImageCapUsage(urls.length, usedSize);
     // R86：用量回传外层（sink 为空 = 健康检查等内部探测，不记账）
     if (sink && typeof sink === "object") sink.capUsage = capUsage;
     // 与现有渲染衔接：返回 Markdown 图片串，由 ai-page.js renderMarkdown 渲染成 <img>
-    // R73p：alt 必须剔掉 [ ] ( ) 与换行 —— 否则 renderMarkdown 的图片正则匹配不上，图片会退化成纯文本
-    var altText = String(prompt)
-      .replace(/[\r\n]+/g, " ")
-      .replace(/[\[\]()]/g, " ")
-      .replace(/\s+/g, " ")
-      .replace(/^ +| +$/g, "")
-      .slice(0, 40);
-    var parts = [];
-    for (var ui = 0; ui < urls.length; ui++) {
-      parts.push("![" + altText + "](" + urls[ui] + ")");
-    }
-    var out = parts.join("\n");
-    if (onChunk) {
-      try { onChunk(out, out); } catch (e4) { /* 渲染失败不影响结果 */ }
-    }
-    return out;
+    return xtImagesMarkdown(urls, prompt, onChunk);
   }
 
   // ==================== R86：通用能力调用层（生图 / 视觉 / 语音 / 嵌入 / 重排） ====================
@@ -1837,20 +2037,10 @@
     return info;
   }
 
-  // 取能力调用所需 Key：模型自带 > 用户自填 > provider 默认（与 chat 链路同一优先级）
-  function xtCapApiKey(modelCfg, provider) {
-    var selfKey = (modelCfg && typeof modelCfg.apiKey === "string" && modelCfg.apiKey) ? modelCfg.apiKey : "";
-    if (selfKey) return selfKey;
-    var userKey = "";
-    if (modelCfg && modelCfg.provider) {
-      try { userKey = localStorage.getItem("ai_user_key_" + modelCfg.provider) || ""; } catch (e) { userKey = ""; }
-    }
-    if (userKey) return userKey;
-    return (provider && provider.apiKey) ? String(provider.apiKey) : "";
-  }
-
-  // 合并请求头：能力自带 headers < provider.extraHeaders < 模型 extraHeaders < 鉴权（有则补）
-  function xtCapMergeHeaders(base, provider, modelCfg, apiKey) {
+  // 合并请求头：能力自带 headers < provider.extraHeaders < 模型 extraHeaders < 鉴权（有则补）。
+  // R131：Authorization **只在 用户自备 Key 的本地直连（allowAuth===true）** 时注入；
+  // 服务端中转链路（allowAuth!==true）一律不注入任何 provider key —— 中转身为 JWT + X-Client-Version。
+  function xtCapMergeHeaders(base, provider, modelCfg, apiKey, allowAuth) {
     var out = {};
     var k;
     var i;
@@ -1867,7 +2057,8 @@
         if (Object.prototype.hasOwnProperty.call(srcs[i], k)) out[k] = srcs[i][k];
       }
     }
-    if (apiKey && !out["Authorization"] && !out["authorization"]) out["Authorization"] = "Bearer " + apiKey;
+    // R131：allowAuth 未显式为 true 时（含服务端中转）绝不拼接 Bearer key。
+    if (allowAuth === true && apiKey && !out["Authorization"] && !out["authorization"]) out["Authorization"] = "Bearer " + apiKey;
     return out;
   }
 
@@ -1953,6 +2144,21 @@
    * @param {Object} sink       用量收集器（可为空）；成功时写入 sink.capUsage
    * @returns {Promise<*>}      cap.parse 归一后的 result
    */
+  // R131：内置模型的 media 能力 → 服务端中转端点（与 server/routers/ai.py 同名同义）。
+  // key 用 cap.key（注册表能力标识）；embedding / rerank 服务端未开媒体端点，不在表内。
+  var XT_RELAY_CAP_ENDPOINTS = {
+    imagegen: "/api/ai/image/generate",
+    asr: "/api/ai/audio/transcribe",
+    video: "/api/ai/video/generate",
+    model3d: "/api/ai/3d/generate"
+  };
+
+  function xtRelayCapEndpoint(capKey) {
+    var k = String(capKey == null ? "" : capKey);
+    if (!Object.prototype.hasOwnProperty.call(XT_RELAY_CAP_ENDPOINTS, k)) return "";
+    return XT_RELAY_CAP_ENDPOINTS[k];
+  }
+
   async function xtCallCapability(cap, modelCfg, input, opt, sink) {
     var cfg = getConfig();
     var provider = (modelCfg && modelCfg.provider && cfg && cfg.providers) ? cfg.providers[modelCfg.provider] : null;
@@ -1976,22 +2182,48 @@
       if (modelCfg) { eBad.modelId = modelCfg.id; eBad.modelName = modelCfg.name; }
       throw eBad;
     }
-    // 端点：模型自带 apiUrl 最优先（自定义模型），否则用能力解析出的端点
-    var url = ((modelCfg && typeof modelCfg.apiUrl === "string" && modelCfg.apiUrl) ? modelCfg.apiUrl : req.url);
+    // R131 双通道：内置模型（relay）改调服务端媒体端点；用户自备 Key 才按 cap 自带端点本地直连。
+    var capCh = xtResolveChannel(modelCfg);
+    var relayEndpoint = capCh.relay ? xtRelayCapEndpoint(cap.key) : "";
+    if (capCh.relay && !relayEndpoint) {
+      // 服务端没有为这类能力开媒体端点（如 embedding / rerank）——给可读错误，绝不静默失败，
+      // 也不能退回去拿 provider key 直连（provider key 已不存在）。
+      var eNoRelay = makeError((cap.key || "该能力") + " 暂不支持服务端中转，请更新到最新版本或联系开发者",
+        0, "unavailable");
+      if (modelCfg) { eNoRelay.modelId = modelCfg.id; eNoRelay.modelName = modelCfg.name; }
+      throw eNoRelay;
+    }
+    // R131：生图经 xtRunCapability 进来时，cap.build 造的是**上游** images/generations
+    // 请求体（{model, prompt, image_size, batch_size}），不是 /api/ai/image/generate 的契约
+    // （{modelId, prompt, size, n}）。此处复用 relayImageGenerate，保证同一份契约只有一个实现。
+    if (capCh.relay && cap.key === "imagegen") {
+      return await relayImageGenerate(
+        modelCfg,
+        [{ role: "user", content: String((input && input.prompt) ? input.prompt : "") }],
+        null, null,
+        { size: (input && input.size) ? String(input.size) : ((opt && opt.size) ? String(opt.size) : ""),
+          n: (input && input.batch != null) ? input.batch : 1 },
+        sink
+      );
+    }
+    var url = capCh.relay ? (relayBase() + relayEndpoint)
+      : ((modelCfg && typeof modelCfg.apiUrl === "string" && modelCfg.apiUrl) ? modelCfg.apiUrl : req.url);
     if (!url) {
       var eUrl = makeError("能力调用缺少接口地址（" + cap.key + "）", 0, "NO_ENDPOINT");
       if (modelCfg) { eUrl.modelId = modelCfg.id; eUrl.modelName = modelCfg.name; }
       throw eUrl;
     }
-    var apiKey = xtCapApiKey(modelCfg, provider);
-    if (!apiKey) {
+    // 本地直连按旧口径必须有 Key；服务端中转不需要任何 Key（key 在服务端 .env）。
+    if (!capCh.relay && !capCh.key) {
       var eKey = makeError("能力调用缺少 API Key（" + cap.key + "）", 0, "NO_KEY");
       if (modelCfg) { eKey.modelId = modelCfg.id; eKey.modelName = modelCfg.name; }
       throw eKey;
     }
-    var headers = xtCapMergeHeaders(req.headers, provider, modelCfg, apiKey);
+    var headers = capCh.relay
+      ? relayHeaders(!req.formData)
+      : xtCapMergeHeaders(req.headers, provider, modelCfg, capCh.key, true);
     var timeoutMs = (cap && typeof cap.timeout === "number" && cap.timeout > 0) ? cap.timeout : XT_CAP_TIMEOUT_DEFAULT;
-    var target = proxyWrapUrl(String(url), modelCfg ? modelCfg.provider : null);
+    var target = capCh.relay ? url : proxyWrapUrl(String(url), modelCfg ? modelCfg.provider : null);
 
     var status = 0;
     var raw = "";
@@ -2023,6 +2255,12 @@
 
     var json = null;
     try { json = raw ? JSON.parse(raw) : null; } catch (eP) { json = null; }
+    // R131：中转端点的响应恒为「统一错误体」{ok,kind,error,code,hint}，
+    // 成功时才交给 cap.parse 按各家协议解析；失败直接映射成可读中文。
+    if (capCh.relay && (status < 200 || status >= 300 || (json && json.ok === false))) {
+      var eRelay = xtRelayError(status, json, modelCfg, "能力调用失败（" + cap.key + "）");
+      throw eRelay;
+    }
     if (!(status >= 200 && status < 300)) {
       var em = xtCapErrText(json, (raw ? String(raw).replace(/\s+/g, " ").slice(0, 200) : ("HTTP " + status)));
       var eHttp = makeError("能力调用失败（" + cap.key + "）：" + status + " " + em, status, "CAP_HTTP");
@@ -2626,15 +2864,18 @@
       return await requestImageGeneration(modelConfig, messages, onChunk, signal, opt);
     }
 
-    var userKey = null;
-    if (modelConfig.provider) {
-      try { userKey = localStorage.getItem("ai_user_key_" + modelConfig.provider); } catch (e) {}
-    }
-    // Key 优先级：模型自带（自定义/override）> 用户自填 > provider 默认；端点同理
-    var apiKey = selfKey ? selfKey : (userKey ? userKey : (provider ? provider.apiKey : null));
+    // R131：Key 优先级 —— 模型自带（自定义/override）> 用户自填（仅非内置平台）。
+    // provider.apiKey 已从 ai-config.js 全量删除：内置平台拿不到 Key 就走服务端中转分支。
+    var chatCh = xtResolveChannel(modelConfig);
+    // R131 调整：BYOK（gemini/openrouter）进直连分支时用用户自备 Key（chatCh.byokKey）。
+    var apiKey = chatCh.key || (chatCh.byokKey ? String(chatCh.byokKey) : "");
     var apiUrlBase = selfUrl ? selfUrl : (provider ? provider.apiUrl : null);
-    // apiFormat：'openai'（默认，OpenAI 兼容）| 'gemini'（R63 contents-parts + keyInQuery）| 'custom'（按 OpenAI 兼容发，仅端点与 extraHeaders 自定义）
+    // apiFormat：'openai'（默认，OpenAI 兼容）| 'gemini'（R63 contents-parts + keyInQuery）| 'custom'
     var apiFormat = selfFmt ? selfFmt : ((provider && provider.apiFormat) ? provider.apiFormat : "openai");
+
+    // R131 调整：撤除 Gemini「既不直连也不中转」硬拦截 —— gemini/openrouter 走 BYOK
+    // 本地直连（Key 来自用户自备，见 xtResolveChannel.byokKey）；无自备 Key 时
+    // 下方 NO_KEY 兜底，绝不拼空 Key 发请求、也绝不恢复任何历史硬编码 Key。
     var isGemini = (apiFormat === "gemini");
     if (!apiKey) {
       throw makeError("缺少 API Key（模型与平台均未配置）:" + modelConfig.id, 0, "NO_KEY");
@@ -2971,6 +3212,63 @@
     return !!(p && (p.needVPN === true || p.needProxy === true));
   }
 
+  // ------------------------------------------------------------------
+  // R131 调整：gemini/openrouter BYOK（自备 Key）本地直连回退 —— 【一次】性，无内部重试。
+  // 触发条件（全部满足才直连）：
+  //   1) 中转失败时手动选中的模型属于 gemini / openrouter（XT_BYOK_PROVIDERS）；
+  //   2) 用户在设置页存了该平台自备 Key（ai_user_key_<provider>，仅存本机）；
+  //   3) ai_proxy_settings.mode !== "relay"（用户明确要求中转则不直连；auto / direct 允许）；
+  //   4) 中转失败属网络类：kind==="network_limited" / 超时 / 网络层错误（无 HTTP status）。
+  // 失败处置：直连失败即收敛为 kind:"network_limited" + hint 的统一错误体上抛，
+  // 由页面渲染 network_limited 错误卡（自备 Key / 国内替代引导）——不进任何 further 重试/降级链。
+  // ------------------------------------------------------------------
+  function isNetworkKindErr(e) {
+    if (!e) return false;
+    if (e.kind === "network_limited") return true;
+    if (e.timedOut === true) return true;
+    var st = Number(e.status || 0) || 0;
+    return st === 0;   // 无 HTTP 状态 = 网络层失败（fetch reject / 超时包装）
+  }
+  async function xtByokDirectFallback(selModel, messages, opts, reqOpts, relayErr) {
+    if (!selModel || !selModel.provider) return null;
+    var pn = String(selModel.provider);
+    if (!XT_BYOK_PROVIDERS[pn]) return null;          // 仅限 gemini / openrouter
+    if (!isNetworkKindErr(relayErr)) {
+      // 非网络类（额度 / 版本 / 参数等）如实上抛交给页面错误卡，不拿自备 Key 重试
+      if (relayErr && relayErr.kind) throw relayErr;
+      return null;
+    }
+    var pc = getProxyConfig();
+    if (pc.mode === "relay") return null;             // 用户明确中转 → 不直连
+    var uk = xtUserOwnKey(selModel);
+    if (!uk) return null;                             // 没存 Key → 维持现状（走既有降级链）
+    var sinkOut = {};
+    var t0 = Date.now();
+    var text = "";
+    try {
+      text = await requestModelCore(selModel, messages, (opts && opts.onChunk) ? opts.onChunk : null,
+        null, reqOpts, sinkOut);
+    } catch (eDir) {
+      // 一次直连重试上限：失败即收敛为 network_limited 统一错误体，不再重试、不再降级
+      var e2 = makeError("自备 Key 直连也失败：本机网络无法直连该海外平台（需代理/梯子），或密钥无效。",
+        (eDir && eDir.status) ? Number(eDir.status) : 0, "network_limited");
+      e2.kind = "network_limited";
+      e2.apiMessage = e2.message;
+      e2.hint = "可检查本机代理/网络后重试；或在设置页更新该平台的自备 Key；也可改用国内平台的同类模型。";
+      if (selModel) { e2.modelId = selModel.id; e2.modelName = selModel.name; }
+      warn("[ai-service] BYOK 本地直连失败（已到一次重试上限）", { provider: pn, err: eDir && eDir.message });
+      throw e2;
+    }
+    warn("[ai-service] BYOK 本地直连成功", { provider: pn, ms: Date.now() - t0 });
+    return {
+      text: String(text || ""),
+      reasoning: (sinkOut && sinkOut.reasoning != null) ? String(sinkOut.reasoning) : "",
+      provider: pn,
+      modelUsedName: (selModel.model ? String(selModel.model) : String(selModel.name || selModel.id)) + "（自备 Key 直连）",
+      ms: Date.now() - t0
+    };
+  }
+
   // ---------- 统一调用入口 ----------
   async function callAI(funcType, messages, opts) {
     opts = opts || {};
@@ -3076,6 +3374,32 @@
             fromPreset: false, degraded: false, funcType: realType
           };
         } catch (eRelay) {
+          // R131 调整：gemini/openrouter 自备 Key（BYOK）回退 —— 中转网络类失败且代理模式
+          // 允许直连时，用用户自备 Key 本地直连重试【一次】；成功按中转同等结构返回。
+          var byokOut = await xtByokDirectFallback(selModel, relayMsgs, opts, reqOpts, eRelay);
+          if (byokOut) {
+            xtUsageRecordAuto({
+              ts: relayStart,
+              model: byokOut.modelUsedName,
+              modelId: selModel ? selModel.id : "byok",
+              modelKey: "byok",
+              inputText: xtUsageMessagesText(relayMsgs),
+              reply: byokOut.text,
+              ok: true,
+              usage: null,
+              ms: byokOut.ms
+            });
+            return {
+              text: byokOut.text,
+              reasoning: byokOut.reasoning,
+              model: "byok:" + byokOut.provider,
+              modelUsed: "byok:" + byokOut.provider,
+              modelUsedName: byokOut.modelUsedName,
+              modelFallback: false,
+              modelUsedReal: byokOut.modelUsedName,
+              fromPreset: false, degraded: false, funcType: realType
+            };
+          }
           // 中转失败（未登录/限额/网络）→ 落到直连链，不中断
         }
       }
@@ -3270,19 +3594,34 @@
 
   // R66 N2：计算「实际可用」的端点与 Key（含 provider 回退与用户自填 Key），
   // 用于端点/Key 缺失时提前返回 no_endpoint / no_key，避免把「配置缺失」误报成 network。
+  // R131：provider.apiKey 已从 ai-config.js 全量删除，此处不再回退平台内置 Key——
+  // 取 Key 统一走 xtResolveChannel（内置平台恒为空串，改由服务端中转下单）。
   function resolveEffectiveEndpointKey(mc) {
     var cfg = getConfig();
     var provider = (mc && mc.provider && cfg && cfg.providers) ? cfg.providers[mc.provider] : null;
     var url = (typeof mc.apiUrl === "string" && mc.apiUrl) ? mc.apiUrl : ((provider && provider.apiUrl) ? provider.apiUrl : null);
-    var key = (typeof mc.apiKey === "string" && mc.apiKey) ? mc.apiKey : null;
-    if (!key && provider && typeof provider.apiKey === "string" && provider.apiKey) key = provider.apiKey;
-    if (!key && mc && mc.provider) {
-      try {
-        var uk = localStorage.getItem("ai_user_key_" + mc.provider);
-        if (uk) key = uk;
-      } catch (eUk) { /* 忽略 */ }
+    var ch = xtResolveChannel(mc);
+    return { apiUrl: url || null, apiKey: ch.key || null, relay: ch.relay };
+  }
+
+  // R131：内置模型可用性以服务端 GET /api/ai/models 为权威源 ——
+  // 该接口由服务端按「已配置 Key 的 provider」过滤，gemini / openrouter 会被自动剔除，
+  // 因此「平台在列表里」等价于「服务端通道就绪」。前端据此判活，不再碰任何 provider key。
+  // @returns {Promise<{ok:boolean, err:string}>} err ∈ {unavailable, network}
+  async function relayProbeAvailable(mc) {
+    var list = [];
+    try {
+      list = await relayProviders();
+    } catch (e) {
+      return { ok: false, err: "network" };
     }
-    return { apiUrl: url || null, apiKey: key || null };
+    if (!list || !list.length) return { ok: false, err: "unavailable" };
+    var pname = (mc && mc.provider) ? String(mc.provider) : "";
+    if (!pname) return { ok: true, err: "" };
+    for (var i = 0; i < list.length; i++) {
+      if (list[i] && String(list[i].id) === pname) return { ok: true, err: "" };
+    }
+    return { ok: false, err: "unavailable" };
   }
 
   // R66 N2：aiHealthCheck 支持可选第二参数 cfgOverride（临时配置）。签名一字不改。
@@ -3342,10 +3681,12 @@
       var hTimeout = (mc && mc.provider && providerNeedProxy(mc.provider))
         ? HEALTH_TIMEOUT_PROXY : HEALTH_TIMEOUT;
 
-      // 端点 / Key 缺失：不抛异常，返回新增 err 值（调用方线1 会映射成用户可读文案）
+      // R131：端点 / Key 缺失：不抛异常，返回新增 err 值（调用方线1 会映射成用户可读文案）。
+      // 注：内置模型（relay 通道）没有 Key 也 **不算缺 Key**，其可用性在下面第 3 段
+      // 改以服务端 GET /api/ai/models 为权威源判定，不再用 provider key 探活。
       var eff = resolveEffectiveEndpointKey(ping);
       if (!eff.apiUrl) { resolve({ ok: false, ms: 0, err: "no_endpoint", kind: "" }); return; }
-      if (!eff.apiKey) { resolve({ ok: false, ms: 0, err: "no_key", kind: "" }); return; }
+      if (!eff.apiKey && !eff.relay) { resolve({ ok: false, ms: 0, err: "no_key", kind: "" }); return; }
       // R81：图片生成模型走 images/generations 专用检测（最小 prompt），不用文本聊天接口误报失败
       if (isImageGenModel(ping)) {
         var iCtrl = (typeof AbortController === "function") ? new AbortController() : null;
@@ -3361,6 +3702,22 @@
             if (iTimer) clearTimeout(iTimer);
             finish({ ok: false, ms: Date.now() - startedAt, err: classifyHealthErr(eImg), kind: "imagegen" });
           });
+        return;
+      }
+
+      // R131 第 3 段：内置模型（relay 通道）不持有任何 Key，也不再用 provider key 探活——
+      // 可用性以服务端 GET /api/ai/models（已按可用 provider 过滤）为 **权威源**：
+      // 平台在列表里 = 服务端已配好 Key 且该模型在线；不在列表里 = 不可用（含软下线的 gemini/openrouter）。
+      if (eff.relay) {
+        var relayProbeInfo = xtResolveCapability(ping);
+        var relayProbeKind = (relayProbeInfo && relayProbeInfo.kind) ? String(relayProbeInfo.kind) : "";
+        relayProbeAvailable(ping).then(function (rpa) {
+          if (rpa.ok) {
+            finish({ ok: true, ms: Date.now() - startedAt, err: null, kind: relayProbeKind });
+          } else {
+            finish({ ok: false, ms: Date.now() - startedAt, err: rpa.err, kind: relayProbeKind });
+          }
+        });
         return;
       }
 

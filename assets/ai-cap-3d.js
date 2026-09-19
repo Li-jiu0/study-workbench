@@ -21,15 +21,75 @@
 (function (global) {
   'use strict';
   var R = global.XT_AI_CAPS;
+  // 上游默认端点（仅本地直连链路用；中转链路一律改指自有服务端 /api/ai/3d/*）
   var BASE = 'https://ark.cn-beijing.volces.com/api/v3';
   var TASKS = BASE + '/contents/generations/tasks';
   var POLL_MS = 5000;
   var POLL_MAX = 120;      // 10 分钟
 
-  function authHeaders(provider) {
-    var h = { 'Content-Type': 'application/json' };
-    var k = (provider && provider.apiKey) ? String(provider.apiKey) : '';
-    if (k) { h['Authorization'] = 'Bearer ' + k; }
+  /* ---------- R131：通道判定（与 ai-service.js 同一套口径） ---------- */
+  // 内置平台白名单：这些平台由服务端持钥并中转，前端既不持 Key、也不允许用自备 Key 覆盖。
+  var BUILTIN_PROVIDERS = ['zhipu', 'qianfan', 'ark', 'arkimage', 'openrouter', 'siliconflow', 'gemini'];
+
+  function isBuiltinProvider(pname) {
+    var s = String(pname == null ? '' : pname);
+    for (var bi = 0; bi < BUILTIN_PROVIDERS.length; bi++) {
+      if (BUILTIN_PROVIDERS[bi] === s) return true;
+    }
+    return false;
+  }
+
+  // 本地直连用 Key：模型自带 > localStorage 用户自备（后者仅对非内置平台生效）。
+  // 返回空串 = 该模型走服务端中转。
+  function ownKey(modelCfg) {
+    if (modelCfg && typeof modelCfg.apiKey === 'string' && modelCfg.apiKey) return modelCfg.apiKey;
+    var pname = (modelCfg && modelCfg.provider) ? String(modelCfg.provider) : '';
+    if (!pname || isBuiltinProvider(pname)) return '';
+    var k = '';
+    try { k = (global.localStorage && global.localStorage.getItem('ai_user_key_' + pname)) || ''; } catch (e) { k = ''; }
+    return k;
+  }
+
+  function isRelay(modelCfg) {
+    return !ownKey(modelCfg);
+  }
+
+  // 中转基址：web 同源取 ''，APK(file:) 取绝对地址（与 ai-service.js relayBase 同口径）。
+  function relayBase() {
+    if (typeof global.STUDY_API_BASE === 'string') return global.STUDY_API_BASE;
+    if (typeof global.API_BASE === 'string') return global.API_BASE;
+    return '';
+  }
+
+  // X-Client-Version：服务端据此让旧 APK 优雅降级，缺了用户只会看到空白失败。
+  function relayVersion() {
+    try {
+      var c = global.AI_CONFIG;
+      if (c && typeof c.clientVersion === 'string' && c.clientVersion) return c.clientVersion;
+    } catch (e) { /* 忽略 */ }
+    return '';
+  }
+
+  function relayToken() {
+    try { return (global.localStorage && global.localStorage.getItem('study_workbench_token')) || ''; } catch (e) { return ''; }
+  }
+
+  // 请求头：中转链路带「用户登录 JWT + X-Client-Version」，**绝不拼 provider key**；
+  // 用户自备 Key 的本地直连才把 Authorization 换成用户那把 Key（Key 只出本机，永不上行）。
+  function baseHeaders(modelCfg) {
+    var h = {};
+    var rt = relayToken();
+    if (rt) h['Authorization'] = 'Bearer ' + rt;
+    var v = relayVersion();
+    if (v) h['X-Client-Version'] = v;
+    var k = ownKey(modelCfg);
+    if (k) h['Authorization'] = 'Bearer ' + k;
+    return h;
+  }
+
+  function jsonHeaders(modelCfg) {
+    var h = baseHeaders(modelCfg);
+    h['Content-Type'] = 'application/json';
     return h;
   }
 
@@ -79,6 +139,24 @@
         // 图片是必须的，缺了直接抛给调用层，别浪费一次上游请求
         return { url: '', method: 'POST', headers: {}, body: '', meta: { err: '图生 3D 需要先提供一张图片' } };
       }
+
+      // R131：内置模型走服务端中转。契约只发 modelId / image / prompt，
+      // 真实模型名与细分等级等由服务端按注册表补齐——前端零密钥，不再自拼上游方舟 body。
+      if (isRelay(ctx.modelCfg)) {
+        var rb = {
+          modelId: String((ctx.modelCfg && ctx.modelCfg.id) || ''),
+          image: img
+        };
+        if (input.prompt) rb.prompt = String(input.prompt);
+        return {
+          url: relayBase() + '/api/ai/3d/generate',
+          method: 'POST',
+          headers: jsonHeaders(ctx.modelCfg),
+          body: JSON.stringify(rb),
+          meta: { format: input.format || 'glb', subdivision: input.subdivision || 'medium', relay: true }
+        };
+      }
+
       var body = {
         model: ctx.modelCfg.model,
         content: [{ type: 'image_url', image_url: { url: img } }],
@@ -89,14 +167,17 @@
       return {
         url: R.endpoint(CAP, ctx.provider),
         method: 'POST',
-        headers: authHeaders(ctx.provider),
+        headers: jsonHeaders(ctx.modelCfg),
         body: JSON.stringify(body),
-        meta: { format: body.fileformat, subdivision: body.subdivisionlevel }
+        meta: { format: body.fileformat, subdivision: body.subdivisionlevel, relay: false }
       };
     },
 
+    /** 解析「创建任务」响应：只要任务 id（中转返回 taskId，上游返回 id，两者都认） */
     parse: function (json, ctx) {
-      var id = (json && json.id) ? String(json.id) : '';
+      var id = '';
+      if (json && json.id) id = String(json.id);
+      else if (json && json.taskId) id = String(json.taskId);
       if (!id) { return { ok: false, err: R.errText(json, '创建 3D 任务未返回任务 ID') }; }
       return { ok: true, result: { taskId: id } };
     },
@@ -122,21 +203,47 @@
 
     poll: function (taskId, ctx, onProgress) {
       var self = CAP;
-      var url = R.endpoint(self, ctx.provider) + '/' + encodeURIComponent(taskId);
-      var headers = authHeaders(ctx.provider);
+      // R131：中转链路轮询自有服务端 GET /api/ai/3d/task/{id}（服务端代持 Key 去问上游）。
+      var relay = isRelay(ctx && ctx.modelCfg);
+      if (!relay && ctx && ctx.meta && ctx.meta.relay === true) relay = true;
+      var url = relay
+        ? (relayBase() + '/api/ai/3d/task/' + encodeURIComponent(taskId))
+        : (R.endpoint(self, ctx.provider) + '/' + encodeURIComponent(taskId));
+      var headers = relay ? baseHeaders(ctx && ctx.modelCfg) : jsonHeaders(ctx && ctx.modelCfg);
       var tries = 0;
 
       function once() {
         return global.fetch(url, { method: 'GET', headers: headers })
           .then(toJson)
           .then(function (r) {
-            if (r.status < 200 || r.status >= 300) {
-              return { ok: false, err: R.errText(r.json, '查询 3D 任务失败（HTTP ' + r.status + '）') };
+            var eff = null;
+            if (relay) {
+              // 中转轮询恒回 200 + 统一错误体 {ok,kind,error}：HTTP 层「成功」不代表任务成功。
+              var rj = (r.json && typeof r.json === 'object') ? r.json : null;
+              if (!rj || rj.ok !== true) {
+                var rm = (rj && rj.error) ? String(rj.error) : R.errText(rj, '查询 3D 任务失败');
+                return { ok: false, err: rm, kind: (rj && rj.kind) ? String(rj.kind) : '' };
+              }
+              // 归一化成上游 Shape，下面整段判定逻辑无需分叉。
+              eff = {
+                status: String(rj.status || ''),
+                content: {
+                  file_url: String(rj.fileUrl || rj.videoUrl || ''),
+                  image_url: String(rj.previewUrl || ''),
+                  fileformat: String(rj.fileformat || '')
+                },
+                usage: (rj.usage && typeof rj.usage === 'object') ? rj.usage : {}
+              };
+            } else {
+              if (r.status < 200 || r.status >= 300) {
+                return { ok: false, err: R.errText(r.json, '查询 3D 任务失败（HTTP ' + r.status + '）') };
+              }
+              eff = r.json;
             }
-            var st = String((r.json && r.json.status) || '');
-            if (st === 'succeeded') { return self.parseDone(r.json, ctx); }
+            var st = String((eff && eff.status) || '');
+            if (st === 'succeeded') { return self.parseDone(eff, ctx); }
             if (st === 'failed' || st === 'cancelled' || st === 'expired') {
-              return { ok: false, err: R.errText(r.json, '3D 生成失败（' + st + '）') };
+              return { ok: false, err: R.errText(eff, '3D 生成失败（' + st + '）') };
             }
             tries++;
             if (tries >= POLL_MAX) {
@@ -160,10 +267,18 @@
       if (!req.url) {
         return Promise.resolve({ ok: false, err: (req.meta && req.meta.err) || '3D 生成参数不完整' });
       }
+      var ranRelay = !!(req && req.meta && req.meta.relay);
       return global.fetch(req.url, { method: req.method, headers: req.headers, body: req.body })
         .then(toJson)
         .then(function (r) {
-          if (r.status < 200 || r.status >= 300) {
+          // R131：中转链路恒回 200 + 统一错误体 {ok,kind,error}，必须按 ok 判定，不能只看状态码。
+          if (ranRelay) {
+            var rj = (r.json && typeof r.json === 'object') ? r.json : null;
+            if (!rj || rj.ok !== true) {
+              return { ok: false, err: (rj && rj.error) ? String(rj.error) : '创建 3D 任务失败',
+                       kind: (rj && rj.kind) ? String(rj.kind) : '' };
+            }
+          } else if (r.status < 200 || r.status >= 300) {
             var msg = R.errText(r.json, '');
             if (msg.indexOf('has not activated') >= 0) {
               return { ok: false, err: '该 3D 模型尚未在火山方舟控制台开通，请先开通后再使用' };
@@ -175,7 +290,8 @@
           if (onProgress) { try { onProgress({ status: 'created', tries: 0, max: POLL_MAX }); } catch (e) {} }
           return self.poll(p.result.taskId, { provider: ctx.provider, modelCfg: ctx.modelCfg, meta: req.meta }, onProgress)
             .then(function (done) {
-              if (done.ok && ctx.modelCfg && ctx.modelCfg.id) {
+              // R131：中转链路服务端已按 `次` 权威记账，前端不再重复上报，避免双份消耗。
+              if (done.ok && !ranRelay && ctx.modelCfg && ctx.modelCfg.id) {
                 reportUsage(ctx.modelCfg.id, done.usage ? done.usage.outTok : 1);
               }
               return done;
@@ -190,10 +306,10 @@
   // 说明：probe 由 ai-service.js 健康检查分派调用（T02 工线接线），
   //   ctx = { modelCfg, provider, timeout }；返回 Promise<{ ok, err, detail }>。
   //   探针一律不写 recordCall、不进 10 次/分钟限频（健康检查本就不计）。
-  function pKey(modelCfg, provider) {
-    var k = (modelCfg && typeof modelCfg.apiKey === "string" && modelCfg.apiKey) ? modelCfg.apiKey : "";
-    if (!k && provider && typeof provider.apiKey === "string") k = provider.apiKey;
-    return k;
+  // R131：不再从 provider.apiKey 取 Key（该字段已从 ai-config.js 全量删除）。
+  // 取 Key 只认「用户自备」两处：模型自带 apiKey / localStorage（且仅限非内置平台）。
+  function pKey(modelCfg) {
+    return ownKey(modelCfg);
   }
   function pHeaders(ctx, json) {
     var h = json ? { "Content-Type": "application/json" } : {};
@@ -203,7 +319,15 @@
       if (!s || typeof s !== "object") continue;
       for (var k in s) { if (Object.prototype.hasOwnProperty.call(s, k)) h[k] = s[k]; }
     }
-    var key = pKey(ctx.modelCfg, ctx.provider);
+    // 中转链路：不拼任何 Bearer key，只带 JWT + 版本号。
+    if (isRelay(ctx.modelCfg)) {
+      var rt = relayToken();
+      if (rt) h["Authorization"] = "Bearer " + rt;
+      var rv = relayVersion();
+      if (rv) h["X-Client-Version"] = rv;
+      return h;
+    }
+    var key = pKey(ctx.modelCfg);
     if (key && !h["Authorization"] && !h["authorization"]) h["Authorization"] = "Bearer " + key;
     return h;
   }
@@ -285,7 +409,15 @@
         if (r.status >= 200 && r.status < 300) {
           var j = null;
           try { j = JSON.parse(r.text); } catch (eJ) { j = null; }
-          if (j && j.id) return { ok: true, err: null, detail: { taskId: String(j.id) } };
+          // 中转返回 {ok:true, taskId}，上游返回 {id}；两者都算「端点连通」。
+          if (j && (j.id || (j.ok === true && j.taskId))) {
+            return { ok: true, err: null, detail: { taskId: String(j.id || j.taskId) } };
+          }
+          // 中转链路的失败是 200 + {ok:false, kind, error}，按 kind 给出可读结论。
+          if (j && j.ok === false) {
+            return { ok: false, err: (j.kind === "quota_exhausted" || j.kind === "network_limited") ? j.kind : "http_200",
+              detail: (j.error ? String(j.error) : pShort(r.text)) };
+          }
           return { ok: false, err: "empty", detail: pShort(r.text) };
         }
         return { ok: false, err: "http_" + r.status, detail: pShort(r.text) };

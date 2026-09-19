@@ -125,10 +125,28 @@
   // 说明：probe 由 ai-service.js 健康检查分派调用（T02 工线接线），
   //   ctx = { modelCfg, provider, timeout }；返回 Promise<{ ok, err, detail }>。
   //   探针一律不写 recordCall、不进 10 次/分钟限频（健康检查本就不计）。
-  function pKey(modelCfg, provider) {
-    var k = (modelCfg && typeof modelCfg.apiKey === "string" && modelCfg.apiKey) ? modelCfg.apiKey : "";
-    if (!k && provider && typeof provider.apiKey === "string") k = provider.apiKey;
-    return k;
+  // R131：不再从 provider.apiKey 取 Key（该字段已从 ai-config.js 全量删除，前端零密钥）。
+  // 内置平台白名单：这些平台由服务端持钥并中转，也不允许用自备 Key 覆盖。
+  var BUILTIN_PROVIDERS = ['zhipu', 'qianfan', 'ark', 'arkimage', 'openrouter', 'siliconflow', 'gemini'];
+
+  function isBuiltinProvider(pname) {
+    var s = String(pname == null ? '' : pname);
+    for (var i = 0; i < BUILTIN_PROVIDERS.length; i++) {
+      if (BUILTIN_PROVIDERS[i] === s) return true;
+    }
+    return false;
+  }
+
+  // 取 Key 只认「用户自备」两处：模型自带 apiKey / localStorage（后者仅对非内置平台生效）。
+  function pKey(modelCfg) {
+    var k = (modelCfg && typeof modelCfg.apiKey === 'string' && modelCfg.apiKey) ? modelCfg.apiKey : '';
+    if (k) return k;
+    var pname = (modelCfg && modelCfg.provider) ? String(modelCfg.provider) : '';
+    if (!pname || isBuiltinProvider(pname)) return '';
+    try {
+      var uk = (global && global.localStorage) ? (global.localStorage.getItem('ai_user_key_' + pname) || '') : '';
+      return uk ? uk : '';
+    } catch (e) { return ''; }
   }
   function pHeaders(ctx, json) {
     var h = json ? { "Content-Type": "application/json" } : {};
@@ -138,7 +156,9 @@
       if (!s || typeof s !== "object") continue;
       for (var k in s) { if (Object.prototype.hasOwnProperty.call(s, k)) h[k] = s[k]; }
     }
-    var key = pKey(ctx.modelCfg, ctx.provider);
+    // R131：内置模型（取不到用户自备 Key）走服务端中转，其可用性以 GET /api/ai/models
+    // 为权威源，探针不再要求任何平台 Key；自备 Key 的直连才拼 Bearer。
+    var key = pKey(ctx.modelCfg);
     if (key && !h["Authorization"] && !h["authorization"]) h["Authorization"] = "Bearer " + key;
     return h;
   }

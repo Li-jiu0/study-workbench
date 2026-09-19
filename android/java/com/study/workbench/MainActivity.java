@@ -127,6 +127,9 @@ public class MainActivity extends Activity {
         // 【应用内更新下载】R101：注册 DownloadManager 下载完成广播（Context 级，
         //   不依赖 WebView 页面存活 —— 用户退出检测更新页/切后台，下载完成仍能自动弹安装）。
         registerApkDoneReceiver();
+        // 【更新包自动清理】检测到覆盖安装成功（versionCode 变大）后，静默清扫
+        //   公共 Download 目录里本 App 之前下载、版本不高于当前已装版本的旧 APK。
+        checkInstalledVersionAndCleanupApks();
         // 【R105】App 启动时按本地开关+登录态恢复消息轮询前台服务（前端 setNotifyConfig 亦会触发，双保险）
         ensureMsgPollService();
 
@@ -1191,6 +1194,130 @@ public class MainActivity extends Activity {
         }
     }
 
+    /* ================= 【更新包自动清理】安装成功后删除 Download 目录旧 APK ================= */
+
+    /** 启动时比对 versionCode 指纹，判断是否刚完成过一次覆盖安装：
+     *  · 无存储值（首装）→ 只记录当前值，不清理；
+     *  · 存储值 < 当前值 → 用户刚完成覆盖安装 → 清扫旧包后更新记录；
+     *  · 相等 → 顺带做一次轻量清扫（兜底上次清理失败 / 广播丢失的遗留文件）；
+     *  · 存储值 > 当前值（回滚降级，理论罕见）→ 只更新记录，不动任何文件。
+     *  全程 try/catch(Throwable)，失败静默，下次启动再试，绝不影响主流程。 */
+    private void checkInstalledVersionAndCleanupApks() {
+        try {
+            int code = 0;
+            try {
+                android.content.pm.PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
+                if (pi != null) code = pi.versionCode;
+            } catch (Throwable t) { code = 0; }
+            if (code <= 0) return;
+            android.content.SharedPreferences sp = getSharedPreferences(
+                    "apk_update", android.content.Context.MODE_PRIVATE);
+            int last = sp.getInt("last_seen_version_code", 0);
+            if (last > 0 && last <= code) {
+                cleanupOldApks();
+            }
+            sp.edit().putInt("last_seen_version_code", code).apply();
+        } catch (Throwable t) { /* 指纹读写/清理失败：静默，下次启动再试 */ }
+    }
+
+    /** 静默清扫「本 App 之前经 DownloadManager 下载、版本不高于当前已装版本」的 APK。
+     *  主路径：DownloadManager.Query 只查 STATUS_SUCCESSFUL 记录 —— 记录是本 App 自己
+     *  入队的，dm.remove(id) 合法且会连文件一起删（API29+ scoped storage 下同样有效）；
+     *  兜底路径：直接扫公共 Download 目录，按命名规则命中本 App 的 .apk 后用 File API 删
+     *  （API<29 或 DownloadManager 查不到记录的遗留文件；API29+ 删不掉会被吞掉，下次再试）。
+     *  零 Toast、零日志，全静默；任何单条失败吞掉继续。 */
+    private void cleanupOldApks() {
+        try {
+            int curVer = parseApkVersionToNumber(getSelfVersionName());
+            if (curVer < 0) return; // 取不到当前版本号：不清理（避免误删更高版本的待装包）
+
+            // ---- 主路径：遍历 DownloadManager 成功记录 ----
+            try {
+                DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+                if (dm != null) {
+                    java.util.List<Long> removeIds = new ArrayList<Long>();
+                    DownloadManager.Query q = new DownloadManager.Query()
+                            .setFilterByStatus(DownloadManager.STATUS_SUCCESSFUL);
+                    android.database.Cursor c = null;
+                    try {
+                        c = dm.query(q);
+                        if (c != null) {
+                            while (c.moveToNext()) {
+                                try {
+                                    long id = c.getLong(c.getColumnIndex(DownloadManager.COLUMN_ID));
+                                    String title = c.getString(c.getColumnIndex(DownloadManager.COLUMN_TITLE));
+                                    if (!isOwnApkTitle(title)) continue;
+                                    int v = parseApkVersionToNumber(title);
+                                    if (v <= curVer) removeIds.add(id); // 版本 ≤ 当前已装 → 删；> 当前 → 保留（可能正要装）
+                                } catch (Throwable t) { /* 单条失败不影响其余 */ }
+                            }
+                        }
+                    } finally {
+                        try { if (c != null) c.close(); } catch (Throwable t) { }
+                    }
+                    for (int i = 0; i < removeIds.size(); i++) {
+                        try { dm.remove(removeIds.get(i)); } catch (Throwable t) { /* 删不掉下次再试 */ }
+                    }
+                }
+            } catch (Throwable t) { /* 主路径失败：走兜底 */ }
+
+            // ---- 兜底路径：扫公共 Download 目录 ----
+            try {
+                java.io.File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                java.io.File[] files = (dir == null) ? null : dir.listFiles();
+                if (files != null) {
+                    for (int i = 0; i < files.length; i++) {
+                        try {
+                            java.io.File f = files[i];
+                            if (f == null || !f.isFile()) continue;
+                            if (!isOwnApkTitle(f.getName())) continue;
+                            int v = parseApkVersionToNumber(f.getName());
+                            if (v <= curVer) f.delete();
+                        } catch (Throwable t) { /* 单个文件失败不影响其余 */ }
+                    }
+                }
+            } catch (Throwable t) { /* 兜底失败：留待下次 */ }
+        } catch (Throwable t) { /* 整体兜底：绝不抛错影响主流程 */ }
+    }
+
+    /** 判断文件/下载标题是否是本 App 的更新包：以 ".apk" 结尾（忽略大小写）
+     *  且 包含「星途」或「xingtu」（不区分大小写，兜底名 xingtu-update.apk 同样命中）。 */
+    private static boolean isOwnApkTitle(String title) {
+        if (title == null) return false;
+        String s = title.trim().toLowerCase(Locale.US);
+        if (!s.endsWith(".apk")) return false;
+        return title.contains("星途") || s.contains("xingtu");
+    }
+
+    /** 从文件名/标题里抽取数字版本并换算成可比较整数：
+     *  "星途-1.25.apk" → 12500、"1.3.1" → 10301（主版本*10000 + 次版本*100 + 修订号，
+     *  保证 "1.3" 与 "1.25"、"1.2.10" 这类不同位数版本可正确比大小）。
+     *  抽不到数字版本（如 xingtu-update.apk）或解析异常 → 返回 -1，由调用方视为待清理。 */
+    private static int parseApkVersionToNumber(String s) {
+        if (s == null) return -1;
+        try {
+            java.util.regex.Matcher m = java.util.regex.Pattern
+                    .compile("(\\d+(?:\\.\\d+)+)").matcher(s);
+            if (!m.find()) return -1;
+            String[] parts = m.group(1).split("\\.");
+            int major = Integer.parseInt(parts[0]);
+            int minor = (parts.length > 1) ? Integer.parseInt(parts[1]) : 0;
+            int patch = (parts.length > 2) ? Integer.parseInt(parts[2]) : 0;
+            return major * 10000 + minor * 100 + patch;
+        } catch (Throwable t) {
+            return -1;
+        }
+    }
+
+    /** 当前已装版本号字符串（versionName，如 "1.25"）；取不到返回 null。 */
+    private String getSelfVersionName() {
+        try {
+            android.content.pm.PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
+            if (pi != null && pi.versionName != null) return pi.versionName;
+        } catch (Throwable t) { }
+        return null;
+    }
+
     /* ================= 【R103 需求2】状态栏沉浸式（状态栏背景 = App 顶部浅色） ================= */
 
     /** 【R103 需求2】状态栏沉浸式：状态栏背景与 App 顶部实际浅色同色，消除顶部黑边。
@@ -1211,12 +1338,12 @@ public class MainActivity extends Activity {
                 window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
                 window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
                 if (Build.VERSION.SDK_INT >= 23) {
-                    window.setStatusBarColor(colorTopBar);
+                    window.setStatusBarColor(0x00000000); window.getDecorView().setSystemUiVisibility(window.getDecorView().getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN); // edge-to-edge：状态栏透明(0x00000000=Color.TRANSPARENT) + 内容铺满其下，由 .topbar 背景透出实现无缝顶栏
                     View decor = window.getDecorView();
                     decor.setSystemUiVisibility(
                             decor.getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
                 } else {
-                    window.setStatusBarColor(colorFallback);
+                    window.setStatusBarColor(colorFallback); window.getDecorView().setSystemUiVisibility(window.getDecorView().getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN); // API21-22 兜底：品牌蓝 + 同样铺满状态栏(edge-to-edge)
                 }
             }
         } catch (Throwable e) { /* 设置失败：沿用系统默认，不影响功能 */ }
@@ -1324,7 +1451,7 @@ public class MainActivity extends Activity {
                 window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
                 window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
                 if (Build.VERSION.SDK_INT >= 23) {
-                    window.setStatusBarColor(color);
+                    window.setStatusBarColor(0x00000000); window.getDecorView().setSystemUiVisibility(window.getDecorView().getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN); // 透明状态栏(edge-to-edge)，图标明暗交由下方 luminance 分支
                     final View decor = window.getDecorView();
                     int vis = decor.getSystemUiVisibility();
                     if (relativeLuminance(color) > 0.6) {
@@ -1334,7 +1461,7 @@ public class MainActivity extends Activity {
                     }
                     decor.setSystemUiVisibility(vis);
                 } else {
-                    window.setStatusBarColor(0xFF5B8DEF); // API21-22：不支持深色图标，品牌蓝兜底
+                    window.setStatusBarColor(0xFF5B8DEF); window.getDecorView().setSystemUiVisibility(window.getDecorView().getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN); // API21-22 兜底：品牌蓝 + 铺满状态栏(edge-to-edge)
                 }
             }
         } catch (Throwable e) { /* 设置失败：静默 */ }

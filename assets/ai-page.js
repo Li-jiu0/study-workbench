@@ -211,7 +211,74 @@
     ]},
     { key: 'openai', label: 'OpenAI 兼容（自定义）', url: '', models: [] }
   ];
+
+  /* ---------- R131 调整：海外平台（gemini / openrouter）不再硬拦截 ----------
+     语义改为「可用但依赖网络条件」：服务器配了代理 → 服务端中转全员可用；
+     未配代理 → 服务端返回 kind:"network_limited"，由请求失败时的统一错误卡
+     引导（自备该平台 Key 直连 / 改用国内同类模型）。下拉条目保持可选中，
+     仅带「需海外网络/代理」浅色标注，无禁用感。迁移映射为前端常量，不入后端。 ---------- */
   var CM_TEST_TIMEOUT = 15000;   // 测试连接超时（毫秒）
+  var OFFLINE_PROVIDERS = { gemini: true, openrouter: true };
+  var OFFLINE_MIGRATE_BY_ID = {
+    'gm-flash': 'ark-v4-pro',
+    'gm-flash-lite': 'ark-v4-flash',
+    'or-auto': 'ark-v4-flash',
+    'or-nemotron-super': 'ark-v4-flash',
+    'or-nemotron-ultra': 'qf-ernie-32k'
+  };
+  var OFFLINE_MIGRATE_BY_PROVIDER = { gemini: 'ark-v4-pro', openrouter: 'ark-v4-flash' };
+  var NEED_PROXY_TEXT = '需海外网络/代理';
+
+  function isOfflineModel(m) {
+    if (!m) return false;
+    return !!(m.provider && OFFLINE_PROVIDERS[m.provider]);
+  }
+  /* 替代模型展示名（按 id 精确映射优先，其次按 provider 兜底） */
+  function offlineAltName(m) {
+    if (!m) return '';
+    var altId = (m.id && OFFLINE_MIGRATE_BY_ID[m.id]) ? OFFLINE_MIGRATE_BY_ID[m.id] : (OFFLINE_MIGRATE_BY_PROVIDER[m.provider] || '');
+    if (!altId) return '';
+    var am = getModelById(altId);
+    return am ? listDisplayName(am) : altId;
+  }
+
+  /* ---------- R131：统一错误卡（禁静默失败） ----------
+     kind ∈ {quota_exhausted, network_limited, version_outdated, provider_error, bad_request, unavailable} */
+  var ERR_KIND_TEXT = {
+    quota_exhausted: { title: '额度已达上限', body: '当前模型的可用额度已用完，请稍后再试或更换其他模型。' },
+    network_limited: { title: '服务端网络受限', body: '该模型所需的上游服务当前不可达（服务端未配置海外代理）。可在设置页填写该平台自己的 Key 后直连使用，或改用国内平台的同类模型。' },
+    version_outdated: { title: '请更新到新版本', body: '当前版本已停用 AI 功能，请更新到最新版后继续使用。' },
+    provider_error: { title: '服务商返回错误', body: '上游服务商返回错误，请稍后重试或更换模型。' },
+    bad_request: { title: '请求有误', body: '请求参数不被服务端接受，请更换模型或调整内容后重试。' },
+    unavailable: { title: '模型暂不可用', body: '该模型当前不可用，请更换其他模型。' }
+  };
+  var ERR_CARD_CSS_ONCE = false;
+  function ensureErrCardCss() {
+    if (ERR_CARD_CSS_ONCE) return;
+    ERR_CARD_CSS_ONCE = true;
+    try {
+      var st = doc.createElement('style');
+      st.textContent = '.ai-err-card{border:1px solid rgba(214,69,69,.35);background:rgba(214,69,69,.07);' +
+        'border-radius:12px;padding:12px 14px;margin:2px 0 6px;}' +
+        '.ai-err-card .ai-err-t{font-weight:700;font-size:13.5px;color:#d64545;}' +
+        '.ai-err-card .ai-err-b{font-size:13px;line-height:1.7;margin-top:6px;white-space:pre-wrap;}' +
+        '.ai-err-card .ai-err-h{font-size:12px;color:#8a8f98;margin-top:6px;}' +
+        '.ai-mp-offline-tag{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:6px;' +
+        'font-size:11px;color:#8a8f98;background:rgba(128,128,128,.15);font-weight:400;}';
+      (doc.head || doc.body).appendChild(st);
+    } catch (e) { /* 样式注入失败不影响提示卡本身 */ }
+  }
+  /* 渲染一张可见的错误卡，返回纯文本（供消息历史 / 复制使用） */
+  function renderErrCard(b, kind, errText, hint) {
+    ensureErrCardCss();
+    var t = ERR_KIND_TEXT[kind] || ERR_KIND_TEXT.provider_error;
+    var body = errText ? String(errText) : t.body;
+    var html = '<div class="ai-err-card"><div class="ai-err-t">' + escHtml(t.title) + '</div>' +
+      '<div class="ai-err-b">' + escHtml(body) + '</div>' +
+      (hint ? '<div class="ai-err-h">建议：' + escHtml(String(hint)) + '</div>' : '') + '</div>';
+    b.mdEl.innerHTML = html;
+    return t.title + '\n' + body + (hint ? ('\n建议：' + String(hint)) : '');
+  }
 
   /* ---------- 元素引用（init 内赋值） ---------- */
   var aiInput, aiSendBtn, aiChat, aiMessages, aiWelcome, aiWelcomeInputSlot, aiDockInputSlot,
@@ -503,6 +570,8 @@
   }
 
   function toast(msg) {
+    /* R131：统一走 xt-toast（项目红线：禁原生 alert/confirm/prompt） */
+    try { if (typeof xtToast === 'function') { xtToast('info', msg); return; } } catch (e0) { /* 忽略 */ }
     try { if (typeof showToast === 'function') { showToast(msg); return; } } catch (e) { /* 忽略 */ }
     var t = $('aiToast'); if (!t) return;
     t.textContent = msg; t.style.display = 'block';
@@ -1856,6 +1925,8 @@
     var funcType = predictFuncType(text, !!image);
     /* R92-A：选中模型 types 含 'video' / '3d' 时走能力直连链路（详见 routeCapabilityModel） */
     if (routeCapabilityModel(aiB, text, image)) { return; }
+    /* R131 调整：海外平台（gemini / openrouter）不再前端硬拦截——允许发起请求；
+       服务端不可达时由下方 callAI 失败分支的 network_limited 错误卡兜底引导。 */
     // 上下文长度：只带最近 N 轮（1 轮 = 1 条用户 + 1 条 AI），0 表示全部
     var all = state.messages.map(function (m) { return { role: m.role, content: m.content }; });
     var turns = getCtxTurns();
@@ -1965,6 +2036,24 @@
       reasoning.settled = true;   // R107b：思维链流式渲染收尾
       finishReasoningPanel(reasoning.panel, reasoning.startedAt);   // 有面板则收起，无面板为三态兜底的「无思维链」空操作
       removeTyping(aiB);
+      /* R131：服务端可能以 200 + {ok:false, kind} 返回（version_outdated / quota_exhausted 等），
+         必须给可见提示卡，绝不静默失败。 */
+      if (res && typeof res === 'object' && res.ok === false && res.kind && ERR_KIND_TEXT[String(res.kind)]) {
+        var ek = String(res.kind);
+        var eh = (res && res.hint) ? String(res.hint) : '';
+        if (ek === 'network_limited') {
+          var nm = getModelById(getSelectedModelId());
+          eh = netLimitedHint(eh, nm);          // 建议行：自备 Key 直连 + 国内同类替代
+          toastNetAltSuggest(nm);               // 替代映射 toast 移到失败时机触发
+        }
+        var ec = renderErrCard(aiB, ek, (res && res.error) ? String(res.error) : '', eh);
+        showMsgActions(aiB);
+        state.messages.push({ role: 'ai', content: ec });
+        setSendBusy(false);
+        saveCurrentChat();
+        toast(ERR_KIND_TEXT[ek].title);
+        return;
+      }
       var ft = '';
       var degraded = false;
       if (typeof res === 'string') {
@@ -1999,8 +2088,22 @@
       finishReasoningPanel(reasoning.panel, reasoning.startedAt);
       removeTyping(aiB);
       var errMsg = (err && err.message) ? String(err.message) : '';
+      var kind = (err && err.kind) ? String(err.kind) : '';
+      var hint = (err && err.hint) ? String(err.hint) : '';
       var content;
-      if (err && err.code === 'IMAGE_INVALID') {
+      var isErrCard = false;
+      /* R131：统一错误体 {ok, kind, error, code, hint} —— 命中即渲染可见提示卡，禁静默失败
+         （quota_exhausted / network_limited / version_outdated / provider_error / bad_request / unavailable） */
+      if (kind && ERR_KIND_TEXT[kind]) {
+        if (kind === 'network_limited') {
+          var nm = getModelById(getSelectedModelId());
+          hint = netLimitedHint(hint, nm);      // 建议行：自备 Key 直连 + 国内同类替代
+          toastNetAltSuggest(nm);               // 替代映射 toast 移到失败时机触发
+        }
+        content = renderErrCard(aiB, kind, errMsg, hint);
+        isErrCard = true;
+        toast(ERR_KIND_TEXT[kind].title);
+      } else if (err && err.code === 'IMAGE_INVALID') {
         // 图片归一化失败：如实告知，不再伪装成「网络不佳」
         content = '图片解析失败：仅支持 JPG / PNG / WebP / GIF / BMP 格式的图片，请换一张再试。';
         toast('图片格式不支持，请换一张');
@@ -2016,7 +2119,8 @@
         content = '（网络不佳，以下为本地参考）\n\n' + localFallback(text);
         toast('网络不佳，以下为本地参考');
       }
-      aiB.mdEl.innerHTML = renderMarkdown(content);
+      /* 错误卡已由 renderErrCard 直接写进 mdEl，不再走 markdown 重复渲染 */
+      if (!isErrCard) { aiB.mdEl.innerHTML = renderMarkdown(content); }
       showMsgActions(aiB);
       state.messages.push({ role: 'ai', content: content });
       setSendBusy(false);
@@ -2355,6 +2459,9 @@
   }
   function modelRow(m, isSel) {
     var row = doc.createElement('div');
+    var off = isOfflineModel(m);
+    /* R131 调整：海外平台条目不再加 offline 禁用类（原 opacity .45 + not-allowed 已删），
+       仅保留浅色「需海外网络/代理」徽标；行可正常选中。 */
     row.className = 'ai-mp-row' + (isSel ? ' sel' : '');
     row.setAttribute('data-id', m.id);
     var d = getDetail(m && m.id);
@@ -2362,12 +2469,16 @@
     var ic = (dn && dn.charAt(0)) ? dn.charAt(0).toUpperCase() : '?';
     row.innerHTML =
       '<span class="ai-mp-ic">' + escHtml(ic) + '</span>' +
-      '<div class="ai-mp-row-main"><div class="ai-mp-name">' + escHtml(dn) + '</div></div>' +
+      '<div class="ai-mp-row-main"><div class="ai-mp-name">' + escHtml(dn) +
+        (off ? '<span class="ai-mp-offline-tag">' + escHtml(NEED_PROXY_TEXT) + '</span>' : '') +
+      '</div></div>' +
       '<div class="ai-mp-right">' +
         '<span class="ai-mp-rate">' + escHtml(getModelRate(m)) + '</span>' +
         '<span class="ai-mp-check">' + CHECK_SVG + '</span>' +
       '</div>';
     row.addEventListener('click', function (ev) {
+      /* R131 调整：海外平台条目可正常选中，网络条件仅以徽标提示；
+         真正不可达时由请求失败的 network_limited 错误卡兜底。 */
       if (useInlineDetail()) {
         // 窄屏/触摸：点行=展开该行下方的详情（选择走详情里的「使用此模型」）
         try { ev.stopPropagation(); } catch (e) { /* 老内核无 stopPropagation 入参保护 */ }
@@ -2378,6 +2489,22 @@
     });
     row.addEventListener('mouseenter', function () { if (!useInlineDetail()) showModelDetail(m, d); });
     return row;
+  }
+
+  /* R131 调整：请求返回 network_limited 时的替代建议 toast（xt-toast 优先）——
+     不再在点击选中时触发（海外平台已放开可选）。 */
+  function toastNetAltSuggest(m) {
+    var nm = m ? listDisplayName(m) : '该模型';
+    var alt = offlineAltName(m);
+    toast('「' + nm + '」服务端网络受限' + (alt ? ('，建议改用 ' + alt) : '，建议改用国内平台的同类模型'));
+  }
+  /* network_limited 错误卡建议行文案：服务端 hint 优先，缺失时用本地默认引导
+     （自备 Key 直连，Key 仅存本机）；有国内同类替代模型时一并给出。 */
+  function netLimitedHint(serverHint, m) {
+    var h = serverHint || '可在设置页填写该平台自己的 Key 后直连使用（Key 仅保存在本机）。';
+    var alt = offlineAltName(m);
+    if (alt) h += '；或改用国内同类模型「' + alt + '」。';
+    return h;
   }
 
   /* —— 详情展示模式 ——
@@ -2527,13 +2654,19 @@
     { key: 'video', title: '视频生成', types: ['video'] },
     { key: 'model3d', title: '3D 生成', types: ['3d'] }
   ];
-  function modelGroupIndex(m) {
+  /* 分区归属改为【逐 type 全匹配】：多能力模型（如 types=['imagegen','general'] 的
+     gm-*-image 系）同时进「对话与识图」与「生图」两区，任一能力入口都可见可选，
+     不再因命中第一个分组而把其它能力藏掉（R134 修正独占桶降级）。 */
+  function modelGroupIndexes(m) {
     var ts = (m && Object.prototype.toString.call(m.types) === '[object Array]') ? m.types : [];
+    var hits = [];
     for (var g = 0; g < MODEL_GROUPS.length; g++) {
       var gt = MODEL_GROUPS[g].types;
-      for (var i = 0; i < gt.length; i++) { if (ts.indexOf(gt[i]) >= 0) return g; }
+      for (var i = 0; i < gt.length; i++) {
+        if (ts.indexOf(gt[i]) >= 0) { hits.push(g); break; }
+      }
     }
-    return 0;
+    return hits;
   }
   /* 分区小标题（顶部分隔线 + 灰字），仅在该区有模型时才渲染 */
   function groupTitleRow(title) {
@@ -2563,17 +2696,25 @@
     }
     list.appendChild(modelRow({ id: 'auto', name: '自动（推荐）' }, manual && sel === 'auto'));
     var combined = applyListSettings(getBuiltinModels().filter(function (m) { return m.id !== 'auto'; }).concat(getCustomModels()));
-    /* R86：按能力分区（对话与识图 / 生图 / 语音识别 / 向量与重排）；空区连标题都不渲染 */
+    /* R86：按能力分区（对话与识图 / 生图 / 语音识别 / 向量与重排）；空区连标题都不渲染。
+       R134：多能力模型进所有匹配分区（modelGroupIndexes 逐 type 匹配）；
+       未命中任何区的模型仍归第 0 区，保证模型不丢。 */
     var buckets = [];
     for (var bi = 0; bi < MODEL_GROUPS.length; bi++) buckets.push([]);
-    combined.forEach(function (m) { buckets[modelGroupIndex(m)].push(m); });
+    combined.forEach(function (m) {
+      var gs = modelGroupIndexes(m);
+      if (!gs.length) { buckets[0].push(m); return; }
+      for (var gi = 0; gi < gs.length; gi++) buckets[gs[gi]].push(m);
+    });
     for (var bg = 0; bg < buckets.length; bg++) {
       if (!buckets[bg].length) continue;
       list.appendChild(groupTitleRow(MODEL_GROUPS[bg].title));
       buckets[bg].forEach(function (m) { list.appendChild(modelRow(m, manual && sel === m.id)); });
     }
   }
-  /* customMsg：由调用方指定的提示文案（保存自定义模型时用「已添加并启用 XXX」） */
+  /* customMsg：由调用方指定的提示文案（保存自定义模型时用「已添加并启用 XXX」）
+     R131 调整：原「软下线模型不可选中」守卫已撤——海外平台可正常选中，
+     失败兜底统一走 askAI 的 network_limited 错误卡。 */
   function selectModel(id, customMsg) {
     setModeKey('');              // R65：手动选具体模型 → 退出三模式
     setSelectedModelId(id);

@@ -16,8 +16,12 @@
            自然间隔分段渲染并标注时间；加载中 / 失败 / 空 三态齐备；未登录不发请求（游客态
            必然 401）。本机 localStorage.ai_chat_history（会话结构）降级为离线兜底。
      R86-C：头像裁剪改为微信风格全屏暗色裁剪台（拖动 + 双指捏合 + 滑杆，输出仍为正方形图片）。 -->
-<link rel="stylesheet" href="assets/common.css?v=20260919m">
+<link rel="stylesheet" href="assets/common.css?v=20260919r">
 <link rel="stylesheet" href="assets/xt-profile.css?v=20260919b">
+<style>
+  /* 顶部安全区：透明状态栏下 .xtp-topbar（sticky，xt-profile.css 高 48px）整体加高补偿 */
+  .xtp-topbar { height: calc(48px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); }
+</style>
 </head>
 <body class="theme-home">
 

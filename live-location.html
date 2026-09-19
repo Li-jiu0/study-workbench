@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#5B8DEF">
+<title>实时位置 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260919r">
+<link rel="stylesheet" href="assets/leaflet/leaflet.css">
+<style>
+  /* common.css 会锁 html/body 高度并隐藏滚动，本页为独立交互地图页，恢复滚动/占满视口 */
+  html, body { height: 100%; }
+  body { margin: 0; background: #e9edf3; font-family: inherit; overflow: hidden; }
+  /* 微信同款：全屏沉浸地图，控件全部悬浮叠加，无常文档流标题栏/状态条 */
+  .ll-map { position: fixed; inset: 0; background: #e9edf3; }
+  #llMap { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+  /* 左上角返回：半透明圆形黑底 + 白色箭头，避开状态栏 */
+  .ll-back { position: fixed; z-index: 1100; left: 12px; top: calc(10px + env(safe-area-inset-top, 0px)); width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(0,0,0,.45); color: #fff; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,.25); padding: 0; }
+  .ll-back:active { background: rgba(0,0,0,.62); }
+  /* 返回键右侧：对方昵称半透明胶囊 */
+  .ll-name { position: fixed; z-index: 1100; left: 62px; top: calc(10px + env(safe-area-inset-top, 0px)); height: 40px; display: flex; align-items: center; padding: 0 16px; border-radius: 20px; background: rgba(0,0,0,.45); color: #fff; font-size: 14px; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,.25); white-space: nowrap; }
+  /* 头像气泡 marker（L.divIcon 自绘）：圆角方形头像白描边 + 底部白三角指向精确坐标 */
+  .ll-ava { position: relative; width: 44px; height: 44px; border-radius: 9px; border: 2.5px solid #fff; background: #5B8DEF; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
+  .ll-ava-txt { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; font-weight: 700; }
+  .ll-ava img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; }
+  .ll-marker-tip { width: 0; height: 0; margin: -1px auto 0; border: 6px solid transparent; border-top-color: #fff; }
+  /* 底部状态胶囊：底部居中悬浮，半透明深底白字 */
+  .ll-bar { position: fixed; z-index: 1100; left: 50%; transform: translateX(-50%); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; background: rgba(0,0,0,.55); color: #fff; font-size: 13px; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+  .ll-bar.stale { background: rgba(120,72,0,.72); }
+  .ll-bdot { width: 8px; height: 8px; border-radius: 50%; background: #4cd964; flex: 0 0 auto; }
+  .ll-bar.stale .ll-bdot { background: #ffb340; }
+  .ll-bspin { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: llspin 0.9s linear infinite; flex: 0 0 auto; }
+  @keyframes llspin { to { transform: rotate(360deg); } }
+  /* 占位层：坐标尚未就绪时覆盖在地图之上，绝不能留白（修「地图加载不出来」的关键） */
+  .ll-loading { position: fixed; inset: 0; z-index: 900; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: #e9edf3; color: #6b7280; }
+  .ll-spinner { width: 34px; height: 34px; border: 3px solid #cfd6e4; border-top-color: #5B8DEF; border-radius: 50%; animation: llspin 0.9s linear infinite; }
+  .ll-loading-txt { font-size: 14px; }
+  .ll-loading-sub { font-size: 12px; color: #9aa3b2; }
+  .ll-ended { position: fixed; inset: 0; z-index: 900; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: rgba(233,237,243,.92); color: #6b7280; text-align: center; padding: 0 24px; }
+  .ll-ended b { font-size: 16px; color: #1f2937; }
+  .ll-toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px; z-index: 9999; transition: opacity .25s; opacity: 0; max-width: 86%; text-align: center; }
+  /* Leaflet 默认版权/attribution 在小屏占位，隐藏避免突兀（瓦片已带腾讯来源） */
+  .leaflet-control-attribution { display: none; }
+</style>
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__ = true;</script>
+<script src="assets/leaflet/leaflet.js"></script>
+</head>
+<body>
+<div id="llMap" class="ll-map"></div>
+<!-- 智能返回：有历史回上一页，无历史兜底回私聊（本页唯一入口惯例，照抄好友申请.html） -->
+<button class="ll-back" onclick="if(history.length>1){history.back()}else{location.href='私聊.html'}" title="返回" aria-label="返回"><span data-icon="arrow-left" data-icon-size="18" style="line-height:1">&#8592;</span></button>
+<!-- 对方昵称胶囊（chat-local.js 跳转携带 name 参数，缺省显示「对方」） -->
+<div class="ll-name" id="llName">对方</div>
+<div class="ll-loading" id="llLoading">
+  <div class="ll-spinner"></div>
+  <div class="ll-loading-txt" id="llLoadingTxt">正在获取位置…</div>
+  <div class="ll-loading-sub">共享发起后请稍候，地图加载完成前不会留白</div>
+</div>
+<div class="ll-ended" id="llEnded" style="display:none">
+  <b>实时位置共享已结束</b>
+  <div>对方已停止共享，没有可显示的坐标。</div>
+</div>
+<div class="ll-bar" id="llBar"><span class="ll-bspin"></span><span>连接中…</span></div>
+<div class="ll-toast" id="llToast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* —— 与 assets/chat-local.js 同义的鉴权/接口封装（复用其请求头写法）—— */
+  function apiBase() {
+    return (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000'));
+  }
+  function tok() { return localStorage.getItem('study_workbench_token') || ''; }
+
+  /* 腾讯栅格瓦片 key：与 assets/xt-region.js 的 GEO.tencentKey 同源（R130 已定版，勿换）。 */
+  var TENCENT_KEY = 'RRTBZ-GNGKQ-3KD5W-2SS5K-YIHG5-S4BAP';
+
+  function toast(msg) {
+    var el = document.getElementById('llToast');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.opacity = '1';
+    clearTimeout(el._t);
+    el._t = setTimeout(function () { el.style.opacity = '0'; }, 2200);
+  }
+
+  /* —— 从 URL query 取 shareId（优先，仅作展示参考）/ peerId / groupId ——
+     注意：服务端 /api/live/state 仅接受 peerId|groupId（二选一，见 server/routers/liveloc.py），
+     shareId 不在该接口参数之列，故轮询一律用 peerId/groupId；shareId 仅携带展示。 */
+  var params = (function () {
+    var u = location.search || '';
+    var m = {};
+    var arr = u.replace(/^\?/, '').split('&');
+    for (var i = 0; i < arr.length; i++) {
+      if (!arr[i]) continue;
+      var kv = arr[i].split('=');
+      m[decodeURIComponent(kv[0])] = decodeURIComponent(kv.slice(1).join('=') || '');
+    }
+    return m;
+  })();
+  var qShare = params['shareId'] || '';
+  var qPeer = params['peerId'] || '';
+  var qGroup = params['groupId'] || '';
+  /* 身份展示参数（chat-local.js imLiveViewUrl 附带，仅展示用，不参与接口鉴权） */
+  var qName = params['name'] || '';
+  var qAvatar = params['avatar'] || '';
+
+  var apiQuery = '';
+  if (qPeer) apiQuery = 'peerId=' + encodeURIComponent(qPeer);
+  else if (qGroup) apiQuery = 'groupId=' + encodeURIComponent(qGroup);
+
+  var POLL_MS = 4000;            // 轮询间隔（任务要求 3-5s）
+  var map = null, marker = null;
+  var revealed = false;          // 是否已拿到有效坐标并打点
+  var ended = false;             // 共享已结束（停止轮询）
+  var lastUpdated = 0, stale = false;
+
+  function $(id) { return document.getElementById(id); }
+
+  function showLoading(txt) {
+    var l = $('llLoading'); if (l) l.style.display = 'flex';
+    if (txt) { var t = $('llLoadingTxt'); if (t) t.textContent = txt; }
+    setBar('<span class="ll-bspin"></span><span>正在获取位置…</span>');
+  }
+  function hideLoading() { var l = $('llLoading'); if (l) l.style.display = 'none'; }
+  function showEnded() {
+    ended = true;
+    var e = $('llEnded'); if (e) e.style.display = 'flex';
+    hideLoading();
+    setBar('<span class="ll-bdot"></span><span>对方已结束共享</span>', true);
+    toast('实时位置共享已结束');
+  }
+
+  /* 底部状态胶囊（微信同款三态）：正在获取位置… → 实时共享中 → 对方已结束共享/位置已失效 */
+  function setBar(html, staleCls) {
+    var bar = $('llBar');
+    if (!bar) return;
+    bar.className = 'll-bar' + (staleCls ? ' stale' : '');
+    bar.innerHTML = html;
+  }
+
+  function updateBar() {
+    if (stale) setBar('<span class="ll-bdot"></span><span>位置已失效</span>', true);
+    else setBar('<span class="ll-bdot"></span><span>实时共享中</span>');
+  }
+
+  /* 腾讯栅格瓦片图层（覆写 getTileUrl 翻转 y，子域 rt0/1/2，照抄 xt-region.js _makeTencentTileLayer） */
+  function makeTencentTileLayer() {
+    var Cls = L.TileLayer.extend({
+      getTileUrl: function (coords) {
+        var z = (typeof this._getZoomForUrl === 'function') ? this._getZoomForUrl() : coords.z;
+        var s = (typeof this._getSubdomain === 'function') ? this._getSubdomain(coords) : '0';
+        var y = Math.pow(2, z) - 1 - coords.y;
+        return 'https://rt' + s + '.map.gtimg.com/realtimerender?z=' + z +
+          '&x=' + coords.x + '&y=' + y +
+          '&type=vector&style=0&key=' + encodeURIComponent(TENCENT_KEY);
+      }
+    });
+    return new Cls('', { subdomains: '012', minZoom: 3, maxZoom: 18, maxNativeZoom: 18 });
+  }
+
+  function initMap() {
+    map = L.map('llMap', { zoomControl: true, attributionControl: false }).setView([39.9042, 116.4074], 16);
+    makeTencentTileLayer().addTo(map);
+  }
+
+  /* 微信同款头像气泡 marker：圆角方形头像（白描边）+ 底部白三角指向精确坐标。
+     头像取值：URL ?avatar=（http(s)/uploads/data: 才认）→ 失败 onerror 隐藏图 →
+     露出底层昵称首字占位（与 chat-local.js renderAvatar 的兜底惯例一致）。 */
+  function llAvatarIcon() {
+    var name = qName || '对方';
+    var av = qAvatar || '';
+    var img = '';
+    if (/^(https?:|\/uploads\/|data:)/.test(av)) {
+      var url = av.indexOf('http') === 0 ? av : apiBase() + av;
+      img = '<img src="' + url + '" alt="" onerror="this.style.display=\'none\'">';
+    }
+    return L.divIcon({
+      className: 'll-marker',
+      html: '<div class="ll-ava"><span class="ll-ava-txt">' + name.slice(0, 1) + '</span>' + img + '</div><div class="ll-marker-tip"></div>',
+      iconSize: [44, 54],
+      iconAnchor: [22, 54]   /* 锚在三角尖 */
+    });
+  }
+
+  function onState(d) {
+    if (!d || d.active !== true) {
+      /* 无活动共享：已打过点 → 判定结束；还没打点 → 继续等待（保持「正在获取位置…」占位） */
+      if (revealed) showEnded();
+      else showLoading('正在获取位置…');
+      return;
+    }
+    var lat = Number(d.lat), lng = Number(d.lng);
+    if (!isFinite(lat) || !isFinite(lng)) { showLoading('正在获取位置…'); return; }
+    stale = !!d.stale;
+    lastUpdated = Number(d.updatedAt) || 0;
+    if (!revealed) { revealed = true; hideLoading(); }
+    if (!marker) marker = L.marker([lat, lng], { icon: llAvatarIcon() }).addTo(map);
+    else marker.setLatLng([lat, lng]);
+    map.setView([lat, lng], map.getZoom());
+    updateBar();
+  }
+
+  function poll() {
+    if (ended) return;
+    if (!tok()) { showLoading('请先登录后再查看实时位置'); return; }
+    if (!apiQuery) { showLoading('缺少会话参数，无法定位'); return; }
+    fetch(apiBase() + '/api/live/state?' + apiQuery, {
+      headers: { 'Authorization': 'Bearer ' + tok() }
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { onState(d); })
+      /* 失败静默容忍：保留现有占位，不刷屏 toast、不 alert */
+      .catch(function () { if (!revealed && !ended) showLoading('正在获取位置…'); });
+  }
+
+  function start() {
+    /* 顶部昵称胶囊：chat-local.js 跳转带 name，缺省兜底「对方」 */
+    var nm = $('llName');
+    if (nm) nm.textContent = qName || '对方';
+    if (typeof window.L === 'undefined' || !L.map) {
+      toast('地图组件加载失败');
+      showLoading('地图组件加载失败，请重试');
+      return;
+    }
+    try { initMap(); }
+    catch (e) { toast('地图初始化失败'); showLoading('地图初始化失败，请重试'); return; }
+    if (!tok()) { showLoading('请先登录后再查看实时位置'); return; }
+    if (!apiQuery) { showLoading('缺少会话参数，无法定位'); return; }
+    poll();                                  // 进页立即拉一次
+    setInterval(poll, POLL_MS);              // 持续轮询更新（实时移动）
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+})();
+</script>
+</body>
+</html>

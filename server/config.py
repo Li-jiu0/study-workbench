@@ -95,6 +95,54 @@ AI_PROVIDERS = {
         "model": _get("OPENAI_MODEL", "gpt-4o-mini"),
         "api_key": _get("OPENAI_API_KEY"),
     },
+    # ---- R132：海外免费模型（OpenRouter / Google Gemini）----
+    # 这两家国内服务器直连不通：proxy 为空 = 服务端中转不可用（fail-closed）。
+    # 但 /api/ai/models 会**恒返回**这两家模型（让用户能用自备 Key 本地直连），
+    # 仅附 relayAvailable 标记（key+proxy 双齐才为 true，见 routers/ai.py）。
+    # proxy 取值优先级：平台级环境变量（OPENROUTER_PROXY / GEMINI_PROXY）→
+    # 全局 RELAY_PROXY_URL → 空。
+    # 额外请求头写死在 provider 配置里（OpenRouter 排行榜归属识别用），不散落各处。
+    "openrouter": {
+        "name": "OpenRouter（海外免费模型）",
+        "base_url": _get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1/chat/completions"),
+        "model": _get("OPENROUTER_MODEL", "openrouter/free"),
+        "api_key": _get("OPENROUTER_API_KEY"),
+        "proxy": _get("OPENROUTER_PROXY") or _get("RELAY_PROXY_URL"),
+        "extra_headers": {"HTTP-Referer": "http://110.42.134.62", "X-Title": "Xingtu Learning"},
+    },
+    "gemini": {
+        "name": "Google Gemini（海外免费模型）",
+        # base_url 指向 models 根目录，调用时服务端拼 {model}:generateContent
+        "base_url": _get("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/models"),
+        "model": _get("GEMINI_MODEL", "gemini-flash-latest"),
+        "api_key": _get("GEMINI_API_KEY"),
+        "proxy": _get("GEMINI_PROXY") or _get("RELAY_PROXY_URL"),
+    },
+    # ---- R131：媒体能力通道（图片 / 视频 / 3D），一律复用 ARK_API_KEY ----
+    # 火山方舟 chat / 图片 / 视频 / 3D 是同一账号、同一密钥；此处不再新增 .env
+    # 变量（少一个待泄露资产，也少一处 .env.example 维护）。base_url 直接指向
+    # 各自的业务端点（非 chat/completions），故不参与 chat 的端点派生逻辑。
+    "arkimage": {
+        "name": "火山方舟·图片生成",
+        "base_url": _get("ARKIMAGE_BASE_URL",
+                         "https://ark.cn-beijing.volces.com/api/v3/images/generations"),
+        "model": _get("ARKIMAGE_MODEL", "doubao-seedream-4-0-250828"),
+        "api_key": _get("ARK_API_KEY"),
+    },
+    "arkvideo": {
+        "name": "火山方舟·视频生成",
+        "base_url": _get("ARKVIDEO_BASE_URL",
+                         "https://ark.cn-beijing.volces.com/api/v3/contents/generations/tasks"),
+        "model": _get("ARKVIDEO_MODEL", "doubao-seedance-1-0-pro-250528"),
+        "api_key": _get("ARK_API_KEY"),
+    },
+    "ark3d": {
+        "name": "火山方舟·3D 生成",
+        "base_url": _get("ARK3D_BASE_URL",
+                         "https://ark.cn-beijing.volces.com/api/v3/contents/generations/tasks"),
+        "model": _get("ARK3D_MODEL", "doubao-seed3d-2-0-260328"),
+        "api_key": _get("ARK_API_KEY"),
+    },
 }
 
 

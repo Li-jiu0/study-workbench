@@ -2,6 +2,10 @@
  * 能力模块：语音识别（ASR）
  * -------------------------------------------------------------
  * 端点：POST /v1/audio/transcriptions（multipart/form-data）
+ *   R131（2026-09-19）起：内置模型改传自有服务端
+ *     POST /api/ai/audio/transcribe，字段 modelId + file (+ 可选 language)
+ *     密钥只在服务端 .env，前端零密钥；「Key 与 ark 相同」这类明文配置已全删。
+ *   用户自备 Key 的模型仍按原链路直连上游（Key 只进 localStorage，永不上行）。
  * 实测结论（2026-09-18，微软慧慧合成的真实中文普通话 6.16s 音频）：
  *   - **按秒计费，不是按 token**：usage = {type:'duration', seconds:N}
  *   - 各家取整规则不同：同一段 6.16s，SenseVoice/Qwen3 记 7 秒，XingChen 记 6 秒
@@ -14,6 +18,59 @@
 (function (global) {
   'use strict';
   var R = global.XT_AI_CAPS;
+
+  /* ---------- R131：通道判定（与 ai-service.js 同一套口径） ---------- */
+  // 内置平台白名单：这些平台由服务端持钥并中转，前端既不持 Key、也不允许用自备 Key 覆盖。
+  var BUILTIN_PROVIDERS = ['zhipu', 'qianfan', 'ark', 'arkimage', 'openrouter', 'siliconflow', 'gemini'];
+
+  function isBuiltinProvider(pname) {
+    var s = String(pname == null ? '' : pname);
+    for (var i = 0; i < BUILTIN_PROVIDERS.length; i++) {
+      if (BUILTIN_PROVIDERS[i] === s) return true;
+    }
+    return false;
+  }
+
+  // 本地直连用 Key：模型自带 > localStorage 用户自备（后者仅对非内置平台生效）。
+  // 返回空串 = 该模型走服务端中转。
+  function ownKey(modelCfg) {
+    if (modelCfg && typeof modelCfg.apiKey === 'string' && modelCfg.apiKey) return modelCfg.apiKey;
+    var pname = (modelCfg && modelCfg.provider) ? String(modelCfg.provider) : '';
+    if (!pname || isBuiltinProvider(pname)) return '';
+    var k = '';
+    try { k = (global.localStorage && global.localStorage.getItem('ai_user_key_' + pname)) || ''; } catch (e) { k = ''; }
+    return k;
+  }
+
+  // 中转基址：web 同源取 ''，APK(file:) 取绝对地址（与 ai-service.js relayBase 同口径）。
+  function relayBase() {
+    if (typeof global.STUDY_API_BASE === 'string') return global.STUDY_API_BASE;
+    if (typeof global.API_BASE === 'string') return global.API_BASE;
+    return '';
+  }
+
+  // X-Client-Version：服务端据此让旧 APK 优雅降级，缺了用户只会看到空白失败。
+  function relayVersion() {
+    try {
+      var c = global.AI_CONFIG;
+      if (c && typeof c.clientVersion === 'string' && c.clientVersion) return c.clientVersion;
+    } catch (e) { /* 忽略 */ }
+    return '';
+  }
+
+  // 中转请求头：用户登录 JWT + 版本号。⚠ multipart 场景千万别塞 Content-Type，
+  // boundary 必须由浏览器自动生成，否则服务端解析不出文件。
+  function relayHeaders(token) {
+    var h = {};
+    if (token) h['Authorization'] = 'Bearer ' + token;
+    var v = relayVersion();
+    if (v) h['X-Client-Version'] = v;
+    return h;
+  }
+
+  function relayToken() {
+    try { return (global.localStorage && global.localStorage.getItem('study_workbench_token')) || ''; } catch (e) { return ''; }
+  }
 
   var CAP = {
     key: 'asr',
@@ -32,17 +89,25 @@
       if (!blob) return { ok: false, err: '没有拿到音频数据' };
 
       var name = input.fileName || 'speech.wav';
+      // R131：内置模型把音频上传给自有服务端转写（前端零密钥）；
+      // 用户自备 Key 的模型维持原链路直连上游，字段仍是 model。
+      var relay = !ownKey(ctx.modelCfg);
       // 老 WebView 的 FormData 兜底见 assets/net-compat.js
       var fd = new FormData();
       fd.append('file', blob, name);
-      fd.append('model', ctx.modelCfg.model);
+      if (relay) {
+        fd.append('modelId', String((ctx.modelCfg && ctx.modelCfg.id) || ''));
+        if (input.language) fd.append('language', String(input.language));
+      } else {
+        fd.append('model', ctx.modelCfg.model);
+      }
 
       return {
-        url: R.endpoint(CAP, ctx.provider),
+        url: relay ? (relayBase() + '/api/ai/audio/transcribe') : R.endpoint(CAP, ctx.provider),
         method: 'POST',
-        headers: {},                 // 交给浏览器自动带 multipart boundary
+        headers: relay ? relayHeaders(relayToken()) : {},   // multipart：不写 Content-Type
         formData: fd,
-        meta: {}
+        meta: { relay: relay }
       };
     },
 
@@ -81,10 +146,10 @@
   // 说明：probe 由 ai-service.js 健康检查分派调用（T02 工线接线），
   //   ctx = { modelCfg, provider, timeout }；返回 Promise<{ ok, err, detail }>。
   //   探针一律不写 recordCall、不进 10 次/分钟限频（健康检查本就不计）。
-  function pKey(modelCfg, provider) {
-    var k = (modelCfg && typeof modelCfg.apiKey === "string" && modelCfg.apiKey) ? modelCfg.apiKey : "";
-    if (!k && provider && typeof provider.apiKey === "string") k = provider.apiKey;
-    return k;
+  // R131：不再从 provider.apiKey 取 Key（该字段已从 ai-config.js 全量删除）。
+  // 取 Key 只认「用户自备」两处：模型自带 apiKey / localStorage（且仅限非内置平台）。
+  function pKey(modelCfg) {
+    return ownKey(modelCfg);
   }
   function pHeaders(ctx, json) {
     var h = json ? { "Content-Type": "application/json" } : {};
@@ -94,7 +159,15 @@
       if (!s || typeof s !== "object") continue;
       for (var k in s) { if (Object.prototype.hasOwnProperty.call(s, k)) h[k] = s[k]; }
     }
-    var key = pKey(ctx.modelCfg, ctx.provider);
+    // 中转链路：不拼任何 Bearer key，只带 JWT + 版本号。
+    if (!ownKey(ctx.modelCfg)) {
+      var rt = relayToken();
+      if (rt) h["Authorization"] = "Bearer " + rt;
+      var rv = relayVersion();
+      if (rv) h["X-Client-Version"] = rv;
+      return h;
+    }
+    var key = pKey(ctx.modelCfg);
     if (key && !h["Authorization"] && !h["authorization"]) h["Authorization"] = "Bearer " + key;
     return h;
   }
@@ -157,17 +230,32 @@
 
   CAP.probeTimeout = 15000;
   CAP.probe = function (ctx) {
-    var url = R.endpoint(CAP, ctx.provider);
+    // R131：内置模型探活同样走服务端 /api/ai/audio/transcribe，不再用 provider key 打上游。
+    var relay = !ownKey(ctx.modelCfg);
+    var url = relay ? (relayBase() + '/api/ai/audio/transcribe') : R.endpoint(CAP, ctx.provider);
     if (!url) return Promise.resolve({ ok: false, err: "network", detail: "no_endpoint" });
     var blob = null;
     try { blob = new Blob([pWavBytes(SILENCE_WAV_B64)], { type: "audio/wav" }); }
     catch (eB) { return Promise.resolve({ ok: false, err: "network", detail: "blob_unavailable" }); }
     var fd = new FormData();
     fd.append("file", blob, "probe.wav");
-    fd.append("model", ctx.modelCfg.model);
+    if (relay) fd.append("modelId", String((ctx.modelCfg && ctx.modelCfg.id) || ""));
+    else fd.append("model", ctx.modelCfg.model);
     return pSend(url, { method: "POST", headers: pHeaders(ctx, false), body: fd,
       timeout: ctx.timeout || CAP.probeTimeout })
-      .then(pClassify);
+      .then(function (r) {
+        var base = pClassify(r);
+        // 中转链路恒回 200 + 统一错误体 {ok,kind,error}：HTTP 层「成功」不代表模型可用。
+        if (relay && base.ok) {
+          var j = null;
+          try { j = JSON.parse(r.text); } catch (eJ) { j = null; }
+          if (!j || j.ok !== true) {
+            var detail = (j && j.error) ? String(j.error) : "服务端返回失败";
+            return { ok: false, err: (j && j.kind === "unavailable") ? "unavailable" : "http_" + (r.status || 200), detail: detail };
+          }
+        }
+        return base;
+      });
   };
 
   R.register(CAP);

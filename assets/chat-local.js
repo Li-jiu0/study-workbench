@@ -2917,7 +2917,10 @@
   function imVoiceTranscriptHtml(m) {
     var t = (m && m.transcript) ? String(m.transcript) : '';
     if (!t) return '';
-    return '<div class="im-voice-transcript">' + esc(t) + '</div>';
+    /* R131/Q5：ASR 模型由服务端决定，这里只展示服务端回传的 modelUsed */
+    var mf = (m && m.transcriptModel) ? String(m.transcriptModel) : '';
+    return '<div class="im-voice-transcript">' + esc(t) + '</div>' +
+      (mf ? '<div class="im-voice-asr-model">识别模型：' + esc(mf) + '</div>' : '');
   }
 
   /**
@@ -2925,97 +2928,79 @@
    * 然后整表重渲（renderMsgs 自带滚动位置保持）。只动内存里的 S.msgs 与 DOM，
    * 不写 localStorage、不碰消息签名计算、绝不回填 #imInput。
    */
-  window.__imApplyVoiceTranscript = function (text) {
+  window.__imApplyVoiceTranscript = function (text, modelUsed) {
     var t = (text == null) ? '' : String(text).trim();
+    var mu = (modelUsed == null) ? '' : String(modelUsed).trim();
     if (!t) return;
     for (var i = S.msgs.length - 1; i >= 0; i--) {
       var mm = S.msgs[i];
       if (mm && mm.senderId === S.myId && mm.kind === 'voice' && !mm.transcript) {
         mm.transcript = t;
+        if (mu) { mm.transcriptModel = mu; }
         break;
       }
     }
     renderMsgs();
   };
 
-  /* ===== ASR 模型选型（V-polish 续 2026-09-21）：未配置时自动挑一个语音识别模型 =====
-     优先级：① localStorage 'im_asr_model_id'（用户/设置页将来可写的覆盖键）
-             ② window.__imVoiceAsrModel（临时/测试覆盖）
-             ③ 自动选型：window.AI_CONFIG.builtinModels（providerGroups.models 兜底）
-                中第一个 types 含 'audio' 的模型（实测 ai-config.js：sf-sensevoice 等已带标记）；
-                全部无 types 标记时按已知 ASR id 白名单正则兜底（sensevoice / asr）
-             ④ 都没有 → ''（调用侧静默跳过，绝不阻塞发送） */
-  var IM_ASR_MODEL_KEY = 'im_asr_model_id';
-  var IM_ASR_ID_RE = /sensevoice|asr/i;
-  function imVoiceAsrModelId() {
-    var v = '';
-    try { v = String(localStorage.getItem(IM_ASR_MODEL_KEY) || '').replace(/^\s+|\s+$/g, ''); } catch (e) { v = ''; }
-    if (v) return v;
-    if (typeof window.__imVoiceAsrModel === 'string' && window.__imVoiceAsrModel) return window.__imVoiceAsrModel;
-    try {
-      var cfg = window.AI_CONFIG;
-      var pools = [];
-      if (cfg && cfg.builtinModels && cfg.builtinModels.length) pools.push(cfg.builtinModels);
-      if (cfg && cfg.providerGroups && cfg.providerGroups.length) {
-        for (var g = 0; g < cfg.providerGroups.length; g++) {
-          var grp = cfg.providerGroups[g];
-          if (grp && grp.models && grp.models.length) pools.push(grp.models);
-        }
-      }
-      var i, m;
-      for (i = 0; i < pools.length; i++) {
-        for (var a = 0; a < pools[i].length; a++) {
-          m = pools[i][a];
-          if (m && m.id && Object.prototype.toString.call(m.types) === '[object Array]' && m.types.indexOf('audio') >= 0) return m.id;
-        }
-      }
-      for (i = 0; i < pools.length; i++) {
-        for (var b = 0; b < pools[i].length; b++) {
-          m = pools[i][b];
-          if (m && m.id && IM_ASR_ID_RE.test(String(m.id))) return m.id;
-        }
-      }
-    } catch (e) { }
-    return '';
+  /* ===== R131：ASR 语音转写 =====
+     旧实现（localStorage 'im_asr_model_id' 覆盖键 → 全局覆盖 → 按 types 自动选型 → id 正则兜底）
+     已下线：ASR 模型不再由前端决策，改由服务端解析（/api/ai/audio/transcribe），
+     前端只透传一个默认模型 id，并把服务端回传的 modelUsed 展示给用户。 */
+  var IM_ASR_MODEL_ID = 'sf-sensevoice';
+  /* 所有 /api/ai/* 请求头必带 X-Client-Version（旧 APK 降级靠它）。
+     与 html 里的 ?v= 戳同步 bump，勿单独回退。 */
+  var XT_CLIENT_VERSION = '20260919q';
+
+  /* 按录音 mime 选一个文件扩展名（服务端按 multipart 原样转发上游） */
+  function audioExtOf(mime) {
+    var m = String(mime || '').toLowerCase();
+    if (m.indexOf('mp4') >= 0 || m.indexOf('m4a') >= 0 || m.indexOf('aac') >= 0) return 'm4a';
+    if (m.indexOf('ogg') >= 0 || m.indexOf('opus') >= 0) return 'ogg';
+    if (m.indexOf('wav') >= 0) return 'wav';
+    if (m.indexOf('mp3') >= 0 || m.indexOf('mpeg') >= 0) return 'mp3';
+    return 'webm';
   }
 
   /**
-   * 语音 ASR 转写默认实现（B 任务核心：先发后转 —— 调用点在语音消息发出之后）。
-   * 走 AI 底座能力直连（AI_SERVICE.xtRunCapability），模型 id 经 imVoiceAsrModelId()
-   * 四级选型（覆盖键 → 全局覆盖 → 自动 → ''）；
-   * 未拿到模型 / 底座未加载 / 识别失败 → onText(null) 静默放弃，
-   * 转写是增强功能，绝不阻塞/改变发送主链路。
+   * 语音 ASR 转写（R131：改调服务端中转 POST /api/ai/audio/transcribe）。
+   * 请求：multipart/form-data —— modelId + file（+ 可选 language）。
+   * 响应：{ ok:true, text:'转写结果', modelUsed:'真实模型名' }；
+   *       失败体 { ok:false, kind, error, code, hint }（R131 统一错误体）。
+   * 说明：modelUsed 由服务端回传并透传给 onText 第二参数，前端不再决策 ASR 模型。
+   * 转写是增强功能：网络 / 额度 / 版本任一异常 → onText(null) 静默放弃，绝不阻塞发送主链路。
    * QA stub 点：整体替换 window.imVoiceTranscribe（签名 (blob, dur, onText)）即可。
    */
   window.imVoiceTranscribe = function (blob, dur, onText) {
     var done = false;
-    function fin(t) { if (!done) { done = true; try { if (onText) onText(t || null); } catch (e) { } } }
-    var mid = imVoiceAsrModelId();
-    var run = null;
+    function fin(t, mu) { if (!done) { done = true; try { if (onText) onText(t || null, mu || ''); } catch (e) { } } }
+    if (!blob || typeof window.FormData !== 'function') { fin(null); return; }
+    var fd = new FormData();
+    fd.append('modelId', IM_ASR_MODEL_ID);
+    fd.append('file', blob, 'voice.' + audioExtOf(blob && blob.type ? String(blob.type) : ''));
+    var headers = { 'X-Client-Version': XT_CLIENT_VERSION };
+    var tok = '';
+    try { tok = getToken() || ''; } catch (eT) { tok = ''; }
+    if (tok) { headers['Authorization'] = 'Bearer ' + tok; }
     try {
-      if (window.AI_SERVICE && typeof window.AI_SERVICE.xtRunCapability === 'function') run = window.AI_SERVICE.xtRunCapability;
-      else if (typeof window.xtRunCapability === 'function') run = window.xtRunCapability;
-    } catch (e) { run = null; }
-    if (!mid || !run || !blob) { fin(null); return; }
-    try {
-      Promise.resolve(run(mid, { blob: blob, fileName: 'voice.webm' }))
-        .then(function (res) {
-          var t = '';
-          if (typeof res === 'string') t = res;
-          else if (res && res.result && typeof res.result.text === 'string') t = res.result.text;
-          else if (res && res.data && typeof res.data.text === 'string') t = res.data.text;
-          else if (res && typeof res.text === 'string') t = res.text;
-          fin(t && t.trim() ? t.trim() : null);
+      fetch(apiBase() + '/api/ai/audio/transcribe', { method: 'POST', headers: headers, body: fd })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (!j || j.ok !== true) { fin(null); return; }
+          var t = (j && typeof j.text === 'string') ? j.text.trim() : '';
+          var mu = (j && typeof j.modelUsed === 'string') ? j.modelUsed : '';
+          fin(t || null, mu);
         })
         .catch(function () { fin(null); });
     } catch (e) { fin(null); }
   };
 
+
   /** 录音 blob → 异步转写；成功后经 __imApplyVoiceTranscript 补渲染到气泡下方（不回填输入框）。 */
   function imVoiceAutoTranscribe(blob, dur) {
     try {
       if (typeof window.imVoiceTranscribe === 'function') {
-        window.imVoiceTranscribe(blob, dur, function (t) { window.__imApplyVoiceTranscript(t); });
+        window.imVoiceTranscribe(blob, dur, function (t, mu) { window.__imApplyVoiceTranscript(t, mu); });
       }
     } catch (e) { /* 转写失败不影响发送主链路 */ }
   }
@@ -4878,6 +4863,7 @@
     if (mine) {
       bn.className = 'im-live-banner';
       bn.innerHTML = '<span class="im-live-t">🛰 正在共享我的实时位置</span>' +
+        '<button type="button" class="im-live-btn" onclick="imLiveGoView()">查看</button>' +
         '<button type="button" class="im-live-btn" onclick="imLiveStop()">结束共享</button>';
     } else {
       bn.className = 'im-live-banner' + (st.stale ? ' im-live-stale' : '');
@@ -4885,11 +4871,42 @@
       var who = S.group ? imLiveSharerName(st.sharerId) : '对方';
       var t = st.stale ? ('位置已停止更新（' + ago + '）') : ('🛰 ' + who + '正在共享实时位置 · 最后更新 ' + ago);
       bn.innerHTML = '<span class="im-live-t">' + esc(t) + '</span>' +
-        '<button type="button" class="im-live-btn" onclick="imLiveOpenOv()">查看</button>';
+        '<button type="button" class="im-live-btn" onclick="imLiveGoView()">查看</button>';
     }
     bn.style.display = 'flex';
     imLiveSyncOv(st);
   }
+
+  /* R104e 批5·阶段C（2026-09-20）：「查看」跳转链接构造（shareId 优先展示，peerId/groupId 供 /api/live/state 使用）。
+     接收方与发起方都用它跳 live-location.html（独立页 + Leaflet，替代原模态浮层 imLiveOpenOv）。
+     rich 消息契约零改动，仅按钮跳转方式变化。 */
+  function imLiveViewUrl(st) {
+    var q = [];
+    if (st && st.shareId) q.push('shareId=' + encodeURIComponent(String(st.shareId)));
+    if (S.group && S.group.id) q.push('groupId=' + encodeURIComponent(S.group.id));
+    else if (S.peer && S.peer.isServer) q.push('peerId=' + encodeURIComponent(S.peer.serverId));
+    /* 身份参数（仅展示，不影响 /api/live/state 契约）：name + avatar，供 live-location.html
+       渲染微信同款顶部昵称胶囊与头像气泡 marker。私聊取 S.peer（备注>昵称）；
+       群聊取共享人名（imLiveSharerName）与其头像；都拿不到就缺省，页面端兜底「对方」+首字占位。 */
+    var who = '', av = '';
+    if (S.group && S.group.id) {
+      if (st && st.sharerId) {
+        who = imLiveSharerName(st.sharerId);
+        var f = null;
+        try { f = getFriend(10000 + Number(st.sharerId)); } catch (e0) { f = null; }
+        av = (f && (f.avatarUrl || f.avatar)) ? (f.avatarUrl || f.avatar) : '';
+      }
+    } else if (S.peer && S.peer.isServer) {
+      var rn = '';
+      try { rn = imRemarkOf(S.peer.serverId) || ''; } catch (e1) { rn = ''; }
+      who = rn || S.peer.nickname || '对方';
+      av = S.peer.avatarUrl || S.peer.avatar || '';
+    }
+    if (who) q.push('name=' + encodeURIComponent(who));
+    if (av) q.push('avatar=' + encodeURIComponent(av));
+    return 'live-location.html?' + q.join('&');
+  }
+  window.imLiveGoView = function () { location.href = imLiveViewUrl(_liveState); };
 
   /* —— 地图浮层（点「查看」打开；DOM 懒创建，样式随脚本注入，不改 common.css）—— */
   function imEnsureLiveOv() {

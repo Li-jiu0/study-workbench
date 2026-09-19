@@ -8,6 +8,12 @@
 // R86（2026-09-18）：重新接入硅基流动 1 平台 12 模型（翻译/OCR/生图/ASR/嵌入/重排），provider 改为单 key 挂多端点字段。
 
 var AI_CONFIG = {
+  // ---------- R131（2026-09-19）：客户端版本号 ----------
+  // 所有 /api/ai/* 请求都带 X-Client-Version 头，服务端据此让旧 APK 优雅降级
+  // （返回 kind:"version_outdated" 提示卡，绝不静默失败）。
+  // 本值需与服务端 MIN_RELAY_CLIENT_VERSION 对齐，由主理人统一 bump、只前进不回落。
+  clientVersion: "20260919a",
+
   // ---------- R77（2026-09-17）海外平台代理访问 ----------
   // auto=自动探测（不可达平台视为离线、调用降级国内链）/ relay=自定义中转 / direct=直连。
   // 运行时以 localStorage ai_proxy_settings（设置页）优先，此处为出厂默认值。
@@ -16,35 +22,34 @@ var AI_CONFIG = {
     relayUrl: ""
   },
 
-  // 两个平台的内置公共 Key（用户没填自己的 Key 时用这个）
+  // R131（2026-09-19）：内置平台一律不持有 Key。
+  // 所有 provider key 只存在于服务端 .env，前端零密钥——
+  // 内置模型（builtin）全部走 /api/ai/* 服务端中转；用户自备 Key（builtin:false）才本地直连，
+  // 且 Key 只进 localStorage、永不上行、不得覆盖内置平台。
+  // ⚠ 红线：禁止再往本文件的 providers 或下方「自检回退用最小默认配置」写回任何明文 Key。
   providers: {
     zhipu: {
       name: "智谱AI",
-      apiUrl: "https://open.bigmodel.cn/api/paas/v4/chat/completions",
-      apiKey: "339ab396568541d0b7c0be4a577e5e53.VM5HxadQcgew1JdB"
+      apiUrl: "https://open.bigmodel.cn/api/paas/v4/chat/completions"
     },
     // R86：硅基流动重新接入（2026-09-18 实测 12 个模型全部 200）；多端点字段由能力模块按需读取。
     // ===== R63 新增 4 平台（2026-09-16 联网实测通过）=====
     qianfan: {
       name: "百度千帆",
-      apiUrl: "https://qianfan.baidubce.com/v2/chat/completions",
-      apiKey: "bce-v3/ALTAK-bddJz30wA3jwpUXr3yDbZ/be743c4cbfafd762fa42c4fc10b8308d574c7a5b"
+      apiUrl: "https://qianfan.baidubce.com/v2/chat/completions"
     },
     ark: {
       name: "火山方舟",
-      apiUrl: "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
-      apiKey: "ark-e725e1de-7d62-4b4a-aebb-a5def4f05ba7-c22bf"
+      apiUrl: "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
     },
     // 火山方舟图片生成（seedream 系列专用：images/generations 接口，Key 与 ark 相同）
     arkimage: {
       name: "火山方舟·图片生成",
-      apiUrl: "https://ark.cn-beijing.volces.com/api/v3/images/generations",
-      apiKey: "ark-e725e1de-7d62-4b4a-aebb-a5def4f05ba7-c22bf"
+      apiUrl: "https://ark.cn-beijing.volces.com/api/v3/images/generations"
     },
     openrouter: {
       name: "OpenRouter",
       apiUrl: "https://openrouter.ai/api/v1/chat/completions",
-      apiKey: "***REMOVED-BY-R2C***",
       extraHeaders: {
         "HTTP-Referer": "http://110.42.134.62",
         "X-Title": "Xingtu Learning"
@@ -56,7 +61,6 @@ var AI_CONFIG = {
     siliconflow: {
       name: "硅基流动",
       apiUrl: "https://api.siliconflow.cn/v1/chat/completions",
-      apiKey: "***REMOVED-BY-R2C***",
       imageUrl: "https://api.siliconflow.cn/v1/images/generations",
       audioUrl: "https://api.siliconflow.cn/v1/audio/transcriptions",
       embedUrl: "https://api.siliconflow.cn/v1/embeddings",
@@ -65,7 +69,6 @@ var AI_CONFIG = {
     gemini: {
       name: "Google Gemini",
       apiUrl: "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
-      apiKey: "***REMOVED-BY-R2C***",
       apiFormat: "gemini",
       keyInQuery: true,
       needVPN: true,
@@ -139,10 +142,24 @@ var AI_CONFIG = {
       apiFormat: "openai",
       needKey: false,
       note: "",
+      // R131 决策 B：海外平台软下线——服务端不配置其 Key，模型列表自动剔除；
+      // 此处保留条目 + 不可用标记，供下拉置灰与 toast 引导到国内替代模型。
+      status: "unavailable",
       models: [
         { id: "or-auto", name: "OR-Auto", types: ["general"] },
-        { id: "or-nemotron-super", name: "Nemotron-Super", types: ["general"] },
-        { id: "or-nemotron-ultra", name: "Nemotron-Ultra", types: ["general","reasoning"] }
+        { id: "or-nemotron-super", name: "Nemotron-Super", types: ["general","reasoning"] },
+        { id: "or-nemotron-ultra", name: "Nemotron-Ultra", types: ["general","reasoning"] },
+        { id: "or-ds-v4-flash", name: "DeepSeek-V4-Flash", types: ["general"] },
+        { id: "or-nex-n25-mini", name: "NEX-N2.5-Mini", types: ["general"] },
+        { id: "or-nex-n25-pro", name: "NEX-N2.5-Pro", types: ["general","reasoning"] },
+        { id: "or-nemotron-nano-omni", name: "Nemotron-Omni-30B", types: ["general","reasoning"] },
+        { id: "or-ling-3-flash-vl", name: "Ling-3.0-VL", types: ["image","general"] },
+        { id: "or-ling-3-flash-fin", name: "Ling-3.0-Fin", types: ["general"] },
+        { id: "or-ling-3-flash-sante", name: "Ling-3.0-Sante", types: ["general"] },
+        { id: "or-lfm-25", name: "LFM-2.5", types: ["general"] },
+        { id: "or-north-code", name: "Cohere-Code", types: ["general"] },
+        { id: "or-dots-note", name: "Dots-Note", types: ["general"] },
+        { id: "or-nemotron-safety", name: "Nemotron-Safety", types: ["general"] }
       ]
     },
     {
@@ -153,9 +170,27 @@ var AI_CONFIG = {
       apiFormat: "gemini",
       needKey: false,
       note: "",
+      // R131 决策 B：同 OpenRouter，海外平台软下线，保留条目 + 置灰标记。
+      status: "unavailable",
       models: [
         { id: "gm-flash-lite", name: "Gemini-3.5-Flash-Lite", types: ["general"] },
-        { id: "gm-flash", name: "Gemini-3.5-Flash", types: ["general","reasoning"] }
+        { id: "gm-flash", name: "Gemini-3.5-Flash", types: ["general","reasoning"] },
+        { id: "gm-flash-lite-latest", name: "Gemini-Flash-Lite", types: ["general"] },
+        { id: "gm-flash-latest", name: "Gemini-Flash", types: ["general"] },
+        { id: "gm-25-flash", name: "Gemini-2.5-Flash", types: ["image","general","longtext"] },
+        { id: "gm-25-flash-lite", name: "Gemini-2.5-Flash-Lite", types: ["image","general"] },
+        { id: "gm-36-flash", name: "Gemini-3.6-Flash", types: ["general"] },
+        { id: "gm-37-flash", name: "Gemini-3.7-Flash", types: ["general"] },
+        { id: "gm-38-flash", name: "Gemini-3.8-Flash", types: ["general"] },
+        { id: "gm-omni-11-flash", name: "Gemini-Omni-1.1", types: ["image","general"] },
+        { id: "gm-gemma-4-26b", name: "Gemma-4-26B", types: ["general"] },
+        { id: "gm-gemma-4-31b", name: "Gemma-4-31B", types: ["general"] },
+        { id: "gm-31-flash-lite", name: "Gemini-3.1-Lite", types: ["general"] },
+        // R134：Gemini 生图 3 条（服务端 model_registry 同步注册，走 /api/ai/image/generate 中转）。
+        // 能力标签含 imagegen + general：生图与对话双能力完整保留，不因归类丢失任何一侧。
+        { id: "gm-2.5-flash-image", name: "Gemini 2.5 图片生成", types: ["imagegen","general"] },
+        { id: "gm-3-pro-image", name: "Gemini 图片 Pro", types: ["imagegen","general"] },
+        { id: "gm-31-flash-lite-image", name: "Gemini 轻量生图", types: ["imagegen","general"] }
       ]
     },
     {
@@ -276,13 +311,13 @@ var AI_CONFIG = {
   // 系统提示词（可配）
   systemPrompt: "你是星途学习助手，回答简洁务实、条理清晰，结合用户当前的学习场景给出可操作建议。",
 
-  // 自动模式选择器里的“自动（推荐）”占位项（不计入内置模型 47 个）
+  // 自动模式选择器里的“自动（推荐）”占位项（不计入内置模型 66 个）
   autoOption: { id: "auto", name: "自动（推荐）" },
 
   // MAX 模式：开启后提升输出上限，回答更详细（按 funcType 的 maxTokens 放大，不低于此下限）
   maxMode: { maxTokens: 4000, temperatureDelta: -0.1 },
 
-  // 内置免费模型列表（47 个，含 fallback 链；顺序即模型下拉分组顺序：火山方舟 → 智谱 → 百度千帆 → OpenRouter → Gemini → 图片生成 → 硅基流动）
+  // 内置免费模型列表（66 个，含 fallback 链；顺序即模型下拉分组顺序：火山方舟 → 智谱 → 百度千帆 → OpenRouter → Gemini → 图片生成 → 硅基流动）
   // R86：硅基流动 12 模型重新接入（types 见上表；端点走 provider 多字段）；seedream 图片模型走 arkimage（images/generations），失败不再降级文本模型。
   builtinModels: [
     {
@@ -625,6 +660,138 @@ var AI_CONFIG = {
       fallback: "ark-v4-pro"
     },
     {
+      id: "or-ds-v4-flash",
+      name: "DeepSeek V4 Flash 免费版",
+      provider: "openrouter",
+      model: "deepseek/deepseek-v4-flash-0731:free",
+      types: ["general"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.7,
+      maxTokens: 1200,
+      fallback: "ark-v4-flash"
+    },
+    {
+      id: "or-nex-n25-mini",
+      name: "NEX N2.5 Mini",
+      provider: "openrouter",
+      model: "nex-agi/nex-n2.5-mini:free",
+      types: ["general"],
+      tag: "免费",
+      rate: "0.8x",
+      temperature: 0.7,
+      maxTokens: 1000,
+      fallback: "ark-v4-flash"
+    },
+    {
+      id: "or-nex-n25-pro",
+      name: "NEX N2.5 Pro",
+      provider: "openrouter",
+      model: "nex-agi/nex-n2.5-pro:free",
+      types: ["general","reasoning"],
+      tag: "免费",
+      rate: "1.5x",
+      temperature: 0.4,
+      maxTokens: 2000,
+      fallback: "ark-v4-pro"
+    },
+    {
+      id: "or-nemotron-nano-omni",
+      name: "Nemotron 推理版 30B",
+      provider: "openrouter",
+      model: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+      types: ["general","reasoning"],
+      tag: "免费",
+      rate: "1.5x",
+      temperature: 0.4,
+      maxTokens: 2000,
+      fallback: "ark-v4-pro"
+    },
+    {
+      id: "or-ling-3-flash-vl",
+      name: "Ling 3.0 视觉版",
+      provider: "openrouter",
+      model: "inclusionai/ling-3.0-flash-vl:free",
+      types: ["image","general"],
+      tag: "免费",
+      rate: "1.2x",
+      temperature: 0.5,
+      maxTokens: 1500,
+      fallback: "ark-v4-flash"
+    },
+    {
+      id: "or-ling-3-flash-fin",
+      name: "Ling 3.0 金融版",
+      provider: "openrouter",
+      model: "inclusionai/ling-3.0-flash-fin:free",
+      types: ["general"],
+      tag: "免费",
+      rate: "1.2x",
+      temperature: 0.5,
+      maxTokens: 1500,
+      fallback: "ark-v4-flash"
+    },
+    {
+      id: "or-ling-3-flash-sante",
+      name: "Ling 3.0 医疗版",
+      provider: "openrouter",
+      model: "inclusionai/ling-3.0-flash-sante:free",
+      types: ["general"],
+      tag: "免费",
+      rate: "1.2x",
+      temperature: 0.5,
+      maxTokens: 1500,
+      fallback: "ark-v4-flash"
+    },
+    {
+      id: "or-lfm-25",
+      name: "LFM 2.5 轻量版",
+      provider: "openrouter",
+      model: "liquid/lfm-2.5-2.6b:free",
+      types: ["general"],
+      tag: "免费",
+      rate: "0.5x",
+      temperature: 0.7,
+      maxTokens: 800,
+      fallback: "ark-v4-flash"
+    },
+    {
+      id: "or-north-code",
+      name: "Cohere 代码助手",
+      provider: "openrouter",
+      model: "cohere/north-mini-code:free",
+      types: ["general"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.3,
+      maxTokens: 2000,
+      fallback: "ark-v4-flash"
+    },
+    {
+      id: "or-dots-note",
+      name: "Dots 笔记助手",
+      provider: "openrouter",
+      model: "dots-studio/dots-3-note-preview:free",
+      types: ["general"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.5,
+      maxTokens: 1500,
+      fallback: "ark-v4-flash"
+    },
+    {
+      id: "or-nemotron-safety",
+      name: "Nemotron 内容安全审核",
+      provider: "openrouter",
+      model: "nvidia/nemotron-3.5-content-safety:free",
+      types: ["general"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.3,
+      maxTokens: 1000,
+      fallback: "ark-v4-flash"
+    },
+    {
       id: "gm-flash-lite",
       name: "Gemini-3.5-Flash-Lite",
       provider: "gemini",
@@ -648,6 +815,192 @@ var AI_CONFIG = {
       temperature: 0.5,
       maxTokens: 2500,
       fallback: "ark-v4-pro",
+      needVPN: true
+    },
+    {
+      id: "gm-flash-lite-latest",
+      name: "Gemini Flash Lite",
+      provider: "gemini",
+      model: "gemini-flash-lite-latest",
+      types: ["general"],
+      tag: "免费",
+      rate: "0.5x",
+      temperature: 0.7,
+      maxTokens: 800,
+      fallback: "ark-v4-flash",
+      needVPN: true
+    },
+    {
+      id: "gm-flash-latest",
+      name: "Gemini Flash",
+      provider: "gemini",
+      model: "gemini-flash-latest",
+      types: ["general"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.7,
+      maxTokens: 1200,
+      fallback: "ark-v4-flash",
+      needVPN: true
+    },
+    {
+      id: "gm-25-flash",
+      name: "Gemini 2.5 Flash",
+      provider: "gemini",
+      model: "gemini-2.5-flash",
+      types: ["image","general"],
+      tag: "免费",
+      rate: "1.2x",
+      temperature: 0.5,
+      maxTokens: 2000,
+      fallback: "ark-v4-pro",
+      needVPN: true
+    },
+    {
+      id: "gm-25-flash-lite",
+      name: "Gemini 2.5 Flash Lite",
+      provider: "gemini",
+      model: "gemini-2.5-flash-lite",
+      types: ["image","general"],
+      tag: "免费",
+      rate: "0.8x",
+      temperature: 0.7,
+      maxTokens: 1200,
+      fallback: "ark-v4-flash",
+      needVPN: true
+    },
+    {
+      id: "gm-36-flash",
+      name: "Gemini 3.6 Flash",
+      provider: "gemini",
+      model: "gemini-3.6-flash",
+      types: ["general"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.7,
+      maxTokens: 1500,
+      fallback: "ark-v4-flash",
+      needVPN: true
+    },
+    {
+      id: "gm-37-flash",
+      name: "Gemini 3.7 Flash",
+      provider: "gemini",
+      model: "gemini-3.7-flash",
+      types: ["general"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.7,
+      maxTokens: 1500,
+      fallback: "ark-v4-flash",
+      needVPN: true
+    },
+    {
+      id: "gm-38-flash",
+      name: "Gemini 3.8 Flash",
+      provider: "gemini",
+      model: "gemini-3.8-flash",
+      types: ["general"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.7,
+      maxTokens: 1500,
+      fallback: "ark-v4-flash",
+      needVPN: true
+    },
+    {
+      id: "gm-omni-11-flash",
+      name: "Gemini 全模态",
+      provider: "gemini",
+      model: "gemini-omni-1.1-flash",
+      types: ["image","general"],
+      tag: "免费",
+      rate: "1.2x",
+      temperature: 0.5,
+      maxTokens: 1500,
+      fallback: "ark-v4-flash",
+      needVPN: true
+    },
+    {
+      id: "gm-gemma-4-26b",
+      name: "Gemma 4 26B",
+      provider: "gemini",
+      model: "gemma-4-26b-a4b-it",
+      types: ["general"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.7,
+      maxTokens: 1500,
+      fallback: "ark-v4-flash",
+      needVPN: true
+    },
+    {
+      id: "gm-gemma-4-31b",
+      name: "Gemma 4 31B",
+      provider: "gemini",
+      model: "gemma-4-31b-it",
+      types: ["general"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.7,
+      maxTokens: 1500,
+      fallback: "ark-v4-flash",
+      needVPN: true
+    },
+    {
+      id: "gm-31-flash-lite",
+      name: "Gemini 3.1 Lite",
+      provider: "gemini",
+      model: "gemini-3.1-flash-lite",
+      types: ["general"],
+      tag: "免费",
+      rate: "0.5x",
+      temperature: 0.7,
+      maxTokens: 800,
+      fallback: "ark-v4-flash",
+      needVPN: true
+    },
+    // ===== R134（2026-09-20）Gemini 生图 3 条：与服务端 model_registry.json 同步注册 =====
+    // 走服务端中转 /api/ai/image/generate（与 arkimage 生图同一入口），id 逐字对齐 registry 键。
+    // types 为 ["imagegen","general"]：生图与对话双能力完整保留（生图选中时 ai-service 直走
+    // 生图链路；作为对话模型时走文本链路），fallback 指向 ark 生图最快款。
+    {
+      id: "gm-2.5-flash-image",
+      name: "Gemini 2.5 图片生成",
+      provider: "gemini",
+      model: "gemini-2.5-flash-image",
+      types: ["imagegen","general"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.7,
+      maxTokens: 1000,
+      fallback: "ark-seedream-4-0828",
+      needVPN: true
+    },
+    {
+      id: "gm-3-pro-image",
+      name: "Gemini 图片 Pro",
+      provider: "gemini",
+      model: "gemini-3-pro-image",
+      types: ["imagegen","general"],
+      tag: "免费",
+      rate: "1x",
+      temperature: 0.7,
+      maxTokens: 1000,
+      fallback: "ark-seedream-4-0828",
+      needVPN: true
+    },
+    {
+      id: "gm-31-flash-lite-image",
+      name: "Gemini 轻量生图",
+      provider: "gemini",
+      model: "gemini-3.1-flash-lite-image",
+      types: ["imagegen","general"],
+      tag: "免费",
+      rate: "0.5x",
+      temperature: 0.7,
+      maxTokens: 800,
+      fallback: "ark-seedream-4-0828",
       needVPN: true
     },
     {
@@ -849,6 +1202,31 @@ var AI_CONFIG = {
     "or-nemotron-ultra": { platform: "OpenRouter", params: "", type: "深度推理", stars: 5, speed: "中", advantage: "深度推理（实测约 3.3 秒）；免费额度 50 次/天、20 次/分钟；需自备网络", applicable: "复杂推理问题" },
     "gm-flash-lite": { platform: "Google Gemini", params: "", type: "通用对话（轻量）", stars: 3, speed: "快", advantage: "超快轻量（实测约 1 秒）；需自备网络", applicable: "日常轻量问答" },
     "gm-flash": { platform: "Google Gemini", params: "", type: "通用对话（推理）", stars: 4, speed: "中", advantage: "通用能力强（实测约 2.9 秒）；需自备网络", applicable: "日常问答、推理" },
+    "or-ds-v4-flash": { platform: "OpenRouter", params: "", type: "通用对话", stars: 4, speed: "快", advantage: "DeepSeek V4 Flash 免费通道，速度快；免费额度 50 次/天、20 次/分钟；需自备网络", applicable: "日常问答、快速解题" },
+    "or-nex-n25-mini": { platform: "OpenRouter", params: "", type: "通用对话（轻量）", stars: 3, speed: "快", advantage: "NEX N2.5 轻量版，响应快；免费额度 50 次/天、20 次/分钟；需自备网络", applicable: "日常轻量问答" },
+    "or-nex-n25-pro": { platform: "OpenRouter", params: "", type: "深度推理", stars: 4, speed: "中", advantage: "NEX N2.5 Pro，推理能力强；免费额度 50 次/天、20 次/分钟；需自备网络", applicable: "复杂推理问题" },
+    "or-nemotron-nano-omni": { platform: "OpenRouter", params: "", type: "深度推理", stars: 4, speed: "中", advantage: "Nemotron 30B 推理版，适合难题；免费额度 50 次/天、20 次/分钟；需自备网络", applicable: "难题求解、复杂推理" },
+    "or-ling-3-flash-vl": { platform: "OpenRouter", params: "", type: "多模态识图", stars: 4, speed: "快", advantage: "Ling 3.0 视觉版，支持图片理解；免费额度 50 次/天、20 次/分钟；需自备网络", applicable: "拍题识图、图片理解" },
+    "or-ling-3-flash-fin": { platform: "OpenRouter", params: "", type: "金融专用", stars: 3, speed: "快", advantage: "Ling 3.0 金融版，金融问答优化；免费额度 50 次/天、20 次/分钟；需自备网络", applicable: "金融问题咨询" },
+    "or-ling-3-flash-sante": { platform: "OpenRouter", params: "", type: "医疗专用", stars: 3, speed: "快", advantage: "Ling 3.0 医疗版，健康问答优化；免费额度 50 次/天、20 次/分钟；需自备网络", applicable: "医疗健康咨询" },
+    "or-lfm-25": { platform: "OpenRouter", params: "2.6B", type: "轻量对话", stars: 3, speed: "快", advantage: "LFM 2.5 小模型，极速响应；免费额度 50 次/天、20 次/分钟；需自备网络", applicable: "极简单问答、快速分类" },
+    "or-north-code": { platform: "OpenRouter", params: "", type: "代码专用", stars: 3, speed: "快", advantage: "Cohere North 代码模型，写代码与 debug；免费额度 50 次/天、20 次/分钟；需自备网络", applicable: "编程、代码解释、纠错" },
+    "or-dots-note": { platform: "OpenRouter", params: "", type: "笔记整理", stars: 3, speed: "快", advantage: "Dots 笔记助手，总结整理优化；免费额度 50 次/天、20 次/分钟；需自备网络", applicable: "笔记总结、资料整理" },
+    "or-nemotron-safety": { platform: "OpenRouter", params: "", type: "内容审核", stars: 3, speed: "快", advantage: "Nemotron 内容安全模型，敏感内容检测；免费额度 50 次/天、20 次/分钟；需自备网络", applicable: "敏感内容检测、内容审核" },
+    "gm-flash-lite-latest": { platform: "Google Gemini", params: "", type: "通用对话（轻量）", stars: 3, speed: "快", advantage: "Flash Lite 最新版，额度最大速度最快；需自备网络", applicable: "日常轻量问答" },
+    "gm-flash-latest": { platform: "Google Gemini", params: "", type: "通用对话", stars: 4, speed: "快", advantage: "Flash 最新版，日常问答主力；需自备网络", applicable: "日常问答" },
+    "gm-25-flash": { platform: "Google Gemini", params: "", type: "多模态对话", stars: 4, speed: "快", advantage: "支持识图与长文本；需自备网络", applicable: "图片理解、长文本问答" },
+    "gm-25-flash-lite": { platform: "Google Gemini", params: "", type: "轻量多模态", stars: 3, speed: "快", advantage: "免费额度大的轻量识图模型；需自备网络", applicable: "轻量识图、日常问答" },
+    "gm-36-flash": { platform: "Google Gemini", params: "", type: "通用对话", stars: 4, speed: "快", advantage: "Gemini 3.6 最新版本；需自备网络", applicable: "日常问答" },
+    "gm-37-flash": { platform: "Google Gemini", params: "", type: "通用对话", stars: 4, speed: "快", advantage: "Gemini 3.7 最新版本；需自备网络", applicable: "日常问答" },
+    "gm-38-flash": { platform: "Google Gemini", params: "", type: "通用对话", stars: 4, speed: "快", advantage: "Gemini 3.8 最新版本；需自备网络", applicable: "日常问答" },
+    "gm-omni-11-flash": { platform: "Google Gemini", params: "", type: "全模态（听/看/说）", stars: 4, speed: "快", advantage: "支持语音、图片与对话的全模态模型；需自备网络", applicable: "图片理解、多模态对话" },
+    "gm-gemma-4-26b": { platform: "Google Gemini", params: "26B", type: "开源对话", stars: 3, speed: "快", advantage: "Google 开源 Gemma 4 26B 模型（Gemini 侧实测可用）；需自备网络", applicable: "日常问答" },
+    "gm-gemma-4-31b": { platform: "Google Gemini", params: "31B", type: "开源对话", stars: 3, speed: "快", advantage: "Google 开源 Gemma 4 31B 模型（Gemini 侧实测可用）；需自备网络", applicable: "日常问答" },
+    "gm-31-flash-lite": { platform: "Google Gemini", params: "", type: "通用对话（轻量）", stars: 3, speed: "快", advantage: "Gemini 3.1 轻量版；需自备网络", applicable: "日常轻量问答" },
+    "gm-2.5-flash-image": { platform: "Google Gemini", params: "", type: "图片生成+对话", stars: 4, speed: "中", advantage: "Gemini 2.5 生图模型，支持文生图与图片编辑，同时保留通用对话能力；走服务端生图中转；需自备网络", applicable: "文生图、学习配图、日常问答" },
+    "gm-3-pro-image": { platform: "Google Gemini", params: "", type: "图片生成+对话（Pro）", stars: 4, speed: "慢", advantage: "Gemini 生图 Pro 版，画质与提示词理解更强，同时保留通用对话能力；走服务端生图中转；需自备网络", applicable: "高质量文生图、复杂绘图指令" },
+    "gm-31-flash-lite-image": { platform: "Google Gemini", params: "", type: "图片生成+对话（轻量）", stars: 3, speed: "快", advantage: "Gemini 轻量生图，速度快消耗低，同时保留通用对话能力；走服务端生图中转；需自备网络", applicable: "快速文生图、轻量问答" },
     "ark-seedream-4-0415": { platform: "火山方舟·图片生成", params: "", type: "图片生成", stars: 4, speed: "中", advantage: "文生图；走 images/generations 接口，调用链路待评估", applicable: "文生图（v4 初版）" },
     "ark-seedream-4-0828": { platform: "火山方舟·图片生成", params: "", type: "图片生成（最快）", stars: 4, speed: "快", advantage: "文生图最快版（实测 4.2 秒）；走 images/generations 接口，调用链路待评估", applicable: "文生图（速度优先）" },
     "sf-hunyuan-mt-7b": { platform: "硅基流动", params: "", type: "通用翻译", stars: 4, speed: "快", advantage: "腾讯混元翻译专用模型，实测中英互译流畅，术语保留好", applicable: "题目/资料中英互译、长句翻译" },
@@ -1009,13 +1387,17 @@ var AI_CONFIG = {
 // 纯 ES2017 及以前语法；校验失败则回退最小默认配置，绝不抛异常。
 (function () {
   function isStr(v) { return typeof v === "string" && v.length > 0; }
+  // R131：内置平台已不持有任何 Key（密钥只在服务端 .env），自检 **只校验 apiUrl 非空**。
+  // 若沿用旧口径要求 apiKey 非空，删 key 后会误判「配置损坏」并回退到下面那份最小默认配置
+  // ——那份配置里原先硬编码过明文 key，是本文件第二处泄露源，已一并删除。
   function providerOk(p, key) {
     var item = p && p[key];
-    return !!(item && isStr(item.apiUrl) && isStr(item.apiKey));
+    return !!(item && isStr(item.apiUrl));
   }
   var ok = true;
 
-  // 1) providers：对象，且 zhipu 有非空 apiUrl + apiKey（R73k：硅基已移除，不再要求）
+  // 1) providers：对象，且 zhipu 有非空 apiUrl
+  //    （R73k：硅基已移除，不再要求；R131：不再要求 apiKey——内置平台改由服务端持钥并中转）
   var providers = AI_CONFIG.providers;
   if (!(typeof providers === "object" && providers !== null)) {
     ok = false;
@@ -1039,12 +1421,13 @@ var AI_CONFIG = {
   if (!(typeof ft === "object" && ft !== null && ft.general)) { ok = false; }
 
   if (!ok) {
-    // 最小默认配置：只保命，不重复主配置
+    // 最小默认配置：只保命，不重复主配置。
+    // R131：这里原先硬编码了 zhipu 明文 key（自检失败即回退到它 -> 删 providers 里的 key 也白删），
+    // 已删除。回退配置同样零密钥：内置模型一律由服务端中转兜底。
     AI_CONFIG.providers = {
       zhipu: {
         name: "智谱AI",
-        apiUrl: "https://open.bigmodel.cn/api/paas/v4/chat/completions",
-        apiKey: "339ab396568541d0b7c0be4a577e5e53.VM5HxadQcgew1JdB"
+        apiUrl: "https://open.bigmodel.cn/api/paas/v4/chat/completions"
       }
     };
     AI_CONFIG.builtinModels = [

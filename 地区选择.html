@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>选择地区 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260919m">
+<link rel="stylesheet" href="assets/common.css?v=20260919r">
 <style>
 /* ==================== R86-B：地区选择页（页内自洽样式，.xtr- 前缀） ==================== */
 /* R89-B\uff1a\u4fee\u590d\u672c\u9875\u4e0d\u80fd\u4e0a\u4e0b\u6ed1\u52a8
@@ -16,7 +16,7 @@ html { height: auto; overflow-y: auto; overflow-x: hidden; }
 body.theme-home { height: auto; min-height: 100%; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
 .xtr-page { max-width: 720px; margin: 0 auto; padding: 0 0 40px; }
 .xtr-head { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 10px;
-  padding: 12px 16px; background: var(--card, #fff); border-bottom: 1px solid var(--border, #e6e9f0); }
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px; background: var(--card, #fff); border-bottom: 1px solid var(--border, #e6e9f0); }
 .xtr-back { display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 10px;
   border: 1px solid var(--border, #e6e9f0); background: transparent; color: var(--text-secondary, #6b7280);
   font-size: 13px; cursor: pointer; flex: 0 0 auto; }

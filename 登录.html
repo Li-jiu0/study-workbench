@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0b1026">
 <title>登录 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260919m">
+<link rel="stylesheet" href="assets/common.css?v=20260919r">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <style>
@@ -24,7 +24,7 @@
     background:radial-gradient(1200px 800px at 20% -10%,#2b3a8f 0%,transparent 55%),
                radial-gradient(1000px 700px at 110% 20%,#5b3a9f 0%,transparent 50%),
                linear-gradient(160deg,#0b1026 0%,#141a3e 55%,#1c1440 100%);
-    color:var(--text);display:flex;align-items:center;justify-content:center;padding:20px;overflow-x:hidden;
+    color:var(--text);display:flex;align-items:center;justify-content:center;padding:calc(20px + env(safe-area-inset-top, 0px)) 20px 20px;overflow-x:hidden;
   }
   /* 星空背景 */
   .stars{position:fixed;inset:0;pointer-events:none;z-index:0}

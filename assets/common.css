@@ -187,12 +187,12 @@ input, textarea { font-family: inherit; outline: none; }
 
 /* 顶部状态栏 */
 .topbar {
-  height: 56px;
+  height: calc(56px + env(safe-area-inset-top, 0px));
   background: var(--card);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  padding: 0 24px;
+  padding: env(safe-area-inset-top, 0px) 24px 0;
   gap: 16px;
   flex-shrink: 0;
 }
@@ -1404,7 +1404,7 @@ input, textarea { font-family: inherit; outline: none; }
 @media (max-width: 768px) {
   .sidebar { display: none; }
   .bottom-nav { display: block; }
-  .topbar { padding: 0 16px; height: 50px; }
+  .topbar { padding: env(safe-area-inset-top, 0px) 16px 0; height: calc(50px + env(safe-area-inset-top, 0px)); }
   .topbar-stats { display: none; }
   .topbar-date { display: none; }  /* 手机窄屏隐藏日期，给标题/搜索框腾空间 */
   /* 标题单行截断（省略号），避免窄屏被挤成逐字竖排并溢出压到搜索框 */

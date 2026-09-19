@@ -37,9 +37,34 @@
   var BASE = 'https://ark.cn-beijing.volces.com/api/v3';
   var DEFAULT_TARGET = 'zh';
 
-  function authHeaders(provider) {
+  /* ---------- R131：Key 取用口径改为「只认用户自备」 ---------- */
+  // provider.apiKey 已从 ai-config.js 全量删除（前端零密钥）：内置模型归服务端中转，
+  // 其可用性以 GET /api/ai/models 为权威源；只有自备 Key 的自定义模型才本地直连。
+  // 内置平台白名单：这批平台不得用自备 Key 覆盖。
+  var BUILTIN_PROVIDERS = ['zhipu', 'qianfan', 'ark', 'arkimage', 'openrouter', 'siliconflow', 'gemini'];
+
+  function isBuiltinProvider(pname) {
+    var s = String(pname == null ? '' : pname);
+    for (var i = 0; i < BUILTIN_PROVIDERS.length; i++) {
+      if (BUILTIN_PROVIDERS[i] === s) return true;
+    }
+    return false;
+  }
+
+  function ownKey(modelCfg) {
+    var k = (modelCfg && typeof modelCfg.apiKey === 'string' && modelCfg.apiKey) ? modelCfg.apiKey : '';
+    if (k) return k;
+    var pname = (modelCfg && modelCfg.provider) ? String(modelCfg.provider) : '';
+    if (!pname || isBuiltinProvider(pname)) return '';
+    try {
+      var uk = (global && global.localStorage) ? (global.localStorage.getItem('ai_user_key_' + pname) || '') : '';
+      return uk ? uk : '';
+    } catch (e) { return ''; }
+  }
+
+  function authHeaders(modelCfg) {
     var h = { 'Content-Type': 'application/json' };
-    var k = (provider && provider.apiKey) ? String(provider.apiKey) : '';
+    var k = ownKey(modelCfg);
     if (k) { h['Authorization'] = 'Bearer ' + k; }
     return h;
   }
@@ -97,7 +122,7 @@
       return {
         url: R.endpoint(CAP, ctx.provider),
         method: 'POST',
-        headers: authHeaders(ctx.provider),
+        headers: authHeaders(ctx.modelCfg),
         body: JSON.stringify(body),
         meta: { target: target, chars: text.length }
       };
@@ -141,10 +166,10 @@
   // 说明：probe 由 ai-service.js 健康检查分派调用（T02 工线接线），
   //   ctx = { modelCfg, provider, timeout }；返回 Promise<{ ok, err, detail }>。
   //   探针一律不写 recordCall、不进 10 次/分钟限频（健康检查本就不计）。
-  function pKey(modelCfg, provider) {
-    var k = (modelCfg && typeof modelCfg.apiKey === "string" && modelCfg.apiKey) ? modelCfg.apiKey : "";
-    if (!k && provider && typeof provider.apiKey === "string") k = provider.apiKey;
-    return k;
+  // R131：不再从 provider.apiKey 取 Key（该字段已从 ai-config.js 全量删除）。
+  // 取 Key 只认「用户自备」两处：模型自带 apiKey / localStorage（且仅限非内置平台）。
+  function pKey(modelCfg) {
+    return ownKey(modelCfg);
   }
   function pHeaders(ctx, json) {
     var h = json ? { "Content-Type": "application/json" } : {};
@@ -154,7 +179,8 @@
       if (!s || typeof s !== "object") continue;
       for (var k in s) { if (Object.prototype.hasOwnProperty.call(s, k)) h[k] = s[k]; }
     }
-    var key = pKey(ctx.modelCfg, ctx.provider);
+    // 内置模型走服务端中转，不拼任何 Bearer key；自备 Key 的直连才拼。
+    var key = pKey(ctx.modelCfg);
     if (key && !h["Authorization"] && !h["authorization"]) h["Authorization"] = "Bearer " + key;
     return h;
   }

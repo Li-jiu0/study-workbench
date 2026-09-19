@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>真题模考 · 成绩单</title>
-<link rel="stylesheet" href="assets/common.css?v=20260919m">
+<link rel="stylesheet" href="assets/common.css?v=20260919r">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
@@ -13,7 +13,7 @@
 <script src="assets/icon-map.js?v=20260919l" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260919i" defer></script>
+<script src="assets/app.js?v=20260919r" defer></script>
 <script src="data/mock-papers.js?v=20260916O" defer></script>
 <script src="assets/mock-engine.js?v=20260916O" defer></script>
 <script src="assets/mock-result.js?v=20260916O" defer></script>
@@ -25,6 +25,9 @@ body { background: var(--xt-bg); margin: 0; color: var(--xt-text); }
    故在此用更具体选择器放开 body 自身滚动（不动 common.css）。 */
 html { height: auto; overflow: auto; }
 body { height: auto; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+/* 顶部安全区：透明状态栏下 .xt-page-head（page-head.css，文档流内）整体下移补偿 */
+.xt-page-head { padding-top: calc(var(--xt-space-4) + env(safe-area-inset-top, 0px)); }
 
 .result-shell {
   max-width: 880px;

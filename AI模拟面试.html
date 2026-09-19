@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>AI模拟面试 - 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260919m">
+<link rel="stylesheet" href="assets/common.css?v=20260919r">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 /* common.css 会锁 html/body 高度并隐藏滚动，本页为独立长页面，恢复滚动 */
@@ -24,7 +24,7 @@ body.theme-interview { --primary: #1A73E8; --primary-light: #E8F0FE; --primary-d
 .header {
   background: rgba(255,255,255,0.96);
   backdrop-filter: blur(10px);
-  padding: 12px 20px;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 20px 12px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -2036,16 +2036,16 @@ else ivInit();
 
 </script>
 
-<script src="assets/ai-config.js?v=20260918c"></script>
+<script src="assets/ai-config.js?v=20260919r"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260919d"></script>
+<script src="assets/ai-service.js?v=20260919r"></script>
 <script src="assets/ai-cap-registry.js?v=20260918c"></script>
-<script src="assets/ai-cap-image.js?v=20260918c"></script>
-<script src="assets/ai-cap-vision.js?v=20260918c"></script>
-<script src="assets/ai-cap-audio.js?v=20260918c"></script>
-<script src="assets/ai-cap-embed.js?v=20260918c"></script>
-<script src="assets/ai-cap-translate.js?v=20260918c"></script>
-<script src="assets/ai-cap-video.js?v=20260918c"></script>
-<script src="assets/ai-cap-3d.js?v=20260918c"></script>
+<script src="assets/ai-cap-image.js?v=20260919r"></script>
+<script src="assets/ai-cap-vision.js?v=20260919r"></script>
+<script src="assets/ai-cap-audio.js?v=20260919r"></script>
+<script src="assets/ai-cap-embed.js?v=20260919r"></script>
+<script src="assets/ai-cap-translate.js?v=20260919r"></script>
+<script src="assets/ai-cap-video.js?v=20260919r"></script>
+<script src="assets/ai-cap-3d.js?v=20260919r"></script>
 </body>
 </html>

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#ff8c00">
 <title>AI</title>
-<link rel="stylesheet" href="assets/common.css?v=20260919m">
+<link rel="stylesheet" href="assets/common.css?v=20260919r">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O">
@@ -37,8 +37,8 @@ body.dark{
 /* 整体布局：复用主站 .app / .sidebar / .main */
 .ai-main{display:flex;flex-direction:column;height:100%;min-width:0;background:var(--ai-bg);}
 .ai-topbar{
-  height:56px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
-  padding:0 16px;background:var(--ai-card);border-bottom:1px solid var(--ai-border);
+  height:calc(56px + env(safe-area-inset-top, 0px));flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
+  padding:env(safe-area-inset-top, 0px) 16px 0;background:var(--ai-card);border-bottom:1px solid var(--ai-border);
 }
 .ai-topbar-left,.ai-topbar-right{display:flex;align-items:center;gap:8px;}
 .ai-topbar-btn{
@@ -974,22 +974,22 @@ body.dark .ai-warn-bar{background:rgba(250,173,20,.1);border-color:rgba(250,173,
 <script src="assets/icon-map.js?v=20260919l" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260919i" defer></script>
+<script src="assets/app.js?v=20260919r" defer></script>
 <script src="assets/quest.js?v=20260916O" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
 <script src="assets/api.js?v=20260917b" defer></script>
 <script src="assets/study-stats.js?v=20260916O" defer></script>
-<script src="assets/ai-config.js?v=20260919m" defer></script>
+<script src="assets/ai-config.js?v=20260919r" defer></script>
 <script src="assets/ai-presets.js?v=20260916O" defer></script>
-<script src="assets/ai-service.js?v=20260919l" defer></script>
+<script src="assets/ai-service.js?v=20260919r" defer></script>
 <script src="assets/ai-cap-registry.js?v=20260918c" defer></script>
-<script src="assets/ai-cap-image.js?v=20260918c" defer></script>
-<script src="assets/ai-cap-vision.js?v=20260918c" defer></script>
-<script src="assets/ai-cap-audio.js?v=20260918c" defer></script>
-<script src="assets/ai-cap-embed.js?v=20260918c" defer></script>
-<script src="assets/ai-cap-translate.js?v=20260918c" defer></script>
-<script src="assets/ai-cap-video.js?v=20260919c" defer></script>
-<script src="assets/ai-cap-3d.js?v=20260918c" defer></script>
-<script src="assets/ai-page.js?v=20260919q" defer></script>
+<script src="assets/ai-cap-image.js?v=20260919r" defer></script>
+<script src="assets/ai-cap-vision.js?v=20260919r" defer></script>
+<script src="assets/ai-cap-audio.js?v=20260919r" defer></script>
+<script src="assets/ai-cap-embed.js?v=20260919r" defer></script>
+<script src="assets/ai-cap-translate.js?v=20260919r" defer></script>
+<script src="assets/ai-cap-video.js?v=20260919r" defer></script>
+<script src="assets/ai-cap-3d.js?v=20260919r" defer></script>
+<script src="assets/ai-page.js?v=20260919r" defer></script>
 </body>
 </html>

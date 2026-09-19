@@ -3099,10 +3099,10 @@ function saveAiProviderConfig(cfg) {
 function clearAiProviderConfig() {
   localStorage.removeItem(AI_CFG_KEY);
 }
-// 当前 AI 模式：'provider'（直连服务商）/ 'backend'（后端中转）/ 'demo'（本地演示）
+// 当前 AI 模式：'backend'（后端中转）/ 'demo'（本地演示）
+// R131：原 'provider'（前端直连服务商、密钥来自 localStorage）模式已下线——密钥一律不出前端，
+//   内置模型统一走服务端中转 /api/ai/*（见 aiDispatchReply 的 window.callAI 主路径）。
 function currentAiMode() {
-  const cfg = getAiProviderConfig();
-  if (cfg.apiKey && cfg.baseUrl) return { mode: 'provider', cfg };
   if (APP_AI_DEMO_CONFIG.apiUrl) return { mode: 'backend', cfg: null };
   return { mode: 'demo', cfg: null };
 }
@@ -3114,63 +3114,8 @@ function buildAiContextMessages() {
   hist.forEach(m => msgs.push({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text }));
   return msgs;
 }
-/**
- * 服务商直连：OpenAI 兼容协议 + SSE 流式解析（带上下文记忆）
- * ⚠️ 密钥从 localStorage 读出后仅用于本次请求头，不写入任何页面/日志/代码。
- */
-async function fetchProviderReply() {
-  const { cfg } = currentAiMode();
-  const bubble = createStreamingBubble();
-  try {
-    // 请求体：上下文消息 + 可选温度/最大输出（设置页「AI 温度 / AI 最大输出」，本地直连与后端均生效）
-    const reqBody = { model: cfg.model || 'deepseek-chat', messages: buildAiContextMessages(), stream: true };
-    const _temp = parseFloat(getSetting('aiTemp')); if (!isNaN(_temp)) reqBody.temperature = _temp;
-    const _max = parseInt(getSetting('aiMax'), 10); if (!isNaN(_max) && _max > 0) reqBody.max_tokens = _max;
-    const res = await fetch(cfg.baseUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.apiKey },
-      body: JSON.stringify(reqBody)
-    });
-    if (!res.ok) {
-      let detail = '';
-      try { detail = (await res.text()).slice(0, 300); } catch (e) {}
-      throw new Error('HTTP ' + res.status + (detail ? '：' + detail : ''));
-    }
-    if (res.body && res.body.getReader) {
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let acc = '', buf = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-        // SSE：按行解析 "data: {...}"，累积增量 delta.content
-        const lines = buf.split('\n');
-        buf = lines.pop() || ''; // 最后一段可能不完整，留到下一轮
-        for (const line of lines) {
-          const t = line.trim();
-          if (!t.startsWith('data:')) continue;
-          const payload = t.slice(5).trim();
-          if (payload === '[DONE]') continue;
-          try {
-            const j = JSON.parse(payload);
-            const delta = j.choices && j.choices[0] && j.choices[0].delta;
-            const piece = (delta && delta.content) || (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
-            if (piece) { acc += piece; bubble.textContent = acc; scrollAiMessages(); }
-          } catch (e) { /* 跳过无法解析的行（如心跳/注释行） */ }
-        }
-      }
-      if (!acc) acc = '(服务返回了空回复，请检查模型名是否正确)';
-      finishStreaming('ai', acc);
-    } else {
-      const data = await res.json();
-      const reply = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '(空回复)';
-      typewriterIntoBubble(bubble, reply, () => finishStreaming('ai', reply));
-    }
-  } catch (e) {
-    finishStreaming('ai', '⚠️ AI 服务商连接失败：' + e.message + '\n\n请检查：① API Key 是否有效 ② 接口地址/模型名是否正确 ③ 本地网络能否访问该服务商。\n\n也可以到「设置 → AI 服务商配置」清除配置，回到本地演示模式。');
-  }
-}
+// R131：fetchProviderReply()（前端用本机密钥直连服务商的对话路径）已删除。
+//   内置模型一律走服务端中转 /api/ai/chat（window.callAI），前端不再出现 Bearer + provider key。
 
 // 聊天历史独立保存在 localStorage（key: study_workbench_ai_chat_<伙伴id>；旧版全局 key 首次兼容导入）
 const AI_CHAT_KEY = 'study_workbench_ai_chat';
@@ -3727,16 +3672,15 @@ function sendAiMsg() {
   if (sb) sb.style.opacity = '0.5';
   aiDispatchReply(text);
 }
-/** 统一的回复派发：主路径 callAI，旧的三条降级路径原样保留 */
+/** 统一的回复派发：主路径 window.callAI（服务端中转 /api/ai/chat），降级到 后端中转 / 本地规则引擎。
+   R131：原「服务商直连」（Bearer + 本机密钥）路径已删除。 */
 function aiDispatchReply(text) {
   if (typeof window.callAI === 'function') {
     fetchAssistantReply(text);   // 统一 AI 底座（assets/ai-service.js）
     return;
   }
   const m = currentAiMode();
-  if (m.mode === 'provider') {
-    fetchProviderReply();        // 服务商直连（密钥来自本地配置，OpenAI 兼容协议，流式+上下文）
-  } else if (m.mode === 'backend') {
+  if (m.mode === 'backend') {
     fetchAiReply(text);          // 后端中转（密钥在后端）
   } else {
     localAiReply(text);          // 本地兜底：规则引擎 + 伙伴 demoStyle
@@ -8103,30 +8047,23 @@ async function editorAiAssist() {
   const prompt = `你是学习助手。请根据下面的发贴，生成一份【复习提纲】和【知识点总结】：1）用 Markdown 要点列出核心考点；2）给 3 条复习建议；3）简洁、便于复习。\n\n发贴标题：${title}\n发贴内容：\n${content.slice(0, 1500)}`;
   const ta = document.getElementById('blogEditorInput');
   if (!content.trim()) { showToast('请先在编辑器里写点内容，AI 才能帮你总结'); return; }
-  const aiMode = currentAiMode();
-  if (aiMode.mode === 'provider') {
-    // 服务商直连（OpenAI兼容，非流式一次性返回）
-    showToast('🤖 AI 生成中…');
+  // R131：原「服务商直连」分支（Bearer + 本机密钥直连上游）已下线——密钥一律不出前端，
+  //   统一走服务端中转（window.callAI → /api/ai/chat），失败再退后端直配 / 本地模板。
+  if (typeof window.callAI === 'function') {
+    showToast('AI 生成中…');
     if (ta.value && !ta.value.endsWith('\n')) ta.value += '\n';
-    ta.value += '## 🤖 AI 复习提纲（生成中…）\n';
+    ta.value += '## AI 复习提纲（生成中…）\n';
     updateEditorPreview();
     try {
-      const cfg = aiMode.cfg;
-      const res = await fetch(cfg.baseUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.apiKey },
-        body: JSON.stringify({ model: cfg.model || 'deepseek-chat', stream: false, messages: [{ role: 'user', content: prompt }] })
-      });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const data = await res.json();
-      const reply = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
-      ta.value = ta.value.replace('## 🤖 AI 复习提纲（生成中…）', reply ? ('## 🤖 AI 复习提纲\n\n' + reply) : '');
+      const r = await window.callAI('auto', [{ role: 'user', content: prompt }], {});
+      const reply = (r && (r.text || r.content)) ? String(r.text || r.content) : '';
+      ta.value = ta.value.replace('## AI 复习提纲（生成中…）', reply ? ('## AI 复习提纲\n\n' + reply) : '');
       updateEditorPreview();
-      showToast('🤖 AI 已生成复习提纲');
+      showToast(reply ? 'AI 已生成复习提纲' : 'AI 返回空内容，请稍后重试');
     } catch (e) {
-      ta.value = ta.value.replace('## 🤖 AI 复习提纲（生成中…）', '## 🤖 AI 复习提纲\n\n⚠️ AI 生成失败：' + e.message + '（请到「设置 → AI 服务商配置」检查密钥/地址，或清除配置回到演示模式）');
+      ta.value = ta.value.replace('## AI 复习提纲（生成中…）', '## AI 复习提纲\n\nAI 生成失败：' + (e && e.message ? e.message : '未知错误'));
       updateEditorPreview();
-      showToast('⚠️ AI 生成失败');
+      showToast('AI 生成失败');
     }
   } else if (APP_AI_DEMO_CONFIG.apiUrl) {
     showToast('🤖 AI 生成中…');
@@ -8673,11 +8610,10 @@ function renderAiProviderForm() {
   const m = currentAiMode();
 
   // 连接状态
-  const connStatus = m.mode === 'provider'
-    ? '<span style="color:#67c23a;font-size:12px">✅ 已直连服务商</span>'
-    : m.mode === 'backend'
-    ? '<span style="color:#409eff;font-size:12px">☁️ 服务端中转</span>'
-    : '<span style="color:#e6a23c;font-size:12px">⚠️ 演示模式（不联网）</span>';
+  // R131：'provider'（前端直连服务商、密钥来自本机）已下线；内置模型统一走服务端中转。
+  const connStatus = (m.mode === 'backend' || typeof window.callAI === 'function')
+    ? '<span style="color:#409eff;font-size:12px">服务端中转（密钥在服务端）</span>'
+    : '<span style="color:#e6a23c;font-size:12px">演示模式（不联网）</span>';
 
   // 常用模型快速选择按钮
   const modelBtns = (cur.models || []).map(mdl =>
@@ -8716,8 +8652,11 @@ function renderAiProviderForm() {
         <input type="text" class="form-input" id="aipBaseUrl" value="${gsEscape(cfg.baseUrl || cur.baseUrl || '')}" placeholder="https://api.deepseek.com/chat/completions">
       </div>
       <div class="form-group full">
-        <div class="form-label">API Key（仅保存在本机浏览器 localStorage）</div>
-        <input type="password" class="form-input" id="aipKey" value="${gsEscape(cfg.apiKey || '')}" placeholder="sk-…（只存本地，不上传任何服务器）" autocomplete="off">
+        <div class="form-label">API Key</div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">
+          内置模型已统一走服务端中转，密钥只保存在服务器；本页不再填写、也不再保存任何服务商密钥。<br>
+          若本机历史遗留过密钥，点下方「清除本机密钥」即可删除。
+        </div>
       </div>
     </div>
 
@@ -8749,6 +8688,7 @@ function renderAiProviderForm() {
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
       <button class="btn btn-primary" onclick="saveAiProviderForm()">${icSpan('save', 14)} 保存配置</button>
       <button class="btn btn-outline" onclick="testAiConnection()">${icSpan('plug', 14)} 测试连接</button>
+      <button class="btn btn-outline" onclick="clearLegacyAiKeyUI()">清除本机密钥</button>
       <button class="btn btn-outline" onclick="clearAiProviderConfigUI()">${icSpan('trash', 14)} 清除配置</button>
       <button class="btn btn-outline" onclick="showAiUsage()">${icSpan('chart-bar', 14)} 用量统计</button>
     </div>
@@ -8936,23 +8876,20 @@ function __oldClearConfig() {
 function onAiProviderChange() {
   const id = document.getElementById('aipSelect').value;
   const p = AI_PROVIDERS.find(x => x.id === id) || {};
-  const cfg = getAiProviderConfig();
   document.getElementById('aipBaseUrl').value = p.baseUrl || '';
   document.getElementById('aipModel').value = p.model || '';
-  document.getElementById('aipKey').value = cfg.apiKey || ''; // 密钥在切换服务商时保留，方便填多把钥匙
 }
+/* R131：不再写入/继承任何 apiKey —— 密钥一律不出前端，内置模型统一走服务端中转。 */
 function saveAiProviderForm() {
   const cfg = {
     provider: (document.getElementById('aipSelect') || {}).value || 'custom',
     baseUrl: (document.getElementById('aipBaseUrl') || {}).value.trim(),
-    model: (document.getElementById('aipModel') || {}).value.trim(),
-    apiKey: (document.getElementById('aipKey') || {}).value.trim()
+    model: (document.getElementById('aipModel') || {}).value.trim()
   };
-  if (cfg.apiKey && !cfg.baseUrl) { showToast('请填写接口地址（或选择预置服务商）'); return; }
-  if (cfg.apiKey || cfg.baseUrl) saveAiProviderConfig(cfg);
+  if (cfg.baseUrl) saveAiProviderConfig(cfg);
   else clearAiProviderConfig();
   renderAiProviderForm();
-  showToast(cfg.apiKey ? '✅ AI 服务商配置已保存（仅存本机）' : '已清除 AI 直连配置');
+  showToast(cfg.baseUrl ? '已保存（内置模型走服务端中转，本机不保存密钥）' : '已清除 AI 直连配置');
 }
 function clearAiProviderConfigUI() {
   uiConfirm('确定清除本机保存的 AI 服务商配置（含 API Key）吗？', '清除').then(function (ok) {
@@ -8962,28 +8899,39 @@ function clearAiProviderConfigUI() {
     showToast('已清除，回到后端中转/本地演示模式');
   });
 }
+/* R131：不再用本机密钥直连上游做连通性测试（密钥不出前端），改为测服务端中转通道。 */
 async function testAiConnection() {
-  const cfg = {
-    provider: (document.getElementById('aipSelect') || {}).value || 'custom',
-    baseUrl: (document.getElementById('aipBaseUrl') || {}).value.trim(),
-    model: (document.getElementById('aipModel') || {}).value.trim(),
-    apiKey: (document.getElementById('aipKey') || {}).value.trim()
-  };
-  if (!cfg.apiKey || !cfg.baseUrl) { showToast('请先填写接口地址和 API Key'); return; }
-  showToast('正在测试连接…');
-  try {
-    const res = await fetch(cfg.baseUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.apiKey },
-      body: JSON.stringify({ model: cfg.model || 'deepseek-chat', stream: false, messages: [{ role: 'user', content: '你好' }] })
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    const reply = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
-    showToast('✅ 连接成功！模型回复：' + (reply || '').slice(0, 20));
-  } catch (e) {
-    showToast('⚠️ 连接失败：' + e.message.slice(0, 60));
+  const box = document.getElementById('aiTestResult');
+  function escT(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  if (typeof window.callAI !== 'function') {
+    if (box) box.innerHTML = '<span style="color:#e6a23c;">服务端 AI 底座未就绪，请刷新页面后重试</span>';
+    showToast('AI 底座未就绪');
+    return;
   }
+  showToast('正在测试服务端中转…');
+  if (box) box.innerHTML = '正在测试服务端中转…';
+  try {
+    const r = await window.callAI('auto', [{ role: 'user', content: '你好' }], {});
+    const out = r && (r.text || r.content);
+    if (box) box.innerHTML = '<span style="color:#67c23a;">服务端中转可用' + (out ? '' : '（返回空内容）') + '</span>';
+    showToast('服务端中转可用');
+  } catch (e) {
+    const msg = (e && e.message) ? String(e.message) : '未知错误';
+    if (box) box.innerHTML = '<span style="color:#e6a23c;">服务端中转不可用：' + escT(msg.slice(0, 60)) + '</span>';
+    showToast('服务端中转不可用');
+  }
+}
+/* R131/Q6：清除本机历史遗留的服务商密钥（只删 apiKey 字段，保留端点/模型等展示配置）。
+   内置模型已改为服务端中转，清除后不影响任何内置能力。 */
+function clearLegacyAiKeyUI() {
+  uiConfirm('确定清除本机保存的服务商密钥吗？\n\n内置模型已统一走服务端中转，本机不再需要任何密钥。', '清除').then(function (ok) {
+    if (!ok) return;
+    var cfg = getAiProviderConfig();
+    if (cfg && cfg.apiKey) { delete cfg.apiKey; saveAiProviderConfig(cfg); }
+    else { clearAiProviderConfig(); }
+    renderAiProviderForm();
+    showToast('已清除本机密钥');
+  });
 }
 // 个人中心页 / 设置页初始化（按 DOM 存在性执行，互不影响其他页面）
 if (document.getElementById('page-profile')) renderProfilePage();

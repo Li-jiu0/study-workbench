@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>动态空间 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260919m">
+<link rel="stylesheet" href="assets/common.css?v=20260919r">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O">
@@ -29,6 +29,16 @@
   .xtm-listrow-icon .nav-icon svg{stroke:var(--primary)}
   .xtm-listrow-arrow .nav-icon{display:flex;align-items:center}
   .xtm-listrow-arrow .nav-icon svg{stroke:var(--text-secondary)}
+  /* R131：修复「最后一条动态的操作栏被固定底栏盖住」。
+     #page-moments 被内联 display:flex（行向）接管为滚动容器后，.xtm-wrap 默认被
+     align-items:stretch 拉到视口高度，其自身 padding-bottom 只落在视口底部而非内容末尾，
+     最后一条动态溢出到其后，操作栏无法滚动到固定底栏上方。
+     处理：1) 让流内子元素按内容自适应高度（flex-start），.xtm-wrap 原有的
+        padding-bottom（xt-moments.css 口径：底栏高 + safe-area + 24px）即可跟随内容生效；
+        2) 给滚动容器 #page-moments 自身补一条含 safe-area 的底部留白兜底，
+        口径照抄 common.css 中 .main > .page / .content 的现成写法。 */
+  #page-moments{align-items:flex-start}
+  #page-moments{padding-bottom:calc(var(--bottom-nav-height, 64px) + 20px + env(safe-area-inset-bottom, 0px))}
 </style>
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
 <script>window.__XT_PROD__=true;</script>
@@ -169,7 +179,7 @@
 <script src="assets/icon-map.js?v=20260919l" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260919i" defer></script>
+<script src="assets/app.js?v=20260919r" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
 <script src="assets/api.js?v=20260917b" defer></script>
 <script src="assets/xt-moments.js?v=20260918d" defer></script>
@@ -179,16 +189,16 @@ if (typeof window.moOpenUser !== 'function') {
   window.moOpenUser = function (uid) { if (uid) location.href = '个人资料.html?user=' + uid; };
 }
 </script>
-<script src="assets/ai-config.js?v=20260918c"></script>
+<script src="assets/ai-config.js?v=20260919r"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260919d"></script>
+<script src="assets/ai-service.js?v=20260919r"></script>
 <script src="assets/ai-cap-registry.js?v=20260918c"></script>
-<script src="assets/ai-cap-image.js?v=20260918c"></script>
-<script src="assets/ai-cap-vision.js?v=20260918c"></script>
-<script src="assets/ai-cap-audio.js?v=20260918c"></script>
-<script src="assets/ai-cap-embed.js?v=20260918c"></script>
-<script src="assets/ai-cap-translate.js?v=20260918c"></script>
-<script src="assets/ai-cap-video.js?v=20260918c"></script>
-<script src="assets/ai-cap-3d.js?v=20260918c"></script>
+<script src="assets/ai-cap-image.js?v=20260919r"></script>
+<script src="assets/ai-cap-vision.js?v=20260919r"></script>
+<script src="assets/ai-cap-audio.js?v=20260919r"></script>
+<script src="assets/ai-cap-embed.js?v=20260919r"></script>
+<script src="assets/ai-cap-translate.js?v=20260919r"></script>
+<script src="assets/ai-cap-video.js?v=20260919r"></script>
+<script src="assets/ai-cap-3d.js?v=20260919r"></script>
 </body>
 </html>

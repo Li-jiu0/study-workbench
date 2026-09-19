@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#5B8DEF">
 <title>私信 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260919m">
+<link rel="stylesheet" href="assets/common.css?v=20260919r">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O">
@@ -51,8 +51,8 @@
      不再出现在彩色/白卡内部；灰色用 var(--text-muted)（深色模式自动适配）。
      气泡下留白 = .im-msgs gap(10px) + margin-bottom(10px)，容纳 10px 小字不与下一条重叠。 */
   .im-m{position:relative;margin-bottom:10px}
-  .im-mt{position:absolute;top:100%;right:0;margin-top:3px;font-size:10px;opacity:1;text-align:right;color:var(--text-muted)}
-  .im-m .im-read{position:absolute;top:100%;right:32px;margin-top:3px;opacity:1;color:var(--text-muted)}
+  .im-mt{position:absolute;top:100%;right:0;margin-top:3px;font-size:10px;opacity:1;text-align:right;color:var(--text-muted);white-space:nowrap}
+  .im-m .im-read{position:absolute;top:100%;right:32px;margin-top:3px;opacity:1;color:var(--text-muted);white-space:nowrap}
   .im-m .im-read.ok{color:var(--text-muted)}
   /* R105：媒体卡脱气泡（位置/文件/图片/语音）—— 卡片自带 var(--card) 白底+描边，永远独立呈现，
      与发送方气泡色无关（微信同款规则）。容器 class「im-m media」由 chat-local.js 渲染端追加
@@ -445,13 +445,13 @@
 <script src="assets/icon-map.js?v=20260919l" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260919i" defer></script>
+<script src="assets/app.js?v=20260919r" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
 <!-- R88-H（2026-09-18）：位置能力底座 XT_LOC_PICK（跟 config.js，先于 chat-local.js，确保调用前就绪） -->
 <script src="assets/xt-region.js?v=20260919j" defer></script>
 <script src="assets/emoji/manifest.js?v=20260916O" defer></script>
 <script src="assets/api.js?v=20260917b" defer></script>
-<script src="assets/chat-local.js?v=20260919m" defer></script>
+<script src="assets/chat-local.js?v=20260919r" defer></script>
 <script src="assets/admin-contact.js?v=20260917b" defer></script>
 <style>
   /* R33（20260913r）：tab 视觉统一——去掉 .im-tab-add 的特殊填充/加粗与专属 hover，添加好友与其余 4 个 tab 同享 .im-tab/.im-tab.active；“im-tab-add” 类保留在 DOM 仅作语义标记，无样式副作用 */
@@ -1180,27 +1180,28 @@
     st.textContent =
       '.im-plus-mask{position:fixed;inset:0;background:rgba(0,0,0,.35);opacity:0;visibility:hidden;transition:opacity .2s ease;z-index:210}' +
       '.im-plus-mask.open{opacity:1;visibility:visible}' +
-      '.im-plus-menu{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:16px 16px 0 0;padding:10px 0 16px;box-shadow:0 -6px 24px rgba(0,0,0,.12);transform:translateY(110%);transition:transform .24s ease;z-index:211;max-width:520px;margin:0 auto;max-height:82vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(16px + env(safe-area-inset-bottom))}' +
+      '.im-plus-menu{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:16px 16px 0 0;display:grid;grid-template-columns:repeat(4,1fr);gap:14px 8px;padding:16px 10px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -6px 24px rgba(0,0,0,.12);transform:translateY(110%);transition:transform .24s ease;z-index:211;max-width:520px;margin:0 auto;max-height:82vh;overflow-y:auto;-webkit-overflow-scrolling:touch}' +
       '.im-plus-menu.open{transform:translateY(0)}' +
-      '.im-plus-item{display:flex;align-items:center;gap:12px;padding:12px 22px;font-size:15px;color:var(--text,#1f2328);cursor:pointer}' +
-      '.im-plus-item:active{background:#f2f3f5}' +
+      '.im-plus-item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 2px;font-size:12px;text-align:center;color:var(--text,#1f2328);cursor:pointer}' +
+      '.im-plus-item:active{background:#f2f3f5;border-radius:12px}' +
       /* R88-M6 方案B：彩色圆角方底色块 + 白色图标（对齐微信「+」菜单）。 */
-      '.im-plus-ico{flex:0 0 auto;width:44px;height:44px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;color:#fff}' +
-      '.im-plus-ico .nav-icon{display:inline-flex;align-items:center;justify-content:center;color:#fff}' +
-      '.im-plus-ico .nav-icon svg{stroke:#fff}' +
-      '.im-plus-ico--i1{background:linear-gradient(135deg,#22c07a,#12a86a)}' +
-      '.im-plus-ico--i2{background:linear-gradient(135deg,#5b8def,#3f6fd8)}' +
-      '.im-plus-ico--i3{background:linear-gradient(135deg,#f2a93b,#e08a1e)}' +
+      /* 图标升级（微信新版「+」面板风格）：浅色同系 tint 底 + 彩色线条图标（原为重彩渐变底 + 白图标）。 */
+      '.im-plus-ico{flex:0 0 auto;width:44px;height:44px;border-radius:14px;display:inline-flex;align-items:center;justify-content:center}' +
+      '.im-plus-ico .nav-icon{display:inline-flex;align-items:center;justify-content:center;color:inherit}' +
+      '.im-plus-ico .nav-icon svg{stroke:currentColor}' +
+      '.im-plus-ico--i1{background:rgba(18,168,106,.13);color:#12a86a}' +
+      '.im-plus-ico--i2{background:rgba(63,111,216,.13);color:#3f6fd8}' +
+      '.im-plus-ico--i3{background:rgba(224,138,30,.15);color:#d9860f}' +
       /* R90 item3：.im-plus-ico--i4 = 「定位」项配色。
          R106 校正：定位项早已回到加号菜单内（DOM 引用为「定位」行），旧注释「无 DOM 引用/改到 #imLocBtn」已失效。 */
       '.im-plus-ico--i4{background:linear-gradient(135deg,#eb5757,#d13b3b)}' +
       /* R106 T2b：--i5 = 「录音」项配色（紫，勿与 i1 绿重复）。 */
-      '.im-plus-ico--i5{background:linear-gradient(135deg,#8b5cf6,#6d3fd8)}' +
+      '.im-plus-ico--i5{background:rgba(109,63,216,.12);color:#6d3fd8}' +
       /* R104e 批5（2026-09-19）：--i6 = 「实时位置」项配色（青，勿与 i1 绿 / i4 红重复）。 */
-      '.im-plus-ico--i6{background:linear-gradient(135deg,#0ea5a4,#0b7c7b)}' +
-      '.im-plus-txt{flex:1;min-width:0}' +
-      '@media (max-width:360px){.im-plus-ico{width:40px;height:40px;border-radius:10px}}' +
-      '@media (max-height:520px){.im-plus-item{padding:8px 20px}.im-plus-ico{width:36px;height:36px;border-radius:9px}.im-plus-menu{padding:6px 0 10px;max-height:88vh}}' +
+      '.im-plus-ico--i6{background:rgba(11,124,123,.13);color:#0b7c7b}' +
+      '.im-plus-txt{width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;text-align:center}' +
+      '@media (max-width:360px){.im-plus-ico{width:40px;height:40px;border-radius:10px}.im-plus-menu{gap:10px 4px;padding:12px 6px calc(16px + env(safe-area-inset-bottom))}}' +
+      '@media (max-height:520px){.im-plus-item{padding:6px 4px;gap:6px}.im-plus-ico{width:36px;height:36px;border-radius:9px}.im-plus-menu{padding:6px 6px 10px;max-height:88vh}}' +
 
       '.im-loc-sheet{position:fixed;inset:0;z-index:215}' +
       '.im-loc-sheet-mask{position:absolute;inset:0;background:rgba(0,0,0,.35)}' +
@@ -1313,16 +1314,16 @@
   else boot();
 })();
 </script>
-<script src="assets/ai-config.js?v=20260918c"></script>
+<script src="assets/ai-config.js?v=20260919r"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260919d"></script>
+<script src="assets/ai-service.js?v=20260919r"></script>
 <script src="assets/ai-cap-registry.js?v=20260918c"></script>
-<script src="assets/ai-cap-image.js?v=20260918c"></script>
-<script src="assets/ai-cap-vision.js?v=20260918c"></script>
-<script src="assets/ai-cap-audio.js?v=20260918c"></script>
-<script src="assets/ai-cap-embed.js?v=20260918c"></script>
-<script src="assets/ai-cap-translate.js?v=20260918c"></script>
-<script src="assets/ai-cap-video.js?v=20260918c"></script>
-<script src="assets/ai-cap-3d.js?v=20260918c"></script>
+<script src="assets/ai-cap-image.js?v=20260919r"></script>
+<script src="assets/ai-cap-vision.js?v=20260919r"></script>
+<script src="assets/ai-cap-audio.js?v=20260919r"></script>
+<script src="assets/ai-cap-embed.js?v=20260919r"></script>
+<script src="assets/ai-cap-translate.js?v=20260919r"></script>
+<script src="assets/ai-cap-video.js?v=20260919r"></script>
+<script src="assets/ai-cap-3d.js?v=20260919r"></script>
 </body>
 </html>

@@ -137,9 +137,10 @@
   };
 
   /* ------------------------------------------------------------------
-     N9-18（含 N9-10）：场景两级分类（仅呈现层，SCENES 数据结构不变）
-     SCENE_GROUPS 为第一级大类；SCENE_GROUP_OF 记录「场景 key → 大类 key」，
+     N9-18（含 N9-10）：场景分类（仅呈现层，SCENES 数据结构不变）
+     SCENE_GROUPS 为大类；SCENE_GROUP_OF 记录「场景 key → 大类 key」，
      ext JSON 增量合并进来的未知 key 默认落入 life（日常生活），保证永不丢场景。
+     R131：大类不再单独平铺，改为下拉 optgroup 分组 + 徽标（vp-badge）。
      ------------------------------------------------------------------ */
   var SCENE_GROUPS = [
     { k: 'life', t: '日常生活' },
@@ -315,24 +316,14 @@
       '.vp-mode{flex:none;display:flex;gap:6px;margin:12px 16px 0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:4px}' +
       '.vp-mode .m{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;text-align:center;padding:9px 0;border-radius:9px;background:transparent;font-size:13px;color:var(--text-secondary);cursor:pointer}' +
       '.vp-mode .m.on{background:var(--primary);color:#fff;font-weight:700}' +
-      /* N9-18：场景两级分类（替掉横向滚动条，改为两行自动换行 chips） */
-      '.vp-cats{flex:none;display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px 0}' +
-      '.vp-cats .c{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:7px 14px;font-size:13px;color:var(--text-secondary);cursor:pointer;font-family:inherit;line-height:1.4}' +
-      '.vp-cats .c.on{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:700}' +
-      '.vp-cats .c.dis{opacity:.45}' +
+      /* R131：场景改为「全部分类 + 下拉选择列表」（原生 select，样式对齐页面配色） */
+      '.vp-cats{flex:none;display:flex;gap:8px;align-items:center;padding:10px 16px 0}' +
+      '.vp-sel{flex:1;max-width:340px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:9px 12px;font-size:13px;color:var(--text);font-family:inherit;line-height:1.4;outline:none}' +
+      '.vp-sel:focus{border-color:var(--primary)}' +
       '.vp-subs{flex:none;display:flex;gap:8px;flex-wrap:wrap;padding:8px 16px 4px;min-height:34px;align-items:center}' +
       '.vp-subs .s{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:6px 12px;font-size:13px;color:var(--text-secondary);cursor:pointer;font-family:inherit;line-height:1.4}' +
       '.vp-subs .s.on{background:var(--primary-light);border-color:var(--primary);color:var(--primary-dark);font-weight:700}' +
-      /* 收放：收起态只显示「当前项 + 展开」一行，展开态才显示整片胶囊（默认收起，减少拥挤） */
-      '.vp-cats.is-collapsed,.vp-subs.is-collapsed{padding-top:10px}' +
-      '.vp-subs.is-collapsed{padding-top:6px}' +
-      '.vp-cats.is-collapsed .c,.vp-subs.is-collapsed .s{display:none}' +
-      '.vp-sum{display:none;align-items:center;gap:8px;flex-wrap:wrap;width:100%}' +
-      '.vp-cats.is-collapsed .vp-sum,.vp-subs.is-collapsed .vp-sum{display:flex}' +
-      '.vp-sum .cur{font-size:13px;font-weight:700;color:var(--primary-dark);background:var(--primary-light);border:1px solid var(--primary);border-radius:18px;padding:6px 13px;line-height:1.4}' +
-      '.vp-sum .tip{font-size:12px;color:var(--text-muted)}' +
-      '.vp-sum .tg{display:inline-flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:6px 13px;font-size:13px;color:var(--text-secondary);cursor:pointer;font-family:inherit;line-height:1.4}' +
-      '.vp-sum .tg:hover{border-color:var(--primary);color:var(--primary-dark)}' +
+      /* R131：下拉选「全部分类」时平铺展示全部场景条目；选中某场景只显示该场景条目 */
       '.vp-none{font-size:12px;color:var(--text-muted)}' +
       '.vp-stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:0;padding:6px 16px 20px;overflow-y:auto}' +
       '.vp-count{color:var(--text-muted);font-size:12px;margin-bottom:8px}' +
@@ -424,46 +415,42 @@
   // 图标补绘：动态插入 data-icon 元素后触发 lucide 全量扫描（icon-map.js 未加载时静默跳过）
   function paintIcons() { if (typeof window.lucideAutoRender === 'function') { try { window.lucideAutoRender(); } catch (e) {} } }
 
-  /* ===== N9-18 辅助：场景两级分类条（两级各自可收放，收放态存 S，重建不丢） ===== */
+  /* ===== R131 辅助：场景条（下拉选择列表 + 场景条目） =====
+     默认视图 = 「全部分类」：平铺展示全部场景条目；
+     下拉选中某场景 = 条目区只显示该场景，并直接切入该场景练习。
+     SCENES / SCENE_GROUPS 数据结构不变，仅改展示层。 */
   function renderSceneBar() {
     var bar1 = document.getElementById('vpCats');
     var bar2 = document.getElementById('vpSubs');
     if (!bar1 || !bar2 || !S) return;
-    var h1 = '', h2 = '', i, keys;
-    // 收放态：默认收起（S.catsOpen / S.subsOpen 非 true 即收起）
-    var catsOpen = S.catsOpen === true;
-    var subsOpen = S.subsOpen === true;
-    // —— 第一级：大类 ——
-    if (catsOpen) {
-      // 展开态：摘要行收起（CSS 隐藏 .vp-sum），仅保留常显的「收起」按钮
-      h1 += '<button class="tg" onclick="openVoiceTrain.__catsToggle()">收起</button>';
-    } else {
-      // 收起态：显示当前分类名 + 展开按钮，仍能看清选中项
-      h1 += '<span class="vp-sum"><span class="cur">' + esc(groupTitle(S.group)) + '</span>' +
-            '<button class="tg" onclick="openVoiceTrain.__catsToggle()">全部分类</button></span>';
+    var sel = (S.catSel === '__all__' || !SCENES[S.catSel]) ? '__all__' : S.catSel;
+    // —— 下拉选择列表：全部分类 + 各大类分组（optgroup）+ 场景选项 ——
+    var h1 = '<select class="vp-sel" id="vpSel" aria-label="按场景筛选" onchange="openVoiceTrain.__selChange(this.value)">' +
+      '<option value="__all__"' + (sel === '__all__' ? ' selected' : '') + '>全部分类</option>';
+    for (var gi = 0; gi < SCENE_GROUPS.length; gi++) {
+      var g = SCENE_GROUPS[gi];
+      var gk = sceneKeysOf(g.k);
+      if (!gk.length) continue;
+      h1 += '<optgroup label="' + esc(g.t) + '">';
+      for (var ki = 0; ki < gk.length; ki++) {
+        h1 += '<option value="' + gk[ki] + '"' + (sel === gk[ki] ? ' selected' : '') + '>' + esc(SCENES[gk[ki]].t) + '</option>';
+      }
+      h1 += '</optgroup>';
     }
-    // 大类胶囊（展开态才由 CSS 显示）
-    for (i = 0; i < SCENE_GROUPS.length; i++) {
-      var g = SCENE_GROUPS[i];
-      var n = sceneKeysOf(g.k).length;
-      h1 += '<button class="c' + (S.group === g.k ? ' on' : '') + (n ? '' : ' dis') + '" onclick="openVoiceTrain.__group(\'' + g.k + '\')">' + esc(g.t) + '</button>';
+    h1 += '</select>';
+    // —— 场景条目：全部分类 = 全部场景平铺（按大类顺序）；选中场景 = 仅该场景 ——
+    var all = [], si;
+    for (si = 0; si < SCENE_GROUPS.length; si++) { all = all.concat(sceneKeysOf(SCENE_GROUPS[si].k)); }
+    var ks = Object.keys(SCENES); // 兜底：ext 合并进来的未归类场景也不丢
+    for (si = 0; si < ks.length; si++) { if (all.indexOf(ks[si]) < 0) all.push(ks[si]); }
+    var shown = (sel === '__all__') ? all : [sel];
+    var h2 = '';
+    for (si = 0; si < shown.length; si++) {
+      var k = shown[si];
+      if (!SCENES[k] || !SCENES[k].lines) continue;
+      h2 += '<button class="s' + (S.scene === k ? ' on' : '') + '" onclick="openVoiceTrain.__scene(\'' + k + '\')">' + esc(SCENES[k].t) + '</button>';
     }
-    // —— 第二级：场景条目 ——
-    keys = sceneKeysOf(S.group);
-    if (subsOpen) {
-      // 展开态：仅保留常显的「收起」按钮
-      h2 += '<button class="tg" onclick="openVoiceTrain.__subsToggle()">收起</button>';
-    } else {
-      h2 += '<span class="vp-sum"><span class="cur">' + esc(SCENES[S.scene] ? SCENES[S.scene].t : '—') + '</span>' +
-            '<button class="tg" onclick="openVoiceTrain.__subsToggle()">换一个</button></span>';
-    }
-    for (i = 0; i < keys.length; i++) {
-      h2 += '<button class="s' + (S.scene === keys[i] ? ' on' : '') + '" onclick="openVoiceTrain.__scene(\'' + keys[i] + '\')">' + esc(SCENES[keys[i]].t) + '</button>';
-    }
-    if (!keys.length) h2 += '<span class="vp-none">该分类暂未收录场景，先看看其它分类</span>';
-    // 两级各自挂 is-open / is-collapsed，CSS 据此决定显示摘要行还是整片胶囊
-    bar1.className = 'vp-cats ' + (catsOpen ? 'is-open' : 'is-collapsed');
-    bar2.className = 'vp-subs ' + (subsOpen ? 'is-open' : 'is-collapsed');
+    if (!h2) h2 = '<span class="vp-none">该分类暂未收录场景</span>';
     bar1.innerHTML = h1;
     bar2.innerHTML = h2;
     paintIcons();
@@ -705,8 +692,8 @@
       full: false, aiOpen: false, aiTab: 'word',
       // N9-18 P1：训练阶段（听→理解→说）+ 精听/挑战双模式
       stage: 'listen', genMode: listen ? 'intensive' : 'intensive',
-      // 收放态：默认收起（两级各自独立收放；状态存 S，重建 DOM 不丢，见 renderSceneBar）
-      catsOpen: false, subsOpen: false
+      // R131：场景筛选态（'__all__' = 全部分类，默认；其它值 = 具体场景 key）
+      catSel: '__all__'
     };
     var m = document.getElementById('vpMask'); if (m) m.remove();
     m = document.createElement('div'); m.id = 'vpMask'; m.className = 'vp-mask open';
@@ -721,7 +708,7 @@
       '<div class="m' + (mode === 'speak' ? ' on' : '') + '" data-mo="speak" onclick="openVoiceTrain.__mode(\'speak\')"><span class="nav-icon" data-icon="mic" data-icon-size="14"></span>口语跟读</div></div>' +
       // N9-18 P1：精听 / 挑战 双模式（需求 8），仅听力精听 tab 下沉到三阶段流程
       '<div class="vp-gmode" id="vpGMode"></div>' +
-      // N9-18：场景条改为两级分类（大类 + 具体场景），内容由 renderSceneBar 填充
+      // R131：场景区改为「全部分类 + 下拉选择列表」，内容由 renderSceneBar 填充
       '<div class="vp-cats" id="vpCats"></div>' +
       '<div class="vp-subs" id="vpSubs"></div>' +
       '<div class="vp-stage" id="vpBody"></div>';
@@ -967,41 +954,21 @@
     renderGModeBar();
     render();
   };
-  // N9-18 收放：大类条展开/收起（内联挂全局，重渲染后仍可用）
-  window.openVoiceTrain.__catsToggle = function () {
+  // R131：下拉选择列表变化（'__all__' = 全部分类；选场景 = 筛选并直接切入该场景）
+  window.openVoiceTrain.__selChange = function (v) {
     if (!S) return;
-    S.catsOpen = !(S.catsOpen === true);
-    // 展开大类时顺手收起条目条，避免两级同时铺满屏幕（保持「一次只看一层」）
-    if (S.catsOpen) S.subsOpen = false;
-    renderSceneBar();
+    if (v === '__all__' || !SCENES[v]) { S.catSel = '__all__'; renderSceneBar(); return; }
+    S.catSel = v;
+    S.scene = v; S.i = 0; S.showEn = S.mode === 'speak'; S.showZh = true;
+    S.group = groupKeyOf(v); S.full = false; S.aiOpen = false; S.stage = 'listen';
+    vpStop();
+    renderSceneBar(); render();
   };
-  // N9-18 收放：条目条展开/收起
-  window.openVoiceTrain.__subsToggle = function () {
-    if (!S) return;
-    S.subsOpen = !(S.subsOpen === true);
-    if (S.subsOpen) S.catsOpen = false;
-    renderSceneBar();
-  };
-  // N9-18：第一级大类切换（点大类 → 展开该类下的具体场景，并自动选中第一个）
-  window.openVoiceTrain.__group = function (gk) {
-    if (!S) return;
-    var keys = sceneKeysOf(gk);
-    if (!keys.length) { toast('「' + groupTitle(gk) + '」暂未收录场景，先看看其它分类'); return; }
-    S.group = gk;
-    if (keys.indexOf(S.scene) < 0) { S.scene = keys[0]; S.i = 0; S.showEn = S.mode === 'speak'; S.showZh = true; S.stage = 'listen'; }
-    // 选中即收起大类，并自动展开条目条（用户下一步就是挑条目，一步到位不打断）
-    S.catsOpen = false;
-    S.subsOpen = true;
-    renderSceneBar();
-    render();
-  };
-  // 第二级场景切换：签名与行为不变（额外同步大类选中态）
+  // 场景条目切换（条目区 chip 点击；全部分类视图下保持平铺不筛选）
   window.openVoiceTrain.__scene = function (k) {
     if (!S || !SCENES[k]) return;
     S.scene = k; S.i = 0; S.showEn = S.mode === 'speak'; S.showZh = true;
     S.group = groupKeyOf(k); S.full = false; S.aiOpen = false; S.stage = 'listen';
-    // 选完条目即收起，回到「当前项一行」的紧凑态（同 company-lib setCat 习惯）
-    S.subsOpen = false;
     renderSceneBar(); render();
   };
   window.openVoiceTrain.__prev = function () { if (!S) return; if (S.i > 0) { S.i--; } else { toast('已是第一句'); } S.stage = 'listen'; vpStop(); render(); };
