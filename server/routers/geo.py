@@ -285,6 +285,10 @@ async def geo_reverse(lat: str = "", lng: str = "",
             "title": p.get("title") or "",
             "address": p.get("address") or "",
             "_distance": p.get("_distance"),
+            # R104b：随 POI 原样透传腾讯自带坐标（数值），供前端选中后生成位置卡；
+            # 缺 location / 非 dict 时自然为 None，前端 Number()+isFinite 判空后降级纯文字。
+            "lat": (p.get("location") or {}).get("lat"),
+            "lng": (p.get("location") or {}).get("lng"),
         }
         for p in pois_raw
         if isinstance(p, dict)

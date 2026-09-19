@@ -570,7 +570,11 @@
             title: String(p.title),
             address: p.address ? String(p.address) : '',
             category: '',
-            distance: (p._distance == null || String(p._distance) === '') ? '' : String(p._distance)
+            distance: (p._distance == null || String(p._distance) === '') ? '' : String(p._distance),
+            /* R104 项3b：保留后端代理 POI 经纬度（与 _poiList 同款 Number()+isFinite 校验）；
+               后端未回传（字段缺失）→ null → 维持纯文字卡降级，绝不抛异常、绝不臆造坐标。 */
+            lat: (p.lat != null && String(p.lat) !== '' && isFinite(Number(p.lat))) ? Number(p.lat) : null,
+            lng: (p.lng != null && String(p.lng) !== '' && isFinite(Number(p.lng))) ? Number(p.lng) : null
           });
         }
       }
