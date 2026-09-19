@@ -206,6 +206,7 @@ class Message(Base):
     R104 项3（位置消息）：location 消息的坐标与地点副标题存于 sub / lat / lng；
     旧消息 / 非位置消息此三列为空（sub=''、lat/lng=NULL），前端走纯文字回退。
     R104d 批4：precise=True 表示用户实时精确定位（「我的位置」）；False / 旧消息 = 用户选择的地点。
+    批5：kind 另增 location_live（实时位置共享系统卡片；sub=shareId，**不含坐标**）。
     """
     __tablename__ = "messages"
     id = Column(Integer, primary_key=True)
@@ -223,6 +224,30 @@ class Message(Base):
 
     sender = relationship("User", foreign_keys=[sender_id])
     receiver = relationship("User", foreign_keys=[receiver_id])
+
+
+class LiveLocation(Base):
+    """批5：实时位置共享会话元数据（**只存会话，不存坐标流**）。
+
+    - 每会话一行；state: active / ended；expires_at 到点即视为结束（惰性判定，无后台线程）；
+    - last_lat/last_lng/last_seen 仅保留「最近一次心跳坐标」（供进程重启后 state 兜底），
+      由 ≥30s 一次的同 ID UPDATE 刷新，**绝不做轨迹追加写入**；
+    - 新表由 init_db 的 create_all（CREATE TABLE IF NOT EXISTS 语义）自动建，存量库零 ALTER。
+
+    隐私红线：只保留当前/最后一点坐标，不保留历史轨迹；日志绝不打印 lat/lng 明文。
+    """
+    __tablename__ = "live_locations"
+    id = Column(Integer, primary_key=True)
+    share_id = Column(String(36), unique=True, nullable=False, index=True)
+    owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    peer_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
+    group_id = Column(Integer, ForeignKey("chat_groups.id", ondelete="CASCADE"), nullable=True)
+    state = Column(String(16), nullable=False, default="active")   # active / ended
+    last_lat = Column(Float, nullable=True)
+    last_lng = Column(Float, nullable=True)
+    last_seen = Column(String(19), nullable=True)                  # now_iso()
+    created_at = Column(String(19), nullable=False)
+    expires_at = Column(String(19), nullable=False)
 
 
 class ChatGroup(Base):
@@ -381,6 +406,26 @@ class EmailCode(Base):
     used = Column(Boolean, nullable=False, default=False)
     attempts = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, nullable=False)
+
+
+class UserDevice(Base):
+    """R105：App 设备信息上报（POST /api/user/device），每用户一行。
+
+    - user_id 主键：同一用户重复上报 = upsert（覆盖 device + 刷新 last_active）；
+    - device：前端上报字段的 JSON 串（brand/model/osVersion/appVersion/androidId/
+      screenWidth/screenHeight/language，全部可选，长度上限见 routers/device.py）；
+    - last_active：最近一次上报时间（now_iso()，'YYYY-MM-DD HH:MM:SS'）。
+    新表由 init_db 的 Base.metadata.create_all（CREATE TABLE IF NOT EXISTS 语义）
+    自动建表，存量库无需 ALTER、无数据迁移。
+
+    ⚠️ 隐私红线：本表只允许存用户端主动上报的上述白名单字段；严禁收集 / 扩展
+    IMEI、IMSI、通讯录、短信、通话记录、剪贴板、定位轨迹等敏感个人信息。
+    后续新增字段必须先过隐私合规评审，并在 DeviceIn 同步声明与限长。
+    """
+    __tablename__ = "user_devices"
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    device = Column(Text, nullable=False, default="{}")
+    last_active = Column(String(19), nullable=False)
 
 
 def friend_pair(a: int, b: int) -> tuple[int, int]:

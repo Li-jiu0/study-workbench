@@ -3,13 +3,16 @@
 发送后若对方在线，会通过 wsmanager 实时推送；不在线则作为未读入库。
 权限：仅好友之间可私聊；任一方拉黑对方都禁止发消息（见 friends.is_blocked）。
 """
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import and_, case, func, or_
 from sqlalchemy.orm import Session
 
-from database import (FriendRemark, Message, User, can_message, friend_ids_of,
-                     get_db, is_admin_user, is_friend, now_iso)
+from database import (ChatGroup, ChatGroupMember, FriendRemark, Message, User,
+                     can_message, friend_ids_of, get_db, is_admin_user,
+                     is_friend, now_iso)
 from routers.friends import is_blocked
 from security import get_current_user
 from wsmanager import send_to
@@ -19,7 +22,7 @@ router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 class SendMsgIn(BaseModel):
     content: str = Field(max_length=5000)
-    kind: str = "text"  # text / image / voice / location
+    kind: str = "text"  # text / image / voice / location / location_live
     # R104 项3（位置消息）：可选坐标字段；非位置消息 / 旧前端不传 → 默认空值，零影响
     sub: str = ""
     lat: float | None = None
@@ -67,6 +70,17 @@ async def store_and_deliver(db: Session, sender: User, receiver_id: int,
     db.refresh(m)
     await send_to(receiver_id, {"type": "msg", "message": msg_dict(m)})
     return m
+
+
+async def send_live_card(db: Session, sender: User, peer_id: int,
+                         content: str, share_id: str) -> Message:
+    """批5：落一条实时位置共享系统卡片（kind=location_live，sub=shareId）。
+
+    卡片**不含任何坐标**（坐标流走 /api/live/tick，绝不落库）；
+    到期自动结束不调用本函数（避免「幽灵」已结束卡片）。
+    """
+    return await store_and_deliver(db, sender, peer_id, "location_live", content,
+                                   sub=share_id)
 
 
 @router.get("/{peer_id}/messages")
@@ -117,7 +131,8 @@ async def send_message(peer_id: int, body: SendMsgIn, user: User = Depends(get_c
     content = body.content.strip()
     # R104 项3：kind 白名单加入 location（**仅私聊放行**；群聊路径 groups.py 本期保持不变）。
     # 未知 kind 仍降级为 text（前向兼容）。
-    kind = body.kind if body.kind in ("text", "image", "voice", "location") else "text"
+    kind = (body.kind if body.kind in ("text", "image", "voice", "location", "location_live")
+            else "text")
     # 位置消息允许「纯坐标、无文本」；其余 kind 仍禁止空消息。
     if not content and kind != "location":
         raise HTTPException(400, "消息不能为空")
@@ -238,6 +253,8 @@ def unread(user: User = Depends(get_current_user), db: Session = Depends(get_db)
                 p["last"] = "[语音]"
             elif m.kind == "location":
                 p["last"] = "[位置]"
+            elif m.kind == "location_live":
+                p["last"] = "[实时位置]"
             else:
                 p["last"] = m.content[:80]
         total += 1
@@ -253,6 +270,118 @@ def unread(user: User = Depends(get_current_user), db: Session = Depends(get_db)
     for it in items:
         it["peerRemark"] = remarks.get(it["peerId"], "")
     return {"total": total, "items": items}
+
+
+def _epoch_ms(created_at: str) -> int:
+    """R105：'YYYY-MM-DD HH:MM:SS'（或旧 16 位格式）→ epoch 毫秒；解析失败返回 0。"""
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+        try:
+            return int(datetime.strptime(created_at, fmt).timestamp() * 1000)
+        except (ValueError, TypeError):
+            continue
+    return 0
+
+
+def _msg_preview(m: Message) -> str:
+    """R105：未读摘要预览文案（与 /unread 的 [图片]/[语音]/[位置] 口径对齐，另加 file）。"""
+    if m.kind == "image":
+        return "[图片]"
+    if m.kind == "voice":
+        return "[语音]"
+    if m.kind == "location":
+        return "[位置]"
+    if m.kind == "location_live":
+        return "[实时位置]"
+    if m.kind == "file":
+        return "[文件]"
+    if m.kind == "text":
+        return (m.content or "")[:50]
+    return "[消息]"
+
+
+@router.get("/unread-summary")
+def unread_summary(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """R105：App 前台轮询用未读摘要（私聊 + 群聊一次聚合返回）。
+
+    仅返回 unread>0 的会话，按最后一条消息时间倒序，最多 20 条：
+        {"ok": true, "items": [
+            {"id": 123, "type": "peer", "name": "昵称", "unread": 2,
+             "last": {"preview": "...", "sender": "发送者昵称", "time": 1726700000000}}]}
+    - type: peer（私聊）/ group（群聊）；
+    - name: 私聊 = 我的备注（有则优先）或对方昵称（与既有会话列表口径一致）；群聊 = 群名；
+    - last.preview: image→[图片] voice→[语音] location→[位置] location_live→[实时位置]
+                    file→[文件]
+                    text→正文前 50 字；未知 kind→[消息]；
+    - last.sender: 最后一条消息发送者昵称；last.time: epoch 毫秒。
+    复用既有未读模型：私聊 read_at IS NULL；群聊沿用 last_read_msg_id 已读游标。
+    性能：聚合 2 条 + 明细批量 4 条，共 6 条定数查询，无 N+1。
+    """
+    me = user.id
+    # 1) 私聊未读：按发送者聚合（未读游标 = read_at IS NULL，与 /unread 同口径）
+    peer_rows = (
+        db.query(Message.sender_id, func.count(Message.id).label("cnt"),
+                 func.max(Message.id).label("last_id"))
+        .filter(Message.receiver_id == me, Message.group_id.is_(None),
+                Message.read_at.is_(None))
+        .group_by(Message.sender_id)
+        .all()
+    )
+    # 2) 群聊未读：join 成员表用 last_read_msg_id 游标（与 groups.py 同口径；排除自己发的）
+    group_rows = (
+        db.query(ChatGroupMember.group_id, func.count(Message.id).label("cnt"),
+                 func.max(Message.id).label("last_id"))
+        .join(Message, Message.group_id == ChatGroupMember.group_id)
+        .filter(ChatGroupMember.user_id == me,
+                Message.id > ChatGroupMember.last_read_msg_id,
+                Message.sender_id != me)
+        .group_by(ChatGroupMember.group_id)
+        .all()
+    )
+    if not peer_rows and not group_rows:
+        return {"ok": True, "items": []}
+    # 3) 批量取最后一条消息（一次查询）
+    last_ids = [r.last_id for r in peer_rows] + [r.last_id for r in group_rows]
+    last_msgs = ({m.id: m for m in db.query(Message).filter(Message.id.in_(last_ids)).all()}
+                 if last_ids else {})
+    # 4) 批量取展示信息：对端用户 / 群 / 发送者昵称 / 我的备注（各一次查询）
+    peer_ids = [r.sender_id for r in peer_rows]
+    group_ids = [r.group_id for r in group_rows]
+    users = ({u.id: u for u in db.query(User).filter(User.id.in_(peer_ids)).all()}
+             if peer_ids else {})
+    group_map = ({g.id: g for g in db.query(ChatGroup).filter(ChatGroup.id.in_(group_ids)).all()}
+                 if group_ids else {})
+    sender_ids = {m.sender_id for m in last_msgs.values()}
+    sender_names = (dict(db.query(User.id, User.nickname).filter(User.id.in_(sender_ids)).all())
+                    if sender_ids else {})
+    remarks = ({
+        r.peer_id: (r.remark or "")
+        for r in db.query(FriendRemark).filter(
+            FriendRemark.owner_id == me, FriendRemark.peer_id.in_(peer_ids)).all()
+    } if peer_ids else {})
+
+    def _item(item_id: int, itype: str, name: str, cnt: int, last_id: int) -> tuple:
+        lm = last_msgs.get(last_id)
+        item = {
+            "id": item_id, "type": itype, "name": name, "unread": int(cnt),
+            "last": {
+                "preview": _msg_preview(lm) if lm else "[消息]",
+                "sender": sender_names.get(lm.sender_id, "") if lm else "",
+                "time": _epoch_ms(lm.created_at) if lm else 0,
+            },
+        }
+        return (item["last"]["time"], last_id, item)
+
+    ranked = []
+    for sid, cnt, last_id in peer_rows:
+        u = users.get(sid)
+        ranked.append(_item(sid, "peer", remarks.get(sid) or (u.nickname if u else "已注销用户"),
+                            cnt, last_id))
+    for gid, cnt, last_id in group_rows:
+        g = group_map.get(gid)
+        ranked.append(_item(gid, "group", (g.name if g else "群聊"), cnt, last_id))
+    # 时间倒序（同一秒内按消息 id 兜底），最多 20 条
+    ranked.sort(key=lambda t: (t[0], t[1]), reverse=True)
+    return {"ok": True, "items": [t[2] for t in ranked[:20]]}
 
 
 def do_mark_read(db: Session, peer_id: int, me_id: int, up_to_id: int) -> int:

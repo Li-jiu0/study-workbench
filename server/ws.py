@@ -3,7 +3,7 @@
 协议（JSON 文本帧）：
   客户端 → 服务端：
     {"type":"ping"}                                 心跳（每 ~25s）
-    {"type":"msg","to":<userId>,"content":"..","kind":"text|image|location","sub":"..","lat":..,"lng":..,"precise":true|false}
+    {"type":"msg","to":<userId>,"content":"..","kind":"text|image|location|location_live","sub":"..","lat":..,"lng":..,"precise":true|false}
     {"type":"read","peer":<userId>,"upToId":<消息id>} 已读回执
   服务端 → 客户端：
     {"type":"hello","userId":..}                    建立成功
@@ -52,7 +52,9 @@ async def _handle_msg(uid: int, msg: dict) -> None:
     to = int(msg.get("to") or 0)
     # R104 项3：kind 白名单加 location（仅私聊 WS；群聊走 groups.py，独立不受影响）。
     # 注：voice 仍未纳入 WS 白名单（保持改动前行为，不在本次范围）。
-    kind = msg.get("kind") if msg.get("kind") in ("text", "image", "location") else "text"
+    # 批5：白名单加 location_live（实时位置共享系统卡片；坐标流仍走 /api/live/tick，不经 WS）。
+    kind = (msg.get("kind") if msg.get("kind") in ("text", "image", "location", "location_live")
+            else "text")
     content = str(msg.get("content") or "").strip()
     # 位置消息允许「纯坐标、无文本」；其余 kind 仍禁止空消息。
     if not to or to == uid or (not content and kind != "location"):

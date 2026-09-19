@@ -17,6 +17,8 @@ from routers import (admin, ai, auth, chat, feedback, feedback_public, friends,
                      geo, groups, migrate, moments, news, notes, social, study,
                      uploads, users)
 from routers import update  # R86-F：客户端检测更新 GET /api/app/version
+from routers import device  # R105：设备上报 POST /api/user/device
+from routers import liveloc  # 批5：实时位置共享 /api/live/*
 import ws
 
 app = FastAPI(title="学习工作台 · 多人博客后端", version="2.0")
@@ -40,6 +42,8 @@ admin.ensure_admin_user()
 
 app.include_router(auth.router)
 app.include_router(users.router)
+app.include_router(device.router)  # R105：设备上报 POST /api/user/device
+app.include_router(liveloc.router)  # 批5：实时位置共享（/api/live/*，rate_limit default）
 app.include_router(notes.router)
 app.include_router(social.router)
 app.include_router(friends.router)

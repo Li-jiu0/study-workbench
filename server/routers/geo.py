@@ -38,7 +38,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import httpx
 from fastapi import APIRouter, Depends, Request, Response
 
-from config import BASE_DIR, GEO_PLACE_DAILY_CAP, TENCENT_MAP_KEY
+from config import (BASE_DIR, GEO_PLACE_DAILY_CAP, GEO_STATICMAP_DAILY_CAP,
+                    TENCENT_MAP_KEY)
 from rate_limit import _client_ip, rate_limit
 
 router = APIRouter(prefix="/api/geo", tags=["geo"])
@@ -89,6 +90,18 @@ _PLACE_LOADED = False  # 懒加载标志：首次用到时才从计数文件读�
 # 内容 {"day": "YYYY-MM-DD", "count": N}；目的：让「当日 150 次熔断」扛得住进程重启
 # （纯内存计数重启即清零 = 假保护）。缺失/损坏/解析失败一律当 {"day":"","count":0}，绝不抛异常。
 _PLACE_COUNT_FILE = BASE_DIR / "data" / "geo_place_count.json"
+
+# 批5：静态地图每日硬上限（按 Key 计的全局额度，非 rate_limit 的每 IP 每分窗）。
+# 腾讯官方个人开发者口径：静态图 /ws/staticmap/v2 日额度 ≈6000（与 geocoder/v1 同档），
+# cap 缺省取一半（config.GEO_STATICMAP_DAILY_CAP=3000），给位置卡片留余量。
+_STATICMAP_DAILY_MAX = GEO_STATICMAP_DAILY_CAP
+_STATICMAP_DAY = ""    # 当前计数所属日期（time.strftime("%Y-%m-%d")）
+_STATICMAP_COUNT = 0   # 当日已消耗次数
+_STATICMAP_LOADED = False  # 懒加载标志
+
+# 计数持久化文件（运行时数据：绝不入库 / 绝不进部署清单 / 已被 .gitignore 覆盖）。
+# 结构照 geo_place_count.json：{"day": "YYYY-MM-DD", "count": N}；目的：扛进程重启。
+_STATICMAP_COUNT_FILE = BASE_DIR / "data" / "geo_staticmap_count.json"
 
 # adcode 为 2~6 位纯数字（省 2 位 / 市 4 位 / 区县 6 位）
 _ADCODE_RE = re.compile(r"^\d{2,6}$")
@@ -298,6 +311,58 @@ def _place_quota_take() -> bool:
     return True
 
 
+def _staticmap_count_load() -> None:
+    """懒加载静态图计数（首次用到时读一次）；缺失/损坏/解析失败 → day="" count=0。
+
+    本函数绝不抛异常（读盘失败也不能阻断请求）。
+    """
+    global _STATICMAP_DAY, _STATICMAP_COUNT, _STATICMAP_LOADED
+    if _STATICMAP_LOADED:
+        return
+    _STATICMAP_LOADED = True
+    try:
+        with open(_STATICMAP_COUNT_FILE, "r", encoding="utf-8") as f:
+            obj = json.load(f)
+        if isinstance(obj, dict):
+            day, cnt = obj.get("day"), obj.get("count")
+            if (isinstance(day, str) and isinstance(cnt, int)
+                    and not isinstance(cnt, bool) and cnt >= 0):
+                _STATICMAP_DAY, _STATICMAP_COUNT = day, cnt
+    except Exception:  # noqa: BLE001 —— 任何读/解析异常都退回空计数
+        _STATICMAP_DAY, _STATICMAP_COUNT = "", 0
+
+
+def _staticmap_count_save() -> None:
+    """尽力把当日计数落盘（.tmp + os.replace 原子替换）；异常一律吞掉，绝不阻断请求。"""
+    try:
+        _STATICMAP_COUNT_FILE.parent.mkdir(parents=True, exist_ok=True)
+        tmp = str(_STATICMAP_COUNT_FILE) + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump({"day": _STATICMAP_DAY, "count": _STATICMAP_COUNT}, f)
+        os.replace(tmp, str(_STATICMAP_COUNT_FILE))
+    except Exception:  # noqa: BLE001 —— 落盘失败不影响计数与请求
+        pass
+
+
+def _staticmap_quota_take() -> bool:
+    """取一次「静态图每日配额」；取不到返回 False（调用方直接降级、绝不出网）。
+
+    计数为按 Key 计的全局额度，持久化到 _STATICMAP_COUNT_FILE：跨重启续上、
+    跨自然日（time.strftime 变化）自动重置为 0，与 _place_quota_take 同构。
+    """
+    global _STATICMAP_DAY, _STATICMAP_COUNT
+    _staticmap_count_load()
+    today = time.strftime("%Y-%m-%d")
+    if today != _STATICMAP_DAY:
+        _STATICMAP_DAY, _STATICMAP_COUNT = today, 0
+        _staticmap_count_save()
+    if _STATICMAP_COUNT >= _STATICMAP_DAILY_MAX:
+        return False
+    _STATICMAP_COUNT += 1
+    _staticmap_count_save()
+    return True
+
+
 @router.get("/ip")
 async def geo_ip(request: Request, _rl: None = Depends(rate_limit("geo"))) -> Dict[str, Any]:
     """IP 定位降级：客户端公网 IP → 省市区（浏览器 geolocation 被拒时的兜底）。
@@ -495,6 +560,11 @@ async def geo_staticmap(lat: str = "", lng: str = "", zoom: str = "",
 
     if not TENCENT_MAP_KEY:
         return {"ok": False, "error": "key_missing"}
+
+    # 批5：静态图每日熔断（顺序与 place 一致：缓存命中已在上方返回；未命中才 take；
+    # take 失败直接降级，绝不出网）。rate_limit("geo") 保持原样不动。
+    if not _staticmap_quota_take():
+        return {"ok": False, "degraded": True, "error": "staticmap_daily_cap"}
 
     # center 为「纬度,经度」顺序；markers 中的 | 由 httpx 自动 URL 编码为 %7C
     got = await _tencent_bytes(_STATICMAP_URL, {

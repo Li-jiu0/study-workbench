@@ -221,7 +221,12 @@ class GroupCreateIn(BaseModel):
 
 class GroupMsgIn(BaseModel):
     content: str = Field(max_length=5000)
-    kind: str = "text"  # text / image / voice
+    kind: str = "text"  # text / image / voice / location / location_live
+    # 批5：群聊位置消息从零打通 —— 可选坐标字段；旧客户端不传 → 默认空值，零影响
+    sub: str = ""
+    lat: float | None = None
+    lng: float | None = None
+    precise: bool = False
 
 
 class GroupReadIn(BaseModel):

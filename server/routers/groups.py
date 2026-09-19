@@ -49,8 +49,45 @@ def group_msg_dict(m: Message, sender: User | None, group_id: int,
         "senderAvatar": sender.avatar if sender else None,
         "kind": m.kind,
         "content": m.content,
+        # 批5：与私聊 msg_dict 对齐，补齐坐标字段（旧数据自然为 ""/None/False）
+        "sub": getattr(m, "sub", "") or "",
+        "lat": getattr(m, "lat", None),
+        "lng": getattr(m, "lng", None),
+        "precise": bool(getattr(m, "precise", False)),
         "createdAt": m.created_at,
     }
+
+
+async def _persist_and_push_group_msg(db: Session, gid: int, sender: User, kind: str,
+                                      content: str, sub: str = "", lat: float | None = None,
+                                      lng: float | None = None,
+                                      precise: bool = False) -> Message:
+    """批5：群消息「写库 + 遍历除发送者外的成员推送」共用实现。
+
+    send_group_message（普通群消息）与 send_group_card（实时位置系统卡片）共用；
+    离线成员靠轮询兜底（与既有行为一致）。
+    """
+    m = Message(sender_id=sender.id, receiver_id=0, group_id=gid, kind=kind,
+                content=content, sub=sub or "", lat=lat, lng=lng, precise=precise,
+                read_at=None, created_at=now_iso())
+    db.add(m)
+    db.commit()
+    db.refresh(m)
+    others = db.query(ChatGroupMember.user_id).filter(
+        ChatGroupMember.group_id == gid, ChatGroupMember.user_id != sender.id).all()
+    nick_map = _group_nick_map(db, gid)
+    payload = {"type": "groupMsg", "groupId": gid,
+               "message": group_msg_dict(m, sender, gid, nick_map)}
+    for (uid,) in others:
+        await send_to(uid, payload)
+    return m
+
+
+async def send_group_card(db: Session, gid: int, sender: User, content: str,
+                          share_id: str) -> Message:
+    """批5：落一条群聊实时位置共享系统卡片（kind=location_live，sub=shareId，不含坐标）。"""
+    return await _persist_and_push_group_msg(db, gid, sender, "location_live", content,
+                                             sub=share_id)
 
 
 def require_group(db: Session, gid: int) -> ChatGroup:
@@ -145,6 +182,10 @@ def _admin_group_rows(db: Session) -> list[dict]:
                 "content": (last.content or "")[:80],
                 "kind": last.kind,
                 "senderId": last.sender_id,
+                "sub": getattr(last, "sub", "") or "",
+                "lat": getattr(last, "lat", None),
+                "lng": getattr(last, "lng", None),
+                "precise": bool(getattr(last, "precise", False)),
                 "createdAt": last.created_at,
             } if last else None,
             "unreadCount": 0,
@@ -187,6 +228,10 @@ def list_groups(user: User = Depends(get_current_user), db: Session = Depends(ge
                 "content": last.content[:80] if last else "",
                 "kind": last.kind if last else "text",
                 "senderId": last.sender_id if last else 0,
+                "sub": (getattr(last, "sub", "") or "") if last else "",
+                "lat": getattr(last, "lat", None) if last else None,
+                "lng": getattr(last, "lng", None) if last else None,
+                "precise": bool(getattr(last, "precise", False)) if last else False,
                 "createdAt": last.created_at if last else "",
             } if last else None,
             "unreadCount": unread,
@@ -316,22 +361,16 @@ async def send_group_message(gid: int, body: GroupMsgIn,
     require_group(db, gid)
     require_member(db, gid, user.id)
     content = body.content.strip()
-    if not content:
+    # 批5：kind 白名单补 location / location_live（群聊此前连 location 都没有）；
+    # 位置类消息允许「纯坐标、无文本」，其余 kind 仍禁止空消息。
+    kind = (body.kind if body.kind in ("text", "image", "voice", "location", "location_live")
+            else "text")
+    if not content and kind not in ("location", "location_live"):
         raise HTTPException(400, "消息不能为空")
-    kind = body.kind if body.kind in ("text", "image", "voice") else "text"
-    m = Message(sender_id=user.id, receiver_id=0, group_id=gid, kind=kind,
-                content=content, read_at=None, created_at=now_iso())
-    db.add(m)
-    db.commit()
-    db.refresh(m)
-    # 推送自身游标之外的成员（自己不需要回显，前端发送成功即本地渲染）
-    others = db.query(ChatGroupMember.user_id).filter(
-        ChatGroupMember.group_id == gid, ChatGroupMember.user_id != user.id).all()
-    nick_map = _group_nick_map(db, gid)
-    payload = {"type": "groupMsg", "groupId": gid, "message": group_msg_dict(m, user, gid, nick_map)}
-    for (uid,) in others:
-        await send_to(uid, payload)
-    return group_msg_dict(m, user, gid, nick_map)
+    m = await _persist_and_push_group_msg(db, gid, user, kind, content,
+                                          sub=body.sub, lat=body.lat, lng=body.lng,
+                                          precise=body.precise)
+    return group_msg_dict(m, user, gid, _group_nick_map(db, gid))
 
 
 @router.post("/{gid}/read")

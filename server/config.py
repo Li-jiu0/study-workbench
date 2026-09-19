@@ -131,3 +131,9 @@ TENCENT_MAP_KEY = _get("TENCENT_MAP_KEY")
 # R104c：地点搜索（/api/geo/place）按 Key 计的全局每日硬上限；缺省 150（留腾讯约 200/日余量）。
 # 注意：这是「全局日额度」，与 rate_limit("geo")（每 IP 每分钟突发闸）职责不同。
 GEO_PLACE_DAILY_CAP = int(_get("GEO_PLACE_DAILY_CAP", "150") or 150)
+
+# 批5：静态地图（/api/geo/staticmap）按 Key 计的全局每日硬上限。
+# 腾讯官方个人开发者口径：静态图 /ws/staticmap/v2 日额度 ≈6000（与 geocoder/v1 同档），
+# cap 缺省取官方一半（3000）给批2/批3/批4 的位置卡片留余量；.env 可覆盖。
+# 与 rate_limit("geo")（每 IP 每分钟突发闸）职责不同，不可互相替代。
+GEO_STATICMAP_DAILY_CAP = int(_get("GEO_STATICMAP_DAILY_CAP", "3000") or 3000)
