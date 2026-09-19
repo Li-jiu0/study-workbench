@@ -929,6 +929,21 @@
     return false;
   }
 
+  // R103：把「所选模型所属平台」提到中转链最前（只重排、不删除任何平台，保留冗余降级）。
+  // 此前固定按服务端顺序（ark 常在首位），选了别的平台的模型也会被 ark 抢先接单，
+  // 而服务端又按 id 解析不到，于是用默认模型应答 -> 用量明细显示 ark 默认模型名。
+  // 纯函数、幂等：命中平台提前，其余保持原相对顺序；未命中返回原数组内容。
+  function prioritizeProvider(list, providerId) {
+    if (!list || !list.length || !providerId) return list;
+    var hit = null;
+    var rest = [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i] && list[i].id === providerId) { hit = list[i]; }
+      else { rest.push(list[i]); }
+    }
+    return hit ? [hit].concat(rest) : rest;
+  }
+
   var _relayProviders = null; // 内存缓存：[{id,name}]
   // 游客也允许中转：服务端 /api/ai/models 已支持可选登录，只按每 IP 限流
   async function relayProviders() {
@@ -1235,7 +1250,11 @@
               // R88-M1：带上用户选中的模型 id（ai-config.js 的 id），
               // 服务端据此解析真实模型名——此前不带导致恒跑 .env 默认模型，
               // 表现为「选哪个模型都用同一个」。无选中则不带该字段（保持旧契约）。
-              modelId: (opt.modelId ? String(opt.modelId) : undefined)
+              modelId: (opt.modelId ? String(opt.modelId) : undefined),
+              // R103：前端 id 与后端 model_registry 键命名不统一，服务端按 id 解析不到
+              // 真实模型名时，用这里带来的「前端已知真实模型名」做二次解析（仍受服务端
+              // registry 白名单约束）；无选中/未知模型时不带该字段（保持旧契约）。
+              modelName: (opt.modelName ? String(opt.modelName) : undefined)
             })
           }),
           respMs, null, "服务端中转超时（" + respMs + "ms 未响应）", "TIMEOUT_RELAY"
@@ -2850,6 +2869,8 @@
       : (selIsImageGen ? "imagegen" : resolveFuncType(funcType, msgs, !!opts.image));
     if (!opts.image && !selIsImageGen) {
       var provs = await relayProviders();
+      // R103：中转优先走「所选模型所属平台」，避免别的平台抢先接单跑默认模型（见 prioritizeProvider）
+      if (selModel && selModel.provider) provs = prioritizeProvider(provs, selModel.provider);
       if (provs.length) {
         var ftR = cfg.FUNC_TYPES[realType] || cfg.FUNC_TYPES.general;
         var tempR = ftR.temperature != null ? ftR.temperature : 0.7;
@@ -2872,6 +2893,9 @@
           var relayOpts = {};
           for (var rk in reqOpts) { if (Object.prototype.hasOwnProperty.call(reqOpts, rk)) relayOpts[rk] = reqOpts[rk]; }
           if (selId) relayOpts.modelId = selId;
+          // R103：带上前端已知的真实模型名，供服务端在 id 解析落空时反查 registry
+          // （解决「前端 id 与后端 registry 键不统一 -> 恒回退 .env 默认模型」的根因）。
+          if (selModel && selModel.model) relayOpts.modelName = String(selModel.model);
           var relayed = await relayChat(provs, relayMsgs, tempR, maxTR, opts.onChunk, relayOpts);
           // 用量明细要显示「实际调用的模型名」：采用服务端回传的真实模型名；
           // 拿不到时用本地选中模型的真实模型串（ai-config 的 model 字段）兜底；

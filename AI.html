@@ -231,6 +231,29 @@ body.dark{
   color:var(--ai-sub);border-radius:0 8px 8px 0;
 }
 .ai-md strong{font-weight:700;}
+/* R103：AI 生成视频全屏播放（手机 WebView 放大观看） */
+.ai-vid-box{position:relative;display:inline-block;max-width:100%;line-height:0;}
+.ai-vid-fs-btn{
+  position:absolute;top:8px;right:8px;display:flex;align-items:center;justify-content:center;
+  width:30px;height:30px;padding:0;border:1px solid rgba(255,255,255,.35);border-radius:8px;
+  background:rgba(0,0,0,.55);color:#fff;cursor:pointer;z-index:2;
+}
+.ai-vid-fs-btn:hover{background:rgba(0,0,0,.72);}
+.ai-vid-fs-btn:active{transform:scale(.94);}
+.ai-vid-fs-btn .ai-vid-ic-close{display:none;}
+.ai-vid-box.ai-vid-fs-active .ai-vid-fs-btn .ai-vid-ic-expand{display:none;}
+.ai-vid-box.ai-vid-fs-active .ai-vid-fs-btn .ai-vid-ic-close{display:inline-block;}
+/* CSS 全屏兜底：video 铺满视口（只改样式，同一元素 → 播放不中断） */
+video.ai-vid-full{
+  position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:0!important;
+  width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;
+  margin:0!important;border-radius:0!important;background:#000!important;object-fit:contain;
+  z-index:2147483001!important;
+}
+.ai-vid-box.ai-vid-fs-active .ai-vid-fs-btn{
+  position:fixed!important;top:14px!important;right:14px!important;left:auto!important;bottom:auto!important;
+  z-index:2147483002!important;width:36px!important;height:36px!important;
+}
 
 /* —— 输入框（DeepSeek 风格） —— */
 .ai-input-dock{flex-shrink:0;padding:10px 16px 14px;background:var(--ai-bg);}
@@ -951,22 +974,22 @@ body.dark .ai-warn-bar{background:rgba(250,173,20,.1);border-color:rgba(250,173,
 <script src="assets/icon-map.js?v=20260916O" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260917b" defer></script>
+<script src="assets/app.js?v=20260919c" defer></script>
 <script src="assets/quest.js?v=20260916O" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
 <script src="assets/api.js?v=20260917b" defer></script>
 <script src="assets/study-stats.js?v=20260916O" defer></script>
 <script src="assets/ai-config.js?v=20260918c" defer></script>
 <script src="assets/ai-presets.js?v=20260916O" defer></script>
-<script src="assets/ai-service.js?v=20260919a" defer></script>
+<script src="assets/ai-service.js?v=20260919c" defer></script>
 <script src="assets/ai-cap-registry.js?v=20260918c" defer></script>
 <script src="assets/ai-cap-image.js?v=20260918c" defer></script>
 <script src="assets/ai-cap-vision.js?v=20260918c" defer></script>
 <script src="assets/ai-cap-audio.js?v=20260918c" defer></script>
 <script src="assets/ai-cap-embed.js?v=20260918c" defer></script>
 <script src="assets/ai-cap-translate.js?v=20260918c" defer></script>
-<script src="assets/ai-cap-video.js?v=20260918c" defer></script>
+<script src="assets/ai-cap-video.js?v=20260919c" defer></script>
 <script src="assets/ai-cap-3d.js?v=20260918c" defer></script>
-<script src="assets/ai-page.js?v=20260919a" defer></script>
+<script src="assets/ai-page.js?v=20260919c" defer></script>
 </body>
 </html>

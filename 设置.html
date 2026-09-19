@@ -148,7 +148,7 @@
           </div>
           <div class="subpage-group-card" onclick="SubpageRouter.navigate('about')">
             <div class="sgc-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div>
-            <div class="sgc-main"><div class="sgc-title">数据与关于</div><div class="sgc-desc">数据管理、数据总览、快捷入口、维护、关于</div></div>
+            <div class="sgc-main"><div class="sgc-title">数据与关于</div><div class="sgc-desc">数据管理、数据总览、快捷入口、维护</div></div>
             <div class="sgc-arrow">›</div>
           </div>
         </div>
@@ -240,6 +240,20 @@
             <div class="setting-actions" id="swCompact" data-page-node-id="mqw8cP72u7TrclPnNBVtAC">
               <button class="theme-option" data-val="1" onclick="stToggle('compact',true,this)" data-page-node-id="6dSJ5BgOvRG3CaNYH56Yoa"><span class="nav-icon" data-icon="check" data-icon-size="14"></span> 开启</button>
               <button class="theme-option" data-val="0" onclick="stToggle('compact',false,this)" data-page-node-id="kGirTzvmvqbo6TDv2dZYyj"><span class="nav-icon" data-icon="close" data-icon-size="14"></span> 关闭</button>
+            </div>
+          </div>
+          <!-- R103：AI 悬浮球显示开关。用户可长按悬浮球选「关闭悬浮球」永久隐藏（assets/app.js 会写
+               localStorage['study_workbench_ai_fab_hidden']='1' 并把球 display:none）。本开关负责重新开启：
+               开启 = removeItem(key) + 若存在则 window.setAiFabVisible(true)；关闭 = 写 key '1' + 若存在则
+               window.setAiFabVisible(false)。本页不直接操作 #aiFab 元素（有些页面没有该元素）。 -->
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">AI 悬浮球</div>
+              <div class="setting-desc">首页右下角的 AI 助手入口，关闭后可在设置里重新开启</div>
+            </div>
+            <div class="setting-actions" id="swAiFab">
+              <button class="theme-option" data-val="1" onclick="stAiFabToggle(true)"><span class="nav-icon" data-icon="check" data-icon-size="14"></span> 开启</button>
+              <button class="theme-option" data-val="0" onclick="stAiFabToggle(false)"><span class="nav-icon" data-icon="close" data-icon-size="14"></span> 关闭</button>
             </div>
           </div>
         </div>
@@ -758,6 +772,12 @@
               <button class="btn btn-outline" onclick="doLogout()" data-page-node-id="fDYJjfu772PG4CtC1gZjey"><span class="nav-icon" data-icon="logout" data-icon-size="14"></span> 退出登录</button>
             </div>
           </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">账号 ID</div>
+              <div class="setting-desc" id="stAcctId">—</div>
+            </div>
+          </div>
           <div class="setting-row" data-page-node-id="XP18LCXD1rEj6yJewUE5s4">
             <div class="setting-info" data-page-node-id="EKACO3MQv472SyidSTTDoa">
               <div class="setting-name" data-page-node-id="GZnaHk979w0Y65JCDkzOXI">注销本机账号</div>
@@ -888,24 +908,6 @@
         </div>
         </section>
 
-        <!-- 关于 -->
-        <section data-subpage="about">
-        <div class="card" data-page-node-id="ZIF3KldaDVWLKSv2KTWq2y">
-          <div class="card-header" data-page-node-id="qMOHPsO1cOqhxasJsruUAl">
-            <div class="card-title" data-page-node-id="R8Brxg61FHeEFz1FoqWucp"><span class="title-icon" data-page-node-id="pJI1c0yFUsqhDYfqwEBSLC" data-icon="info"></span>关于</div>
-          </div>
-          <div style="font-size:var(--xt-font-base);color:var(--text-secondary);line-height:1.9" data-page-node-id="EWt4IU3P46ldMQL0ZwXjV7">
-            <div style="font-size:var(--xt-font-md);font-weight:800;color:var(--text)" data-page-node-id="cebfOtFTEwudkshNDRmtpw"><span class="nav-icon" data-icon="rocket" data-icon-size="16"></span> 星途 · 学习工作台 v2.2 · 致追梦的人->修身</div>
-            <div style="margin-top:6px" data-page-node-id="BKe1rLTpXIQ0FqOJ4JZE9P">一款面向在校生与求职者的<b data-page-node-id="UMbLDaqutazwD7WYrwd692">全流程学习与备考工具箱</b>：从日常打卡、词汇记忆到刷题模考、面试表达，再到 AI 辅助与社区互动，学习记录默认保存在本机浏览器；登录服务器后，发贴/私信/AI 记录可多端同步（数据库存服务器）。</div>
-            <div style="margin-top:8px;font-weight:600;color:var(--text)" data-page-node-id="MjyN21aAMXf0HRWdcpw2ur"><span class="nav-icon" data-icon="inbox" data-icon-size="16"></span> 学习模块</div>
-            <div data-page-node-id="mi6yoar3f5KakALoBUL75p">首页学习台(每日任务/专注计时/学习提醒) · 四级词汇(间隔重复) · 听说训练(情景口语/听力精听) · 英语(听力/口语/阅读/翻译) · 行测刷题 · 错题本 · 行测(企业定向库/时政热点/真题模考/话题表达训练) · 面试题库 · 表达 · 面测 · 演示(设计基础/版式库/案例拆解/实战模板) · 万能金句/场景话术 · 社区(发贴/评论/点赞) · 通讯录私信</div>
-            <div style="margin-top:8px;font-weight:600;color:var(--text)" data-page-node-id="3Go179ureNmpTmQEArBbZo"><span class="nav-icon" data-icon="wrench" data-icon-size="16"></span> 便捷能力</div>
-            <div data-page-node-id="vsfN2AkFnyTSLv1V5dZjUJ">导入题库(Word/Excel/文本选目标导入) · 各题库“我的题库”自建/导入导出 · AI(多模型/用量/记录/读发贴) · 学习统计 · 数据备份与迁移 · 发贴回收站 · Markdown 导出 · 外观(主题跟随系统+配色皮肤) · 数据总览 · 每日学习提醒 · 账号与隐私安全 · 反馈直达创作者</div>
-            <div style="margin-top:10px;border-top:1px dashed var(--border);padding-top:8px;color:var(--text-muted);font-size:var(--xt-font-sm)" data-page-node-id="sA7LgG0fY7DvUL0lu3V6vv">版本 20260913k · 更新日期 2026-09-13：英语「听力训练」升级为页内面板（听力精听+口语跟读双模块，场景台词扩充）· 表达（案例拆解/i人伙伴团/角色扮演）、面测（面试准备/面试后）、演示（设计基础/实战模板库/技巧提升）由弹窗改页面并重构版式 · 社区评论支持回复嵌套与收起展开、修复评论头像显示 · 我的文章改列表导航、分类筛选改下拉 · 个人中心学习偏好支持页内直设、修复发贴统计入口 · 全站图标矢量化的查漏补缺与顶栏升级。</div>
-            <div style="margin-top:14px;text-align:right;font-style:italic;color:var(--text-secondary)" data-page-node-id="GnUdRryGLdmU50l8qbYfl5">—— 小叶子</div>
-          </div>
-        </div>
-        </section>
       </div>
   </div>
 
@@ -1025,9 +1027,9 @@
 <script src="assets/icon-map.js?v=20260916O" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260917b" defer></script>
+<script src="assets/app.js?v=20260919c" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/xt-update.js?v=20260919b" defer></script>
+<script src="assets/xt-update.js?v=20260919c" defer></script>
 <script src="assets/api.js?v=20260917b" defer></script>
 <script src="assets/subpage-router.js?v=20260917b" defer></script>
 <script src="assets/qbank.js?v=20260916O" defer></script>
@@ -1133,7 +1135,37 @@ function stToggle(key, val, el) {
   });
   showToast('✅ 设置已保存');
 }
+/* R103：AI 悬浮球显示开关。契约与 assets/app.js 保持一致：
+   localStorage key 'study_workbench_ai_fab_hidden'，值 '1' = 已隐藏；键不存在或 '0' = 显示。
+   开启：removeItem(key)，随后若 typeof window.setAiFabVisible === 'function' 则调用 setAiFabVisible(true) 实时生效
+        （该函数并非所有页面都存在，必须 typeof 判空）。
+   关闭：写 key '1'，并（若存在）调用 window.setAiFabVisible(false)（app.js 会同时写 key 与隐藏球）。
+   本页只负责写 localStorage + 调用该函数，不直接操作 #aiFab 元素。 */
+var AI_FAB_HIDE_KEY = 'study_workbench_ai_fab_hidden';
+function stAiFabHidden() {
+  try { return localStorage.getItem(AI_FAB_HIDE_KEY) === '1'; } catch (e) { return false; }
+}
+function stRenderAiFabUI() {
+  var on = !stAiFabHidden();
+  var wrap = document.getElementById('swAiFab'); if (!wrap) return;
+  wrap.querySelectorAll('.theme-option').forEach(function (b) {
+    b.classList.toggle('active', (b.getAttribute('data-val') === '1') === on);
+  });
+}
+function stAiFabToggle(visible) {
+  visible = !!visible;
+  try {
+    if (visible) { localStorage.removeItem(AI_FAB_HIDE_KEY); }
+    else { localStorage.setItem(AI_FAB_HIDE_KEY, '1'); }
+  } catch (e) { /* 忽略：隐私模式下 localStorage 可能不可用 */ }
+  if (typeof window.setAiFabVisible === 'function') {
+    try { window.setAiFabVisible(visible); } catch (e2) { /* 忽略 */ }
+  }
+  stRenderAiFabUI();
+  showToast(visible ? '✅ 已重新开启 AI 悬浮球' : '已关闭 AI 悬浮球（可在设置里重新开启）');
+}
 (function initSettingsUI() {
+  stRenderAiFabUI();
   var set = loadAllSettings();
   var pick = function (id, v) { var el = document.getElementById(id); if (el) el.value = v; };
   pick('stDailyNew', set.dailyNew);
@@ -1375,6 +1407,22 @@ function stInitAccount() {
   if (desc) desc.innerHTML = acct
     ? ('账号：<b>' + stEsc(acct) + '</b>　' + (online ? '数据存于服务器，可多端同步' : '账号与数据仅保存在本机浏览器'))
     : '未获取到登录账号（可能为访客状态）';
+  /* R103：补显示「账号 ID」。数据来源：真实登录态 CURRENT_USER.id（assets/api.js 的 loadCurrentUser()
+     读取 GET /api/auth/me，服务端 server/routers/auth.py 返回 user.id）。拿不到就如实说明，不造假。 */
+  var idEl = document.getElementById('stAcctId');
+  if (idEl) {
+    var curUser = (typeof CURRENT_USER !== 'undefined') ? CURRENT_USER : null;
+    if (online && curUser && curUser.id != null) {
+      idEl.innerHTML = 'ID：<b>' + stEsc(String(curUser.id)) + '</b>' + (curUser.username ? '　用户名：' + stEsc(curUser.username) : '');
+      idEl.setAttribute('data-id', String(curUser.id));
+    } else if (!online) {
+      idEl.innerHTML = '本地单机模式，无服务器账号 ID' + (acct ? '（本机账号：' + stEsc(acct) + '）' : '');
+      idEl.removeAttribute('data-id');
+    } else {
+      idEl.textContent = '获取中…';
+      idEl.removeAttribute('data-id');
+    }
+  }
   /* 任务 E：同步刷新绑定与认证状态（真实反映本机数据，不停留占位文案） */
   try { if (typeof stRenderBindings === 'function') stRenderBindings(); } catch (e) { }
   /* 在线模式：再向服务端拉一次已绑定邮箱，保证显示的是服务器真实状态 */
@@ -2509,7 +2557,7 @@ if (typeof stInitAccount === 'function') {
 </script>
 <script src="assets/ai-config.js?v=20260918c"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260919a"></script>
+<script src="assets/ai-service.js?v=20260919c"></script>
 <script src="assets/ai-cap-registry.js?v=20260918c"></script>
 <script src="assets/ai-cap-image.js?v=20260918c"></script>
 <script src="assets/ai-cap-vision.js?v=20260918c"></script>

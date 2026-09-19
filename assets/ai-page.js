@@ -505,6 +505,173 @@
     return [s.slice(0, m.index), m[1], s.slice(m.index + m[0].length)];
   }
 
+
+  /* ============ R103：AI 生成视频「全屏播放」 ============ */
+  /* 目标：手机 WebView 里把 AI 生成的视频放大到全屏观看。
+     策略：优先原生 requestFullscreen（安卓 WebView 由宿主 onShowCustomView 接管，
+     补上即生效）；API 缺失 / 调用抛错 / Promise 拒绝 / 1.2s 内未进入全屏时，
+     退化为 CSS 全屏兜底：同一 video 元素 position:fixed + inset:0 + 极高 z-index
+     + 黑底遮罩 + 关闭按钮。全程只改 video 的样式、不移动 / 不重载该元素，
+     因此播放进度不中断；再点按钮、或按 Esc 即退出。
+     约束：ES2017（不用可选链 ?. / ?? / replaceAll / at / flat），不弹 alert / confirm / prompt。 */
+  var VID_FS_Z = 2147483000;            /* 遮罩层级（页面现有最高 400，远超之） */
+  var VID_FS_BTN_CLS = 'ai-vid-fs-btn';
+  var VID_FS_ACTIVE_CLS = 'ai-vid-fs-active';
+  var VID_FS_VIDEO_CLS = 'ai-vid-full';
+
+  /* 全屏按钮（SVG 图标，风格随页面；展开 / 关闭两态由 CSS 按容器 class 切换） */
+  function vidFsBtnHtml() {
+    return '<button type="button" class="' + VID_FS_BTN_CLS + '" data-ai-vid-fs="1" aria-label="全屏播放" title="全屏播放">' +
+      '<svg class="ai-vid-ic-expand" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">' +
+      '<path d="M4 9V4h5v2H6v3H4zm11-5h5v5h-2V6h-3V4zM4 15h2v3h3v2H4v-5zm14 0h2v5h-5v-2h3v-3z" fill="currentColor"></path></svg>' +
+      '<svg class="ai-vid-ic-close" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">' +
+      '<path d="M6.4 5L5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6z" fill="currentColor"></path></svg>' +
+      '</button>';
+  }
+  function vidBoxOpen() { return '<span class="ai-vid-box">'; }
+  function vidBoxClose() { return '</span>'; }
+
+  function vidFsElement() {
+    return doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement || null;
+  }
+  function vidHasNative(v) {
+    return !!(v && (v.requestFullscreen || v.webkitRequestFullscreen || v.msRequestFullscreen || v.webkitEnterFullscreen));
+  }
+  function vidStripCls(str, cls) {
+    var s = String(str || '');
+    s = s.replace(new RegExp('(^|\\s)' + cls + '(\\s|$)', 'g'), ' ');
+    s = s.replace(/^\s+|\s+$/g, '');
+    return s.replace(/\s+/g, ' ');
+  }
+
+  /* ---- CSS 全屏兜底：只改样式、不搬元素，播放进度不中断 ---- */
+  function vidCssBackdrop() { return doc.getElementById('aiVidBackdrop'); }
+  function vidCssEnter(v) {
+    if (!v || v.__aiVidFs) { return; }
+    v.__aiVidFs = true;
+    v.__aiVidPrevStyle = v.getAttribute('style') || '';
+    v.className = vidStripCls(v.className, VID_FS_VIDEO_CLS);
+    v.className = (v.className ? v.className + ' ' : '') + VID_FS_VIDEO_CLS;
+    var box = v.parentNode;
+    if (box && box.className && String(box.className).indexOf('ai-vid-box') >= 0) {
+      box.className = vidStripCls(box.className, VID_FS_ACTIVE_CLS) + ' ' + VID_FS_ACTIVE_CLS;
+    }
+    if (!vidCssBackdrop()) {
+      var bd = doc.createElement('div');
+      bd.id = 'aiVidBackdrop';
+      bd.setAttribute('style', 'position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:' + VID_FS_Z + ';');
+      doc.body.appendChild(bd);
+    }
+  }
+  function vidCssExit(v) {
+    if (!v || !v.__aiVidFs) { return; }
+    v.__aiVidFs = false;
+    v.className = vidStripCls(v.className, VID_FS_VIDEO_CLS);
+    v.setAttribute('style', v.__aiVidPrevStyle || '');
+    v.__aiVidPrevStyle = '';
+    var box = v.parentNode;
+    if (box && box.className && String(box.className).indexOf('ai-vid-box') >= 0) {
+      box.className = vidStripCls(box.className, VID_FS_ACTIVE_CLS);
+    }
+    var bd = vidCssBackdrop();
+    if (bd && bd.parentNode) { bd.parentNode.removeChild(bd); }
+  }
+
+  /* 原生全屏：'called'（有 fullscreenchange 事件）/ 'ios'（iOS 视频全屏，无事件）/ 'none'（无 API 或抛错） */
+  function vidRequestNative(v) {
+    try {
+      if (v.requestFullscreen) {
+        var p = v.requestFullscreen();
+        if (p && typeof p['catch'] === 'function') { p['catch'](function () { vidCssEnter(v); }); }
+        return 'called';
+      }
+      if (v.webkitRequestFullscreen) { v.webkitRequestFullscreen(); return 'called'; }
+      if (v.msRequestFullscreen) { v.msRequestFullscreen(); return 'called'; }
+      if (v.webkitEnterFullscreen) { v.webkitEnterFullscreen(); return 'ios'; }
+    } catch (e) { return 'none'; }
+    return 'none';
+  }
+  function vidExitNative() {
+    try {
+      if (doc.exitFullscreen) { doc.exitFullscreen(); return; }
+      if (doc.webkitExitFullscreen) { doc.webkitExitFullscreen(); return; }
+      if (doc.msExitFullscreen) { doc.msExitFullscreen(); }
+    } catch (e) { /* 忽略 */ }
+  }
+
+  function vidToggle(v) {
+    if (!v) { return; }
+    if (v.__aiVidFs) { vidCssExit(v); return; }              /* 已在 CSS 全屏 → 退出 */
+    var active = vidFsElement();
+    if (active && active === v) { vidExitNative(); return; } /* 已在原生全屏 → 退出 */
+    if (!vidHasNative(v)) { vidCssEnter(v); return; }         /* 原生不可用 → CSS 兜底 */
+    var settled = false;
+    function onFsChange() {
+      settled = true;
+      doc.removeEventListener('fullscreenchange', onFsChange, false);
+      doc.removeEventListener('webkitfullscreenchange', onFsChange, false);
+    }
+    doc.addEventListener('fullscreenchange', onFsChange, false);
+    doc.addEventListener('webkitfullscreenchange', onFsChange, false);
+    var mode = vidRequestNative(v);
+    if (mode === 'none') {
+      doc.removeEventListener('fullscreenchange', onFsChange, false);
+      doc.removeEventListener('webkitfullscreenchange', onFsChange, false);
+      vidCssEnter(v);
+      return;
+    }
+    if (mode === 'ios') { return; }  /* iOS 原生全屏无事件，直接信任 */
+    /* 'called'：1.2s 内既无 fullscreenchange、也未真正进入全屏 → 判定原生不可用，转 CSS */
+    window.setTimeout(function () {
+      doc.removeEventListener('fullscreenchange', onFsChange, false);
+      doc.removeEventListener('webkitfullscreenchange', onFsChange, false);
+      if (!settled && !vidFsElement() && !v.__aiVidFs) { vidCssEnter(v); }
+    }, 1200);
+  }
+
+  /* 事件委托：命中全屏按钮 → 找同一容器内的 video → 切换全屏 */
+  function vidFindBtn(node) {
+    var el = node;
+    while (el && el !== doc && el.nodeType === 1) {
+      var cn = el.className;
+      if (cn && typeof cn === 'string' && cn.indexOf(VID_FS_BTN_CLS) >= 0) { return el; }
+      el = el.parentNode;
+    }
+    return null;
+  }
+  function vidFindVideo(btn) {
+    if (!btn) { return null; }
+    if (btn.__aiVid) { return btn.__aiVid; }
+    var box = btn.parentNode;
+    if (box && box.getElementsByTagName) {
+      var vs = box.getElementsByTagName('video');
+      if (vs && vs.length) { return vs[0]; }
+    }
+    return null;
+  }
+  function onVideoFsClick(e) {
+    var btn = vidFindBtn(e.target);
+    if (!btn) { return; }
+    var v = vidFindVideo(btn);
+    if (!v) { return; }
+    if (e.preventDefault) { e.preventDefault(); }
+    if (e.stopPropagation) { e.stopPropagation(); }
+    vidToggle(v);
+  }
+  function onVideoFsKey(e) {
+    var code = e.keyCode || e.which;
+    if (code !== 27) { return; }
+    var vids = doc.getElementsByTagName('video');
+    for (var i = 0; i < (vids ? vids.length : 0); i++) {
+      if (vids[i].__aiVidFs) { vidCssExit(vids[i]); break; }
+    }
+  }
+  if (doc.addEventListener) {
+    doc.addEventListener('click', onVideoFsClick, false);
+    doc.addEventListener('keydown', onVideoFsKey, false);
+  }
+
+
   /* ============ 轻量 Markdown 渲染（自实现，无外部库） ============ */
   function inlineMd(s) {
     var parts = s.split('`');
@@ -546,8 +713,10 @@
       if (vidM) {
         flushPara();
         if (vidM[0]) { html += '<p>' + inlineMd(escHtml(vidM[0])) + '</p>'; }
-        html += '<p><video class="ai-md-video" controls preload="metadata" src="' +
-          escHtml(vidM[1]) + '" style="max-width:100%;border-radius:10px;display:block;"></video></p>';
+        html += '<p>' + vidBoxOpen() +
+          '<video class="ai-md-video" controls playsinline webkit-playsinline preload="metadata" src="' +
+          escHtml(vidM[1]) + '" style="max-width:100%;border-radius:10px;display:block;"></video>' +
+          vidFsBtnHtml() + vidBoxClose() + '</p>';
         if (vidM[2]) { html += '<p>' + inlineMd(escHtml(vidM[2])) + '</p>'; }
         continue;
       }
@@ -1240,9 +1409,18 @@
         plain = '🎬 ' + label + (withAudio ? '（带声音）' : '') + '已生成（链接约 24 小时内有效，请及时观看 / 保存）：' + url;
         aiB.mdEl.innerHTML = renderMarkdown('🎬 ' + label + (withAudio ? '（带声音）' : '') + '已生成（链接约 24 小时内有效，请及时观看 / 保存）：');
         var vid = doc.createElement('video');
+        vid.className = 'ai-md-video';
         vid.src = url; vid.controls = true;
+        vid.setAttribute('playsinline', ''); vid.setAttribute('webkit-playsinline', '');
+        vid.setAttribute('preload', 'metadata');
         vid.setAttribute('style', 'max-width:100%;border-radius:10px;margin-top:6px;display:block;');
-        aiB.mdEl.appendChild(vid);
+        var vidBox = doc.createElement('span');
+        vidBox.className = 'ai-vid-box';
+        vidBox.appendChild(vid);
+        var vidBtnHolder = doc.createElement('span');
+        vidBtnHolder.innerHTML = vidFsBtnHtml();
+        if (vidBtnHolder.firstChild) { vidBtnHolder.firstChild.__aiVid = vid; vidBox.appendChild(vidBtnHolder.firstChild); }
+        aiB.mdEl.appendChild(vidBox);
       } else {
         plain = '🧊 ' + label + '已生成（结果为 .zip 压缩包，内含模型文件）：' + url;
         aiB.mdEl.innerHTML = renderMarkdown('🧊 ' + label + '已生成（结果为 .zip 压缩包，内含模型文件）：');

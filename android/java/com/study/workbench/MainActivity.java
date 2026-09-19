@@ -21,6 +21,9 @@ import android.os.Looper;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.view.KeyEvent;
+import android.view.View;
+import android.view.Window;
+import android.widget.FrameLayout;
 import android.webkit.DownloadListener;
 import android.webkit.JavascriptInterface;
 import android.webkit.URLUtil;
@@ -63,6 +66,12 @@ public class MainActivity extends Activity {
     private WebView web;
     private ValueCallback<Uri[]> filePathCallback;
 
+    // ---- 【R103 需求1】H5 getUserMedia 麦克风授权：暂存的 WebView 权限请求 ----
+    private android.webkit.PermissionRequest pendingWebPermissionRequest = null;
+    // ---- 【R103 需求3】WebView H5 视频全屏：全屏自定义视图及其回调 ----
+    private View customView = null;
+    private WebChromeClient.CustomViewCallback customViewCallback = null;
+
     // ---- 原生消息通知（R72 需求5：收到消息弹系统横幅）----
     private static final String NOTIFY_CHANNEL_ID = "xt_msg";
     private static final int NOTIFY_ID = 101;
@@ -90,6 +99,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // 【R103 需求2】状态栏沉浸式：状态栏背景与 App 顶部浅色同色 + API23+ 深色图标（见 applyImmersiveStatusBar）
+        applyImmersiveStatusBar();
 
         web = new WebView(this);
         setContentView(web);
@@ -278,6 +290,20 @@ public class MainActivity extends Activity {
                         }
                     });
                 } catch (Throwable e) { /* 下载失败不影响页面其它功能 */ }
+            }
+
+            /** 【R103 需求2·动态版】页面注入脚本回调：按页面真实顶部色动态设置状态栏。
+             *  cssColor 支持 "#RRGGBB" / "#RGB" / "rgb(r,g,b)" / "rgba(r,g,b,a)"；
+             *  sRGB 相对亮度 > 0.6 视为浅色底 → 深色图标；否则浅色图标；解析失败静默返回，绝不影响页面。 */
+            @JavascriptInterface
+            public void applyStatusBar(final String cssColor) {
+                try {
+                    final int color = parseCssColor(cssColor);
+                    if (color == Integer.MIN_VALUE) return; // 解析失败：静默
+                    runOnUiThread(new Runnable() {
+                        @Override public void run() { applyStatusBarColor(color); }
+                    });
+                } catch (Throwable e) { /* 状态栏设置失败绝不影响页面 */ }
             }
         }, "AndroidBridge");
 
@@ -560,6 +586,8 @@ public class MainActivity extends Activity {
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 injectXtAndroid(view);
+                // 【R103 需求2·动态版】注入自包含脚本：动态取页面真实顶部色设置状态栏
+                injectStatusBarColor(view);
             }
         });
         web.loadUrl("file:///android_asset/" + Uri.encode("学习工作台.html"));
@@ -605,6 +633,53 @@ public class MainActivity extends Activity {
                     // 授权失败不得影响 WebView；交由页面侧降级为手动填写
                     callback.invoke(origin, false, false);
                 }
+            }
+
+            /** 【R103 需求1】H5 getUserMedia 麦克风授权。
+             *  WebView 对 getUserMedia 的权限请求默认直接 deny（页面表现为「无法访问麦克风 / 录音」），
+             *  必须在此回调显式处理：
+             *   · 仅授予 RESOURCE_AUDIO_CAPTURE（麦克风）；摄像头等其余资源一律 deny；
+             *   · 宿主(本 App)已持有 RECORD_AUDIO 运行时权限 → 立即 grant；
+             *   · 尚未授权 → 暂存该请求，先走运行时权限申请，结果回来后 grant / deny。 */
+            @Override
+            public void onPermissionRequest(final android.webkit.PermissionRequest request) {
+                if (request == null) return;
+                try {
+                    String[] res = request.getResources();
+                    boolean wantsAudio = false;
+                    if (res != null) {
+                        for (String r : res) {
+                            if (android.webkit.PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(r)) {
+                                wantsAudio = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!wantsAudio) {          // 非麦克风资源：本项目不需要，明确拒绝
+                        request.deny();
+                        return;
+                    }
+                    if (hasAudioRuntimePermission()) {
+                        grantWebAudio(request);  // 宿主已授权：直接授予
+                    } else {
+                        pendingWebPermissionRequest = request; // 暂存，运行时申请后再回填
+                        requestRecPermission();                // 复用 RECORD_AUDIO 运行时申请(REQ 2002)
+                    }
+                } catch (Throwable t) {
+                    try { request.deny(); } catch (Throwable e2) { }
+                }
+            }
+
+            /** 【R103 需求3】进入 H5 视频全屏（<video> 全屏 / WebView 全屏 API）。 */
+            @Override
+            public void onShowCustomView(View view, WebChromeClient.CustomViewCallback callback) {
+                showCustomView(view, callback);
+            }
+
+            /** 【R103 需求3】退出 H5 视频全屏。 */
+            @Override
+            public void onHideCustomView() {
+                hideCustomView();
             }
         });
 
@@ -907,6 +982,245 @@ public class MainActivity extends Activity {
         }
     }
 
+    /* ================= 【R103 需求2】状态栏沉浸式（状态栏背景 = App 顶部浅色） ================= */
+
+    /** 【R103 需求2】状态栏沉浸式：状态栏背景与 App 顶部实际浅色同色，消除顶部黑边。
+     *  实测顶部色值：手机窄屏(<=768px)侧栏隐藏，页面最顶部为主结构
+     *  <header class="topbar">，其背景为 var(--card)；浅色主题下 --card=#FFFFFF
+     *  （见 assets/common.css 的 .topbar{background:var(--card)} 与 :root{--card:#FFFFFF}）。
+     *  · API 23+：状态栏取顶部浅色(#FFFFFF) + 深色图标(SYSTEM_UI_FLAG_LIGHT_STATUS_BAR) → 无缝沉浸；
+     *  · API 21-22：不支持深色状态栏图标，白底会使浅色图标不可见，故兜底为品牌蓝(#5B8DEF)，
+     *    白色图标清晰可辨且不留黑边；
+     *  · setStatusBarColor 生效前提：窗口带 FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS 且未使用半透明状态栏标志。 */
+    private void applyImmersiveStatusBar() {
+        try {
+            final int colorTopBar = 0xFFFFFFFF;   // #FFFFFF = .topbar 背景(var(--card)) 浅色值
+            final int colorFallback = 0xFF5B8DEF; // #5B8DEF = 品牌主色(API21-22 兜底)
+            Window window = getWindow();
+            if (window == null) return;
+            if (Build.VERSION.SDK_INT >= 21) {
+                window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+                window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+                if (Build.VERSION.SDK_INT >= 23) {
+                    window.setStatusBarColor(colorTopBar);
+                    View decor = window.getDecorView();
+                    decor.setSystemUiVisibility(
+                            decor.getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+                } else {
+                    window.setStatusBarColor(colorFallback);
+                }
+            }
+        } catch (Throwable e) { /* 设置失败：沿用系统默认，不影响功能 */ }
+    }
+
+    /** 【R103 需求2·动态版】注入自包含 ES5 脚本：读取页面真实顶部背景色并回调原生桥设置状态栏。
+     *  取色优先级：.topbar → .page-head → header → body；透明/无效回退 #FFFFFF；
+     *  立即执行一次，并用 MutationObserver 监听 body/html 的 class/style（覆盖暗色切换），变化时防抖 120ms 重算；
+     *  全程 try/catch，脚本异常绝不影响页面；不引入轮询定时器、不改任何页面文件（仅原生侧注入）。 */
+    private void injectStatusBarColor(final WebView view) {
+        if (view == null) return;
+        uiHandler.post(new Runnable() {
+            @Override public void run() { evalJs(view, STATUS_BAR_SCRIPT); }
+        });
+    }
+
+    /** 状态栏取色脚本（ES5，自包含；仅在原生侧注入，页面文件零改动）。 */
+    private static final String STATUS_BAR_SCRIPT =
+            "(function(){try{"
+            + "if(!window.AndroidBridge||typeof AndroidBridge.applyStatusBar!=='function')return;"
+            + "var last='';var timer=null;"
+            + "function norm(c){"
+            + "if(!c)return null;"
+            + "var s=(''+c).replace(/\\s+/g,'').toLowerCase();"
+            + "if(s==='transparent'||s==='rgba(0,0,0,0)')return null;"
+            + "if(s.charAt(0)==='#'){"
+            + "if(s.length===4){s='#'+s.charAt(1)+s.charAt(1)+s.charAt(2)+s.charAt(2)+s.charAt(3)+s.charAt(3);}"
+            + "return (s.length===7)?s:null;}"
+            + "var m=s.match(/^rgba?\\(([^)]+)\\)$/);"
+            + "if(m){var p=m[1].split(',');if(p.length<3)return null;"
+            + "var a=(p.length>3)?parseFloat(p[3]):1;if(isNaN(a))a=1;if(a<=0.01)return null;"
+            + "var r=parseInt(p[0],10),g=parseInt(p[1],10),b=parseInt(p[2],10);"
+            + "if(isNaN(r)||isNaN(g)||isNaN(b))return null;"
+            + "function h(x){x=Math.max(0,Math.min(255,Math.round(x))).toString(16);return (x.length<2)?('0'+x):x;}"
+            + "return '#'+h(r)+h(g)+h(b);}"
+            + "return null;}"
+            + "function topColor(){"
+            + "var sel=['.topbar','.page-head','header','body'];"
+            + "for(var i=0;i<sel.length;i++){var el=document.querySelector(sel[i]);if(!el)continue;"
+            + "var st=window.getComputedStyle(el);if(!st)continue;"
+            + "var c=norm(st.backgroundColor);if(c)return c;}"
+            + "return '#FFFFFF';}"
+            + "function apply(){try{var c=topColor();if(c===last)return;last=c;AndroidBridge.applyStatusBar(c);}catch(e){}}"
+            + "function schedule(){if(timer){clearTimeout(timer);}timer=setTimeout(apply,120);}"
+            + "apply();"
+            + "try{setTimeout(apply,400);}catch(e0){}"
+            + "try{"
+            + "if(typeof MutationObserver!=='undefined'){"
+            + "var obs=new MutationObserver(schedule);"
+            + "if(document.body){obs.observe(document.body,{attributes:true,attributeFilter:['class','style']});}"
+            + "if(document.documentElement){obs.observe(document.documentElement,{attributes:true,attributeFilter:['class','style']});}"
+            + "}"
+            + "}catch(e2){}"
+            + "}catch(e3){}})();";
+
+    /** 解析 CSS 颜色为 ARGB int；失败返回哨兵 Integer.MIN_VALUE。支持 #RGB/#RRGGBB/rgb()/rgba()。 */
+    private static int parseCssColor(final String css) {
+        if (css == null) return Integer.MIN_VALUE;
+        final String s = css.trim().toLowerCase(Locale.US).replace(" ", "");
+        try {
+            if (s.startsWith("#")) {
+                String hex = s.substring(1);
+                if (hex.length() == 3) {
+                    hex = "" + hex.charAt(0) + hex.charAt(0) + hex.charAt(1) + hex.charAt(1)
+                            + hex.charAt(2) + hex.charAt(2);
+                }
+                if (hex.length() != 6) return Integer.MIN_VALUE;
+                final int r = Integer.parseInt(hex.substring(0, 2), 16);
+                final int g = Integer.parseInt(hex.substring(2, 4), 16);
+                final int b = Integer.parseInt(hex.substring(4, 6), 16);
+                return 0xFF000000 | (r << 16) | (g << 8) | b;
+            }
+            if (s.startsWith("rgb")) {
+                final int lp = s.indexOf('(');
+                final int rp = s.indexOf(')');
+                if (lp < 0 || rp <= lp) return Integer.MIN_VALUE;
+                final String[] p = s.substring(lp + 1, rp).split(",");
+                if (p.length < 3) return Integer.MIN_VALUE;
+                if (p.length >= 4 && Float.parseFloat(p[3]) <= 0.01f) return Integer.MIN_VALUE;
+                final int r = clamp255(Math.round(Float.parseFloat(p[0])));
+                final int g = clamp255(Math.round(Float.parseFloat(p[1])));
+                final int b = clamp255(Math.round(Float.parseFloat(p[2])));
+                return 0xFF000000 | (r << 16) | (g << 8) | b;
+            }
+        } catch (Throwable e) { return Integer.MIN_VALUE; }
+        return Integer.MIN_VALUE;
+    }
+
+    private static int clamp255(final int v) { return v < 0 ? 0 : (v > 255 ? 255 : v); }
+
+    /** sRGB 相对亮度（0~1）：> 0.6 视为浅色底 → 需深色图标。 */
+    private static double relativeLuminance(final int color) {
+        final double r = ((color >> 16) & 0xFF) / 255.0;
+        final double g = ((color >> 8) & 0xFF) / 255.0;
+        final double b = (color & 0xFF) / 255.0;
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    }
+
+    /** 按真实顶部色应用状态栏（API23+ 动态图标明暗；API21-22 品牌蓝兜底）。 */
+    private void applyStatusBarColor(final int color) {
+        try {
+            final Window window = getWindow();
+            if (window == null) return;
+            if (Build.VERSION.SDK_INT >= 21) {
+                window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+                window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+                if (Build.VERSION.SDK_INT >= 23) {
+                    window.setStatusBarColor(color);
+                    final View decor = window.getDecorView();
+                    int vis = decor.getSystemUiVisibility();
+                    if (relativeLuminance(color) > 0.6) {
+                        vis |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;  // 浅色底 → 深色图标
+                    } else {
+                        vis &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR; // 深色底 → 浅色图标
+                    }
+                    decor.setSystemUiVisibility(vis);
+                } else {
+                    window.setStatusBarColor(0xFF5B8DEF); // API21-22：不支持深色图标，品牌蓝兜底
+                }
+            }
+        } catch (Throwable e) { /* 设置失败：静默 */ }
+    }
+
+    /* ================= 【R103 需求3】WebView H5 视频全屏 ================= */
+
+    /** 进入全屏：把 H5 视频的自定义视图铺满 Activity 顶层 DecorView，并隐藏 WebView。
+     *  由 WebChromeClient.onShowCustomView 触发；已有全屏视图时拒绝新请求（避免叠加）。 */
+    private void showCustomView(final View view, final WebChromeClient.CustomViewCallback callback) {
+        if (customView != null) {
+            if (callback != null) callback.onCustomViewHidden();
+            return;
+        }
+        try {
+            View decor = getWindow().getDecorView();
+            if (!(decor instanceof FrameLayout)) {
+                // 极端机型 DecorView 非 FrameLayout：无法承载，直接回退
+                if (callback != null) callback.onCustomViewHidden();
+                return;
+            }
+            customView = view;
+            customViewCallback = callback;
+            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT);
+            ((FrameLayout) decor).addView(view, lp);
+            if (web != null) web.setVisibility(View.GONE);
+            // 全屏视频：连同隐藏系统状态栏，画面真正铺满（退出时由 hideCustomView 恢复）
+            decor.setSystemUiVisibility(decor.getSystemUiVisibility() | View.SYSTEM_UI_FLAG_FULLSCREEN);
+        } catch (Throwable t) {
+            // 全屏失败：回滚并通知 WebView
+            try {
+                View decor = getWindow().getDecorView();
+                if (decor instanceof FrameLayout && view != null) ((FrameLayout) decor).removeView(view);
+            } catch (Throwable e2) { }
+            customView = null;
+            customViewCallback = null;
+            if (web != null) web.setVisibility(View.VISIBLE);
+            if (callback != null) callback.onCustomViewHidden();
+        }
+    }
+
+    /** 退出全屏：移除自定义视图、恢复 WebView 显示，并重新应用状态栏（顶部浅色）。 */
+    private void hideCustomView() {
+        if (customView == null) return;
+        try {
+            View decor = getWindow().getDecorView();
+            if (decor instanceof FrameLayout) ((FrameLayout) decor).removeView(customView);
+        } catch (Throwable t) { /* 移除失败：忽略 */ }
+        customView = null;
+        if (web != null) web.setVisibility(View.VISIBLE);
+        if (customViewCallback != null) {
+            try { customViewCallback.onCustomViewHidden(); } catch (Throwable t) { }
+            customViewCallback = null;
+        }
+        // 取消「全屏隐藏状态栏」，再重新应用沉浸式状态栏（顶部浅色）
+        try {
+            View dv = getWindow().getDecorView();
+            dv.setSystemUiVisibility(dv.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_FULLSCREEN);
+        } catch (Throwable te) { }
+        applyImmersiveStatusBar(); // 退出全屏后恢复状态栏顶部浅色
+    }
+
+    /* ================= 【R103 需求1】H5 getUserMedia 麦克风授权辅助 ================= */
+
+    /** 宿主是否已持有麦克风运行时权限（API23 以下安装即授予，视为已持有）。 */
+    private boolean hasAudioRuntimePermission() {
+        return Build.VERSION.SDK_INT < 23
+                || checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
+                   == android.content.pm.PackageManager.PERMISSION_GRANTED;
+    }
+
+    /** 授予 WebView 麦克风资源（仅 AUDIO_CAPTURE）。 */
+    private void grantWebAudio(final android.webkit.PermissionRequest request) {
+        try {
+            request.grant(new String[] { android.webkit.PermissionRequest.RESOURCE_AUDIO_CAPTURE });
+        } catch (Throwable t) { /* 授予失败：静默，页面侧自行降级 */ }
+    }
+
+    /** 【R103 需求1·补】跳转本应用「应用详情」设置页，方便用户手动开启麦克风权限。
+     *  个别定制 ROM 无法直达详情页时退回系统设置首页；仍失败则保留已弹出的文字指引。 */
+    private void openAppSettings() {
+        try {
+            Intent i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+            i.setData(Uri.parse("package:" + getPackageName()));
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(i);
+        } catch (Throwable e) {
+            try {
+                startActivity(new Intent(android.provider.Settings.ACTION_SETTINGS));
+            } catch (Throwable e2) { /* 跳不过去：前面 Toast 已给出文字指引 */ }
+        }
+    }
+
     /* ================= 原生消息通知（R72 需求5） ================= */
 
     /** 创建通知渠道（API 26+ 必须；已存在则跳过，创建失败不影响其它功能） */
@@ -1078,8 +1392,24 @@ public class MainActivity extends Activity {
         if (requestCode == 2002) {
             recPermissionGranted = (grantResults != null && grantResults.length > 0
                     && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED);
+            // 【R103 需求1】若该申请由 H5 getUserMedia(onPermissionRequest) 触发：结果回来后回填 grant/deny
+            android.webkit.PermissionRequest wp = pendingWebPermissionRequest;
+            pendingWebPermissionRequest = null;
+            if (wp != null) {
+                if (recPermissionGranted) grantWebAudio(wp);
+                else { try { wp.deny(); } catch (Throwable t) { } }
+            }
             if (!recPermissionGranted) {
                 notifyRecError("perm", "not_allowed");
+                // 【R103 需求1·补】永久拒绝（用户勾选过"不再询问"）→ requestPermissions 会立即回 denied
+                // 且不再弹框，只能明确引导用户去系统设置手动开启麦克风。
+                try {
+                    if (Build.VERSION.SDK_INT >= 23
+                            && !shouldShowRequestPermissionRationale(android.Manifest.permission.RECORD_AUDIO)) {
+                        toast("麦克风权限已被拒绝，请在 系统设置 → 应用 → 星途 → 权限 中开启麦克风");
+                        openAppSettings(); // 可选取跳应用详情页；跳不过去只保留上面的 Toast
+                    }
+                } catch (Throwable t) { /* 引导失败：不影响其它功能 */ }
             }
         } else if (requestCode == REQ_NOTIFY_PERM) {
             boolean granted = (grantResults != null && grantResults.length > 0
@@ -1117,12 +1447,19 @@ public class MainActivity extends Activity {
         }
     }
 
-    // 返回键：网页内后退 → 退出应用
+    // 返回键：H5 视频全屏 → 先退全屏；否则网页内后退 → 退出应用
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK && web != null && web.canGoBack()) {
-            web.goBack();
-            return true;
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            // 【R103 需求3】全屏视频中：返回键先退出全屏
+            if (customView != null) {
+                hideCustomView();
+                return true;
+            }
+            if (web != null && web.canGoBack()) {
+                web.goBack();
+                return true;
+            }
         }
         return super.onKeyDown(keyCode, event);
     }

@@ -105,7 +105,13 @@ def _set_int(pattern: "re.Pattern[bytes]", new_val: int, data: bytes) -> Tuple[b
     enc = str(int(new_val)).encode("ascii")
 
     def _rep(m: "re.Match[bytes]") -> bytes:
-        return m.group(1) + enc
+        # 保留捕获组 3（若存在）—— 例如 AndroidManifest 的 versionCode=".." 结尾引号；
+        # 早期版本漏掉该组，会把 versionCode="27" 写成 versionCode="28（引号丢失→XML 破损，
+        # aapt2 link 直接失败）。此修复保证仅替换数字、其余字节原样保留。
+        tail = b""
+        if m.re.groups >= 3 and m.group(3) is not None:
+            tail = m.group(3)
+        return m.group(1) + enc + tail
 
     new_data, n = pattern.subn(_rep, data, count=1)
     return new_data, (n > 0 and new_data != data)

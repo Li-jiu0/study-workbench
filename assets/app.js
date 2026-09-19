@@ -68,6 +68,7 @@ window.lsKey = lsKey;
    4) 拖动位置持久化到 localStorage，双击复位。 */
 (function initAiFabModule() {
   var POS_KEY = 'study_workbench_ai_fab_pos';
+  var HIDE_KEY = 'study_workbench_ai_fab_hidden';   // '1'=用户已关闭悬浮球（设置页可重新开启）
   var fab = null, bound = false;
   var dragging = false, moved = false, lastMoveEnd = 0;
   var sx = 0, sy = 0, origL = 0, origT = 0;
@@ -128,12 +129,14 @@ window.lsKey = lsKey;
     origL = rect.left; origT = rect.top;
     sx = cx; sy = cy;
     dragging = true; moved = false;   // 每次按下都重置，避免上一次的拖拽状态吞掉点击
+    suppressClick = false;   // R103：新的一次按下恢复点击能力（长按菜单标志只在当次生效）
     try { fab.classList.add('dragging'); } catch (e) { /* 忽略 */ }
   }
   function moveDrag(cx, cy) {
     if (!fab || !dragging) return;
     var dx = cx - sx, dy = cy - sy;
     if (!moved && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) moved = true;
+    if (moved) disarmMenu();   // R103：拖动即取消长按菜单
     if (moved) applyPos(fab, origL + dx, origT + dy);
   }
   function endDrag(saveNow) {
@@ -165,9 +168,69 @@ window.lsKey = lsKey;
       if (p && p.classList.contains('open') === wasOpen) p.classList.add('open');
     } catch (e2) { /* 忽略 */ }
   }
+  function isHidden() {
+    try { return localStorage.getItem(HIDE_KEY) === '1'; } catch (e) { return false; }
+  }
+  function applyHidden(el) {
+    try { if (isHidden()) el.style.display = 'none'; } catch (e) { /* 忽略 */ }
+  }
+  // R103：长按弹菜单（关闭悬浮球 / 取消）。不依赖 uiConfirm 等后部函数，保持自举独立。
+  var menuEl = null, pressTimer = 0, suppressClick = false;
+  function disarmMenu() {
+    if (pressTimer) { clearTimeout(pressTimer); pressTimer = 0; }
+    if (menuEl) {
+      try { menuEl.parentNode.removeChild(menuEl); } catch (e) { /* 忽略 */ }
+      menuEl = null;
+    }
+  }
+  function menuBtn(label, color, onTap) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    b.style.cssText = 'display:block;width:100%;border:0;background:none;padding:11px 16px;text-align:center;font-size:14px;border-radius:8px;-webkit-tap-highlight-color:transparent;color:' + color;
+    b.addEventListener('click', function (ev) {
+      try { ev.stopPropagation(); } catch (e) { /* 忽略 */ }
+      disarmMenu();
+      onTap();
+    });
+    return b;
+  }
+  function showMenu() {
+    try {
+      disarmMenu();
+      if (!fab || isHidden()) return;
+      var m = document.createElement('div');
+      m.id = 'aiFabMenu';
+      m.style.cssText = 'position:fixed;z-index:99999;background:#fff;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,0.18);padding:4px;min-width:150px;font-family:inherit;overflow:hidden;';
+      m.appendChild(menuBtn('关闭悬浮球', '#E05040', hideFab));
+      m.appendChild(menuBtn('取消', '#666666', function () {}));
+      document.body.appendChild(m);
+      menuEl = m;
+      var vw = window.innerWidth || 360, vh = window.innerHeight || 640;
+      var r = fab.getBoundingClientRect();
+      var ml = Math.max(8, Math.min(vw - 158, r.left));
+      var mt = r.top + r.height + 8;
+      if (mt + 120 > vh) mt = Math.max(8, r.top - 128);
+      mt = Math.min(mt, Math.max(8, vh - 120));
+      m.style.left = ml + 'px';
+      m.style.top = mt + 'px';
+      suppressClick = true;   // 长按松手后补发的 click 不能把面板弹出来
+    } catch (e) { /* 忽略 */ }
+  }
+  function armMenu() {
+    disarmMenu();
+    pressTimer = setTimeout(showMenu, 650);
+  }
+  function hideFab() {
+    try { localStorage.setItem(HIDE_KEY, '1'); } catch (e) { /* 忽略 */ }
+    if (fab) { try { fab.style.display = 'none'; } catch (e) { /* 忽略 */ } }
+    toast('AI 悬浮球已关闭，可在「设置」中重新开启');
+  }
+
   function bind(el) {
     if (!el || bound) return;
     fab = el; bound = true;
+    applyHidden(el);
     ensureVisible(el);
     restore(el);
 
@@ -176,6 +239,7 @@ window.lsKey = lsKey;
       e = e || window.event;
       if (e.button && e.button !== 0) return;
       startDrag(e.clientX, e.clientY);
+      armMenu();
       try { e.preventDefault(); } catch (err) { /* 忽略 */ }
     });
     el.addEventListener('mousemove', function (e) {
@@ -183,13 +247,14 @@ window.lsKey = lsKey;
       moveDrag(e.clientX, e.clientY);
     });
     // mouseup 挂在 window 上，鼠标移出球外松手也能结束拖拽
-    window.addEventListener('mouseup', function () { endDrag(true); });
+    window.addEventListener('mouseup', function () { disarmMenu(); endDrag(true); });
 
     // ---- touch ----
     el.addEventListener('touchstart', function (e) {
       var t = e.touches && e.touches[0];
       if (!t) return;
       startDrag(t.clientX, t.clientY);
+      armMenu();
     }, false);
     el.addEventListener('touchmove', function (e) {
       var t = e.touches && e.touches[0];
@@ -200,16 +265,18 @@ window.lsKey = lsKey;
       }
     }, false);
     el.addEventListener('touchend', function (e) {
+      disarmMenu();
       endDrag(true);
       if (moved) {
         // 抑制 touchend 后老内核合成的 click，避免"拖完又弹面板"
         try { e.preventDefault(); } catch (err) { /* 忽略 */ }
       }
     }, false);
-    el.addEventListener('touchcancel', function () { endDrag(false); }, false);
+    el.addEventListener('touchcancel', function () { disarmMenu(); endDrag(false); }, false);
 
     // ---- 点击 / 双击 ----
     el.addEventListener('click', function () {
+      if (suppressClick) { suppressClick = false; return; }   // R103：长按菜单后不触发面板
       var now = new Date().getTime();
       // 刚拖完的那一下不算点击（老内核 touch 后可能补发 click）
       if (moved && (now - lastMoveEnd) < 600) { moved = false; return; }
@@ -233,6 +300,26 @@ window.lsKey = lsKey;
   // 保留原有全局函数名，供调试 / 页面内联调用（幂等）
   window.initAiFabDrag = function () { try { attempt(); } catch (e) { /* 忽略 */ } };
   window.restoreAiFabPos = function () { try { if (fab) restore(fab); else attempt(); } catch (e) { /* 忽略 */ } };
+  // R103：设置页开关入口。visible=true 重开（清 key+显示），false 关闭（写 key+隐藏）。幂等。
+  window.setAiFabVisible = function (visible) {
+    try {
+      if (visible) {
+        try { localStorage.removeItem(HIDE_KEY); } catch (e) { /* 忽略 */ }
+        if (!fab) attempt();
+        if (fab) { fab.style.display = ''; restore(fab); }
+      } else {
+        try { localStorage.setItem(HIDE_KEY, '1'); } catch (e) { /* 忽略 */ }
+        if (fab) { try { fab.style.display = 'none'; } catch (e) { /* 忽略 */ } }
+      }
+    } catch (e) { /* 忽略 */ }
+  };
+  try {
+    window.addEventListener('storage', function (ev) {
+      if (ev && ev.key === HIDE_KEY && fab) {
+        try { fab.style.display = (ev.newValue === '1') ? 'none' : ''; } catch (e) { /* 忽略 */ }
+      }
+    });
+  } catch (e) { /* 忽略 */ }
 
   // 自举：DOM 未就绪（或元素后被追加）时轮询重试
   function boot(tries) {

@@ -26,6 +26,24 @@ from security import get_current_user, get_current_user_optional
 
 router = APIRouter(prefix="/api/ai", tags=["ai"])
 
+
+class _ChatIn(ChatIn):
+    """R103：/chat 专用请求体（在共享 ChatIn 之上加一个可选的真实模型名）。
+
+    背景：前端 assets/ai-config.js 的 builtinModels.id（如 ark-v4-pro）与后端
+    server/data/model_registry.json 的键（如 ark-ds-v4-pro-ga）命名并不统一
+    （实测 45 个前端 id 仅 5 个与 registry 键相同）。R88-M1 起前端会带上 modelId，
+    但服务端按该 id 解析真实模型名会大面积落空，于是恒回退 .env 默认模型（ARK_MODEL），
+    表现为「选哪个模型都跑同一个」，用量明细因此只显示默认模型名。
+
+    modelName 由前端随请求带来（其 ai-config 中该模型对应的真实模型串，前端本就持有）。
+    服务端**只在按 modelId 解析失败时**用它做二次解析，且仍走 model_registry 白名单校验：
+    解析不到即保持原有「回退 .env 默认模型」的行为，绝不放行任意/未登记的模型名。
+    """
+
+    modelName: str | None = None
+
+
 _MAX_NOTE_CTX = 4000
 _MAX_MSGS = 20
 
@@ -222,7 +240,7 @@ def ai_history_delete(ids: str = "", user: User = Depends(get_current_user),
     return {"ok": True, "deleted": deleted}
 
 @router.post("/chat")
-async def chat(body: ChatIn, user: User = Depends(get_current_user_optional),
+async def chat(body: _ChatIn, user: User = Depends(get_current_user_optional),
                db: Session = Depends(get_db), _rl: None = Depends(rate_limit("ai"))):
     # 游客（未登录）也可使用：登录用户走每日调用限额，游客仅受每 IP 限流保护，
     # 这样手机浏览器 / 电脑浏览器 / APK 三种环境都不依赖第三方平台的跨域与直连能力。
@@ -267,6 +285,13 @@ async def chat(body: ChatIn, user: User = Depends(get_current_user_optional),
     # 才能真正「选哪个跑哪个」——此前前端不带 modelId，这里恒回退 .env 默认，用户看着像
     # 「选什么都跑同一个模型」。展示名用宽松版（忽略 provider 校验），拿不到就如实回落。
     resolved_name = resolve_model_name(body.provider, quota_key)
+    # R103：按前端 id 解析落空时，用前端带来的真实模型名做二次解析（仍受 registry 白名单
+    # 约束；查不到即空串 -> 保持原有「回退 .env 默认模型」的行为，绝不放行未登记模型名）。
+    # 这样「选哪个跑哪个」与「用量明细显示的模型名」才同时成立（此前二者都退化成默认模型）。
+    if not resolved_name:
+        _client_model = (getattr(body, "modelName", None) or "").strip()
+        if _client_model:
+            resolved_name = resolve_model_name(body.provider, _client_model)
     model_name = resolved_name or cfg["model"]
     # 展示用真实模型名：严格解析不到时用宽松解析；仍拿不到则用实际转发用的 model_name
     # （即 .env 默认），如实反映「实际执行的模型」，绝不编造一个看起来正常的假名字。

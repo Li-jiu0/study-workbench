@@ -71,6 +71,9 @@
   .form-input.bad{border-color:var(--danger);box-shadow:0 0 0 3px rgba(255,107,107,.15)}
   .eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:32px;height:32px;border:none;background:none;color:var(--text-dim);cursor:pointer;font-size:16px;border-radius:8px}
   .eye:hover{color:var(--text);background:rgba(255,255,255,.08)}
+  /* R103：图标由 emoji 换成 inline SVG 后，用 flex 居中避免基线偏移（复用同一 .eye 类，不新增类名） */
+  .eye{display:inline-flex;align-items:center;justify-content:center}
+  .eye>svg{display:block;width:18px;height:18px}
 
   /* 密码强度 */
   .strength{display:flex;gap:5px;margin-top:7px;align-items:center}
@@ -158,7 +161,7 @@
     <div class="form-label">密码</div>
     <div class="field">
       <input type="password" class="form-input" id="loginPass" placeholder="至少 8 位，含字母和数字" autocomplete="current-password" maxlength="64">
-      <button type="button" class="eye" id="eyePass" onclick="togglePw('loginPass',this)" title="显示/隐藏密码" aria-label="显示或隐藏密码">👁</button>
+      <button type="button" class="eye" id="eyePass" onclick="togglePw('loginPass',this)" title="显示/隐藏密码" aria-label="显示或隐藏密码"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
     </div>
     <div class="strength" id="pwStrength" style="display:none">
       <i id="s1"></i><i id="s2"></i><i id="s3"></i><em id="sTxt"></em>
@@ -169,7 +172,7 @@
     <div class="form-label">确认密码</div>
     <div class="field">
       <input type="password" class="form-input" id="loginConfirm" placeholder="再输入一次密码" autocomplete="new-password" maxlength="64" oninput="checkMatch()">
-      <button type="button" class="eye" onclick="togglePw('loginConfirm',this)" aria-label="显示或隐藏密码">👁</button>
+      <button type="button" class="eye" onclick="togglePw('loginConfirm',this)" aria-label="显示或隐藏密码"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
     </div>
     <div id="matchTip"></div>
   </div>
@@ -335,11 +338,19 @@ function showErr(msg) {
   card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
 }
 function clearErr() { var b = document.getElementById('errBox'); b.classList.remove('show'); b.innerHTML = ''; }
+/* R103：密码可见性图标升级为干净 inline SVG（睁眼 / 闭眼两态，currentColor 跟随按钮文字色，点击切换保留）。
+   图标字符串集中定义于此；HTML 里的初态直接内联「睁眼」SVG，避免 emoji 闪现。 */
+var PWD_EYE_ON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+var PWD_EYE_OFF_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
 function togglePw(id, btn) {
   var inp = document.getElementById(id);
+  if (!inp) return;
   var show = inp.type === 'password';
   inp.type = show ? 'text' : 'password';
-  btn.textContent = show ? '🙈' : '👁';
+  if (btn) {
+    btn.innerHTML = show ? PWD_EYE_OFF_SVG : PWD_EYE_ON_SVG;
+    btn.setAttribute('aria-label', show ? '隐藏密码' : '显示密码');
+  }
 }
 /* ---------- 密码强度（与后端 server/schemas.py 对齐，P0-B 需求22） ----------
    后端唯一规则：正则 ^(?=.*[A-Za-z])(?=.*\d).{8,64}$（≥8 位且同时含字母与数字，最长 64 位）
