@@ -84,6 +84,13 @@ public class MainActivity extends Activity {
     private volatile String pendingNotifyText = null;
     private volatile String xtAndroidJs = null;   // R73：桥接胶水 assets/xt-android.js 内容缓存（注入前读一次）
 
+    // ---- 【批5/R104e】实时位置共享：供 LocationShareService 回调 JS + 前台性判断 ----
+    /** 当前 Activity 弱引用（避免静态持有造成内存泄漏）；Service 经此把定位推给页面。 */
+    private static volatile java.lang.ref.WeakReference<MainActivity> sInstanceRef = null;
+    /** 窗口是否获得焦点（由 onWindowFocusChanged 维护）。占位「可见前台」即用户可交互状态，
+     *  用于「必须由可见 Activity 发起位置共享」的前台性判断（Android 11+ 后台启动前台服务会被拒）。 */
+    private volatile boolean uiForeground = false;
+
     // ---- 原生 TTS（朗读发音）----
     private TextToSpeech tts;
     private volatile boolean ttsReady = false;
@@ -99,6 +106,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // 【批5/R104e】登记当前实例弱引用，供 LocationShareService 回调 window.__onLocationUpdate
+        sInstanceRef = new java.lang.ref.WeakReference<MainActivity>(this);
 
         // 【R103 需求2】状态栏沉浸式：状态栏背景与 App 顶部浅色同色 + API23+ 深色图标（见 applyImmersiveStatusBar）
         applyImmersiveStatusBar();
@@ -117,6 +127,8 @@ public class MainActivity extends Activity {
         // 【应用内更新下载】R101：注册 DownloadManager 下载完成广播（Context 级，
         //   不依赖 WebView 页面存活 —— 用户退出检测更新页/切后台，下载完成仍能自动弹安装）。
         registerApkDoneReceiver();
+        // 【R105】App 启动时按本地开关+登录态恢复消息轮询前台服务（前端 setNotifyConfig 亦会触发，双保险）
+        ensureMsgPollService();
 
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);            // 全站逻辑为原生 JS
@@ -304,6 +316,143 @@ public class MainActivity extends Activity {
                         @Override public void run() { applyStatusBarColor(color); }
                     });
                 } catch (Throwable e) { /* 状态栏设置失败绝不影响页面 */ }
+            }
+
+            /** 【R105】设置页消息通知开关：true=启动前台轮询服务，false=停止服务并取消通知。
+             *  前端契约：XTAppBridge.setMsgNotify(enabled)；开关状态落盘 xt_notify_prefs/notify_enabled，
+             *  重启/开机后按此恢复（BootReceiver / ensureMsgPollService）。 */
+            @JavascriptInterface
+            public void setMsgNotify(final boolean enabled) {
+                try {
+                    android.content.SharedPreferences sp = getSharedPreferences(
+                            MsgPollService.PREFS, android.content.Context.MODE_PRIVATE);
+                    sp.edit().putBoolean(MsgPollService.KEY_ENABLED, enabled).apply();
+                    runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            try {
+                                Intent svc = new Intent(MainActivity.this, MsgPollService.class);
+                                if (enabled) {
+                                    if (Build.VERSION.SDK_INT >= 26) startForegroundService(svc);
+                                    else startService(svc);
+                                } else {
+                                    stopService(svc);
+                                    cancelPollNotifications();
+                                }
+                            } catch (Throwable e) { /* 启停失败：静默，不影响网页 */ }
+                        }
+                    });
+                } catch (Throwable e) { /* 写配置失败：静默 */ }
+            }
+
+            /** 【R105】设备信息桥：返回 JSON 字符串（零第三方依赖用 org.json）。
+             *  前端契约：XTAppBridge.getDeviceInfo() →
+             *  {"brand":"…","model":"…","osVersion":"…","appVersion":"…","androidId":"…",
+             *   "screenWidth":1080,"screenHeight":2340,"language":"zh-CN"}
+             *  任何字段取不到时留空/留 0，绝不抛异常影响页面。 */
+            @JavascriptInterface
+            public String getDeviceInfo() {
+                try {
+                    String appVersion = "";
+                    try {
+                        android.content.pm.PackageManager pm = getPackageManager();
+                        if (pm != null) {
+                            android.content.pm.PackageInfo pi = pm.getPackageInfo(getPackageName(), 0);
+                            if (pi != null && pi.versionName != null) appVersion = pi.versionName;
+                        }
+                    } catch (Throwable e1) { /* 版本号取不到：留空 */ }
+                    String androidId = "";
+                    try {
+                        androidId = android.provider.Settings.Secure.getString(
+                                getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
+                    } catch (Throwable e2) { /* ANDROID_ID 取不到：留空 */ }
+                    int sw = 0;
+                    int sh = 0;
+                    try {
+                        android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
+                        sw = dm.widthPixels;
+                        sh = dm.heightPixels;
+                    } catch (Throwable e3) { /* 屏幕尺寸取不到：留 0 */ }
+                    org.json.JSONObject o = new org.json.JSONObject();
+                    o.put("brand", Build.BRAND == null ? "" : Build.BRAND);
+                    o.put("model", Build.MODEL == null ? "" : Build.MODEL);
+                    o.put("osVersion", Build.VERSION.RELEASE == null ? "" : Build.VERSION.RELEASE);
+                    o.put("appVersion", appVersion);
+                    o.put("androidId", androidId == null ? "" : androidId);
+                    o.put("screenWidth", sw);
+                    o.put("screenHeight", sh);
+                    o.put("language", Locale.getDefault().toString());
+                    return o.toString();
+                } catch (Throwable e) {
+                    return "{}";
+                }
+            }
+
+            /** 【R106】原生录音桥（预埋，随下次 APK 生效）：开始录音。
+             *  前端契约：window.XTAppBridge.startVoiceRecord()（别名脚本转发到本方法）。
+             *  权限未授予时先申请(REQ 2002)，授权回调里再启动；结果经 window.__onVoiceRecord(json) 回传，
+             *  异常一律 ok:false，绝不抛进 WebView。 */
+            @JavascriptInterface
+            public void startVoiceRecord() {
+                runOnUiThread(new Runnable() {
+                    @Override public void run() { startVoiceRecordInternal(); }
+                });
+            }
+
+            /** 【R106】原生录音桥：停止录音并把结果（base64 dataUrl）回传网页。 */
+            @JavascriptInterface
+            public void stopVoiceRecord() {
+                runOnUiThread(new Runnable() {
+                    @Override public void run() { stopVoiceRecordInternal(); }
+                });
+            }
+
+            /** 【批5/R104e】实时位置共享：启动 location 前台服务（原生直接上报 /api/live/tick，
+             *  不依赖后台 JS）。前端契约：window.XTAppBridge.startLocationShare(shareId) → boolean。
+             *  返回 true=已请求启动；false=参数非法 / 未登录 / 非前台 / 启动异常
+             *  （前端据此决定走原生路还是纯 JS 降级）。
+             *  前台性：本桥只会被可见 WebView 的 JS 唤起，仍显式用 uiForeground 把关，
+             *  非前台不硬起（Android 11+ 后台启动前台服务会抛 ForegroundServiceStartNotAllowedException）。 */
+            @JavascriptInterface
+            public boolean startLocationShare(final String shareId) {
+                try {
+                    final String sid = (shareId == null) ? "" : shareId.trim();
+                    if (sid.isEmpty()) return false;                       // 参数非法
+                    if (!uiForeground) return false;                       // 非前台：不硬起
+                    android.content.SharedPreferences sp = getSharedPreferences(
+                            MsgPollService.PREFS, android.content.Context.MODE_PRIVATE);
+                    String token = sp.getString(MsgPollService.KEY_TOKEN, "");
+                    if (token == null || token.trim().isEmpty()) return false; // 未登录：无法上报
+                    final Intent svc = new Intent(MainActivity.this, LocationShareService.class);
+                    svc.putExtra(LocationShareService.EXTRA_SHARE_ID, sid);
+                    runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            try {
+                                if (Build.VERSION.SDK_INT >= 26) startForegroundService(svc);
+                                else startService(svc);
+                            } catch (Throwable e) { toast("位置共享启动失败，已降级"); }
+                        }
+                    });
+                    return true;
+                } catch (Throwable e) {
+                    return false;
+                }
+            }
+
+            /** 【批5/R104e】停止实时位置共享：发 stopService 意图（幂等，服务未运行也不报错）。
+             *  前端契约：window.XTAppBridge.stopLocationShare() → boolean（true=已请求停止）。 */
+            @JavascriptInterface
+            public boolean stopLocationShare() {
+                try {
+                    final Intent svc = new Intent(MainActivity.this, LocationShareService.class);
+                    runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            try { stopService(svc); } catch (Throwable e) { /* 静默 */ }
+                        }
+                    });
+                    return true;
+                } catch (Throwable e) {
+                    return false;
+                }
             }
         }, "AndroidBridge");
 
@@ -586,11 +735,19 @@ public class MainActivity extends Activity {
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 injectXtAndroid(view);
+                // 【R105】注入 XTAppBridge 别名脚本（前端统一桥名，feature-detect 不覆盖已有）
+                injectXtAppBridge(view);
                 // 【R103 需求2·动态版】注入自包含脚本：动态取页面真实顶部色设置状态栏
                 injectStatusBarColor(view);
+                // 【R105】页面加载完成：标记就绪，并补发冷启动时早于本回调的待处理深链
+                //   （onCreate 里 handleOpenIntent 那次调用会因 webPageReady=false 直接返回，属预期）
+                webPageReady = true;
+                if (pendingDeepLinkJson != null) forwardPendingDeepLink();
             }
         });
         web.loadUrl("file:///android_asset/" + Uri.encode("学习工作台.html"));
+        // 【R105】通知点击冷启动：识别深链 extras（热启动走 onNewIntent）
+        handleOpenIntent(getIntent());
 
         // alert/confirm/prompt 由默认实现弹出；此处扩展文件选择器（头像/插图上传）
         web.setWebChromeClient(new WebChromeClient() {
@@ -604,14 +761,27 @@ public class MainActivity extends Activity {
                 Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
                 intent.addCategory(Intent.CATEGORY_OPENABLE);
                 String mime = "*/*";
+                boolean isAudio = false;
                 String[] accept = params.getAcceptTypes();
-                if (accept != null && accept.length > 0 && accept[0] != null
-                        && accept[0].contains("image")) {
-                    mime = "image/*";
+                if (accept != null && accept.length > 0 && accept[0] != null) {
+                    if (accept[0].contains("image")) {
+                        mime = "image/*";
+                    } else if (accept[0].contains("audio")) {
+                        // 【R106】网页 <input type="file" accept="audio/*" capture>（L3 降级录音入口）：
+                        //  旧实现只识别 image，audio 会退化为普通文件选择器、调不起系统录音机 —— 故单列分支。
+                        mime = "audio/*";
+                        isAudio = true;
+                    }
                 }
                 intent.setType(mime);
+                Intent chooser = Intent.createChooser(intent, isAudio ? "录音或选择音频" : "选择文件");
+                if (isAudio) {
+                    // 附带「系统录音机」初始 intent：用户可直接录音，而非只能在文件里挑音频
+                    chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS,
+                            new Intent[] { new Intent(android.provider.MediaStore.Audio.Media.RECORD_SOUND_ACTION) });
+                }
                 try {
-                    startActivityForResult(Intent.createChooser(intent, "选择文件"), REQ_FILE_CHOOSER);
+                    startActivityForResult(chooser, REQ_FILE_CHOOSER);
                     return true;
                 } catch (Exception e) {
                     filePathCallback = null;
@@ -816,6 +986,18 @@ public class MainActivity extends Activity {
     private android.speech.SpeechRecognizer sr = null;
     private volatile boolean recPermissionGranted = false;
 
+    // ---- 【R106】原生录音桥（预埋，随下次 APK 生效）：MediaRecorder → MPEG_4 + AAC(.m4a) ----
+    private android.media.MediaRecorder voiceRecorder = null;   // 当前录音器
+    private java.io.File voiceRecFile = null;                   // 当前录音落盘文件（缓存目录）
+    private volatile boolean voiceRecording = false;            // 是否正在录音
+    private volatile boolean voiceStartPending = false;         // 权限申请中，授权后自动启动
+    private volatile long voiceRecordStartMs = 0L;              // 录音起始时间戳（算时长）
+    private static final long VOICE_MAX_MS = 60000L;            // 60 秒硬上限
+    private final Handler voiceStopHandler = new Handler(Looper.getMainLooper());
+    private final Runnable voiceStopTask = new Runnable() {
+        @Override public void run() { stopVoiceRecordInternal(); }
+    };
+
     /** 引擎状态变化 → 推送给页面 window.__nativeTtsStatus(ok, info) */
     private void notifyTtsStatus() {
         uiHandler.post(new Runnable() {
@@ -857,6 +1039,33 @@ public class MainActivity extends Activity {
 
     private void evalJs(WebView view, String js) {
         try { view.evaluateJavascript(js, null); } catch (Throwable e) { /* 注入失败：静默 */ }
+    }
+
+    /* ================= 【R105】XTAppBridge 别名注入 ================= */
+
+    /** 【R105】bootstrap JS：把前端统一桥名 window.XTAppBridge 挂到既有 AndroidBridge 上
+     *  （历史桥名为 AndroidBridge，前端契约统一为 XTAppBridge，故在此做别名而非改桥名）。
+     *  ES5 自包含；feature-detect：已存在则不覆盖；异常绝不影响页面。 */
+    private static final String XT_APP_BRIDGE_SCRIPT =
+            "(function(){try{"
+            + "if(!window.AndroidBridge)return;"
+            + "if(window.XTAppBridge)return;"
+            + "window.XTAppBridge={"
+            + "getDeviceInfo:function(){try{return AndroidBridge.getDeviceInfo()||'{}';}catch(e){return '{}';}},"
+            + "setMsgNotify:function(enabled){try{AndroidBridge.setMsgNotify(!!enabled);}catch(e){}},"
+            + "startVoiceRecord:function(){try{AndroidBridge.startVoiceRecord();}catch(e){}},"
+            + "stopVoiceRecord:function(){try{AndroidBridge.stopVoiceRecord();}catch(e){}},"
+            + "startLocationShare:function(sid){try{return !!(AndroidBridge.startLocationShare&&AndroidBridge.startLocationShare(String(sid==null?'':sid)));}catch(e){return false;}},"
+            + "stopLocationShare:function(){try{return !!(AndroidBridge.stopLocationShare&&AndroidBridge.stopLocationShare());}catch(e){return false;}}"
+            + "};"
+            + "}catch(e){}})();";
+
+    /** 【R105】在每个页面 onPageFinished 注入 XTAppBridge 别名脚本（先于 xt-android.js 胶水）。 */
+    private void injectXtAppBridge(final WebView view) {
+        if (view == null) return;
+        uiHandler.post(new Runnable() {
+            @Override public void run() { evalJs(view, XT_APP_BRIDGE_SCRIPT); }
+        });
     }
 
     /** 读取 assets 下的文本资源（UTF-8）；失败返回 null。 */
@@ -1373,6 +1582,130 @@ public class MainActivity extends Activity {
         });
     }
 
+    /* ================= 【R106】原生录音桥（预埋，随下次 APK 生效） ================= */
+
+    /** 【R106】开始录音（主线程调用）。权限未授予时先申请(REQ 2002)，授权回调里再启动；
+     *  被拒回传 ok:false/denied；任何异常一律 ok:false，绝不抛进 WebView。 */
+    private void startVoiceRecordInternal() {
+        try {
+            if (voiceRecording || voiceStartPending) return;
+            if (!hasAudioRuntimePermission()) {
+                voiceStartPending = true;
+                requestRecPermission();   // 复用既有 RECORD_AUDIO 运行时申请
+                return;
+            }
+            beginVoiceRecorder();
+        } catch (Throwable t) {
+            voiceStartPending = false;
+            notifyVoiceRecord("{\"ok\":false,\"err\":\"start_failed\"}");
+        }
+    }
+
+    /** 【R106】创建并启动 MediaRecorder：MPEG_4 + AAC → m4a（命中后端魔数白名单），
+     *  落 getCacheDir()/voice_rec.m4a，60 秒硬上限。 */
+    private void beginVoiceRecorder() {
+        try {
+            if (voiceRecording) return;
+            if (voiceRecorder != null) {
+                try { voiceRecorder.release(); } catch (Throwable t) { }
+                voiceRecorder = null;
+            }
+            java.io.File out = new java.io.File(getCacheDir(), "voice_rec.m4a");
+            voiceRecFile = out;
+            android.media.MediaRecorder r = new android.media.MediaRecorder();
+            r.setAudioSource(android.media.MediaRecorder.AudioSource.MIC);
+            r.setOutputFormat(android.media.MediaRecorder.OutputFormat.MPEG_4);
+            r.setAudioEncoder(android.media.MediaRecorder.AudioEncoder.AAC);
+            try { r.setAudioEncodingBitRate(64000); } catch (Throwable t) { }
+            try { r.setAudioSamplingRate(44100); } catch (Throwable t) { }
+            r.setOutputFile(out.getAbsolutePath());
+            r.prepare();
+            r.start();
+            voiceRecorder = r;
+            voiceRecording = true;
+            voiceRecordStartMs = System.currentTimeMillis();
+            try {
+                voiceStopHandler.removeCallbacks(voiceStopTask);
+                voiceStopHandler.postDelayed(voiceStopTask, VOICE_MAX_MS);
+            } catch (Throwable t) { /* 定时失败：仅失去自动上限，手动停止仍可用 */ }
+        } catch (Throwable t) {
+            try { if (voiceRecorder != null) voiceRecorder.release(); } catch (Throwable e2) { }
+            voiceRecorder = null;
+            voiceRecording = false;
+            notifyVoiceRecord("{\"ok\":false,\"err\":\"recorder_init\"}");
+        }
+    }
+
+    /** 【R106】停止录音：读文件转 base64 后经 window.__onVoiceRecord 回传（子线程读盘，避免卡 UI）。
+     *  未在录音时回传 ok:false/not_recording；任何异常一律 ok:false，绝不抛进 WebView。 */
+    private void stopVoiceRecordInternal() {
+        try { voiceStopHandler.removeCallbacks(voiceStopTask); } catch (Throwable t) { }
+        if (!voiceRecording || voiceRecorder == null) {
+            voiceRecording = false;
+            notifyVoiceRecord("{\"ok\":false,\"err\":\"not_recording\"}");
+            return;
+        }
+        int dur = 1;
+        try { dur = (int) Math.max(1L, Math.round((System.currentTimeMillis() - voiceRecordStartMs) / 1000.0)); }
+        catch (Throwable t) { dur = 1; }
+        final java.io.File file = voiceRecFile;
+        final int durationSec = dur;
+        try {
+            voiceRecorder.stop();
+        } catch (Throwable t) {
+            try { voiceRecorder.release(); } catch (Throwable e2) { }
+            voiceRecorder = null;
+            voiceRecording = false;
+            if (file != null) { try { file.delete(); } catch (Throwable e3) { } }
+            notifyVoiceRecord("{\"ok\":false,\"err\":\"stop_failed\"}");
+            return;
+        }
+        try { voiceRecorder.release(); } catch (Throwable t) { }
+        voiceRecorder = null;
+        voiceRecording = false;
+        new Thread(new Runnable() {
+            @Override public void run() {
+                java.io.FileInputStream in = null;
+                try {
+                    if (file == null || !file.exists() || file.length() <= 0) {
+                        notifyVoiceRecord("{\"ok\":false,\"err\":\"empty\"}");
+                        return;
+                    }
+                    in = new java.io.FileInputStream(file);
+                    java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+                    byte[] buf = new byte[8192];
+                    int n;
+                    while ((n = in.read(buf)) > 0) bos.write(buf, 0, n);
+                    in.close();
+                    in = null;
+                    String b64 = android.util.Base64.encodeToString(
+                            bos.toByteArray(), android.util.Base64.NO_WRAP);
+                    notifyVoiceRecord("{\"ok\":true,\"dataUrl\":\"data:audio/mp4;base64," + b64
+                            + "\",\"durationSec\":" + durationSec + "}");
+                } catch (Throwable t) {
+                    notifyVoiceRecord("{\"ok\":false,\"err\":\"read_failed\"}");
+                } finally {
+                    if (in != null) { try { in.close(); } catch (Throwable e) { } }
+                    if (file != null) { try { file.delete(); } catch (Throwable e) { } }
+                }
+            }
+        }).start();
+    }
+
+    /** 【R106】把录音结果 JSON 回传网页：window.__onVoiceRecord(jsonStr)。jsonStr 由本类构造
+     *  （仅含 base64/数字/固定词），仍做一次转义保险；异常静默，绝不影响页面。 */
+    private void notifyVoiceRecord(final String jsonStr) {
+        uiHandler.post(new Runnable() {
+            @Override public void run() {
+                if (web == null) return;
+                String s = (jsonStr == null) ? "{\"ok\":false,\"err\":\"null\"}" : jsonStr;
+                s = s.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "").replace("\r", "");
+                String js = "window.__onVoiceRecord&&window.__onVoiceRecord('" + s + "')";
+                try { web.evaluateJavascript(js, null); } catch (Throwable t) { }
+            }
+        });
+    }
+
     /** 请求麦克风权限（Android 6.0+ 运行时权限）；授权结果记入 recPermissionGranted */
     private void requestRecPermission() {
         if (android.os.Build.VERSION.SDK_INT < 23) {
@@ -1398,6 +1731,12 @@ public class MainActivity extends Activity {
             if (wp != null) {
                 if (recPermissionGranted) grantWebAudio(wp);
                 else { try { wp.deny(); } catch (Throwable t) { } }
+            }
+            // 【R106】若本次申请由原生录音桥(startVoiceRecordInternal)触发：授权则启动录音，被拒则回传失败
+            if (voiceStartPending) {
+                voiceStartPending = false;
+                if (recPermissionGranted) startVoiceRecordInternal();
+                else notifyVoiceRecord("{\"ok\":false,\"err\":\"denied\"}");
             }
             if (!recPermissionGranted) {
                 notifyRecError("perm", "not_allowed");
@@ -1475,6 +1814,137 @@ public class MainActivity extends Activity {
     protected void onPause() {
         super.onPause();
         MsgPollService.appForeground = false;
+    }
+
+    /** 【批5/R104e】窗口焦点变化 → 维护 uiForeground（对 onResume/onPause 零改动）。
+     *  仅用于「必须由可见 Activity 发起位置共享」的前台性把关。 */
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        uiForeground = hasFocus;
+    }
+
+    /** 【批5/R104e】把一次定位推给页面：window.__onLocationUpdate(JSON字符串)。
+     *  由 LocationShareService 在每次定位时调用；JSON 用 JSONObject.quote 转义
+     *  （照 notifyRecResult 的注入范式，参数为字符串）。无实例/无 WebView 时静默忽略。 */
+    public static void pushLocationUpdate(final String json) {
+        final MainActivity a = (sInstanceRef == null) ? null : sInstanceRef.get();
+        if (a == null) return;
+        a.uiHandler.post(new Runnable() {
+            @Override public void run() {
+                if (a.web == null) return;
+                String payload = (json == null) ? "{}" : json;
+                String quoted;
+                try { quoted = org.json.JSONObject.quote(payload); }
+                catch (Throwable e) { quoted = "\"\""; }
+                String js = "window.__onLocationUpdate&&window.__onLocationUpdate(" + quoted + ")";
+                try { a.web.evaluateJavascript(js, null); } catch (Throwable e) { /* 静默 */ }
+            }
+        });
+    }
+
+    /** 【R105】通知点击热启动：MainActivity 已在栈顶时系统走 onNewIntent
+     *  （Manifest 已声明 launchMode=singleTop）。 */
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleOpenIntent(intent);
+    }
+
+    /* ================= 【R105】通知点击深链 + 服务恢复 + 通知清理 ================= */
+
+    /** 【R105】暂存的深链参数 JSON（等前端会话选中契约确认后由最终注入调用消费）。 */
+    private volatile String pendingDeepLinkJson = null;
+
+    /** 【R105】WebView 页面是否已加载完成（onPageFinished 置 true）。用于处理
+     *  「冷启动时 handleOpenIntent 早于页面加载完成」的竞态：页面未就绪则保留 pending，
+     *  待 onPageFinished 末尾再补发一次。 */
+    private volatile boolean webPageReady = false;
+
+    /** 【R105】App 冷启动（onCreate）与热启动（onNewIntent）统一走这里：
+     *  识别 MsgPollService 通知点击带来的 extras
+     *  （xt_open_conversation / xt_msg_id / xt_msg_type / xt_msg_name），组装 JSON 暂存。 */
+    private void handleOpenIntent(final Intent intent) {
+        try {
+            if (intent == null || !intent.getBooleanExtra("xt_open_conversation", false)) return;
+            final String type = intent.getStringExtra("xt_msg_type");
+            final String name = intent.getStringExtra("xt_msg_name");
+            final long id = intent.getLongExtra("xt_msg_id", -1L);
+            org.json.JSONObject o = new org.json.JSONObject();
+            o.put("type", type == null ? "" : type);
+            o.put("name", name == null ? "" : name);
+            o.put("id", id);
+            pendingDeepLinkJson = o.toString();
+            forwardPendingDeepLink();
+        } catch (Throwable e) { /* 深链解析失败：不影响正常打开 */ }
+    }
+
+    /** 【R105】把暂存深链转发给 WebView 前端，直达对应会话（契约见 _r105_deeplink_contract.txt）。
+     *  前端唯一入口 window.gotoChatWith(peerId, name, avatar)（assets/app.js 已导出）：
+     *   · peerId>0 → 打开该用户私聊（页内已有 imOpenChatWithUser 则直接开会话，
+     *     否则走 ?uid=&name= 站内深链）；· peerId=0 → 回落 gotoChat() 打开聊天列表。
+     *  群/系统类通知本批只做降级（pid=0 → 打开聊天列表），按群直达需前端另开契约，不在本批范围。
+     *  竞态：页面未就绪(webPageReady=false)时保留 pending，onPageFinished 末尾再调一次。
+     *  name 必须经 org.json.JSONObject.quote() 转义（通知标题可能含引号），禁止裸拼接。 */
+    private void forwardPendingDeepLink() {
+        final String json = pendingDeepLinkJson;
+        if (json == null) return;
+        if (!webPageReady) return;                 // 页面没就绪 → 保留 pending，onPageFinished 末尾再调
+        if (web == null) return;
+        pendingDeepLinkJson = null;                // 先清后注入，防重入重复跳转
+        long pid = 0L;
+        String name = "";
+        try {
+            org.json.JSONObject o = new org.json.JSONObject(json);
+            String type = o.optString("type", "");
+            name = o.optString("name", "");
+            long id = o.optLong("id", 0L);
+            // 仅 peer 类型直达用户会话；群/系统类本批降级为打开聊天列表(pid=0)
+            pid = ("peer".equals(type) || type == null || type.isEmpty()) ? id : 0L;
+            if (pid < 0) pid = 0L;
+        } catch (Throwable t) {
+            pid = 0L;                              // 解析失败：降级为打开聊天列表，绝不中断开 App
+        }
+        final long fpid = pid;
+        final String fname = (name == null) ? "" : name;
+        uiHandler.post(new Runnable() {
+            @Override public void run() {
+                try {
+                    if (web == null) return;
+                    // 走 evaluateJavascript；name 经 JSONObject.quote 转义防注入；
+                    // 无 gotoChatWith 时回落站内深链 私聊.html?uid=，整体 try/catch 静默。
+                    String js = "javascript:try{if(window.gotoChatWith){window.gotoChatWith("
+                            + fpid + "," + org.json.JSONObject.quote(fname) + ","
+                            + "\"\");}else{location.href='私聊.html?uid=" + fpid + "';}}catch(e){}";
+                    web.evaluateJavascript(js, null);
+                } catch (Throwable t) { /* 静默：深链失败不能影响开 App */ }
+            }
+        });
+    }
+
+    /** 【R105】App 启动时按本地开关+登录态恢复前台轮询服务（前端 setNotifyConfig 也会触发，双保险）。 */
+    private void ensureMsgPollService() {
+        try {
+            android.content.SharedPreferences sp = getSharedPreferences(
+                    MsgPollService.PREFS, android.content.Context.MODE_PRIVATE);
+            boolean enabled = sp.getBoolean(MsgPollService.KEY_ENABLED, true);
+            String token = sp.getString(MsgPollService.KEY_TOKEN, "");
+            if (!enabled || token == null || token.trim().isEmpty()) return;
+            Intent svc = new Intent(this, MsgPollService.class);
+            if (Build.VERSION.SDK_INT >= 26) startForegroundService(svc);
+            else startService(svc);
+        } catch (Throwable e) { /* 恢复失败：静默 */ }
+    }
+
+    /** 【R105】取消原生侧消息轮询产生的全部通知（设置页关开关时调用）。 */
+    private void cancelPollNotifications() {
+        try {
+            NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm == null) return;
+            nm.cancel(MsgPollService.MSG_NOTIFY_ID);
+            nm.cancel(MsgPollService.ALIVE_NOTIFY_ID);
+        } catch (Throwable e) { /* 静默 */ }
     }
 
     @Override

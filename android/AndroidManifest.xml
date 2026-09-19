@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.study.workbench"
-    android:versionCode="29"
-    android:versionName="1.28">
+    android:versionCode="30"
+    android:versionName="1.29">
 
     <!-- 预留：将来若连接局域网后端（多人在线模式）需要联网权限；单机离线其实用不到 -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -19,8 +19,15 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <!-- R73-18①：Android 14 (API 34) 起前台服务须声明类型，dataSync 对应轮询同步 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- 批5/R104e：实时位置共享前台服务 —— 声明 location 类型权限（Android 14/API34+ 强制，
+         不声明会 MissingForegroundServiceTypeException 崩溃）。普通权限，安装即授予，无弹窗。
+         注意：刻意【不】申请 ACCESS_BACKGROUND_LOCATION —— 共享由可见 Activity 点按发起，
+         属「延续用户主动操作」（同 Google 地图导航模型），后台仍可持续定位。 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <!-- R73-18①：引导用户忽略电池优化，降低后台服务被冻结/清理导致停摆的概率 -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- R105：开机自启 —— BootReceiver 收到 BOOT_COMPLETED 后按开关+登录态拉起 MsgPollService -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- R73-4（需求4 根因）：Android 11+ 包可见性（package visibility）。
          targetSdkVersion>=30 时，未声明本 <queries> 的应用调用
@@ -44,8 +51,10 @@
         android:allowBackup="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
 
+        <!-- R105：singleTop —— 通知点击已在栈顶时走 onNewIntent 传递深链 extras，不重复开实例 -->
         <activity
             android:name=".MainActivity"
+            android:launchMode="singleTop"
             android:exported="true"
             android:configChanges="orientation|screenSize|keyboardHidden|screenLayout"
             android:windowSoftInputMode="adjustResize">
@@ -60,6 +69,23 @@
             android:name=".MsgPollService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+
+        <!-- 批5/R104e：实时位置共享前台服务 —— location 类型，独立于 MsgPollService。
+             由可见 Activity 点按发起（Android 14 起须声明类型）；原生直接 POST /api/live/tick，
+             切后台/熄屏后持续上报；【不】经 BootReceiver 拉起（Android 10+ 后台自动开始会被拒）。 -->
+        <service
+            android:name=".LocationShareService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+
+        <!-- R105：开机自启 —— 按本地开关+登录态拉起消息轮询前台服务（受保护系统广播，仅系统可发） -->
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
         <!-- R101：应用内下载更新包自动安装 —— Android 7+ 系统安装器读 file:// 会
              FileUriExposedException，须经 content:// 授权读取。本工程零 androidx/support

@@ -66,6 +66,31 @@
         }
       } catch (e) { /* 静默 */ }
       return false;
+    },
+    /* 【批5/R104e】实时位置共享：转发到原生前台服务桥。
+       契约：window.XTAppBridge.startLocationShare(shareId) / .stopLocationShare() → boolean。
+       原生负责切后台/熄屏后持续上报（原生直接 POST /api/live/tick）；
+       原生不支持时（老壳或 Web 端）返回 false，前端据此降级为纯 JS 前台模式。
+       定位回调：原生经 window.__onLocationUpdate(JSON字符串) 推送，前端自行监听。 */
+    hasLocationShare: function () {
+      try { return !!(W.AndroidBridge && typeof W.AndroidBridge.startLocationShare === 'function'); }
+      catch (e) { return false; }
+    },
+    startLocationShare: function (shareId) {
+      try {
+        if (W.AndroidBridge && typeof W.AndroidBridge.startLocationShare === 'function') {
+          return !!W.AndroidBridge.startLocationShare(String(shareId == null ? '' : shareId));
+        }
+      } catch (e) { /* 静默 */ }
+      return false;
+    },
+    stopLocationShare: function () {
+      try {
+        if (W.AndroidBridge && typeof W.AndroidBridge.stopLocationShare === 'function') {
+          return !!W.AndroidBridge.stopLocationShare();
+        }
+      } catch (e) { /* 静默 */ }
+      return false;
     }
   };
 })();
