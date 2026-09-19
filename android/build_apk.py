@@ -115,6 +115,14 @@ REQUIRED_ASSETS = [
     "states.css",
     # --- 子目录资源（build-apk.sh 早期版本用 cp 不带 -r 会静默漏掉） ---
     "emoji/manifest.js",
+    # --- R129（2026-09-19）：Leaflet 1.9.4 本地化资源（离线地图卡片，缺一即地图空白） ---
+    "leaflet/leaflet.js",
+    "leaflet/leaflet.css",
+    "leaflet/images/marker-icon.png",
+    "leaflet/images/marker-icon-2x.png",
+    "leaflet/images/marker-shadow.png",
+    "leaflet/images/layers.png",
+    "leaflet/images/layers-2x.png",
 ]
 
 # --- 一级资源目录 data/（2026-09-12 新增）：真题模考数据契约 ---
