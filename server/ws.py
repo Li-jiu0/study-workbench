@@ -3,7 +3,7 @@
 协议（JSON 文本帧）：
   客户端 → 服务端：
     {"type":"ping"}                                 心跳（每 ~25s）
-    {"type":"msg","to":<userId>,"content":"..","kind":"text|image|location","sub":"..","lat":..,"lng":..}
+    {"type":"msg","to":<userId>,"content":"..","kind":"text|image|location","sub":"..","lat":..,"lng":..,"precise":true|false}
     {"type":"read","peer":<userId>,"upToId":<消息id>} 已读回执
   服务端 → 客户端：
     {"type":"hello","userId":..}                    建立成功
@@ -69,8 +69,11 @@ async def _handle_msg(uid: int, msg: dict) -> None:
             await send_to(uid, {"type": "error", "detail": "无法发送消息（已被限制）"})
             return
         sub = str(msg.get("sub") or "")
+        # R104d 批4：precise 布尔透传（True=实时精确定位）；缺省 / 非 true 一律 False（向后兼容）
+        precise = bool(msg.get("precise"))
         m = await store_and_deliver(db, db.get(User, uid), to, kind, content,
-                                    sub=sub, lat=_num(msg.get("lat")), lng=_num(msg.get("lng")))
+                                    sub=sub, lat=_num(msg.get("lat")), lng=_num(msg.get("lng")),
+                                    precise=precise)
         await send_to(uid, {"type": "msg", "message": msg_dict(m)})  # 自己的回显
     finally:
         db.close()

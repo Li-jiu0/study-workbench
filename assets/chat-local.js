@@ -1787,7 +1787,7 @@
     if (data.chats[friendId]) { data.chats[friendId].unread = 0; saveData(data); }
 
     S.msgs = (data.messages[friendId] || []).map(function (m, i) {
-      return { id: i + 1, senderId: m.senderId, content: m.content, kind: m.kind, time: m.time, duration: m.duration, sub: m.sub, lat: m.lat, lng: m.lng };
+      return { id: i + 1, senderId: m.senderId, content: m.content, kind: m.kind, time: m.time, duration: m.duration, sub: m.sub, lat: m.lat, lng: m.lng, precise: m.precise };
     });
 
     // 显示聊天区域，隐藏空状态
@@ -1813,7 +1813,7 @@
         imHasMore = !!d.hasMore; // R73 需求19：记录是否还有更早历史，供滚动加载更多
         if (items.length > 0) {
           S.msgs = items.map(function (m) {
-            return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, sub: m.sub, lat: m.lat, lng: m.lng, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read };
+            return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, sub: m.sub, lat: m.lat, lng: m.lng, precise: m.precise, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read };
           });
           renderMsgs();
           // 标记最后一条消息为已读
@@ -2131,6 +2131,9 @@
           var mapSrc = apiBase() + '/api/geo/staticmap?lat=' + encodeURIComponent(m.lat) +
                        '&lng=' + encodeURIComponent(m.lng) + '&zoom=16';
           var locSubHtml = m.sub ? '<div class="im-loc-sub">' + esc(m.sub) + '</div>' : '';
+          /* R104d 批4：「精确 / 地点」小标识 —— 仅 m.precise === true 显「精确」，旧消息（无 precise）显「地点」。 */
+          var locBadge = m.precise === true ? '精确' : '地点';
+          var locBadgeCls = 'im-loc-badge' + (m.precise === true ? ' im-loc-badge--precise' : '');
           /* 接收方距离行：仅对方发来的位置显示；数值由本地 haversine 算，无网络请求。 */
           var locDistHtml = '';
           if (!isMe) {
@@ -2150,7 +2153,8 @@
           inner = '<div class="im-loc-card' + (locInteractive ? ' im-loc-clickable' : '') + '"' +
               locCardAttr + locCardClick + '>' +
               '<div class="im-loc-addr">' +
-                '<div class="im-loc-title">' + esc(locTitle) + '</div>' +
+                '<div class="im-loc-head"><span class="' + locBadgeCls + '">' + esc(locBadge) + '</span>' +
+                  '<div class="im-loc-title">' + esc(locTitle) + '</div></div>' +
                 locSubHtml +
                 locDistHtml +
               '</div>' +
@@ -2774,6 +2778,8 @@
     var msg = { id: uid, senderId: S.myId, content: t, kind: 'location', time: now };
     if (sub) msg.sub = sub;
     if (hasGeo) { msg.lat = o.lat; msg.lng = o.lng; }
+    /* R104d 批4：精确位置标记 —— 仅显式 true 才置真（undefined/缺失即 false，向后兼容旧调用方）。 */
+    if (o.precise === true) msg.precise = true;
     S.msgs.push(msg);
 
     var data = loadData();
@@ -2781,6 +2787,7 @@
     var stored = { id: uid, senderId: S.myId, content: t, kind: 'location', time: now };
     if (sub) stored.sub = sub;
     if (hasGeo) { stored.lat = o.lat; stored.lng = o.lng; }
+    if (o.precise === true) stored.precise = true;
     data.messages[S.peer.id].push(stored);
     if (!data.chats[S.peer.id]) data.chats[S.peer.id] = {};
     data.chats[S.peer.id].last = '[位置] ' + t;
@@ -2799,6 +2806,7 @@
         var payload = { content: t, kind: 'location' };
         if (sub) payload.sub = sub;
         if (hasGeo) { payload.lat = o.lat; payload.lng = o.lng; }
+        if (o.precise === true) payload.precise = true;   // 服务端加列后跨端可显示「精确」
         fetch(apiBase() + '/api/chat/' + S.peer.serverId + '/messages', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
@@ -2814,6 +2822,8 @@
             var rec = { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read };
             if (rsub) rec.sub = rsub;
             if (typeof rlat === 'number' && typeof rlng === 'number') { rec.lat = rlat; rec.lng = rlng; }
+            // 回包用发送方意图（o.precise）判定：老服务端不回传 precise 也不丢「精确」标识
+            if (o.precise === true) rec.precise = true;
             S.msgs.push(rec);
             renderMsgs();
           }
@@ -3140,7 +3150,7 @@
       mapper = function (m) { return { id: m.id, senderId: m.senderId, senderNickname: m.senderNickname, senderAvatar: m.senderAvatar, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true }; };
     } else if (S.peer && S.peer.isServer) {
       url = apiBase() + '/api/chat/' + S.peer.serverId + '/messages?before_id=' + firstId + '&limit=30&mark_read=0';
-      mapper = function (m) { return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, sub: m.sub, lat: m.lat, lng: m.lng, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read }; };
+      mapper = function (m) { return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, sub: m.sub, lat: m.lat, lng: m.lng, precise: m.precise, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read }; };
     } else {
       return;
     }
@@ -3178,7 +3188,7 @@
       var items = d.items || [];
       if (!items.length && silent) return;
       var list = items.map(function (m) {
-        return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, sub: m.sub, lat: m.lat, lng: m.lng, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read };
+        return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, sub: m.sub, lat: m.lat, lng: m.lng, precise: m.precise, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read };
       });
       // 保留已 prepend 的更早历史，避免被「最新 50 条」覆盖
       var merged = imMergeOlderMsgs(S.msgs, list);
@@ -4252,6 +4262,11 @@
       '.im-loc-card.im-loc-plain{display:inline-flex;align-items:flex-start;gap:8px;width:auto;max-width:240px;padding:8px 12px}' +
       '.im-loc-addr{padding:8px 10px}' +
       '.im-loc-title{font-size:15px;font-weight:700;color:var(--text,#2D3436);line-height:1.35;word-break:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}' +
+      /* R104d 批4（2026-09-19）：「精确 / 地点」小标识（与标题同行 flex 头）。固定 px，禁 clamp/min/max。 */
+      '.im-loc-head{display:flex;align-items:flex-start;gap:6px;min-width:0}' +
+      '.im-loc-head .im-loc-title{flex:1 1 auto;min-width:0}' +
+      '.im-loc-badge{flex:0 0 auto;display:inline-flex;align-items:center;height:18px;margin-top:1px;padding:0 6px;border-radius:4px;font-size:11px;line-height:1;white-space:nowrap;background:var(--bg,#F5F7FA);color:var(--text-secondary,#8a8f99)}' +
+      '.im-loc-badge.im-loc-badge--precise{background:#e6f6ee;color:#189a58}' +
       '.im-loc-sub{font-size:12px;color:var(--text-secondary,#8a8f99);margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}' +
       '.im-loc-map{display:block;width:100%;height:110px;object-fit:cover;border-bottom-left-radius:10px;border-bottom-right-radius:10px;background:var(--bg,#F5F7FA)}' +
       '.im-loc-ic{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;color:var(--primary,#5B8DEF);margin-top:1px}' +

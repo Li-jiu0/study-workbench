@@ -205,6 +205,7 @@ class Message(Base):
 
     R104 项3（位置消息）：location 消息的坐标与地点副标题存于 sub / lat / lng；
     旧消息 / 非位置消息此三列为空（sub=''、lat/lng=NULL），前端走纯文字回退。
+    R104d 批4：precise=True 表示用户实时精确定位（「我的位置」）；False / 旧消息 = 用户选择的地点。
     """
     __tablename__ = "messages"
     id = Column(Integer, primary_key=True)
@@ -216,6 +217,7 @@ class Message(Base):
     sub = Column(Text, nullable=False, default="")  # 位置消息地点副标题（非位置消息恒为 ''）
     lat = Column(Float, nullable=True)  # 位置消息纬度（旧消息 / 非位置消息为 NULL）
     lng = Column(Float, nullable=True)  # 位置消息经度（旧消息 / 非位置消息为 NULL）
+    precise = Column(Boolean, nullable=False, default=False)  # R104d：True=实时精确定位；False/旧消息=选的地点
     read_at = Column(String(19), nullable=True)
     created_at = Column(String(19), nullable=False)
 
@@ -487,6 +489,9 @@ def _upgrade_legacy_schema() -> None:
                 conn.execute(text("ALTER TABLE messages ADD COLUMN lat REAL"))
             if "lng" not in mcols:
                 conn.execute(text("ALTER TABLE messages ADD COLUMN lng REAL"))
+            # R104d 批4：precise 布尔（守卫式、幂等、无损）；存量行默认 0 = 「地点」
+            if "precise" not in mcols:
+                conn.execute(text("ALTER TABLE messages ADD COLUMN precise BOOLEAN NOT NULL DEFAULT 0"))
     # 修复（2026-09-11）：comments.parent_id 缺失导致 social.py 评论接口 AttributeError（生产 500），此处无损补列
     if "comments" in names and "parent_id" not in _table_columns("comments"):
         with engine.begin() as conn:

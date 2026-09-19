@@ -24,6 +24,8 @@ class SendMsgIn(BaseModel):
     sub: str = ""
     lat: float | None = None
     lng: float | None = None
+    # R104d 批4：True=用户实时精确定位（「我的位置」）；False/缺省 = 用户选择的地点或旧消息
+    precise: bool = False
 
 
 class ReadIn(BaseModel):
@@ -41,6 +43,7 @@ def msg_dict(m: Message) -> dict:
         "sub": getattr(m, "sub", "") or "",
         "lat": getattr(m, "lat", None),
         "lng": getattr(m, "lng", None),
+        "precise": bool(getattr(m, "precise", False)),
         "createdAt": m.created_at,
         "read": bool(m.read_at),
     }
@@ -48,15 +51,17 @@ def msg_dict(m: Message) -> dict:
 
 async def store_and_deliver(db: Session, sender: User, receiver_id: int,
                             kind: str, content: str, sub: str = "",
-                            lat: float | None = None, lng: float | None = None) -> Message:
+                            lat: float | None = None, lng: float | None = None,
+                            precise: bool = False) -> Message:
     """写库并尝试实时推送给接收方；返回入库后的消息。
 
     R104 项3：新增可选 sub / lat / lng，仅位置消息携带；其余消息恒为 '' / None。
     ws.py 既有的 5 参调用保持兼容（新增参数均有默认值）。
+    R104d 批4：新增可选 precise（True=用户实时精确定位；False/缺省=选的地点或旧消息）。
     """
     m = Message(sender_id=sender.id, receiver_id=receiver_id,
                 kind=kind, content=content, sub=sub or "", lat=lat, lng=lng,
-                read_at=None, created_at=now_iso())
+                precise=precise, read_at=None, created_at=now_iso())
     db.add(m)
     db.commit()
     db.refresh(m)
@@ -117,7 +122,8 @@ async def send_message(peer_id: int, body: SendMsgIn, user: User = Depends(get_c
     if not content and kind != "location":
         raise HTTPException(400, "消息不能为空")
     m = await store_and_deliver(db, user, peer_id, kind, content,
-                                sub=body.sub, lat=body.lat, lng=body.lng)
+                                sub=body.sub, lat=body.lat, lng=body.lng,
+                                precise=body.precise)
     return msg_dict(m)
 
 
@@ -193,6 +199,7 @@ def list_conversations(limit: int = 100, user: User = Depends(get_current_user),
                 "sub": getattr(lm, "sub", "") or "",
                 "lat": getattr(lm, "lat", None),
                 "lng": getattr(lm, "lng", None),
+                "precise": bool(getattr(lm, "precise", False)),
                 "createdAt": lm.created_at,
                 "senderId": lm.sender_id,
             } if lm else None,

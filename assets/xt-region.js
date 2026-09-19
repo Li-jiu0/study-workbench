@@ -1082,6 +1082,9 @@
       '.xtlp-empty{padding:26px 14px;text-align:center;color:#9aa3b2;font-size:13px}'+
       '.xtlp-foot{flex:0 0 auto;padding:10px 12px 16px;display:flex;gap:10px;background:#fff;border-top:1px solid #e6e9f0}'+
       '.xtlp-loc{flex:1;border:1px solid #5B8DEF;background:transparent;color:#5B8DEF;border-radius:10px;padding:10px;font-size:14px;cursor:pointer}'+
+      /* R104d 批4：发送我的精确位置（第二入口；固定 px，禁 clamp/min/max） */
+      '.xtlp-my{flex:1;border:none;background:#5B8DEF;color:#fff;border-radius:10px;padding:10px;font-size:14px;font-weight:700;cursor:pointer}'+
+      '.xtlp-my:active{opacity:.85}'+
       '.xtlp-cancel{flex:none;border:1px solid #e6e9f0;background:transparent;color:#6b7280;border-radius:10px;padding:10px 18px;font-size:14px;cursor:pointer}'+
       /* R90 item3：矮屏（总高 ≤ 560px：480/400 都落进来）收紧固定高度块，
          避免 overhead(293px)+列表 foot 超出视口导致截断。全固定值 + @media，禁 clamp/min/max。 */
@@ -1108,6 +1111,8 @@
       '<div class="xtlp-curline">尚未选择位置</div></div>';
     html += '<div class="xtlp-list"></div>';
     html += '<div class="xtlp-foot"><button type="button" class="xtlp-loc" data-act="loc">用当前位置</button>' +
+      /* R104d 批4：精确位置第二入口（act=myloc，独立于「用当前位置」分叉） */
+      '<button type="button" class="xtlp-my" data-act="myloc">发送我的精确位置</button>' +
       '<button type="button" class="xtlp-cancel" data-act="cancel">取消</button></div>';
 
     /* R89-B: \u4e0d\u518d\u5305\u4e00\u5c42\u65e0\u6837\u5f0f\u7684 .xtlp-body \u4e2d\u95f4 div\uff08\u4f1a\u6253\u65ad .xtlp \u7684 flex
@@ -1130,8 +1135,10 @@
     var curSub = '';        // R104 项3：当前选中项的副地址（「区 + 路」级，如「西湖区 · 文三路」）
     var curLat = null;      // R104 项3：当前选中项纬度（拿不到坐标 → null）
     var curLng = null;      // R104 项3：当前选中项经度
+    var curPrecise = false; // R104d 批4：当前选中是否为「我的精确位置」（POI/文字选择路径恒 false）
     var nearbyResults = [];  // 最近一次定位得到的周边 POI
     var locBusy = false;     // 定位中：置位后不再启动第二次，防止并发重复请求
+    var mylocBusy = false;   // R104d 批4：精确定位进行中（独立闸门，不与 locBusy 互锁）
     /* R104c：显式地点搜索（回车 / 点「搜索」）状态 —— 与「输入联想」两态分离。 */
     var placeActive = false;   // 显式搜索命中态（true 且 placePois 非空时渲染 POI 组）
     var placeLoading = false;  // 显式搜索进行中
@@ -1148,6 +1155,7 @@
           isFinite(coord.lat) && isFinite(coord.lng)) {
         curLat = coord.lat; curLng = coord.lng;
       } else { curLat = null; curLng = null; }
+      curPrecise = false;   // R104d 批4：列表/输入选择路径非精确位置
       if (chosen) {
         curlineEl.textContent = chosen;
         okEl.removeAttribute('disabled');
@@ -1316,6 +1324,62 @@
       });
     }
 
+    /* R104d 批4：发送我的精确位置 —— 直连 navigator.geolocation（高精度、一次性、零 IP 兜底）。
+       严禁走 locate()：纯 HTTP 下它经 _failOver 静默降级成 IP 定位（source:'ip'），
+       会把城市级粗坐标冒充「精确位置」发出。拿到真坐标即 finish 发送
+       （跳过 reverseGeocode、跳过列表、跳过二次点选）；失败绝不发送，分档提示仅 UI note。 */
+    var MYLOC_GEO_OPTS = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
+    var MYLOC_MSG_ENV = '当前网页环境不支持精确定位，请在 App 内发送，或手动选择地点';
+    var MYLOC_MSG_DENIED = '未授权定位，请在浏览器允许位置权限后重试';
+
+    /** 安全上下文判定：isSecureContext 优先，缺失时按 https 协议兜底（http/file 均视为非安全）。 */
+    function _isSecureCtx() {
+      try {
+        if (typeof window.isSecureContext === 'boolean') return window.isSecureContext;
+      } catch (e0) {}
+      try {
+        var p = (window.location && window.location.protocol) ? String(window.location.protocol) : '';
+        return p === 'https:';
+      } catch (e1) { return false; }
+    }
+
+    function doMyLoc() {
+      if (mylocBusy) return;   // 独立 busy 闸门（不与 locBusy 互锁）
+      var geo = null;
+      try { geo = navigator.geolocation; } catch (e0) { geo = null; }
+      if (!geo || typeof geo.getCurrentPosition !== 'function' || !_isSecureCtx()) {
+        _placeNote(MYLOC_MSG_ENV);   // 非安全上下文 / 无 API：绝不 IP 兜底、绝不发送
+        renderList();
+        return;
+      }
+      mylocBusy = true;
+      setChosen('', '正在精确定位…');
+      renderList();
+      geo.getCurrentPosition(function (pos) {
+        if (closed) return;
+        mylocBusy = false;
+        var c = (pos && pos.coords) ? pos.coords : null;
+        var la = c ? Number(c.latitude) : NaN;
+        var ln = c ? Number(c.longitude) : NaN;
+        if (!isFinite(la) || !isFinite(ln)) {
+          setChosen('', '');
+          _placeNote(MYLOC_MSG_ENV);
+          renderList();
+          return;
+        }
+        // 拿到真坐标即发送：跳过 reverseGeocode、跳过列表、跳过二次点选。
+        setChosen('我的位置', '', { lat: la, lng: ln });
+        curPrecise = true;
+        finish(chosen);
+      }, function () {
+        if (closed) return;
+        mylocBusy = false;
+        setChosen('', '');
+        _placeNote(MYLOC_MSG_DENIED);   // 安全上下文失败（被拒/超时等）→ 授权/重试口径
+        renderList();
+      }, MYLOC_GEO_OPTS);
+    }
+
     /* R104 批2：上次发送位置（一键再发）—— 读写 xt_loc_last（与 pick() 同键；失败静默）。 */
     /** 读上次发送记录；无 / 坏 JSON / 非对象 / 缺 text / 坐标非法 → null（该行不渲染）。 */
     function lastSendRead() {
@@ -1332,7 +1396,8 @@
       var la = Number(o.lat), ln = Number(o.lng);
       if (!(o.lat != null && String(o.lat) !== '' && isFinite(la) &&
             o.lng != null && String(o.lng) !== '' && isFinite(ln))) return null;
-      return { text: t, sub: (o.sub == null ? '' : String(o.sub)), lat: la, lng: ln };
+      return { text: t, sub: (o.sub == null ? '' : String(o.sub)), lat: la, lng: ln,
+               precise: o.precise === true };   // R104d 批4：last 记录带 precise（缺失 → false）
     }
 
     /** 写上次发送记录 {text,sub,lat,lng}；try/catch 包住，失败不影响发送。 */
@@ -1344,7 +1409,8 @@
           text: chosen || String(text || ''),
           sub: curSub || '',
           lat: (typeof curLat === 'number' ? curLat : null),
-          lng: (typeof curLng === 'number' ? curLng : null)
+          lng: (typeof curLng === 'number' ? curLng : null),
+          precise: curPrecise === true   // R104d 批4：last 记录带 precise（一键再发不退化）
         }));
       } catch (e) { /* localStorage 禁用 / 写满：静默，不影响发送 */ }
     }
@@ -1369,6 +1435,7 @@
       curSub = rec.sub || '';
       curLat = rec.lat;
       curLng = rec.lng;
+      curPrecise = rec.precise === true;   // R104d 批4：一键再发保持「精确」语义
       finish(rec.text, true);
     }
 
@@ -1380,13 +1447,17 @@
       document.removeEventListener('keydown', onKey);
       window.removeEventListener('resize', onResize);
       if (text) {
-        recentPush(text);
+        // R104d 批4（lead 裁决）：精确位置不入 recent —— 「我的位置」是无坐标文本项，
+        // 混进最近/常用后点选无法解析出坐标（违反「无坐标不产生坏数据」规范）；
+        // 同时覆盖 myloc 成功与精确记录一键再发两条路径。lastSend 写入保留。
+        if (curPrecise !== true) recentPush(text);
         if (!skipPersist) lastSendWrite(text);   // R104 批2：记录「上次发送」（一键再发时跳过）
       }
       if (o.rich) {
         // R104 项3：rich 模式回传结构化对象；无坐标时 lat/lng 回 null（前端退化为纯文字卡）。
         if (text) {
-          done({ text: chosen || String(text), sub: curSub || '', lat: curLat, lng: curLng });
+          done({ text: chosen || String(text), sub: curSub || '', lat: curLat, lng: curLng,
+                 precise: curPrecise === true });   // R104d 批4：precise 随 rich 回调透传
         } else {
           done(null);
         }
@@ -1445,6 +1516,7 @@
       if (act === 'cancel') { finish(null); return; }
       if (act === 'ok') { if (chosen) finish(chosen); return; }
       if (act === 'search') { doPlaceSearch(); return; }   // R104c：显式地点搜索
+      if (act === 'myloc') { doMyLoc(); return; }          // R104d 批4：发送我的精确位置
       if (act === 'loc') {
         if (locBusy) return;
         locBusy = true;
