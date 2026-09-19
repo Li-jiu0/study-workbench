@@ -32,8 +32,21 @@
 .xtm-nav-title { flex: 1; min-width: 0; text-align: center; font-size: 17px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .xtm-nav-spacer { width: 38px; flex-shrink: 0; }
 
+/* ---------- R-MOMENTSFIX 手机端（≤768px）----------
+   1) 隐藏全局 topbar，避免与页内 .xtm-nav 双头部叠加；
+      通知入口页内已有 .xtm-bell，私信走底部导航「互动」，功能不丢。
+   2) 吸顶 .xtm-nav 改通栏（保持 sticky）：负 margin 抵消 .xtm-wrap 左右 10px 内边距，
+      蓝→橙渐变封面滚动时不再从导航下露橙线、头像卡不被切。 */
+@media (max-width: 768px) {
+  body[data-xtm] .topbar { display: none; }
+  .xtm-nav { border-radius: 0; margin: 0 -10px 10px; }
+}
+
 /* ---------- 通用容器 ---------- */
-.xtm-wrap { max-width: 680px; margin: 0 auto; padding: 0 10px 88px; width: 100%; box-sizing: border-box; }
+/* R-MOMENTSFIX2：底部留白必须 ≥ 底栏真实高度（64px + safe-area），写死 84/88px 在
+   手势条机型（env≈24-34px）上会被 .bottom-nav 压住最后一行点赞/评论。
+   统一改为 calc(底栏高度 + 安全区 + 24px 余量)；env 不支持时回落 0px，仍有 88px。 */
+.xtm-wrap { max-width: 680px; margin: 0 auto; padding: 0 10px calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 24px); width: 100%; box-sizing: border-box; }
 .xtm-feed { display: block; }
 .xtm-feed > .xtm-card { margin-bottom: 12px; }
 .xtm-empty { text-align: center; padding: 52px 16px; color: var(--text-secondary); font-size: 13px; line-height: 1.8; }
@@ -207,8 +220,9 @@
 .xtm-picker-ft .no { background: var(--bg-sub); color: var(--text); border: 1px solid var(--border); }
 
 /* ---------- 下拉刷新指示 ---------- */
-.xtm-refresh { text-align: center; font-size: 12px; color: var(--text-secondary); min-height: 0; overflow: hidden; transition: min-height .18s ease; line-height: 1.4; }
-.xtm-refresh.show { min-height: 34px; padding: 8px 0; }
+.xtm-refresh { text-align: center; font-size: 12px; color: var(--text-secondary); height: 0; min-height: 0; padding: 0; overflow: hidden; transition: min-height .18s ease; line-height: 1.4; }
+/* R-MOMENTSFIX：默认 height:0 隐藏静态文字，仅下拉手势进行中（.show）展开；xt-moments.js 的 touch 监听不变 */
+.xtm-refresh.show { height: 34px; min-height: 34px; padding: 8px 0; }
 
 /* ---------- R82：动态插入的 lucide 图标容器（xt-moments.js ico() 使用） ----------
    与静态 data-icon 共用同一套 LUCIDE_ICONS 字典；stroke 为 currentColor，随主题/父级文字色变化。
@@ -219,12 +233,14 @@
 
 /* ---------- 响应式（窄屏断点） ---------- */
 @media (max-width: 760px) {
-  .xtm-wrap { padding: 0 8px 84px; }
+  .xtm-wrap { padding: 0 8px calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 24px); }
   .xtm-cover { height: 140px; }
   .xtm-card { border-radius: 14px; padding: 12px; }
+  /* R-MOMENTSFIX：≤760px 时 .xtm-wrap 内边距为 8px，负 margin 同步改为 -8px，避免横向溢出 */
+  .xtm-nav { margin-left: -8px; margin-right: -8px; }
 }
 @media (max-width: 360px) {
-  .xtm-wrap { padding: 0 6px 84px; }
+  .xtm-wrap { padding: 0 6px calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 24px); }
   .xtm-avatar { width: 38px; height: 38px; margin-right: 8px; }
   .xtm-header-av { width: 60px; height: 60px; margin-right: 10px; }
   .xtm-fn { font-size: 12px; padding: 6px 10px; }

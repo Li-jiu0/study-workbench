@@ -239,6 +239,27 @@
   function getMaxMode() { return lsStr(MAX_MODE_KEY, '0') === '1'; }
   function setMaxMode(on) { lsStrSet(MAX_MODE_KEY, on ? '1' : '0'); }
 
+  /* ---------- R130b：推理模型判定 ----------
+     背景：思维链看不到的头号根因是「深度思考」开关默认关，且手动选了推理模型
+     （如 DeepSeek-R1）也不会自动补 reasoning 标志——请求层只认 getDeepThink()。
+     判定优先级：
+       1) 选中模型自带能力标记 types 含 'reasoning'（内置模型与自定义模型均可标）；
+       2) 无标记时按 id / name 兜底匹配推理系命名（r1 / think / reason，不区分大小写）；
+       3) 'auto'（未手动选模型）恒 false，走原 getDeepThink 链路，行为不变。
+     注：reasoning 误开无副作用——面板只有服务端真的回 reasoning_content 才有内容。 */
+  function isReasoningModelSelected() {
+    var selId = getSelectedModelId();
+    if (!selId || selId === 'auto') { return false; }
+    var m = getModelById(selId);
+    if (m && m.types && typeof m.types.length === 'number') {
+      for (var i = 0; i < m.types.length; i++) {
+        if (String(m.types[i]) === 'reasoning') { return true; }
+      }
+    }
+    var hay = ((m && m.id ? String(m.id) : '') + ' ' + (m && m.name ? String(m.name) : '')).toLowerCase();
+    return /r1|think|reason/.test(hay);
+  }
+
   /* ---------- R65：三模式（ai_model_mode） ---------- */
   function getModeKey() {
     var v = lsStr(MODE_KEY, '');
@@ -940,10 +961,11 @@
     reader.readAsDataURL(file);
   }
 
-  /* ============ R86：语音识别入口（麦克风录音 → 识别结果回填输入框） ============
+  /* ============ R86：语音识别入口（麦克风录音 → 识别结果直接发出） ============
      录制写法复用 assets/chat-local.js 的 getUserMedia + MediaRecorder mime 候选；
      不支持 / 权限被拒一律 toast 提示，不弹 alert，不静默失败。
-     识别结果不直接发出，回填输入框让用户编辑后再发（ASR 结果有误是常态）。 */
+     V-polish 续（2026-09-21）：识别结果改为直接作为用户消息发出（见 sendAudioForTranscribe），
+     不再回填输入框等二次点击；失败/空文本保留音频可重试。 */
   var REC = { rec: null, chunks: [], stream: null, start: 0, tick: null, stopTimer: null, on: false };
   var NATIVE_REC = false;                       // R106/L2：当前是否处于原生桥录音态（与 REC 分开记）
   var MAX_REC_MS = 60000;                       // 单次最长 60 秒
@@ -1247,7 +1269,7 @@
     } catch (e) { return false; }
   }
 
-  /* ---------- 发送语音：识别结果回填输入框，不直接当成提问发出 ---------- */
+  /* ---------- 发送语音：识别完成 → 转写文本直接作为用户消息发出（走 sendMessage 既有链路） ---------- */
   function asrResultText(res) {
     if (typeof res === 'string') return res;
     if (res && typeof res === 'object') {
@@ -1350,25 +1372,29 @@
     var audio = state.audio;
     if (!audio || !audio.blob) { clearAudio(); return; }
     setSendBusy(true);
+    /* 识别中可见反馈：按钮置灰（.sending 态）+ 预览条「识别中…」+ toast 明示直发行为 */
     setAudioPreview('识别中…');
+    toast('正在识别语音…完成后将直接发送');
     runAudioRecognition(audio, m).then(function (txt) {
       setSendBusy(false);
       txt = String(txt || '').replace(/^\s+|\s+$/g, '');
       if (!txt) {
+        /* 空文本兜底：不静默丢 —— 音频保留（可重试）+ 预览恢复 + toast 明示 */
         setAudioPreview('已录 ' + audio.seconds + ' 秒，点发送转文字');
         toast('没有识别出内容，请靠近麦克风再说一次');
         return;
       }
       clearAudio();     // 识别成功即消费掉附件，避免重复发送
       var merged = text ? (text + (/\s$/.test(text) ? '' : ' ') + txt) : txt;
-      if (aiInput) {
-        aiInput.value = merged;
-        autoGrow();
-        updateSendEnabled();
-        renderCtxUsage();
-        try { aiInput.focus(); } catch (e) { /* 忽略聚焦异常 */ }
-      }
-      toast('已识别为文字，确认后点发送');
+      /* V-polish 续（2026-09-21）：识别完成 → 转写文本【直接发出】，不再回填输入框等二次点击。
+         做法：merged 写入输入框后立即调 sendMessage() —— 走既有发送链路
+         （setSendBusy → 用户气泡 addUserBubble → 清输入框 → askAI），气泡展示与普通文本完全一致。
+         失败 / 空文本分支保持现状兜底（toast + 音频保留可重试），绝不静默丢。 */
+      if (!aiInput) { toast('识别完成，但输入框未就绪，请刷新后重试'); return; }
+      aiInput.value = merged;
+      autoGrow();
+      updateSendEnabled();
+      sendMessage();
     }).catch(function (err) {
       setSendBusy(false);
       setAudioPreview('已录 ' + audio.seconds + ' 秒，点发送转文字');
@@ -1509,7 +1535,10 @@
     if (text) { var p = doc.createElement('div'); p.textContent = text; bubble.appendChild(p); }
     var av = doc.createElement('div'); av.className = 'ai-avatar ai-avatar-user';
     av.innerHTML = userAvatarHtml();
-    msg.appendChild(bubble); msg.appendChild(av);
+    /* 头像换边补丁（方案A，2026-09-21）：DOM 改为「先头像、后气泡」——
+       配合 .ai-msg-user{flex-direction:row-reverse}（AI.html）渲染成 [气泡][头像] 整组靠右，
+       用户头像落在最右，与 AI 行（先头像后气泡）镜像对称。CSS 一律不动。 */
+    msg.appendChild(av); msg.appendChild(bubble);
     aiMessages.appendChild(msg);
   }
 
@@ -1653,12 +1682,10 @@
         aiB.mdEl.appendChild(vidBox);
       } else {
         plain = '🧊 ' + label + '已生成（结果为 .zip 压缩包，内含模型文件）：' + url;
-        aiB.mdEl.innerHTML = renderMarkdown('🧊 ' + label + '已生成（结果为 .zip 压缩包，内含模型文件）：');
-        var lk = doc.createElement('a');
-        lk.href = url; lk.target = '_blank'; lk.rel = 'noopener';
-        lk.textContent = '⬇ 下载模型文件（.zip）';
-        lk.setAttribute('style', 'display:inline-block;margin-top:6px;');
-        aiB.mdEl.appendChild(lk);
+        aiB.mdEl.innerHTML = renderMarkdown('🧊 ' + label + '已生成（内含模型文件，正在准备内联预览）：');
+        /* R130-项4：zip 不再只给下载链接 —— 气泡内直接内联预览图/视频，
+           glb 走 model-viewer 懒加载（不支持时降级提示），zip 下载保留为次按钮 */
+        render3dPreview(aiB.mdEl, url, u.previewUrl, label);
       }
       showMsgActions(aiB);
       state.messages.push({ role: 'ai', content: plain });
@@ -1676,6 +1703,152 @@
     });
     return true;
   }
+
+  /* ============ R130-项4：3D 结果内联预览 ============
+     背景：图生 3D 的结果是火山 TOS 上的 .zip（链接 24h 有效），此前会话里只有
+     一个 zip 下载链接，必须下载解压后才能看到模型。现在：
+       1) 上游响应自带 image_url（渲染预览图）时先秒出 <img>；
+       2) 随后调后端 POST /api/ai/model3d/preview 把 zip 里的预览图 / 视频 / glb
+          解到 /uploads 静态目录，换成不随 24h 失效的服务端媒体继续内联展示；
+       3) zip 下载降级为次按钮（所有预览失败场景的兜底）；
+       4) glb 走 model-viewer 懒加载（CDN module，15 秒未就绪 / 加载失败 /
+          环境不支持时降级为文字提示，预览图始终保留）。
+     ES2017 语法；CSS 用内联样式且不用 clamp()/min()/max()（老 WebView 约束）。 */
+  /* [R130-3D-BEGIN] jsdom 测试锚点：本段可整体提取做独立渲染验证 */
+  var XT_MV_CDN = 'https://unpkg.com/@google/model-viewer@3.5.0/dist/model-viewer.min.js';
+  var XT_MV_LOAD_MS = 15000;
+
+  function xt3dAbs(u) {
+    var s = String(u || '');
+    if (/^https?:/i.test(s)) { return s; }
+    var base = (window.API_BASE != null) ? String(window.API_BASE) : '';
+    return base + s;
+  }
+
+  function xt3dEl(tag, style, text) {
+    var el = doc.createElement(tag);
+    if (style) { el.setAttribute('style', style); }
+    if (text) { el.textContent = text; }
+    return el;
+  }
+
+  /** 懒加载 model-viewer 并挂载 glb；任何失败路径都降级为文字提示（不弹窗）。 */
+  function xt3dOpenViewer(meshUrl, host) {
+    function fallback() {
+      host.appendChild(xt3dEl('div', 'font-size:12px;color:#999;margin-top:4px;',
+        '当前环境暂不支持 3D 交互预览，可下载 zip 在电脑端查看模型'));
+    }
+    function mount() {
+      var mv = doc.createElement('model-viewer');
+      mv.setAttribute('src', xt3dAbs(meshUrl));
+      mv.setAttribute('camera-controls', '');
+      mv.setAttribute('auto-rotate', '');
+      mv.setAttribute('shadow-intensity', '1');
+      mv.setAttribute('style', 'width:100%;height:340px;border-radius:10px;margin-top:6px;background:#111;display:block;');
+      host.appendChild(mv);
+    }
+    try {
+      var ce = window.customElements;
+      if (ce && ce.get && ce.get('model-viewer')) { mount(); return; }
+      if (!window.__xtMvPromise) {
+        window.__xtMvPromise = new Promise(function (resolve) {
+          var settled = false;
+          var timer = setTimeout(function () {
+            if (!settled) { settled = true; resolve(false); }
+          }, XT_MV_LOAD_MS);
+          var s = doc.createElement('script');
+          s.src = XT_MV_CDN;
+          s.type = 'module';
+          s.onload = function () { if (!settled) { settled = true; clearTimeout(timer); resolve(true); } };
+          s.onerror = function () { if (!settled) { settled = true; clearTimeout(timer); resolve(false); } };
+          (doc.head || doc.documentElement).appendChild(s);
+        });
+      }
+      window.__xtMvPromise.then(function (ok) {
+        var ce2 = window.customElements;
+        if (ok && ce2 && ce2.get && ce2.get('model-viewer')) { mount(); } else { fallback(); }
+      })['catch'](fallback);
+    } catch (e) { fallback(); }
+  }
+
+  /** 3D 结果气泡内联预览：先快照后解包；zip 下载按钮保留为次按钮。 */
+  function render3dPreview(box, zipUrl, quickUrl, label) {
+    var wrap = xt3dEl('span', 'display:block;margin-top:2px;');
+    wrap.className = 'ai-3d-wrap';
+    var status = null;
+    var quickImg = null;
+    function setStatus(t) {
+      if (!status) {
+        status = xt3dEl('div', 'font-size:12px;color:#999;margin-top:4px;', t);
+        wrap.insertBefore(status, wrap.firstChild);
+      } else {
+        status.textContent = t;
+      }
+    }
+    function clearStatus() {
+      if (status && status.parentNode) { status.parentNode.removeChild(status); status = null; }
+    }
+    /* 次按钮：zip 下载（保留，兜底所有预览失败的场景） */
+    var lk = doc.createElement('a');
+    lk.href = zipUrl; lk.target = '_blank'; lk.rel = 'noopener';
+    lk.textContent = '⬇ 下载模型文件（.zip）';
+    lk.setAttribute('style', 'display:inline-block;margin-top:6px;font-size:13px;');
+    wrap.appendChild(lk);
+    /* 快速预览：上游响应自带 image_url 时秒出（该图 24h 后失效，仅作首屏） */
+    if (quickUrl) {
+      quickImg = xt3dEl('img', 'max-width:260px;max-height:260px;border-radius:10px;margin-top:6px;display:block;background:#f2f3f5;');
+      quickImg.alt = '3D 生成预览图';
+      quickImg.src = xt3dAbs(quickUrl);
+      wrap.insertBefore(quickImg, lk);
+    }
+    setStatus('正在准备内联预览…');
+    box.appendChild(wrap);
+    var base = (window.API_BASE != null) ? String(window.API_BASE) : '';
+    window.fetch(base + '/api/ai/model3d/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: zipUrl })
+    }).then(function (res) { return res.json(); }).then(function (j) {
+      if (!j || !j.ok) {
+        setStatus('内联预览准备失败' + ((j && j.err) ? ('：' + j.err) : '') + '，可直接下载 zip 查看');
+        return;
+      }
+      clearStatus();
+      /* 上游快照图会过期，换服务端解包出的持久预览图 */
+      if (quickImg && quickImg.parentNode) { quickImg.parentNode.removeChild(quickImg); quickImg = null; }
+      if (j.image) {
+        var im = xt3dEl('img', 'max-width:260px;max-height:260px;border-radius:10px;margin-top:6px;display:block;background:#f2f3f5;');
+        im.alt = '3D 模型预览图';
+        im.src = xt3dAbs(j.image);
+        if (j.mesh && j.mesh.url) {
+          im.setAttribute('style', im.getAttribute('style') + 'cursor:pointer;');
+          im.title = '点击查看 3D 模型';
+          im.addEventListener('click', function () { xt3dOpenViewer(j.mesh.url, wrap); });
+        }
+        wrap.insertBefore(im, lk);
+      }
+      if (j.video) {
+        var vd = doc.createElement('video');
+        vd.src = xt3dAbs(j.video); vd.controls = true;
+        vd.setAttribute('playsinline', ''); vd.setAttribute('webkit-playsinline', '');
+        vd.setAttribute('preload', 'metadata');
+        vd.setAttribute('style', 'width:260px;max-width:100%;border-radius:10px;margin-top:6px;display:block;background:#000;');
+        wrap.insertBefore(vd, lk);
+      }
+      if (j.mesh && j.mesh.url) {
+        var btn = xt3dEl('button', 'display:inline-block;margin:6px 8px 0 0;padding:5px 12px;border-radius:8px;border:1px solid #d0d3d9;background:#fff;font-size:13px;cursor:pointer;',
+          '🧊 3D 查看（实验）');
+        btn.addEventListener('click', function () { xt3dOpenViewer(j.mesh.url, wrap); });
+        wrap.insertBefore(btn, lk);
+      }
+      if (!j.image && !j.video && !(j.mesh && j.mesh.url)) {
+        setStatus('压缩包内未找到可直接预览的图片 / 视频，请下载 zip 查看');
+      }
+    })['catch'](function () {
+      setStatus('内联预览准备失败（网络异常），可直接下载 zip 查看');
+    });
+  }
+  /* [R130-3D-END] */
 
   function askAI(text, image) {
     var aiB = addAiBubble();
@@ -1742,6 +1915,12 @@
          服务层最终选模还要看用户手动选中的模型；带上这个标志才能保证
          手动选中的非推理模型也能被深度思考覆盖（与 UI 文案一致）。 */
       forceReasoning: (!image && getDeepThink()) ? 1 : 0,
+      /* R107c：把「深度思考」显式传给服务层——中转链路只有在 opt.reasoning===true 时
+         才会带 reasoning:true 并进入分帧协议（t:r/t:c），思维链才能流回前端。
+         没有这一行，后端会照旧剥离 reasoning_content，面板永远不会出现。
+         R130b：深度思考开关开【或】当前手动选中的是推理模型 → true。
+         兼容硬门禁：非推理模型 + 开关关 → 仍 false，请求体与旧版字节级一致。 */
+      reasoning: (!image && (getDeepThink() || isReasoningModelSelected())) ? true : false,
       onChunk: function (delta, full) {
         if (firstChunk) { removeTyping(aiB); firstChunk = false; }
         fullText = full;
@@ -1851,7 +2030,7 @@
     var hasImage = !!state.image;
     if (!text && !hasImage && !state.audio) return;
     if (!aiMessages) { toast('页面尚未就绪，请刷新后重试'); return; }
-    // R86：有语音附件时先转文字回填输入框，不直接把音频当提问发出
+    // R86→V-polish 续：有语音附件时先转文字，识别完成直接作为用户消息发出（见 sendAudioForTranscribe）
     if (state.audio) { sendAudioForTranscribe(text); return; }
     setSendBusy(true);
     try {

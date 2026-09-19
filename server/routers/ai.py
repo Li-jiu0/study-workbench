@@ -7,6 +7,7 @@
 """
 import json
 import os
+from pathlib import Path
 
 import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException
@@ -47,6 +48,17 @@ class _ChatIn(ChatIn):
     # **逐字节一致**（纯文本增量，无 data: 分帧），这是兼容硬门禁；只有显式
     # reasoning=true 时才切换为 SSE 行分帧输出（t:r/t:c/t:u + [DONE] 收尾）。
     reasoning: bool = False
+
+    # R130：向量/重排专用透传字段。仅当该模型在 model_registry.json 中声明
+    # type=embedding / type=rerank 时才会被读取，chat 模型完全不受影响。
+    #   input     -> 上游 /v1/embeddings 的 input（字符串或字符串数组）；
+    #   query     -> 上游 /v1/rerank 的 query；
+    #   documents -> 上游 /v1/rerank 的 documents；
+    #   topN      -> 上游 /v1/rerank 的 top_n。
+    input: str | list[str] | None = None
+    documents: list[str] | None = None
+    query: str | None = None
+    topN: int | None = None
 
 
 _MAX_NOTE_CTX = 4000
@@ -114,6 +126,159 @@ def _note_system(note: Note) -> str:
     more = "…" if len(note.content or "") > _MAX_NOTE_CTX else ""
     return (f"你正在帮助用户学习。以下是用户的一篇笔记《{note.title}》"
             f"（分类：{note.category}），请优先结合这篇笔记内容回答用户问题：\n\n{body}{more}")
+
+
+# ---------------------------------------------------------------------------
+# R130：向量/重排模型按类型路由
+# ---------------------------------------------------------------------------
+# 背景：/api/ai/chat 此前只有 chat/completions 一条转发路径，向量模型
+# （BAAI/bge-m3 等）与重排模型（BAAI/bge-reranker-v2-m3）被送进 chat 端点，
+# 硅基流动一律 400 {"code":20012,"message":"Model does not exist"}。
+# 修复：model_registry.json 条目新增 type 字段（embedding / rerank），
+# 命中时改走从 provider base_url 派生的专用上游端点；其余模型（含所有 chat
+# 模型）的请求与响应保持与旧版**逐字节一致**。
+
+_MODEL_TYPE_INDEX: dict[str, dict] | None = None
+
+
+def _model_type_index() -> dict[str, dict]:
+    """读取 model_registry.json，构建 (条目键 + 真实模型名) -> 类型信息映射。
+
+    仅收录带非空 type 字段的条目（当前为 embedding / rerank），进程内缓存一次；
+    读取失败（文件缺失/JSON 损坏）返回空映射，所有请求照旧走 chat 路径，绝不因此拒服。
+    """
+    global _MODEL_TYPE_INDEX
+    if _MODEL_TYPE_INDEX is not None:
+        return _MODEL_TYPE_INDEX
+    idx: dict[str, dict] = {}
+    path = Path(__file__).resolve().parent.parent / "data" / "model_registry.json"
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        data = {}
+    if isinstance(data, dict):
+        for key, entry in data.items():
+            k = str(key).strip()
+            if not k or k.startswith("_") or not isinstance(entry, dict):
+                continue
+            t = str(entry.get("type") or "").strip()
+            if not t:
+                continue
+            name = str(entry.get("model") or "").strip()
+            info = {"type": t, "provider": str(entry.get("provider") or "").strip()}
+            idx[k] = info
+            if name and name not in idx:
+                idx[name] = info
+    _MODEL_TYPE_INDEX = idx
+    return idx
+
+
+def _model_type_info(provider: str, quota_key: str, client_model: str) -> dict:
+    """解析本次请求对应的模型类型信息；无 type 或 provider 不匹配返回空 dict。
+
+    查找顺序与 quota_ledger._lookup_registry 一致：先按前端 modelId（registry 键），
+    再按前端声明的真实模型名（modelName）；provider 为空视为不限制。
+    """
+    idx = _model_type_index()
+    for mid in (str(quota_key or "").strip(), str(client_model or "").strip()):
+        if not mid:
+            continue
+        info = idx.get(mid)
+        if info and (not info["provider"] or info["provider"] == provider):
+            return info
+    return {}
+
+
+def _upstream_special_url(base_url: str, kind: str) -> str:
+    """从 chat/completions base_url 派生 embeddings / rerank 上游端点。
+
+    例：https://api.siliconflow.cn/v1/chat/completions
+        -> kind=embeddings: https://api.siliconflow.cn/v1/embeddings
+        -> kind=rerank:     https://api.siliconflow.cn/v1/rerank
+    base_url 不含 chat/completions（异常配置）时返回空串，调用方按 500 拒绝，
+    绝不猜测改写其它形态的 URL。
+    """
+    b = str(base_url or "")
+    pos = b.find("chat/completions")
+    if pos < 0:
+        return ""
+    return b[:pos] + kind
+
+
+async def _serve_special(body: "_ChatIn", cfg: dict, quota_key: str,
+                         model_name: str, messages: list, kind: str):
+    """R130：向量/重排专用转发（上游 /v1/embeddings、/v1/rerank）。
+
+    - embeddings：input 取请求体 input（字符串或字符串数组），缺省取最后一条
+      用户消息正文；上游响应 JSON 原样透传（含 data[].embedding 与 usage）。
+    - rerank：query 取请求体 query，缺省取最后一条用户消息正文；documents 取
+      请求体 documents，缺省 [query]；top_n 取请求体 topN，缺省文档数（夹在
+      [1, len(documents)]）。
+    - 上游非 200 时按原状态码透传错误体；不写 ai_logs（非对话调用）；
+      每日调用计数已在 chat() 入口按登录用户递增；账本按上游 usage 记账
+      （拿不到按 1 次计），与 chat 路径的记账口径一致。
+    """
+    url = _upstream_special_url(cfg["base_url"], kind)
+    if not url:
+        raise HTTPException(500, f"无法从平台端点 {cfg['base_url']} 派生 {kind} 上游地址，请检查 server/.env 配置")
+
+    last_user_text = next((m["content"] for m in reversed(messages)
+                           if m.get("role") == "user"), "")
+    if kind == "embeddings":
+        raw = body.input if body.input is not None else last_user_text
+        if isinstance(raw, str):
+            texts = [raw] if raw.strip() else []
+        elif isinstance(raw, list):
+            texts = [str(x) for x in raw if str(x).strip()]
+        else:
+            texts = []
+        if not texts:
+            raise HTTPException(400, "缺少向量输入内容（input 字段或最后一条用户消息）")
+        payload: dict = {"model": model_name, "input": texts,
+                         "encoding_format": "float"}
+    else:  # rerank
+        query = (str(body.query or "").strip() or str(last_user_text or "").strip())
+        docs = [str(d) for d in (body.documents or []) if str(d).strip()]
+        if not docs:
+            docs = [query] if query else []
+        if not query or not docs:
+            raise HTTPException(400, "缺少重排输入（query/documents 字段或最后一条用户消息）")
+        top_n = len(docs)
+        if body.topN:
+            top_n = min(max(int(body.topN), 1), len(docs))
+        payload = {"model": model_name, "query": query, "documents": docs,
+                   "top_n": top_n}
+
+    headers = {"Content-Type": "application/json",
+               "Authorization": f"Bearer {cfg['api_key']}"}
+    try:
+        async with httpx.AsyncClient(timeout=60) as client:
+            resp = await client.post(url, headers=headers, json=payload)
+    except httpx.HTTPError as e:
+        raise HTTPException(502, f"连接模型服务失败：{e.__class__.__name__}")
+
+    # 账本记账：embeddings 的 usage.prompt_tokens / rerank 的 usage.input_tokens
+    used_tokens = 0
+    try:
+        j = resp.json()
+    except Exception:
+        j = None
+    if isinstance(j, dict) and isinstance(j.get("usage"), dict):
+        u = j["usage"]
+        try:
+            used_tokens = int(u.get("prompt_tokens") or u.get("input_tokens") or 0) or 0
+        except (TypeError, ValueError):
+            used_tokens = 0
+    record_usage(quota_key, used_tokens if used_tokens > 0 else 1,
+                 ok=(resp.status_code == 200))
+
+    # 响应头带「实际执行的模型名」，前端记账口径与 chat 路径一致（ASCII 安全）
+    safe_model = "".join(ch for ch in str(model_name) if ord(ch) < 128) or "unknown"
+    if j is not None:
+        return JSONResponse(j, status_code=resp.status_code,
+                            headers={"X-Ai-Model-Used": safe_model})
+    return JSONResponse({"raw": resp.text[:2000]}, status_code=resp.status_code,
+                        headers={"X-Ai-Model-Used": safe_model})
 
 
 @router.get("/models")
@@ -291,6 +456,25 @@ async def chat(body: _ChatIn, user: User = Depends(get_current_user_optional),
     if not messages:
         raise HTTPException(400, "缺少对话内容")
 
+    # R130：按注册表 type 字段识别向量/重排模型，改走专用上游端点
+    # （/v1/embeddings、/v1/rerank）。此前这两类模型被送进 chat/completions，
+    # 硅基流动一律 400 {"code":20012,"message":"Model does not exist"}。
+    # 仅当 modelId / modelName 命中带 type 的注册表条目且 provider 匹配时才改道；
+    # 其余所有请求（普通 chat）不进入本分支，与旧版逐字节一致。
+    _mt_info = _model_type_info(body.provider, quota_key, getattr(body, "modelName", None))
+    if _mt_info:
+        _cm_type = (getattr(body, "modelName", None) or "").strip()
+        _mt_name = (resolve_model_name(body.provider, quota_key)
+                    or (resolve_model_name(body.provider, _cm_type) if _cm_type else "")
+                    or cfg["model"])
+        if _mt_info["type"] == "embedding":
+            return await _serve_special(body, cfg, quota_key, _mt_name, messages,
+                                        kind="embeddings")
+        if _mt_info["type"] == "rerank":
+            return await _serve_special(body, cfg, quota_key, _mt_name, messages,
+                                        kind="rerank")
+
+
     # 可选：把用户笔记作为 system 上下文（仅作者本人笔记或公开笔记）
     if body.noteId:
         note = db.get(Note, body.noteId)
@@ -449,3 +633,243 @@ async def chat(body: _ChatIn, user: User = Depends(get_current_user_optional),
         headers={"X-Ai-Model-Used": _safe_model,
                  "X-Ai-Model-Fallback": "1" if fallback else "0"},
     )
+
+
+# ==================== R130-项4：3D 结果内联预览（zip 解包） ====================
+# 背景：前端 assets/ai-cap-3d.js 直连火山方舟「图生 3D」，结果 content.file_url 是一个
+# .zip 压缩包（TOS 对象存储，链接 24 小时有效）。此前会话气泡里只有一个 zip 下载链接，
+# 用户必须下载解压后才能看到模型。本节新增「解包预览」端点：服务端把 zip 里的预览媒体
+# （图片 / 视频）与网格文件（glb / gltf）解到 /uploads 静态目录（main.py 已挂载），
+# 前端气泡内直接 <img>/<video> 内联展示，zip 下载降级为次按钮。
+# 安全与健壮性边界：
+#   · 目标 URL 仅允许火山 TOS 域名后缀（_MODEL3D_HOST_ALLOW），且 DNS 解析结果
+#     不得为内网 / 环回 / 链路本地地址（SSRF 防护；单测可通过模块变量显式放行）。
+#   · zip 包体积与单文件解压体积均有硬上限，防恶意超大包打爆磁盘。
+#   · 解包成员一律取 basename 并清洗后写盘，绝不使用 zip 内原始路径（防 Zip Slip）。
+#   · 同一 URL 用 sha1 前 16 位做目录 token，天然防命名冲突；结果写入 meta.json
+#     缓存，重复请求（含 zip 链接失效后）直接读缓存，不重复下载。
+import hashlib
+import ipaddress
+import re
+import shutil
+import socket
+import time
+import zipfile
+from pathlib import Path
+from urllib.parse import urlsplit
+
+from pydantic import BaseModel
+
+from config import UPLOAD_DIR
+
+_MODEL3D_DIR = Path(UPLOAD_DIR) / "model3d"
+_MODEL3D_HOST_ALLOW = ("volces.com",)   # 火山引擎 TOS（ark 3D 结果包所在域）
+_MODEL3D_ALLOW_PRIVATE = False          # 测试钩子：True 时允许内网 / 环回目标
+_MODEL3D_ZIP_MAX = 300 * 1024 * 1024    # zip 包整体下载上限 300MB
+_MODEL3D_FILE_MAX = 200 * 1024 * 1024   # 单个成员解压上限 200MB
+_MODEL3D_IMAGE_EXT = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"}
+_MODEL3D_VIDEO_EXT = {".mp4", ".webm"}
+_MODEL3D_MESH_EXT = {".glb", ".gltf"}   # 浏览器可懒加载渲染的网格格式（obj/fbx 不解）
+# 预览图命名提示：命中者更可能是渲染预览而非贴图
+_MODEL3D_PREVIEW_HINTS = ("preview", "render", "cover", "thumbnail", "turntable")
+
+
+class _Model3dPreviewIn(BaseModel):
+    """POST /api/ai/model3d/preview 请求体：3D 结果 zip 的下载地址。"""
+
+    url: str
+
+
+def _model3d_host_ok(host: str) -> bool:
+    """存储域白名单：host 等于后缀本身或以其结尾（防子域伪造用点号边界判定）。"""
+    host = (host or "").lower().strip(".")
+    for suffix in _MODEL3D_HOST_ALLOW:
+        if host == suffix or host.endswith("." + suffix):
+            return True
+    return False
+
+
+def _model3d_assert_safe_url(zip_url: str) -> None:
+    """SSRF 防护：https + 存储域白名单 + DNS 解析非内网。不合格直接 ValueError。
+
+    例外：测试模式（_MODEL3D_ALLOW_PRIVATE=True）放行 http，供本地 http.server
+    自检脚本使用；生产恒为 False，不受影响。
+    """
+    parsed = urlsplit(zip_url)
+    if parsed.scheme != "https":
+        if not (parsed.scheme == "http" and _MODEL3D_ALLOW_PRIVATE):
+            raise ValueError("仅支持 https 的结果包地址")
+    host = parsed.hostname or ""
+    if not _model3d_host_ok(host):
+        raise ValueError("结果包地址不在允许的存储域内")
+    if not _MODEL3D_ALLOW_PRIVATE:
+        infos = socket.getaddrinfo(host, parsed.port or 443, proto=socket.IPPROTO_TCP)
+        for info in infos:
+            ip = ipaddress.ip_address(info[4][0])
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+                raise ValueError("结果包地址解析到内网地址，已拒绝")
+
+
+def _model3d_download(zip_url: str, dest: Path) -> None:
+    """流式下载结果包到 dest，边下边限体积（超限即中止，不留超大临时文件）。"""
+    with httpx.Client(follow_redirects=True,
+                      timeout=httpx.Timeout(30.0, read=120.0)) as client:
+        with client.stream("GET", zip_url) as resp:
+            if resp.status_code >= 400:
+                raise ValueError(f"下载结果包失败（HTTP {resp.status_code}），链接可能已过期")
+            got = 0
+            with open(dest, "wb") as f:
+                for chunk in resp.iter_bytes(256 * 1024):
+                    got += len(chunk)
+                    if got > _MODEL3D_ZIP_MAX:
+                        raise ValueError("结果包体积超出上限，已中止下载")
+                    f.write(chunk)
+
+
+def _model3d_safe_name(info: zipfile.ZipInfo) -> str:
+    """zip 成员 → 干净的落盘文件名（仅 basename，去路径分隔符与非法字符，防 Zip Slip）。"""
+    raw = (info.filename or "").replace("\\", "/").split("/")[-1]
+    name = re.sub(r"[^\w.\-]+", "_", raw, flags=re.ASCII).strip("._")
+    return name or "file"
+
+
+def _prune_model3d_dirs(max_age_days: float = 3.0) -> None:
+    """尽力清理过期解包目录 / 残留临时包（zip 源链接本身 24h 失效，缓存意义有限）。"""
+    try:
+        now = time.time()
+        if not _MODEL3D_DIR.is_dir():
+            return
+        deadline = max_age_days * 86400
+        for child in _MODEL3D_DIR.iterdir():
+            try:
+                if now - child.stat().st_mtime <= deadline:
+                    continue
+                if child.is_dir():
+                    shutil.rmtree(child, ignore_errors=True)
+                else:
+                    child.unlink(missing_ok=True)   # 残留的 *.part.zip 等
+            except OSError:
+                continue
+    except OSError:
+        pass
+
+
+def _model3d_pick(entries: list[zipfile.ZipInfo], exts: set[str]) -> zipfile.ZipInfo | None:
+    """按扩展名挑一个成员；图片场景下优先命中预览命名提示，其次取体积更大者。"""
+    cands = [i for i in entries if Path(i.filename).suffix.lower() in exts]
+    if not cands:
+        return None
+    if exts is _MODEL3D_IMAGE_EXT:
+        def _score(i: zipfile.ZipInfo) -> tuple:
+            low = i.filename.lower()
+            hint = 1 if any(h in low for h in _MODEL3D_PREVIEW_HINTS) else 0
+            return (hint, i.file_size)
+        return max(cands, key=_score)
+    if exts is _MODEL3D_MESH_EXT:
+        # glb 自包含贴图，优先于 gltf（gltf 常伴生外部 bin/贴图，解一个没意义）
+        glbs = [i for i in cands if i.filename.lower().endswith(".glb")]
+        if glbs:
+            return max(glbs, key=lambda i: i.file_size)
+    return cands[0]
+
+
+def unpack_model3d_zip(zip_url: str) -> dict:
+    """下载并解包 3D 结果 zip，返回可直接内联展示的静态媒体信息。
+
+    返回结构（ok 恒为 True；未找到对应媒体时对应字段为空）::
+        {"ok": true, "token": "...", "image": "/uploads/model3d/<t>/x.png",
+         "video": "/uploads/model3d/<t>/y.mp4" | "",
+         "mesh": {"url": "...", "format": "glb"} | None,
+         "files": ["zip 内原始成员名", ...]}
+    """
+    zip_url = str(zip_url or "").strip()
+    if not zip_url:
+        raise ValueError("缺少结果包地址")
+    _model3d_assert_safe_url(zip_url)
+
+    token = hashlib.sha1(zip_url.encode("utf-8")).hexdigest()[:16]
+    out_dir = _MODEL3D_DIR / token
+    meta_path = out_dir / "meta.json"
+    _MODEL3D_DIR.mkdir(parents=True, exist_ok=True)
+    if meta_path.exists():
+        try:
+            cached = json.loads(meta_path.read_text(encoding="utf-8"))
+            if cached.get("ok"):
+                cached["cached"] = True
+                return cached
+        except Exception:
+            pass   # 缓存损坏则按无缓存走全流程
+
+    _prune_model3d_dirs()
+    tmp_zip = _MODEL3D_DIR / (token + ".part.zip")
+    _model3d_download(zip_url, tmp_zip)
+
+    image_url = video_url = ""
+    mesh: dict | None = None
+    used_names: set[str] = set()
+    try:
+        with zipfile.ZipFile(tmp_zip) as zf:
+            entries: list[zipfile.ZipInfo] = []
+            for info in zf.infolist():
+                low = (info.filename or "").lower()
+                if info.is_dir() or info.file_size <= 0:
+                    continue
+                if low.startswith("__macosx") or "/." in low or "/__macosx" in low:
+                    continue   # macOS 元数据，不是模型资产
+                if info.file_size > _MODEL3D_FILE_MAX:
+                    continue   # 超限成员直接跳过，不中止整体
+                entries.append(info)
+
+            def _extract(info: zipfile.ZipInfo, prefix: str) -> str:
+                name = _model3d_safe_name(info)
+                while name in used_names:
+                    name = prefix + "_" + name
+                used_names.add(name)
+                out_dir.mkdir(parents=True, exist_ok=True)
+                (out_dir / name).write_bytes(zf.read(info))
+                return f"/uploads/model3d/{token}/{name}"
+
+            img = _model3d_pick(entries, _MODEL3D_IMAGE_EXT)
+            if img is not None:
+                image_url = _extract(img, "img")
+            vid = _model3d_pick(entries, _MODEL3D_VIDEO_EXT)
+            if vid is not None:
+                video_url = _extract(vid, "vid")
+            mesh_info = _model3d_pick(entries, _MODEL3D_MESH_EXT)
+            if mesh_info is not None:
+                mesh_url = _extract(mesh_info, "mesh")
+                mesh = {"url": mesh_url,
+                        "format": Path(mesh_info.filename).suffix.lower().lstrip(".")}
+    finally:
+        try:
+            tmp_zip.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+    result = {
+        "ok": True,
+        "token": token,
+        "image": image_url,
+        "video": video_url,
+        "mesh": mesh,
+        "files": [i.filename for i in entries][:50],
+        "cached": False,
+    }
+    out_dir.mkdir(parents=True, exist_ok=True)
+    meta_path.write_text(json.dumps(result, ensure_ascii=False), encoding="utf-8")
+    return result
+
+
+@router.post("/model3d/preview", dependencies=[Depends(rate_limit("consume"))])
+def model3d_preview(body: _Model3dPreviewIn) -> dict:
+    """R130-项4：把 3D 生成结果 zip 解包成可内联预览的静态媒体。
+
+    恒返回 200 + {"ok": bool, "err"?: str}——前端统一按 ok 分支渲染，
+    避免 FastAPI 错误体（{"detail": ...}）与正常体结构分叉增加前端判断成本。
+    """
+    try:
+        return unpack_model3d_zip(body.url)
+    except ValueError as exc:
+        return {"ok": False, "err": str(exc)}
+    except Exception:
+        return {"ok": False, "err": "结果包解包失败，请直接下载 zip 查看"}

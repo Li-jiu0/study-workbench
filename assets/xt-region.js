@@ -1,11 +1,14 @@
 /* ============================================================
  * xt-region.js —— 中国省 / 市 / 区数据 + 选择辅助 + 逆地理编码
  * 批次：R86-B（个人信息页改造 · 需求4 地区选择）
+ *       R130（位置选择组件升级真地图：Leaflet + 腾讯瓦片）
  *
  * 设计约束：
- *   1) ES5 语法（老 WebView / Chrome 50+ 可解析）：无箭头函数、无可选链、
- *      无空值合并、无顶层 await、无 const/let（用 var）、无模板字符串。
- *   2) 全部挂在 window.XT_REGION 上，不污染全局；不依赖任何第三方库。
+ *   1) ES2017 上限（仅用 var + function，老 WebView / Chrome 50+ 可解析）：
+ *      无箭头函数、无可选链、无空值合并、无顶层 await、无模板字符串。
+ *   2) 全部挂在 window.XT_REGION / window.XT_LOC_PICK 上，不污染全局；
+ *      R130 起按需懒加载本地化的 Leaflet 1.9.4（assets/leaflet/，
+ *      相对路径注入，禁止任何 CDN 外链）。
  *   3) 数据体量：34 个省级 → 全部地级市；区县级只覆盖直辖市与主要城市
  *      （够用即可）。没有区县数据的城市，选到「市」即完成。
  *   4) 逆地理编码走 JSONP（绕开 CORS），高德 / 腾讯需 Key，
@@ -967,7 +970,32 @@
   var RECENT_KEY = 'xt_region_recent';
   var RECENT_MAX = 8;
 
-  /** 读常用城市列表（失败返回 []）。 */
+  /**
+   * 常用地址归一化键（pickfix 历史治理）：
+   * ① 按空白/常见分隔符（· ， , 、 / |）拆段；② 段内再去空白；③ 去重复段
+   * （同一条街道被拼接两次的串）；④ 段排序后拼接——使「广东省 广州市 天河区 文三路」
+   * 「天河区 · 文三路 广州市 广东省」「广州市 天河区 文三路 文三路」等异拼法
+   * 收敛为同一键（省+市+区+街道+POI 段集合等价即视为同一条）。
+   * 仅用于历史去重比较，绝不参与任何展示文本输出。
+   * @param {String} s 原始地址文本
+   * @returns {String} 归一化键（空串 = 不可比较）
+   */
+  function _histKey(s) {
+    var t = (s == null) ? '' : String(s);
+    if (!t.replace(/\s+/g, '')) return '';
+    var segs = t.split(/[\s·,，、/|]+/);
+    var out = [], seen = {}, i;
+    for (i = 0; i < segs.length; i++) {
+      var v = String(segs[i]).replace(/\s+/g, '');
+      if (!v || seen[v]) continue;
+      seen[v] = 1;
+      out.push(v);
+    }
+    out.sort();
+    return out.join('|');
+  }
+
+  /** 读常用城市列表（读取时按归一键去重收敛存量数据；不改存储格式，失败返回 []）。 */
   function recentList() {
     var ls = _safeLS();
     if (!ls) return [];
@@ -977,37 +1005,158 @@
     var arr = null;
     try { arr = JSON.parse(raw); } catch (e2) { arr = null; }
     if (Object.prototype.toString.call(arr) !== '[object Array]') return [];
-    var out = [], i, s;
+    var out = [], seenK = {}, i, s;
     for (i = 0; i < arr.length; i++) {
       s = (arr[i] == null) ? '' : String(arr[i]).replace(/^\s+|\s+$/g, '');
-      if (s && out.indexOf(s) < 0) out.push(s);
+      if (!s) continue;
+      var k = _histKey(s);
+      if (!k || seenK[k]) continue;   // pickfix：归一键相同 → 只保留最新一条
+      seenK[k] = 1;
+      out.push(s);
     }
     return out;
   }
 
-  /** 把一个地址文本推入常用城市（去重 + LRU 置顶 + ≤8，失败静默）。 */
+  /** 把一个地址文本推入常用地址（归一键去重 + LRU 置顶 + ≤8，失败静默）。 */
   function recentPush(text) {
     var t = (text == null) ? '' : String(text).replace(/^\s+|\s+$/g, '');
     if (!t) return;
+    var key = _histKey(t);
+    if (!key) return;
     var ls = _safeLS();
     if (!ls) return;
     var list = recentList();
     var out = [t], i;
-    for (i = 0; i < list.length; i++) { if (list[i] !== t) out.push(list[i]); }
+    for (i = 0; i < list.length; i++) { if (_histKey(list[i]) !== key) out.push(list[i]); }
     if (out.length > RECENT_MAX) out = out.slice(0, RECENT_MAX);
     try { ls.setItem(RECENT_KEY, JSON.stringify(out)); } catch (e) {}
   }
 
   /* ---------------- R88-J：微信式位置选择组件（方案 A） ----------------
-   * 说明：不引第三方地图库。地图区域用【纯 CSS + 内联 SVG】绘制的静态示意（无外链图片、
-   *   无网络依赖），叠加 data-icon="map-pin" 的 Pin。地址候选来自 XT_REGION.search()
-   *   省/市/区联想 + 「用当前位置」的逆地理编码结果。确认仅回传 text（坐标绝不进字符串）。
+   * R130 起：地图区域升级为【Leaflet + 腾讯瓦片】真地图（可拖动/缩放，
+   * 本地化 assets/leaflet/，懒加载，零 CDN 外链，技术路线见上方 R130 块）；
+   * Leaflet 加载失败时静默退回纯 CSS 示意图（原渐变+伪元素道路保留作兜底）。
+   * 中心 Pin 仍用 data-icon 风格的内联 SVG overlay。地址候选来自
+   * XT_REGION.search() 省/市/区联想 + /api/geo/place POI 搜索 + 「用当前位置」
+   * 的逆地理编码结果。rich 确认回传 {text, sub, lat, lng}（坐标不进字符串）。
    */
   var _pickSeq = 0;
   var PIN_SVG = '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" '+
     'stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>';
   var SEARCH_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#9aa3b2" '+
     'stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>';
+
+  /* ============================================================
+   * R130 位置选择真地图（Leaflet + 腾讯瓦片）
+   * ------------------------------------------------------------
+   * 技术路线（lead 定版，勿换）：Leaflet（本地化于 assets/leaflet/，
+   * 1.9.4，随本组件按需懒加载）+ 腾讯栅格瓦片 rt{0-2}.map.gtimg.com/
+   * realtimerender。不引腾讯 JS API v2（其域名白名单 Referer 校验会拒
+   * file:// 与 APK WebView）、不用高德、零 CDN 外链。Key 复用本文件
+   * GEO.tencentKey（瓦片 URL 附加参数 + 逆地理，不申请新 Key）。
+   *
+   * 坐标系说明：腾讯瓦片与腾讯 WebService 逆地理同为 GCJ-02，Leaflet
+   * 视图坐标即 GCJ-02，二者自洽；rich 回调回传的 lat/lng 即视图坐标，
+   * 消费方（地图卡 staticmap）同源一致。GPS（WGS-84）仅经既有 locate()
+   * 链路进入，行为与 R100 一致，本组件不做坐标转换。
+   *
+   * 数据诚实红线：坐标仅用于本次发送（rich 回调 lat/lng 字段，绝不拼接
+   * 进任何面向用户的字符串）；逆地理失败优雅降级为「所选位置」文案，
+   * 不伪造 POI、不报错。
+   * ============================================================ */
+
+  // Leaflet 加载状态机：0 未加载 / 1 加载中 / 2 就绪 / 3 失败
+  var _lfState = 0;
+  var _lfWaiters = [];
+  // 依据 xt-region.js 自身 <script src> 推导 assets/leaflet/ 基址，
+  // 兼容根页面与子目录页面；推导失败回退 'assets/leaflet/'。
+  var _lfDir = (function () {
+    var fallback = 'assets/leaflet/';
+    try {
+      var cur = (typeof document !== 'undefined' && document.currentScript) ? document.currentScript : null;
+      if (cur && cur.src) return String(cur.src).replace(/xt-region\.js.*$/, '') + 'leaflet/';
+      var ss = document.getElementsByTagName('script');
+      for (var i = ss.length - 1; i >= 0; i--) {
+        if (ss[i].src && /xt-region\.js/.test(ss[i].src)) {
+          return String(ss[i].src).replace(/xt-region\.js.*$/, '') + 'leaflet/';
+        }
+      }
+    } catch (e) {}
+    return fallback;
+  })();
+
+  /** 【后续扩展点】地图就绪后挂载附加图层（如批5 实时共享层）。保留空实现，勿删。 */
+  function _mapExtOnReady() { /* 预留：后续扩展在此 addLayer */ }
+  /** 【后续扩展点】每次地图移动后附加行为（如节流上报中心点）。保留空实现，勿删。 */
+  function _mapExtOnMove() { /* 预留：后续扩展在此读取 lmap.getCenter() */ }
+
+  /**
+   * 确保本地 Leaflet 已注入（CSS+JS 各一次，幂等）；就绪/失败后回调 ok(bool)。
+   * 失败（文件缺失/超时）上层组件静默退回原 CSS 示意图，绝不报错。
+   */
+  function _ensureLeaflet(cb) {
+    var done = (typeof cb === 'function') ? cb : function () {};
+    if (_lfState === 2) { done(true); return; }
+    if (_lfState === 3) { done(false); return; }
+    _lfWaiters.push(done);
+    if (_lfState === 1) return;
+    _lfState = 1;
+    var settled = false;
+    function settle(ok) {
+      if (settled) return;
+      settled = true;
+      _lfState = ok ? 2 : 3;
+      var ws = _lfWaiters;
+      _lfWaiters = [];
+      for (var i = 0; i < ws.length; i++) { try { ws[i](ok); } catch (e) {} }
+    }
+    var timer = setTimeout(function () { settle(!!(window.L && window.L.map)); }, 8000);
+    // CSS 只注入一次（幂等 id 保护）
+    try {
+      if (!document.getElementById('xt-leaflet-css')) {
+        var link = document.createElement('link');
+        link.id = 'xt-leaflet-css';
+        link.rel = 'stylesheet';
+        link.href = _lfDir + 'leaflet.css';
+        (document.getElementsByTagName('head')[0] || document.documentElement).appendChild(link);
+      }
+    } catch (e1) {}
+    // JS：已就位（同页其它组件先注入过）直接判定；否则注入本地 leaflet.js
+    if (window.L && window.L.map) { try { clearTimeout(timer); } catch (e0) {} settle(true); return; }
+    try {
+      var s = document.createElement('script');
+      s.charset = 'UTF-8';
+      s.src = _lfDir + 'leaflet.js';
+      s.onload = function () { try { clearTimeout(timer); } catch (e2) {} settle(!!(window.L && window.L.map)); };
+      s.onerror = function () { try { clearTimeout(timer); } catch (e3) {} settle(false); };
+      (document.getElementsByTagName('head')[0] || document.documentElement).appendChild(s);
+    } catch (e4) {
+      try { clearTimeout(timer); } catch (e5) {}
+      settle(false);
+    }
+  }
+
+  /**
+   * 腾讯栅格瓦片图层：Leaflet URL 模板不支持 { -y}，按业界通用实现覆写
+   * getTileUrl，把 Leaflet 自上而下的 y 翻转为腾讯自下而上的 y = 2^z - 1 - y；
+   * 子域 rt0/rt1/rt2。瓦片加载失败时 Leaflet 显示空白格，上层不做任何
+   * 错误提示（符合「不报错」红线）。
+   */
+  function _makeTencentTileLayer() {
+    var Cls = L.TileLayer.extend({
+      getTileUrl: function (coords) {
+        var z = (typeof this._getZoomForUrl === 'function') ? this._getZoomForUrl() : coords.z;
+        var s = (typeof this._getSubdomain === 'function') ? this._getSubdomain(coords) : '0';
+        var y = Math.pow(2, z) - 1 - coords.y;
+        return 'https://rt' + s + '.map.gtimg.com/realtimerender?z=' + z +
+          '&x=' + coords.x + '&y=' + y +
+          '&type=vector&style=0&key=' + encodeURIComponent(GEO.tencentKey);
+      }
+    });
+    // 注意：L.TileLayer 构造签名为 (url, options)，url 参数不可省——
+    // 否则 options 会被当作 url，subdomains 等全部落回默认值（实测踩坑：出现 rta/rtb/rtc）。
+    return new Cls('', { subdomains: '012', minZoom: 3, maxZoom: 18, maxNativeZoom: 18 });
+  }
 
   function _escAttr(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -1058,42 +1207,61 @@
       '.xtlp-ls-name{font-size:14px;color:#1f2937;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}'+
       '.xtlp-ls-sub{font-size:12px;color:#9aa3b2;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}'+
       '.xtlp-ls-go{flex:0 0 auto;color:#5B8DEF;font-size:13px;font-weight:700}'+
-      '.xtlp-map{flex:0 0 auto;position:relative;height:168px;margin:0 12px;border-radius:14px;overflow:hidden;'+
+      /* pickfix point6/7：地图高度写死 168px → 响应式（32vh，上限 420px，下限 168px）。
+         vh 在 fixed 定位层安全；老 WebView 禁 clamp()/min()/max() 函数，但
+         min-height/max-height 属性可用。列表区 flex:1 1 auto + overflow-y 滚动兜底。 */
+      '.xtlp-map{flex:0 0 auto;position:relative;height:32vh;max-height:420px;min-height:168px;margin:0 12px;border-radius:14px;overflow:hidden;'+
         'background:linear-gradient(135deg,#dbe7f7,#eef4fb 55%,#e5f0e6);border:1px solid #e6e9f0}'+
       '.xtlp-map::before{content:"";position:absolute;left:-10%;top:38%;width:120%;height:10px;background:rgba(255,255,255,.75);'+
         'transform:rotate(-8deg);box-shadow:0 34px 0 rgba(255,255,255,.55),0 -30px 0 rgba(255,255,255,.4)}'+
       '.xtlp-map::after{content:"";position:absolute;left:30%;top:-10%;width:10px;height:120%;background:rgba(255,255,255,.55);'+
         'transform:rotate(12deg)}'+
+      /* R130：真地图容器（Leaflet 注入 .xtlp-lmap），占满 .xtlp-map；
+         .xtlp-map 的渐变+伪元素道路作为瓦片加载失败时的 CSS 示意图兜底保留 */
+      '.xtlp-lmap{position:absolute;left:0;top:0;width:100%;height:100%;background:#e9edf3}'+
+      /* Pin/curline 置顶（z-index 高于 Leaflet 内部 pane 最大值 800），
+         pointer-events:none 不挡地图拖拽（微信式中心 Pin 交互） */
       '.xtlp-pin{position:absolute;left:50%;top:46%;transform:translate(-50%,-100%);width:40px;height:40px;border-radius:50%;'+
+        'pointer-events:none;z-index:900;'+
         'background:#eb5757;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(235,87,87,.4)}'+
       '.xtlp-pin::after{content:"";position:absolute;left:50%;bottom:-6px;transform:translateX(-50%) rotate(45deg);width:14px;height:14px;'+
         'background:#eb5757;border-radius:2px}'+
       '.xtlp-pin svg{position:relative;z-index:1}'+
-      '.xtlp-curline{position:absolute;left:12px;right:12px;bottom:10px;background:rgba(31,41,55,.82);color:#fff;border-radius:10px;'+
-        'padding:7px 12px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'+
+      /* pickfix：压地图的大黑块 → 更矮的半透明胶囊（圆角 + 左右留白，
+         不遮地图中心 Pin 附近内容；文字仍为 curline 回显位） */
+      '.xtlp-curline{position:absolute;left:16px;right:16px;bottom:8px;background:rgba(31,41,55,.55);color:#fff;border-radius:999px;'+
+        'pointer-events:none;z-index:900;'+
+        'padding:4px 14px;font-size:12px;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'+
       /* R90 item3: flex:1 1 0% -> 1 1 auto + min-height:180px 下限（矮屏下保证列表可用，靠自身 overflow-y 滚） */
       '.xtlp-list{flex:1 1 auto;min-height:182px;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:10px 12px 0;background:#fff;border-radius:14px;border:1px solid #e6e9f0}'+
       '.xtlp-sec{padding:10px 14px 4px;font-size:12px;font-weight:700;color:#9aa3b2;letter-spacing:.5px}'+
-      '.xtlp-item{display:flex;align-items:center;gap:10px;padding:12px 14px;font-size:14px;color:#1f2937;cursor:pointer;border-top:1px solid #eef1f6}'+
+      /* pickfix 两行条目：主行（POI 名/最短可识别名）+ 副行（省 市 区 街道，小字灰），
+         两行均 ellipsis（原长串整行平铺未截断问题修复） */
+      '.xtlp-item{display:block;padding:10px 14px;font-size:14px;color:#1f2937;cursor:pointer;border-top:1px solid #eef1f6}'+
       '.xtlp-item:active{background:#f5f7fb}'+
       '.xtlp-item.on{color:#5B8DEF;font-weight:700}'+
+      '.xtlp-row1{display:flex;align-items:center;gap:10px;min-width:0}'+
+      '.xtlp-name{flex:1 1 auto;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}'+
+      '.xtlp-row2{font-size:12px;color:#9aa3b2;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}'+
       '.xtlp-item .xtlp-tick{margin-left:auto;color:#5B8DEF;flex:none}'+
-      '.xtlp-sub{color:#9aa3b2;font-size:12px}'+
+      /* pickfix：列表首行快捷「📍 发送我的位置」（替代原底部按钮区，点击走 doMyLoc 原语义） */
+      '.xtlp-quick{display:flex;align-items:center;gap:8px;padding:12px 14px;font-size:14px;font-weight:700;color:#5B8DEF;cursor:pointer;border-top:1px solid #eef1f6}'+
+      '.xtlp-quick:active{background:#f5f7fb}'+
+      /* pickfix：省份平铺折叠开关（列表最底部，默认收起） */
+      '.xtlp-prov-toggle{padding:12px 14px;font-size:13px;font-weight:700;color:#5B8DEF;cursor:pointer;text-align:center;border-top:1px solid #eef1f6}'+
+      '.xtlp-prov-toggle:active{background:#f5f7fb}'+
       '.xtlp-empty{padding:26px 14px;text-align:center;color:#9aa3b2;font-size:13px}'+
-      '.xtlp-foot{flex:0 0 auto;padding:10px 12px 16px;display:flex;gap:10px;background:#fff;border-top:1px solid #e6e9f0}'+
-      '.xtlp-loc{flex:1;border:1px solid #5B8DEF;background:transparent;color:#5B8DEF;border-radius:10px;padding:10px;font-size:14px;cursor:pointer}'+
-      /* R104d 批4：发送我的精确位置（第二入口；固定 px，禁 clamp/min/max） */
-      '.xtlp-my{flex:1;border:none;background:#5B8DEF;color:#fff;border-radius:10px;padding:10px;font-size:14px;font-weight:700;cursor:pointer}'+
-      '.xtlp-my:active{opacity:.85}'+
-      '.xtlp-cancel{flex:none;border:1px solid #e6e9f0;background:transparent;color:#6b7280;border-radius:10px;padding:10px 18px;font-size:14px;cursor:pointer}'+
       /* R90 item3：矮屏（总高 ≤ 560px：480/400 都落进来）收紧固定高度块，
          避免 overhead(293px)+列表 foot 超出视口导致截断。全固定值 + @media，禁 clamp/min/max。 */
       '@media (max-height:560px){'+
         '.xtlp-head{padding:7px 10px}'+
         '.xtlp-search{margin:7px 12px;padding:6px 10px}'+
-        '.xtlp-map{height:110px}'+
+        '.xtlp-map{min-height:110px}'+   /* pickfix point6/7：矮屏下限收紧，height 仍走基础规则 32vh */
         '.xtlp-list{margin:7px 12px 0}'+
-        '.xtlp-foot{padding:8px 12px 10px}'+
+      '}'+
+      /* pickfix：窄屏（≤768px）隐藏「搜索」按钮（回车 / 输入 debounce 联想已有；PC 保留按钮） */
+      '@media (max-width:768px){'+
+        '.xtlp-go{display:none}'+
       '}';
 
     var style = document.createElement('style');
@@ -1107,13 +1275,14 @@
     html += '<div class="xtlp-search">' + SEARCH_SVG +
       '<input type="text" class="xtlp-input" placeholder="搜索地址 / 省 / 市 / 区，如：天河、杭州" autocomplete="off">' +
       '<button type="button" class="xtlp-go" data-act="search">搜索</button></div>';
-    html += '<div class="xtlp-map"><div class="xtlp-pin">' + PIN_SVG + '</div>' +
+    /* R130：.xtlp-lmap 为 Leaflet 容器（tiles 覆盖后不可见 CSS 示意图道路）；
+       .xtlp-pin 中心固定 overlay（微信式），.xtlp-curline 显示当前中心地址 */
+    html += '<div class="xtlp-map"><div class="xtlp-lmap"></div><div class="xtlp-pin">' + PIN_SVG + '</div>' +
       '<div class="xtlp-curline">尚未选择位置</div></div>';
     html += '<div class="xtlp-list"></div>';
-    html += '<div class="xtlp-foot"><button type="button" class="xtlp-loc" data-act="loc">用当前位置</button>' +
-      /* R104d 批4：精确位置第二入口（act=myloc，独立于「用当前位置」分叉） */
-      '<button type="button" class="xtlp-my" data-act="myloc">发送我的精确位置</button>' +
-      '<button type="button" class="xtlp-cancel" data-act="cancel">取消</button></div>';
+    /* pickfix：底部按钮区整体移除——底部「取消」与顶部重复；
+       「用当前位置」/「发送我的精确位置」按钮移除，改为地址列表首项快捷行
+       「📍 发送我的位置」（data-quickloc，点击即走原 act=myloc 语义 doMyLoc）。 */
 
     /* R89-B: \u4e0d\u518d\u5305\u4e00\u5c42\u65e0\u6837\u5f0f\u7684 .xtlp-body \u4e2d\u95f4 div\uff08\u4f1a\u6253\u65ad .xtlp \u7684 flex
        \u5e03\u5c40\uff0c\u5bfc\u81f4 .xtlp-list \u7684 flex/overflow-y \u5931\u6548\u3001\u5217\u8868\u65e0\u6cd5\u6eda\u52a8\uff09\uff1b\u76f4\u63a5\u628a\u5185\u5bb9\u88c5\u8fdb root\uff0c
@@ -1146,7 +1315,15 @@
     var placeSeq = 0;          // 显式搜索请求序号（丢弃迟到响应）
     var placeNote = '';        // 熔断/失败提示（仅 UI，绝不 alert/confirm/prompt）
     var placeNoteTimer = null; // 提示自动消失计时器
+    var placeKw = '';          // R130：最近一次显式搜索的关键词（供输入 debounce 判定是否重置）
     var geoCtx = null;         // 最近定位/逆地理上下文 {adcode,city,province,lat,lng}（供 place boundary）
+    var provOpen = false;      // pickfix：省份平铺折叠开关（false=默认收起为一行）
+    /* R130 真地图（Leaflet）状态 */
+    var lmap = null;           // Leaflet 地图实例（初始化失败/未就绪 → null，退回 CSS 示意图）
+    var lmapReady = false;     // 地图已初始化并绑定 moveend
+    var revTimer = null;       // moveend → 逆地理防抖计时器
+    var revSeq = 0;            // 逆地理请求序号（丢弃迟到响应）
+    var skipNextRev = 0;       // setView 飞行触发的 moveend 计数（地址已知，不重复解析省配额）
 
     function setChosen(text, sub, coord) {
       chosen = (text == null) ? '' : String(text).replace(/^\s+|\s+$/g, '');
@@ -1170,15 +1347,133 @@
       }
     }
 
+    /* ---------------- R130：真地图（Leaflet + 腾讯瓦片） ----------------
+     * 中心固定 Pin 走既有 .xtlp-pin CSS overlay（微信式「中心点选」交互，
+     * 地图动 Pin 不动），不用 L.marker。所有函数 try/catch 包住，任何
+     * Leaflet 异常都静默退回纯 CSS 示意图，绝不抛异常、绝不报错。 */
+
+    /** 默认视图：优先上次发送坐标 → 本次定位上下文 → 北京（GCJ-02，与瓦片自洽）。 */
+    function _mapDefaultView() {
+      try {
+        var rec = lastSendRead();
+        if (rec && typeof rec.lat === 'number' && typeof rec.lng === 'number') {
+          return { lat: rec.lat, lng: rec.lng, zoom: 16 };
+        }
+        if (geoCtx && typeof geoCtx.lat === 'number' && typeof geoCtx.lng === 'number') {
+          return { lat: geoCtx.lat, lng: geoCtx.lng, zoom: 16 };
+        }
+      } catch (e0) {}
+      return { lat: 39.90923, lng: 116.397428, zoom: 12 };
+    }
+
+    /** moveend → 逆地理防抖：停稳 500ms 才发（省配额，连续拖动只解析终点）。 */
+    function _scheduleReverse() {
+      if (revTimer) { try { clearTimeout(revTimer); } catch (e) {} revTimer = null; }
+      revTimer = setTimeout(function () {
+        revTimer = null;
+        if (closed || !lmapReady || !lmap) return;
+        var c = null;
+        try { c = lmap.getCenter(); } catch (e1) { c = null; }
+        if (!c || !isFinite(c.lat) || !isFinite(c.lng)) return;
+        _revCenter(c.lat, c.lng);
+      }, 500);
+    }
+
+    /** 中心点逆地理：成功回填 text/sub/坐标（rich 契约字段）；失败降级「所选位置」。 */
+    function _revCenter(lat, lng) {
+      var seq = ++revSeq;
+      try { curlineEl.textContent = '正在解析所选位置…'; } catch (e0) {}
+      reverseGeocode(lat, lng, function (g) {
+        if (closed || seq !== revSeq) return;   // 迟到响应丢弃
+        var txt = '';
+        var sub = '';
+        if (g && (g.text || g.recommend)) {
+          txt = _terseGeo(g) || g.text || g.recommend;
+          if (g.district) sub = g.district;
+          if (g.streetBase) sub = sub ? (sub + ' · ' + g.streetBase) : g.streetBase;
+        }
+        if (!txt) {
+          var RR = window.XT_REGION;
+          if (g && (g.province || g.city) && RR && typeof RR.textOf === 'function') {
+            txt = RR.textOf(g.province, g.city, g.district);
+          }
+        }
+        if (!txt) txt = '所选位置';   // 优雅降级：不伪造 POI、不报错、坐标不进字符串
+        setChosen(_clipText(txt), sub, { lat: lat, lng: lng });
+        renderList();
+      });
+    }
+
+    /** 列表点选带坐标时飞行定位（地址已知 → skipNextRev 抑制重复逆地理）。 */
+    function _flyTo(lat, lng) {
+      if (!lmapReady || !lmap) return;
+      skipNextRev = skipNextRev + 1;
+      try {
+        var z = lmap.getZoom();
+        lmap.setView([lat, lng], (z > 16) ? z : 16, { animate: true });
+      } catch (e) {
+        skipNextRev = 0;
+      }
+    }
+
+    /** 初始化地图：腾讯瓦片 + moveend 绑定；失败静默（保留 CSS 示意图）。 */
+    function _initMap() {
+      if (lmapReady || closed) return;
+      var el = root.querySelector('.xtlp-lmap');
+      if (!el || !window.L || !window.L.map) return;
+      try {
+        lmap = L.map(el, {
+          zoomControl: false,
+          attributionControl: false,
+          scrollWheelZoom: true,
+          doubleClickZoom: true
+        });
+        lmap.addLayer(_makeTencentTileLayer());
+        var dv = _mapDefaultView();
+        if (initText) skipNextRev = 1;   // 已带初始选择时抑制首帧自动逆地理（不覆盖 current）
+        lmap.setView([dv.lat, dv.lng], dv.zoom, { animate: false });
+        lmap.on('moveend', function () {
+          if (skipNextRev > 0) { skipNextRev = skipNextRev - 1; _mapExtOnMove(); return; }
+          _mapExtOnMove();
+          _scheduleReverse();
+        });
+        lmapReady = true;
+        _mapExtOnReady();
+      } catch (e2) {
+        lmap = null;
+        lmapReady = false;   // 静默退回 CSS 示意图
+      }
+    }
+
+    /**
+     * 两行拆分（pickfix）：主行取最具体一段（最后一段：POI 名/街道/区），
+     * 副行为其余前缀（省 市 区…）。单段或无空白 → 主行原文、无副行。
+     * 仅拆展示用，不改 data-text（选中态高亮与回调仍用完整原文）。
+     */
+    function _splitAddr(text) {
+      var t = (text == null) ? '' : String(text);
+      var segs = t.split(/\s+/);
+      var clean = [], i;
+      for (i = 0; i < segs.length; i++) { if (segs[i]) clean.push(segs[i]); }
+      if (clean.length <= 1) return { main: t, sub: '' };
+      return { main: clean[clean.length - 1], sub: clean.slice(0, clean.length - 1).join(' ') };
+    }
+
     function itemRow(text, sub, lat, lng) {
       var cls = 'xtlp-item' + (text === chosen ? ' on' : '');
-      var subHtml = sub ? ' <span class="xtlp-sub">' + _escAttr(sub) + '</span>' : '';
       var coordAttr = '';
       if (typeof lat === 'number' && typeof lng === 'number' && isFinite(lat) && isFinite(lng)) {
         coordAttr = ' data-lat="' + _escAttr(lat) + '" data-lng="' + _escAttr(lng) + '"';
       }
-      return '<div class="' + cls + '" data-text="' + _escAttr(text) + '"' + coordAttr + '>' + _escAttr(text) + subHtml +
-        (text === chosen ? '<span class="xtlp-tick">✓</span>' : '') + '</div>';
+      /* pickfix 两行渲染：显式 sub（POI 地址）→ 主行整段标题；否则按段拆分（主行=最具体段） */
+      var hasSub = (sub != null && String(sub) !== '');
+      var main = hasSub ? String(text) : _splitAddr(text).main;
+      var subLine = hasSub ? String(sub) : _splitAddr(text).sub;
+      return '<div class="' + cls + '" data-text="' + _escAttr(text) + '"' + coordAttr + '>' +
+        '<div class="xtlp-row1"><span class="xtlp-name">' + _escAttr(main) + '</span>' +
+        (text === chosen ? '<span class="xtlp-tick">✓</span>' : '') + '</div>' +
+        (subLine ? '<div class="xtlp-row2">' + _escAttr(subLine) + '</div>' : '') +
+        '</div>';
     }
 
     function renderList() {
@@ -1210,12 +1505,14 @@
         html2 += leadHtml;
         html2 += '<div class="xtlp-sec">搜索结果</div>';
         for (i = 0; i < hits.length; i++) {
-          var sub = (hits[i].province && hits[i].province !== hits[i].city) ? hits[i].province : '';
-          html2 += itemRow(hits[i].text, sub);
+          /* pickfix：不传 sub，走 _splitAddr 两行拆分（主行=最具体段，副行=省 市…） */
+          html2 += itemRow(hits[i].text, '');
         }
         listEl.innerHTML = html2;
         return;
       }
+      /* pickfix：快捷行「📍 发送我的位置」为地址列表第一项（替代原底部按钮区） */
+      html2 += '<div class="xtlp-quick" data-quickloc="1">📍 发送我的位置</div>';
       html2 += leadHtml;
       if (nearbyResults.length) {
         html2 += '<div class="xtlp-sec">附近位置</div>';
@@ -1225,16 +1522,22 @@
           html2 += itemRow(poi.title, psub, poi.lat, poi.lng);
         }
       }
-      var recent = recentList();
+      var recent = recentList();   // pickfix：读取时已按归一键去重（渲染层收敛存量数据）
       if (recent.length) {
         html2 += '<div class="xtlp-sec">常用城市</div>';
-        for (i = 0; i < recent.length; i++) html2 += itemRow(recent[i], '常用');
+        for (i = 0; i < recent.length; i++) html2 += itemRow(recent[i], '');   // pickfix：「常用」角标全量删除
       }
       R = window.XT_REGION;
       var provs = (R && typeof R.provinces === 'function') ? R.provinces() : [];
       if (provs.length) {
-        html2 += '<div class="xtlp-sec">热门 / 全部省份</div>';
-        for (i = 0; i < provs.length && i < 12; i++) html2 += itemRow(provs[i], '省');
+        /* pickfix：省份平铺默认折叠为一行，放列表最底部；点开才展开原平铺 */
+        if (provOpen) {
+          html2 += '<div class="xtlp-sec">热门 / 全部省份</div>';
+          for (i = 0; i < provs.length && i < 12; i++) html2 += itemRow(provs[i], '');
+          html2 += '<div class="xtlp-prov-toggle" data-prov="1">收起省份 ▴</div>';
+        } else {
+          html2 += '<div class="xtlp-prov-toggle" data-prov="1">选择省份 ▾</div>';
+        }
       }
       if (!html2) html2 = '<div class="xtlp-empty">暂无可选地址</div>';
       listEl.innerHTML = html2;
@@ -1255,7 +1558,16 @@
       try { pt = parseText(chosen || initText); } catch (e) { pt = null; }
       var city = (pt && pt.city) ? pt.city : ((geoCtx && geoCtx.city) ? geoCtx.city : '');
       if (city) { b.city = city; return b; }
-      if (geoCtx && typeof geoCtx.lat === 'number' && typeof geoCtx.lng === 'number') { b.lat = geoCtx.lat; b.lng = geoCtx.lng; }
+      if (geoCtx && typeof geoCtx.lat === 'number' && typeof geoCtx.lng === 'number') { b.lat = geoCtx.lat; b.lng = geoCtx.lng; return b; }
+      /* R130：兜底用地图中心坐标——后端 /api/geo/place 要求 adcode/city/lat&lng
+         至少其一（实测：全空 → bad_params）；无任何上下文时「地图当前中心」
+         即用户所在区域的最近似语义。 */
+      if (lmapReady && lmap) {
+        try {
+          var c = lmap.getCenter();
+          if (c && isFinite(c.lat) && isFinite(c.lng)) { b.lat = c.lat; b.lng = c.lng; }
+        } catch (e2) {}
+      }
       return b;
     }
 
@@ -1299,6 +1611,7 @@
     function doPlaceSearch() {
       var q = String(inputEl.value || '').replace(/^\s+|\s+$/g, '');
       kw = q;
+      placeKw = q;   // R130：记录本次显式搜索关键词（debounce 据此判定是否重置）
       if (q.length < PLACE_MIN) {   // 不足 2 字符：不发请求，回退本地联想
         placeActive = false; placeLoading = false; placePois = null;
         renderList();
@@ -1324,11 +1637,11 @@
       });
     }
 
-    /* R104d 批4：发送我的精确位置 —— 直连 navigator.geolocation（高精度、一次性、零 IP 兜底）。
+    /* R104d 批4 + pickfix：发送我的精确位置 —— 一次性现场 GPS（原生桥优先，
+       桥退化为 watchPosition 一次 fix），拿到真坐标即 finish 发送（precise:true，
+       跳过 reverseGeocode、跳过列表、跳过二次点选）；失败绝不发送，toast + 分档提示仅 UI。
        严禁走 locate()：纯 HTTP 下它经 _failOver 静默降级成 IP 定位（source:'ip'），
-       会把城市级粗坐标冒充「精确位置」发出。拿到真坐标即 finish 发送
-       （跳过 reverseGeocode、跳过列表、跳过二次点选）；失败绝不发送，分档提示仅 UI note。 */
-    var MYLOC_GEO_OPTS = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
+       会把城市级粗坐标冒充「精确位置」发出。 */
     var MYLOC_MSG_ENV = '当前网页环境不支持精确定位，请在 App 内发送，或手动选择地点';
     var MYLOC_MSG_DENIED = '未授权定位，请在浏览器允许位置权限后重试';
 
@@ -1343,41 +1656,113 @@
       } catch (e1) { return false; }
     }
 
+    /** 原生桥（与 chat-local.js imLiveBridge 同源约定）：XTAppBridge / StudyAndroid。 */
+    function _natBridge() {
+      var b = null;
+      try { b = window.XTAppBridge || window.StudyAndroid || null; } catch (e0) { b = null; }
+      return b;
+    }
+
+    /** 一次性定位是否可用：桥有一发式定位，或安全上下文 + geolocation。 */
+    function _oneShotAvail() {
+      var br = _natBridge();
+      if (br && typeof br.getCurrentLocation === 'function') return true;
+      var geo = null;
+      try { geo = navigator.geolocation; } catch (e1) { geo = null; }
+      return !!(geo && typeof geo.watchPosition === 'function') && _isSecureCtx();
+    }
+
+    /**
+     * 一次性现场定位（pickfix：桥优先 → watchPosition 一次 fix 降级）。
+     * 桥契约（前向兼容）：br.getCurrentLocation(cb)，cb 收 JSON 串 {lat,lng}；
+     * 现网桥暂无该方法，探测到才启用，绝不调用未定义方法。
+     * JS 降级：watchPosition 拿到首个有效 fix 即 clearWatch；12s 超时兜底。
+     * 回调 cb({ok:true,lat,lng}) / cb({ok:false,reason})；
+     * reason ∈ unsupported / insecure / denied / timeout / gps_fail / bridge_fail。
+     * 绝不 IP 兜底（粗坐标不得冒充精确位置）、绝不抛异常。
+     */
+    function _oneShotFix(cb) {
+      var done = (typeof cb === 'function') ? cb : function () {};
+      var settled = false;
+      var geo = null;
+      var watchId = null;
+      var timer = null;
+      function cleanup() {
+        if (watchId != null && geo && typeof geo.clearWatch === 'function') {
+          try { geo.clearWatch(watchId); } catch (e0) {}
+          watchId = null;
+        }
+        if (timer) { try { clearTimeout(timer); } catch (e1) {} timer = null; }
+      }
+      function finishOne(r) {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        done(r);
+      }
+      /* ① 原生桥一发式定位（前向兼容；现网桥未提供即跳过） */
+      var br = _natBridge();
+      if (br && typeof br.getCurrentLocation === 'function') {
+        try {
+          br.getCurrentLocation(function (jsonStr) {
+            var o = null;
+            try { o = JSON.parse(String(jsonStr == null ? '' : jsonStr)); } catch (e2) { o = null; }
+            var la = o ? Number(o.lat) : NaN;
+            var ln = o ? Number(o.lng) : NaN;
+            if (isFinite(la) && isFinite(ln)) finishOne({ ok: true, lat: la, lng: ln });
+            else finishOne({ ok: false, reason: 'bridge_fail' });
+          });
+          return;
+        } catch (e3) { /* 桥异常 → 落 watchPosition */ }
+      }
+      /* ② watchPosition 一次 fix */
+      try { geo = navigator.geolocation; } catch (e4) { geo = null; }
+      if (!geo || typeof geo.watchPosition !== 'function') { finishOne({ ok: false, reason: 'unsupported' }); return; }
+      if (!_isSecureCtx()) { finishOne({ ok: false, reason: 'insecure' }); return; }
+      timer = setTimeout(function () { finishOne({ ok: false, reason: 'timeout' }); }, 12000);
+      try {
+        watchId = geo.watchPosition(function (pos) {
+          var c = (pos && pos.coords) ? pos.coords : null;
+          var la = c ? Number(c.latitude) : NaN;
+          var ln = c ? Number(c.longitude) : NaN;
+          if (!isFinite(la) || !isFinite(ln)) return;   // 无效 fix：等下一次
+          finishOne({ ok: true, lat: la, lng: ln });
+        }, function (err) {
+          var code = err && err.code;
+          finishOne({ ok: false, reason: (code === 1) ? 'denied' : 'gps_fail' });
+        }, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
+      } catch (e5) {
+        finishOne({ ok: false, reason: 'gps_fail' });
+      }
+    }
+
     function doMyLoc() {
       if (mylocBusy) return;   // 独立 busy 闸门（不与 locBusy 互锁）
-      var geo = null;
-      try { geo = navigator.geolocation; } catch (e0) { geo = null; }
-      if (!geo || typeof geo.getCurrentPosition !== 'function' || !_isSecureCtx()) {
+      if (!_oneShotAvail()) {
         _placeNote(MYLOC_MSG_ENV);   // 非安全上下文 / 无 API：绝不 IP 兜底、绝不发送
+        _failToast();
         renderList();
         return;
       }
       mylocBusy = true;
       setChosen('', '正在精确定位…');
       renderList();
-      geo.getCurrentPosition(function (pos) {
+      _oneShotFix(function (r) {
         if (closed) return;
         mylocBusy = false;
-        var c = (pos && pos.coords) ? pos.coords : null;
-        var la = c ? Number(c.latitude) : NaN;
-        var ln = c ? Number(c.longitude) : NaN;
-        if (!isFinite(la) || !isFinite(ln)) {
+        if (!r || r.ok !== true || !isFinite(r.lat) || !isFinite(r.lng)) {
           setChosen('', '');
-          _placeNote(MYLOC_MSG_ENV);
+          var reason = (r && r.reason) || '';
+          _placeNote(reason === 'denied' ? MYLOC_MSG_DENIED : MYLOC_MSG_ENV);
+          _failToast();   // pickfix：取不到定位 → toast 提示且不发送
           renderList();
           return;
         }
         // 拿到真坐标即发送：跳过 reverseGeocode、跳过列表、跳过二次点选。
-        setChosen('我的位置', '', { lat: la, lng: ln });
+        setChosen('我的位置', '', { lat: r.lat, lng: r.lng });
         curPrecise = true;
         finish(chosen);
-      }, function () {
-        if (closed) return;
-        mylocBusy = false;
-        setChosen('', '');
-        _placeNote(MYLOC_MSG_DENIED);   // 安全上下文失败（被拒/超时等）→ 授权/重试口径
-        renderList();
-      }, MYLOC_GEO_OPTS);
+      });
     }
 
     /* R104 批2：上次发送位置（一键再发）—— 读写 xt_loc_last（与 pick() 同键；失败静默）。 */
@@ -1442,6 +1827,10 @@
     function finish(text, skipPersist) {
       if (closed) return;
       closed = true;
+      /* R130：清理地图与防抖定时器（先于移除 DOM，避免 Leaflet 监听残留） */
+      if (revTimer) { try { clearTimeout(revTimer); } catch (e5) {} revTimer = null; }
+      try { if (lmap) { lmap.remove(); lmap = null; } } catch (e6) {}
+      lmapReady = false;
       if (placeNoteTimer) { try { clearTimeout(placeNoteTimer); } catch (e) {} placeNoteTimer = null; }
       try { if (root.parentNode) root.parentNode.removeChild(root); } catch (e) {}
       document.removeEventListener('keydown', onKey);
@@ -1477,6 +1866,9 @@
       kwTimer = setTimeout(function () {
         kw = String(inputEl.value || '').replace(/^\s+|\s+$/g, '');
         // R104c：输入联想（≥800ms debounce）只走本地省市区联想，绝不触发 place 请求（省配额硬保护）。
+        // R130 竞态修复：显式搜索进行中/已命中时，若关键词未变则不重置 place 状态——
+        // 否则「输入后 800ms 内点搜索」场景下，迟到的 debounce 会把已渲染的 POI 结果冲成空列表。
+        if (kw === placeKw && (placeLoading || (placeActive && placePois && placePois.length))) return;
         placeActive = false; placeLoading = false; placePois = null;
         renderList();
       }, 800);
@@ -1493,9 +1885,11 @@
 
     listEl.addEventListener('click', function (ev) {
       var node = ev.target;
-      while (node && node !== listEl && !(node.getAttribute && (node.getAttribute('data-text') !== null || node.getAttribute('data-lastsend') !== null))) { node = node.parentNode; }
+      while (node && node !== listEl && !(node.getAttribute && (node.getAttribute('data-text') !== null || node.getAttribute('data-lastsend') !== null || node.getAttribute('data-quickloc') !== null || node.getAttribute('data-prov') !== null))) { node = node.parentNode; }
       if (!node || node === listEl) return;
       if (node.getAttribute('data-lastsend') !== null) { lastSendReuse(); return; }   // R104 批2：一键再发
+      if (node.getAttribute('data-quickloc') !== null) { doMyLoc(); return; }         // pickfix：快捷行「📍 发送我的位置」
+      if (node.getAttribute('data-prov') !== null) { provOpen = !provOpen; renderList(); return; }   // pickfix：省份折叠开关
       var t = node.getAttribute('data-text');
       if (t == null) return;
       // R104 项3：列表项若带经纬度（如附近 POI），选中时一并记录，供 rich 模式回传。
@@ -1506,6 +1900,7 @@
         if (isFinite(nla) && isFinite(nln)) coord = { lat: nla, lng: nln };
       }
       setChosen(t, '', coord);
+      if (coord) _flyTo(coord.lat, coord.lng);   // R130：点选 POI 后地图飞到该点
     });
 
     root.addEventListener('click', function (ev) {
@@ -1516,46 +1911,15 @@
       if (act === 'cancel') { finish(null); return; }
       if (act === 'ok') { if (chosen) finish(chosen); return; }
       if (act === 'search') { doPlaceSearch(); return; }   // R104c：显式地点搜索
-      if (act === 'myloc') { doMyLoc(); return; }          // R104d 批4：发送我的精确位置
-      if (act === 'loc') {
-        if (locBusy) return;
-        locBusy = true;
-        setChosen('', '正在定位…');
-        locate(function (r) {
-          if (closed) return;
-          if (!r || r.ok === false) { setChosen('', '定位失败，可搜索或手动输入'); locBusy = false; _failToast(); return; }
-          setChosen('', '已获取坐标，正在解析地址…');
-          reverseGeocode(r.lat, r.lng, function (g) {
-            if (closed) return;
-            locBusy = false;
-            if (!g || !g.text) { setChosen('', '地址解析失败，可搜索或手动输入'); return; }
-            var list = (g.pois && g.pois.length) ? g.pois : [];
-            nearbyResults = list;
-            // R104c：记录本次定位/逆地理上下文（adcode/city）供 place boundary 使用。
-            geoCtx = { adcode: g.adcode || '', city: g.city || '', province: g.province || '', lat: r.lat, lng: r.lng };
-            var txt = _terseGeo(g);
-            if (!txt) {
-              var RR = window.XT_REGION;
-              if ((g.province || g.city) && RR && typeof RR.textOf === 'function') {
-                var t2 = RR.textOf(g.province, g.city, g.district);
-                if (t2) txt = t2;
-              }
-            }
-            // R104 项3：副地址取「区 + 路」级（如「西湖区 · 文三路」）；回传本次定位坐标 r.lat/r.lng。
-            var subParts = [];
-            if (g.district) subParts.push(g.district);
-            if (g.streetBase) subParts.push(g.streetBase);
-            setChosen(_clipText(txt), subParts.join(' · '), { lat: r.lat, lng: r.lng });
-            renderList();
-          });
-        });
-        return;
-      }
+      if (act === 'myloc') { doMyLoc(); return; }          // R104d 批4：发送我的精确位置（pickfix 起由列表快捷行触发）
+      /* pickfix：act='loc'（原「用当前位置」按钮）随底部按钮区一并移除，
+         自动预选能力由 _autoLocate（进页触发）承接。 */
     });
 
     /* R89-B\uff1a\u7a97\u53e3\u5c3a\u5bf8\u53d8\u5316\uff08\u65cb\u5c4f / \u8f6f\u952e\u76d8\uff09\u65f6\u91cd\u7b97\u5217\u8868\u9ad8\u5ea6\u4e0a\u9650\u3002 */
     function onResize() {
       if (closed || !listEl) return;
+      try { if (lmap) lmap.invalidateSize(); } catch (e0) {}   // R130：地图容器尺寸变化重算
       var h = 0;
       try { h = window.innerHeight || 0; } catch (e) { h = 0; }
       if (h && h >= 120) {
@@ -1587,9 +1951,61 @@
         listEl.style.overflowY = 'auto';
       }
     })();
+    /* pickfix：进页自动预选当前位置 —— 定位可用（原生桥 / 安全上下文 GPS）时
+       自动走一次定位 + 逆地理，成功后把地址回显进黑条（curline）并点亮「发送」，
+       即「进页即预选当前位置，拖动即改选」；「尚未选择位置」只在定位与逆地理
+       都失败时出现。初始定位失败必须静默降级（不弹错误框、不 toast）；
+       非安全上下文 Web（拿不到 geolocation）保持现状行为。
+       用户已手动选择（chosen 非空）或调用方已带 current（initText）时让位，不覆盖。
+       逆地理走既有链路（后端代理优先），拖动防竞态沿用 revSeq/切片闸门。 */
+    function _autoLocate() {
+      if (closed || initText || locBusy || mylocBusy || !_oneShotAvail()) return;
+      locBusy = true;
+      setChosen('', '正在定位当前位置…');
+      _oneShotFix(function (r) {
+        if (closed) return;
+        locBusy = false;
+        if (chosen) return;   // 用户已手动选择 / 拖动改选：自动结果让位
+        if (!r || r.ok !== true || !isFinite(r.lat) || !isFinite(r.lng)) {
+          setChosen('', '');   // 静默恢复「尚未选择位置」
+          return;
+        }
+        setChosen('', '正在解析当前位置…');
+        reverseGeocode(r.lat, r.lng, function (g) {
+          if (closed || chosen) return;   // 迟到 / 用户已改选 → 丢弃
+          if (!g || !g.text) { setChosen('', ''); return; }   // 逆地理失败 → 维持未选态（静默）
+          nearbyResults = (g.pois && g.pois.length) ? g.pois : [];
+          geoCtx = { adcode: g.adcode || '', city: g.city || '', province: g.province || '', lat: r.lat, lng: r.lng };
+          var txt = _terseGeo(g);
+          if (!txt) {
+            var RR = window.XT_REGION;
+            if ((g.province || g.city) && RR && typeof RR.textOf === 'function') {
+              var t2 = RR.textOf(g.province, g.city, g.district);
+              if (t2) txt = t2;
+            }
+          }
+          if (!txt) { setChosen('', ''); return; }
+          var subParts = [];
+          if (g.district) subParts.push(g.district);
+          if (g.streetBase) subParts.push(g.streetBase);
+          setChosen(_clipText(txt), subParts.join(' · '), { lat: r.lat, lng: r.lng });
+          _flyTo(r.lat, r.lng);   // 地图未就绪时 _mapDefaultView 也会采用 geoCtx
+          renderList();
+        });
+      });
+    }
+
     if (initText) setChosen(initText, '');
     renderList();
     try { if (inputEl.focus) inputEl.focus(); } catch (e9) {}
+    _autoLocate();   // pickfix：进页自动预选（initText 已带选择时内部自动跳过）
+
+    /* R130：注入并初始化真地图（本地 Leaflet 就绪失败 → 静默退回原 CSS 示意图，
+       搜索/定位/历史等既有能力不受影响） */
+    _ensureLeaflet(function (lfOk) {
+      if (!lfOk || closed) return;
+      try { _initMap(); } catch (eLf) {}
+    });
   }
 
   window.XT_LOC_PICK = {

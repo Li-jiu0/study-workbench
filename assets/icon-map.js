@@ -132,6 +132,21 @@
       '<rect x="6" y="4" width="4" height="16"/>' +
       '<rect x="14" y="4" width="4" height="16"/>'
     ),
+    /* ===========================================================
+       V-polish（2026-09-21）：语音条专用实心图标（去字符 ▶ 定版规格）
+       - 既有 outline play/pause 被设置页「开始专注」/英语页/voiceplayer/
+         roleplay 共用，样式不能动 → 语音条另立实心键
+       - 实心圆角三角：children 覆盖 fill="currentColor" + stroke-width="2"
+         + stroke-linejoin="round"（三角三顶点圆角化，模板其余属性继承）
+       - 实心双圆角竖条：rect rx=2 + fill="currentColor"
+       =========================================================== */
+    "play-solid": svg(
+      '<polygon points="7 4 20 12 7 20 7 4" fill="currentColor" stroke-width="2" stroke-linejoin="round"/>'
+    ),
+    "pause-solid": svg(
+      '<rect x="6" y="4" width="4.5" height="16" rx="2" fill="currentColor"/>' +
+      '<rect x="13.5" y="4" width="4.5" height="16" rx="2" fill="currentColor"/>'
+    ),
     // —— 操作类（确认 / 关闭）——
     "check": svg(
       '<polyline points="20 6 9 17 4 12"/>'
