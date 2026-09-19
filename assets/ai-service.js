@@ -1097,10 +1097,32 @@
     return { content: content, reasoning: reasoning, usage: (obj && obj.usage) ? obj.usage : null };
   }
 
+  // R107：解析服务端中转分帧行 data: {"t":"r"|"c","d":"<增量>"} / {"t":"u","tokens":<n>}。
+  // 非分帧行（裸文本增量 / data: [DONE] / 心跳）一律返回 null，调用方回退原有解析。
+  // 兼容性：d 字段为主；历史摘要稿曾用 v 字段命名，这里同样接受（取 d 优先，v 兜底）。
+  function parseRelayFrameLine(line) {
+    var s = String(line == null ? "" : line).replace(/^[\s\r\n]+|[\s\r\n]+$/g, "");
+    if (s.indexOf("data:") !== 0) return null;
+    var body = s.slice(5).replace(/^ +/, "");
+    if (!body || body === "[DONE]") return null;
+    if (body.charAt(0) !== "{") return null;
+    var obj = null;
+    try { obj = JSON.parse(body); } catch (e) { return null; }
+    if (!obj || typeof obj !== "object" || obj.t == null) return null;
+    if (obj.t === "r" || obj.t === "c") {
+      var d = (obj.d != null) ? obj.d : ((obj.v != null) ? obj.v : "");
+      return { t: obj.t, d: String(d) };
+    }
+    if (obj.t === "u") return { t: "u", tokens: (obj.tokens != null) ? obj.tokens : 0 };
+    return null;
+  }
+
   // 流式读取 SSE（仅在 canStreamRead 为真时调用）。返回 { text, reasoning }：
   // text = content 累积；reasoning = 思维链累积（content 全程为空时由 requestModel 兜底使用）。
   // markActivity：可选；收到思维链增量时回调，用于重置「未出首字」超时判定（避免慢推理被误判为超时）。
-  async function readSSEStream(resp, emit, markActivity) {
+  // onReasoning（R107 新增，可选）：思维链增量回调 onReasoning(delta, full)——feature-detect，
+  // 旧调用方（只传 3 参）不受影响；同时兼容解析服务端中转分帧（data: {"t":...}）。
+  async function readSSEStream(resp, emit, markActivity, onReasoning) {
     var reader = resp.body.getReader();
     var decoder = new TextDecoder("utf-8");
     var buffer = "";
@@ -1117,11 +1139,27 @@
           throw makeError(nonJsonMessage(respStatus(resp), respCtype(resp), line), respStatus(resp), "NON_JSON");
         }
       }
+      // R107：服务端中转分帧（data: {"t":...}）优先解析；非分帧行走原有 consumeLine
+      var fr = parseRelayFrameLine(line);
+      if (fr) {
+        if (fr.t === "r" && fr.d) {
+          reasoning += fr.d;
+          if (onReasoning) onReasoning(fr.d, reasoning);
+          if (markActivity) markActivity();
+        } else if (fr.t === "c" && fr.d) {
+          full += fr.d;
+          if (emit) emit(fr.d, full);
+        }
+        // t:"u"（token 用量帧）前端忽略：账本由服务端 record_usage 记
+        return;
+      }
       var pr = consumeLine(line);
       if (pr.usage) usage = pr.usage;
       if (pr.reasoning) {
         reasoning += pr.reasoning;
         if (markActivity) markActivity();
+        // R107：直连路径的思维链增量不再静默丢弃 -> onReasoning（feature-detect，旧调用方无感）
+        if (onReasoning) onReasoning(pr.reasoning, reasoning);
       }
       if (pr.content) {
         full += pr.content;
@@ -1254,7 +1292,10 @@
               // R103：前端 id 与后端 model_registry 键命名不统一，服务端按 id 解析不到
               // 真实模型名时，用这里带来的「前端已知真实模型名」做二次解析（仍受服务端
               // registry 白名单约束）；无选中/未知模型时不带该字段（保持旧契约）。
-              modelName: (opt.modelName ? String(opt.modelName) : undefined)
+              modelName: (opt.modelName ? String(opt.modelName) : undefined),
+              // R107：「深度思考」开关——仅显式开启时携带该字段（旧后端不认识也不报错）；
+              // 关闭/缺省时不带（不是传 false），保证服务端按旧契约输出纯文本增量。
+              reasoning: (opt.reasoning === true) ? true : undefined
             })
           }),
           respMs, null, "服务端中转超时（" + respMs + "ms 未响应）", "TIMEOUT_RELAY"
@@ -1273,7 +1314,8 @@
           lastErr = makeError("中转HTTP " + resp.status + " " + relayMsg, resp.status, null);
           break;
         }
-        // 服务端返回 text/plain 纯文本流（每段为增量文本，非 SSE）
+        // 服务端返回 text/plain 纯文本流（每段为增量文本，非 SSE）；
+        // R107：reasoning=true 时新后端返回 data: 分帧，由 readRelayBody 自探测后解析
         var firstChunkAt = 0;
         var relayLive = true;   // 需求12：超时后丢弃迟到增量，避免污染已切换的界面
         var emit = function (piece, full) {
@@ -1281,13 +1323,23 @@
           if (!firstChunkAt) firstChunkAt = Date.now();
           if (onChunk) onChunk(piece, full);
         };
-        var readP = readRelayBody(resp, emit);
+        // R107：思维链增量回调（feature-detect）；思维链到达同样计入「已出首字」，
+        // 避免长推理期间被 TIMEOUT_FIRST_TOKEN 误判超时。
+        var onReasoningCb = (opt.onReasoning && typeof opt.onReasoning === "function") ? opt.onReasoning : null;
+        var emitReason = function (piece, full) {
+          if (!relayLive) return;
+          if (!firstChunkAt) firstChunkAt = Date.now();
+          if (onReasoningCb) onReasoningCb(piece, full);
+        };
+        var readP = readRelayBody(resp, emit, emitReason);
         readP = raceTimeout(readP, firstTokenMs, function () { return firstChunkAt > 0; },
           "服务端中转响应较慢（" + firstTokenMs + "ms 未出首字）", "TIMEOUT_FIRST_TOKEN");
         readP = raceTimeout(readP, totalMs, null, "服务端中转响应超时", "TIMEOUT_TOTAL");
         var rr = await readP;
         var full = rr.text;
         var chunkCount = rr.count;
+        // R107：分帧模式下 readRelayBody 附带思维链累积（纯文本模式该字段不存在 -> 空串）
+        var relayReasoning = (rr && rr.reasoning) ? String(rr.reasoning) : "";
         if (full) {
           // 服务端可能把整段一次返回（实测常见），这里补一层本地分段，
           // 让页面的打字机效果不至于退化成「整段弹出」。失败不影响已有文本。
@@ -1310,7 +1362,9 @@
             }
           } catch (eH) { usedModel = ""; usedFallback = ""; }
           return { text: full, providerId: p.id, providerName: p.name, modelUsed: usedModel,
-                   modelFallback: (usedFallback === "1") };
+                   modelFallback: (usedFallback === "1"),
+                   // R107：完整思维链文本（可为空串）；既有字段全部保留
+                   reasoning: relayReasoning };
         }
         lastErr = makeError("中转空回复", 0, "EMPTY");
       } catch (e) {
@@ -1324,8 +1378,11 @@
     throw lastErr || makeError("服务端中转全部失败", 0, null);
   }
 
-  // 中转响应体读取：有 getReader 走流式，没有则整段读取（老内核兜底）
-  async function readRelayBody(resp, emit) {
+  // 中转响应体读取：有 getReader 走流式，没有则整段读取（老内核兜底）。
+  // R107：双格式自探测——响应体若以 data: 开头（新后端 reasoning=true 的分帧协议）
+  // 则按分帧逐行解析（t:r -> onReasoning，t:c -> emit，t:u/[DONE] 忽略）；
+  // 否则按现状纯文本路径（老后端兼容，行为逐字节不变）。onReasoning 可选（feature-detect）。
+  async function readRelayBody(resp, emit, onReasoning) {
     if (canStreamRead(resp)) {
       var reader = resp.body.getReader();
       var decoder = new TextDecoder("utf-8");
@@ -1333,16 +1390,59 @@
       var count = 0;
       var htmlChecked = false;   // 是否已排除「HTML 错误页」
       var GUARD_LEN = 64;        // 前缀判定窗口：攒够这么多字符仍非 HTML 才放心逐块吐出
+      // R107：分帧协议状态（探测到 data: 前缀后启用）
+      var frameMode = false;
+      var frameBuf = "";
+      var frameFull = "";        // 分帧模式下的正文累积（作为 text 返回）
+      var frameCount = 0;        // 分帧模式下的正文帧数（供上层判断是否需要本地分段）
+      var frameReasoning = "";   // 分帧模式下的思维链累积
+      function handleFrameLine(line) {
+        var fr = parseRelayFrameLine(line);
+        if (!fr) return;
+        if (fr.t === "r" && fr.d) {
+          frameReasoning += fr.d;
+          if (onReasoning) onReasoning(fr.d, frameReasoning);
+        } else if (fr.t === "c" && fr.d) {
+          frameFull += fr.d;
+          frameCount++;
+          emit(fr.d, frameFull);
+        }
+        // t:"u"（token 用量帧）前端忽略：账本由服务端 record_usage 记
+      }
+      function pumpFrameLines() {
+        var nl2;
+        while ((nl2 = frameBuf.indexOf("\n")) !== -1) {
+          var ln2 = frameBuf.slice(0, nl2);
+          frameBuf = frameBuf.slice(nl2 + 1);
+          handleFrameLine(ln2);
+        }
+      }
       while (true) {
         var r = await reader.read();
         if (r.done) break;
         var piece = decoder.decode(r.value, { stream: true });
         if (!piece) continue;
+        if (frameMode) {
+          frameBuf += piece;
+          pumpFrameLines();
+          continue;
+        }
         full += piece;
         count++;   // 与改造前一致：按实际分块计数（供上层判断是否需要本地分段）
         // R72：中转端返回 HTML 错误页时，绝不按流逐块当答案吐出（否则界面出现 <!DOCTYPE html> 乱码）。
         // 先攒够一个小前缀再判定，避免首块被切成半截 "<!DO" 而漏判；判定窗口内暂不 emit。
         if (!htmlChecked) {
+          // R107：分帧自探测——新后端 reasoning=true 时响应以 data: 开头，切换分帧解析；
+          // 该分支必须先于 HTML 判定（分帧体永远不是 HTML，也不受 GUARD_LEN 窗口拖累首字延迟）。
+          var head = full.replace(/^[\s\r\n]+/, "");
+          if (head.indexOf("data: ") === 0 || head.indexOf("data:{") === 0) {
+            frameMode = true;
+            frameBuf = head;
+            full = "";    // 分帧模式下 text 取正文帧累积，不复用原始帧文本
+            count = 0;
+            pumpFrameLines();   // 首块可能已含多行完整分帧，立即处理
+            continue;
+          }
           if (looksLikeHtml(full)) {
             throw makeError(nonJsonMessage(respStatus(resp), respCtype(resp), full), respStatus(resp), "NON_JSON");
           }
@@ -1354,6 +1454,11 @@
           htmlChecked = true;
         }
         emit(piece, full);
+      }
+      if (frameMode) {
+        // 收尾：清空缓冲中未以换行结束的最后一行（如 data: [DONE] 之前残留）
+        if (frameBuf.length) { handleFrameLine(frameBuf); frameBuf = ""; }
+        return { text: frameFull, count: frameCount, reasoning: frameReasoning };
       }
       if (!htmlChecked) {
         // 响应体不足判定窗口：收尾时再判定一次；短文本正常吐出，HTML 则抛错
@@ -1376,6 +1481,25 @@
     // R73k：中转上游故障标记 → 抛错走直连链
     if (text.indexOf("⚠️【中转错误】") === 0) {
       throw makeError(text, 502, "RELAY_UPSTREAM");
+    }
+    // R107：分帧自探测（老内核整段读取兜底）——data: 开头按分帧逐行解析，否则纯文本
+    var tHead = text.replace(/^[\s\r\n]+/, "");
+    if (tHead.indexOf("data: ") === 0 || tHead.indexOf("data:{") === 0) {
+      var fFull = "", fReason = "", fCount = 0;
+      var frameLines = text.split("\n");
+      for (var fli = 0; fli < frameLines.length; fli++) {
+        var fr2 = parseRelayFrameLine(frameLines[fli]);
+        if (!fr2) continue;
+        if (fr2.t === "r" && fr2.d) {
+          fReason += fr2.d;
+          if (onReasoning) onReasoning(fr2.d, fReason);
+        } else if (fr2.t === "c" && fr2.d) {
+          fFull += fr2.d;
+          fCount++;
+          emit(fr2.d, fFull);
+        }
+      }
+      return { text: fFull, count: fCount, reasoning: fReason };
     }
     if (text && emit) emit(text, text);
     return { text: text, count: text ? 1 : 0 };
@@ -2682,9 +2806,11 @@
     }
 
     var fullText = "";
+    // R107：思维链增量回调（feature-detect，直连路径透传给 readSSEStream）
+    var onReasoningCb = (opt && opt.onReasoning && typeof opt.onReasoning === "function") ? opt.onReasoning : null;
     // Gemini 走 generateContent（无 SSE），强制走整段读取 + extractContent 分支
     if (!isGemini && canStreamRead(resp)) {
-      var readP = readSSEStream(resp, emit, function () { if (!firstChunkAt) firstChunkAt = Date.now(); });
+      var readP = readSSEStream(resp, emit, function () { if (!firstChunkAt) firstChunkAt = Date.now(); }, onReasoningCb);
       // 15 秒未出首字 -> 判慢，交给上层切下一个快模型
       readP = raceTimeout(readP, firstTokenMs, function () { return firstChunkAt > 0; },
         "模型响应较慢（" + firstTokenMs + "ms 未出首字）", "TIMEOUT_FIRST_TOKEN");
@@ -2704,6 +2830,8 @@
       if (streamResult) {
         // 需求 E：流式响应里的 usage（有则记为实测值，没有则由外层按字符数估算）
         if (streamResult.usage && sink) sink.usage = streamResult.usage;
+        // R107：思维链全文存入 sink（requestModel 外层据此挂到 resolve 值的 reasoning 字段）
+        if (sink) sink.reasoning = (streamResult.reasoning != null) ? String(streamResult.reasoning) : "";
         fullText = streamResult.text || "";
         if (!fullText && streamResult.reasoning) {
           // 流式全程只有思维链、content 为空 -> 以 reasoning 作为最终文本（不加前缀，避免污染渲染）
@@ -2778,6 +2906,9 @@
 
   // 需求 E：requestModel 外层包裹 —— 每次请求（成功 / 失败）都写一条用量明细。
   // 埋点全程 try/catch：localStorage 不可用 / 超配额 / JSON 损坏都不会影响正常对话。
+  // R107：resolve 值新增 reasoning 字段（完整思维链文本，可为空串）——用 String 包装对象
+  // 承载，length/拼接/切片等字符串行为全部保持；需要严格原始字符串时用 String(res) 还原
+  // （callAI / 健康检查等内部调用方均已做该归一）。既有「字段」零删除零改名。
   async function requestModel(modelConfig, messages, onChunk, signal, options) {
     var opt = options || {};
     // 健康检查等内部探测不计入用量（「批量检测」一次会灌进十几条噪声，把真实用量挤出去）
@@ -2785,7 +2916,7 @@
       return await requestModelCore(modelConfig, messages, onChunk, signal, opt, { usage: null });
     }
     var startedAt = Date.now();
-    var sink = { usage: null };
+    var sink = { usage: null, reasoning: "" };
     var mName = (modelConfig && modelConfig.name) ? String(modelConfig.name) : "";
     var mId = (modelConfig && modelConfig.id) ? String(modelConfig.id) : "";
     var mKey = (modelConfig && modelConfig.model) ? String(modelConfig.model) : "";
@@ -2804,7 +2935,11 @@
         usage: sink.usage,
         ms: Date.now() - startedAt
       });
-      return text;
+      // R107：String 包装对象承载 reasoning 字段（空串兜底；requestModelCore 未写 sink.reasoning
+      // 的路径——xtNoUsage / 非流式整段——保持空串，不影响任何既有行为）
+      var out = new String(text);
+      out.reasoning = (sink.reasoning != null) ? String(sink.reasoning) : "";
+      return out;
     } catch (e) {
       xtUsageRecordAuto({
         ts: startedAt,
@@ -2850,7 +2985,11 @@
     var reqOpts = {
       firstTokenTimeout: (opts.firstTokenTimeout != null) ? opts.firstTokenTimeout : TIMEOUT_FIRST_TOKEN,
       totalTimeout: (opts.totalTimeout != null) ? opts.totalTimeout : TIMEOUT_TOTAL,
-      responseTimeout: (opts.responseTimeout != null) ? opts.responseTimeout : TIMEOUT_RESPONSE
+      responseTimeout: (opts.responseTimeout != null) ? opts.responseTimeout : TIMEOUT_RESPONSE,
+      // R107：「深度思考」开关与思维链增量回调——onReasoning 必须 feature-detect（旧调用方
+      // 不传则两链路均无感）；reasoning 仅显式 true 时为 true，relayChat 才会带上该字段
+      onReasoning: (opts.onReasoning && typeof opts.onReasoning === "function") ? opts.onReasoning : null,
+      reasoning: (opts.reasoning === true) ? true : undefined
     };
 
     // R72-Bug4：预设不再默认抢跑（旧逻辑命中极宽子串即短路，UI 看不出是内置 -> 「偶尔误触发」）。
@@ -2925,6 +3064,8 @@
           });
           return {
             text: relayed.text,
+            // R107：中转链路思维链全文（可为空串）；既有字段全部保留
+            reasoning: (relayed && relayed.reasoning) ? String(relayed.reasoning) : "",
             model: "relay:" + relayed.providerId,
             modelUsed: "relay:" + relayed.providerId,
             modelUsedName: relayed.providerName,

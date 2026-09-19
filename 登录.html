@@ -97,6 +97,17 @@
     background:rgba(255,255,255,.05);border:1px solid var(--card-border);border-radius:12px;padding:10px 14px;
   }
   .login-notice b{color:var(--text)}
+  /* R105：用户协议 / 隐私政策 勾选行与页内弹层 */
+  .agree-row{display:flex;align-items:flex-start;gap:8px;margin:14px 2px 0;font-size:12px;line-height:1.7;color:var(--text-dim);text-align:left}
+  .agree-row input[type=checkbox]{width:16px;height:16px;flex:none;margin-top:2px;accent-color:#5b8def;cursor:pointer}
+  .agree-row label{cursor:pointer;flex:1}
+  .agree-row a{color:var(--primary);text-decoration:none;cursor:pointer}
+  .agree-row a:hover{text-decoration:underline}
+  .agree-row.shake-err{animation:shake .4s}
+  .agreement-sec{margin-bottom:14px}
+  .agreement-h{font-size:14px;font-weight:800;color:var(--text);margin-bottom:8px}
+  .agreement-p{font-size:12px;line-height:1.8;color:var(--text-dim);margin-bottom:6px;word-break:break-all}
+  .agreement-p b{color:var(--text)}
   .err-box{
     display:none;margin-bottom:14px;padding:10px 14px;border-radius:12px;font-size:13px;
     background:rgba(255,107,107,.12);border:1px solid rgba(255,107,107,.4);color:#ffb4b4;
@@ -177,6 +188,13 @@
     <div id="matchTip"></div>
   </div>
 
+  <!-- R105：隐私合规 —— 首次登录/注册前必须勾选同意；同意状态记入 localStorage['xt_privacy_agreed']，
+       已同意过则进入本页时自动勾上，不再强拦。协议文案用页内弹层承载（不新建页面）。 -->
+  <div class="agree-row" id="agreeRow">
+    <input type="checkbox" id="agreeChk">
+    <label for="agreeChk">我已阅读并同意<a onclick="openAgreement('ua')">《用户协议》</a>与<a onclick="openAgreement('privacy')">《隐私政策》</a>，并同意为功能适配与消息通知收集设备基础信息</label>
+  </div>
+
   <button class="btn-primary" id="loginSubmitBtn" onclick="submitLogin()" aria-label="登录">登录</button>
 
   <!-- R73：忘记密码 / 找回账号入口（仅在线模式可用） -->
@@ -218,6 +236,30 @@
   </div>
 </div>
 
+<!-- R105：用户协议 / 隐私政策 页内弹层（复用找回账号弹层的 .modal-mask/.modal-card 范式，不新建页面） -->
+<div class="modal-mask" id="agreementModal">
+  <div class="modal-card">
+    <div class="modal-title">用户协议与隐私政策</div>
+    <div class="modal-sub">请仔细阅读以下内容，点击「同意并继续」表示你已理解并接受全部条款。</div>
+    <div class="agreement-sec" id="uaSection">
+      <div class="agreement-h">一、用户协议</div>
+      <div class="agreement-p">1. 本站为个人学习辅助工具，账号仅限本人使用，请妥善保管账号与密码。</div>
+      <div class="agreement-p">2. 请勿发布违法违规、侵犯他人权益的内容；发贴、评论等社区行为须遵守相关法律法规。</div>
+      <div class="agreement-p">3. 管理员有权对违规内容进行删除处理，对违规账号进行限制。</div>
+      <div class="agreement-p">4. 本站按「现状」提供服务，不对学习效果或服务可用性作任何承诺。</div>
+    </div>
+    <div class="agreement-sec" id="privacySection">
+      <div class="agreement-h">二、隐私政策</div>
+      <div class="agreement-p"><b>我们收集什么：</b>仅收集设备基础信息，包括设备品牌、型号、系统版本、App 版本、匿名设备标识、屏幕尺寸与系统语言，用于页面与功能适配以及 App 消息通知。</div>
+      <div class="agreement-p"><b>我们不收集：</b>IMEI、通讯录、短信、通话记录等任何敏感个人信息。</div>
+      <div class="agreement-p"><b>数据用途：</b>设备基础信息仅用于本站自身的服务（功能适配与消息通知），不用于任何第三方用途，不对外提供。</div>
+      <div class="agreement-p"><b>数据存储：</b>账号与社区数据保存在服务器；学习进度等本地数据保存在你的设备上，可随时在「设置 → 数据管理」导出或清除。</div>
+    </div>
+    <button type="button" class="btn-primary" onclick="agreeAndClose()">同意并继续</button>
+    <button type="button" class="btn-ghost" onclick="closeAgreement()">关闭</button>
+  </div>
+</div>
+
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
 <script src="assets/icon-map.js?v=20260916O" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
@@ -254,6 +296,9 @@ function saveSession(token, account, refreshToken, isAdmin) {
   localStorage.setItem(AUTH_KEY, JSON.stringify({ account: account, loginAt: Date.now(), is_admin: !!isAdmin }));
   localStorage.setItem(LAST_ACCOUNT_KEY, account || '');
   try { localStorage.setItem(ADMIN_FLAG_KEY, isAdmin ? '1' : '0'); } catch (e) { /* 无痕模式忽略 */ }
+  /* R105：每次登录重置设备上报标记（上报本身在 reportDeviceInfo 里 feature-detect + 静默执行） */
+  try { localStorage.removeItem(DEVICE_REPORTED_KEY); } catch (eR105) { /* 忽略 */ }
+  reportDeviceInfo();
 }
 /* 在线续期：access 过期时用 refresh 令牌静默换新（access + refresh 一起轮换） */
 function apiTryRefresh() {
@@ -509,6 +554,15 @@ function submitLogin() {
   var account = document.getElementById('loginAccount').value.trim();
   var pass = document.getElementById('loginPass').value;
   if (!validate(account, pass)) return;
+  /* R105：未勾选《用户协议》与《隐私政策》时 toast 提示并阻止提交（已同意过则勾选框自动带上，不再拦） */
+  var agreeChk = document.getElementById('agreeChk');
+  if (!agreeChk || !agreeChk.checked) {
+    var agreeRow = document.getElementById('agreeRow');
+    if (agreeRow) { agreeRow.classList.remove('shake-err'); void agreeRow.offsetWidth; agreeRow.classList.add('shake-err'); }
+    if (typeof window.xtToast === 'function') { try { window.xtToast('warning', '请先阅读并勾选同意《用户协议》与《隐私政策》'); } catch (e0) { /* 忽略 */ } }
+    showErr('请先阅读并勾选同意《用户协议》与《隐私政策》');
+    return;
+  }
   var btn = document.getElementById('loginSubmitBtn');
   var btnText = btn.textContent;
   btn.disabled = true;
@@ -590,6 +644,58 @@ function showOnlineRetry(account, pass, btn, btnText) {
       location.href = '学习工作台.html';
     }).catch(function () { showErr('网络异常，请稍后再试'); btn.disabled = false; btn.textContent = btnText; });
   });
+}
+
+/* ==================== R105：隐私合规勾选 + 登录成功设备信息上报 ==================== */
+var PRIVACY_AGREED_KEY = 'xt_privacy_agreed';
+var DEVICE_REPORTED_KEY = 'xt_device_reported';
+
+/* 是否已同意过协议（localStorage '1'）。已同意则勾选框自动带上，不再强拦。 */
+function privacyAgreed() {
+  try { return localStorage.getItem(PRIVACY_AGREED_KEY) === '1'; } catch (e) { return false; }
+}
+/* 进入页面时回填已同意状态 */
+(function initAgreeState() {
+  var chk = document.getElementById('agreeChk');
+  if (chk && privacyAgreed()) chk.checked = true;
+})();
+function openAgreement(sec) {
+  var modal = document.getElementById('agreementModal');
+  if (!modal) return;
+  modal.classList.add('show');
+  var target = document.getElementById(sec === 'ua' ? 'uaSection' : 'privacySection');
+  if (target) { try { target.scrollIntoView({ block: 'start' }); } catch (e) { /* 老内核忽略 */ } }
+}
+function closeAgreement() {
+  var modal = document.getElementById('agreementModal');
+  if (modal) modal.classList.remove('show');
+}
+/* 弹层内点「同意并继续」：落盘已同意 + 自动勾上勾选框 */
+function agreeAndClose() {
+  try { localStorage.setItem(PRIVACY_AGREED_KEY, '1'); } catch (e) { /* 无痕模式忽略 */ }
+  var chk = document.getElementById('agreeChk');
+  if (chk) chk.checked = true;
+  closeAgreement();
+}
+document.getElementById('agreementModal').addEventListener('click', function (e) { if (e.target === this) closeAgreement(); });
+
+/* ---------- 登录成功后设备信息上报（仅 App 环境） ----------
+   App WebView 会注入 window.XTAppBridge.getDeviceInfo()（同步返回 JSON 字符串）。
+   Web 端 / 桥缺失 → feature-detect 静默跳过；上报失败也静默，绝不阻塞登录跳转。
+   防重复：saveSession 成功时先清 'xt_device_reported'，上报前置位——每次登录最多上报一次。 */
+function reportDeviceInfo() {
+  try {
+    if (!(window.XTAppBridge && typeof window.XTAppBridge.getDeviceInfo === 'function')) return;
+    if (localStorage.getItem(DEVICE_REPORTED_KEY) === '1') return;
+    var info = JSON.parse(window.XTAppBridge.getDeviceInfo());
+    if (!info || typeof info !== 'object') return;
+    localStorage.setItem(DEVICE_REPORTED_KEY, '1');
+    var headers = { 'Content-Type': 'application/json' };
+    var t = getToken();
+    if (t) headers['Authorization'] = 'Bearer ' + t;
+    fetch(API_BASE + '/api/user/device', { method: 'POST', headers: headers, body: JSON.stringify(info) })
+      .catch(function () { /* 网络失败静默：接口由后端线并行提供 */ });
+  } catch (e) { /* 任何异常都静默，不影响登录流程 */ }
 }
 
 /* ==================== R73：找回账号 / 重置密码 ==================== */

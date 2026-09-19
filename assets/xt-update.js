@@ -33,7 +33,7 @@
      必须与 android/AndroidManifest.xml 的 android:versionName 一致。
      APK / WebView 前端读不到 manifest，所以这里是唯一的版本来源。
      ======================================================================= */
-  var CURRENT_VERSION = '1.28';
+  var CURRENT_VERSION = '1.29';
 
   var API_PATH = '/api/app/version';
   var LS_CHECK = 'xt_update_last_check';    // JSON: {at: 毫秒时间戳, version: 当前版本}

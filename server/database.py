@@ -219,6 +219,8 @@ class Message(Base):
     lat = Column(Float, nullable=True)  # 位置消息纬度（旧消息 / 非位置消息为 NULL）
     lng = Column(Float, nullable=True)  # 位置消息经度（旧消息 / 非位置消息为 NULL）
     precise = Column(Boolean, nullable=False, default=False)  # R104d：True=实时精确定位；False/旧消息=选的地点
+    # 语音消息时长（秒，1~600）：仅 kind=voice 携带；旧消息 / 非语音为 NULL（前端显示「语音」占位）
+    duration = Column(Integer, nullable=True)
     read_at = Column(String(19), nullable=True)
     created_at = Column(String(19), nullable=False)
 
@@ -537,6 +539,11 @@ def _upgrade_legacy_schema() -> None:
             # R104d 批4：precise 布尔（守卫式、幂等、无损）；存量行默认 0 = 「地点」
             if "precise" not in mcols:
                 conn.execute(text("ALTER TABLE messages ADD COLUMN precise BOOLEAN NOT NULL DEFAULT 0"))
+            # 语音时长（私聊语音消息）：duration 秒（1~600），可空；旧消息 / 非语音恒为 NULL。
+            # 守卫式、幂等、无损：SQLite 无 ADD COLUMN IF NOT EXISTS，先 PRAGMA 判断列存在
+            # 再 ALTER，旧库无损补列（存量行自动 NULL），重复启动不会报 duplicate column。
+            if "duration" not in mcols:
+                conn.execute(text("ALTER TABLE messages ADD COLUMN duration INTEGER"))
     # 修复（2026-09-11）：comments.parent_id 缺失导致 social.py 评论接口 AttributeError（生产 500），此处无损补列
     if "comments" in names and "parent_id" not in _table_columns("comments"):
         with engine.begin() as conn:

@@ -1781,6 +1781,7 @@
     imResetMsgPaging(); // R73 需求19：切换会话重置分页 / 签名状态
     // R60：告诉 app.js 当前会话对象（本地/AI 好友没有 serverId → null，避免误报）
     xtSetChatUser(S.peer.isServer ? S.peer.serverId : null);
+    imLiveOnEnter(); // R104e 批5：进会话 → 启动实时位置轮询（换会话先清旧，防定时器泄漏）
     getOrCreateChat(friendId);
 
     var data = loadData();
@@ -1945,6 +1946,7 @@
     S.group = null; // T4 增量：退出群会话状态
     imResetMsgPaging(); // R73 需求19：退出会话一并重置分页 / 签名状态
     xtSetChatUser(null); // R60：离开会话 → 清掉当前会话对象
+    imLiveOnLeave(); // R104e 批5：退会话 → 停轮询清定时器 + 隐藏横幅（不许泄漏）
     var conv = $id('imConv');
     if (conv) conv.style.display = 'none';
     var empty = $id('imEmpty');
@@ -2098,6 +2100,11 @@
       if (imIsRecalled(key, m.id)) {
         var rtip = (m.senderId === S.myId) ? '你撤回了一条消息' : '对方撤回了一条消息';
         return '<div class="im-recall-tip">' + esc(rtip) + '</div>';
+      }      /* R104e 批5（2026-09-19）：实时位置共享系统提示卡 —— 居中灰色提示条，不走气泡/位置卡分支。
+         必须放在 kind === 'location' 分支之前，避免被位置卡截胡。
+         私聊与群聊共用本分支（不依赖 S.group 的私聊假设，阶段B 直接复用）；文案用服务端 content，前端不拼。 */
+      if (m.kind === 'location_live') {
+        return '<div class="im-live-sys">' + esc(m.content || '') + '</div>';
       }
       var inner;
       if (m.kind === 'image') {
@@ -2191,7 +2198,11 @@
       }
       /* N9-17：桌面 hover 的 .im-recall-btn 入口已删除（生成函数 imRecallEntryHtml 一并移除），
          撤回统一走长按 / 右键唤起的 imShowMsgMenu 菜单。 */
-      var body = '<div class="im-m ' + (isMe ? 'me' : 'ot') + '"' + imMsgAttrs(m, isMe) + ' data-mid="' + esc(m.id || '') + '">' + inner + '</div>';
+      /* R106 派工一·T1（2026-09-19）：媒体类消息脱气泡 —— 图片/语音条/文件卡/定位卡都是自带白底、
+         自成卡片的容器，套进绿色气泡=双卡叠层；location 无条件算 media（含无坐标旧卡 im-loc-plain）。
+         对应 CSS（私聊.html `.im-m.media`）已就位；群聊分支沿用同一 body，无需另改。 */
+      var isMedia = (m.kind === 'image' || m.kind === 'voice' || m.kind === 'file' || m.kind === 'location');
+      var body = '<div class="im-m ' + (isMe ? 'me' : 'ot') + (isMedia ? ' media' : '') + '"' + imMsgAttrs(m, isMe) + ' data-mid="' + esc(m.id || '') + '">' + inner + '</div>';
       // 群聊：他人消息左侧加发送者小头像 + 昵称（自己的消息保持右侧绿底）
       // 批次二 需求9（2026-09-11h）：头像/昵称点击 → 打开该用户公开主页（复用 api.js openUserHome，
       // 与私聊好友列表点头像行为一致；非好友主页只有「加为好友」，好友主页有「发消息」；
@@ -2458,7 +2469,13 @@
   /* ==================== A7（2026-09-11）：语音消息（录制 / 上传 / 播放 / 降级） ====================
      约束：≤60s 自动停、≤2MB；在线走 POST /api/uploads/voice 上传后发 kind=voice；
      离线（无 token）存 dataURL 到 study_im_local_data（仅本地）；环境不支持时优雅降级。 */
-  var VR = { rec: null, chunks: [], start: 0, timer: null, stream: null };
+  /* R106：native=true 表示当前处于「原生桥录音」态（与网页 MediaRecorder 态互斥）。 */
+  /* R106b：「按住说话」与「点击切换」共用同一套起停原语（recBegin / recFinish）。
+     hold=处于按住流程；armed=录音已真正开始；cancelHold=已进入上滑取消态；
+     abortPending=按下后未就绪即松手（待就绪时立即丢弃）；holdTimer=遮罩计时；holdAction=停止后的处置（send/cancel/tooshort/abort）。 */
+  var VR = { rec: null, chunks: [], start: 0, timer: null, stream: null, native: false,
+             hold: false, cancelHold: false, y0: null, armed: false, abortPending: false,
+             holdTimer: null, holdAction: null, dur: null, discardNative: false, pressT: 0 };
   var MAX_VOICE_MS = 60000;
   var MAX_VOICE_BYTES = 2 * 1024 * 1024;
 
@@ -2466,43 +2483,278 @@
     return !!(window.MediaRecorder && navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.Blob);
   }
 
-  window.imToggleRecord = function () {
-    if (!voiceSupported()) { toast('当前环境不支持录音，请用 Chrome 并检查麦克风权限'); return; }
-    if (S.group) { toast('语音消息仅支持私聊'); return; }
-    if (!S.peer) { toast('请先选择一位好友再录音'); return; }
-    if (VR.rec && VR.rec.state === 'recording') { imStopRecord(); return; }
-    navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(function (stream) {
-        VR.stream = stream;
-        var mime = '';
-        var cands = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/ogg'];
-        for (var i = 0; i < cands.length; i++) {
-          if (window.MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(cands[i])) { mime = cands[i]; break; }
-        }
-        try { VR.rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream); }
-        catch (e) { VR.rec = new MediaRecorder(stream); }
-        VR.chunks = [];
-        VR.start = Date.now();
-        VR.rec.ondataavailable = function (e) { if (e.data && e.data.size) VR.chunks.push(e.data); };
-        VR.rec.onstop = onRecordStop;
-        VR.rec.start();
-        toast('🎤 录音中…再次点击结束（最长 60 秒）');
-        VR.timer = setTimeout(function () { imStopRecord(); }, MAX_VOICE_MS);
-      })
-      .catch(function () { toast('无法访问麦克风，请检查权限'); });
-  };
-
-  function imStopRecord() {
-    if (VR.timer) { clearTimeout(VR.timer); VR.timer = null; }
-    if (VR.rec && VR.rec.state === 'recording') { try { VR.rec.stop(); } catch (e) { } }
+  /* R106 派工一·T3（2026-09-19）：三档降级 —— L1 网页录音 / L2 原生桥 / L3 系统录音机。
+     决定性事实：线上是纯 HTTP（非安全上下文）→ navigator.mediaDevices 为 undefined →
+     voiceSupported() 恒 false，只恢复按钮不改逻辑等于没修，故必须有 L2/L3 路径。
+     L1 原流程一字不改，仅在成功进入/结束时同步录音态 UI。 */
+  /** L2：APK 原生桥是否可用（预埋，随下次打包生效）。 */
+  function nativeVoiceOk() {
+    try { return !!(window.XTAppBridge && typeof window.XTAppBridge.startVoiceRecord === 'function'); } catch (e) { return false; }
+  }
+  /** 录音态 UI：麦克风高亮 + 输入框 placeholder 提示（文案原文；退出时还原）。 */
+  function setRecUI(on) {
+    var c = document.querySelector('.im-composer');
+    if (c) c.classList.toggle('rec-on', !!on);
+    var ta = document.getElementById('imInput');
+    if (ta) {
+      if (on) {
+        if (!ta.dataset.phOld) ta.dataset.phOld = ta.getAttribute('placeholder') || '';
+        ta.setAttribute('placeholder', '🎙 录音中…点击麦克风结束（最长 60 秒）');
+      } else if (ta.dataset.phOld) {
+        ta.setAttribute('placeholder', ta.dataset.phOld);
+      }
+    }
   }
 
+  /* ---------- R106b：录音起停原语（按住说话 / 点击切换 共用） ---------- */
+  /** 当前可用录音档位：web(L1 网页) / native(L2 原生桥) / sysrec(L3 系统录音机) / none。 */
+  function recTier() {
+    if (voiceSupported()) return 'web';
+    if (nativeVoiceOk()) return 'native';
+    if (typeof window.imPickVoiceFile === 'function') return 'sysrec';
+    return 'none';
+  }
+
+  /* ---------- R106b：按住说话遮罩（.im-rec-overlay 由 私聊.html 提供，此处仅控制显隐/文案/计时） ---------- */
+  function overlayEl() { try { return document.querySelector('.im-rec-overlay'); } catch (e) { return null; } }
+  function setOverlay(on, cancel) {
+    var el = overlayEl();
+    if (!el) return;
+    try { el.style.display = on ? 'flex' : 'none'; } catch (e) { }
+    try { el.classList.toggle('cancel', !!cancel); } catch (e) { }
+    var t = el.querySelector ? el.querySelector('.im-rec-ov-text') : null;
+    if (t) t.textContent = cancel ? '松开取消' : '松开发送 · 上滑取消';
+  }
+  function fmtDur(ms) {
+    var s = Math.floor((ms || 0) / 1000);
+    if (s < 0) s = 0;
+    return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2);
+  }
+  function ovTick() {
+    var el = overlayEl(); if (!el) return;
+    var t = el.querySelector ? el.querySelector('.im-rec-ov-time') : null;
+    if (t) t.textContent = fmtDur(Date.now() - (VR.pressT || Date.now()));
+  }
+  function ovStartTimer() { ovStopTimer(); ovTick(); VR.holdTimer = setInterval(ovTick, 1000); }
+  function ovStopTimer() { if (VR.holdTimer) { clearInterval(VR.holdTimer); VR.holdTimer = null; } }
+
+  /* ---------- R106b：起（L1/L2）—— 与点击切换共用 ----------
+     成功开始后 cb('web'|'native')；getUserMedia 失败 cb(null)；
+     若开始前已松手（VR.abortPending）→ 直接释放麦克风、cb('abort')，不进入录制。 */
+  function recBegin(cb) {
+    if (voiceSupported()) {
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(function (stream) {
+          VR.stream = stream;
+          if (VR.abortPending) {
+            VR.abortPending = false; VR.armed = false;
+            try { stream.getTracks().forEach(function (t) { try { t.stop(); } catch (e) { } }); } catch (e) { }
+            VR.stream = null;
+            if (cb) cb('abort');
+            return;
+          }
+          var mime = '';
+          var cands = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/ogg'];
+          for (var i = 0; i < cands.length; i++) {
+            if (window.MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(cands[i])) { mime = cands[i]; break; }
+          }
+          try { VR.rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream); }
+          catch (e) { VR.rec = new MediaRecorder(stream); }
+          VR.chunks = [];
+          VR.start = Date.now();
+          VR.armed = true;
+          VR.rec.ondataavailable = function (e) { if (e.data && e.data.size) VR.chunks.push(e.data); };
+          VR.rec.onstop = onRecordStop;
+          VR.rec.start();
+          setRecUI(true);
+          VR.timer = setTimeout(function () { recFinish('send'); }, MAX_VOICE_MS);
+          if (cb) cb('web');
+        })
+        .catch(function () { setRecUI(false); toast('无法访问麦克风，请检查权限'); if (cb) cb(null); });
+      return true;
+    }
+    if (nativeVoiceOk()) {
+      try { window.XTAppBridge.startVoiceRecord(); }
+      catch (e) { setRecUI(false); toast('无法启动录音'); if (cb) cb(null); return true; }
+      VR.native = true;
+      VR.start = Date.now();
+      VR.armed = true;
+      setRecUI(true);
+      VR.timer = setTimeout(function () { recFinish('send'); }, MAX_VOICE_MS);
+      if (cb) cb('native');
+      return true;
+    }
+    return false;
+  }
+
+  /* ---------- R106b：停（处置动作）----------
+     action='send' 发送 / 'cancel' 丢弃+toast 已取消 / 'tooshort' 丢弃+toast 太短 / 'abort' 静默丢弃。 */
+  function recFinish(action) {
+    action = action || 'send';
+    VR.hold = false;
+    VR.cancelHold = false;
+    ovStopTimer();
+    setOverlay(false, false);
+    if (VR.timer) { clearTimeout(VR.timer); VR.timer = null; }
+    var durSec = VR.start ? Math.max(1, Math.round((Date.now() - VR.start) / 1000)) : 0;
+    if (VR.native) {
+      VR.native = false;
+      VR.discardNative = (action !== 'send');
+      setRecUI(false);
+      if (action === 'cancel') toast('已取消');
+      else if (action === 'tooshort') toast('说话时间太短');
+      try { if (window.XTAppBridge && typeof window.XTAppBridge.stopVoiceRecord === 'function') window.XTAppBridge.stopVoiceRecord(); } catch (e) { }
+      return;
+    }
+    if (VR.rec && VR.rec.state === 'recording') {
+      VR.holdAction = action;
+      VR.dur = durSec;
+      setRecUI(false);
+      if (action === 'cancel') toast('已取消');
+      else if (action === 'tooshort') toast('说话时间太短');
+      try { VR.rec.stop(); } catch (e) { }
+      return;
+    }
+    setRecUI(false);
+    if (action === 'cancel') toast('已取消');
+    else if (action === 'tooshort') toast('说话时间太短');
+  }
+
+  /* 点击切换（加号菜单「录音」项）：点开始 → 再点结束发送；与按住说话共用 recBegin/recFinish。 */
+  window.imToggleRecord = function () {
+    if (S.group) { toast('语音消息仅支持私聊'); return; }
+    if (!S.peer) { toast('请先选择一位好友再录音'); return; }
+    if (VR.native || (VR.rec && VR.rec.state === 'recording')) { recFinish('send'); return; }
+    if (voiceSupported() || nativeVoiceOk()) {
+      recBegin(function (done) {
+        if (done === 'web' || done === 'native') toast('🎤 录音中…再次点击结束（最长 60 秒）');
+      });
+      return;
+    }
+    if (typeof window.imPickVoiceFile === 'function') {
+      toast('当前环境不支持网页录音，已改用系统录音机');
+      window.imPickVoiceFile();
+      return;
+    }
+    toast('当前环境不支持录音');
+  };
+
+  /* ---------- R106b：按住说话 API（私聊.html 的 touch/mouse 事件调用） ---------- */
+  /** 按下：L1/L2 走按住流程（显示遮罩）；L3 自动转点击式（无遮罩/不进入按住态）。 */
+  window.imRecPressStart = function (clientY) {
+    if (VR.hold) return;                                   // 一次按下只开始一次
+    if (S.group) { toast('语音消息仅支持私聊'); return; }
+    if (!S.peer) { toast('请先选择一位好友再录音'); return; }
+    if (VR.native || (VR.rec && VR.rec.state === 'recording')) { recFinish('send'); return; }
+    var tier = recTier();
+    if (tier === 'none') { toast('当前环境不支持录音'); return; }
+    if (tier === 'sysrec') {                               // L3：点击式，无「按住」
+      toast('当前环境不支持网页录音，已改用系统录音机');
+      window.imPickVoiceFile();
+      return;
+    }
+    VR.hold = true;
+    VR.cancelHold = false;
+    VR.y0 = (typeof clientY === 'number') ? clientY : null;
+    VR.armed = false;
+    VR.abortPending = false;
+    VR.holdAction = null;
+    VR.dur = null;
+    VR.pressT = Date.now();
+    setOverlay(true, false);
+    ovStartTimer();
+    recBegin(function (done) {
+      if (done === null || done === 'abort') { VR.hold = false; ovStopTimer(); setOverlay(false, false); }
+    });
+  };
+  /** 移动：上滑超过 60px 进入取消态（遮罩切「松开取消」并变色）。 */
+  window.imRecPressMove = function (clientY) {
+    if (!VR.hold) return;
+    if (typeof clientY !== 'number') return;
+    if (VR.y0 == null) { VR.y0 = clientY; return; }
+    var cancel = (VR.y0 - clientY) > 60;
+    if (cancel !== VR.cancelHold) { VR.cancelHold = cancel; setOverlay(true, cancel); }
+  };
+  /** 松手：非取消且 ≥1s → 发送；取消 → 丢弃；<1s → 丢弃；未就绪 → 丢弃并提示。 */
+  window.imRecPressEnd = function () {
+    if (!VR.hold) return;                                  // 非按住态（含 L3）→ 松手不做任何事
+    VR.hold = false;
+    ovStopTimer();
+    setOverlay(false, false);
+    var cancel = VR.cancelHold;
+    VR.cancelHold = false;
+    if (!VR.armed) {                                       // 尚未就绪（权限弹窗/首帧延迟）
+      VR.abortPending = true;
+      toast('麦克风未就绪，请长按稍候');
+      return;
+    }
+    var heldMs = Date.now() - (VR.pressT || Date.now());
+    if (cancel) { recFinish('cancel'); return; }
+    if (heldMs < 1000) { recFinish('tooshort'); return; }
+    recFinish('send');
+  };
+
+  /* ---------- R106b：#imMicBtn 绑定「按住说话」（触摸 + 桌面鼠标）----------
+     chat-local.js 以 defer 加载，DOM 已就绪；用互斥标志保证一次按下只开始一次。 */
+  (function bindMicHold() {
+    function bind() {
+      var btn = document.getElementById('imMicBtn');
+      if (!btn || btn.__holdBound) return;
+      btn.__holdBound = true;
+      var usingTouch = false;
+      function press(y) { if (typeof window.imRecPressStart === 'function') window.imRecPressStart(y); }
+      function move(y) { if (typeof window.imRecPressMove === 'function') window.imRecPressMove(y); }
+      function end() { if (typeof window.imRecPressEnd === 'function') window.imRecPressEnd(); }
+      btn.addEventListener('mousedown', function (e) {
+        if (usingTouch) return;
+        if (e.preventDefault) { try { e.preventDefault(); } catch (er) { } }
+        press(e.clientY);
+        var mm = function (ev) { move(ev.clientY); };
+        var mu = function (ev) { move(ev.clientY); end(); document.removeEventListener('mousemove', mm); document.removeEventListener('mouseup', mu); };
+        document.addEventListener('mousemove', mm);
+        document.addEventListener('mouseup', mu);
+      });
+      btn.addEventListener('touchstart', function (e) {
+        usingTouch = true;
+        if (e.preventDefault) { try { e.preventDefault(); } catch (er) { } }
+        var t = (e.touches && e.touches[0]) ? e.touches[0] : null;
+        press(t ? t.clientY : 0);
+        var tm = function (ev) {
+          if (ev.preventDefault) { try { ev.preventDefault(); } catch (er) { } }
+          var tt = (ev.touches && ev.touches[0]) ? ev.touches[0] : null;
+          if (tt) move(tt.clientY);
+        };
+        var tu = function () { end(); unbind(); };
+        var tc = function () { end(); unbind(); };
+        function unbind() {
+          document.removeEventListener('touchmove', tm);
+          document.removeEventListener('touchend', tu);
+          document.removeEventListener('touchcancel', tc);
+        }
+        document.addEventListener('touchmove', tm, { passive: false });
+        document.addEventListener('touchend', tu);
+        document.addEventListener('touchcancel', tc);
+      });
+    }
+    if (!document.getElementById('imMicBtn') && document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bind);
+    } else {
+      bind();
+    }
+  })();
+
+  /* 录音停止：按处置动作决定发送 / 丢弃（cancel,tooshort,abort → 丢弃）。 */
   function onRecordStop() {
-    var dur = Math.max(1, Math.round((Date.now() - VR.start) / 1000));
+    setRecUI(false);
+    var action = VR.holdAction || 'send';
+    VR.holdAction = null;
+    var dur = (VR.dur != null) ? VR.dur : Math.max(1, Math.round((Date.now() - VR.start) / 1000));
+    VR.dur = null;
     var type = (VR.rec && VR.rec.mimeType) || 'audio/webm';
     var blob = new Blob(VR.chunks, { type: type });
     if (VR.stream) { VR.stream.getTracks().forEach(function (t) { try { t.stop(); } catch (e) { } }); VR.stream = null; }
-    VR.rec = null; VR.chunks = [];
+    VR.rec = null; VR.chunks = []; VR.armed = false; VR.start = 0;
+    if (action === 'cancel' || action === 'tooshort' || action === 'abort') { return; }
     if (!blob.size) { toast('录音失败，请重试'); return; }
     if (blob.size > MAX_VOICE_BYTES) { toast('语音超过 2MB，请录短一点'); return; }
     if (S.peer && S.peer.isServer && getToken()) {
@@ -2514,9 +2766,10 @@
     }
   }
 
-  function uploadVoice(blob, dur) {
+  function uploadVoice(blob, dur, extOverride) {
     var fd = new FormData();
-    var ext = blob.type.indexOf('ogg') >= 0 ? 'ogg' : (blob.type.indexOf('mp4') >= 0 ? 'm4a' : 'webm');
+    // R106：第 3 参 ext 为前端魔数嗅探结果（覆盖推断）；不传则走原逻辑，向后兼容。
+    var ext = extOverride || (blob.type.indexOf('ogg') >= 0 ? 'ogg' : (blob.type.indexOf('mp4') >= 0 ? 'm4a' : 'webm'));
     fd.append('file', blob, 'voice.' + ext);
     fetch(apiBase() + '/api/uploads/voice', {
       method: 'POST', headers: { 'Authorization': 'Bearer ' + getToken() }, body: fd
@@ -2528,6 +2781,78 @@
       })
       .catch(function (e) { toast('语音上传失败：' + (e.message || '网络错误')); });
   }
+
+  /* ---------- R106：原生桥回调 + 通用「按魔数发送语音」入口 ---------- */
+  /** dataURL → Blob；atob 分块（避免一次 atob 大串阻塞）。解析失败安全返回 null。 */
+  function _voiceDataUrlToBlob(dataUrl) {
+    try {
+      var s = String(dataUrl || '');
+      var i = s.indexOf(',');
+      if (i < 0) return null;
+      var meta = s.slice(0, i), body = s.slice(i + 1);
+      var mime = '';
+      var mm = meta.match(/^data:([^;]*)/);
+      if (mm && mm[1]) mime = mm[1];
+      var bin = (meta.indexOf(';base64') >= 0) ? atob(body) : decodeURIComponent(body);
+      var len = bin.length, u8 = new Uint8Array(len), k = 0;
+      for (k = 0; k < len; k++) u8[k] = bin.charCodeAt(k) & 0xFF;
+      return new Blob([u8], { type: mime });
+    } catch (e) { return null; }
+  }
+  /** 魔数嗅探（读前 16 字节）→ 扩展名；与后端 filecheck.detect_audio_mime 判据逐一对应。 */
+  function _voiceExtByMagic(buf) {
+    try {
+      var b = new Uint8Array(buf || new ArrayBuffer(0));
+      function at(i) { return b[i]; }
+      if (b.length >= 4 && at(0) === 0x1A && at(1) === 0x45 && at(2) === 0xDF && at(3) === 0xA3) return 'webm';   // EBML
+      if (b.length >= 4 && at(0) === 0x4F && at(1) === 0x67 && at(2) === 0x67 && at(3) === 0x53) return 'ogg';    // 'OggS'
+      if (b.length >= 8 && at(4) === 0x66 && at(5) === 0x74 && at(6) === 0x79 && at(7) === 0x70) return 'm4a';    // 偏移4 'ftyp'
+      if (b.length >= 12 && at(0) === 0x52 && at(1) === 0x49 && at(2) === 0x46 && at(3) === 0x46 &&
+          at(8) === 0x57 && at(9) === 0x41 && at(10) === 0x56 && at(11) === 0x45) return 'wav';                  // RIFF+WAVE
+      return '';
+    } catch (e) { return ''; }
+  }
+  /** 通用语音发送：File/Blob → 魔数嗅探 → 在线 uploadVoice / 离线 sendVoiceLocal。 */
+  window.imSendVoiceBlob = function (fileOrBlob, durSeconds) {
+    var blob = fileOrBlob;
+    if (!blob) return;
+    if (S.group) { toast('语音消息仅支持私聊'); return; }
+    if (!S.peer) { toast('请先选择一位好友再发送语音'); return; }
+    if (blob.size > MAX_VOICE_BYTES) { toast('语音超过 2MB，请录短一点'); return; }
+    var dur = Math.max(1, Math.round(durSeconds || 0) || Math.max(1, Math.round(blob.size / 16000)));
+    function finish(ext) {
+      if (S.peer && S.peer.isServer && getToken()) {
+        uploadVoice(blob, dur, ext);
+      } else {
+        var rd = new FileReader();
+        rd.onload = function (e) { sendVoiceLocal(e.target.result, dur); };
+        rd.onerror = function () { toast('语音读取失败'); };
+        rd.readAsDataURL(blob);
+      }
+    }
+    var fr = new FileReader();
+    fr.onload = function (e) {
+      var ext = _voiceExtByMagic(e.target && e.target.result);
+      if (!ext) { toast('本机录音格式（3gp/amr）不被支持，请在 App 内或用电脑 Chrome 录音'); return; }
+      finish(ext);
+    };
+    fr.onerror = function () { toast('语音读取失败'); };
+    fr.readAsArrayBuffer(blob.slice(0, 16));
+  };
+  /** 原生桥回调（APK 内 startVoiceRecord 完成后由原生注入 JSON 字符串）。 */
+  window.__onVoiceRecord = function (jsonStr) {
+    var o = null;
+    try { o = JSON.parse(String(jsonStr || '')); } catch (e) { o = null; }
+    setRecUI(false);
+    var discard = VR.discardNative; VR.discardNative = false;   // 取消/太短：静默丢弃本次回调
+    VR.armed = false; VR.start = 0;
+    if (discard || !o || typeof o !== 'object') return;         // 丢弃 或 解析失败：安全 no-op
+    if (o.ok !== true) { toast('录音失败' + (o.err === 'denied' ? '：权限被拒' : '')); return; }
+    if (!o.dataUrl) { toast('录音失败'); return; }
+    var blob = _voiceDataUrlToBlob(o.dataUrl);
+    if (!blob) { toast('录音数据解析失败'); return; }
+    window.imSendVoiceBlob(blob, o.durationSec || 0);
+  };
 
   function postVoiceMsg(url, dur) {
     var now = Date.now();
@@ -3298,6 +3623,7 @@
       : { id: gid, name: '群聊', memberCount: 0, avatar: '' };
     // R60：群聊不是单人会话，清掉「当前会话对象」
     xtSetChatUser(null);
+    imLiveOnEnter(); // R104e 批5：群会话同一钩子（imLivePoll 对群只隐藏横幅、不发请求）
     var empty = $id('imEmpty');
     if (empty) empty.style.display = 'none';
     var conv = $id('imConv');
@@ -4202,6 +4528,289 @@
     }, 30000);
   }
 
+  /* ==================== R104e 批5·L2 阶段A（2026-09-19）：实时位置共享（私聊 1v1） ====================
+     契约 D4：不进消息流 —— imMsgsSig（L3423）不含 lat/lng，同 id 原地改坐标签名不变 → 不重渲染。
+     故做成「常驻横幅 + 地图浮层」，坐标由 /api/live/state 独立轮询，与消息流完全解耦。
+     横幅/浮层不含任何地名（后端共享全程 0 次 geocoder），只显示相对时间。
+     严禁：直连 apis.map.qq.com / 引腾讯地图 JS SDK / IP 粗定位兜底（用户红线）。 */
+
+  /* —— 具名常量（任务书 §2.3：不许散落魔法数字，后续可改 .env 可配）—— */
+  var IM_LIVE_POLL_MS = 5000;        // state 轮询间隔
+  var IM_LIVE_MAP_MIN_MS = 45000;    // 地图重拉：距上次拉图最小间隔（45s）
+  var IM_LIVE_MAP_MIN_M = 50;        // 地图重拉：与上次拉图坐标的 haversine 位移阈值（米）
+  var IM_LIVE_TICK_MIN_MS = 15000;   // JS 兜底上报节流：时间阈值
+  var IM_LIVE_TICK_MIN_M = 30;       // JS 兜底上报节流：位移阈值
+
+  /* —— 运行时状态（与消息流状态完全分离）—— */
+  var LIVE = { timer: null, shareId: null, expiresAt: 0, watchId: null, lastTickAt: 0, lastTickPos: null, starting: false };
+  var _liveState = null;                          // 最近一次 /api/live/state 响应
+  var _liveMap = { lat: null, lng: null, at: 0 }; // 浮层当前地图基线（每次拉图时更新）
+
+  function imLiveBannerEl() { return $id('imLiveBanner'); }
+  function imLiveOvEl() { return $id('imLiveOv'); }
+
+  /* 相对时间文案（只报时间，绝不显示地名/地址） */
+  function imLiveAgoTxt(ms) {
+    if (!ms) return '';
+    var s = Math.max(0, Math.round((Date.now() - ms) / 1000));
+    if (s < 60) return s + ' 秒前';
+    return Math.floor(s / 60) + ' 分钟前';
+  }
+
+  /* 原生桥探测（L3 已定型）：契约字段 XTAppBridge；StudyAndroid 为 lead 同步的别名，双探测容错 */
+  function imLiveBridge() {
+    var b = window.XTAppBridge || window.StudyAndroid || null;
+    return (b && typeof b.startLocationShare === 'function') ? b : null;
+  }
+
+  /* 发起闸门（契约 D8）：App 内（有原生桥）放行；否则必须 https 安全上下文 + 有 geolocation。
+     纯 HTTP Web（isSecureContext=false）→ false → 明确降级文案，零请求、绝不用 IP 粗定位。 */
+  function imLiveCanGeo() {
+    if (imLiveBridge()) return true;
+    try { if (typeof window.isSecureContext === 'boolean' && !window.isSecureContext) return false; } catch (e0) { }
+    try {
+      var p = (window.location && window.location.protocol) ? String(window.location.protocol) : '';
+      if (p && p !== 'https:') return false;
+    } catch (e1) { }
+    return !!(navigator.geolocation && typeof navigator.geolocation.watchPosition === 'function');
+  }
+
+  /* 轮询：5s；页面不可见跳过本轮；进/退会话必须清理（防定时器泄漏） */
+  function startLivePoll() {
+    if (LIVE.timer) return;
+    LIVE.timer = setInterval(imLivePoll, IM_LIVE_POLL_MS);
+  }
+  function stopLivePoll() {
+    if (LIVE.timer) { clearInterval(LIVE.timer); LIVE.timer = null; }
+    var bn = imLiveBannerEl();
+    if (bn) bn.style.display = 'none';
+    imLiveOvClose();
+    _liveState = null;
+  }
+  function imLiveOnEnter() { stopLivePoll(); startLivePoll(); imLivePoll(); }
+  function imLiveOnLeave() { stopLivePoll(); }
+
+  function imLivePoll() {
+    imLiveCheckExpiry();
+    if (!getToken()) return;
+    if (document.visibilityState !== 'visible') return;   // 可见性守卫（照抄 startConvPoll 写法）
+    /* 群会话 / 非服务器好友：阶段A 不发请求，仅确保横幅隐藏（阶段B 再扩展群聊多人） */
+    if (S.group || !(S.peer && S.peer.isServer)) { imLiveRender(null); return; }
+    fetch(apiBase() + '/api/live/state?peerId=' + encodeURIComponent(S.peer.serverId), {
+      headers: { 'Authorization': 'Bearer ' + getToken() }
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { imLiveRender(d && d.ok !== false ? d : null); })
+      /* 失败静默容忍：不在共享 → 隐藏横幅不发 toast 刷屏；我在共享 → 保留「结束共享」入口 */
+      .catch(function () { imLiveRender(LIVE.shareId ? _liveState : null); });
+  }
+
+  /* 到期自动收尾：后端对 expires_at 是惰性判定（active 自动 false），前端【绝不能】补发 /api/live/stop，
+     否则会给双方消息流多刷一张「已结束」冗余系统卡。此处只做本地收尾 + 通知原生停服务。 */
+  function imLiveCheckExpiry() {
+    if (!(LIVE.shareId && LIVE.expiresAt && Date.now() >= LIVE.expiresAt)) return;
+    imLiveStopWatch();
+    stopLivePoll();
+    LIVE.shareId = null; LIVE.expiresAt = 0; LIVE.lastTickAt = 0; LIVE.lastTickPos = null; LIVE.starting = false;
+    var br = imLiveBridge();
+    if (br && typeof br.stopLocationShare === 'function') { try { br.stopLocationShare(); } catch (e) { } }
+    toast('实时位置共享已到期');
+  }
+
+  /* 横幅渲染：完全由 live 轮询驱动，绝不挂在 renderMsgs 里（imMsgsSig 坑的正面规避） */
+  function imLiveRender(st) {
+    var bn = imLiveBannerEl();
+    _liveState = st || null;
+    if (!bn) return;
+    if (!st || !st.active || S.group || !(S.peer && S.peer.isServer)) {
+      bn.style.display = 'none';
+      imLiveOvClose();
+      return;
+    }
+    var mine = false;
+    if (st.shareId && LIVE.shareId && String(st.shareId) === String(LIVE.shareId)) mine = true;
+    else if (S.myId && st.sharerId === S.myId) mine = true;
+    var ago = imLiveAgoTxt(st.updatedAt);
+    if (mine) {
+      bn.className = 'im-live-banner';
+      bn.innerHTML = '<span class="im-live-t">🛰 正在共享我的实时位置</span>' +
+        '<button type="button" class="im-live-btn" onclick="imLiveStop()">结束共享</button>';
+    } else {
+      bn.className = 'im-live-banner' + (st.stale ? ' im-live-stale' : '');
+      var t = st.stale ? ('位置已停止更新（' + ago + '）') : ('🛰 对方正在共享实时位置 · 最后更新 ' + ago);
+      bn.innerHTML = '<span class="im-live-t">' + esc(t) + '</span>' +
+        '<button type="button" class="im-live-btn" onclick="imLiveOpenOv()">查看</button>';
+    }
+    bn.style.display = 'flex';
+    imLiveSyncOv(st);
+  }
+
+  /* —— 地图浮层（点「查看」打开；DOM 懒创建，样式随脚本注入，不改 common.css）—— */
+  function imEnsureLiveOv() {
+    var existed = imLiveOvEl();
+    if (existed) return existed;
+    var ov = document.createElement('div');
+    ov.id = 'imLiveOv'; ov.className = 'im-live-ov'; ov.style.display = 'none';
+    ov.innerHTML =
+      '<div class="im-live-ov-mask" onclick="imLiveOvClose()"></div>' +
+      '<div class="im-live-ov-body">' +
+        '<div class="im-live-ov-head">' +
+          '<span class="im-live-ov-title" id="imLiveOvTitle"></span>' +
+          '<button type="button" class="im-live-ov-close" onclick="imLiveOvClose()">✕</button>' +
+        '</div>' +
+        '<img class="im-live-ov-map" id="imLiveOvMap" alt="实时位置地图">' +
+        '<div class="im-live-ov-sub" id="imLiveOvSub"></div>' +
+      '</div>';
+    document.body.appendChild(ov);
+    return ov;
+  }
+  window.imLiveOpenOv = function () {
+    imEnsureLiveOv();
+    _liveMap = { lat: null, lng: null, at: 0 };   // 打开即以当前坐标首拉
+    var ov = imLiveOvEl();
+    ov.style.display = 'flex';
+    imLiveSyncOv(_liveState);
+  };
+  window.imLiveOvClose = function () {
+    var ov = imLiveOvEl();
+    if (ov) ov.style.display = 'none';
+  };
+
+  /* 重拉判据（充要：两个都满足才拉）：
+     ① 距上次拉图 ≥ IM_LIVE_MAP_MIN_MS(45s)  ② 与上次拉图坐标 haversine 位移 > IM_LIVE_MAP_MIN_M(50m)。
+     坐标变了但不满足 → 不拉图，但「最后更新于 X 秒前」文案仍要更新（坐标更新 ≠ 地图重拉，两者解耦）。 */
+  function imLiveShouldReloadMap(lat, lng) {
+    if (_liveMap.lat == null || _liveMap.lng == null) return true;   // 首拉
+    if ((Date.now() - _liveMap.at) < IM_LIVE_MAP_MIN_MS) return false;   // 时间不够不拉
+    var moved = imHaversineKm(_liveMap.lat, _liveMap.lng, lat, lng) * 1000;   // 复用既有 haversine，别重写
+    if (!(moved > IM_LIVE_MAP_MIN_M)) return false;                      // 没动不拉（NaN 亦不拉）
+    return true;
+  }
+
+  function imLiveSyncOv(st) {
+    var ov = imLiveOvEl();
+    if (!ov || ov.style.display === 'none' || !st || !st.active) return;
+    if (typeof st.lat !== 'number' || typeof st.lng !== 'number' || !isFinite(st.lat) || !isFinite(st.lng)) return;
+    var ago = imLiveAgoTxt(st.updatedAt);
+    var who = (S.myId && st.sharerId === S.myId) ? '我' : '对方';
+    var tt = $id('imLiveOvTitle'), sub = $id('imLiveOvSub');
+    /* 文案每次都更新（时间观感），地图是否重拉由 imLiveShouldReloadMap 独立裁决 */
+    if (tt) tt.textContent = who + ' · ' + (st.stale ? ('位置已停止更新（' + ago + '）') : ('最后更新于 ' + ago));
+    if (sub) sub.textContent = st.stale ? '对方可能已离开或断网' : ('地图每 ' + Math.round(IM_LIVE_MAP_MIN_MS / 1000) + ' 秒且有位移时刷新');
+    if (!imLiveShouldReloadMap(st.lat, st.lng)) return;
+    var img = $id('imLiveOvMap');
+    if (img) img.src = apiBase() + '/api/geo/staticmap?lat=' + encodeURIComponent(st.lat) + '&lng=' + encodeURIComponent(st.lng) + '&zoom=16';
+    _liveMap = { lat: st.lat, lng: st.lng, at: Date.now() };
+  }
+
+  /* —— 发起共享（加号菜单「实时位置」→ 私聊.html imPlusPickLiveLoc）—— */
+  window.imLiveStart = function () {
+    if (LIVE.starting || LIVE.shareId) return;
+    if (S.group) { toast('群聊实时位置将在后续版本支持'); return; }
+    if (!(S.peer && S.peer.isServer)) { toast('请先选择一位好友'); return; }
+    if (!getToken()) { toast('实时位置共享需要联网登录'); return; }
+    if (!imLiveCanGeo()) {
+      /* 契约 D8：纯 HTTP Web 恒拒绝，明确降级文案；零请求、绝不用 IP 粗定位冒充精确位置 */
+      toast('实时位置共享需要在「星途」App 内使用（网页端无法获取精确位置）');
+      return;
+    }
+    LIVE.starting = true;
+    fetch(apiBase() + '/api/live/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+      body: JSON.stringify({ peerId: S.peer.serverId })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        LIVE.starting = false;
+        if (!d || !d.ok || !d.shareId) { toast((d && d.detail) || '实时位置共享发起失败'); return; }
+        LIVE.shareId = d.shareId;
+        LIVE.expiresAt = Number(d.expiresAt) || 0;
+        LIVE.lastTickAt = 0; LIVE.lastTickPos = null;
+        imLiveArmUpload();     // 三态降级：原生桥 → JS watchPosition
+        startLivePoll();
+        imLivePoll();
+      })
+      .catch(function () { LIVE.starting = false; toast('实时位置共享发起失败：网络错误'); });
+  };
+
+  /* 三态降级（lead 已定型，桥返回 boolean 而非 JSON 串）：
+     ① 桥不存在 → JS watchPosition 兜底；
+     ② 桥在但 startLocationShare 返回 false（Web 恒 false / 非前台被拒）→ 也走 JS，但明确提示（不许静默）；
+     ③ 桥在且返回 true → 原生负责上报，【绝不】再起 watchPosition（避免同一 shareId 双边重复上报）。 */
+  function imLiveArmUpload() {
+    var br = imLiveBridge();
+    if (br) {
+      var ok = false;
+      try { ok = br.startLocationShare(String(LIVE.shareId)) === true; } catch (e) { ok = false; }
+      if (ok) return;
+      toast('后台共享不可用，仅在页面打开时更新位置，精确度较低');
+    }
+    imLiveStartWatch();
+  }
+
+  /* JS 兜底上报：位移 >30m 或 ≥15s 才 tick 一次（契约 L3 节流口径，同一 shareId） */
+  function imLiveStartWatch() {
+    if (!navigator.geolocation || LIVE.watchId != null) return;
+    LIVE.watchId = navigator.geolocation.watchPosition(function (pos) {
+      var c = pos && pos.coords;
+      if (!c || !isFinite(c.latitude) || !isFinite(c.longitude)) return;
+      imLiveMaybeTick(c.latitude, c.longitude);
+    }, function () { /* 定位失败：静默（横幅由 state 驱动） */ },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
+  }
+  function imLiveStopWatch() {
+    if (LIVE.watchId != null && navigator.geolocation && typeof navigator.geolocation.clearWatch === 'function') {
+      try { navigator.geolocation.clearWatch(LIVE.watchId); } catch (e) { }
+    }
+    LIVE.watchId = null;
+  }
+  function imLiveMaybeTick(lat, lng) {
+    if (!LIVE.shareId || !getToken()) return;
+    var now = Date.now();
+    if (LIVE.lastTickPos) {
+      var dt = now - LIVE.lastTickAt;
+      var moved = imHaversineKm(LIVE.lastTickPos.lat, LIVE.lastTickPos.lng, lat, lng) * 1000;
+      if (!(moved > IM_LIVE_TICK_MIN_M || dt >= IM_LIVE_TICK_MIN_MS)) return;
+    }
+    LIVE.lastTickAt = now;
+    LIVE.lastTickPos = { lat: lat, lng: lng };
+    fetch(apiBase() + '/api/live/tick', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+      body: JSON.stringify({ shareId: LIVE.shareId, lat: lat, lng: lng })
+    }).catch(function () { });
+  }
+
+  /* 原生定位回调（L3）：每次定位都会来（含被节流掉的点）。只用于刷新相对时间观感；
+     【绝不】据此再发 tick —— 后台 tick 由原生服务直发，双边重复上报属事故。 */
+  window.__onLocationUpdate = function (jsonStr) {
+    var o = null;
+    try { o = JSON.parse(String(jsonStr == null ? '' : jsonStr)); } catch (e) { o = null; }
+    if (!o || typeof o !== 'object') return;
+    if (typeof o.t !== 'number' || !LIVE.shareId || !_liveState) return;
+    _liveState.updatedAt = o.t;
+    imLiveRender(_liveState);
+  };
+
+  /* 用户主动结束：这一条【要】调 /api/live/stop（需要落「已结束」系统卡）+ 通知原生停服务。
+     shareId 优先取本地会话，取不到时回退 state 返回值（横幅由对方 state 判出「我在共享」的场景）。 */
+  window.imLiveStop = function () {
+    var sid = LIVE.shareId || ((_liveState && _liveState.shareId) ? _liveState.shareId : null);
+    imLiveStopWatch();
+    stopLivePoll();
+    LIVE.shareId = null; LIVE.expiresAt = 0; LIVE.lastTickAt = 0; LIVE.lastTickPos = null; LIVE.starting = false;
+    var br = imLiveBridge();
+    if (br && typeof br.stopLocationShare === 'function') { try { br.stopLocationShare(); } catch (e) { } }
+    if (sid && getToken()) {
+      fetch(apiBase() + '/api/live/stop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+        body: JSON.stringify({ shareId: sid })
+      }).catch(function () { });
+    }
+  };
+
   /* 支持通过 ?uid= 直接进入与某位服务器好友的会话（A3/A5 深链：好友申请页「发消息」） */
   function maybeAutoOpenChat() {
     var uid = 0, name = '';
@@ -4286,7 +4895,23 @@
       '.im-file-ic svg{width:20px;height:20px;display:block}' +
       '.im-file-meta{display:inline-flex;flex-direction:column;min-width:0}' +
       '.im-file-name{font-size:14px;line-height:1.4;color:var(--text,#2D3436);word-break:break-all}' +
-      '.im-file-size{font-size:12px;line-height:1.4;color:var(--text-secondary,#8a8f99);margin-top:2px}';
+      '.im-file-size{font-size:12px;line-height:1.4;color:var(--text-secondary,#8a8f99);margin-top:2px}' +
+      /* R104e 批5（2026-09-19）：实时位置共享 —— 常驻横幅 / 地图浮层 / location_live 系统提示条。
+         不显示地名（后端共享全程 0 次 geocoder）；固定 px，禁 clamp/min/max。 */
+      '.im-live-banner{display:none;align-items:center;gap:10px;padding:8px 12px;background:var(--card,#fff);border-bottom:1px solid var(--border,#eee);font-size:13px;color:var(--text,#2D3436)}' +
+      '.im-live-banner.im-live-stale{color:var(--text-secondary,#8a8f99)}' +
+      '.im-live-t{flex:1 1 auto;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}' +
+      '.im-live-btn{flex:0 0 auto;height:26px;padding:0 12px;border:1px solid var(--primary,#5B8DEF);background:transparent;color:var(--primary,#5B8DEF);border-radius:13px;font-size:12px;line-height:1;cursor:pointer}' +
+      '.im-live-btn:active{background:var(--primary-light,#EEF1FF)}' +
+      '.im-live-sys{align-self:center;max-width:80%;padding:4px 10px;font-size:12px;color:var(--text-secondary,#8a8f99);background:var(--bg,#F5F7FA);border-radius:10px;text-align:center}' +
+      '.im-live-ov{position:fixed;left:0;top:0;right:0;bottom:0;z-index:2200;display:none;align-items:center;justify-content:center}' +
+      '.im-live-ov-mask{position:absolute;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.45)}' +
+      '.im-live-ov-body{position:relative;width:92%;max-width:380px;background:var(--card,#fff);border-radius:14px;overflow:hidden;box-shadow:0 10px 34px rgba(0,0,0,.25)}' +
+      '.im-live-ov-head{display:flex;align-items:center;gap:8px;padding:10px 12px}' +
+      '.im-live-ov-title{flex:1 1 auto;min-width:0;font-size:14px;font-weight:600;color:var(--text,#2D3436);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}' +
+      '.im-live-ov-close{flex:0 0 auto;width:28px;height:28px;border:none;border-radius:50%;background:var(--bg,#F5F7FA);color:var(--text-secondary,#8a8f99);font-size:14px;line-height:1;cursor:pointer}' +
+      '.im-live-ov-map{display:block;width:100%;height:260px;object-fit:cover;background:var(--bg,#F5F7FA)}' +
+      '.im-live-ov-sub{padding:8px 12px 12px;font-size:12px;color:var(--text-secondary,#8a8f99)}';
     document.head.appendChild(style);
 
     /* R60：本页已持有聊天轮询（2.5s 会话 + 5s 未读 + 30s 群/在线），
@@ -4579,7 +5204,28 @@
     getImMyLoc: function () { return _imMyLoc; },
     setImMyLoc: function (v) { _imMyLoc = v || null; _imGeoState = v ? 2 : 0; },
     getImGeoState: function () { return _imGeoState; },
-    getAiConfig: getAiConfig
+    getAiConfig: getAiConfig,
+    /* R104e 批5（2026-09-19）：实时位置共享 校验钩子（仅测试引用，零运行时行为影响） */
+    imLivePoll: imLivePoll,
+    imLiveRender: imLiveRender,
+    imLiveSyncOv: imLiveSyncOv,
+    imLiveShouldReloadMap: imLiveShouldReloadMap,
+    imLiveOnEnter: imLiveOnEnter,
+    imLiveOnLeave: imLiveOnLeave,
+    startLivePoll: startLivePoll,
+    stopLivePoll: stopLivePoll,
+    imLiveCheckExpiry: imLiveCheckExpiry,
+    imLiveCanGeo: imLiveCanGeo,
+    imLiveBridge: imLiveBridge,
+    imLiveMaybeTick: imLiveMaybeTick,
+    imLiveOpenOvFn: window.imLiveOpenOv,
+    imLiveStopFn: window.imLiveStop,
+    getLive: function () { return LIVE; },
+    getLiveMap: function () { return _liveMap; },
+    getLiveState: function () { return _liveState; },
+    IM_LIVE_POLL_MS: IM_LIVE_POLL_MS,
+    IM_LIVE_MAP_MIN_MS: IM_LIVE_MAP_MIN_MS,
+    IM_LIVE_MAP_MIN_M: IM_LIVE_MAP_MIN_M
   };
 
   $ready(boot);

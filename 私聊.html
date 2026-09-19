@@ -43,10 +43,26 @@
   .im-chat-head{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--card)}
   .im-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
   .im-m{max-width:72%;padding:8px 12px;border-radius:12px;font-size:14px;line-height:1.5;word-break:break-word;white-space:pre-wrap}
-  .im-m.me{align-self:flex-end;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;border-bottom-right-radius:4px}
+  /* R105 气泡线（2026-09-19）：对标微信 —— 发送方改单色浅底+深色文字（固定值 #95ec69/#111，
+     不用主题变量 → body.dark / 换肤均不再翻转气泡颜色，深色模式根除破版）。 */
+  .im-m.me{align-self:flex-end;background:#95ec69;color:#111;border-bottom-right-radius:4px}
   .im-m.ot{align-self:flex-start;background:var(--card);border:1px solid var(--border);border-bottom-left-radius:4px}
-  .im-mt{font-size:10px;opacity:.75;margin-top:4px;text-align:right}
-  .im-m.ot .im-mt{color:var(--text-secondary)}
+  /* R105：时间戳/已读移出气泡外下方（微信式灰色小字）。.im-mt 与 .im-read 绝对定位到气泡底边之下，
+     不再出现在彩色/白卡内部；灰色用 var(--text-muted)（深色模式自动适配）。
+     气泡下留白 = .im-msgs gap(10px) + margin-bottom(10px)，容纳 10px 小字不与下一条重叠。 */
+  .im-m{position:relative;margin-bottom:10px}
+  .im-mt{position:absolute;top:100%;right:0;margin-top:3px;font-size:10px;opacity:1;text-align:right;color:var(--text-muted)}
+  .im-m .im-read{position:absolute;top:100%;right:32px;margin-top:3px;opacity:1;color:var(--text-muted)}
+  .im-m .im-read.ok{color:var(--text-muted)}
+  /* R105：媒体卡脱气泡（位置/文件/图片/语音）—— 卡片自带 var(--card) 白底+描边，永远独立呈现，
+     与发送方气泡色无关（微信同款规则）。容器 class「im-m media」由 chat-local.js 渲染端追加
+     （已报 lead 转卡片侧同事）；本页先行落 CSS，类名就位即生效。
+     宽度收敛：容器随卡内容自适应（位置卡 180px / 文件卡 ≤240px / 图片 ≤200px），不再撑到 72%。 */
+  .im-m.media{background:transparent!important;padding:0;border:none;box-shadow:none;color:var(--text);max-width:240px}
+  .im-m.media .im-mt{position:static;margin-top:4px}
+  .im-m.media .im-read{position:static;margin-top:2px}
+  /* R105：深色模式显式固定（双保险，根除翻转）。 */
+  body.dark .im-m.me{background:#95ec69;color:#111}
   /* 2026-09-15 批次八：消息撤回 —— 轻量确认气泡 / 已撤回系统提示
      （批次八原有的桌面 hover .im-recall-btn 入口已于批次九 N9-17 移除，撤回统一走消息菜单） */
   .im-m{position:relative}
@@ -67,8 +83,34 @@
   .im-composer{display:flex;gap:8px;align-items:flex-end;padding:10px 12px;background:var(--card);border-top:1px solid var(--border)}
   .im-composer textarea{flex:1;resize:none;height:44px;max-height:120px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;font-size:14px;outline:none;font-family:inherit;background:var(--bg);color:var(--text)}
   .im-composer textarea:focus{border-color:var(--primary)}
+  /* R105b（2026-09-19）：输入框微信式双状态。空态=表情+➕+框内麦克风装饰；
+     输入态(.is-typing)=➕隐 / 发送显 / 麦克风隐。发送按钮颜色走 --primary 令牌（勿写死色值，
+     暗色模式自适应）；全固定 px，禁 clamp/min/max 函数与 :has 等新选择器。 */
+  .im-input-wrap{position:relative;flex:1;min-width:0;display:flex}
+  .im-input-wrap textarea{width:100%;padding-right:34px}
+  .im-mic{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);opacity:.55;display:flex;cursor:pointer;background:none;border:none;padding:0}
+  .im-mic svg{display:block}
+  .im-mic:active{opacity:.85}
+  /* R106（2026-09-19）：麦克风改为可点录音键后新增录音态（红 + 呼吸动画；keyframes 允许，禁 clamp/min/max 函数）。 */
+  .im-composer.rec-on .im-mic{color:#e5484d;opacity:1;animation:imMicPulse 1s ease-in-out infinite}
+  @keyframes imMicPulse{0%,100%{opacity:1}50%{opacity:.3}}
+  /* R106b：按住说话——禁长按菜单/选中/触摸滚动（保证按下即录音、上滑不滚页）。 */
+  #imMicBtn{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:none}
+  /* R106b：录音遮罩（页面中央浮层，半透明深底；.cancel 态变色）。 */
+  .im-rec-overlay{position:fixed;left:0;right:0;top:0;bottom:0;z-index:220;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.42)}
+  .im-rec-ov-body{min-width:190px;padding:22px 26px;border-radius:16px;background:rgba(30,30,32,.92);color:#fff;display:flex;flex-direction:column;align-items:center;gap:10px;box-shadow:0 10px 34px rgba(0,0,0,.3)}
+  .im-rec-ov-mic{display:flex;align-items:center;justify-content:center;color:#95ec69}
+  .im-rec-ov-time{font-size:22px;font-weight:600;letter-spacing:1px}
+  .im-rec-ov-text{font-size:13px;opacity:.85;white-space:nowrap}
+  .im-rec-overlay.cancel .im-rec-ov-body{background:rgba(120,24,24,.94)}
+  .im-rec-overlay.cancel .im-rec-ov-mic{color:#ff8a8a}
+  .im-rec-overlay.cancel .im-rec-ov-text{opacity:1;font-weight:600;color:#ffd0d0}
+  .im-btn-send{display:none}
+  .im-composer.is-typing .im-btn-plus{display:none}
+  .im-composer.is-typing .im-btn-send{display:flex;align-items:center;justify-content:center}
+  .im-composer.is-typing .im-mic{display:none}
   .im-icon{width:44px;height:44px;border:none;border-radius:12px;background:var(--primary-light);color:var(--primary);font-size:18px;cursor:pointer;flex-shrink:0}
-  .im-send{height:44px;padding:0 18px;border:none;border-radius:12px;background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff;cursor:pointer;flex-shrink:0}
+  .im-send{height:44px;padding:0 18px;border:none;border-radius:12px;background:var(--primary);color:#fff;cursor:pointer;flex-shrink:0}
   /* R90 item3：输入栏新增「定位」图标后，窄屏（≤360px）压缩图标与间距，保证整排不换行、不溢出。固定值 + @media，禁 clamp/min/max。 */
   @media (max-width:360px){
     .im-composer{gap:6px;padding:8px 8px}
@@ -160,11 +202,20 @@
             <!-- T02 增量 2026-09-11：群会话「⋯」群设置入口（仅群会话由 renderChatHeader() 显示，私聊会话用 display 隐藏而非删 DOM） -->
             <button class="im-icon" id="imGSBtn" onclick="imOpenGroupSettings()" title="群设置" style="display:none">⋯</button>
           </div>
+          <!-- R104e 批5（2026-09-19）：实时位置共享常驻横幅（默认隐藏；chat-local.js 由 /api/live/state 驱动显隐）。
+               对方共享 → 「查看」开地图浮层；我在共享 → 「结束共享」。不含地名（后端 0 次 geocoder）。 -->
+          <div class="im-live-banner" id="imLiveBanner" style="display:none"></div>
           <div class="im-msgs" id="imMsgs"></div>
           <!-- R55（2026-09-14）：帖子分享接收侧转发卡片预览容器（默认隐藏，由页尾脚本按 localStorage 渲染） -->
           <div id="imForwardCard" class="im-forward-card" style="display:none"></div>
           <div class="im-composer">
-            <textarea id="imInput" placeholder="输入消息…"></textarea>
+            <!-- R105b：输入框包一层 .im-input-wrap 以承载框内右侧装饰麦克风（textarea 不能含子节点）。 -->
+            <div class="im-input-wrap">
+              <textarea id="imInput" placeholder="输入消息…"></textarea>
+              <!-- R106b：麦克风改为「按住说话」键（不再有 onclick；touch/mouse 事件由 chat-local.js 绑定）。
+                   按下 → 录音 + 中央遮罩；上滑超 60px 取消；松手发送/丢弃；L3 系统录音机自动降级为点击式。 -->
+              <button type="button" class="im-mic" id="imMicBtn" title="按住说话" aria-label="按住说话"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg></button>
+            </div>
             <!-- 【后续扩展点】表情面板（T4 增量）：[emoji:xx] 文本语法，Unicode 渲染，离线可用 -->
             <button class="im-icon" title="表情" onclick="imToggleEmoji()"><span class="nav-icon" data-icon="smile" data-icon-size="20"></span></button>
             <div class="im-emoji-panel" id="imEmojiPanel" style="display:none"></div>
@@ -173,25 +224,44 @@
                  → chat-local.js：在线 POST /api/uploads/image + 发 kind='image' 消息；离线回落 dataURL。 -->
             <!-- R88-I（2026-09-18）：发图按钮改「+」浮层菜单入口（相册发图 / 拍摄 / 位置定位）。
                  原 #imImgInput 与 onchange="imSendImage(this)" 原样保留，菜单「相册发图」仍走同一条链路。 -->
-            <button class="im-icon" id="imPlusBtn" title="更多" onclick="imTogglePlusMenu()"><span class="nav-icon" data-icon="plus" data-icon-size="20"></span></button>
+            <!-- R105b：➕ 即既有 #imPlusBtn（复用现有加号菜单功能，不删不改原逻辑）；im-btn-plus 供双状态 CSS 切换。
+                 【后续扩展点】如需独立「更多」面板，仅替换本按钮 onclick 即可，双状态不受影响。 -->
+            <button class="im-icon im-btn-plus" id="imPlusBtn" title="更多" onclick="imTogglePlusMenu()"><span class="nav-icon" data-icon="plus" data-icon-size="20"></span></button>
             <input type="file" id="imImgInput" accept="image/*" style="display:none" onchange="imSendImage(this)">
             <!-- R88-I：拍摄入口（capture 移动端直调相机；桌面退化为文件选择，同走 imSendImage 链路；不用 getUserMedia） -->
             <input type="file" id="imCameraInput" accept="image/*" capture="environment" style="display:none" onchange="imSendImage(this)">
             <!-- R88-I 增量：发送文件入口（不限 accept，允许常见文档/压缩包；change→imSendFile(this)） -->
             <input type="file" id="imFileInput" style="display:none" onchange="imSendFile(this)">
+            <!-- R106 T2g：L3 降级「系统录音机」入口 —— accept=audio/* + 裸 capture（不写 capture="microphone"）；
+                 change → imSendVoiceFile(this) → imSendVoiceBlob（魔数嗅探后按扩展名上传）。 -->
+            <input type="file" id="imVoiceInput" accept="audio/*" capture style="display:none" onchange="imSendVoiceFile(this)">
             <!-- R88-I：底部滑出的加号浮层菜单（遮罩点击 / 再点「+」/ ESC 关闭）；各项均真可用，无假占位 -->
-            <!-- R90 item3 修订（用户明确要求）：定位保留在加号菜单内，不挪出。加号菜单共 4 项。 -->
+            <!-- R90 item3 修订（用户明确要求）：定位保留在加号菜单内，不挪出。
+                 R106：新增第 5 项「录音」；R104e 批5 新增第 6 项「实时位置」（相册发图/拍摄/发送文件/定位/录音/实时位置）。 -->
             <div class="im-plus-mask" id="imPlusMask" onclick="imClosePlusMenu()"></div>
             <!-- R88-M6 方案B（2026-09-18）：每项 = 彩色圆角方底色块(.im-plus-ico) + 白色图标 + 文字。
-                 配色由 #imPlusCss 的 .im-plus-ico--i1..--i3 统一管理（成体系，非各写各的）。
-                 R90 item3 修订：--i4 恢复启用（定位项已回到加号菜单内）。 -->
+                 配色由 #imPlusCss 的 .im-plus-ico--i1..--i5 统一管理（成体系，非各写各的）。
+                 R90 item3 修订：--i4 恢复启用（定位项已回到加号菜单内）；R106 新增 --i5（录音项）；R104e 批5 新增 --i6（实时位置项）。 -->
             <div class="im-plus-menu" id="imPlusMenu">
               <div class="im-plus-item" onclick="imPlusPickImage()"><span class="im-plus-ico im-plus-ico--i1"><span class="nav-icon" data-icon="image" data-icon-size="22"></span></span><span class="im-plus-txt">相册发图</span></div>
               <div class="im-plus-item" onclick="imPlusPickCamera()"><span class="im-plus-ico im-plus-ico--i2"><span class="nav-icon" data-icon="camera" data-icon-size="22"></span></span><span class="im-plus-txt">拍摄</span></div>
               <div class="im-plus-item" onclick="imPlusPickFile()"><span class="im-plus-ico im-plus-ico--i3"><span class="nav-icon" data-icon="file" data-icon-size="22"></span></span><span class="im-plus-txt">发送文件</span></div>
               <div class="im-plus-item" onclick="imPlusPickLocation()"><span class="im-plus-ico im-plus-ico--i4"><span class="nav-icon" data-icon="map-pin" data-icon-size="22"></span></span><span class="im-plus-txt">定位</span></div>
+              <!-- R106 T2a：第 5 项「录音」（与输入栏麦克风同一条链路 imMicClick）。 -->
+              <div class="im-plus-item" onclick="imPlusPickVoice()"><span class="im-plus-ico im-plus-ico--i5"><span class="nav-icon" data-icon="mic" data-icon-size="22"></span></span><span class="im-plus-txt">录音</span></div>
+              <!-- R104e 批5（2026-09-19）：第 6 项「实时位置」→ imPlusPickLiveLoc → chat-local.js imLiveStart。
+                   Web（isSecureContext=false）明确降级文案、零请求；App 内走原生桥 / JS watchPosition。 -->
+              <div class="im-plus-item" onclick="imPlusPickLiveLoc()"><span class="im-plus-ico im-plus-ico--i6"><span class="nav-icon" data-icon="navigation" data-icon-size="22"></span></span><span class="im-plus-txt">实时位置</span></div>
             </div>
-            <button class="im-send" onclick="imSendText()">发送</button>
+            <button class="im-send im-btn-send" onclick="imSendText()">发送</button>
+            <!-- R106b：按住说话录音遮罩（默认隐藏；chat-local.js 控制显隐/计时/取消态文案与变色）。 -->
+            <div class="im-rec-overlay" id="imRecOverlay" style="display:none">
+              <div class="im-rec-ov-body">
+                <span class="im-rec-ov-mic"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg></span>
+                <div class="im-rec-ov-time">0:00</div>
+                <div class="im-rec-ov-text">松开发送 · 上滑取消</div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -375,13 +445,13 @@
 <script src="assets/icon-map.js?v=20260916O" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260919c" defer></script>
+<script src="assets/app.js?v=20260919i" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
 <!-- R88-H（2026-09-18）：位置能力底座 XT_LOC_PICK（跟 config.js，先于 chat-local.js，确保调用前就绪） -->
 <script src="assets/xt-region.js?v=20260919h" defer></script>
 <script src="assets/emoji/manifest.js?v=20260916O" defer></script>
 <script src="assets/api.js?v=20260917b" defer></script>
-<script src="assets/chat-local.js?v=20260919h" defer></script>
+<script src="assets/chat-local.js?v=20260919j" defer></script>
 <script src="assets/admin-contact.js?v=20260917b" defer></script>
 <style>
   /* R33（20260913r）：tab 视觉统一——去掉 .im-tab-add 的特殊填充/加粗与专属 hover，添加好友与其余 4 个 tab 同享 .im-tab/.im-tab.active；“im-tab-add” 类保留在 DOM 仅作语义标记，无样式副作用 */
@@ -439,10 +509,13 @@
   .ac-msgs{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:8px;min-height:160px;background:var(--bg)}
   .ac-empty{text-align:center;padding:24px 8px;color:var(--text-secondary);font-size:13px}
   .ac-m{max-width:78%;padding:8px 12px;border-radius:12px;font-size:14px;line-height:1.5;word-break:break-word}
-  .ac-m.me{align-self:flex-end;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;border-bottom-right-radius:4px}
+  /* R105 气泡线：AI/助手面板同私聊 —— 单色浅底+深色文字（固定值），时间移出气泡外下方。 */
+  .ac-m.me{align-self:flex-end;background:#95ec69;color:#111;border-bottom-right-radius:4px}
   .ac-m.ot{align-self:flex-start;background:var(--card);border:1px solid var(--border);border-bottom-left-radius:4px;color:var(--text)}
+  .ac-m{position:relative;margin-bottom:8px}
   .ac-m-text{white-space:pre-wrap}
-  .ac-m-time{font-size:10px;opacity:.7;margin-top:4px;text-align:right}
+  .ac-m-time{position:absolute;top:100%;right:0;margin-top:3px;font-size:10px;opacity:1;text-align:right;color:var(--text-muted)}
+  body.dark .ac-m.me{background:#95ec69;color:#111}
   .ac-composer{display:flex;gap:8px;align-items:flex-end;padding:10px 12px;background:var(--card);border-top:1px solid var(--border)}
   .ac-composer textarea{flex:1;resize:none;height:44px;max-height:120px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;font-size:14px;outline:none;font-family:inherit;background:var(--bg);color:var(--text)}
   .ac-composer textarea:focus{border-color:var(--primary)}
@@ -878,6 +951,39 @@
 </script>
 <script>
 /* =====================================================================
+   R105b（2026-09-19）：输入框微信式双状态控制器（本页自有，不依赖 chat-local.js）。
+   - 空态：表情 + ➕(既有 imPlus 菜单) + 框内麦克风装饰；输入态(.is-typing)：➕隐 / 发送显 / 麦克风隐。
+   - #imInput input 事件：两参 classList.toggle（空格 trim 不算内容）。
+   - 发送（Enter 与按钮两路）/清空/表情插入均为程序化赋值（imSendText/imPickEmoji 直写 value），
+     不触发 input 事件 → 以 250ms 哨兵轮询兜底同步；发送按钮点击另有即时回切快路径，
+     且仅在 value 已空时回切（发送被拒不误清、焦点回输入框）。chat-local.js 零改动（他人占用中）。
+   ===================================================================== */
+(function () {
+  'use strict';
+  var input = document.getElementById('imInput');
+  if (!input || !input.closest) return;
+  var composer = input.closest('.im-composer');
+  if (!composer) return;
+  function syncComposerState() {
+    composer.classList.toggle('is-typing', String(input.value || '').trim().length > 0);
+  }
+  input.addEventListener('input', syncComposerState);
+  var sendBtn = composer.querySelector('.im-btn-send');
+  if (sendBtn) {
+    sendBtn.addEventListener('click', function () {
+      setTimeout(function () {
+        if (!String(input.value || '').trim()) {
+          composer.classList.remove('is-typing');
+          try { input.focus(); } catch (e0) {}
+        }
+      }, 0);
+    });
+  }
+  setInterval(syncComposerState, 250);
+  syncComposerState();
+})();
+
+/* =====================================================================
    R88-I（2026-09-18）：私聊输入栏「+」浮层菜单（相册发图 / 拍摄 / 位置定位）
    - 菜单开关：imTogglePlusMenu / imOpenPlusMenu / imClosePlusMenu（点遮罩、再点「+」、ESC 关闭）
    - 相册发图 → imPickImage()（既有链路，不改）；拍摄 → #imCameraInput；位置 → imPickLocation()
@@ -1012,6 +1118,35 @@
     });
   };
 
+  /* ---------- 分支4：录音（R106 派工一·T2f/T2g） ---------- */
+  /* 单入口：输入栏麦克风键与加号菜单「录音」项都汇聚到 imMicClick →
+     chat-local.js window.imToggleRecord（三档降级：网页录音 / 原生桥 / 系统录音机）。 */
+  window.imMicClick = function () {
+    if (typeof window.imToggleRecord === 'function') window.imToggleRecord();
+  };
+  window.imPlusPickVoice = function () {
+    imClosePlusMenu();
+    window.imMicClick();
+  };
+  /* R104e 批5：加号菜单「实时位置」→ chat-local.js window.imLiveStart（闸门/降级/三态桥判定都在那边）。 */
+  window.imPlusPickLiveLoc = function () {
+    imClosePlusMenu();
+    if (typeof window.imLiveStart === 'function') window.imLiveStart();
+  };
+  /* L3 降级：调起系统录音机（隐藏 file input）。 */
+  window.imPickVoiceFile = function () {
+    var el = document.getElementById('imVoiceInput');
+    if (el) el.click();
+  };
+  /* 系统录音机回调：File 直接交给 chat-local.js 的 imSendVoiceBlob（魔数嗅探后发送）。 */
+  window.imSendVoiceFile = function (input) {
+    var f = input && input.files && input.files[0];
+    if (input) { try { input.value = ''; } catch (e) { } }
+    if (!f) return;
+    if (typeof window.imSendVoiceBlob === 'function') window.imSendVoiceBlob(f, 0);
+    else if (typeof window.toast === 'function') window.toast('当前环境不支持发送语音');
+  };
+
   /* 旧链路（一键定位 → 逆地理 → 文字；失败手动兜底）。保留作 openPicker 缺失时的兜底。 */
   function onLoc(fallbackTitle) {
     if (!window.XT_LOC_PICK || typeof window.XT_LOC_PICK.pick !== 'function') {
@@ -1056,9 +1191,13 @@
       '.im-plus-ico--i1{background:linear-gradient(135deg,#22c07a,#12a86a)}' +
       '.im-plus-ico--i2{background:linear-gradient(135deg,#5b8def,#3f6fd8)}' +
       '.im-plus-ico--i3{background:linear-gradient(135deg,#f2a93b,#e08a1e)}' +
-      /* R90 item3：.im-plus-ico--i4 原为「定位」项配色；该项已移出加号菜单（改到输入栏 #imLocBtn），
-         此规则当前无 DOM 引用。按「最小变更 + 可复用」保留规则本体，仅此注释标注停用。 */
+      /* R90 item3：.im-plus-ico--i4 = 「定位」项配色。
+         R106 校正：定位项早已回到加号菜单内（DOM 引用为「定位」行），旧注释「无 DOM 引用/改到 #imLocBtn」已失效。 */
       '.im-plus-ico--i4{background:linear-gradient(135deg,#eb5757,#d13b3b)}' +
+      /* R106 T2b：--i5 = 「录音」项配色（紫，勿与 i1 绿重复）。 */
+      '.im-plus-ico--i5{background:linear-gradient(135deg,#8b5cf6,#6d3fd8)}' +
+      /* R104e 批5（2026-09-19）：--i6 = 「实时位置」项配色（青，勿与 i1 绿 / i4 红重复）。 */
+      '.im-plus-ico--i6{background:linear-gradient(135deg,#0ea5a4,#0b7c7b)}' +
       '.im-plus-txt{flex:1;min-width:0}' +
       '@media (max-width:360px){.im-plus-ico{width:40px;height:40px;border-radius:10px}}' +
       '@media (max-height:520px){.im-plus-item{padding:8px 20px}.im-plus-ico{width:36px;height:36px;border-radius:9px}.im-plus-menu{padding:6px 0 10px;max-height:88vh}}' +

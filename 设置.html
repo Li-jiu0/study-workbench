@@ -439,6 +439,20 @@
               <button class="theme-option" data-val="0" onclick="stToggle('chatNotify',false,this)" data-page-node-id="oq0uFtDvmTtiuShUs40v9p"><span class="nav-icon" data-icon="close" data-icon-size="14"></span> 关闭</button>
             </div>
           </div>
+          <!-- R105：App 后台消息通知总开关。状态存 localStorage['xt_notify_enabled']（'1'/'0'，缺省='1'=开）。
+               切换时 feature-detect 原生桥 window.XTAppBridge.setMsgNotify(on)（由安卓端并行注入；
+               Web 端 / 桥缺失时静默跳过，不允许报错）。关闭只停后台推送提醒，
+               不影响进入聊天页自动清零未读等既有逻辑。 -->
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">消息通知</div>
+              <div class="setting-desc">App 收到新私信 / 回复时在系统通知栏提醒（关闭后停止后台消息提醒）</div>
+            </div>
+            <div class="setting-actions" id="swMsgNotify">
+              <button class="theme-option" data-val="1" onclick="stMsgNotifyToggle(true)"><span class="nav-icon" data-icon="check" data-icon-size="14"></span> 开启</button>
+              <button class="theme-option" data-val="0" onclick="stMsgNotifyToggle(false)"><span class="nav-icon" data-icon="close" data-icon-size="14"></span> 关闭</button>
+            </div>
+          </div>
           <!-- 每日学习提醒（【9/11 新增】） -->
           <div class="setting-row" data-page-node-id="l1KqfYu1Myi3i2vMRfEurs">
             <div class="setting-info" data-page-node-id="reisKw0dEY8QBoiVtAknSg">
@@ -545,6 +559,10 @@
             <div class="fb-faq-item">
               <div class="fb-faq-q" onclick="fbToggleFaq(this)"><span class="nav-icon" data-icon="send" data-icon-size="16"></span> 反馈提交了没人回？<span>▾</span></div>
               <div class="fb-faq-a">反馈会进入开发者的处理队列，状态会显示在下方「我的反馈」里（待处理 / 已回复）。提交成功会返回一个编号（如 #123），方便追踪。</div>
+            </div>
+            <div class="fb-faq-item">
+              <div class="fb-faq-q" onclick="fbToggleFaq(this)"><span class="nav-icon" data-icon="bell" data-icon-size="16"></span> 收不到通知？<span>▾</span></div>
+              <div class="fb-faq-a">① 先到「提醒与通知」确认「消息通知」与「新私信提醒」开关已开启；② 手机厂商常默认禁止第三方 App 后台自启与通知，需手动放行：<br>· 华为：设置 → 应用和服务 → 应用启动管理 → 本应用 → 关闭「自动管理」，允许自启动 / 关联启动 / 后台活动；<br>· 小米：设置 → 应用设置 → 应用管理 → 本应用 → 打开「自启动」，并在「通知管理」里允许通知；<br>· OPPO：设置 → 应用管理 → 本应用 → 允许自启动 + 允许通知，电池选项设为「不优化」；<br>· vivo：设置 → 应用与权限 → 应用管理 → 本应用 → 允许自启动 + 允许后台高耗电；<br>· 其他 Android：设置 → 应用 → 本应用 → 通知 → 允许通知，并在最近任务里给本应用加锁防清理；<br>③ 完成后把 App 从后台划掉再重新打开一次即可生效。</div>
             </div>
           </div>
 
@@ -1027,9 +1045,9 @@
 <script src="assets/icon-map.js?v=20260916O" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260919c" defer></script>
+<script src="assets/app.js?v=20260919i" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/xt-update.js?v=20260919d" defer></script>
+<script src="assets/xt-update.js?v=20260919i" defer></script>
 <script src="assets/api.js?v=20260917b" defer></script>
 <script src="assets/subpage-router.js?v=20260917b" defer></script>
 <script src="assets/qbank.js?v=20260916O" defer></script>
@@ -1164,8 +1182,37 @@ function stAiFabToggle(visible) {
   stRenderAiFabUI();
   showToast(visible ? '✅ 已重新开启 AI 悬浮球' : '已关闭 AI 悬浮球（可在设置里重新开启）');
 }
+/* R105：App 后台消息通知总开关。契约：
+   localStorage key 'xt_notify_enabled'：'1'=开（缺省），'0'=关。
+   切换时 feature-detect 原生桥 window.XTAppBridge.setMsgNotify(on)：
+   该桥由安卓端并行实现，Web 端 / 桥缺失时必须静默跳过，不允许抛错；
+   关闭只停后台推送提醒，不改变进聊天页自动清零未读等既有逻辑。 */
+var MSG_NOTIFY_KEY = 'xt_notify_enabled';
+function stMsgNotifyOn() {
+  try { return localStorage.getItem(MSG_NOTIFY_KEY) !== '0'; } catch (e) { return true; }
+}
+function stRenderMsgNotifyUI() {
+  var on = stMsgNotifyOn();
+  var wrap = document.getElementById('swMsgNotify'); if (!wrap) return;
+  wrap.querySelectorAll('.theme-option').forEach(function (b) {
+    b.classList.toggle('active', (b.getAttribute('data-val') === '1') === on);
+  });
+}
+function stMsgNotifyToggle(on) {
+  on = !!on;
+  try { localStorage.setItem(MSG_NOTIFY_KEY, on ? '1' : '0'); } catch (e) { /* 无痕模式忽略 */ }
+  try {
+    if (window.XTAppBridge && typeof window.XTAppBridge.setMsgNotify === 'function') {
+      window.XTAppBridge.setMsgNotify(on);
+    }
+  } catch (e2) { /* 桥异常也不影响开关状态与 UI */ }
+  stRenderMsgNotifyUI();
+  showToast(on ? '✅ 已开启消息通知' : '已关闭消息通知，将停止后台消息提醒');
+}
+
 (function initSettingsUI() {
   stRenderAiFabUI();
+  stRenderMsgNotifyUI();
   var set = loadAllSettings();
   var pick = function (id, v) { var el = document.getElementById(id); if (el) el.value = v; };
   pick('stDailyNew', set.dailyNew);

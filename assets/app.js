@@ -9723,6 +9723,11 @@ window.seedStudyLimitUI = seedStudyLimitUI;
     location.href = '私聊.html?uid=' + uid + '&name=' + encodeURIComponent(name || '');
   }
 
+  /* R105 深链契约（2026-09-19）：暴露给 Android 侧通知点击消费 ——
+     MainActivity.forwardPendingDeepLink() 注入 evaluateJavascript 调
+     window.gotoChatWith(peerId, name, avatar)；已在私聊页则直接开会话，否则跳深链。 */
+  window.gotoChatWith = gotoChatWith;
+
   /**
    * 弹一条入站消息通知。
    * msg: { senderId/peerId, senderName/nickname/name, avatar, text/content/last, lastId }

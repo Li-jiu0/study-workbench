@@ -43,12 +43,37 @@ class _ChatIn(ChatIn):
 
     modelName: str | None = None
 
+    # R107：「深度思考」开关。缺省 False——不带该字段或传 false 时，响应与旧版
+    # **逐字节一致**（纯文本增量，无 data: 分帧），这是兼容硬门禁；只有显式
+    # reasoning=true 时才切换为 SSE 行分帧输出（t:r/t:c/t:u + [DONE] 收尾）。
+    reasoning: bool = False
+
 
 _MAX_NOTE_CTX = 4000
 _MAX_MSGS = 20
 
 # 单次上报的用量上限（防恶意刷大数字把模型一次打停），与 quota_ledger 保持一致
 _MAX_CONSUME_AMOUNT = 100000
+
+# R107：「深度思考」上游开关白名单——仅当请求 reasoning=true 且 base_url 命中下表子串时，
+# 才向 chat/completions 请求体追加上游思考开关字段。表外平台（千帆/OpenAI/DeepSeek/Kimi
+# 等）一律不加：未知字段可能被平台直接 400 拒绝；reasoner 类模型默认输出思维链，无需开关。
+# 后续按平台实测再扩（注意：键为 base_url 的「包含子串」判定，非全等）。
+REASONING_UPSTREAM_FIELDS: list[tuple[str, dict]] = [
+    ("volces.com", {"thinking": {"type": "enabled"}}),        # 火山方舟（豆包）
+    ("dashscope.aliyuncs.com", {"enable_thinking": True}),    # 阿里 Qwen
+    ("api.siliconflow.cn", {"enable_thinking": True}),        # 硅基流动
+    ("open.bigmodel.cn", {"thinking": {"type": "enabled"}}),  # 智谱 GLM
+]
+
+
+def _sse_frame(t: str, d) -> bytes:
+    """R107 分帧 SSE 行（契约 §1.2）：data: {"t":"r"|"c","d":"<增量>"}\\n\\n。
+
+    Content-Type 仍为 text/plain; charset=utf-8（不改响应头）；ensure_ascii=False
+    保持中文原文，客户端按 UTF-8 解码。
+    """
+    return b"data: " + json.dumps({"t": t, "d": d}, ensure_ascii=False).encode("utf-8") + b"\n\n"
 
 # R73j：上游非 200 的友好提示（key=HTTP 状态码）。未命中的状态码仍回退为原始报文。
 _STATUS_HINTS = {
@@ -312,6 +337,17 @@ async def chat(body: _ChatIn, user: User = Depends(get_current_user_optional),
         payload["temperature"] = min(max(body.temperature, 0.0), 2.0)
     if body.maxTokens is not None:
         payload["max_tokens"] = min(max(body.maxTokens, 1), 8192)
+    # R107：「深度思考」显式开启时，按 base_url 白名单追加上游思考开关
+    # （REASONING_UPSTREAM_FIELDS 表外平台一律不加，防未知字段被平台 400）。
+    if body.reasoning:
+        for _host, _extra in REASONING_UPSTREAM_FIELDS:
+            if _host in cfg["base_url"]:
+                payload.update(_extra)
+                break
+
+    # R107：分帧开关。use_frames=False 时 gen() 的输出与改动前逐字节一致（纯文本增量）；
+    # use_frames=True 时 reasoning/content 增量分别以 data: {"t":"r"/"c","d":...} 分帧输出。
+    use_frames = bool(body.reasoning)
 
     async def gen():
         acc: list[str] = []
@@ -356,7 +392,17 @@ async def chat(body: _ChatIn, user: User = Depends(get_current_user_optional),
                                 used_tokens = max(used_tokens, chunk_tokens)
                             delta = j.get("choices", [{}])[0].get("delta", {})
                             piece = delta.get("content") or ""
-                            if piece:
+                            # R107：思维链增量（reasoning_content 为主，reasoning 兼容个别平台）
+                            rpiece = delta.get("reasoning_content") or delta.get("reasoning") or ""
+                            if use_frames:
+                                # 分帧模式：思维链 t:"r" 先行、正文 t:"c" 随后；
+                                # 思维链不进 acc（AiLog 只存正文，与「思维链不入历史」口径一致）
+                                if rpiece:
+                                    yield _sse_frame("r", rpiece)
+                                if piece:
+                                    acc.append(piece)
+                                    yield _sse_frame("c", piece)
+                            elif piece:
                                 acc.append(piece)
                                 yield piece.encode("utf-8")
                         except Exception:
@@ -365,6 +411,16 @@ async def chat(body: _ChatIn, user: User = Depends(get_current_user_optional),
             msg = f"⚠️ 连接模型服务失败：{e.__class__.__name__}"
             acc.append(msg)
             yield msg.encode("utf-8")
+        else:
+            # R107：分帧模式收尾——有真实 token 消耗才发 t:"u"（供前端账本展示），
+            # 恒以 data: [DONE] 结束。错误路径（上方 return / except）不收尾，维持裸文本。
+            if use_frames:
+                if used_tokens > 0:
+                    yield (b"data: "
+                           + json.dumps({"t": "u", "tokens": used_tokens},
+                                        ensure_ascii=False).encode("utf-8")
+                           + b"\n\n")
+                yield b"data: [DONE]\n\n"
         finally:
             # 服务端账本：成功累加真实 token（拿不到就按 1 次计），失败只记 failCalls
             record_usage(quota_key, used_tokens if used_tokens > 0 else 1,

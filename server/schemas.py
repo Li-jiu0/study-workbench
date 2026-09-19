@@ -219,6 +219,18 @@ class GroupCreateIn(BaseModel):
     memberIds: list[int] = Field(min_length=2, max_length=49)
 
 
+def clamp_duration(v) -> int | None:
+    """语音消息时长夹取（私聊语音 duration）：None/非法 → None，其余夹取到 1~600 秒。
+
+    私聊入口 routers/chat.py SendMsgIn 与群聊 GroupMsgIn 共用，保证两通道口径一致。
+    """
+    try:
+        n = int(v)
+    except (TypeError, ValueError):
+        return None
+    return max(1, min(600, n))
+
+
 class GroupMsgIn(BaseModel):
     content: str = Field(max_length=5000)
     kind: str = "text"  # text / image / voice / location / location_live
@@ -227,6 +239,14 @@ class GroupMsgIn(BaseModel):
     lat: float | None = None
     lng: float | None = None
     precise: bool = False
+    # 语音时长（秒）：可选；经 clamp_duration 夹取 1~600，缺省 None。
+    # 群聊线（groups.py）暂不读取/落库，仅保证契约与私聊一致（前向兼容）。
+    duration: int | None = None
+
+    @field_validator("duration")
+    @classmethod
+    def _clamp_duration(cls, v):
+        return clamp_duration(v)
 
 
 class GroupReadIn(BaseModel):

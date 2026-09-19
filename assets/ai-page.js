@@ -1,6 +1,7 @@
 /* ============ AI 页交互逻辑（DeepSeek 风格） ============
    依赖（由并行线 eng-ai-base 提供，全局函数/对象）：
-     - callAI(funcType, messages, { image, onChunk(delta, fullText), onFallback(name) })
+     - callAI(funcType, messages, { image, onChunk(delta, fullText), onFallback(name),
+         onReasoning(delta, full)（R107 可选，思维链增量，feature-detect） })
      - AI_CONFIG（模型配置 / 推荐问题 / 关键词）
    说明：本文件只负责页面交互；所有模型调用、流式、降级交给 callAI。
    语法约束（老 WebView）：不用可选链、双问号、replaceAll、fromEntries、数组 at、正则后行断言；不用顶层 await。 */
@@ -944,6 +945,7 @@
      不支持 / 权限被拒一律 toast 提示，不弹 alert，不静默失败。
      识别结果不直接发出，回填输入框让用户编辑后再发（ASR 结果有误是常态）。 */
   var REC = { rec: null, chunks: [], stream: null, start: 0, tick: null, stopTimer: null, on: false };
+  var NATIVE_REC = false;                       // R106/L2：当前是否处于原生桥录音态（与 REC 分开记）
   var MAX_REC_MS = 60000;                       // 单次最长 60 秒
   var MIC_MIME_CANDS = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/ogg'];
 
@@ -1004,10 +1006,72 @@
     if (aiAudioLabel) aiAudioLabel.textContent = text;
   }
   function toggleRecord() {
-    if (!micSupported()) { toast('当前浏览器不支持录音，请用 Chrome 打开并允许麦克风权限'); return; }
     if (state.sending) { toast('正在识别中，请稍候'); return; }
     if (REC.on) { stopRecord(); return; }
-    startRecord();
+    if (micSupported()) { startRecord(); return; }        // L1：网页录音（getUserMedia，原 startRecord 流程不变）
+    if (nativeVoiceOk()) { startNativeRecord(); return; } // L2：原生桥（APK 内预埋，随下次打包生效）
+    pickVoiceBySystem();                                  // L3：系统录音机（隐藏 file input capture，AI.html 不动）
+  }
+  /* R106/L2：原生桥可用性探测（仅 APK 内 window.XTAppBridge.startVoiceRecord 为函数时命中） */
+  function nativeVoiceOk() {
+    try { return !!(window.XTAppBridge && typeof window.XTAppBridge.startVoiceRecord === 'function'); } catch (e) { return false; }
+  }
+  /* R106/L2：调桥开始录音；60 秒上限与 REC 清理语义刻意与 L1 保持一致（复用 REC.tick/stopTimer/start） */
+  function startNativeRecord() {
+    var started = false;
+    try {
+      if (window.XTAppBridge && typeof window.XTAppBridge.startVoiceRecord === 'function') { window.XTAppBridge.startVoiceRecord(); started = true; }
+    } catch (e) { started = false; }
+    if (!started) { pickVoiceBySystem(); return; }   // 桥调用失败 → 退到系统录音机，不静默
+    NATIVE_REC = true;
+    REC.on = true;
+    REC.start = Date.now();
+    setMicRecording(true, 0);
+    toast('录音中…再次点击麦克风结束（最长 60 秒）');
+    REC.tick = setInterval(function () {
+      var s = Math.round((Date.now() - REC.start) / 1000);
+      setMicRecording(true, s);
+    }, 1000);
+    REC.stopTimer = setTimeout(function () { stopRecord(); toast('已到 60 秒上限，自动结束录音'); }, MAX_REC_MS);
+  }
+  /* R106/L3：动态建隐藏 <input type=file accept=audio/* + 裸 capture> 调起系统录音机；
+     纯 JS 创建/click/remove（不碰 AI.html）；选回的文件走既有发送链路 sendAudioForTranscribe。 */
+  function pickVoiceBySystem() {
+    var input = null;
+    try {
+      input = doc.createElement('input');
+      input.type = 'file';
+      input.accept = 'audio/*';
+      input.setAttribute('capture', '');   // 裸属性 capture（勿写 capture="microphone"）
+      input.style.display = 'none';
+    } catch (e) { input = null; }
+    if (!input) { toast('当前浏览器不支持录音，请用 Chrome 打开并允许麦克风权限'); return; }
+    var cleaned = false;
+    function cleanup() {
+      if (cleaned) return; cleaned = true;
+      try { input.onchange = null; } catch (e) { /* 忽略 */ }
+      try { if (input.parentNode) input.parentNode.removeChild(input); } catch (e2) { /* 忽略 */ }
+    }
+    input.onchange = function () {
+      var f = null;
+      try { f = (input.files && input.files[0]) ? input.files[0] : null; } catch (e) { f = null; }
+      if (f) applyVoiceFile(f);
+      cleanup();
+    };
+    try { doc.body.appendChild(input); } catch (e) { /* 兜底：不中断，仍尝试 click */ }
+    try { input.click(); } catch (e2) { cleanup(); toast('无法调起系统录音机，请改用 Chrome 或 App 内录音'); return; }
+    toast('请在系统录音机里录音，完成后选择该音频文件');
+  }
+  /* R106/L3：把系统录音机选回的文件填进 state.audio（结构与 L1 录完一致，秒数未知先记 0） */
+  function applyVoiceFile(f) {
+    if (!f) return;
+    var mime = f.type || 'audio/mpeg';
+    state.audio = { blob: f, file: f, mime: mime, seconds: 0 };
+    setAudioPreview('已选录音文件，点发送转文字');
+    updateSendEnabled();
+    if (mime === 'audio/3gpp' || mime === 'audio/amr' || mime === 'audio/x-amr' || mime === 'audio/aac') {
+      toast('本机录音为 ' + mime + ' 格式，识别可能失败，建议在 App 内或用电脑 Chrome 录音');
+    }
   }
   function startRecord() {
     var p = null;
@@ -1053,6 +1117,10 @@
     if (REC.tick) { clearInterval(REC.tick); REC.tick = null; }
     if (REC.stopTimer) { clearTimeout(REC.stopTimer); REC.stopTimer = null; }
     if (REC.rec && REC.rec.state === 'recording') { try { REC.rec.stop(); } catch (e) { /* 忽略：失败也不会留下状态 */ } }
+    if (NATIVE_REC) {   // R106/L2：原生桥录音态停止
+      NATIVE_REC = false;
+      try { if (window.XTAppBridge && typeof window.XTAppBridge.stopVoiceRecord === 'function') window.XTAppBridge.stopVoiceRecord(); } catch (e2) { /* 忽略：桥异常不影响状态清理 */ }
+    }
     REC.on = false;
     setMicRecording(false, 0);
   }
@@ -1075,7 +1143,7 @@
     var file = null;
     try {
       if (typeof window !== 'undefined' && typeof window.File === 'function') {
-        var ext = (mime.indexOf('ogg') >= 0) ? 'ogg' : 'webm';
+        var ext = audioExt(mime);   // R106 追加：与 runAudioRecognition 同一口径，防「名 .webm 实为 m4a/3gp」
         file = new File([blob], 'voice.' + ext, { type: mime });   // 上传接口通常需要带文件名
       }
     } catch (e2) { file = null; }
@@ -1083,6 +1151,59 @@
     setAudioPreview('已录 ' + secs + ' 秒，点发送转文字');
     updateSendEnabled();
   }
+  /* R106：原生桥录音结果回调（APK evaluateJavascript 注入 JSON 字符串）。
+     ok=false → 明确 toast；ok=true → dataURL 转 Blob 填充 state.audio（与 L1 结构一致）。
+     解析失败安全 no-op，绝不清空既有附件、绝不抛错到宿主。 */
+  function b64ToBytes(b64) {
+    var bin = '';
+    var step = 8192;   // 分块 atob，避免超大 dataURL 一次性解码卡死老 WebView
+    try {
+      for (var i = 0; i < b64.length; i += step) { bin += atob(b64.substring(i, i + step)); }
+    } catch (e) { return null; }
+    var n = bin.length;
+    var bytes = new Uint8Array(n);
+    for (var j = 0; j < n; j++) { bytes[j] = bin.charCodeAt(j) & 0xff; }
+    return bytes;
+  }
+  function dataUrlToBlob(dataUrl) {
+    try {
+      var s = String(dataUrl || '');
+      var comma = s.indexOf(',');
+      if (comma < 0) return null;
+      var meta = s.substring(0, comma);
+      var data = s.substring(comma + 1);
+      var mime = 'audio/mp4';
+      var mm = /^data:([^;,]+)/i.exec(meta);
+      if (mm && mm[1]) mime = mm[1];
+      var bytes = null;
+      if (meta.indexOf(';base64') >= 0) { bytes = b64ToBytes(data); }
+      else {
+        try {
+          var txt = decodeURIComponent(data);
+          var arr = new Uint8Array(txt.length);
+          for (var k = 0; k < txt.length; k++) { arr[k] = txt.charCodeAt(k) & 0xff; }
+          bytes = arr;
+        } catch (e) { bytes = null; }
+      }
+      if (!bytes) return null;
+      return new Blob([bytes], { type: mime });
+    } catch (e2) { return null; }
+  }
+  window.__onVoiceRecord = function (jsonStr) {
+    var obj = null;
+    try { obj = (typeof jsonStr === 'string') ? JSON.parse(jsonStr) : jsonStr; } catch (e) { obj = null; }
+    if (!obj) return;   // 解析失败：安全 no-op
+    if (obj.ok !== true) { toast('录音失败或权限被拒绝，请在系统设置里允许麦克风权限'); return; }
+    var blob = dataUrlToBlob(obj.dataUrl);
+    if (!blob || !blob.size) { toast('没有录到声音，请再试一次'); return; }
+    var secs = Math.max(1, Math.round(Number(obj.durationSec) || 0) || 1);
+    var mime = blob.type || 'audio/mp4';
+    var file = null;
+    try { if (typeof window.File === 'function') { file = new File([blob], 'voice.' + audioExt(mime), { type: mime }); } } catch (e2) { file = null; }
+    state.audio = { blob: blob, file: file, mime: mime, seconds: secs };
+    setAudioPreview('已录 ' + secs + ' 秒，点发送转文字');
+    updateSendEnabled();
+  };
   /* DOM 注入：麦克风按钮挂在附件按钮旁边；语音条挂在图片预览旁边（AI.html 不动） */
   function ensureMicButton() {
     if (aiMicBtn || !aiAttachBtn) return;
@@ -1149,12 +1270,32 @@
     } catch (e) { /* 忽略 */ }
     return null;
   }
+  /* R106 追加：按 mime 精确推导音频扩展名。
+     第三方 ASR（如 SiliconFlow /v1/audio/transcriptions）常依文件名判类型，
+     扩展名必须与真实字节一致——否则 m4a/3gp/amr/aac 顶着「.webm」名会被拒。
+     规则：mime 先 toLowerCase()、截断 ';'（去 codecs 参数）并去首尾空格；
+     命中已知类型按表返回；未命中则兜底取 '/' 后子类型（去 'x-' 前缀、仅留 [a-z0-9]），
+     取不到才回 webm（webm 不再是默认兜底）。 */
   function audioExt(mime) {
     var m = String(mime || '').toLowerCase();
-    if (m.indexOf('ogg') >= 0) return 'ogg';
-    if (m.indexOf('mp4') >= 0 || m.indexOf('m4a') >= 0) return 'm4a';
-    if (m.indexOf('mpeg') >= 0 || m.indexOf('mp3') >= 0) return 'mp3';
-    if (m.indexOf('wav') >= 0) return 'wav';
+    var semi = m.indexOf(';');
+    if (semi >= 0) m = m.substring(0, semi);
+    m = m.replace(/^\s+|\s+$/g, '');
+    if (!m) return 'webm';
+    if (m === 'audio/mp4' || m === 'audio/m4a' || m === 'audio/x-m4a') return 'm4a';
+    if (m === 'audio/ogg' || m === 'audio/opus' || m === 'application/ogg') return 'ogg';
+    if (m === 'audio/wav' || m === 'audio/x-wav' || m === 'audio/wave') return 'wav';
+    if (m === 'audio/aac') return 'aac';
+    if (m === 'audio/3gpp' || m === 'audio/3gpp2') return '3gp';
+    if (m === 'audio/amr') return 'amr';
+    if (m === 'audio/webm' || m === 'video/webm') return 'webm';
+    if (m === 'audio/mpeg' || m === 'audio/mp3') return 'mp3';
+    /* 兜底：按 '/' 后段取子类型，去 'x-' 前缀；含非 [a-z0-9] 视为取不到 → webm */
+    var slash = m.indexOf('/');
+    if (slash >= 0) {
+      var sub = m.substring(slash + 1).replace(/^x-/, '');
+      if (sub && /^[a-z0-9]+$/.test(sub)) return sub;
+    }
     return 'webm';
   }
   function runAudioRecognition(audio, m) {
@@ -1198,7 +1339,10 @@
   }
   function sendAudioForTranscribe(text) {
     var m = getModelById(getSelectedModelId());
-    if (!micSupported() || !hasPromise()) { toast('当前浏览器不支持语音识别，请用 Chrome 打开'); return; }
+    if (!hasPromise()) { toast('当前浏览器不支持语音识别，请用 Chrome 打开'); return; }
+    /* R106：L2 原生桥 / L3 系统录音机已捕获音频时，不再要求 getUserMedia 环境；
+       L1（micSupported 为真）路径行为完全不变 */
+    if (!micSupported() && !state.audio) { toast('当前浏览器不支持语音识别，请用 Chrome 打开'); return; }
     if (!m || !modelHasType(m, 'audio')) {
       toast('当前模型不支持语音识别，请在模型列表「语音识别」区里选一个模型');
       return;
@@ -1270,6 +1414,92 @@
     if (!aiMessages) return;
     var list = aiMessages.querySelectorAll('.ai-avatar-user');
     for (var i = 0; i < list.length; i++) list[i].innerHTML = userAvatarHtml();
+  }
+
+  /* ============ R107b：思考过程折叠面板（AI.html 不动：DOM 与样式全部由本文件注入） ============
+     三态兜底：
+       1) 流式思维链 —— 收到 onReasoning 增量即创建面板，展开 + 「思考中…」呼吸动画，正文逐字渲染；
+       2) 回答完成   —— 标题变「思考过程」并默认收起，点击标题可展开回看（含用时）；
+       3) 全程无思维链 —— 非推理模型或旧版服务层不回调 onReasoning，面板根本不创建，
+          气泡表现与改动前完全一致；onChunk / onFallback / onModelUsed 行为均不受影响。 */
+  var REASON_CHEVRON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="6 9 12 15 18 9"/></svg>';
+  /* 面板样式（老 WebView 兼容的纯字符串）：init 时一次性注入 <style id="aiReasoningPanelStyle">，
+     全部选择器收敛在 .ai-bubble-ai 下，配色用半透明中性色，深浅主题均可读 */
+  var aiReasoningPanelStyle =
+    '.ai-bubble-ai .ai-reason{margin:0 0 8px;border:1px solid rgba(128,128,128,.28);border-radius:10px;background:rgba(128,128,128,.08);overflow:hidden;text-align:left}' +
+    '.ai-bubble-ai .ai-reason-head{display:flex;align-items:center;gap:6px;width:100%;padding:6px 10px;border:none;background:transparent;cursor:pointer;color:inherit;font:inherit;font-size:13px;line-height:1.4;text-align:left}' +
+    '.ai-bubble-ai .ai-reason-caret{display:inline-flex;transition:transform .2s ease}' +
+    '.ai-bubble-ai .ai-reason.open .ai-reason-caret{transform:rotate(180deg)}' +
+    '.ai-bubble-ai .ai-reason-title{flex:1}' +
+    '.ai-bubble-ai .ai-reason-time{opacity:.65;font-size:12px}' +
+    '.ai-bubble-ai .ai-reason.thinking .ai-reason-title{animation:aiReasonPulse 1.2s ease-in-out infinite}' +
+    '@keyframes aiReasonPulse{0%,100%{opacity:1}50%{opacity:.45}}' +
+    '.ai-bubble-ai .ai-reason-body{display:none;padding:0 10px 8px;max-height:240px;overflow-y:auto;font-size:12.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:inherit;opacity:.85}' +
+    '.ai-bubble-ai .ai-reason.open .ai-reason-body{display:block}';
+  var _reasonStyleDone = false;
+  /* 样式只注入一次；已存在同 id（重复初始化）时直接复用。注入失败不影响消息主链路 */
+  function ensureReasoningStyle() {
+    if (_reasonStyleDone) return;
+    try {
+      if (!doc.getElementById('aiReasoningPanelStyle')) {
+        var st = doc.createElement('style');
+        st.id = 'aiReasoningPanelStyle';
+        st.type = 'text/css';
+        st.textContent = aiReasoningPanelStyle;
+        var host = doc.head || doc.getElementsByTagName('head')[0] || doc.documentElement;
+        if (host) host.appendChild(st);
+      }
+      _reasonStyleDone = true;
+    } catch (e) { /* 忽略：无头环境下样式注入失败不能打断对话 */ }
+  }
+  /* 在 AI 气泡顶部创建（或替换旧的）思考面板；streaming=true 时为「思考中」展开态。
+     返回面板句柄 { wrap, head, title, timeEl, bodyEl, textEl }，创建失败返回 null */
+  function createReasoningPanel(b, streaming) {
+    if (!b || !b.bubble) return null;
+    var stale = null;
+    try { stale = b.bubble.querySelector('.ai-reason'); } catch (e) { stale = null; }
+    if (stale && stale.parentNode) stale.parentNode.removeChild(stale);
+    ensureReasoningStyle();
+    var wrap = doc.createElement('div');
+    wrap.className = 'ai-reason' + (streaming ? ' open thinking' : ' open');
+    var head = doc.createElement('button');
+    head.type = 'button';
+    head.className = 'ai-reason-head';
+    head.setAttribute('aria-expanded', streaming ? 'true' : 'false');
+    var caret = doc.createElement('span'); caret.className = 'ai-reason-caret'; caret.innerHTML = REASON_CHEVRON_SVG;
+    var title = doc.createElement('span'); title.className = 'ai-reason-title';
+    title.textContent = streaming ? '思考中…' : '思考过程';
+    var timeEl = doc.createElement('span'); timeEl.className = 'ai-reason-time';
+    head.appendChild(caret); head.appendChild(title); head.appendChild(timeEl);
+    var body = doc.createElement('div'); body.className = 'ai-reason-body';
+    var textEl = doc.createElement('div'); textEl.className = 'ai-reason-text';
+    body.appendChild(textEl);
+    wrap.appendChild(head); wrap.appendChild(body);
+    head.addEventListener('click', function () {
+      var open = wrap.classList.contains('open');
+      if (open) wrap.classList.remove('open'); else wrap.classList.add('open');
+      head.setAttribute('aria-expanded', open ? 'false' : 'true');
+    });
+    b.bubble.insertBefore(wrap, b.bubble.firstChild);
+    return { wrap: wrap, head: head, title: title, timeEl: timeEl, bodyEl: body, textEl: textEl };
+  }
+  /* 流式态：写入思维链全文并让正文滚动区始终贴底 */
+  function setReasoningBody(rp, text) {
+    if (!rp || !rp.textEl) return;
+    try { rp.textEl.textContent = String(text || ''); } catch (e) { return; }
+    try { rp.bodyEl.scrollTop = rp.bodyEl.scrollHeight; } catch (e2) { /* 忽略 */ }
+  }
+  /* 完成态：摘掉「思考中」动画，标题改「思考过程」，标注用时并默认收起。
+     startedAt 缺失 / 异常时静默跳过用时，不影响收起动作 */
+  function finishReasoningPanel(rp, startedAt) {
+    if (!rp || !rp.wrap || !rp.wrap.parentNode) return;
+    rp.wrap.classList.remove('thinking');
+    rp.wrap.classList.remove('open');
+    rp.title.textContent = '思考过程';
+    try {
+      var secs = startedAt ? Math.max(1, Math.round((Date.now() - startedAt) / 1000)) : 0;
+      rp.timeEl.textContent = secs ? '· ' + secs + 's' : '';
+    } catch (e) { /* 忽略 */ }
   }
 
   function addUserBubble(text, img) {
@@ -1475,6 +1705,18 @@
     // 并以 renderSettled 闸门保证收尾渲染（含降级前缀）不被迟到的 rAF 覆盖。
     var renderSettled = false;
     var renderPending = false;
+    /* R107b：思考过程（思维链）面板状态。三态兜底：
+       1) 收到思维链增量 → 面板展开并流式渲染（标题「思考中…」）；
+       2) 回答完成/失败 → 面板收起，标题变「思考过程」，可点击展开回看；
+       3) 全程无思维链（非推理模型 / 旧版服务层不回调）→ 面板根本不创建，
+          页面表现与改动前完全一致。 */
+    var reasoning = { panel: null, text: '', startedAt: 0, pending: false, settled: false };
+    function flushReasonRender() {
+      reasoning.pending = false;
+      if (reasoning.settled || !reasoning.panel) return;
+      setReasoningBody(reasoning.panel, reasoning.text);
+      scrollBottom();
+    }
     function flushRender() {
       renderPending = false;
       if (renderSettled) return;
@@ -1505,6 +1747,26 @@
         fullText = full;
         scheduleRender();
       },
+      /* R107b：思维链增量（服务层 feature-detect 回调，旧版 ai-service 不传则此回调不触发）。
+         full 优先（服务层已累计全文），缺失时本地累加 delta 兜底 */
+      onReasoning: function (delta, full) {
+        if (typeof full === 'string' && full) { reasoning.text = full; }
+        else if (delta) { reasoning.text += String(delta); }
+        if (!reasoning.text) return;
+        if (!reasoning.panel) {
+          reasoning.startedAt = Date.now();
+          reasoning.panel = createReasoningPanel(aiB, true);
+          if (!reasoning.panel) return;
+        }
+        if (!reasoning.pending) {
+          reasoning.pending = true;
+          if (typeof window !== 'undefined' && window.requestAnimationFrame) {
+            window.requestAnimationFrame(flushReasonRender);
+          } else {
+            setTimeout(flushReasonRender, 16);
+          }
+        }
+      },
       onFallback: function (name) { toast('当前模型繁忙，已自动切换到 ' + name); },
       onModelUsed: function (id, name) { setUsedModel(aiB, id, name); }
     };
@@ -1521,6 +1783,8 @@
     }
     callAI(funcType, apiMessages, opts).then(function (res) {
       renderSettled = true;   // 收尾后停用 rAF 节流渲染
+      reasoning.settled = true;   // R107b：思维链流式渲染收尾
+      finishReasoningPanel(reasoning.panel, reasoning.startedAt);   // 有面板则收起，无面板为三态兜底的「无思维链」空操作
       removeTyping(aiB);
       var ft = '';
       var degraded = false;
@@ -1552,6 +1816,8 @@
       if (degraded) toast('网络不佳，以下为本地参考');
     }).catch(function (err) {
       renderSettled = true;   // 收尾后停用 rAF 节流渲染
+      reasoning.settled = true;   // R107b：失败也要摘掉「思考中」态，面板不悬在动画里
+      finishReasoningPanel(reasoning.panel, reasoning.startedAt);
       removeTyping(aiB);
       var errMsg = (err && err.message) ? String(err.message) : '';
       var content;
@@ -2775,6 +3041,7 @@
     doc.addEventListener('xt:health-changed', onHealthChanged);   // R87/T04：健康状态变更 → 模型列表重算（恢复可用自动回归）
     ensureMicButton();      // R86：麦克风按钮（DOM 注入，AI.html 不动）
     ensureAudioPreview();   // R86：语音附件条
+    ensureReasoningStyle(); // R107b：思考过程面板样式一次性注入（AI.html 不动）
     renderHistory();
     updateModelLabel();
     ensureMemorySection();
