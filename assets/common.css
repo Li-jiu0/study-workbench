@@ -1409,8 +1409,8 @@ input, textarea { font-family: inherit; outline: none; }
   .topbar-date { display: none; }  /* 手机窄屏隐藏日期，给标题/搜索框腾空间 */
   /* 标题单行截断（省略号），避免窄屏被挤成逐字竖排并溢出压到搜索框 */
   .topbar-title { font-size: 16px; flex: 0 1 auto; min-width: 0; max-width: 44vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .content { padding: 16px; padding-bottom: calc(var(--bottom-nav-height) + 20px); }
-  .main > .page { padding-bottom: calc(var(--bottom-nav-height) + 20px); }
+  .content { padding: 16px; padding-bottom: calc(var(--bottom-nav-height, 64px) + 20px + env(safe-area-inset-bottom, 0px)); }
+  .main > .page { padding-bottom: calc(var(--bottom-nav-height, 64px) + 20px + env(safe-area-inset-bottom, 0px)); }
   .home-grid { grid-template-columns: 1fr; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .module-progress-grid { grid-template-columns: repeat(3, 1fr); }

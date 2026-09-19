@@ -1778,6 +1778,8 @@
     var friend = getFriend(friendId);
     if (!friend) return;
     S.peer = friend;
+    S.group = null; // R104e 批5·阶段B：与 imOpenGroup 置 S.peer=null 对称 —— 私聊必须清群上下文，
+                    // 否则实时位置轮询继续命中旧群 groupId、消息渲染也误走群分支
     imResetMsgPaging(); // R73 需求19：切换会话重置分页 / 签名状态
     // R60：告诉 app.js 当前会话对象（本地/AI 好友没有 serverId → null，避免误报）
     xtSetChatUser(S.peer.isServer ? S.peer.serverId : null);
@@ -1813,8 +1815,9 @@
         var items = d.items || [];
         imHasMore = !!d.hasMore; // R73 需求19：记录是否还有更早历史，供滚动加载更多
         if (items.length > 0) {
+          /* R130：首拉映射补读 m.duration（R129 契约 items[].duration）——修复打开会话重拉后秒数丢失。 */
           S.msgs = items.map(function (m) {
-            return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, sub: m.sub, lat: m.lat, lng: m.lng, precise: m.precise, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read };
+            return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, duration: imVoiceDuration(m.duration), sub: m.sub, lat: m.lat, lng: m.lng, precise: m.precise, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read };
           });
           renderMsgs();
           // 标记最后一条消息为已读
@@ -2114,11 +2117,31 @@
         inner = '<img class="im-img" src="' + esc(src) + '" alt="[图片]" onclick="imPreviewImage(this.getAttribute(\'src\'))">' +
           '<div class="im-mt">' + timeStr + '</div>' + readTag;
       } else if (m.kind === 'voice') {
-        // A7：语音条（点击播放/暂停/续播；进度条随时间更新；显示时长）
+        /* R130（2026-09-20）：微信式语音条 —— 补回时长显示链路（旧版发送时请求体没带 duration、
+           服务端映射也没读 duration，重拉后秒数丢失只剩「语音」占位）：
+           ① 有 duration → 显「N″」，宽度随时长伸缩（80 + 6×N px，封顶 244）；
+           ② duration=null（历史旧消息）→ 保持原占位「语音」，不写内联宽度，与现状一致。
+           侧别类 im-voice-me/ot（配色 + 小尾巴）、播放态声波（纯 CSS）、进度条仅播放时显示，
+           样式统一在 boot() 注入区（本文件），不改 common.css / 私聊.html。 */
         var vsrc = /^(https?:|data:)/.test(m.content) ? m.content : apiBase() + m.content;
-        inner = '<div class="im-voice" onclick="imTogglePlayVoice(this,this.dataset.src)" data-src="' + esc(vsrc) + '">' +
-          '<span class="im-voice-ic">▶</span><span class="im-voice-bar"><i></i></span>' +
-          '<span class="im-voice-dur">' + (m.duration ? m.duration + '″' : '语音') + '</span></div>' +
+        var vdur = imVoiceDuration(m.duration);
+        var vstyle = vdur ? ' style="width:' + imVoiceWidth(vdur) + 'px"' : '';
+        /* V-polish（2026-09-21）：语音条图标去字符化 + 方向镜像 + 未读红点 + ASR 转写行
+           ① 图标：▶ 字符跟随系统字体跨机不一致 → 统一走 icon-map 实心圆角 SVG（play-solid，18px）；
+           ② 镜像（微信强惯例）：收到（ot）=图标左/时长右；发出（me）=时长左/图标右（声波替换图标侧不变）；
+           ③ 未读红点：对方语音未播放时气泡左上角 8px 红点（内存态 _imVoicePlayed，播放回调移除）；
+           ④ ASR 转写：识别完成后挂在语音条下方小字（imVoiceTranscriptHtml），先发消息后补文本，绝不回填输入框。 */
+        var vIc = '<span class="im-voice-ic">' + _imVoiceIconHtml('play-solid') + '</span>';
+        var vWave = '<span class="im-voice-wave"><i></i><i></i><i></i><i></i></span>';
+        var vBar = '<span class="im-voice-bar"><i></i></span>';
+        var vDur = '<span class="im-voice-dur">' + (vdur ? vdur + '″' : '语音') + '</span>';
+        var vDot = (!isMe && !_imVoicePlayed[vsrc]) ? '<i class="im-voice-dot" aria-hidden="true"></i>' : '';
+        var vCore = isMe ? (vDur + vBar + vWave + vIc) : (vIc + vWave + vBar + vDur);
+        inner = '<div class="im-voice' + (isMe ? ' im-voice-me' : ' im-voice-ot') + '"' + vstyle +
+          ' onclick="imTogglePlayVoice(this,this.dataset.src)" data-src="' + esc(vsrc) + '">' +
+          vDot + vCore +
+          '</div>' +
+          imVoiceTranscriptHtml(m) +
           '<div class="im-mt">' + timeStr + '</div>' + readTag;
       } else if (m.kind === 'location') {
         /* R104 批2（2026-09-19）：位置卡交互 —— 有坐标走微信式地图卡：
@@ -2757,12 +2780,16 @@
     if (action === 'cancel' || action === 'tooshort' || action === 'abort') { return; }
     if (!blob.size) { toast('录音失败，请重试'); return; }
     if (blob.size > MAX_VOICE_BYTES) { toast('语音超过 2MB，请录短一点'); return; }
+    /* V-polish（B 任务）：点击发送 = 语音消息正常发出（上行分支与无 ASR 时完全一致）；
+       转写异步并行 —— 消息先出、文本到了再补渲染到气泡下方，绝不回填输入框。 */
     if (S.peer && S.peer.isServer && getToken()) {
       uploadVoice(blob, dur);
+      imVoiceAutoTranscribe(blob, dur);
     } else {
       var rd = new FileReader();
       rd.onload = function (e) { sendVoiceLocal(e.target.result, dur); };
       rd.readAsDataURL(blob);
+      imVoiceAutoTranscribe(blob, dur);
     }
   }
 
@@ -2854,19 +2881,162 @@
     window.imSendVoiceBlob(blob, o.durationSec || 0);
   };
 
+  /* R130（2026-09-20）：语音时长清洗 —— 仅接受正数秒并取整；
+     null / undefined / 非法值一律归 null（渲染层回落占位「语音」，旧消息行为不变）。 */
+  function imVoiceDuration(v) {
+    if (typeof v === 'number' && isFinite(v) && v > 0) return Math.round(v);
+    return null;
+  }
+
+  /* R130：时长 → 语音条宽度（px）：80 + 6×秒，封顶 244（与注入区 .im-voice max-width 一致）。
+     无时长返回 0 —— 渲染层据此不写内联宽度，走 CSS 默认宽度。 */
+  function imVoiceWidth(dur) {
+    if (!(dur > 0)) return 0;
+    var w = 80 + Math.round(dur) * 6;
+    return w > 244 ? 244 : w;
+  }
+
+  /* ==================== V-polish（2026-09-21）：语音条图标 / 未读红点 / ASR 转写 ==================== */
+
+  /** 图标统一走 icon-map（项目规矩：禁字符/emoji）：按名取 18px SVG；
+      icon-map 未加载或键缺失时返回空串（退化无图标，绝不回退字符 ▶）。 */
+  function _imVoiceIconHtml(name) {
+    try {
+      if (typeof window.lucideIcon === 'function') {
+        var s = window.lucideIcon(name, 18);
+        if (s) return s;
+      }
+    } catch (e) { }
+    return '';
+  }
+
+  /** 未读红点状态（内存态，不持久化）：key=语音内容地址（vsrc）；对方语音未播放时展示。 */
+  var _imVoicePlayed = {};
+
+  /** ASR 转写行渲染：m.transcript 存在才渲染（转写异步补读 —— 消息先出、文本到了再补）。 */
+  function imVoiceTranscriptHtml(m) {
+    var t = (m && m.transcript) ? String(m.transcript) : '';
+    if (!t) return '';
+    return '<div class="im-voice-transcript">' + esc(t) + '</div>';
+  }
+
+  /**
+   * ASR 转写完成回调：把文本挂到最近一条尚未转写的本人语音消息（senderId==myId && kind=='voice'），
+   * 然后整表重渲（renderMsgs 自带滚动位置保持）。只动内存里的 S.msgs 与 DOM，
+   * 不写 localStorage、不碰消息签名计算、绝不回填 #imInput。
+   */
+  window.__imApplyVoiceTranscript = function (text) {
+    var t = (text == null) ? '' : String(text).trim();
+    if (!t) return;
+    for (var i = S.msgs.length - 1; i >= 0; i--) {
+      var mm = S.msgs[i];
+      if (mm && mm.senderId === S.myId && mm.kind === 'voice' && !mm.transcript) {
+        mm.transcript = t;
+        break;
+      }
+    }
+    renderMsgs();
+  };
+
+  /* ===== ASR 模型选型（V-polish 续 2026-09-21）：未配置时自动挑一个语音识别模型 =====
+     优先级：① localStorage 'im_asr_model_id'（用户/设置页将来可写的覆盖键）
+             ② window.__imVoiceAsrModel（临时/测试覆盖）
+             ③ 自动选型：window.AI_CONFIG.builtinModels（providerGroups.models 兜底）
+                中第一个 types 含 'audio' 的模型（实测 ai-config.js：sf-sensevoice 等已带标记）；
+                全部无 types 标记时按已知 ASR id 白名单正则兜底（sensevoice / asr）
+             ④ 都没有 → ''（调用侧静默跳过，绝不阻塞发送） */
+  var IM_ASR_MODEL_KEY = 'im_asr_model_id';
+  var IM_ASR_ID_RE = /sensevoice|asr/i;
+  function imVoiceAsrModelId() {
+    var v = '';
+    try { v = String(localStorage.getItem(IM_ASR_MODEL_KEY) || '').replace(/^\s+|\s+$/g, ''); } catch (e) { v = ''; }
+    if (v) return v;
+    if (typeof window.__imVoiceAsrModel === 'string' && window.__imVoiceAsrModel) return window.__imVoiceAsrModel;
+    try {
+      var cfg = window.AI_CONFIG;
+      var pools = [];
+      if (cfg && cfg.builtinModels && cfg.builtinModels.length) pools.push(cfg.builtinModels);
+      if (cfg && cfg.providerGroups && cfg.providerGroups.length) {
+        for (var g = 0; g < cfg.providerGroups.length; g++) {
+          var grp = cfg.providerGroups[g];
+          if (grp && grp.models && grp.models.length) pools.push(grp.models);
+        }
+      }
+      var i, m;
+      for (i = 0; i < pools.length; i++) {
+        for (var a = 0; a < pools[i].length; a++) {
+          m = pools[i][a];
+          if (m && m.id && Object.prototype.toString.call(m.types) === '[object Array]' && m.types.indexOf('audio') >= 0) return m.id;
+        }
+      }
+      for (i = 0; i < pools.length; i++) {
+        for (var b = 0; b < pools[i].length; b++) {
+          m = pools[i][b];
+          if (m && m.id && IM_ASR_ID_RE.test(String(m.id))) return m.id;
+        }
+      }
+    } catch (e) { }
+    return '';
+  }
+
+  /**
+   * 语音 ASR 转写默认实现（B 任务核心：先发后转 —— 调用点在语音消息发出之后）。
+   * 走 AI 底座能力直连（AI_SERVICE.xtRunCapability），模型 id 经 imVoiceAsrModelId()
+   * 四级选型（覆盖键 → 全局覆盖 → 自动 → ''）；
+   * 未拿到模型 / 底座未加载 / 识别失败 → onText(null) 静默放弃，
+   * 转写是增强功能，绝不阻塞/改变发送主链路。
+   * QA stub 点：整体替换 window.imVoiceTranscribe（签名 (blob, dur, onText)）即可。
+   */
+  window.imVoiceTranscribe = function (blob, dur, onText) {
+    var done = false;
+    function fin(t) { if (!done) { done = true; try { if (onText) onText(t || null); } catch (e) { } } }
+    var mid = imVoiceAsrModelId();
+    var run = null;
+    try {
+      if (window.AI_SERVICE && typeof window.AI_SERVICE.xtRunCapability === 'function') run = window.AI_SERVICE.xtRunCapability;
+      else if (typeof window.xtRunCapability === 'function') run = window.xtRunCapability;
+    } catch (e) { run = null; }
+    if (!mid || !run || !blob) { fin(null); return; }
+    try {
+      Promise.resolve(run(mid, { blob: blob, fileName: 'voice.webm' }))
+        .then(function (res) {
+          var t = '';
+          if (typeof res === 'string') t = res;
+          else if (res && res.result && typeof res.result.text === 'string') t = res.result.text;
+          else if (res && res.data && typeof res.data.text === 'string') t = res.data.text;
+          else if (res && typeof res.text === 'string') t = res.text;
+          fin(t && t.trim() ? t.trim() : null);
+        })
+        .catch(function () { fin(null); });
+    } catch (e) { fin(null); }
+  };
+
+  /** 录音 blob → 异步转写；成功后经 __imApplyVoiceTranscript 补渲染到气泡下方（不回填输入框）。 */
+  function imVoiceAutoTranscribe(blob, dur) {
+    try {
+      if (typeof window.imVoiceTranscribe === 'function') {
+        window.imVoiceTranscribe(blob, dur, function (t) { window.__imApplyVoiceTranscript(t); });
+      }
+    } catch (e) { /* 转写失败不影响发送主链路 */ }
+  }
+
   function postVoiceMsg(url, dur) {
     var now = Date.now();
     S.msgs.push({ id: S.msgs.length + 1, senderId: S.myId, content: url, kind: 'voice', time: now, duration: dur });
     renderMsgs();
+    /* R130：请求体补传 duration（秒，服务端 1–600 夹取，缺省/非法 → null）——
+       此前只传 {content, kind}，服务端存 null，重拉后秒数丢失（本次 bug 根因）。 */
     fetch(apiBase() + '/api/chat/' + S.peer.serverId + '/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
-      body: JSON.stringify({ content: url, kind: 'voice' })
+      body: JSON.stringify({ content: url, kind: 'voice', duration: imVoiceDuration(dur) })
     })
       .then(function (r) { return r.json(); })
       .then(function (m) {
         if (m && m.id) {
-          S.msgs.push({ id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read, duration: dur });
+          // 服务端回包根级 m.duration（R129 契约）优先；异常回落本地录音时长
+          var svrDur = imVoiceDuration(m.duration);
+          S.msgs.push({ id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read, duration: (svrDur != null ? svrDur : imVoiceDuration(dur)) });
           renderMsgs();
         }
         fetchPeerMsgs(true);
@@ -2898,9 +3068,24 @@
     _vaEl = el;
     var ic = el.querySelector('.im-voice-ic');
     var bar = el.querySelector('.im-voice-bar i');
-    _va.onplay = function () { el.classList.add('playing'); if (ic) ic.textContent = '⏸'; };
-    _va.onpause = function () { el.classList.remove('playing'); if (ic) ic.textContent = '▶'; };
-    _va.onended = function () { el.classList.remove('playing'); if (ic) ic.textContent = '▶'; if (bar) bar.style.width = '0'; };
+    var dot = el.querySelector('.im-voice-dot');
+    /* V-polish：本次语音已播放 → 红点状态置已读并就地移除（播放回调即移除，不等 onended） */
+    _imVoicePlayed[src] = true;
+    if (dot && dot.parentNode) { dot.parentNode.removeChild(dot); }
+    _va.onplay = function () {
+      el.classList.add('playing'); el.classList.remove('paused');
+      if (ic) ic.innerHTML = _imVoiceIconHtml('pause-solid');
+    };
+    _va.onpause = function () {
+      el.classList.remove('playing'); el.classList.add('paused');
+      /* V-polish 暂停态：播放器支持暂停 → 暂停中显示实心双圆角竖条（icon-map pause-solid） */
+      if (ic) ic.innerHTML = _imVoiceIconHtml('pause-solid');
+    };
+    _va.onended = function () {
+      el.classList.remove('playing'); el.classList.remove('paused');
+      if (ic) ic.innerHTML = _imVoiceIconHtml('play-solid');
+      if (bar) bar.style.width = '0';
+    };
     _va.ontimeupdate = function () { if (bar && _va.duration) bar.style.width = Math.round(_va.currentTime / _va.duration * 100) + '%'; };
     _va.play().catch(function () { toast('无法播放语音'); });
   };
@@ -3090,13 +3275,17 @@
     t = t.replace(/^\s+|\s+$/g, '');
     if (!t) return;
     if (!S.group && !S.peer) { toast('请先选择一个会话再发送位置'); return; }
-    // 群聊：与文字消息同走群发送分支（kind 由 imSendGroupText 内部决定，此处仅保证入口不炸）
-    if (S.group) { toast('群聊暂不支持发送位置'); return; }
-    if (!S.peer) return;
+    if (!S.peer && !S.group) return;
 
     // 坐标仅在经纬度均为有限数时携带；副地址仅在非空时携带（避免脏值进消息体）。
     var hasGeo = (typeof o.lat === 'number' && typeof o.lng === 'number' && isFinite(o.lat) && isFinite(o.lng));
     var sub = (o.sub == null) ? '' : String(o.sub);
+
+    /* R104e 批5·阶段B：群聊位置消息打通 —— 后端 groups.py 已白名单 kind=location 并带
+       sub/lat/lng/precise 落库与推送；群聊走 imSendGroupLocation（服务端回包后渲染地图卡，
+       不做本地乐观落库，与 imSendGroupText 口径一致 → 群内 pendingSend 恒 false，整卡即可点）。 */
+    if (S.group) { imSendGroupLocation(t, sub, o.lat, o.lng, hasGeo, o.precise === true); return; }
+    if (!S.peer) return;
 
     var now = Date.now();
     var uid = genMsgId();
@@ -3472,10 +3661,11 @@
     var url, mapper;
     if (S.group) {
       url = apiBase() + '/api/groups/' + S.group.id + '/messages?before_id=' + firstId + '&limit=30&mark_read=0';
-      mapper = function (m) { return { id: m.id, senderId: m.senderId, senderNickname: m.senderNickname, senderAvatar: m.senderAvatar, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true }; };
+      mapper = function (m) { return { id: m.id, senderId: m.senderId, senderNickname: m.senderNickname, senderAvatar: m.senderAvatar, content: m.content, kind: m.kind, sub: m.sub, lat: m.lat, lng: m.lng, precise: m.precise, time: new Date(m.createdAt).getTime(), server: true }; };
     } else if (S.peer && S.peer.isServer) {
       url = apiBase() + '/api/chat/' + S.peer.serverId + '/messages?before_id=' + firstId + '&limit=30&mark_read=0';
-      mapper = function (m) { return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, sub: m.sub, lat: m.lat, lng: m.lng, precise: m.precise, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read }; };
+      /* R130：翻历史映射补读 m.duration —— 与首拉/轮询一致，向前翻页语音条不丢秒数。 */
+      mapper = function (m) { return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, duration: imVoiceDuration(m.duration), sub: m.sub, lat: m.lat, lng: m.lng, precise: m.precise, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read }; };
     } else {
       return;
     }
@@ -3512,8 +3702,10 @@
       if (!S.peer || S.peer.serverId !== want) return;
       var items = d.items || [];
       if (!items.length && silent) return;
+      /* R130：轮询映射补读 m.duration（R129 契约 items[].duration）——
+         语音条在轮询整表刷新后不再退回「语音」占位。 */
       var list = items.map(function (m) {
-        return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, sub: m.sub, lat: m.lat, lng: m.lng, precise: m.precise, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read };
+        return { id: m.id, senderId: m.senderId, content: m.content, kind: m.kind, duration: imVoiceDuration(m.duration), sub: m.sub, lat: m.lat, lng: m.lng, precise: m.precise, time: new Date(m.createdAt).getTime(), server: true, read: !!m.read };
       });
       // 保留已 prepend 的更早历史，避免被「最新 50 条」覆盖
       var merged = imMergeOlderMsgs(S.msgs, list);
@@ -3540,7 +3732,7 @@
     .then(function (d) {
       if (!S.group || S.group.id !== want) return; // R73：切走后丢弃迟到响应
       var list = (d.items || []).map(function (m) {
-        return { id: m.id, senderId: m.senderId, senderNickname: m.senderNickname, senderAvatar: m.senderAvatar, content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true };
+        return { id: m.id, senderId: m.senderId, senderNickname: m.senderNickname, senderAvatar: m.senderAvatar, content: m.content, kind: m.kind, sub: m.sub, lat: m.lat, lng: m.lng, precise: m.precise, time: new Date(m.createdAt).getTime(), server: true };
       });
       var merged = imMergeOlderMsgs(S.msgs, list);
       imHasMore = !!d.hasMore;
@@ -3623,7 +3815,7 @@
       : { id: gid, name: '群聊', memberCount: 0, avatar: '' };
     // R60：群聊不是单人会话，清掉「当前会话对象」
     xtSetChatUser(null);
-    imLiveOnEnter(); // R104e 批5：群会话同一钩子（imLivePoll 对群只隐藏横幅、不发请求）
+    imLiveOnEnter(); // R104e 批5·阶段B：群会话同一钩子（imLivePoll 走 ?groupId= 驱动横幅/浮层）
     var empty = $id('imEmpty');
     if (empty) empty.style.display = 'none';
     var conv = $id('imConv');
@@ -3659,6 +3851,39 @@
       fetchGroupMsgs(true);
     })
     .catch(function (e) { toast('发送失败：' + (e.message || '网络错误')); });
+  }
+
+  /* R104e 批5·阶段B：群聊发送位置消息（kind=location + sub/lat/lng/precise）。
+     后端契约：POST /api/groups/{gid}/messages（groups.py 白名单含 location，空 content 且
+     kind=location 允许「纯坐标」）。回包才推进 S.msgs 并渲染（与 imSendGroupText 一致，
+     不做本地乐观落库 → 群内位置卡回包即整卡可点，不走 pendingSend 态）。 */
+  function imSendGroupLocation(t, sub, lat, lng, hasGeo, precise) {
+    var token = getToken();
+    if (!token) { toast('群聊需要联网'); return; }
+    if (!S.group || !S.group.id) { toast('请先选择一个群'); return; }
+    var payload = { content: t, kind: 'location' };
+    if (sub) payload.sub = sub;
+    if (hasGeo) { payload.lat = lat; payload.lng = lng; }
+    if (precise) payload.precise = true;
+    fetch(apiBase() + '/api/groups/' + S.group.id + '/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(payload)
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (m) {
+      if (m && m.id) {
+        var rec = { id: m.id, senderId: m.senderId, senderNickname: m.senderNickname, senderAvatar: m.senderAvatar,
+                    content: m.content, kind: m.kind, time: new Date(m.createdAt).getTime(), server: true };
+        if (m.sub) rec.sub = m.sub;
+        if (typeof m.lat === 'number' && typeof m.lng === 'number' && isFinite(m.lat) && isFinite(m.lng)) { rec.lat = m.lat; rec.lng = m.lng; }
+        if (m.precise === true || precise) rec.precise = true;   // 回包缺失时按发送方意图兜底，保「精确」标识不丢
+        S.msgs.push(rec);
+        renderMsgs();
+      }
+      fetchGroupMsgs(true);
+    })
+    .catch(function () { toast('发送失败：网络错误'); });
   }
 
   // —— 发起群聊弹层（好友多选 → 命名 → 创建） ——
@@ -4528,7 +4753,7 @@
     }, 30000);
   }
 
-  /* ==================== R104e 批5·L2 阶段A（2026-09-19）：实时位置共享（私聊 1v1） ====================
+  /* ==================== R104e 批5·L2（2026-09-19）：实时位置共享（阶段A 私聊 1v1 + 阶段B 群聊） ====================
      契约 D4：不进消息流 —— imMsgsSig（L3423）不含 lat/lng，同 id 原地改坐标签名不变 → 不重渲染。
      故做成「常驻横幅 + 地图浮层」，坐标由 /api/live/state 独立轮询，与消息流完全解耦。
      横幅/浮层不含任何地名（后端共享全程 0 次 geocoder），只显示相对时间。
@@ -4555,6 +4780,19 @@
     var s = Math.max(0, Math.round((Date.now() - ms) / 1000));
     if (s < 60) return s + ' 秒前';
     return Math.floor(s / 60) + ' 分钟前';
+  }
+
+  /* R104e 批5·阶段B：群共享人展示名 —— 备注名 > 好友昵称 > 「群成员」兜底。
+     纯本地解析（S.chats / SERVER_FRIENDS），零网络请求；绝不显示地名/地址（红线）。 */
+  function imLiveSharerName(uid) {
+    var n = Number(uid || 0);
+    if (!n || n === S.myId) return '群成员';
+    var rn = '';
+    try { rn = imRemarkOf(n) || ''; } catch (e0) { rn = ''; }
+    if (rn) return rn;
+    var f = null;
+    try { f = getFriend(10000 + n); } catch (e1) { f = null; }
+    return (f && f.nickname) ? f.nickname : '群成员';
   }
 
   /* 原生桥探测（L3 已定型）：契约字段 XTAppBridge；StudyAndroid 为 lead 同步的别名，双探测容错 */
@@ -4594,9 +4832,13 @@
     imLiveCheckExpiry();
     if (!getToken()) return;
     if (document.visibilityState !== 'visible') return;   // 可见性守卫（照抄 startConvPoll 写法）
-    /* 群会话 / 非服务器好友：阶段A 不发请求，仅确保横幅隐藏（阶段B 再扩展群聊多人） */
-    if (S.group || !(S.peer && S.peer.isServer)) { imLiveRender(null); return; }
-    fetch(apiBase() + '/api/live/state?peerId=' + encodeURIComponent(S.peer.serverId), {
+    /* R104e 批5·阶段B：群会话走 ?groupId=（同一 /api/live/state 契约），私聊走 ?peerId=；
+       两者都没有 → 仅确保横幅隐藏。群内同一时刻只展示一条 active 共享（后端 _LIVE_BY_GROUP 索引）。 */
+    var lvq = null;
+    if (S.group && S.group.id) lvq = 'groupId=' + encodeURIComponent(S.group.id);
+    else if (S.peer && S.peer.isServer) lvq = 'peerId=' + encodeURIComponent(S.peer.serverId);
+    if (!lvq) { imLiveRender(null); return; }
+    fetch(apiBase() + '/api/live/state?' + lvq, {
       headers: { 'Authorization': 'Bearer ' + getToken() }
     })
       .then(function (r) { return r.json(); })
@@ -4622,7 +4864,9 @@
     var bn = imLiveBannerEl();
     _liveState = st || null;
     if (!bn) return;
-    if (!st || !st.active || S.group || !(S.peer && S.peer.isServer)) {
+    /* R104e 批5·阶段B：群会话（有 groupId）与私聊（peer.isServer）都驱动横幅。 */
+    var lvCtxOk = (S.group && S.group.id) || !!(S.peer && S.peer.isServer);
+    if (!st || !st.active || !lvCtxOk) {
       bn.style.display = 'none';
       imLiveOvClose();
       return;
@@ -4637,7 +4881,9 @@
         '<button type="button" class="im-live-btn" onclick="imLiveStop()">结束共享</button>';
     } else {
       bn.className = 'im-live-banner' + (st.stale ? ' im-live-stale' : '');
-      var t = st.stale ? ('位置已停止更新（' + ago + '）') : ('🛰 对方正在共享实时位置 · 最后更新 ' + ago);
+      /* 群聊：显示共享人名字（备注 > 昵称 > 群成员）；私聊：沿用「对方」。 */
+      var who = S.group ? imLiveSharerName(st.sharerId) : '对方';
+      var t = st.stale ? ('位置已停止更新（' + ago + '）') : ('🛰 ' + who + '正在共享实时位置 · 最后更新 ' + ago);
       bn.innerHTML = '<span class="im-live-t">' + esc(t) + '</span>' +
         '<button type="button" class="im-live-btn" onclick="imLiveOpenOv()">查看</button>';
     }
@@ -4692,11 +4938,11 @@
     if (!ov || ov.style.display === 'none' || !st || !st.active) return;
     if (typeof st.lat !== 'number' || typeof st.lng !== 'number' || !isFinite(st.lat) || !isFinite(st.lng)) return;
     var ago = imLiveAgoTxt(st.updatedAt);
-    var who = (S.myId && st.sharerId === S.myId) ? '我' : '对方';
+    var who = (S.myId && st.sharerId === S.myId) ? '我' : (S.group ? imLiveSharerName(st.sharerId) : '对方');
     var tt = $id('imLiveOvTitle'), sub = $id('imLiveOvSub');
     /* 文案每次都更新（时间观感），地图是否重拉由 imLiveShouldReloadMap 独立裁决 */
     if (tt) tt.textContent = who + ' · ' + (st.stale ? ('位置已停止更新（' + ago + '）') : ('最后更新于 ' + ago));
-    if (sub) sub.textContent = st.stale ? '对方可能已离开或断网' : ('地图每 ' + Math.round(IM_LIVE_MAP_MIN_MS / 1000) + ' 秒且有位移时刷新');
+    if (sub) sub.textContent = st.stale ? (who + '可能已离开或断网') : ('地图每 ' + Math.round(IM_LIVE_MAP_MIN_MS / 1000) + ' 秒且有位移时刷新');
     if (!imLiveShouldReloadMap(st.lat, st.lng)) return;
     var img = $id('imLiveOvMap');
     if (img) img.src = apiBase() + '/api/geo/staticmap?lat=' + encodeURIComponent(st.lat) + '&lng=' + encodeURIComponent(st.lng) + '&zoom=16';
@@ -4705,9 +4951,11 @@
 
   /* —— 发起共享（加号菜单「实时位置」→ 私聊.html imPlusPickLiveLoc）—— */
   window.imLiveStart = function () {
-    if (LIVE.starting || LIVE.shareId) return;
-    if (S.group) { toast('群聊实时位置将在后续版本支持'); return; }
-    if (!(S.peer && S.peer.isServer)) { toast('请先选择一位好友'); return; }
+    if (LIVE.starting) return;
+    if (LIVE.shareId) { toast('已在其他会话共享实时位置'); return; }
+    /* R104e 批5·阶段B：群会话发 {groupId}，私聊发 {peerId}（契约 §3 二选一）。 */
+    var lvGroup = !!(S.group && S.group.id);
+    if (!lvGroup && !(S.peer && S.peer.isServer)) { toast('请先选择一位好友'); return; }
     if (!getToken()) { toast('实时位置共享需要联网登录'); return; }
     if (!imLiveCanGeo()) {
       /* 契约 D8：纯 HTTP Web 恒拒绝，明确降级文案；零请求、绝不用 IP 粗定位冒充精确位置 */
@@ -4718,7 +4966,7 @@
     fetch(apiBase() + '/api/live/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
-      body: JSON.stringify({ peerId: S.peer.serverId })
+      body: JSON.stringify(lvGroup ? { groupId: S.group.id } : { peerId: S.peer.serverId })
     })
       .then(function (r) { return r.json(); })
       .then(function (d) {
@@ -4911,7 +5159,44 @@
       '.im-live-ov-title{flex:1 1 auto;min-width:0;font-size:14px;font-weight:600;color:var(--text,#2D3436);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}' +
       '.im-live-ov-close{flex:0 0 auto;width:28px;height:28px;border:none;border-radius:50%;background:var(--bg,#F5F7FA);color:var(--text-secondary,#8a8f99);font-size:14px;line-height:1;cursor:pointer}' +
       '.im-live-ov-map{display:block;width:100%;height:260px;object-fit:cover;background:var(--bg,#F5F7FA)}' +
-      '.im-live-ov-sub{padding:8px 12px 12px;font-size:12px;color:var(--text-secondary,#8a8f99)}';
+      '.im-live-ov-sub{padding:8px 12px 12px;font-size:12px;color:var(--text-secondary,#8a8f99)}' +
+      /* R130（2026-09-20）：微信式语音条 —— 双侧配色 + 小尾巴 + 宽度随时长伸缩 + 播放态声波（纯 CSS）
+         + 进度条仅播放时显示。覆盖 common.css 旧 .im-voice（min-width:110px/max-width:190px）；
+         固定 px，禁 clamp/min/max；沿用私聊.html .im-m.me 的 #95ec69 绿与 --card/--border 令牌。 */
+      '.im-voice{min-width:88px;max-width:244px;padding:9px 12px;border-radius:12px;position:relative;box-sizing:border-box}' +
+      '.im-voice-me{background:#95ec69;border:none;color:#111}' +
+      '.im-voice-ot{background:var(--card,#fff);border:1px solid var(--border,#eee);color:var(--text,#2D3436)}' +
+      '.im-voice-me::after{content:"";position:absolute;right:-5px;top:50%;margin-top:-5px;border:5px solid transparent;border-right:0;border-left-color:#95ec69}' +
+      '.im-voice-ot::after{content:"";position:absolute;left:-5px;top:50%;margin-top:-5px;border:5px solid transparent;border-left:0;border-right-color:var(--card,#fff)}' +
+      '.im-voice-me .im-voice-bar{background:rgba(0,0,0,.18)}' +
+      '.im-voice-me .im-voice-bar i{background:rgba(0,0,0,.6)}' +
+      '.im-voice-dur{font-size:12px;flex-shrink:0}' +
+      /* 进度条：仅播放中显示（R130 需求） */
+      '.im-voice-bar{display:none}' +
+      '.im-voice.playing .im-voice-bar{display:block}' +
+      /* V-polish（2026-09-21）：播放态声波 4 根圆角竖条 —— 0.8s 循环、各根 animation-delay 错拍、
+         高度 4~16px 起伏；播放中隐藏 .im-voice-ic（icon-map SVG），声波成主角。
+         颜色跟气泡文字同系：绿泡 #173404 / 白泡 #1f2937。 */
+      '.im-voice-ic{display:inline-flex;flex:0 0 auto;align-items:center}' +
+      '.im-voice-ic svg{display:block}' +
+      '.im-voice-wave{display:none;align-items:flex-end;gap:2px;height:16px;flex:0 0 auto}' +
+      '.im-voice.playing .im-voice-wave{display:inline-flex}' +
+      '.im-voice.playing .im-voice-ic{display:none}' +
+      '.im-voice-wave i{width:3px;border-radius:2px;background:currentColor;animation:imVoiceWaveB .8s ease-in-out infinite}' +
+      '.im-voice-me .im-voice-wave i{background:#173404}' +
+      '.im-voice-ot .im-voice-wave i{background:#1f2937}' +
+      '.im-voice-wave i:nth-child(1){height:6px;animation-delay:0s}' +
+      '.im-voice-wave i:nth-child(2){height:12px;animation-delay:.12s}' +
+      '.im-voice-wave i:nth-child(3){height:16px;animation-delay:.24s}' +
+      '.im-voice-wave i:nth-child(4){height:9px;animation-delay:.36s}' +
+      '@keyframes imVoiceWaveB{0%,100%{height:4px}50%{height:16px}}' +
+      /* 未读红点：对方语音未播放时气泡左上角 8px（imTogglePlayVoice 播放回调移除） */
+      '.im-voice-dot{position:absolute;left:-3px;top:-3px;width:8px;height:8px;border-radius:50%;background:#e5484d}' +
+      /* ASR 转写行：挂在语音条下方的小字（样式随现有令牌，绝不回填输入框） */
+      '.im-voice-transcript{max-width:244px;margin-top:3px;padding:5px 8px;font-size:12px;line-height:1.5;color:var(--text-secondary,#8a8f99);background:var(--bg,#F5F7FA);border-radius:8px;word-break:break-word;white-space:pre-wrap}' +
+      /* 降级：手动 reduce-motion 或系统偏好 → 声波动画静止（保留静态 4 根波形） */
+      'body.reduce-motion .im-voice-wave i{animation:none}' +
+      '@media (prefers-reduced-motion: reduce){.im-voice-wave i{animation:none}}';
     document.head.appendChild(style);
 
     /* R60：本页已持有聊天轮询（2.5s 会话 + 5s 未读 + 30s 群/在线），
@@ -5225,7 +5510,13 @@
     getLiveState: function () { return _liveState; },
     IM_LIVE_POLL_MS: IM_LIVE_POLL_MS,
     IM_LIVE_MAP_MIN_MS: IM_LIVE_MAP_MIN_MS,
-    IM_LIVE_MAP_MIN_M: IM_LIVE_MAP_MIN_M
+    IM_LIVE_MAP_MIN_M: IM_LIVE_MAP_MIN_M,
+    /* R104e 批5·阶段B（2026-09-19）：群聊实时位置 校验钩子（仅测试引用，零运行时行为影响） */
+    imLiveSharerName: imLiveSharerName,
+    imSendGroupLocation: imSendGroupLocation,
+    /* R130（2026-09-20）：语音条时长/宽度 校验钩子（仅测试引用，零运行时行为影响） */
+    imVoiceDuration: imVoiceDuration,
+    imVoiceWidth: imVoiceWidth
   };
 
   $ready(boot);
