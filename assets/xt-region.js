@@ -1050,6 +1050,14 @@
       '.xtlp-go{flex:0 0 auto;border:none;border-radius:9px;padding:7px 12px;font-size:13px;font-weight:700;color:#fff;background:#5B8DEF;cursor:pointer}'+
       '.xtlp-go:active{opacity:.85}'+
       '.xtlp-note{margin:8px 0 2px;padding:8px 12px;border-radius:10px;background:#FFF7E6;color:#B26B00;font-size:12px;line-height:1.4}'+
+      /* R104 批2：「上次发送 · 一键再发」行（仅在有效坐标记录时渲染；固定值，禁 clamp/min/max） */
+      '.xtlp-lastsend{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;border-top:1px solid #eef1f6;background:#F5F9FF}'+
+      '.xtlp-lastsend:active{background:#EAF2FF}'+
+      '.xtlp-ls-label{flex:0 0 auto;font-size:12px;color:#8a8f99}'+
+      '.xtlp-ls-main{flex:1;min-width:0;display:flex;flex-direction:column}'+
+      '.xtlp-ls-name{font-size:14px;color:#1f2937;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}'+
+      '.xtlp-ls-sub{font-size:12px;color:#9aa3b2;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}'+
+      '.xtlp-ls-go{flex:0 0 auto;color:#5B8DEF;font-size:13px;font-weight:700}'+
       '.xtlp-map{flex:0 0 auto;position:relative;height:168px;margin:0 12px;border-radius:14px;overflow:hidden;'+
         'background:linear-gradient(135deg,#dbe7f7,#eef4fb 55%,#e5f0e6);border:1px solid #e6e9f0}'+
       '.xtlp-map::before{content:"";position:absolute;left:-10%;top:38%;width:120%;height:10px;background:rgba(255,255,255,.75);'+
@@ -1170,11 +1178,13 @@
       var i, R;
       // R104c：熔断/失败提示（仅 UI）
       var noteHtml = placeNote ? '<div class="xtlp-note">' + _escAttr(placeNote) + '</div>' : '';
+      // R104 批2：列表顶部「上次发送 · 一键再发」（无有效坐标记录 → 空串）
+      var leadHtml = lastSendHtml() + noteHtml;
       // R104c：显式搜索进行中
-      if (placeLoading) { listEl.innerHTML = noteHtml + '<div class="xtlp-empty">正在搜索…</div>'; return; }
+      if (placeLoading) { listEl.innerHTML = leadHtml + '<div class="xtlp-empty">正在搜索…</div>'; return; }
       // R104c：显式搜索命中 → POI 组（每条走 itemRow(title,address,lat,lng) → data-lat/lng）
       if (placeActive && placePois && placePois.length) {
-        html2 += noteHtml;
+        html2 += leadHtml;
         html2 += '<div class="xtlp-sec">地点</div>';
         for (i = 0; i < placePois.length; i++) {
           var pp = placePois[i] || {};
@@ -1188,8 +1198,8 @@
       if (kw) {
         R = window.XT_REGION;
         var hits = (R && typeof R.search === 'function') ? R.search(kw, 40) : [];
-        if (!hits.length) { listEl.innerHTML = noteHtml + '<div class="xtlp-empty">没找到「' + _escAttr(kw) + '」，换个关键词试试</div>'; return; }
-        html2 += noteHtml;
+        if (!hits.length) { listEl.innerHTML = leadHtml + '<div class="xtlp-empty">没找到「' + _escAttr(kw) + '」，换个关键词试试</div>'; return; }
+        html2 += leadHtml;
         html2 += '<div class="xtlp-sec">搜索结果</div>';
         for (i = 0; i < hits.length; i++) {
           var sub = (hits[i].province && hits[i].province !== hits[i].city) ? hits[i].province : '';
@@ -1198,7 +1208,7 @@
         listEl.innerHTML = html2;
         return;
       }
-      html2 += noteHtml;
+      html2 += leadHtml;
       if (nearbyResults.length) {
         html2 += '<div class="xtlp-sec">附近位置</div>';
         for (i = 0; i < nearbyResults.length; i++) {
@@ -1306,14 +1316,73 @@
       });
     }
 
-    function finish(text) {
+    /* R104 批2：上次发送位置（一键再发）—— 读写 xt_loc_last（与 pick() 同键；失败静默）。 */
+    /** 读上次发送记录；无 / 坏 JSON / 非对象 / 缺 text / 坐标非法 → null（该行不渲染）。 */
+    function lastSendRead() {
+      var ls = _safeLS();
+      if (!ls) return null;
+      var raw = null;
+      try { raw = ls.getItem(LAST_KEY); } catch (e) { return null; }
+      if (!raw) return null;
+      var o = null;
+      try { o = JSON.parse(raw); } catch (e2) { return null; }
+      if (!o || typeof o !== 'object') return null;
+      var t = (o.text == null) ? '' : String(o.text);
+      if (!t) return null;
+      var la = Number(o.lat), ln = Number(o.lng);
+      if (!(o.lat != null && String(o.lat) !== '' && isFinite(la) &&
+            o.lng != null && String(o.lng) !== '' && isFinite(ln))) return null;
+      return { text: t, sub: (o.sub == null ? '' : String(o.sub)), lat: la, lng: ln };
+    }
+
+    /** 写上次发送记录 {text,sub,lat,lng}；try/catch 包住，失败不影响发送。 */
+    function lastSendWrite(text) {
+      var ls = _safeLS();
+      if (!ls) return;
+      try {
+        ls.setItem(LAST_KEY, JSON.stringify({
+          text: chosen || String(text || ''),
+          sub: curSub || '',
+          lat: (typeof curLat === 'number' ? curLat : null),
+          lng: (typeof curLng === 'number' ? curLng : null)
+        }));
+      } catch (e) { /* localStorage 禁用 / 写满：静默，不影响发送 */ }
+    }
+
+    /** 列表顶部「上次发送：XXX · 一键再发」行 HTML（无有效记录 → 空串）。 */
+    function lastSendHtml() {
+      var rec = lastSendRead();
+      if (!rec) return '';
+      var sub = rec.sub ? '<span class="xtlp-ls-sub">' + _escAttr(rec.sub) + '</span>' : '';
+      return '<div class="xtlp-lastsend" data-lastsend="1">' +
+        '<span class="xtlp-ls-label">上次发送：</span>' +
+        '<span class="xtlp-ls-main"><span class="xtlp-ls-name">' + _escAttr(rec.text) + '</span>' + sub + '</span>' +
+        '<span class="xtlp-ls-go">一键再发</span>' +
+      '</div>';
+    }
+
+    /** 点「一键再发」：直接用上次记录走 finish（等价重选并确认），不重复写 xt_loc_last。 */
+    function lastSendReuse() {
+      var rec = lastSendRead();
+      if (!rec) return;
+      chosen = rec.text;
+      curSub = rec.sub || '';
+      curLat = rec.lat;
+      curLng = rec.lng;
+      finish(rec.text, true);
+    }
+
+    function finish(text, skipPersist) {
       if (closed) return;
       closed = true;
       if (placeNoteTimer) { try { clearTimeout(placeNoteTimer); } catch (e) {} placeNoteTimer = null; }
       try { if (root.parentNode) root.parentNode.removeChild(root); } catch (e) {}
       document.removeEventListener('keydown', onKey);
       window.removeEventListener('resize', onResize);
-      if (text) recentPush(text);
+      if (text) {
+        recentPush(text);
+        if (!skipPersist) lastSendWrite(text);   // R104 批2：记录「上次发送」（一键再发时跳过）
+      }
       if (o.rich) {
         // R104 项3：rich 模式回传结构化对象；无坐标时 lat/lng 回 null（前端退化为纯文字卡）。
         if (text) {
@@ -1353,8 +1422,9 @@
 
     listEl.addEventListener('click', function (ev) {
       var node = ev.target;
-      while (node && node !== listEl && !(node.getAttribute && node.getAttribute('data-text') !== null)) { node = node.parentNode; }
+      while (node && node !== listEl && !(node.getAttribute && (node.getAttribute('data-text') !== null || node.getAttribute('data-lastsend') !== null))) { node = node.parentNode; }
       if (!node || node === listEl) return;
+      if (node.getAttribute('data-lastsend') !== null) { lastSendReuse(); return; }   // R104 批2：一键再发
       var t = node.getAttribute('data-text');
       if (t == null) return;
       // R104 项3：列表项若带经纬度（如附近 POI），选中时一并记录，供 rich 模式回传。

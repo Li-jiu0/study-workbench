@@ -541,7 +541,7 @@ async def geo_place(keyword: str = "", city: str = "", adcode: str = "",
       → 取不到直接降级 degraded（不出网）→ 取到才外呼。
 
     Args:
-        keyword: 搜索关键词（strip 后 1..30 字符，必填）。
+        keyword: 搜索关键词（strip 后 2..30 字符，必填）。
         adcode: 行政区划码（2~6 位数字，优先级最高）→ region(adcode,0)。
         city: 城市名（次优先）→ region(city,0)。
         lat / lng: 坐标（末位降级）→ nearby(lat,lng,5000)（中国范围粗校）。
@@ -553,7 +553,7 @@ async def geo_place(keyword: str = "", city: str = "", adcode: str = "",
         失败：HTTP 200 + {"ok": false, "error": ...}；
               日额度耗尽：{"ok": false, "degraded": true, "error": "place_daily_cap"}。
     """
-    # 1) 关键词校验：strip 后 1..30 字符
+    # 1) 关键词校验：strip 后 2..30 字符
     kw = (keyword or "").strip()
     if not (2 <= len(kw) <= 30):
         return {"ok": False, "error": "bad_params"}

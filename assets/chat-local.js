@@ -1962,6 +1962,104 @@
     });
   }
 
+  /* ==================== R104 批2（2026-09-19）：位置卡交互 ====================
+     主体点击 → 腾讯地图 marker（免 Key URI）；「导航」→ routeplan(type=drive)；
+     接收方本地 haversine 算「距你约 X」。全部零网络请求、零 Key、零额度。
+     ❗绝不使用 /api/geo/ip 或任何 IP 粗定位冒充精确位置（用户红线）。 */
+  var IM_EARTH_R = 6371;      // 地球平均半径(km，haversine 常数)
+  var _imMyLoc = null;        // 自己坐标（仅来自 navigator.geolocation；无则保持 null）
+  var _imGeoState = 0;        // 0 未请求 / 1 请求中 / 2 成功 / 3 失败（失败即永久不显示距离行）
+
+  /* haversine 大圆距离（km）。入参为十进制度；任一非有限值返回 NaN。 */
+  function imHaversineKm(la1, lo1, la2, lo2) {
+    if (!isFinite(la1) || !isFinite(lo1) || !isFinite(la2) || !isFinite(lo2)) return NaN;
+    var rad = Math.PI / 180;
+    var dLat = (la2 - la1) * rad;
+    var dLng = (lo2 - lo1) * rad;
+    var s1 = Math.sin(dLat / 2), s2 = Math.sin(dLng / 2);
+    var a = s1 * s1 + Math.cos(la1 * rad) * Math.cos(la2 * rad) * s2 * s2;
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return IM_EARTH_R * c;
+  }
+
+  /* 距离文案：≥1km → 「距你约 X 公里」(1 位小数)；<1km → 「距你约 X 米」(取整)。非法值返回 ''。 */
+  function imFormatDistance(km) {
+    if (!isFinite(km) || km < 0) return '';
+    if (km >= 1) return '距你约 ' + km.toFixed(1) + ' 公里';
+    return '距你约 ' + Math.round(km * 1000) + ' 米';
+  }
+
+  /* 「先渲染、后定位」时的补填：定位成功后把已知坐标写入所有接收侧距离占位。
+     renderMsgs 在已知坐标时直接内联文案，故正常路径不依赖此函数。 */
+  function imFillLocDistances() {
+    if (!_imMyLoc || !document.querySelectorAll) return;
+    var nodes = document.querySelectorAll('[data-imloc-dlat][data-imloc-dlng]');
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      var la = parseFloat(el.getAttribute('data-imloc-dlat'));
+      var lo = parseFloat(el.getAttribute('data-imloc-dlng'));
+      var txt = imFormatDistance(imHaversineKm(_imMyLoc.lat, _imMyLoc.lng, la, lo));
+      if (txt) { el.textContent = txt; el.style.display = ''; }
+    }
+  }
+
+  /* 惰性触发一次定位；失败 / 超时 / 被拒 → _imGeoState=3，永久不显示距离行（无任何兜底）。 */
+  function imEnsureMyLoc() {
+    if (_imGeoState !== 0) return;
+    _imGeoState = 1;
+    try {
+      var geo = (typeof navigator !== 'undefined') ? navigator.geolocation : null;
+      if (!geo || typeof geo.getCurrentPosition !== 'function') { _imGeoState = 3; return; }
+      geo.getCurrentPosition(function (pos) {
+        var c = pos && pos.coords;
+        if (c && isFinite(c.latitude) && isFinite(c.longitude)) {
+          _imMyLoc = { lat: c.latitude, lng: c.longitude };
+          _imGeoState = 2;
+          imFillLocDistances();
+        } else { _imGeoState = 3; }   // 残缺坐标视为失败，不显示
+      }, function () { _imGeoState = 3; }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 });
+    } catch (e) { _imGeoState = 3; }
+  }
+
+  /* 从位置卡 DOM 找到承载坐标/标题的 .im-loc-card（点主体或点卡片内「导航」按钮均可命中）。
+     SVG 元素的 className 是 SVGAnimatedString，String() 后不含 'im-loc-card'，天然跳过。 */
+  function imLocCardOf(el) {
+    var n = el;
+    while (n && n.nodeType === 1) {
+      if (n.className && String(n.className).indexOf('im-loc-card') >= 0) return n;
+      n = n.parentNode;
+    }
+    return null;
+  }
+
+  /* 读取卡片坐标与标题；坐标非法返回 null（不跳转、不报错）。 */
+  function imLocDataOf(el) {
+    var card = imLocCardOf(el);
+    if (!card || !card.getAttribute) return null;
+    var la = parseFloat(card.getAttribute('data-imloc-lat'));
+    var lo = parseFloat(card.getAttribute('data-imloc-lng'));
+    if (!isFinite(la) || !isFinite(lo)) return null;
+    return { lat: la, lng: lo, title: card.getAttribute('data-imloc-title') || '位置' };
+  }
+
+  /* 主体点击 → 腾讯地图 marker 定位页（移动端拉起 App / PC 开网页版）。免 Key、零额度。 */
+  window.imLocOpen = function (el) {
+    var d = imLocDataOf(el);
+    if (!d) return;
+    var url = 'https://apis.map.qq.com/uri/v1/marker?marker=' + d.lat + ',' + d.lng +
+      '&name=' + encodeURIComponent(d.title) + '&coord_type=1';
+    window.open(url, '_blank');
+  };
+
+  /* 「导航」按钮 → 腾讯地图驾车路线规划（type=drive）。免 Key、零额度。 */
+  window.imLocRoute = function (el) {
+    var d = imLocDataOf(el);
+    if (!d) return;
+    var url = 'https://apis.map.qq.com/uri/v1/routeplan?type=drive&to=' + encodeURIComponent(d.title) +
+      '&tocoord=' + d.lat + ',' + d.lng + '&coord_type=1&policy=0';
+    window.open(url, '_blank');
+  };
+
   function renderMsgs() {
     var box = $id('imMsgs');
     if (!box) return;
@@ -2016,21 +2114,49 @@
           '<span class="im-voice-dur">' + (m.duration ? m.duration + '″' : '语音') + '</span></div>' +
           '<div class="im-mt">' + timeStr + '</div>' + readTag;
       } else if (m.kind === 'location') {
-        /* R104 项3（2026-09-19，用户拍板解除 R88-I §7-7 红线）：位置消息 —— 有坐标渲染微信式地图卡，
-           无坐标（旧消息）回退纯文字卡（向后兼容）。地图图片统一走后端 /api/geo/staticmap 代理，
-           前端绝不经 apis.map.qq.com（Key 不落前端）；onerror 隐藏图片、文字仍在、不破版。 */
+        /* R104 批2（2026-09-19）：位置卡交互 —— 有坐标走微信式地图卡：
+           ① 主体可点 → imLocOpen（腾讯地图 marker URI，免 Key、零额度）；
+           ② 底部「导航」→ imLocRoute（routeplan, type=drive），按钮 stopPropagation 不触发①；
+           ③ 接收方本地 haversine 算「距你约 X」，零网络请求（自己坐标仅来自 navigator.geolocation，
+              失败/超时/被拒 → 不显示该行，无兜底；绝不走 /api/geo/ip 粗定位冒充精确位置）。
+           不可点：无坐标旧卡（im-loc-plain）/ 发送中未回包（pendingSend）/ 已撤回（已在上面 return 灰色提示）。
+           地图缩略图仍统一走后端 /api/geo/staticmap 代理，前端不直连地图服务商。 */
         var hasGeo = (typeof m.lat === 'number' && typeof m.lng === 'number' && isFinite(m.lat) && isFinite(m.lng));
+        /* 发送中未回包 = 服务端会话里本人乐观追加、尚未拿到 server 回包标记的消息；
+           与既有「✓ 已发送」角标条件 (isMe && !isGroup && m.server) 互为镜像。 */
+        var pendingSend = isMe && !isGroup && !!(S.peer && S.peer.isServer) && !m.server;
+        var locInteractive = hasGeo && !pendingSend;
         if (hasGeo) {
+          var locTitle = m.content || '位置';
           var mapSrc = apiBase() + '/api/geo/staticmap?lat=' + encodeURIComponent(m.lat) +
                        '&lng=' + encodeURIComponent(m.lng) + '&zoom=16';
           var locSubHtml = m.sub ? '<div class="im-loc-sub">' + esc(m.sub) + '</div>' : '';
-          inner = '<div class="im-loc-card">' +
+          /* 接收方距离行：仅对方发来的位置显示；数值由本地 haversine 算，无网络请求。 */
+          var locDistHtml = '';
+          if (!isMe) {
+            var locDistTxt = _imMyLoc ? imFormatDistance(imHaversineKm(_imMyLoc.lat, _imMyLoc.lng, m.lat, m.lng)) : '';
+            locDistHtml = '<div class="im-loc-dist"' + (locDistTxt ? '' : ' style="display:none"') +
+              ' data-imloc-dlat="' + esc(m.lat) + '" data-imloc-dlng="' + esc(m.lng) + '">' +
+              (locDistTxt ? esc(locDistTxt) : '') + '</div>';
+            imEnsureMyLoc();
+          }
+          var locCardAttr = ' data-imloc-lat="' + esc(m.lat) + '" data-imloc-lng="' + esc(m.lng) +
+            '" data-imloc-title="' + esc(locTitle) + '"';
+          var locCardClick = locInteractive ? ' onclick="imLocOpen(this)"' : '';
+          var locNavHtml = locInteractive
+            ? '<div class="im-loc-foot"><button type="button" class="im-loc-nav"' +
+                ' onclick="event.stopPropagation();imLocRoute(this)">导航</button></div>'
+            : '';
+          inner = '<div class="im-loc-card' + (locInteractive ? ' im-loc-clickable' : '') + '"' +
+              locCardAttr + locCardClick + '>' +
               '<div class="im-loc-addr">' +
-                '<div class="im-loc-title">' + esc(m.content || '位置') + '</div>' +
+                '<div class="im-loc-title">' + esc(locTitle) + '</div>' +
                 locSubHtml +
+                locDistHtml +
               '</div>' +
               '<img class="im-loc-map" src="' + esc(mapSrc) + '" alt="地图" loading="lazy"' +
                 ' onerror="this.style.display=\'none\'">' +
+              locNavHtml +
             '</div>' +
             '<div class="im-mt">' + timeStr + '</div>' + readTag;
         } else {
@@ -4131,6 +4257,14 @@
       '.im-loc-ic{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;color:var(--primary,#5B8DEF);margin-top:1px}' +
       '.im-loc-ic svg{width:18px;height:18px;display:block}' +
       '.im-loc-text{font-size:14px;line-height:1.5;color:var(--text,#2D3436);word-break:break-word;white-space:pre-wrap}' +
+      /* R104 批2（2026-09-19）：位置卡交互样式 —— 可点态 / 距离行 / 底部「导航」按钮。
+         跟随卡片小按钮风格；固定 px + 圆角，禁 clamp/min/max。 */
+      '.im-loc-card.im-loc-clickable{cursor:pointer}' +
+      '.im-loc-card.im-loc-clickable:active{opacity:.85}' +
+      '.im-loc-dist{font-size:12px;color:var(--text-secondary,#8a8f99);margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}' +
+      '.im-loc-foot{display:flex;justify-content:flex-end;padding:6px 10px;border-top:1px solid var(--border,#eee)}' +
+      '.im-loc-nav{display:inline-flex;align-items:center;justify-content:center;height:26px;padding:0 12px;border:1px solid var(--primary,#5B8DEF);background:transparent;color:var(--primary,#5B8DEF);border-radius:13px;font-size:12px;line-height:1;cursor:pointer}' +
+      '.im-loc-nav:active{background:var(--primary-light,#EEF1FF)}' +
       /* R88-I 增量（2026-09-18）：文件消息卡片（元数据卡，无 emoji、不可跳转）。 */
       '.im-file-card{display:inline-flex;align-items:center;gap:10px;max-width:240px;padding:10px 12px;background:var(--card,#fff);border:1px solid var(--border,#eee);border-radius:10px}' +
       '.im-file-ic{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;color:var(--primary,#5B8DEF)}' +
@@ -4421,6 +4555,15 @@
     fetchGroupMsgs: fetchGroupMsgs,
     renderChatHeader: renderChatHeader,
     imEnsureRemarkBtn: imEnsureRemarkBtn,
+    /* R104 批2（2026-09-19）：位置卡交互 校验钩子（仅测试引用，零运行时行为影响） */
+    imLocOpen: window.imLocOpen,
+    imLocRoute: window.imLocRoute,
+    imHaversineKm: imHaversineKm,
+    imFormatDistance: imFormatDistance,
+    imLocDataOf: imLocDataOf,
+    getImMyLoc: function () { return _imMyLoc; },
+    setImMyLoc: function (v) { _imMyLoc = v || null; _imGeoState = v ? 2 : 0; },
+    getImGeoState: function () { return _imGeoState; },
     getAiConfig: getAiConfig
   };
 
