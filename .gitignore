@@ -53,6 +53,18 @@ server/data/*
 # 用量账本（运行时累计，服务器上的才是真实数据）
 server/data/model_usage.json
 
+# ===== 2026-09-19 R104c：地点搜索每日计数（运行时数据，绝不能上线覆盖）=====
+# geo_place_count.json 记录当日 /api/geo/place 已消耗次数，靠它让「当日 150 熔断」扛重启；
+# 一旦入库，下次部署会把服务器真实计数覆盖成 0 -> 熔断形同虚设。
+# （虽已被上方 `server/data/*` 覆盖，此处仍显式列出，沿用 model_usage.json 的既有做法。）
+server/data/geo_place_count.json
+
+# ===== 2026-09-19 批5：静态地图每日计数（运行时数据，绝不能上线覆盖）=====
+# geo_staticmap_count.json 记录当日 /api/geo/staticmap 已消耗次数，靠它让「6000/日 熔断」扛重启；
+# 一旦入库，下次部署会把服务器真实计数覆盖成 0 -> 熔断形同虚设。
+# （虽已被上方 `server/data/*` 覆盖，此处仍显式列出，沿用 geo_place_count.json 的既有做法。）
+server/data/geo_staticmap_count.json
+
 # 后端真实配置（含 JWT 密钥与各家大模型 API Key，只留 .env.example 模板入库）
 server/.env
 .env
