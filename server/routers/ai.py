@@ -1132,7 +1132,14 @@ def _task_view(body) -> dict:
     """
     j = body if isinstance(body, dict) else {}
     raw = str(j.get("status") or "").strip().lower()
-    content = j.get("content") if isinstance(j.get("content"), dict) else {}
+    # 部分上游可能返回数组形态，取首个对象元素；其余形态一律按空对象兜底
+    _c = j.get("content")
+    if isinstance(_c, dict):
+        content = _c
+    elif isinstance(_c, list):
+        content = next((it for it in _c if isinstance(it, dict)), {})
+    else:
+        content = {}
     err = ""
     e = j.get("error")
     if isinstance(e, dict):

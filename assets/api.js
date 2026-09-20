@@ -1003,29 +1003,48 @@ async function sendAiMsg() {
     } catch (e) { /* ignore */ }
   }
   var bubble = createStreamingBubble();
+  /* 需求B（2026-09-22，主理人补完）：aiStream「流式输出」开关端到端接线。
+     本函数才是真正生效的 AI 聊天路径——api.js 在 app.js 之后加载，同名全局
+     function sendAiMsg 覆盖了 app.js 那一版，所以前缀侧渲染门控必须落在这里。
+     读：getSetting('aiStream')，缺省 true（保持历史行为不变）；
+     写：随请求体下发 stream 字段（协议留痕，服务端未声明该字段时会忽略）；
+     消费：false 时不再做逐字递增渲染，整段返回后一次性渲染；true 时沿用
+           reader 增量渲染（打字机观感）。 */
+  var aiStreamOn = true;
+  try { if (typeof getSetting === 'function') aiStreamOn = (getSetting('aiStream') !== false); } catch (e0) { aiStreamOn = true; }
   try {
     var res = await apiAuthedFetch('/api/ai/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiGetToken() },
-      body: JSON.stringify((function () { var o = { provider: modelId, messages: buildAiContextMessages() }; try { if (typeof getSetting === 'function') { var t = getSetting('aiTemp'); if (t !== '' && t != null) o.temperature = Math.min(2, Math.max(0, +t)); var mx = getSetting('aiMax'); if (mx !== '' && mx != null) o.maxTokens = Math.min(8192, Math.max(64, +mx)); } } catch (e) {} return o; })())
+      body: JSON.stringify((function () { var o = { provider: modelId, messages: buildAiContextMessages(), stream: aiStreamOn }; try { if (typeof getSetting === 'function') { var t = getSetting('aiTemp'); if (t !== '' && t != null) o.temperature = Math.min(2, Math.max(0, +t)); var mx = getSetting('aiMax'); if (mx !== '' && mx != null) o.maxTokens = Math.min(8192, Math.max(64, +mx)); } } catch (e) {} return o; })())
     });
     if (!res.ok) {
       var detail = '';
       try { detail = (await res.json()).detail || ''; } catch (e) { }
       throw new Error(detail || ('HTTP ' + res.status));
     }
-    var reader = res.body.getReader();
-    var decoder = new TextDecoder('utf-8');
-    var acc = '';
-    while (true) {
-      var r = await reader.read();
-      if (r.done) break;
-      acc += decoder.decode(r.value, { stream: true });
-      bubble.textContent = acc;
+    if (aiStreamOn) {
+      var reader = res.body.getReader();
+      var decoder = new TextDecoder('utf-8');
+      var acc = '';
+      while (true) {
+        var r = await reader.read();
+        if (r.done) break;
+        acc += decoder.decode(r.value, { stream: true });
+        bubble.textContent = acc;   // 增量渲染：打字机观感
+        scrollAiMessages();
+      }
+      if (!acc) acc = '(模型返回了空回复)';
+      finishStreaming('ai', acc);
+    } else {
+      // 关闭「流式输出」：读满整段再一次性渲染，不再逐字递增（光标态同步撤掉）
+      var full = await res.text();
+      if (!full) full = '(模型返回了空回复)';
+      try { bubble.classList.remove('typing'); } catch (e2) { }
+      bubble.textContent = full;
       scrollAiMessages();
+      finishStreaming('ai', full);
     }
-    if (!acc) acc = '(模型返回了空回复)';
-    finishStreaming('ai', acc);
   } catch (e) {
     finishStreaming('ai', '⚠️ AI 服务连接失败：' + e.message + '\n\n请确认：① 后端已启动（uvicorn main:app --port 8000）② server/.env 里已配置对应模型的 API Key。');
   }

@@ -367,10 +367,19 @@
     var m = findM(mid);
     if (!m || !(m.images || []).length) return;
     viewerImgs = m.images;
+    /* 增量需求1（2026-09-22）：优先委托全站 ImgViewer.openList（捏合缩放/拖动/保存/返回键）；
+       img-viewer.js 未加载时回退本文件旧查看器，XTM.viewer 函数签名不变、旧缓存页不崩。 */
+    if (window.ImgViewer && typeof ImgViewer.openList === 'function') {
+      var urls = [];
+      for (var k = 0; k < viewerImgs.length; k++) urls.push(absUrl(viewerImgs[k]));
+      try { ImgViewer.openList({ urls: urls, index: i || 0 }); return; } catch (e) { /* 回退旧实现 */ }
+    }
     ensureViewer();
     showViewer(i || 0);
     $('xtmViewer').style.display = 'flex';
   }
+  /* 兼容空壳（增量需求1 2026-09-22）：旧查看器仅作 ImgViewer 缺失时的回退路径；
+     ImgViewer 接管后正常流程不会再显示 xtmViewer，保留隐藏逻辑防残留。 */
   function closeViewer() { var el = $('xtmViewer'); if (el) el.style.display = 'none'; }
 
   /* ============================ 通用输入 / 通知弹层 ============================ */
@@ -628,6 +637,10 @@
   }
   function viewerSrc(src) {
     viewerImgs = [src];
+    /* 增量需求1（2026-09-22）：相册单图同样委托 ImgViewer，缺失时回退旧查看器 */
+    if (window.ImgViewer && typeof ImgViewer.open === 'function') {
+      try { ImgViewer.open({ src: absUrl(src) }); return; } catch (e) { /* 回退旧实现 */ }
+    }
     ensureViewer();
     showViewer(0);
     $('xtmViewer').style.display = 'flex';

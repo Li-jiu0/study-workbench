@@ -2383,14 +2383,24 @@
   }
   window.imClosePreview = imClosePreview;
 
+  /* 增量需求1（2026-09-22）：优先委托全站 ImgViewer（assets/img-viewer.js，含双指捏合/
+     加载态/失败重试/保存到相册/Android 返回键关闭）；img-viewer.js 未加载（老缓存页面
+     未引入该脚本）时回退旧 _IV 实现，函数名与行为对旧 HTML 完全兼容。 */
   function imPreviewImage(src) {
     if (!src) return;
+    if (window.ImgViewer && typeof window.ImgViewer.open === 'function') {
+      try { window.ImgViewer.open({ src: src }); return; } catch (e) { /* 委托失败走旧实现 */ }
+    }
+    imPreviewImageLegacy(src);
+  }
+  window.imPreviewImage = imPreviewImage;
+  /* 旧 _IV 单例实现保留作 fallback（防 img-viewer.js 加载失败） */
+  function imPreviewImageLegacy(src) {
     if (!_IV) imIvBuild();
     _IV.img.setAttribute('src', src);
     _IV.scale = 1; _IV.tx = 0; _IV.ty = 0; _IV.applyT();
     if (!_IV.ov.parentNode) document.body.appendChild(_IV.ov);
   }
-  window.imPreviewImage = imPreviewImage;
 
   function imIvBuild() {
     var ov = document.createElement('div');

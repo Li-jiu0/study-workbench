@@ -186,6 +186,12 @@
             <div class="sgc-main"><div class="sgc-title">我的文件</div><div class="sgc-desc">题库 / 作品 / 笔记，一处归档</div></div>
             <div class="sgc-arrow">›</div>
           </div>
+          <!-- 需求 3（数据管理重构 20260922a）：新增「数据管理」直达入口卡（存储占用/分类清理/备份恢复） -->
+          <div class="subpage-group-card" onclick="location.href='数据管理.html'">
+            <div class="sgc-icon" data-icon="package"></div>
+            <div class="sgc-main"><div class="sgc-title">数据管理</div><div class="sgc-desc">存储占用 · 分类清理 · 备份恢复</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
           <!-- N9-25（2026-09-15）：原「本机数据」入口卡（navigate('local-data')）按需求删除。
                section[data-subpage="local-data"] 与 #localStats 保留（renderProfileOverview() 依赖），
                仍可通过 hash 直达：个人中心.html#local-data -->
@@ -507,16 +513,16 @@
 
 </div>
 
-<script src="assets/xt-settings.js?v=20260916O"></script>
+<script src="assets/xt-settings.js?v=20260922c"></script>
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
 <script>window.__XT_PROD__=true;</script>
 <script src="assets/icon-map.js?v=20260919l" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260920e" defer></script>
+<script src="assets/app.js?v=20260922c" defer></script>
 <script src="assets/quest.js?v=20260916O" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260917b" defer></script>
+<script src="assets/api.js?v=20260922c" defer></script>
 <script src="assets/subpage-router.js?v=20260917b" defer></script>
 
 <script>
@@ -1098,7 +1104,7 @@ window.addEventListener('load', function() {
 <script src="assets/ai-cap-embed.js?v=20260920c"></script>
 <script src="assets/ai-cap-translate.js?v=20260920c"></script>
 <script src="assets/ai-cap-video.js?v=20260920c"></script>
-<script src="assets/ai-cap-3d.js?v=20260920c"></script>
+<script src="assets/ai-cap-3d.js?v=20260922a"></script>
 <script>
 /* ==================== R86-B（2026-09-18）：个人信息页四项改造 ====================
    ① 生日：统一 YYYY-MM-DD；输入即时校验（格式 / 不存在的日期 / 未来日期 / 越界年月）；

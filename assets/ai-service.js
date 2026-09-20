@@ -22,7 +22,7 @@
   // R83b：文档 §四的「30 秒」指首响应超时（TIMEOUT_RESPONSE），总时长回归 90 秒，避免长回答被判超时降级
   var TIMEOUT_TOTAL = 90000;
   // 慢模型黑名单：仅用户手动选择时进入链路，自动降级链里排除。
-  // 2026-09-20 核对：现役 66 个内置模型中仅视频/3D（seedance/seed3d/hyper3d/hitem3d）标「慢」，
+  // 2026-09-20 核对：现役内置模型中仅视频/3D（seedance/seed3d/hitem3d）标「慢」，
   // 它们只进 video/three_d 专属 funcType 链，永不进入文本自动链 -> 本名单置空、过滤逻辑保留，
   // 日后若接入慢速文本模型（如深度推理 R1 系）再回填 id 即可。
   var SLOW_MODEL_IDS = [];

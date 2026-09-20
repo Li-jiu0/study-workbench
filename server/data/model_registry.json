@@ -38,7 +38,6 @@
   "ark-seedance-2-0-mini": { "provider": "arkvideo", "model": "doubao-seedance-2-0-mini-260615", "type": "video" },
   "ark-seedance-2-5": { "provider": "arkvideo", "model": "doubao-seedance-2-5-260628", "type": "video" },
   "ark-seed3d-2-0": { "provider": "ark3d", "model": "doubao-seed3d-2-0-260328", "type": "3d" },
-  "ark-hyper3d-gen2": { "provider": "ark3d", "model": "hyper3d-gen2-260112", "type": "3d" },
   "ark-hitem3d-2-0": { "provider": "ark3d", "model": "hitem3d-2-0-251223", "type": "3d" },
   "ark-embedding-vision": { "provider": "ark", "model": "doubao-embedding-vision-251215", "type": "embedding" },
   "ark-v4-flash": { "provider": "ark", "model": "deepseek-v4-flash-ga-260731" },

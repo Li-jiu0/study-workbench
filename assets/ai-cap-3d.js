@@ -11,7 +11,7 @@
  *   - 用量字段同视频：usage.completion_tokens == usage.total_tokens
  *   - 单次约 30,000 tokens（glb / medium），200 万额度够约 66 个
  *   - 结果 URL 同样只有 24 小时有效期（X-Tos-Expires=86400）
- *   - 三家厂商额度不同：Seed3D-2.0 200万 / Hyper3D-Gen2 15万 / Hitem3D-2.0 50万
+ *   - 厂商额度不同：Seed3D-2.0 200万 / Hitem3D-2.0 50万（Hyper3D-Gen2 已下线移除）
  *
  * 与 ai-cap-video.js 一样自带轮询（run()），不走同步调用层。
  *
@@ -228,7 +228,7 @@
               eff = {
                 status: String(rj.status || ''),
                 content: {
-                  file_url: String(rj.fileUrl || rj.videoUrl || ''),
+                  file_url: String(rj.fileUrl || rj.modelUrl || rj.videoUrl || ''),
                   image_url: String(rj.previewUrl || ''),
                   fileformat: String(rj.fileformat || '')
                 },

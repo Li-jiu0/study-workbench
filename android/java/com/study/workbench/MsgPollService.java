@@ -33,7 +33,7 @@ import java.util.List;
  * R73 版本：15s 固定间隔轮询 /api/chat/unread（total 增长即弹横幅）。
  * R105 升级（本期）：
  *   1. 前台服务 + 常驻低优先级保活通知「星途正在守护消息」（id 固定，不发声不振动）；
- *   2. 轮询节奏：亮屏 60s/次、灭屏 300s/次（PowerManager + SCREEN_ON/OFF 广播，
+ *   2. 轮询节奏：亮屏 60s/次、灭屏 120s/次（PollLogic；PowerManager + SCREEN_ON/OFF 广播，
  *      Handler/后台线程实现，不引第三方库）；
  *   3. 轮询接口升级为 GET /api/chat/unread-summary（后端线契约，见 PollLogic）：
  *      {"ok":true,"items":[{"id":123,"type":"peer","name":"昵称","unread":2,
@@ -66,8 +66,15 @@ public class MsgPollService extends Service {
     /** MainActivity 前台状态：前台时页面 JS 会自己弹通知，本服务不重复弹。 */
     public static volatile boolean appForeground = false;
 
+    /** 【需求C】轮询线程存活静态标志：onStartCommand 起线程时置 true、onDestroy/cleanupAndStop 置 false。
+     *  供 PollKeepAliveJobService.onStartJob 自检「服务是否还在跑」（静态可读，JobService 无实例引用）。 */
+    public static volatile boolean sRunning = false;
+
     private static final String ALIVE_CHANNEL_ID = "xt_keepalive";
-    private static final String MSG_CHANNEL_ID = "xt_msg";
+    /** 【需求C】消息渠道 id 由 xt_msg 改 xt_msg_v2：渠道设置跨安装保留且程序无法升级 importance，
+     *  设备上若残留过旧版创建的低 importance 渠道（或被用户手动关了横幅），代码永远无法修正 ——
+     *  换新渠道 id 一次性绕开历史状态，强制 IMPORTANCE_HIGH（旧 xt_msg 遗留不动，任其自然闲置）。 */
+    private static final String MSG_CHANNEL_ID = "xt_msg_v2";
     /** 保活常驻通知 id（固定，同 id 重复 post 只更新不堆叠）。MainActivity 取消时也要用。 */
     public static final int ALIVE_NOTIFY_ID = 102;
     /** 新消息横幅通知 id（固定：后一条覆盖前一条，避免横幅刷屏）。 */
@@ -94,6 +101,8 @@ public class MsgPollService extends Service {
     public void onCreate() {
         super.onCreate();
         ensureChannels();
+        // 【需求C】调度/刷新 15 分钟周期保活 Job（幂等：同 JOB_ID 覆盖；MainActivity.onCreate 也会调，双保险）
+        PollKeepAliveJobService.scheduleKeepAlive(this);
         // 初始屏幕状态：无 PowerManager（极端 ROM）按亮屏处理，间隔取小值保实时
         boolean interactive = true;
         try {
@@ -117,6 +126,7 @@ public class MsgPollService extends Service {
         }
         if (!running) {
             running = true;
+            sRunning = true;   // 【需求C】同步静态存活标志（JobService 自检用）
             worker = new Thread(new Runnable() {
                 @Override public void run() { pollLoop(); }
             }, "xt-msg-poll");
@@ -129,6 +139,7 @@ public class MsgPollService extends Service {
     @Override
     public void onDestroy() {
         running = false;
+        sRunning = false;      // 【需求C】同步静态存活标志
         worker = null;
         unregisterScreenReceiver();
         wakePoller();
@@ -319,6 +330,16 @@ public class MsgPollService extends Service {
                 NotificationChannel c2 = new NotificationChannel(MSG_CHANNEL_ID, "消息通知", NotificationManager.IMPORTANCE_HIGH);
                 c2.setDescription("星途 · 收到新消息时弹出横幅提醒");
                 nm.createNotificationChannel(c2);
+            } else {
+                // 【需求C】渠道自检：渠道设置跨安装保留且程序无法升级 importance ——
+                // 若该渠道 importance 低于 HIGH（历史遗留/被用户手动降级），打观测日志
+                // （只打 id 与 importance 等级，不含任何坐标/消息内容）。
+                NotificationChannel cur = nm.getNotificationChannel(MSG_CHANNEL_ID);
+                if (cur != null && cur.getImportance() < NotificationManager.IMPORTANCE_HIGH) {
+                    android.util.Log.w("MsgPollService",
+                            "notify channel importance degraded: " + MSG_CHANNEL_ID
+                                    + " importance=" + cur.getImportance());
+                }
             }
         } catch (Throwable e) { /* 渠道创建失败：静默 */ }
     }
@@ -407,6 +428,7 @@ public class MsgPollService extends Service {
         try { stopForeground(true); } catch (Throwable e) { /* 静默 */ }
         try { stopSelf(); } catch (Throwable e) { /* 静默 */ }
         running = false;
+        sRunning = false;   // 【需求C】同步静态存活标志
     }
 
     private void sleep(long ms) {

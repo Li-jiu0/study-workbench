@@ -30,10 +30,11 @@ router = APIRouter(prefix="/api/live", tags=["live"])
 # _LIVE[shareId] = {owner, peer, group, lat, lng, ts(monotonic基准=time.time), exp(epoch秒),
 #                   ended(bool), last_db_hb(上次落盘 epoch秒)}
 _LIVE: dict[str, dict] = {}
-# 双向私聊索引：键 (min(a,b), max(a,b))
-_LIVE_BY_PEER: dict[tuple[int, int], str] = {}
-# 群聊索引：groupId → shareId
-_LIVE_BY_GROUP: dict[int, str] = {}
+# 双向私聊索引：键 (min(a,b), max(a,b)) → 该对上所有 active 会话 shareId 列表。
+# 双向共享：A、B 各自 start 后并存两条会话，列表 append/remove；列表空则整个键 pop（防慢泄漏）。
+_LIVE_BY_PEER: dict[tuple[int, int], list[str]] = {}
+# 群聊索引：groupId → 该群所有 active 会话 shareId 列表
+_LIVE_BY_GROUP: dict[int, list[str]] = {}
 
 _LIVE_SHARE_MAX_SEC = 3600   # 单次共享时长上限 60 分钟（到期惰性结束）
 _LIVE_STALE_SEC = 60         # 心跳超过 60s → stale（App 被杀 / 断网）
@@ -64,7 +65,11 @@ def _parse_iso(s: str) -> float | None:
 
 
 def _hydrate(row: LiveLocation) -> dict:
-    """把 DB 行回填成内存条目（进程重启后 state/tick 兜底用）。"""
+    """把 DB 行回填成内存条目（进程重启后 state/tick 兜底用）。
+
+    守护：仅 active（未 ended 且未过期）的行才写二级索引；ended/expired 行只回填 _LIVE
+    （供 tick 返回 403「共享已结束」用），绝不进索引——顺带修掉「ended 行覆盖索引」的隐患。
+    """
     it = {
         "owner": row.owner_id,
         "peer": row.peer_id,
@@ -77,23 +82,41 @@ def _hydrate(row: LiveLocation) -> dict:
         "last_db_hb": time.time(),
     }
     _LIVE[row.share_id] = it
-    if it["peer"]:
-        _LIVE_BY_PEER[_pair(it["owner"], it["peer"])] = row.share_id
-    elif it["group"]:
-        _LIVE_BY_GROUP[it["group"]] = row.share_id
+    if (not it["ended"]) and time.time() <= it["exp"]:
+        if it["peer"]:
+            key = _pair(it["owner"], it["peer"])
+            lst = _LIVE_BY_PEER.setdefault(key, [])
+            if row.share_id not in lst:
+                lst.append(row.share_id)
+        elif it["group"]:
+            lst = _LIVE_BY_GROUP.setdefault(it["group"], [])
+            if row.share_id not in lst:
+                lst.append(row.share_id)
     return it
 
 
 def _drop_indexes(it: dict, share_id: str) -> None:
-    """从内存索引摘除一个会话（stop / 覆盖旧会话时用）。"""
+    """从内存索引摘除一个会话（stop / 覆盖旧会话时用）：按值 remove，列表空则摘键防慢泄漏。"""
     _LIVE.pop(share_id, None)
     if it.get("peer"):
         key = _pair(it["owner"], it["peer"])
-        if _LIVE_BY_PEER.get(key) == share_id:
-            _LIVE_BY_PEER.pop(key, None)
+        lst = _LIVE_BY_PEER.get(key)
+        if lst is not None:
+            try:
+                lst.remove(share_id)
+            except ValueError:
+                pass
+            if not lst:
+                _LIVE_BY_PEER.pop(key, None)
     if it.get("group"):
-        if _LIVE_BY_GROUP.get(it["group"]) == share_id:
-            _LIVE_BY_GROUP.pop(it["group"], None)
+        lst = _LIVE_BY_GROUP.get(it["group"])
+        if lst is not None:
+            try:
+                lst.remove(share_id)
+            except ValueError:
+                pass
+            if not lst:
+                _LIVE_BY_GROUP.pop(it["group"], None)
 
 
 def _end_row(db: Session, row: LiveLocation | None) -> None:
@@ -164,9 +187,13 @@ async def live_start(body: StartIn, user: User = Depends(get_current_user),
                        "lat": None, "lng": None, "ts": now, "exp": exp, "ended": False,
                        "last_db_hb": now}
     if peer:
-        _LIVE_BY_PEER[_pair(user.id, peer)] = share_id
+        lst = _LIVE_BY_PEER.setdefault(_pair(user.id, peer), [])
+        if share_id not in lst:
+            lst.append(share_id)
     else:
-        _LIVE_BY_GROUP[gid] = share_id
+        lst = _LIVE_BY_GROUP.setdefault(gid, [])
+        if share_id not in lst:
+            lst.append(share_id)
 
     # 系统卡片（只有文案，无坐标）：私聊 / 群聊各走自己的落库+推送路径
     if peer:
@@ -177,20 +204,22 @@ async def live_start(body: StartIn, user: User = Depends(get_current_user),
 
 
 def _end_existing(db: Session, owner: int, peer: int | None, group: int | None) -> None:
-    """结束本人「同一目标」上仍在 active 的旧会话（幂等；不落卡片）。"""
+    """结束本人「同一目标」上所有仍 active 的旧会话（幂等；不落卡片）。
+
+    双向共享后同一 pair/群下本人可能残留多条历史会话，.all() 全部清干净
+    （不再只结最新一条），pair/群列表里只剩对方会话（若有）+ 本人新会话。
+    """
     q = db.query(LiveLocation).filter(LiveLocation.owner_id == owner,
                                       LiveLocation.state == "active")
     if peer:
         q = q.filter(LiveLocation.peer_id == peer, LiveLocation.group_id.is_(None))
     else:
         q = q.filter(LiveLocation.group_id == group)
-    row = q.order_by(LiveLocation.id.desc()).first()
-    if row is None:
-        return
-    old = _hydrate(row) if row.share_id not in _LIVE else _LIVE[row.share_id]
-    old["ended"] = True
-    _drop_indexes(old, row.share_id)
-    _end_row(db, row)
+    for row in q.order_by(LiveLocation.id.desc()).all():
+        it = _LIVE.get(row.share_id) or _hydrate(row)
+        it["ended"] = True
+        _drop_indexes(it, row.share_id)
+        _end_row(db, row)
 
 
 @router.post("/tick")
@@ -264,45 +293,94 @@ def live_state(peerId: int = 0, groupId: int = 0,
     """查询「我对该对端 / 该群」当前是否有人在共享及其当前坐标（**不含轨迹**）。
 
     读取顺序：先内存（命中零 DB 查询）→ 内存没有（进程重启过）才查 DB 并回填内存。
+    返回该对/该群下**所有** active 会话列表（sessions[]），另附顶层旧字段兼容层。
     """
     if bool(peerId) == bool(groupId):
         raise HTTPException(400, "peerId / groupId 必须二选一")
     now = time.time()
+    pairs: list[tuple[str, dict]] = []  # (share_id, it) —— 该对/群下全部候选会话
     if peerId:
-        share_id = _LIVE_BY_PEER.get(_pair(user.id, peerId))
-        it = _LIVE.get(share_id) if share_id else None
-        if it is None:
-            a, b = _pair(user.id, peerId)
-            row = (db.query(LiveLocation)
-                   .filter(LiveLocation.state == "active", LiveLocation.group_id.is_(None))
-                   .filter(((LiveLocation.owner_id == a) & (LiveLocation.peer_id == b))
-                           | ((LiveLocation.owner_id == b) & (LiveLocation.peer_id == a)))
-                   .order_by(LiveLocation.id.desc()).first())
-            it = _hydrate(row) if row is not None else None
+        key = _pair(user.id, peerId)
+        for sid in list(_LIVE_BY_PEER.get(key, [])):
+            it = _LIVE.get(sid)
+            if it is not None and _active(it, now):
+                pairs.append((sid, it))
+        if not pairs:
+            a, b = key
+            rows = (db.query(LiveLocation)
+                    .filter(LiveLocation.state == "active", LiveLocation.group_id.is_(None))
+                    .filter(((LiveLocation.owner_id == a) & (LiveLocation.peer_id == b))
+                            | ((LiveLocation.owner_id == b) & (LiveLocation.peer_id == a)))
+                    .order_by(LiveLocation.id.desc()).all())
+            for row in rows:
+                it = _LIVE.get(row.share_id) or _hydrate(row)
+                if _active(it, now):
+                    pairs.append((row.share_id, it))
     else:
         if not db.query(ChatGroupMember).filter(
                 ChatGroupMember.group_id == groupId,
                 ChatGroupMember.user_id == user.id).first():
             raise HTTPException(403, "你不是该群成员")
-        share_id = _LIVE_BY_GROUP.get(groupId)
-        it = _LIVE.get(share_id) if share_id else None
-        if it is None:
-            row = (db.query(LiveLocation)
-                   .filter(LiveLocation.group_id == groupId,
-                           LiveLocation.state == "active")
-                   .order_by(LiveLocation.id.desc()).first())
-            it = _hydrate(row) if row is not None else None
+        for sid in list(_LIVE_BY_GROUP.get(groupId, [])):
+            it = _LIVE.get(sid)
+            if it is not None and _active(it, now):
+                pairs.append((sid, it))
+        if not pairs:
+            rows = (db.query(LiveLocation)
+                    .filter(LiveLocation.group_id == groupId,
+                            LiveLocation.state == "active")
+                    .order_by(LiveLocation.id.desc()).all())
+            for row in rows:
+                it = _LIVE.get(row.share_id) or _hydrate(row)
+                if _active(it, now):
+                    pairs.append((row.share_id, it))
 
-    if it is None or not _active(it, now):
+    if not pairs:
         return {"ok": True, "active": False, "shareId": "", "sharerId": 0,
                 "lat": None, "lng": None, "updatedAt": 0, "stale": True}
+
+    # 发起人昵称批量取齐（每 uid 至多一次 db.get，不逐条查询）
+    owners: dict[int, str] = {}
+    for _sid, it in pairs:
+        if it["owner"] not in owners:
+            u = db.get(User, it["owner"])
+            owners[it["owner"]] = ((u.nickname or "") if u else "")
+
+    sessions = []
+    for sid, it in pairs:
+        lat, lng = it["lat"], it["lng"]
+        # hasFix 语义锁定：lat/lng 均非 None 才算就绪；绝不把 null 转 0、绝不返回 0 坐标
+        has_fix = (lat is not None) and (lng is not None)
+        sessions.append({
+            "shareId": sid,
+            "sharerId": it["owner"],
+            "sharerName": owners.get(it["owner"], ""),
+            "lat": lat,
+            "lng": lng,
+            "hasFix": has_fix,
+            "updatedAt": _ms(it["ts"]),
+            "stale": (now - it["ts"]) > _LIVE_STALE_SEC,
+        })
+    sessions.sort(key=lambda s: s["updatedAt"], reverse=True)  # 最新坐标在前（稳定排序）
+
+    # ===== 旧字段兼容层：优先取 peer（=对方发起）的会话，还原旧行为「显示对方坐标」；
+    # 无 peer 会话时取任一条（updatedAt 最高，即 sessions[0]）。新前端只读 sessions[]，互不干扰。
+    top = sessions[0]
+    if peerId:
+        for s in sessions:
+            if s["sharerId"] == peerId:
+                top = s
+                break
     return {
         "ok": True,
         "active": True,
-        "shareId": share_id,
-        "sharerId": it["owner"],
-        "lat": it["lat"],
-        "lng": it["lng"],
-        "updatedAt": _ms(it["ts"]),
-        "stale": (now - it["ts"]) > _LIVE_STALE_SEC,
+        "count": len(sessions),
+        "sessions": sessions,
+        # 以下顶层旧字段仅供旧缓存页面兼容（类型与升级前完全一致）
+        "shareId": top["shareId"],
+        "sharerId": top["sharerId"],
+        "lat": top["lat"],
+        "lng": top["lng"],
+        "updatedAt": top["updatedAt"],
+        "stale": top["stale"],
     }

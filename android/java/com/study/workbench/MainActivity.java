@@ -138,6 +138,10 @@ public class MainActivity extends Activity {
         checkInstalledVersionAndCleanupApks();
         // 【R105】App 启动时按本地开关+登录态恢复消息轮询前台服务（前端 setNotifyConfig 亦会触发，双保险）
         ensureMsgPollService();
+        // 【需求C】首启自动引导一次电池优化白名单（系统弹窗由用户确认，不强制；仅弹一次，落盘标记）
+        maybeGuideBatteryOnce();
+        // 【需求C】注册 15 分钟周期的轮询保活 Job（进程被杀/划卡后自拉 MsgPollService；幂等：同 JOB_ID 覆盖）
+        PollKeepAliveJobService.scheduleKeepAlive(this);
 
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);            // 全站逻辑为原生 JS
@@ -272,29 +276,12 @@ public class MainActivity extends Activity {
                 } catch (Throwable e) { /* 配置写入失败：静默 */ }
             }
 
-            /** 【R73-18①】引导用户把本应用加入电池优化白名单（可选，降低被系统冻结概率）。 */
+            /** 【R73-18①】引导用户把本应用加入电池优化白名单（可选，降低被系统冻结概率）。
+             *  【需求C】实现抽到 MainActivity.openBatteryOptimizationRequest()：桥与首启自动引导共用。 */
             @JavascriptInterface
             public void requestIgnoreBatteryOptimizations() {
                 runOnUiThread(new Runnable() {
-                    @Override public void run() {
-                        try {
-                            if (Build.VERSION.SDK_INT >= 23) {
-                                Intent i = new Intent(
-                                        android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-                                i.setData(Uri.parse("package:" + getPackageName()));
-                                startActivity(i);
-                            } else {
-                                toast("当前系统无需手动设置电池优化");
-                            }
-                        } catch (Throwable e) {
-                            try {
-                                startActivity(new Intent(
-                                        android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
-                            } catch (Throwable e2) {
-                                toast("请在 系统设置→电池 中允许本应用后台运行");
-                            }
-                        }
-                    }
+                    @Override public void run() { openBatteryOptimizationRequest(); }
                 });
             }
             /** 【R101】App 内下载更新包 —— 交给系统 DownloadManager 后台下载（退出页面不中断），完成后自动弹安装。
@@ -351,6 +338,98 @@ public class MainActivity extends Activity {
                         }
                     });
                 } catch (Throwable e) { /* 写配置失败：静默 */ }
+            }
+
+            /** 【需求C】查询系统通知权限是否已授予（Android 13 / API 33+ 才有运行时通知权限）。
+             *  前端契约：XTAppBridge.isNotifyGranted() → boolean（设置页渲染「去开启系统通知」引导行）。
+             *  API<33 恒 true（通知随安装授予，无运行时开关）；查询异常也按 true 处理，避免误引导。 */
+            @JavascriptInterface
+            public boolean isNotifyGranted() {
+                try {
+                    if (Build.VERSION.SDK_INT < 33) return true;
+                    return checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                            == android.content.pm.PackageManager.PERMISSION_GRANTED;
+                } catch (Throwable e) {
+                    return true;
+                }
+            }
+
+            /** 【需求C】跳转系统「应用通知」设置页（权限被拒后的引导闭环，与拒绝分支共用同一实现）。 */
+            @JavascriptInterface
+            public void openNotifySettings() {
+                runOnUiThread(new Runnable() {
+                    @Override public void run() { openAppNotificationSettings(); }
+                });
+            }
+
+            /** 【需求1·图片保存】下载图片并写入系统相册（同步网络 IO，照 fetchUrl 的线程与错误约定）。
+             *  前端契约：AndroidBridge.saveImageToGallery(url, filename) →
+             *  'ok' / '__ERROR__:...' / '__UNSUPPORTED__'（img-viewer.js xtSaveImage 按前缀分流降级）。
+             *  流程：HttpURLConnection 下载（Content-Type 须为 image/*、≤20MB）→ 解码 Bitmap →
+             *  Android 10+（API29+）走 MediaStore.Images 写 Pictures/星途（RELATIVE_PATH，免存储权限）；
+             *  API<29 写 getExternalFilesDir(Pictures) 应用专属目录（零权限，相册不可见为设计内降级）。
+             *  Manifest 本期不加任何权限。文件名清洗照 saveFile；日志不打印 URL 之外的任何用户内容。 */
+            @JavascriptInterface
+            public String saveImageToGallery(final String url, final String filename) {
+                if (url == null || url.trim().isEmpty()) return "__ERROR__: empty url";
+                // 文件名清洗照 saveFile：非法字符换下划线；缺省用时间戳兜底
+                String safe = (filename == null) ? "" : filename.trim();
+                safe = safe.replaceAll("[\\\\/:*?\"<>|]", "_");
+                if (safe.isEmpty()) safe = "xt_" + System.currentTimeMillis() + ".png";
+                java.net.HttpURLConnection conn = null;
+                try {
+                    java.net.URL u = new java.net.URL(url.trim());
+                    conn = (java.net.HttpURLConnection) u.openConnection();
+                    conn.setRequestMethod("GET");
+                    conn.setConnectTimeout(10000);
+                    conn.setReadTimeout(20000);
+                    // 与 fetchUrl 同款 Chrome UA，避免被 WAF 拦截
+                    conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 15; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36");
+                    int code = conn.getResponseCode();
+                    if (code < 200 || code >= 300) return "__ERROR__: HTTP " + code;
+                    String ctype = conn.getContentType();
+                    if (ctype == null || !ctype.toLowerCase(Locale.US).startsWith("image/")) {
+                        return "__ERROR__: not an image";
+                    }
+                    // 流式读取 + 边读边限体积（20MB 上限，防超大图打爆内存）
+                    java.io.InputStream is = conn.getInputStream();
+                    java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+                    byte[] buf = new byte[8192];
+                    int n;
+                    long total = 0L;
+                    final long MAX_BYTES = 20L * 1024 * 1024;
+                    while ((n = is.read(buf)) != -1) {
+                        total += n;
+                        if (total > MAX_BYTES) {
+                            is.close();
+                            return "__ERROR__: image too large";
+                        }
+                        bos.write(buf, 0, n);
+                    }
+                    is.close();
+                    byte[] data = bos.toByteArray();
+                    // 先解码边界拿宽高/真实 MIME（校验确实是可解码图片），再整图解码
+                    android.graphics.BitmapFactory.Options opts = new android.graphics.BitmapFactory.Options();
+                    opts.inJustDecodeBounds = true;
+                    android.graphics.BitmapFactory.decodeByteArray(data, 0, data.length, opts);
+                    if (opts.outWidth <= 0 || opts.outHeight <= 0) return "__ERROR__: decode failed";
+                    String mime = (opts.outMimeType == null || opts.outMimeType.trim().isEmpty())
+                            ? ctype : opts.outMimeType.trim();
+                    android.graphics.Bitmap bmp = android.graphics.BitmapFactory.decodeByteArray(data, 0, data.length);
+                    if (bmp == null) return "__ERROR__: decode failed";
+                    String saved;
+                    if (Build.VERSION.SDK_INT >= 29) {
+                        saved = writeImageToMediaStore(bmp, safe, mime);
+                    } else {
+                        saved = writeImageToAppPictures(bmp, safe);
+                    }
+                    bmp.recycle();
+                    return (saved == null) ? "__ERROR__: save failed" : "ok";
+                } catch (final Exception e) {
+                    return "__ERROR__: " + e.getClass().getSimpleName() + " " + e.getMessage();
+                } finally {
+                    if (conn != null) conn.disconnect();
+                }
             }
 
             /** 【R105】设备信息桥：返回 JSON 字符串（零第三方依赖用 org.json）。
@@ -1754,6 +1833,123 @@ public class MainActivity extends Activity {
         } catch (Throwable e) { /* 静默 */ }
     }
 
+    /* ================= 【需求C】通知权限引导闭环 + 电池优化首启引导 ================= */
+
+    private static final String KEY_BATTERY_GUIDED = "battery_guide_done";
+
+    /** 跳系统「应用通知」设置页（onRequestPermissionsResult 拒绝分支与 openNotifySettings 桥共用）。
+     *  EXTRA_APP_PACKAGE 需 API 26，低版本上 extra 无效但跳应用设置列表仍可用；全兜底 try/catch。 */
+    private void openAppNotificationSettings() {
+        try {
+            Intent i = new Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+            i.putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, getPackageName());
+            startActivity(i);
+        } catch (Throwable e) {
+            try {
+                startActivity(new Intent(android.provider.Settings.ACTION_APPLICATION_SETTINGS));
+            } catch (Throwable e2) {
+                toast("请在 系统设置→应用→星途→通知 中开启通知");
+            }
+        }
+    }
+
+    /** 【需求C】首启自动引导一次电池优化白名单（复用既有 requestIgnoreBatteryOptimizations 桥逻辑）。
+     *  仅弹一次：标记落盘 xt_notify_prefs/battery_guide_done；系统弹窗由用户确认，不强制。 */
+    private void maybeGuideBatteryOnce() {
+        try {
+            android.content.SharedPreferences sp = getSharedPreferences(
+                    MsgPollService.PREFS, android.content.Context.MODE_PRIVATE);
+            if (sp.getBoolean(KEY_BATTERY_GUIDED, false)) return;
+            sp.edit().putBoolean(KEY_BATTERY_GUIDED, true).apply();
+            openBatteryOptimizationRequest();   // onCreate 在主线程，直接调用（桥内经 runOnUiThread）
+        } catch (Throwable e) { /* 引导失败：静默，不影响启动 */ }
+    }
+
+    /** 【需求C】发起电池优化白名单请求（原 requestIgnoreBatteryOptimizations 桥的实现，供桥与首启共用）。 */
+    private void openBatteryOptimizationRequest() {
+        try {
+            if (Build.VERSION.SDK_INT >= 23) {
+                Intent i = new Intent(
+                        android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                i.setData(Uri.parse("package:" + getPackageName()));
+                startActivity(i);
+            } else {
+                toast("当前系统无需手动设置电池优化");
+            }
+        } catch (Throwable e) {
+            try {
+                startActivity(new Intent(
+                        android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
+            } catch (Throwable e2) {
+                toast("请在 系统设置→电池 中允许本应用后台运行");
+            }
+        }
+    }
+
+    /* ================= 【需求1·图片保存】相册写入（API 分支） ================= */
+
+    /** API29+：MediaStore.Images 写公共 Pictures/星途（RELATIVE_PATH，免存储权限）。
+     *  返回 content:// URI，失败返回 null（调用方统一映射 __ERROR__）。 */
+    private String writeImageToMediaStore(android.graphics.Bitmap bmp, String fileName, String mimeType) {
+        try {
+            android.content.ContentResolver cr = getContentResolver();
+            String mime = (mimeType == null || mimeType.trim().isEmpty()) ? "image/png" : mimeType.trim();
+            android.content.ContentValues cv = new android.content.ContentValues();
+            cv.put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, fileName);
+            cv.put(android.provider.MediaStore.Images.Media.MIME_TYPE, mime);
+            cv.put(android.provider.MediaStore.Images.Media.RELATIVE_PATH,
+                    Environment.DIRECTORY_PICTURES + "/星途");
+            Uri uri = cr.insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cv);
+            if (uri == null) return null;
+            java.io.OutputStream os = cr.openOutputStream(uri);
+            if (os == null) return null;
+            // JPEG 源图用 JPEG 编码保持格式一致；其余（png/webp 等）一律 PNG 兜底
+            android.graphics.Bitmap.CompressFormat fmt =
+                    mime.contains("jpeg") || mime.contains("jpg")
+                            ? android.graphics.Bitmap.CompressFormat.JPEG
+                            : android.graphics.Bitmap.CompressFormat.PNG;
+            boolean ok = bmp.compress(fmt, 100, os);
+            os.close();
+            if (!ok) {
+                // 写入失败：清掉半截记录，不留脏条目
+                try { cr.delete(uri, null, null); } catch (Throwable t) { /* 静默 */ }
+                return null;
+            }
+            return uri.toString();
+        } catch (Throwable e) {
+            return null;
+        }
+    }
+
+    /** API<29：写应用专属 Pictures 目录（getExternalFilesDir，零权限；相册不可见为设计内降级）。
+     *  成功后 toast 告知实际保存路径。返回绝对路径，失败返回 null。 */
+    private String writeImageToAppPictures(android.graphics.Bitmap bmp, String fileName) {
+        java.io.FileOutputStream fos = null;
+        try {
+            java.io.File dir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+            if (dir == null) return null;
+            if (!dir.exists()) dir.mkdirs();
+            java.io.File out = new java.io.File(dir, fileName);
+            if (out.exists()) {
+                // 简单防覆盖：同名追加时间戳
+                int dot = fileName.lastIndexOf('.');
+                String stem = (dot > 0) ? fileName.substring(0, dot) : fileName;
+                String ext = (dot > 0) ? fileName.substring(dot) : "";
+                out = new java.io.File(dir, stem + "_" + System.currentTimeMillis() + ext);
+            }
+            fos = new java.io.FileOutputStream(out);
+            bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, fos);
+            fos.close();
+            fos = null;
+            toast("已保存到应用图片目录: " + out.getAbsolutePath());
+            return out.getAbsolutePath();
+        } catch (Throwable e) {
+            return null;
+        } finally {
+            if (fos != null) { try { fos.close(); } catch (Throwable t) { /* 静默 */ } }
+        }
+    }
+
     /* ================= 【定位】R96：WebView geolocation 所需的运行时权限 ================= */
 
     /** R96：启动时申请定位权限（WebView geolocation 依赖系统定位权限）。
@@ -2006,6 +2202,11 @@ public class MainActivity extends Activity {
                 pendingNotifyTitle = null;
                 pendingNotifyText = null;
                 if (pt != null) showNotify(pt, pb);
+            } else {
+                // 【需求C】拒绝分支补引导闭环（对齐定位权限分支的既有做法）：
+                // toast 告知后果 + 跳系统「应用通知」设置页，用户开启后无需重启 App 即可收到横幅。
+                toast("未开启通知权限，收不到新消息横幅，可在系统设置中开启");
+                openAppNotificationSettings();
             }
         } else if (requestCode == REQ_LOCATION_PERM) {
             // R96：定位权限结果。拒绝也不影响其它功能；WebView 侧会降级为「无法自动定位」，
@@ -2196,6 +2397,9 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        // 【需求C】Activity 销毁后进程若仍存活（onPause 已置 false，此处兜底）：
+        // 防 MsgPollService 误判「用户在前台」而不弹横幅。
+        MsgPollService.appForeground = false;
         // 【R101】注销下载完成广播（与 onCreate 的 registerApkDoneReceiver 配对）
         if (apkDoneReceiver != null) {
             try { unregisterReceiver(apkDoneReceiver); } catch (Exception e) { }

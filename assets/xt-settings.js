@@ -15,16 +15,21 @@
   var DEFAULTS = {
     theme: 'light', color: 'blue', fontSize: 'normal',
     dailyNew: 50, dailyReview: 20, focusMinutes: 25,
-    studyLimitOn: true, studyLimitHours: 4, studyLimitWarn: true,
+    studyLimitOn: true, studyLimitHours: 4,
     autoSpeak: true, voiceRate: 0.9, voiceLang: 'en-US',
-    chatNotify: true, studyRemind: false, reviewRemind: true,
-    keepScreen: false, cardAutoPlay: true,
-    notesPublic: true, canSearch: true, studyPublic: false,
+    chatNotify: true, studyRemind: false,
+    keepScreen: false,
     blogCat: 'cet', blogPrivacy: 'public', blogTags: '',
     readerFont: 'normal', reduceMotion: false, compact: false, remindTime: '20:00',
     aiTemp: '', aiMax: '', aiStream: true, aiContext: true,
     aiAvatar: '🤖', aiPanelWidth: 'normal'
   };
+  /* 需求B（2026-09-22）键清理：reviewRemind / cardAutoPlay / studyLimitWarn /
+     notesPublic / canSearch / studyPublic 六键从 DEFAULTS 删除——全项目无任何消费点，
+     或已被服务端账号级隐私（User.searchable / moment_visibility / friend_allow）取代。
+     老用户 localStorage 残留键无害：本文件 read() 按 hasOwnProperty(DEFAULTS) 合并，
+     残留键不进 merged（app.js 的 loadAllSettings 用 Object.assign，残留键也只是
+     多存一个无消费点的值），均无需迁移脚本。 */
 
   function read() {
     var o = {};
@@ -149,4 +154,55 @@
 
   window.XT_PROFILE_LOCK_FIELDS = FIELDS;
   window.XT_PROFILE_COOLDOWN_DAYS = 30;
+})();
+
+/* ============================================================
+ * 需求B（2026-09-22）：每日学习提醒 applyStudyReminder —— 从 设置.html 迁入
+ * 背景：原实现只在设置页内注册（setInterval 30s + 开关切换时调用），离开设置页
+ *       定时器随页面销毁——站点为多独立 HTML 页，提醒基本永远不响。
+ * 现挂到 window，由 app.js 页面加载（boot）时无条件调用：每次跳转 app.js 重新
+ *       执行 → 定时器随页面重新注册。
+ * 行为保持与原实现一致：studyRemind 开启时，每 30s 对表一次，到达 remindTime 且
+ *       当天未提醒过 → Notification（前置 Notification.permission==='granted'），
+ *       无通知权限时回退页面内 toast。补文案「提醒需 App 处于打开状态」如实标注
+ *       纯前端定时提醒的到达率受页面存活限制（平台限制）。
+ * 兼容：ES5 语法；toast 优先复用页面 showToast / xtToast，均缺失时静默跳过。
+ * 注意：设置.html 内同名旧函数暂保留（由负责该页面的并行线在删页面代码时一并清理），
+ *       页面内声明仅作用于该页且行为一致，不产生冲突。
+ * ============================================================ */
+(function () {
+  function pickToast() {
+    if (typeof window.showToast === 'function') {
+      return function (m) { try { window.showToast(m); } catch (e) {} };
+    }
+    if (typeof window.xtToast === 'function') {
+      return function (m) { try { window.xtToast('info', m); } catch (e) {} };
+    }
+    return null;
+  }
+  window.applyStudyReminder = function () {
+    var s = (typeof window.loadAllSettings === 'function') ? window.loadAllSettings() : {};
+    try {
+      if (window.__stRemindTimer) { clearInterval(window.__stRemindTimer); window.__stRemindTimer = null; }
+    } catch (e) {}
+    if (!s.studyRemind) return;
+    var toastFn = pickToast();
+    var tick = function () {
+      var now = new Date();
+      var hm = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
+      var dk = now.toDateString();
+      if (hm === (s.remindTime || '20:00') && window.__stRemindDay !== dk) {
+        window.__stRemindDay = dk;
+        try {
+          if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+            new Notification('🚀 星途 · 学习提醒', { body: '该打卡学习啦，今天的任务完成了吗？' });
+          } else if (toastFn) {
+            toastFn('⏰ 学习提醒：该打卡学习啦！（提醒需 App 处于打开状态）');
+          }
+        } catch (e) { if (toastFn) toastFn('⏰ 学习提醒：该打卡学习啦！'); }
+      }
+    };
+    try { window.__stRemindTimer = setInterval(tick, 30000); } catch (e) {}
+    tick();
+  };
 })();

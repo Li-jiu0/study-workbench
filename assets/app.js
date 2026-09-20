@@ -350,26 +350,22 @@ const DEFAULT_SETTINGS = {
   dailyNew: 50,          // 每日新增学习内容
   dailyReview: 20,       // 【R36】每日复习量：四级词汇复习队列的词数上限（10/20/30/50/100）
   focusMinutes: 25,      // 专注学习时长
-  studyLimitOn: true,    // 【9/11 新增】每日学习时长上限开关
+  studyLimitOn: true,    // 【9/11 新增】每日学习时长上限开关（超限提醒随本开关走）
   studyLimitHours: 4,    // 【9/11 新增】每日学习时长上限（小时），默认 4
-  studyLimitWarn: true,  // 【9/11 新增】超限后弹窗提醒（仅提醒，不阻断）
   autoSpeak: true,       // 朗读开关
   voiceRate: 0.9,        // 朗读语速
   voiceLang: 'en-US',    // 英文发音口音
-  
+
   // 通知
   chatNotify: true,      // 新私信提醒
   studyRemind: false,    // 每日学习提醒
-  reviewRemind: true,    // 复习提醒
-  
+  /* 需求B（2026-09-22）键清理：studyLimitWarn / reviewRemind / cardAutoPlay /
+     notesPublic / canSearch / studyPublic 六键已从 DEFAULTS 删除——全项目无消费点，
+     或已被服务端账号级隐私（User.searchable / moment_visibility / friend_allow）取代。
+     老用户 localStorage 残留键无害：无消费点即被忽略，无需迁移脚本。 */
+
   // 显示与交互
   keepScreen: false,     // 屏幕常亮
-  cardAutoPlay: true,    // 卡片轮播自动播放
-  
-  // 隐私
-  notesPublic: true,     // 新发贴默认公开
-  canSearch: true,       // 允许被搜索
-  studyPublic: false,    // 学习记录公开
 
   // 发贴默认偏好（【9/11 新增】设置页可改，编辑器自动套用）
   blogCat: 'cet',        // 新建发贴默认分类
@@ -476,7 +472,11 @@ function applySettings() {
 // 页面加载完成后应用所有设置
 window.addEventListener('load', function() {
   applySettings();
-  // 【9/11 新增】启动每日学习时长计时（各页统一；函数定义见文件末尾）
+  /* 需求B（2026-09-22）：每日学习提醒定时器——boot 时无条件注册。函数本体已从
+     设置.html 迁至 assets/xt-settings.js（原实现只在设置页注册，离开页面定时器
+     即随页面销毁，提醒基本永不触发）。站点为多独立 HTML 页，每次跳转本文件
+     重新执行即重新注册。注意：纯前端提醒依赖页面存活，App 切后台后不保证触达。 */
+  try { if (typeof window.applyStudyReminder === 'function') window.applyStudyReminder(); } catch (e) {}
   if (typeof initStudyTimer === 'function') initStudyTimer();
   if (typeof seedStudyLimitUI === 'function') seedStudyLimitUI();
 });
@@ -3146,7 +3146,11 @@ function currentAiMode() {
 function buildAiContextMessages() {
   // 先注入当前伙伴的人设（system），再带最近14条上下文（provider直连/后端中转/多人后端 三通道都透传 system）
   const msgs = [{ role: 'system', content: getAiPartner().systemPrompt }];
-  const hist = aiChatHistory.slice(-14); // 最近14条，防 token 超限
+  /* 需求B（2026-09-22）：aiContext（上下文记忆开关）接上消费点——关闭时只携带当轮
+     （保留最新一条用户消息，保证问题本身不丢），不再带历史。 */
+  let withCtx = true;
+  try { if (typeof getSetting === 'function') withCtx = getSetting('aiContext') !== false; } catch (e) { withCtx = true; }
+  const hist = withCtx ? aiChatHistory.slice(-14) : aiChatHistory.slice(-1); // 最近14条，防 token 超限
   hist.forEach(m => msgs.push({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text }));
   return msgs;
 }
@@ -9353,8 +9357,13 @@ function showAbout() {
 }
 window.showAbout = showAbout;
 
-// 旧版页内弹窗：保留作兜底（关于页缺失 / 无法跳转时仍可查看），内容与 关于.html 一致。
+// 旧版页内弹窗：保留作兜底（关于页缺失 / 无法跳转时仍可查看）。
+// 需求A（2026-09-22）：内容精简为「版本号 + 定位一句话 + 跳转引导」——完整功能清单、
+// 协议、检测更新等只在 关于.html 一处维护，防止两处内容漂移；去掉写死的 v2.3，
+// 版本号单一来源 window.XT_VERSION（assets/xt-update.js 定义），缺失时回退 '1.32'。
 function showAboutDialog() {
+  var ver = '1.32';
+  try { if (window.XT_VERSION) ver = String(window.XT_VERSION); } catch (e) {}
   var old = document.getElementById('aboutModal');
   if (old) old.remove();
   var mask = document.createElement('div');
@@ -9366,28 +9375,17 @@ function showAboutDialog() {
     '<div style="font-size:18px;font-weight:800;color:#1a1b1c">关于星途</div>' +
     '<button id="aboutClose" style="background:none;border:none;font-size:22px;cursor:pointer;color:#999">×</button>' +
     '</div>' +
-    '<div style="font-size:15px;font-weight:800;color:#1a1b1c">星途 v2.3</div>' +
+    '<div style="font-size:15px;font-weight:800;color:#1a1b1c">星途 v' + ver + '</div>' +
     '<div style="font-size:13px;color:#6b7280;margin-top:4px">给上班族的备考搭子 · 学得下去、问得明白</div>' +
-    '<div style="margin-top:14px;font-size:13px;color:#374151;line-height:1.8">白天上班、晚上备考，最怕的是工具散、计划断、没人答疑。星途把这一路要用的东西收在一处：能刷题背词、能写申论做 PPT，还有一个随叫随到的 AI —— 不会就问，问完就能接着学。</div>' +
-
-    '<div style="margin-top:16px;font-weight:700;color:#1a1b1c">AI 怎么用</div>' +
-    '<div style="font-size:13px;color:#374151;line-height:1.75;margin-top:4px">' +
-    '<b>AI 问答</b>：底部导航点「AI」进入。默认「自动（推荐）」会按题型挑模型——数学推理走 DeepSeek-R1、英语翻译走混元、发图提问走视觉模型；也能手动指定。开 <b>MAX 模式</b>输出更长（适合申论批改、长文讲解），开 <b>深度思考</b>会先推导再给结论。' +
-    '</div>' +
-    '<div style="font-size:13px;color:#374151;line-height:1.75;margin-top:6px">' +
-    '<b>AI 伙伴</b>：两位常驻——<b>小助手</b>覆盖行测、申论、四级、面试、PPT、备考规划，给的是结论+可执行动作；<b>暖心学伴</b>学不动的时候先稳住你，再拆一个「现在就能开始」的小任务。' +
-    '</div>' +
-
-    '<div style="margin-top:16px;font-weight:700;color:#1a1b1c">学习模块</div>' +
-    '<div style="font-size:13px;color:#374151;line-height:1.7;margin-top:4px">英语（词汇+听说）· 行测刷题 · 申论刷题 · 错题本 · 央国企定向库 · 面试题库 · AI 模拟面试 · 时政热点 · 表达 · 商务礼仪 · 我的文件 · 万能金句 / 场景话术 · 动态社区 · 好友私信</div>' +
-
-    '<div style="margin-top:16px;border-top:1px dashed #e4e3dd;padding-top:10px;font-size:12px;color:#9ca3af;line-height:1.7">完整版本说明、数据说明与免责声明请见「关于」独立页面。</div>' +
-    '<div style="margin-top:16px;text-align:right;font-style:italic;color:#6b7280">—— 小叶子</div>' +
+    '<div style="margin-top:14px;font-size:13px;color:#374151;line-height:1.8">完整的功能清单、协议与条款、检测更新与免责声明，请在「关于」独立页查看。</div>' +
+    '<button id="aboutGoPage" style="margin-top:16px;width:100%;padding:10px 0;border:none;border-radius:12px;background:#2F6BFF;color:#fff;font-size:14px;font-weight:700;cursor:pointer">打开「关于」页</button>' +
     '</div>';
   mask.innerHTML = html;
   document.body.appendChild(mask);
   var closeBtn = document.getElementById('aboutClose');
   if (closeBtn) closeBtn.onclick = function() { mask.remove(); };
+  var goBtn = document.getElementById('aboutGoPage');
+  if (goBtn) goBtn.onclick = function() { mask.remove(); showAbout(); };
 }
 window.showAboutDialog = showAboutDialog;
 

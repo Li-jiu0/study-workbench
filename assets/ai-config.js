@@ -536,18 +536,6 @@ var AI_CONFIG = {
       fallback: "ark-hitem3d-2-0"
     },
     {
-      id: "ark-hyper3d-gen2",
-      name: "Hyper3D-Gen2",
-      provider: "ark",
-      model: "hyper3d-gen2-260112",
-      types: ["3d"],
-      tag: "免费",
-      rate: "1x",
-      temperature: 0.7,
-      maxTokens: 1000,
-      fallback: "ark-seed3d-2-0"
-    },
-    {
       id: "ark-hitem3d-2-0",
       name: "Hitem3D-2.0",
       provider: "ark",
@@ -1168,7 +1156,6 @@ var AI_CONFIG = {
     "ark-seedance-1-0-pro-fast": { platform: "火山方舟", params: "", type: "视频生成（快速版）", stars: 4, speed: "慢", advantage: "文生视频 / 图生视频快速版；输入与输出同标准版，出片更快；分钟级异步返回；单次消耗约 10 万 tokens 量级", applicable: "文生视频、图生视频（速度优先）" },
 
     "ark-seed3d-2-0": { platform: "火山方舟", params: "", type: "3D 生成", stars: 5, speed: "慢", advantage: "图生 3D；输入一张图片（可再配文字），输出 glb 模型（打包为 zip 下载）；分钟级异步返回；单次消耗约 3 万 tokens 量级；结果地址约 24 小时有效", applicable: "图生 3D 模型" },
-    "ark-hyper3d-gen2": { platform: "火山方舟", params: "", type: "3D 生成", stars: 4, speed: "慢", advantage: "图生 3D；输入一张图片，输出 3D 模型文件；分钟级异步返回；单次消耗约 3 万 tokens 量级", applicable: "图生 3D 模型" },
     "ark-hitem3d-2-0": { platform: "火山方舟", params: "", type: "3D 生成", stars: 4, speed: "慢", advantage: "图生 3D；输入一张图片，输出 3D 模型文件；分钟级异步返回；单次消耗约 3 万 tokens 量级", applicable: "图生 3D 模型" }
 
   },

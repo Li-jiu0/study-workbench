@@ -35,6 +35,12 @@
      ======================================================================= */
   var CURRENT_VERSION = '1.32';
 
+  /* 需求 A.3（2026-09-22）：版本号单一来源对外暴露。
+     关于页 / app.js showAboutDialog 需要读当前版本，但又不能各自再抄一份字符串
+     （历史bug：弹窗里写死过 v2.3 造成两处漂移）。这里把内部常量同步挂到 window，
+     读不到时（xt-update.js 未加载的页面）由调用方回退到同一字符串常量即可。 */
+  try { window.XT_VERSION = CURRENT_VERSION; } catch (eVer) { /* 忽略 */ }
+
   var API_PATH = '/api/app/version';
   var LS_CHECK = 'xt_update_last_check';    // JSON: {at: 毫秒时间戳, version: 当前版本}
   var LS_RESULT = 'xt_update_last_result';  // JSON: 上一次成功检测到的版本信息（首屏秒渲染）

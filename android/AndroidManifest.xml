@@ -87,6 +87,15 @@
             </intent-filter>
         </receiver>
 
+        <!-- 需求C：消息轮询拉活兜底 JobService —— 每 15 分钟自检 MsgPollService 是否存活，
+             未跑则拉起（治「划掉最近任务后 START_STICKY 恢复不可靠」）。
+             setPersisted(true) 依赖的 RECEIVE_BOOT_COMPLETED 已在上方声明；
+             BIND_JOB_SERVICE 权限为系统 JobScheduler 绑定所必需。 -->
+        <service
+            android:name=".PollKeepAliveJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="false" />
+
         <!-- R101：应用内下载更新包自动安装 —— Android 7+ 系统安装器读 file:// 会
              FileUriExposedException，须经 content:// 授权读取。本工程零 androidx/support
              依赖（系统 API 无 FileProvider 类），故自写极简 ApkFileProvider：仅开放

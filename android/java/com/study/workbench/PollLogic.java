@@ -11,7 +11,7 @@ import java.util.Map;
  * 纯 Java、零 Android 依赖，便于单测桩验证（PollLogicTest）。
  * MsgPollService 负责网络/通知/生命周期，本类只做"决策"：
  *
- *  · 轮询节奏：亮屏 60s/次、灭屏 300s/次；
+ *  · 轮询节奏：亮屏 60s/次、灭屏 120s/次；
  *  · 是否轮询：仅"开关开 + token 非空"（已登录）才轮询；
  *  · token 失效：HTTP 401 → 停止轮询；
  *  · 通知去重：按会话条目 id + last.time 对比上次快照，
@@ -21,8 +21,9 @@ public final class PollLogic {
 
     /** 亮屏轮询间隔：60 秒。 */
     public static final long INTERVAL_SCREEN_ON_MS = 60_000L;
-    /** 灭屏轮询间隔：300 秒（5 分钟）。 */
-    public static final long INTERVAL_SCREEN_OFF_MS = 300_000L;
+    /** 灭屏轮询间隔：120 秒（2 分钟）。【需求C】由 300s 收紧到 120s：通知时效↑，
+     *  耗电增量可接受；Doze 下仍有电池优化白名单（首启引导）缓解。 */
+    public static final long INTERVAL_SCREEN_OFF_MS = 120_000L;
 
     /** HTTP 处理结论：继续轮询。 */
     public static final int HTTP_CONTINUE = 0;

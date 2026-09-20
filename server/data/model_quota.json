@@ -37,7 +37,6 @@
   "ark-seedance-2-0-mini": { "freeQuota": null, "quotaType": "videos" },
   "ark-seedance-2-5": { "freeQuota": null, "quotaType": "videos" },
   "ark-seed3d-2-0": { "freeQuota": null, "quotaType": "tasks" },
-  "ark-hyper3d-gen2": { "freeQuota": null, "quotaType": "tasks" },
   "ark-hitem3d-2-0": { "freeQuota": null, "quotaType": "tasks" },
   "ark-embedding-vision": { "freeQuota": 500000, "quotaType": "tokens" },
   "ark": { "freeQuota": 500000, "quotaType": "tokens" }

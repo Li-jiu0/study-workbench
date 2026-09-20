@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O" data-page-node-id="gZ2lwtNBjEq5CgqQTlbjFi">
-<script src="assets/xt-settings.js?v=20260916O"></script>
+<script src="assets/xt-settings.js?v=20260922c"></script>
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
 <script>window.__XT_PROD__=true;</script>
 </head>
@@ -148,7 +148,7 @@
           </div>
           <div class="subpage-group-card" onclick="SubpageRouter.navigate('about')">
             <div class="sgc-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div>
-            <div class="sgc-main"><div class="sgc-title">数据与关于</div><div class="sgc-desc">数据管理、数据总览、快捷入口、维护</div></div>
+            <div class="sgc-main"><div class="sgc-title">数据与关于</div><div class="sgc-desc">存储空间、帮助反馈、关于</div></div>
             <div class="sgc-arrow">›</div>
           </div>
         </div>
@@ -453,11 +453,11 @@
               <button class="theme-option" data-val="0" onclick="stMsgNotifyToggle(false)"><span class="nav-icon" data-icon="close" data-icon-size="14"></span> 关闭</button>
             </div>
           </div>
-          <!-- 每日学习提醒（【9/11 新增】） -->
+        <!-- 每日学习提醒（【9/11 新增】；需求B：纯前端定时提醒到达率受页面存活限制——需 App 保持打开） -->
           <div class="setting-row" data-page-node-id="l1KqfYu1Myi3i2vMRfEurs">
             <div class="setting-info" data-page-node-id="reisKw0dEY8QBoiVtAknSg">
               <div class="setting-name" data-page-node-id="m3FAVfWotA60v9XHT1TnqI">每日学习提醒</div>
-              <div class="setting-desc" data-page-node-id="uwc391hZ1q09ZSjWh2BHie">到点后以网页通知提醒你打卡学习（需先授权通知权限）</div>
+              <div class="setting-desc" data-page-node-id="uwc391hZ1q09ZSjWh2BHie">到点后以网页通知提醒你打卡学习（需先授权通知权限）<b>· 需 App 保持打开</b></div>
             </div>
             <div class="setting-actions" id="swStudyRemind" data-page-node-id="fow41uztmFtSxtqgtfjbIB">
               <button class="theme-option" data-val="1" onclick="stToggle('studyRemind',true,this);applyStudyReminder()" data-page-node-id="dviafJtgb7h9zmZHDKURYr"><span class="nav-icon" data-icon="check" data-icon-size="14"></span> 开启</button>
@@ -477,48 +477,20 @@
         </div>
         </section>
 
-        <!-- 数据管理 -->
+        <!-- 数据管理（需求 3 重构：原导出/导入/清空等操作全部收进独立页 数据管理.html，
+             本卡瘦身为「存储空间」一行入口；统计/清理/备份/检测更新均在新页） -->
         <section data-subpage="about">
         <div class="card" data-page-node-id="DfyIF0SHAUqXLzX7Xg63wM">
           <div class="card-header" data-page-node-id="ENm5SJ0XkCpCDO4t8IHSod">
             <div class="card-title" data-page-node-id="WZciCdFmp1YMRwrPT14vAF"><span class="title-icon" data-page-node-id="x4o7VSTFQ9lJ0OJ1YtiRzL" data-icon="package"></span>数据管理</div>
           </div>
-          <div class="setting-row" data-page-node-id="EZotqtkEcWbqqmCZ7ZbeD9">
-            <div class="setting-info" data-page-node-id="Hc1k5M7Rc9kYM42qKbAl9w">
-              <div class="setting-name" data-page-node-id="7QBOFtQ853AzAG1x1yj4C3">导入本地题库（Word / txt / CSV）</div>
-              <div class="setting-desc" data-page-node-id="pR9C9f7PaBDRVvkGS0NNeC">把文档里的单词、行测题、面试题等内容，选择导入到对应模块的题库（四级词汇 / 行测 / 面试），支持手动加题与 JSON 备份在“各题库→<span class="nav-icon" data-icon="brain" data-icon-size="14"></span> 我的题库”里管理</div>
+          <div class="setting-row" onclick="location.href='数据管理.html'" style="cursor:pointer">
+            <div class="setting-info">
+              <div class="setting-name">存储空间</div>
+              <div class="setting-desc">占用统计 · 分类清理 · 备份与恢复</div>
             </div>
-            <div class="setting-actions" data-page-node-id="94azGTx3KNu1apNPzmyQvD">
-              <button class="btn btn-primary" onclick="openImporter()" data-page-node-id="61YK6X9SlPY1ObxhACKxXZ"><span class="nav-icon" data-icon="download" data-icon-size="14"></span> 导入题库</button>
-            </div>
-          </div>
-          <div class="setting-row" data-page-node-id="tHlPvSQAfHUjAtAHl1yS1W">
-            <div class="setting-info" data-page-node-id="I52zc3iLmCYJmZl2ERvxtG">
-              <div class="setting-name" data-page-node-id="ynPDcXYKAO6A748cEHV0iq">导出数据</div>
-              <div class="setting-desc" data-page-node-id="cmT3fkCNftnuYowIlX4E9x">将全部学习记录（倒计时、任务、错题、词汇进度等）导出为 JSON 文件备份</div>
-            </div>
-            <div class="setting-actions" data-page-node-id="UUMwjdl6PnC5c6J9lID1gG">
-              <button class="btn btn-primary" onclick="exportData()" data-page-node-id="oDEwzYM3x14c6awi8CAaxi"><span class="nav-icon" data-icon="upload" data-icon-size="14"></span> 导出 JSON</button>
-            </div>
-          </div>
-          <div class="setting-row" data-page-node-id="25s8HYRWqn4ZncZ9RCSykD">
-            <div class="setting-info" data-page-node-id="DzxDv12bqoFz3u4Pqm1X9D">
-              <div class="setting-name" data-page-node-id="k6OOGfxkpw0Asyttcsry53">导入数据</div>
-              <div class="setting-desc" data-page-node-id="nCup1pb0vZQFJnimszA05i">从之前导出的 JSON 备份文件恢复数据，导入后会覆盖当前数据</div>
-            </div>
-            <div class="setting-actions" data-page-node-id="ry8rWC5yURAuHEGkhrWXTE">
-              <button class="btn btn-outline" onclick="document.getElementById('importFileInput').click()" data-page-node-id="vlvhJ5S1zncDNytHUZZUtH"><span class="nav-icon" data-icon="download" data-icon-size="14"></span> 导入 JSON</button>
-              <!-- 隐藏的文件选择框：供导入功能使用 -->
-              <input type="file" id="importFileInput" accept=".json,application/json" style="display:none" onchange="importData(event)" data-page-node-id="bv4HbczsuLD3zfJxCpp1qy">
-            </div>
-          </div>
-          <div class="setting-row" data-page-node-id="PF1kwH2lojVN4OEKVQuKrY">
-            <div class="setting-info" data-page-node-id="MNCY4XUoRcH5AlrAIR60To">
-              <div class="setting-name" data-page-node-id="CbJLXbPLpP2TFs8BnlHdOL">清空数据</div>
-              <div class="setting-desc" data-page-node-id="eAFUZMk28ilXk1zbsx24nM">删除全部本地学习记录，恢复初始状态（操作不可撤销，请先导出备份）</div>
-            </div>
-            <div class="setting-actions" data-page-node-id="wemRjOKiMwX5O85FVQ3wG3">
-              <button class="btn btn-danger" onclick="clearAllData()" data-page-node-id="7Av7tNDPNRf3gHGwigORsc"><span class="nav-icon" data-icon="trash" data-icon-size="14"></span> 清空</button>
+            <div class="setting-actions">
+              <button class="btn btn-outline"><span class="nav-icon" data-icon="package" data-icon-size="14"></span> 进入</button>
             </div>
           </div>
         </div>
@@ -689,89 +661,10 @@
         </div>
         </section>
 
-        <!-- 数据总览（【9/11 新增】） -->
-        <section data-subpage="about">
-        <div class="card" data-page-node-id="AeEJjVfxGlzb0DzpurHDlJ">
-          <div class="card-header" data-page-node-id="atH5UoBr4X5dfIYikx7qdo">
-            <div class="card-title" data-page-node-id="sPefse0h3gQKRTAMwn0PIG"><span class="title-icon" data-page-node-id="W2RGvzW04ptsxvBUmCme32" data-icon="chart-bar"></span>数据总览</div>
-            <div class="card-action" data-page-node-id="A3TGWNrtw4Qk8siZPVACBk"><button class="btn btn-outline" style="padding:5px 12px;font-size:var(--xt-font-sm)" onclick="stRefreshOverview(true)" data-page-node-id="uMAv8Zltqq5MNdnHds2KCR"><span class="nav-icon" data-icon="rotate-ccw" data-icon-size="14"></span> 刷新</button></div>
-          </div>
-          <div class="setting-row" style="display:block" data-page-node-id="ACj1oLwWiiJ9tKEjFgdZCh">
-            <div class="st-overview" id="stOverview" data-page-node-id="7EI0gi7NPFz6FTFh7XLVLK"></div>
-            <div class="st-bar" data-page-node-id="8IjZU6Hkwb1uQ2J5sf2UZT"><i id="stStorageBar" style="width:0%" data-page-node-id="Z0d2rl6YAGLbf0niboABY3"></i></div>
-            <div class="st-bar-tx" id="stStorageTx" data-page-node-id="DzFyj3iEQdFUTU2tQojhPh">正在统计本机数据…</div>
-          </div>
-        </div>
-        </section>
-
-        <!-- 快捷入口（【9/11 新增】） -->
-        <section data-subpage="about">
-        <div class="card" data-page-node-id="czlsEkgYcvLK8dVtrr3ERS">
-          <div class="card-header" data-page-node-id="L80AtGPcqm7H6BIbxkmAXf">
-            <div class="card-title" data-page-node-id="Lhzf1PNxcRGVDL9BuMtS9J"><span class="title-icon" data-page-node-id="ERfgTGuXIK5rl8DTDeoxbB" data-icon="zap"></span>快捷入口</div>
-            <div class="card-action" data-page-node-id="egrLcITfUggI3xijGMhZar">常用功能一键直达</div>
-          </div>
-          <div class="setting-row" style="display:block" data-page-node-id="kze5X4HeyvbkjsNDhHz7d8">
-            <div class="st-quick" data-page-node-id="YVQE29S8CAX5EXsAmcWMBy">
-              <button class="st-quick-it" onclick="navigateTo('blog')" data-page-node-id="KC2JBP3WzteE37Fujml7Zq"><span class="sq-ic" data-page-node-id="iEzjAYOIjsKMe1UeC1Y2vX" data-icon="pen" data-icon-size="16"></span>写发贴</button>
-              <button class="st-quick-it" onclick="navigateTo('wrong-book')" data-page-node-id="k61DAFgHBNhWQ17twzDphl"><span class="sq-ic" data-page-node-id="4hsngS2D7ZjIRdqVhYjmnK" data-icon="book" data-icon-size="16"></span>错题本</button>
-              <button class="st-quick-it" onclick="navigateTo('cet-vocab')" data-page-node-id="Cfw0lnYs08ohL2V8Rf6zTF"><span class="sq-ic" data-page-node-id="CNPZ97P7DRBHLHiKTBb9WA" data-icon="book-open" data-icon-size="16"></span>四级词汇</button>
-              <button class="st-quick-it" onclick="navigateTo('exam-center')" data-page-node-id="Yu5Vx9RBEV5IX3AGKDJj5T"><span class="sq-ic" data-page-node-id="4Zt8CbhpOxo9VTYiLHsuhd" data-icon="puzzle" data-icon-size="16"></span>行测刷题</button>
-              <button class="st-quick-it" onclick="openImporter()" data-page-node-id="ktNGYLWUAT12GwDjLmC98D"><span class="sq-ic" data-page-node-id="BqfxQ0BEzXLYboGHEoZ0jf" data-icon="inbox" data-icon-size="16"></span>导入题库</button>
-              <button class="st-quick-it" onclick="openFocusTimer()" data-page-node-id="MbONyy1dnrSLi2NxZEwFhr"><span class="sq-ic" data-page-node-id="nAfgSM9UgUrpWjvS6YUEba" data-icon="clock" data-icon-size="16"></span>专注计时</button>
-              <button class="st-quick-it" onclick="openBlogStats()" data-page-node-id="6oFa7YzjMZVaew2IdC0EHL"><span class="sq-ic" data-page-node-id="1FqvhtNlrqAYclQDNnA994" data-icon="chart-bar" data-icon-size="16"></span>学习统计</button>
-              <button class="st-quick-it" onclick="gotoChat()" data-page-node-id="LfJXwWr8Syn7tvQOmdyf9R"><span class="sq-ic" data-page-node-id="jDCMH1PciHiJXbPqrGjXHa" data-icon="message-circle" data-icon-size="16"></span>通讯录私信</button>
-            </div>
-          </div>
-        </div>
-        </section>
-
-        <!-- 维护与重置（【9/11 新增】） -->
-        <section data-subpage="about">
-        <div class="card" data-page-node-id="Y3MF1IXY2UsDkfnrTKiAHn">
-          <div class="card-header" data-page-node-id="EeEIxOsyUcFtEEkkIPNzgT">
-            <div class="card-title" data-page-node-id="C7LpCY2GrXOU67gyiOeqna"><span class="title-icon" data-page-node-id="fOV291NvnPQCXVc7FwJc7c" data-icon="wrench"></span>维护与重置</div>
-          </div>
-          <!-- 检测更新（R86-F）：进入设置页自动检测一次，结果由 assets/xt-update.js 写回本行的 #xtUpdateDesc / #xtUpdateBtn -->
-          <div class="setting-row" id="xtUpdateRow" onclick="XTUpdate.openUpdatePage()">
-            <div class="setting-info">
-              <div class="setting-name">检测更新</div>
-              <div class="setting-desc" id="xtUpdateDesc">当前版本 v1.23 · 进入设置页会自动检测一次</div>
-            </div>
-            <div class="setting-actions">
-              <button class="btn btn-outline" id="xtUpdateBtn" onclick="XTUpdate.openUpdatePage()"><span class="nav-icon" data-icon="download" data-icon-size="14"></span> 检测更新</button>
-            </div>
-          </div>
-
-          <div class="setting-row" data-page-node-id="eoiIGkTDfuU3fs5bGZRqpW">
-            <div class="setting-info" data-page-node-id="bTDCQD8xwgBgWCHroArRYb">
-              <div class="setting-name" data-page-node-id="AFIEMt7T7sbmXSQAEpNJts">清理缓存与临时数据</div>
-              <div class="setting-desc" data-page-node-id="27tOIuofqCy2jkDItiIp2V">清除错误日志、未完成的发贴草稿、AI 悬浮球位置等临时数据；<b data-page-node-id="TSYjwdf1tFJ9JCrIiTRunw">不会删除</b>学习记录、发贴与错题</div>
-            </div>
-            <div class="setting-actions" data-page-node-id="u1EKNXUC1Z6HwOqQqXPjQC">
-              <button class="btn btn-outline" onclick="stClearCache()" data-page-node-id="2S6UfnO7G7hsiDtiO16TRe"><span class="nav-icon" data-icon="eraser" data-icon-size="14"></span> 清理缓存</button>
-            </div>
-          </div>
-          <div class="setting-row" data-page-node-id="CLQei7BUqvqu7Ug7R0ClgQ">
-            <div class="setting-info" data-page-node-id="IIOabLzhuMZtlamyl7iC8j">
-              <div class="setting-name" data-page-node-id="IVhqz6lVZmXdHQW2nFlOgA">重置外观与偏好</div>
-              <div class="setting-desc" data-page-node-id="k9kHYsLKla2nnhlFXJL6r4">把主题、配色、字号、动效、紧凑模式等界面设置恢复为默认值（不影响学习数据）</div>
-            </div>
-            <div class="setting-actions" data-page-node-id="XRsuTZ8NusfdBDnHkoAqmi">
-              <button class="btn btn-outline" onclick="stResetAppearance()" data-page-node-id="iHKDvuBaqMbXL3ZqQAzYrx"><span class="nav-icon" data-icon="rotate-ccw" data-icon-size="14"></span> 重置外观</button>
-            </div>
-          </div>
-          <div class="setting-row" data-page-node-id="C6rqD8apeMrjJFhG1KYFef">
-            <div class="setting-info" data-page-node-id="regPYIM7Cw2AWznQe5ub48">
-              <div class="setting-name" data-page-node-id="5eY2tY0TdX4EiZDvPNmBIp">一键完整备份</div>
-              <div class="setting-desc" data-page-node-id="TPVMHmaM4s21ipDQS8ECwF">把全部本机数据导出为 JSON 备份文件（与「导出数据」一致，此处为快捷入口）</div>
-            </div>
-            <div class="setting-actions" data-page-node-id="PK2dkULb3CCuHDyPDRVIOM">
-              <button class="btn btn-primary" onclick="exportData()" data-page-node-id="Ii200DR7wJwW172yeAfM3H"><span class="nav-icon" data-icon="package" data-icon-size="14"></span> 立即备份</button>
-            </div>
-          </div>
-        </div>
-        </section>
+        <!-- 【需求 3 数据管理重构 20260922a】原「数据总览 / 快捷入口 / 维护与重置」三个 section 已删除：
+             数据总览与维护（清理缓存 / 重置外观 / 一键备份 / 检测更新）全部迁入独立页 数据管理.html
+             （stRefreshOverview / stClearCache / stResetAppearance 函数一并迁走，口径一致）；
+             快捷入口磁贴与首页功能中心重复，按设计直接删除不迁移。 -->
 
         <!-- 账号与安全（【9/11 新增】） -->
         <section data-subpage="account">
@@ -923,6 +816,15 @@
               </div>
             </div>
           </div>
+
+          <!-- 需求 2（协议重写）：新增《用户协议》《隐私政策》全文页入口（独立页 协议.html，?tab=ua|privacy） -->
+          <div class="privacy-row" id="privacyAgreementRow" onclick="location.href='协议.html?tab=ua'" style="cursor:pointer">
+            <div class="privacy-row-main">
+              <div class="privacy-row-name">用户协议与隐私政策</div>
+              <div class="privacy-row-sub">查看《星途用户服务协议》与《星途隐私政策》全文</div>
+            </div>
+            <div class="privacy-row-ctrl" style="color:var(--text-secondary);font-size:16px">›</div>
+          </div>
         </div>
         </section>
 
@@ -1045,10 +947,10 @@
 <script src="assets/icon-map.js?v=20260919l" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260920e" defer></script>
+<script src="assets/app.js?v=20260922c" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/xt-update.js?v=20260920d" defer></script>
-<script src="assets/api.js?v=20260917b" defer></script>
+<!-- 【需求B】检测更新入口已从设置页移除（收敛到 数据管理页 / 关于页），xt-update.js 引用同步移除 -->
+<script src="assets/api.js?v=20260922c" defer></script>
 <script src="assets/subpage-router.js?v=20260917b" defer></script>
 <script src="assets/qbank.js?v=20260916O" defer></script>
 <script src="assets/importer.js?v=20260917b" defer></script>
@@ -1063,14 +965,18 @@
 (function () {
   if (typeof window === 'undefined') return;
   var SETTINGS_KEY_FALLBACK = 'study_workbench_settings';
+  /* 【需求B 设置项核对】无效项键已同步移除（与 xt-settings.js DEFAULTS 同步，逻辑接线由并行线处理）：
+     reviewRemind / cardAutoPlay / studyLimitWarn 全项目无消费点；
+     notesPublic / canSearch / studyPublic 已被服务端账号级隐私取代
+     （User.searchable / User.moment_visibility / User.friend_allow，见本页隐私与安全卡）。
+     旧用户 JSON 中的残留键按 hasOwnProperty(DEFAULTS) 合并范式天然被忽略，无需迁移。 */
   var FALLBACK_DEFAULTS = {
     theme: 'light', color: 'blue', fontSize: 'normal',
     dailyNew: 50, dailyReview: 20, focusMinutes: 25,
-    studyLimitOn: true, studyLimitHours: 4, studyLimitWarn: true,
+    studyLimitOn: true, studyLimitHours: 4,
     autoSpeak: true, voiceRate: 0.9, voiceLang: 'en-US',
-    chatNotify: true, studyRemind: false, reviewRemind: true,
-    keepScreen: false, cardAutoPlay: true,
-    notesPublic: true, canSearch: true, studyPublic: false,
+    chatNotify: true, studyRemind: false,
+    keepScreen: false,
     blogCat: 'cet', blogPrivacy: 'public', blogTags: '',
     readerFont: 'normal', reduceMotion: false, compact: false, remindTime: '20:00',
     aiTemp: '', aiMax: '', aiStream: true, aiContext: true,
@@ -1299,52 +1205,9 @@ function stSaveBlogTags() {
   showToast('✅ 常用标签已保存');
 }
 
-/* ---------- 数据总览 ---------- */
-function stFmtSize(b) {
-  return b < 1024 ? (b + ' B') : b < 1048576 ? (b / 1024).toFixed(1) + ' KB' : (b / 1048576).toFixed(2) + ' MB';
-}
-function stRefreshOverview(notify) {
-  var box = document.getElementById('stOverview'); if (!box) return;
-  var totalBytes = 0, keyCount = 0;
-  try {
-    for (var i = 0; i < localStorage.length; i++) {
-      var k = localStorage.key(i); if (!k) continue;
-      var v = localStorage.getItem(k) || '';
-      totalBytes += (k.length + v.length) * 2; keyCount++;
-    }
-  } catch (e) { }
-  var notes = 0, drafts = 0, wrong = 0, tasks = 0, tasksDone = 0, vocab = 0, favs = 0;
-  try {
-    var d = JSON.parse(localStorage.getItem('study_workbench_data') || '{}');
-    notes = (d.notes || []).length;
-    drafts = (d.notes || []).filter(function (n) { return n.status === 'draft' || n.status === 'archived'; }).length;
-    wrong = (d.wrongQuestions || []).length;
-    tasks = (d.tasks || []).length;
-    tasksDone = (d.tasks || []).filter(function (t) { return t.done; }).length;
-    vocab = (d.vocabLearned || []).length;
-    favs = (d.favoriteNotes || []).length;
-  } catch (e) { }
-  var qbank = 0;
-  try {
-    var q = JSON.parse(localStorage.getItem('study_workbench_custom') || '{}');
-    qbank = Object.keys(q).reduce(function (a, k2) { return a + (Array.isArray(q[k2]) ? q[k2].length : 0); }, 0);
-  } catch (e) { }
-  var items = [
-    { n: notes, t: '发贴总数' }, { n: drafts, t: '草稿/归档' }, { n: wrong, t: '错题' },
-    { n: tasksDone + '/' + tasks, t: '今日任务' }, { n: vocab, t: '已学词汇' },
-    { n: qbank, t: '自建题目' }, { n: favs, t: '收藏发贴' }, { n: keyCount, t: '本机数据项' }
-  ];
-  box.innerHTML = items.map(function (it) {
-    return '<div class="st-ov-item"><b>' + it.n + '</b><span>' + it.t + '</span></div>';
-  }).join('');
-  var limit = 5 * 1024 * 1024;   // 浏览器 localStorage 常见上限约 5MB
-  var pct = Math.min(100, Math.round(totalBytes / limit * 100));
-  var bar = document.getElementById('stStorageBar'); if (bar) bar.style.width = pct + '%';
-  var tx = document.getElementById('stStorageTx');
-  if (tx) tx.textContent = '本机存储占用约 ' + stFmtSize(totalBytes) + ' / 约 5 MB（' + pct + '%）。' +
-    '数据只保存在本机浏览器，清理浏览器数据会一并清除，请定期点「立即备份」。';
-  if (notify) showToast('📊 数据总览已刷新');
-}
+/* ---------- 数据总览 ----------
+   【需求 3 数据管理重构 20260922a】stFmtSize / stRefreshOverview 已整体迁入 数据管理.html
+   （统计口径不变：(k.length+v.length)*2 全键求和，5MB 假设上限）；设置页不再保留。 */
 
 /* ---------- 每日学习提醒 ---------- */
 function requestNotifyPermission() {
@@ -1380,44 +1243,9 @@ function applyStudyReminder() {
   tick();
 }
 
-/* ---------- 维护：清理缓存 / 重置外观 ---------- */
-/* 全站禁用原生 confirm/prompt/alert：统一走 app.js 的 uiConfirm / uiPrompt / uiAlert（轻量页内层） */
-function stClearCache() {
-  uiConfirm('将清理错误日志、未完成的发贴草稿、AI 悬浮球位置等临时数据。\n学习记录、发贴、错题等业务数据不会被删除。确定继续吗？', '清理').then(function (ok) {
-    if (!ok) return;
-    var keys = ['study_workbench_errors', 'study_workbench_editor_draft_v1', 'study_workbench_ai_fab_pos'];
-    var n = 0;
-    keys.forEach(function (k) {
-      try { if (localStorage.getItem(k) !== null) { localStorage.removeItem(k); n++; } } catch (e) { }
-    });
-    try { sessionStorage.clear(); } catch (e) { }
-    var bar = document.getElementById('edDraftBar'); if (bar) bar.style.display = 'none';
-    stRefreshOverview();
-    showToast('已清理 ' + n + ' 项临时数据');
-  });
-}
-function stResetAppearance() {
-  uiConfirm('将把主题、配色、字号、动效、紧凑模式等外观偏好恢复为默认值（不影响学习数据）。确定吗？', '恢复默认').then(function (ok) {
-    if (!ok) return;
-    resetAppearanceNow();
-  });
-}
-function resetAppearanceNow() {
-  ['fontSize', 'readerFont', 'reduceMotion', 'compact'].forEach(function (k) {
-    try { setSetting(k, DEFAULT_SETTINGS[k]); } catch (e) { }
-  });
-  try { if (typeof setSkin === 'function') setSkin('default'); } catch (e) { }
-  try { if (typeof setTheme === 'function') setTheme('light'); } catch (e) { }
-  stApplySegUI();
-  var s2 = loadAllSettings();
-  var apply = function (id, on) {
-    var w = document.getElementById(id); if (!w) return;
-    w.querySelectorAll('.theme-option').forEach(function (b) { b.classList.toggle('active', (b.getAttribute('data-val') === '1') === !!on); });
-  };
-  apply('swReduceMotion', s2.reduceMotion);
-  apply('swCompact', s2.compact);
-  showToast('外观与偏好已恢复默认');
-}
+/* ---------- 维护：清理缓存 / 重置外观 ----------
+   【需求 3 数据管理重构 20260922a】stClearCache / stResetAppearance / resetAppearanceNow
+   已整体迁入 数据管理.html（逻辑与键清单原样迁移，口径一致）；设置页不再保留。 */
 
 /* ---------- 账号与安全 ---------- */
 function stEsc(s) {
@@ -2199,7 +2027,7 @@ if (typeof window !== 'undefined') {
   apply('swReduceMotion', s.reduceMotion);
   apply('swCompact', s.compact);
   apply('swStudyRemind', s.studyRemind);
-  stRefreshOverview();
+  /* 【需求 3】stRefreshOverview() 已随数据总览卡迁入 数据管理.html，此处调用移除 */
   applyStudyReminder();
   stLoadBlocked();
   stLoadPrivacy();
@@ -2561,7 +2389,6 @@ if (typeof stInitAccount === 'function') {
   .setting-actions{width:100%}
   .setting-actions .seg{flex-wrap:wrap;justify-content:flex-start;max-width:100%}
   .setting-actions .seg button{padding:6px 10px}
-  .st-quick{grid-template-columns:1fr}
   .setting-name,.setting-desc,.card-title{overflow-wrap:anywhere;word-break:break-word}
 }
 </style>
@@ -2612,6 +2439,6 @@ if (typeof stInitAccount === 'function') {
 <script src="assets/ai-cap-embed.js?v=20260920c"></script>
 <script src="assets/ai-cap-translate.js?v=20260920c"></script>
 <script src="assets/ai-cap-video.js?v=20260920c"></script>
-<script src="assets/ai-cap-3d.js?v=20260920c"></script>
+<script src="assets/ai-cap-3d.js?v=20260922a"></script>
 </body>
 </html>
