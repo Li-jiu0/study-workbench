@@ -91,6 +91,11 @@ REQUIRED_ASSETS = [
     "mini-exam.js",
     "mini-interview.js",
     "mini-ppt.js",
+    # --- R2B（2026-09-20 v1.33）新增：图片查看器与版本检测 ---
+    #   · img-viewer.js 缺失 → 图片无法捏合缩放/保存到相册（静默降级为无手势）
+    #   · xt-update.js 缺失 → 关于页/数据管理页的「检测更新」不可用
+    "img-viewer.js",
+    "xt-update.js",
     # --- R70 新增：联网能力必需（缺 api.js = 所有在线功能变静态壳） ---
     "api.js",
     # --- R70 新增：AI 三件套 + 设置页（缺一即 AI 功能/检测不可用） ---

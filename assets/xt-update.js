@@ -33,7 +33,7 @@
      必须与 android/AndroidManifest.xml 的 android:versionName 一致。
      APK / WebView 前端读不到 manifest，所以这里是唯一的版本来源。
      ======================================================================= */
-  var CURRENT_VERSION = '1.32';
+  var CURRENT_VERSION = '1.33';
 
   /* 需求 A.3（2026-09-22）：版本号单一来源对外暴露。
      关于页 / app.js showAboutDialog 需要读当前版本，但又不能各自再抄一份字符串
