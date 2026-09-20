@@ -308,21 +308,26 @@ _VERSION_OUTDATED_MSG = "当前版本已停用，请更新到最新版以继续�
 _OVERSEA_PROVIDERS = ("gemini", "openrouter")
 
 
-def _oversea_ready(cfg: dict) -> bool:
-    """海外 provider 就绪判定：api_key 与 proxy 二者缺一即视为不可用。
+def _oversea_ready(cfg: dict, pid: str = "") -> bool:
+    """海外 provider 就绪判定：api_key 必备；proxy 有则走代理，无代理时可用
+    <PROVIDER>_ALLOW_DIRECT=1 显式声明「服务器实测可直连」（fail-open 仅对显式 opt-in 生效）。
 
     configured_providers() 已过滤掉无 key 的 provider，这里补验 proxy；
     对非海外 provider 恒返回 True（国内平台无需代理）。
     """
     if not str(cfg.get("api_key") or "").strip():
         return False
-    return bool(str(cfg.get("proxy") or "").strip())
+    if str(cfg.get("proxy") or "").strip():
+        return True
+    if pid:
+        return os.getenv(f"{pid.upper()}_ALLOW_DIRECT", "").strip() == "1"
+    return False
 
 
 def _provider_available(provider_id: str, cfg: dict) -> bool:
     """/api/ai/models 与媒体端点共用的平台可用性判定。"""
     if provider_id in _OVERSEA_PROVIDERS:
-        return _oversea_ready(cfg)
+        return _oversea_ready(cfg, provider_id)
     return True
 
 # 媒体端点上游超时（秒）。视频/3D 创建是异步的，只等一个 create 响应，无需长超时。
@@ -600,7 +605,7 @@ def list_models(request: Request, user: User = Depends(get_current_user_optional
         if pid in _OVERSEA_PROVIDERS:
             models.append({
                 "id": pid, "name": cfg["name"], "model": cfg["model"],
-                "relayAvailable": _oversea_ready(cfg),
+                "relayAvailable": _oversea_ready(cfg, pid),
             })
         elif str(cfg.get("api_key") or "").strip():
             models.append({"id": pid, "name": cfg["name"], "model": cfg["model"]})
@@ -852,7 +857,7 @@ async def chat(body: _ChatIn, request: Request, user: User = Depends(get_current
         raise HTTPException(400, "该模型未在服务端配置密钥，请在 server/.env 中填写对应 API Key")
     # R132（调整）：海外平台已配 key 但 proxy 未配 = 服务端中转不可达，
     # 同样返回 network_limited，引导前端走用户自备 Key 直连。
-    if body.provider in _OVERSEA_PROVIDERS and not _oversea_ready(cfg):
+    if body.provider in _OVERSEA_PROVIDERS and not _oversea_ready(cfg, body.provider):
         return _err("network_limited", "当前网络无法访问海外AI服务，请检查代理设置",
                     code=503, hint="可在设置页填写该平台自己的 Key 后直连使用")
 

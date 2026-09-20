@@ -2,10 +2,10 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#5B8DEF">
 <title>行测刷题中心 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260919r">
+<link rel="stylesheet" href="assets/common.css?v=20260920e">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O">
@@ -121,17 +121,22 @@
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px" id="ecTypeFilter">
           <!-- 【2026-09-15 用户指令】题型筛选由两行标签压缩为一个下拉列表，节省纵向空间；
-               逻辑不变：仍调 filterExamType(type)（app.js L5763），页尾脚本负责让下拉框与筛选状态双向同步 -->
+               逻辑不变：仍调 filterExamType(type)（app.js），页尾脚本负责让下拉框与筛选状态双向同步。
+               【N9-1/N9-2 修复】原下拉漏掉「常识判断」「判断推理」两个一级题型（内联题库 861+940 题筛不到），
+               且所列 4 个判断推理子题型只能筛中内置/分片题、漏掉内联同题型题——
+               app.js 已做题型口径归一（type=二级、ptype=一级），这里补全 5 个一级 + 4 个二级子题型。 -->
           <select id="ecTypeSelect" onchange="filterExamType(this.value)" title="按题型筛选"
             style="padding:8px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--card);color:var(--text);font-size:var(--xt-font-base);min-width:132px">
             <option value="全部">全部题型</option>
-            <option value="图形推理">图形推理</option>
-            <option value="定义判断">定义判断</option>
-            <option value="类比推理">类比推理</option>
-            <option value="逻辑判断">逻辑判断</option>
+            <option value="常识判断">常识判断</option>
             <option value="言语理解">言语理解</option>
             <option value="数量关系">数量关系</option>
+            <option value="判断推理">判断推理（含图形/定义/类比/逻辑）</option>
             <option value="资料分析">资料分析</option>
+            <option value="图形推理">· 图形推理</option>
+            <option value="定义判断">· 定义判断</option>
+            <option value="类比推理">· 类比推理</option>
+            <option value="逻辑判断">· 逻辑判断</option>
           </select>
           <span class="type-filter" style="border:1.5px solid var(--primary);color:var(--primary);background:var(--primary-light)" onclick="openQBank('exam')" title="添加/导入/导出自己的题目"><span data-icon="brain" data-icon-size="16" style="vertical-align:-3px"></span> 我的题库</span>
           <span class="type-filter" style="background:var(--primary);color:#fff;border-color:var(--primary)" onclick="shuffleExamQuestions()"><span data-icon="shuffle" data-icon-size="16" style="vertical-align:-3px"></span> 随机刷题</span>
@@ -280,7 +285,7 @@
 <script src="assets/icon-map.js?v=20260919l" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260919r" defer></script>
+<script src="assets/app.js?v=20260920e" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
 <script src="assets/api.js?v=20260917b" defer></script>
 <script src="assets/qbank.js?v=20260916O" defer></script>
@@ -298,16 +303,16 @@ window.addEventListener('DOMContentLoaded', function () {
   };
 });
 </script>
-<script src="assets/ai-config.js?v=20260919r"></script>
+<script src="assets/ai-config.js?v=20260920c"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260919r"></script>
+<script src="assets/ai-service.js?v=20260920e"></script>
 <script src="assets/ai-cap-registry.js?v=20260918c"></script>
-<script src="assets/ai-cap-image.js?v=20260919r"></script>
-<script src="assets/ai-cap-vision.js?v=20260919r"></script>
-<script src="assets/ai-cap-audio.js?v=20260919r"></script>
-<script src="assets/ai-cap-embed.js?v=20260919r"></script>
-<script src="assets/ai-cap-translate.js?v=20260919r"></script>
-<script src="assets/ai-cap-video.js?v=20260919r"></script>
-<script src="assets/ai-cap-3d.js?v=20260919r"></script>
+<script src="assets/ai-cap-image.js?v=20260920c"></script>
+<script src="assets/ai-cap-vision.js?v=20260920c"></script>
+<script src="assets/ai-cap-audio.js?v=20260920c"></script>
+<script src="assets/ai-cap-embed.js?v=20260920c"></script>
+<script src="assets/ai-cap-translate.js?v=20260920c"></script>
+<script src="assets/ai-cap-video.js?v=20260920c"></script>
+<script src="assets/ai-cap-3d.js?v=20260920c"></script>
 </body>
 </html>

@@ -6,7 +6,7 @@
  *   视觉请求本质就是多模态的 chat/completions，ai-service.js 里的
  *   buildMessages() 已经支持 content:[{type:'image_url'},{type:'text'}]，
  *   ai-page.js 也有完整的「上传 → base64 → 送模型」通路。
- *   所以本模块**不接管请求构造**，只负责把用量口径标注清楚，
+ *   所以本模块「不接管请求构造」，只负责把用量口径标注清楚，
  *   让视觉请求能从账本里被单独统计出来（这是原来做不到的）。
  *
  * ⚠ types 必须是 "image" 而不是 "vision"：

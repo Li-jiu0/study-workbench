@@ -1,4 +1,0 @@
-﻿mtime=2026-09-17 19:34:51  size=81382  lines=1649  CR=1648  LF=1648
-node_check_exit=0
-jsdom= C:\Users\ATM\node_modules\jsdom\lib\api.js
-jsdom_exit=0

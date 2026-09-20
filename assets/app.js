@@ -571,7 +571,10 @@ let appData = {
     '逻辑判断': { total: 0, correct: 0 },
     '言语理解': { total: 0, correct: 0 },
     '数量关系': { total: 0, correct: 0 },
-    '资料分析': { total: 0, correct: 0 }
+    '资料分析': { total: 0, correct: 0 },
+    // 【N9-1】内联粉笔常识判断题（861 道）按 type='常识判断' 计入进度，缺这个 key 时
+    // 做题记录会被写进对象但不在初始口径里，首页/薄弱点遍历 Object.keys 能兜住，这里补齐显式槽位。
+    '常识判断': { total: 0, correct: 0 }
   },
   vocabRecords: {},   // 间隔重复：词汇学习记录
   examRecords: {},     // 间隔重复：做题记录
@@ -662,6 +665,38 @@ const EXAM_BANK = [
   { id: 60, type: '资料分析', sub: '比重', diff: 2, q: '2023年某市社会消费品零售总额为2000亿元，其中网上零售额为600亿元。问网上零售额占社会消费品零售总额的比重为多少？', o: ['25%', '30%', '35%', '40%'], a: 1, x: '比重公式：比重=部分量÷整体量×100%。部分量（网上零售额）=600亿，整体量（社会消费品零售总额）=2000亿。比重=600÷2000×100%=30%。', tip: '比重=部分÷整体，注意区分谁是部分谁是整体' }
 ];
 
+/* ========== 【N9-1/N9-2 根因修复】题型口径归一化 ==========
+   缺陷根因：题库存在两套题型口径且无归一化层——
+     · 内置 EXAM_BANK + 分片 json：type 用「二级题型名」（图形推理/定义判断/类比推理/逻辑判断…）；
+     · 内联粉笔五大本（4488 题）：type 用「一级模块名」（判断推理/常识判断…），二级题型名在 sub。
+   导致：下拉选「图形推理」只能筛出内置+分片的题、内联 270 道图形推理漏掉（N9-2）；
+        下拉里根本没有「常识判断」「判断推理」两个一级名，常识判断 861 题从筛选入口够不到（N9-1）。
+   修法：入库/筛选前统一归一化——二级题型名当 type 用（与内置/分片口径、下拉选项一致），
+        一级模块名挂到 ptype（parent type）。归并关系与 XT_EXAM_MODULE_TYPES（约 L1926）保持同源，
+        改一处必须同步另一处。 */
+var XT_EXAM_SUB2TYPE = {
+  '图形推理': '判断推理', '定义判断': '判断推理', '类比推理': '判断推理', '逻辑判断': '判断推理'
+};
+/** 就地归一化一条题的 type/ptype（幂等：重复调用结果不变，可对全库反复执行） */
+function xtNormalizeExamType(q) {
+  if (!q || typeof q !== 'object') return q;
+  var t = String(q.type == null ? '' : q.type).trim();
+  var s = String(q.sub == null ? '' : q.sub).trim();
+  if (t === '判断推理' && XT_EXAM_SUB2TYPE[s]) {
+    // 内联粉笔口径：type=一级、sub=二级题型名 → type 统一成二级名，一级挂 ptype
+    q.type = s;
+    q.ptype = '判断推理';
+  } else {
+    q.type = t;
+    q.ptype = XT_EXAM_SUB2TYPE[t] || t;   // 二级名 → 归属一级；其余（常识判断/言语理解…）一级即自身
+  }
+  return q;
+}
+// 内置 60 题在常量声明处就地归一（补 ptype；内置没有 type='判断推理' 的题，纯补字段零风险）
+(function () {
+  for (var i = 0; i < EXAM_BANK.length; i++) xtNormalizeExamType(EXAM_BANK[i]);
+})();
+
 // ========== 统一题库入口（批次四 T01）：内置兜底 + 覆盖层 + 增量分片 ==========
 // 三份来源统一由 loadExamBankExt() 编排、共用 mergeExamBankQuestions() 合并，
 // 全程绝不调用 saveData()（用户进度零改动）：
@@ -684,6 +719,7 @@ function mergeExamBankQuestions(questions, allowOverride) {
   var changed = 0;
   questions.forEach(function (nq) {
     if (!nq || typeof nq.id !== 'number' || !nq.q) return;
+    xtNormalizeExamType(nq);   // 【N9-1/N9-2】内联/分片/覆盖层三路入库统一归一题型口径
     var i = EXAM_BANK.findIndex(function (o) { return o.id === nq.id; });
     if (i >= 0) {
       if (!allowOverride) return;      // 增量分片：同 id 不覆盖内置
@@ -6702,7 +6738,13 @@ function filterExamType(type) {
   if (type === '全部') {
     examFilteredBank = [...EXAM_BANK];
   } else {
-    examFilteredBank = EXAM_BANK.filter(q => q.type === type);
+    // 【N9-1/N9-2】一级（判断推理/常识判断…）与二级（图形推理/定义判断…）双向可筛：
+    // type 命中二级口径、ptype 命中一级口径；就地归一一次，保证 qbank.js 等旁路
+    // 注入的题（不经 mergeExamBankQuestions）也带 ptype，筛选口径绝不漏题。
+    examFilteredBank = EXAM_BANK.filter(q => {
+      xtNormalizeExamType(q);
+      return q.type === type || q.ptype === type;
+    });
   }
   examCurrentIndex = 0;
   renderExamQuestion();
@@ -6793,7 +6835,8 @@ function renderExamQuestion() {
   const q = examFilteredBank[examCurrentIndex];
   document.getElementById('ecProgress').textContent = `第 ${examCurrentIndex + 1} / ${examFilteredBank.length} 题`;
   document.getElementById('ecType').textContent = q.type;
-  document.getElementById('ecSub').textContent = q.sub;
+  // 【N9-1/N9-2】归一后内联判断推理题 type 与 sub 同为二级题型名，此时副标签显示所属一级模块
+  document.getElementById('ecSub').textContent = (q.sub && q.sub !== q.type) ? q.sub : (q.ptype || q.sub || q.type);
   const diffText = ['简单','中等','困难'][q.diff - 1] || '中等';
   document.getElementById('ecDiff').textContent = `难度：${diffText}`;
   document.getElementById('ecQuestionText').innerHTML = xtRenderQText(q.q);
@@ -9804,3 +9847,20 @@ window.seedStudyLimitUI = seedStudyLimitUI;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', xtStartPoll);
   else xtStartPoll();
 })();
+
+/* R137：通讯录入口兜底 —— gotoChat 常规定义在 assets/api.js（APK 离线包会剥离 api.js，
+   导致 AI/个人中心/更多/时政热点 等 10+ 页「通讯录」点击 ReferenceError 无响应）。
+   api.js 已加载时本兜底不生效（typeof 判定，真实现优先，绝不覆盖）；
+   api.js 缺失（APK）时按登录态跳转：有 token -> 私聊.html（chat-local.js 支持离线本地模式），
+   无 token -> 登录.html（与 api.js gotoChat 行为一致）。 */
+if (typeof window.gotoChat !== 'function') {
+  window.gotoChat = function () {
+    var token = '';
+    try { token = localStorage.getItem('study_workbench_token') || ''; } catch (e) { token = ''; }
+    if (token) { location.href = '私聊.html'; return; }
+    if (typeof window.showToast === 'function') {
+      try { showToast('好友私信是在线功能：请先登录后使用'); } catch (e2) { /* 忽略 */ }
+    }
+    setTimeout(function () { location.href = '登录.html'; }, 900);
+  };
+}

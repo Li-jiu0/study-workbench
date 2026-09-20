@@ -2,9 +2,9 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>AI模拟面试 - 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260919r">
+<link rel="stylesheet" href="assets/common.css?v=20260920c">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 /* common.css 会锁 html/body 高度并隐藏滚动，本页为独立长页面，恢复滚动 */
@@ -1452,18 +1452,23 @@ function startInterview() {
   clearInterval(timerInterval);
   timerInterval = null;
 
-  document.getElementById('setupPanel').classList.add('hidden');
-  document.getElementById('chatContainer').classList.remove('hidden');
-  document.getElementById('evalPanel').classList.add('hidden');
+  /* 【P1 加固】面板/容器判空：节点缺失（结构异常或被移除）时只跳过对应步骤，
+     不再抛 TypeError 中断后续脚本。 */
+  var sp = document.getElementById('setupPanel');
+  var cc = document.getElementById('chatContainer');
+  var ep = document.getElementById('evalPanel');
+  if (sp) sp.classList.add('hidden');
+  if (cc) cc.classList.remove('hidden');
+  if (ep) ep.classList.add('hidden');
   var tp = document.getElementById('topProgress');
   if (tp) tp.classList.remove('hidden');
 
   SESSION_QUESTIONS = ivBuildSessionQuestions();
 
   var messages = document.getElementById('chatMessages');
-  var interviewerArea = messages.querySelector('.interviewer-area');
-  messages.innerHTML = '';
-  if (interviewerArea) messages.appendChild(interviewerArea);
+  var interviewerArea = messages ? messages.querySelector('.interviewer-area') : null;
+  if (messages) messages.innerHTML = '';
+  if (messages && interviewerArea) messages.appendChild(interviewerArea);
 
   updateProgress();
   setTimeout(function () { loadQuestion(0); }, 600);
@@ -1613,6 +1618,7 @@ function nextQuestion() { nextFromReview(); }
 /* ===================== 消息渲染 ===================== */
 function addQuestionMessage(idx, text) {
   var messages = document.getElementById('chatMessages');
+  if (!messages) return;   /* 【P1 加固】容器缺失：放弃渲染本题卡，避免 TypeError */
   var div = document.createElement('div');
   div.className = 'message ai';
   div.id = 'qMsg' + idx;
@@ -1634,6 +1640,7 @@ function addQuestionMessage(idx, text) {
 
 function addAIMessage(text) {
   var messages = document.getElementById('chatMessages');
+  if (!messages) return;   /* 【P1 加固】容器缺失：放弃渲染，避免 TypeError */
   var msgDiv = document.createElement('div');
   msgDiv.className = 'message ai';
   msgDiv.innerHTML =
@@ -1645,6 +1652,7 @@ function addAIMessage(text) {
 
 function addUserMessage(text) {
   var messages = document.getElementById('chatMessages');
+  if (!messages) return;   /* 【P1 加固】容器缺失：放弃渲染，避免 TypeError */
   var msgDiv = document.createElement('div');
   msgDiv.className = 'message user';
   msgDiv.innerHTML =
@@ -1656,6 +1664,7 @@ function addUserMessage(text) {
 
 function showTyping() {
   var messages = document.getElementById('chatMessages');
+  if (!messages) return;   /* 【P1 加固】容器缺失：放弃显示「正在点评」，避免 TypeError */
   var typingDiv = document.createElement('div');
   typingDiv.className = 'message ai';
   typingDiv.id = 'typingIndicator';
@@ -1744,6 +1753,7 @@ function ivLocalFeedback(answer, question) {
 
 function renderFeedbackCard(fb) {
   var messages = document.getElementById('chatMessages');
+  if (!messages) return;   /* 【P1 加固】容器缺失：放弃渲染点评卡，避免 TypeError */
   var div = document.createElement('div');
   div.className = 'feedback-card';
   var isLast = currentQuestion >= SESSION_QUESTIONS.length - 1;
@@ -1806,8 +1816,15 @@ function switchInputMode(mode) {
 /* ===================== 面试评定报告（终态 eval） ===================== */
 function showEvaluation() {
   ivGotoStage(IV_TERMINAL);
-  document.getElementById('chatContainer').classList.add('hidden');
-  document.getElementById('evalPanel').classList.remove('hidden');
+  /* 【P1 加固】报告面板四块 + 容器判空：结构异常时跳过对应渲染，不再抛 TypeError */
+  var cc = document.getElementById('chatContainer');
+  var ep = document.getElementById('evalPanel');
+  var scoresEl = document.getElementById('evalScores');
+  var goodEl = document.getElementById('evalGood');
+  var improveEl = document.getElementById('evalImprove');
+  var overallEl = document.getElementById('evalOverall');
+  if (cc) cc.classList.add('hidden');
+  if (ep) ep.classList.remove('hidden');
 
   var n = userResults.length || 1;
   var sumE = 0, sumD = 0, sumM = 0, i;
@@ -1826,7 +1843,7 @@ function showEvaluation() {
       + '<span class="fb-bar-track"><span class="fb-bar-fill" style="width:' + v + '%"></span></span>'
       + '<span class="fb-bar-val">' + v + '</span></div>';
   };
-  document.getElementById('evalScores').innerHTML =
+  if (scoresEl) scoresEl.innerHTML =
     '<div class="fb-bars">'
     + bar('表达逻辑', expr)
     + bar('内容深度', depth)
@@ -1837,18 +1854,18 @@ function showEvaluation() {
   for (i = 0; i < userAnswers.length; i++) totalLength += String(userAnswers[i] || '').length;
   var avgLength = Math.round(totalLength / n);
 
-  document.getElementById('evalGood').innerHTML =
+  if (goodEl) goodEl.innerHTML =
     '① 完成了 ' + userAnswers.length + ' 道题的模拟流程<br>'
     + '② 平均回答长度约 ' + avgLength + ' 字，' + (avgLength > 30 ? '表达较为充分' : '可进一步展开') + '<br>'
     + '③ 三维均分 ' + overall + ' 分，' + (overall >= 70 ? '整体表现稳定' : '仍有明确的提升空间');
 
-  document.getElementById('evalImprove').innerHTML =
+  if (improveEl) improveEl.innerHTML =
     '① 用STAR法则回答行为类问题（背景-任务-行动-结果）<br>'
     + '② 多举具体例子和数据，避免空泛观点<br>'
     + '③ 回答前先分点，"第一/其次/最后"让逻辑更清晰<br>'
     + '④ 对照每题的参考回答，补齐遗漏的关键要点';
 
-  document.getElementById('evalOverall').innerHTML =
+  if (overallEl) overallEl.innerHTML =
     '综合评定：' + (overall >= 80 ? '优秀' : overall >= 65 ? '良好' : overall >= 45 ? '中等' : '有待提高')
     + '（' + overall + ' 分）。'
     + (overall >= 80 ? '表现全面，继续保持，可在真实面试前再打磨自我介绍和STAR细节。'
@@ -1861,8 +1878,15 @@ function showEvaluation() {
 
 /* 回到 setup（六阶段起点）；保留旧函数名 */
 function restartInterview() {
-  document.getElementById('evalPanel').classList.add('hidden');
-  document.getElementById('setupPanel').classList.remove('hidden');
+  /* 【P2 收紧】阶段守卫：只有终态（已出评定报告）才允许重置。
+     防止其它阶段误触 .eval-btn（它在隐藏的 evalPanel 里静态存在）把整场面试清零。
+     IV_TERMINAL = 'eval'，见本页 808 行状态常量定义。 */
+  if (currentStage !== IV_TERMINAL) return;
+  /* 【P1 加固】面板判空：节点缺失时只复位状态，不再抛 TypeError */
+  var ep = document.getElementById('evalPanel');
+  var sp = document.getElementById('setupPanel');
+  if (ep) ep.classList.add('hidden');
+  if (sp) sp.classList.remove('hidden');
   var tp = document.getElementById('topProgress');
   if (tp) tp.classList.add('hidden');
 
@@ -2036,16 +2060,16 @@ else ivInit();
 
 </script>
 
-<script src="assets/ai-config.js?v=20260919r"></script>
+<script src="assets/ai-config.js?v=20260920c"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260919r"></script>
+<script src="assets/ai-service.js?v=20260920c"></script>
 <script src="assets/ai-cap-registry.js?v=20260918c"></script>
-<script src="assets/ai-cap-image.js?v=20260919r"></script>
-<script src="assets/ai-cap-vision.js?v=20260919r"></script>
-<script src="assets/ai-cap-audio.js?v=20260919r"></script>
-<script src="assets/ai-cap-embed.js?v=20260919r"></script>
-<script src="assets/ai-cap-translate.js?v=20260919r"></script>
-<script src="assets/ai-cap-video.js?v=20260919r"></script>
-<script src="assets/ai-cap-3d.js?v=20260919r"></script>
+<script src="assets/ai-cap-image.js?v=20260920c"></script>
+<script src="assets/ai-cap-vision.js?v=20260920c"></script>
+<script src="assets/ai-cap-audio.js?v=20260920c"></script>
+<script src="assets/ai-cap-embed.js?v=20260920c"></script>
+<script src="assets/ai-cap-translate.js?v=20260920c"></script>
+<script src="assets/ai-cap-video.js?v=20260920c"></script>
+<script src="assets/ai-cap-3d.js?v=20260920c"></script>
 </body>
 </html>

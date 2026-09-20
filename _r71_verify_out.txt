@@ -1,7 +1,0 @@
-bak=D:\下载的文件\学习工作台\用户需求与决策总账.md.bak-pre-r68-20260917
-bak_ok=true
-old_size=76567 new_size=79024
-CRLF=659 loneLF=0 loneCR=0
-R71_hits=1
-R68_hits=1 R70_hits=1
-tail='模型列表卡片渲染）、`ai-settings.html`（LF，卡片 CSS）；行尾铁律照旧，改前备份 `.bak-pre-r71-日期`。\r\n- 状态：**已记录，未开工**（等用户指令放行）。\r\n'

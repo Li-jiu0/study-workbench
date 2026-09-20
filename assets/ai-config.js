@@ -1,4 +1,4 @@
-// ========== AI 模型配置文件（全站 AI 底座） ==========
+﻿// ========== AI 模型配置文件（全站 AI 底座） ==========
 // 所有 Key、模型、参数、funcType 分工都在这里配置，业务代码不写死。
 // 新增/删除模型只改这个文件。
 // 注意：本文件遵循老 WebView 语法禁令，不使用可选链、空值合并、顶层 await 及正则后行断言等老内核不支持的写法。
@@ -69,6 +69,7 @@ var AI_CONFIG = {
     gemini: {
       name: "Google Gemini",
       apiUrl: "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+      apiKey: "***REMOVED-BY-R2C***",
       apiFormat: "gemini",
       keyInQuery: true,
       needVPN: true,
@@ -142,9 +143,8 @@ var AI_CONFIG = {
       apiFormat: "openai",
       needKey: false,
       note: "",
-      // R131 决策 B：海外平台软下线——服务端不配置其 Key，模型列表自动剔除；
-      // 此处保留条目 + 不可用标记，供下拉置灰与 toast 引导到国内替代模型。
-      status: "unavailable",
+      // R133：服务端已配置 OPENROUTER_API_KEY 并实测可直连（OPENROUTER_ALLOW_DIRECT=1），
+      // 可用性以服务端 GET /api/ai/models 为权威源，不再本地置灰。
       models: [
         { id: "or-auto", name: "OR-Auto", types: ["general"] },
         { id: "or-nemotron-super", name: "Nemotron-Super", types: ["general","reasoning"] },
@@ -182,15 +182,11 @@ var AI_CONFIG = {
         { id: "gm-36-flash", name: "Gemini-3.6-Flash", types: ["general"] },
         { id: "gm-37-flash", name: "Gemini-3.7-Flash", types: ["general"] },
         { id: "gm-38-flash", name: "Gemini-3.8-Flash", types: ["general"] },
-        { id: "gm-omni-11-flash", name: "Gemini-Omni-1.1", types: ["image","general"] },
         { id: "gm-gemma-4-26b", name: "Gemma-4-26B", types: ["general"] },
-        { id: "gm-gemma-4-31b", name: "Gemma-4-31B", types: ["general"] },
-        { id: "gm-31-flash-lite", name: "Gemini-3.1-Lite", types: ["general"] },
-        // R134：Gemini 生图 3 条（服务端 model_registry 同步注册，走 /api/ai/image/generate 中转）。
-        // 能力标签含 imagegen + general：生图与对话双能力完整保留，不因归类丢失任何一侧。
-        { id: "gm-2.5-flash-image", name: "Gemini 2.5 图片生成", types: ["imagegen","general"] },
-        { id: "gm-3-pro-image", name: "Gemini 图片 Pro", types: ["imagegen","general"] },
-        { id: "gm-31-flash-lite-image", name: "Gemini 轻量生图", types: ["imagegen","general"] }
+        { id: "gm-31-flash-lite", name: "Gemini-3.1-Lite", types: ["general"] }
+        // R135 20260920：移除 5 个实测不可用条目（免费 Key 下 Google 侧拒绝，非配置问题）——
+        // gm-omni-11-flash（429 无配额）、gm-gemma-4-31b（500 INTERNAL）、生图三件套（429 无生图配额）。
+        // 配额开放后可从 git 历史恢复。
       ]
     },
     {
@@ -845,9 +841,9 @@ var AI_CONFIG = {
     },
     {
       id: "gm-25-flash",
-      name: "Gemini 2.5 Flash",
+      name: "Gemini Flash（最新版）",
       provider: "gemini",
-      model: "gemini-2.5-flash",
+      model: "gemini-flash-latest",
       types: ["image","general"],
       tag: "免费",
       rate: "1.2x",
@@ -858,9 +854,9 @@ var AI_CONFIG = {
     },
     {
       id: "gm-25-flash-lite",
-      name: "Gemini 2.5 Flash Lite",
+      name: "Gemini Flash Lite（最新版）",
       provider: "gemini",
-      model: "gemini-2.5-flash-lite",
+      model: "gemini-flash-lite-latest",
       types: ["image","general"],
       tag: "免费",
       rate: "0.8x",
@@ -909,36 +905,10 @@ var AI_CONFIG = {
       needVPN: true
     },
     {
-      id: "gm-omni-11-flash",
-      name: "Gemini 全模态",
-      provider: "gemini",
-      model: "gemini-omni-1.1-flash",
-      types: ["image","general"],
-      tag: "免费",
-      rate: "1.2x",
-      temperature: 0.5,
-      maxTokens: 1500,
-      fallback: "ark-v4-flash",
-      needVPN: true
-    },
-    {
       id: "gm-gemma-4-26b",
       name: "Gemma 4 26B",
       provider: "gemini",
       model: "gemma-4-26b-a4b-it",
-      types: ["general"],
-      tag: "免费",
-      rate: "1x",
-      temperature: 0.7,
-      maxTokens: 1500,
-      fallback: "ark-v4-flash",
-      needVPN: true
-    },
-    {
-      id: "gm-gemma-4-31b",
-      name: "Gemma 4 31B",
-      provider: "gemini",
-      model: "gemma-4-31b-it",
       types: ["general"],
       tag: "免费",
       rate: "1x",
@@ -958,49 +928,6 @@ var AI_CONFIG = {
       temperature: 0.7,
       maxTokens: 800,
       fallback: "ark-v4-flash",
-      needVPN: true
-    },
-    // ===== R134（2026-09-20）Gemini 生图 3 条：与服务端 model_registry.json 同步注册 =====
-    // 走服务端中转 /api/ai/image/generate（与 arkimage 生图同一入口），id 逐字对齐 registry 键。
-    // types 为 ["imagegen","general"]：生图与对话双能力完整保留（生图选中时 ai-service 直走
-    // 生图链路；作为对话模型时走文本链路），fallback 指向 ark 生图最快款。
-    {
-      id: "gm-2.5-flash-image",
-      name: "Gemini 2.5 图片生成",
-      provider: "gemini",
-      model: "gemini-2.5-flash-image",
-      types: ["imagegen","general"],
-      tag: "免费",
-      rate: "1x",
-      temperature: 0.7,
-      maxTokens: 1000,
-      fallback: "ark-seedream-4-0828",
-      needVPN: true
-    },
-    {
-      id: "gm-3-pro-image",
-      name: "Gemini 图片 Pro",
-      provider: "gemini",
-      model: "gemini-3-pro-image",
-      types: ["imagegen","general"],
-      tag: "免费",
-      rate: "1x",
-      temperature: 0.7,
-      maxTokens: 1000,
-      fallback: "ark-seedream-4-0828",
-      needVPN: true
-    },
-    {
-      id: "gm-31-flash-lite-image",
-      name: "Gemini 轻量生图",
-      provider: "gemini",
-      model: "gemini-3.1-flash-lite-image",
-      types: ["imagegen","general"],
-      tag: "免费",
-      rate: "0.5x",
-      temperature: 0.7,
-      maxTokens: 800,
-      fallback: "ark-seedream-4-0828",
       needVPN: true
     },
     {
@@ -1220,13 +1147,9 @@ var AI_CONFIG = {
     "gm-36-flash": { platform: "Google Gemini", params: "", type: "通用对话", stars: 4, speed: "快", advantage: "Gemini 3.6 最新版本；需自备网络", applicable: "日常问答" },
     "gm-37-flash": { platform: "Google Gemini", params: "", type: "通用对话", stars: 4, speed: "快", advantage: "Gemini 3.7 最新版本；需自备网络", applicable: "日常问答" },
     "gm-38-flash": { platform: "Google Gemini", params: "", type: "通用对话", stars: 4, speed: "快", advantage: "Gemini 3.8 最新版本；需自备网络", applicable: "日常问答" },
-    "gm-omni-11-flash": { platform: "Google Gemini", params: "", type: "全模态（听/看/说）", stars: 4, speed: "快", advantage: "支持语音、图片与对话的全模态模型；需自备网络", applicable: "图片理解、多模态对话" },
     "gm-gemma-4-26b": { platform: "Google Gemini", params: "26B", type: "开源对话", stars: 3, speed: "快", advantage: "Google 开源 Gemma 4 26B 模型（Gemini 侧实测可用）；需自备网络", applicable: "日常问答" },
-    "gm-gemma-4-31b": { platform: "Google Gemini", params: "31B", type: "开源对话", stars: 3, speed: "快", advantage: "Google 开源 Gemma 4 31B 模型（Gemini 侧实测可用）；需自备网络", applicable: "日常问答" },
     "gm-31-flash-lite": { platform: "Google Gemini", params: "", type: "通用对话（轻量）", stars: 3, speed: "快", advantage: "Gemini 3.1 轻量版；需自备网络", applicable: "日常轻量问答" },
-    "gm-2.5-flash-image": { platform: "Google Gemini", params: "", type: "图片生成+对话", stars: 4, speed: "中", advantage: "Gemini 2.5 生图模型，支持文生图与图片编辑，同时保留通用对话能力；走服务端生图中转；需自备网络", applicable: "文生图、学习配图、日常问答" },
-    "gm-3-pro-image": { platform: "Google Gemini", params: "", type: "图片生成+对话（Pro）", stars: 4, speed: "慢", advantage: "Gemini 生图 Pro 版，画质与提示词理解更强，同时保留通用对话能力；走服务端生图中转；需自备网络", applicable: "高质量文生图、复杂绘图指令" },
-    "gm-31-flash-lite-image": { platform: "Google Gemini", params: "", type: "图片生成+对话（轻量）", stars: 3, speed: "快", advantage: "Gemini 轻量生图，速度快消耗低，同时保留通用对话能力；走服务端生图中转；需自备网络", applicable: "快速文生图、轻量问答" },
+    // R135 20260920：移除 gm-omni-11-flash / gm-gemma-4-31b / 生图三件套 的说明条目（模型条目已删）
     "ark-seedream-4-0415": { platform: "火山方舟·图片生成", params: "", type: "图片生成", stars: 4, speed: "中", advantage: "文生图；走 images/generations 接口，调用链路待评估", applicable: "文生图（v4 初版）" },
     "ark-seedream-4-0828": { platform: "火山方舟·图片生成", params: "", type: "图片生成（最快）", stars: 4, speed: "快", advantage: "文生图最快版（实测 4.2 秒）；走 images/generations 接口，调用链路待评估", applicable: "文生图（速度优先）" },
     "sf-hunyuan-mt-7b": { platform: "硅基流动", params: "", type: "通用翻译", stars: 4, speed: "快", advantage: "腾讯混元翻译专用模型，实测中英互译流畅，术语保留好", applicable: "题目/资料中英互译、长句翻译" },

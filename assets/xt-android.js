@@ -5,10 +5,10 @@
    本脚本只做一件事：把「后端地址 + 登录 token」交给原生侧，
    由 MsgPollService 前台服务在原生层轮询 /api/chat/unread 并弹系统通知。
    MainActivity 在每个页面 onPageFinished 时用 evaluateJavascript 注入本文件内容，
-   因此**无需改动任何 html 页面**（页面归属其它线路，避免冲突）。
+   因此「无需改动任何 html 页面」（页面归属其它线路，避免冲突）。
 
    安全：全程 try/catch；window.__XT_ANDROID_INJECTED__ 幂等守卫，重复注入不报错。
-   语法铁律：ES2017 上限（禁 ?. ?? 展开 Object.fromEntries .at() 等），老 WebView 可跑。
+   语法铁律：ES2017 上限（禁可选链、空值合并、对象展开、fromEntries、at 等），老 WebView 可跑。
    ===================================================================== */
 (function () {
   'use strict';

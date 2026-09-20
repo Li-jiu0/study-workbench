@@ -1,9 +1,0 @@
-[SCAN] assets/xt-polyfill.js -> 48 top-level decls
-[SCAN] assets/config.js -> 6 top-level decls
-[SCAN] assets/icon-map.js -> 12 top-level decls
-[SCAN] assets/ai-config.js -> 1 top-level decls
-[SCAN] assets/ai-presets.js -> 6 top-level decls
-[SCAN] assets/ai-service.js -> 122 top-level decls
-
---- page globals not found in loaded assets (safe) ---
-  (empty above = no collision)

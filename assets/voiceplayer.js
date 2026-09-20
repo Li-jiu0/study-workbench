@@ -849,7 +849,7 @@
           未就绪 → 直接调原生网络 TTS（AndroidTTS.netTts，MediaPlayer 播放，不依赖系统引擎）。
        ② Web Speech（浏览器）：speechSynthesis + voiceschanged 兜底。
        ③ 都不支持：友好提示（区分安卓浏览器 / 桌面浏览器），并自动展开原文兜底。
-     语法铁律：ES2017 上限（禁 ?. ?? 展开 Object.fromEntries .at() 等）。
+     语法铁律：ES2017 上限（禁可选链、空值合并、对象展开、fromEntries、at 等）。
      ================================================================== */
   var _vpNativeSeq = 0, _vpResetTimer = null;
 

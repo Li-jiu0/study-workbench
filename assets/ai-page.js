@@ -412,9 +412,17 @@
      必须同时满足：(1) 未被 disabled；(2) 未被 health 隐藏；(3) 匹配当前分类筛选。
      三种过滤全是【渲染期】只读判定：不写 disabled、不删 catModels/overrides、
      不改任何持久化 → 取消筛选（catKey 置空）后立即恢复，数据从未被删除。
-     分类映射表与 ai-settings.js 的 CAT_OF_TYPE 保持一致（14 键，无隐式兜底）；
-     自定义分类（不在值域内）视为「无能力映射」→ 一律不匹配，避免误隐藏。
+     分类映射表与 ai-settings.js 的 CAT_OF_TYPE 保持一致（14 键，无隐式兜底）。
      ── 依赖跨文件契约：ai_model_settings.lastSort.catKey（由 ai-settings 排序弹窗写入）。 */
+  /* R93 修复（本改动）：设置页排序弹窗除 14 个功能分类外还提供「梯子」（catKey='proxy'）
+     与自定义分类（settings.categories，key 形如 custom_*）两个选项，但本页原先只认
+     14 个功能键 → 选中「梯子」后无任何 type 映射到 'proxy'，or-/gm- 等代理模型
+     连同全部模型一起被误隐藏，AI 页下拉整体清空（「按代理分类排序映射不到下拉」的根因）。
+     现与 ai-settings.js 的 modelInCategory 完全同口径：
+       proxy    → 梯子 = 平台需代理：模型级 needVPN 或平台级 needVPN/needProxy 任一命中；
+       custom_* → catModels[catKey] 优先级链含该模型即匹配。
+     可用性策略不变：服务端 /api/ai/models 不下发的模型仍按原有 health/隐藏策略处理，
+     本改动只修「分类归属映射」，不额外放宽可用性。 */
   var CAT_OF_TYPE_PAGE = {
     general: 'general', longtext: 'longtext',
     creative: 'content', interview: 'content',
@@ -433,13 +441,49 @@
     var ck = ls.catKey;
     return (typeof ck === 'string') ? ck : '';
   }
-  /* 模型 id 是否匹配当前分类筛选。catKey 空 → 全部匹配；模型无类型映射 → 不匹配（不误伤筛选语义）。 */
+  /* R93：模型 id 是否匹配当前分类筛选。catKey 空 → 全部匹配；模型无类型映射 → 不匹配（不误伤筛选语义）。
+     proxy / 自定义分类分支与 ai-settings.js modelInCategory 同口径（R93 修复，见上注释）。 */
+  function isCustomCatKeyPage(key) {
+    if (!key) return false;
+    var cs = getModelSettings().categories;
+    if (Object.prototype.toString.call(cs) !== '[object Array]') return false;
+    for (var i = 0; i < cs.length; i++) {
+      if (cs[i] && cs[i].key === key) return true;
+    }
+    return false;
+  }
+  /* R93：模型所属平台配置（AI_CONFIG.providers[key]），AI_CONFIG 未就绪 / 未知平台 → null */
+  function providerConfigOf(m) {
+    if (!m || !m.provider) return null;
+    try {
+      if (typeof AI_CONFIG !== 'undefined' && AI_CONFIG && AI_CONFIG.providers) {
+        return AI_CONFIG.providers[m.provider] || null;
+      }
+    } catch (e) { /* AI_CONFIG 未就绪：按无平台配置处理 */ }
+    return null;
+  }
+  /* R93：模型是否需要梯子——与 ai-settings.js 的 isNeedVPN / providerNeedProxy 同一口径：
+     模型级 needVPN、平台级 needVPN、平台级 needProxy 任一命中即算（梯子=平台需代理）。 */
+  function modelNeedVPN(m) {
+    if (!m) return false;
+    if (m.needVPN === true) return true;
+    var p = providerConfigOf(m);
+    return !!(p && (p.needVPN === true || p.needProxy === true));
+  }
   function isHiddenByCategory(id) {
     var catKey = activeCatFilterPage();
     if (!catKey) return false;                 // 未选分类 → 不隐藏任何模型
     if (!id) return false;
     var m = getModelById(id);
     if (!m) return false;                      // 模型已不存在：交由其它过滤/上游兜底，不在此误判
+    if (catKey === 'proxy') return !modelNeedVPN(m);   // R93：梯子=平台需代理（or-/gm- 等 needVPN/needProxy 平台模型可见）
+    if (isCustomCatKeyPage(catKey)) {          // 自定义分类：优先级链上含该模型即匹配（与设置页 chainIdsOf 空链=无归属一致）
+      var cm = getModelSettings().catModels;
+      if (cm && typeof cm === 'object' && Object.prototype.toString.call(cm[catKey]) === '[object Array]') {
+        return cm[catKey].indexOf(id) === -1;  // 链上 → 可见；不在链上 → 隐藏（渲染期，可逆）
+      }
+      return true;                             // 链未配置 → 无归属，隐藏（与设置页空链同口径）
+    }
     var ts = (Object.prototype.toString.call(m.types) === '[object Array]') ? m.types : [];
     for (var i = 0; i < ts.length; i++) {
       if (CAT_OF_TYPE_PAGE[ts[i]] === catKey) return false;   // 命中分类 → 可见
@@ -604,7 +648,7 @@
      退化为 CSS 全屏兜底：同一 video 元素 position:fixed + inset:0 + 极高 z-index
      + 黑底遮罩 + 关闭按钮。全程只改 video 的样式、不移动 / 不重载该元素，
      因此播放进度不中断；再点按钮、或按 Esc 即退出。
-     约束：ES2017（不用可选链 ?. / ?? / replaceAll / at / flat），不弹 alert / confirm / prompt。 */
+     约束：ES2017（不用可选链 / 空值合并 / replaceAll / at / flat），不弹 alert / confirm / prompt。 */
   var VID_FS_Z = 2147483000;            /* 遮罩层级（页面现有最高 400，远超之） */
   var VID_FS_BTN_CLS = 'ai-vid-fs-btn';
   var VID_FS_ACTIVE_CLS = 'ai-vid-fs-active';
@@ -2017,7 +2061,11 @@
           }
         }
       },
-      onFallback: function (name) { toast('当前模型繁忙，已自动切换到 ' + name); },
+      /* 需求 D-2/D-3：ai-service 会下发第 3 参 msg（reason==="slow" →「响应较慢，已切换模型：X」，
+         其余场景 →「已切换到 X 模型」）；参数缺失/旧调用方时回退原有固定文案，向后兼容。 */
+      onFallback: function (name, id, msg) {
+        toast((typeof msg === 'string' && msg) ? msg : ('当前模型繁忙，已自动切换到 ' + name));
+      },
       onModelUsed: function (id, name) { setUsedModel(aiB, id, name); }
     };
     if (typeof callAI !== 'function') {

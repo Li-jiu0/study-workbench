@@ -1,8 +1,0 @@
-BACKUP js -> 132398 bytes, md5=4bf74894d3ab9924c0cac66baa4f34bd, crlf=2613, loneLF=0
-BEFORE js  132398 bytes, md5=4bf74894d3ab9924c0cac66baa4f34bd, crlf=2613, loneLF=0
-OK  [js-ZMIN] x1
-OK  [js-layout] x1
-OK  [js-zoomAt] x1
-AFTER  js  133167 bytes, md5=c8e01cc6b3e7a3fae0dcc9281814aade, crlf=2623, loneLF=0
-LONE-LF-OK js=True
-DONE

@@ -8,7 +8,7 @@
        · Chromium 41：仍无 fetch
        · Chromium 42：有 fetch，但无流式 body.getReader 的早期实现
        · Chromium 45：才有 Object.assign
-       · Chromium 55：才有 async / await（这一条是本文件**无法**兜底的，见下方探针）
+       · Chromium 55：才有 async / await（这一条是本文件「无法」兜底的，见下方探针）
      一旦缺失，页面里的 fetch(...) 直接抛异常，表现为「连不上服务器 / 单机静态」。
 
    本文件做什么：
@@ -20,7 +20,7 @@
 
    铁律：本文件必须用 ES5 语法写（var / function，禁箭头函数、模板字符串、
          let/const、可选链、空值合并），因为它就是要在最老的内核上先跑起来。
-   加载位置：由 android/build_apk.py 在打包时注入为各页面 <head> 的**第一个**
+   加载位置：由 android/build_apk.py 在打包时注入为各页面 <head> 的「第一个」
              script（非 defer），保证在所有 defer 业务脚本之前同步执行。
    ===================================================================== */
 (function () {

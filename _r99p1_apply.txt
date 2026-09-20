@@ -1,6 +1,0 @@
-BACKUP js -> 133409 bytes, md5=c396a192c9527a9bcc7ffe1f29d6d67f, crlf=2625, loneLF=0
-BEFORE js  133409 bytes, md5=c396a192c9527a9bcc7ffe1f29d6d67f, crlf=2625, loneLF=0
-OK  [js-ok-clamp-source] x1
-AFTER  js  134368 bytes, md5=c015910b4ca18b402f2b6e0165fa8ba7, crlf=2639, loneLF=0
-LONE-LF-OK js=True
-DONE

@@ -1,6 +1,0 @@
-cet-read.js size=33609 crlf=0 lf=678
-data-cet-read.js size=21490
-ID=r1 type=cloze
-ID=r2 type=match
-ID=r3 type=careful
-ID=r4 type=careful

@@ -1,5 +1,0 @@
-D:/下载的文件/学习工作台/_w2t1_img\img06_1380x162.jpg bytes=5799 head=b'\xff\xd8\xff\xe0'
-D:/下载的文件/学习工作台/_w2t1_img\img08_1380x315.jpg bytes=7180 head=b'\xff\xd8\xff\xe0'
-D:/下载的文件/学习工作台/_w2t1_img\img10_134x70.jpg bytes=2832 head=b'\xff\xd8\xff\xe0'
-D:/下载的文件/学习工作台/_w2t1_img\img14_1380x523.jpg bytes=9333 head=b'\xff\xd8\xff\xe0'
-D:/下载的文件/学习工作台/_w2t1_img\img16_97x70.jpg bytes=2616 head=b'\xff\xd8\xff\xe0'

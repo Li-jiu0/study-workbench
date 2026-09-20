@@ -3,7 +3,7 @@
    R72-5：优先走安卓原生通知横幅（window.AndroidBridge.notify），无桥时回落页内 toast。
    ---------------------------------------------------------------------
    定位：全站共用的「入站消息提醒」薄层。整个文件包在一个 IIFE 里，
-   **顶层 0 个声明**；对外只做「守卫赋值」（typeof 判空后才挂 window），
+   「顶层 0 个声明」；对外只做「守卫赋值」（typeof 判空后才挂 window），
    因此绝不会与 app.js / chat-local.js / xt-toast.js 抢全局名，
    也不会因为被重复注入而报 SyntaxError。
 
@@ -20,7 +20,7 @@
    与既有实现的协作（重复弹窗是本项最大风险，必须遵守）：
      · app.js 的 R60 层已实现 window.xtNotifyMessage / window.xtSetUnread
        以及 /api/chat/unread 的 8 秒轮询，并置 window.__xtPollStarted = true。
-       本文件只在**它没接管**时才开 HTTP 轮询；一旦探测到
+       本文件只在「它没接管」时才开 HTTP 轮询；一旦探测到
        __xtPollStarted === true 或 __xtChatTransportActive === true，
        立即把自己的 HTTP 轮询永久关掉（remoteOff），只保留本地 storage
        轮询与「被调方」能力 —— 同一条消息绝不弹两次。
@@ -29,9 +29,9 @@
      · 首次轮询只建基线，不补弹历史未读（避免一进页面狂弹）。
 
    语法铁律（安卓 APK 老 WebView / Chrome 50~58）：
-     禁 ?. ?? .replaceAll( Object.fromEntries .at( 顶层 await、
-     正则后行断言 (?<= (?<!、对象展开 {...obj}、对象剩余解构、指数 **、
-     可选 catch 绑定 catch {}；本文件一律 var / function / 字符串拼接。
+     禁可选链、空值合并、replaceAll、fromEntries、数组 at、顶层异步等待、
+     正则后行断言、对象展开、对象剩余解构、指数运算符、
+     可选 catch 绑定；本文件一律 var / function / 字符串拼接。
      禁原生 alert / confirm / prompt。
    加载方式：<script src="assets/notify.js?v=版本号" defer></script>
    ===================================================================== */

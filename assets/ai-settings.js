@@ -21,7 +21,7 @@
  *   - ai_memory：记忆（JSON 字符串数组，单条 ≤200 字，最多 50 条 FIFO；R65 契约）
  * 语法约束（老 WebView 上限 ES2017）：不用可选链 / 空值合并 / 对象展开 /
  *   replaceAll / fromEntries / 数组 at / 正则后行断言 / 指数运算符 /
- *   顶层 await / 可选 catch 绑定（catch 一律带参数）。
+ *   顶层异步等待 / 可选 catch 绑定（catch 一律带参数）。
  * ---------------------------------------------------------------------------
  */
 (function () {
@@ -926,6 +926,15 @@
     var s = String(err === null || typeof err === 'undefined' ? '' : err);
     var pn = providerNameOf(id);
     if (s === 'http_429') { return '当前模型额度已用完/被限流，已自动降级'; }
+    /* R134fix：服务端中转统一错误体 kind（HTTP 200 + {ok:false,kind,error}）。
+       这类 err 来自 ai-service.js classifyHealthErr 的 kind 直通（含 relay 生图链路），
+       文案口径与 ai-page.js 的 ERR_KIND_TEXT 错误卡一致——绝不再裸显示「HTTP 200」 */
+    if (s === 'unavailable') { return '服务端未配置该模型通道，模型暂不可用，请更换其他模型'; }
+    if (s === 'network_limited') { return '服务端网络受限（服务端访问该平台失败），请稍后重试，或更换国内平台的同类模型'; }
+    if (s === 'quota_exhausted') { return '服务端额度已达上限，请稍后再试或更换其他模型'; }
+    if (s === 'provider_error') { return '上游服务商返回错误，请稍后重试或更换模型'; }
+    if (s === 'bad_request') { return '请求参数不被服务端接受，请更换模型或调整内容后重试'; }
+    if (s === 'version_outdated') { return '当前版本已停用 AI 功能，请更新到最新版后继续使用'; }
     if (s === 'truncated') {
       return pn + ' 已连通，但模型输出被上限截断（思考型模型需要更大的最大输出）；请到设置页调大该模型「最大输出」后重新检测';
     }
@@ -1220,6 +1229,10 @@
      故改为 3 路并发：提速约 3 倍，同时对上游仍温和。
      HEALTH_STEP 常量保留（后台队列 pumpHealth 仍在用），此处不再作为主节流。 */
   var BATCH_CONCURRENCY = 3;   // 批量检测并发上限（同一时刻最多 3 个在飞）
+  /* R133：批量检测排除名单 —— 名单内服务商的模型不进「批量检测 / 重新检测全部」。
+     openrouter：账户 402 余额不足，批量只会刷一排 402 噪声；单行「检测」按钮仍保留，可手动测。
+     后台慢速健康队列（pumpHealth）不受此名单影响，仍按原逻辑走。 */
+  var BATCH_SKIP_PROVIDERS = { openrouter: true };
   function batchHealthCheck() {
     if (batchRunning) { return; }
     if (typeof window.aiHealthCheck !== 'function') { toast('warning', '当前环境不支持连通性检测'); return; }
@@ -1227,6 +1240,7 @@
     var ids = [];
     for (var i = 0; i < all.length; i++) {
       if (isProbeNoAutoId(all[i].id)) { continue; }   // R87 成本保护：video / 3D 不进「检测全部」批量
+      if (all[i].provider && BATCH_SKIP_PROVIDERS[all[i].provider]) { continue; }   // R133：排除名单内的服务商不进批量
       ids.push(all[i].id);
     }
     if (!ids.length) { toast('warning', '没有可检测的模型'); return; }

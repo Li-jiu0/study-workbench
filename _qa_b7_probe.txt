@@ -1,5 +1,0 @@
---- 调用 openPicker ---
-createElement(div) childNodes=4 qs(input)=HIT
-createElement(style) childNodes=0 qs(input)=NULL
-createElement(div) childNodes=4 qs(input)=HIT
-openPicker OK

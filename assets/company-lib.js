@@ -15,11 +15,11 @@
      - ES5 语法为主，不用可选链与空值合并（file:// + 老 WebView 兼容）
 
    ★ 键命名空间（重要，勿改）
-     本组件**独占** `xtc:lib:ent:` 前缀，共 3 组键：
+     本组件「独占」`xtc:lib:ent:` 前缀，共 3 组键：
        xtc:lib:ent:<id>         已学标记（1 / 0）
        xtc:lib:ent:<id>:fav     收藏标记（1 / 0）
        xtc:lib:ent:<id>:quiz    自测最好成绩 {best, total, ts}
-     **禁止**写入 `xtc:learn:*` / `xtc:fav:*` / `xtc:quiz:*` —— 那是
+     「禁止」写入 `xtc:learn:*` / `xtc:fav:*` / `xtc:quiz:*` —— 那是
      assets/xt-content.js（T00 通用契约，模式 `xtc:learn:<bankId>:<itemId>`）
      的地盘。两套结构在同一命名空间下会互相覆盖，且故障要等用户数据莫名
      丢失才暴露，故此处一律不双写、不回退读取。

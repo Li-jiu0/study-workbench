@@ -3,7 +3,7 @@
    批次：2026-09-16 / B2「N9-12 PPT版式库升级」/ 版本戳 20260916（本波不 bump）
    ---------------------------------------------------------------------
    架构约定（ADR-1 数据外置 + 后置覆盖）：
-     · 本文件在 assets/mini-ppt.js **之后**加载，用新结构覆盖同名 key
+     · 本文件在 assets/mini-ppt.js 「之后」加载，用新结构覆盖同名 key
        PPT['ppt-templates']；mini-ppt.js 原有 5 条文字数据一行不删、不动。
      · 旧 5 条文案的去向（保证零删除）：
          旧①通用版式模板套件 → items[0].summary
@@ -22,7 +22,7 @@
        《需求文档-PPT版式库升级-豆包-20260915.md》第七节：
          id / name / category / previewImage / pptFile / useCase /
          designPoints[] / palette / placeholder（占位骨架用）
-     · previewImage 一律填 ''（**不写会 404 的路径**）；previewImage 为空时
+     · previewImage 一律填 ''（「不写会 404 的路径」）；previewImage 为空时
        渲染器走「内联 SVG 版式示意骨架」占位降级（见 tpl-preview.js）。
      · pptFile 一律 null（本波无真实 .pptx 文件）→ 下载按钮显示「制作中」置灰。
      · 共 16 条，覆盖 4 个分类：封面页 4 / 目录页 3 / 过渡页 3 / 内容页 6。

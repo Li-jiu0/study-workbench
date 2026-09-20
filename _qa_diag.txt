@@ -1,6 +1,0 @@
-_qa_behavior2.js bytes=8147 mtime=1789749912.6365516 firstline=/* R96 QA · 补测 B3 / B7（v3） */
-   has_marker_v3 = True
-_qa_behavior2_stdout.txt bytes=5 mtime=1789749918.2480936 firstline=RC=0
-   has_marker_v3 = False
-_qa_behavior2_out.txt bytes=1102 mtime=1789749894.8348517 firstline==== B3 status:121（无 result）解析安全性 · 直接单测 ===
-   has_marker_v3 = False

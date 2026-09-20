@@ -1,8 +1,0 @@
-D:/下载的文件/学习工作台/assets/xt-profile.js
-  size=132398
-  md5=4bf74894d3ab9924c0cac66baa4f34bd
-  crlf=2613  loneLF=0  loneCR=0
-D:/下载的文件/学习工作台/assets/xt-profile.css
-  size=40729
-  md5=cd0e9c0519bfa715c59ae9443178e29a
-  crlf=1244  loneLF=0  loneCR=0

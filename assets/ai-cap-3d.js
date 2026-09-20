@@ -7,7 +7,7 @@
  *
  * 实测结论（2026-09-18，真实调用取证）：
  *   - 异步，与视频同端点，只是 content[] 里塞的是 image_url（图生 3D）
- *   - 结果在 content.file_url，**是 .zip 压缩包**（模型文件 glb 在包里）
+ *   - 结果在 content.file_url，「是 .zip 压缩包」（模型文件 glb 在包里）
  *   - 用量字段同视频：usage.completion_tokens == usage.total_tokens
  *   - 单次约 30,000 tokens（glb / medium），200 万额度够约 66 个
  *   - 结果 URL 同样只有 24 小时有效期（X-Tos-Expires=86400）
@@ -15,7 +15,7 @@
  *
  * 与 ai-cap-video.js 一样自带轮询（run()），不走同步调用层。
  *
- * 约束：ES2017（不用可选链 ?. 、不用 ?? 、不用 replaceAll / at / flat）
+ * 约束：ES2017（不用可选链、不用空值合并、不用 replaceAll / at / flat）
  *       不弹 alert / confirm / prompt
  * ============================================================= */
 (function (global) {

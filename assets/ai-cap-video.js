@@ -10,14 +10,14 @@
  *   - 结果在 content.video_url；3D 走同一端点但结果在 content.file_url（.zip）
  *   - 用量字段是 usage.completion_tokens == usage.total_tokens（无 prompt_tokens）
  *   - 单次消耗巨大：5s/720p 一次约 103,818 tokens，200 万额度只够约 19 个
- *   - 结果 URL 带 X-Tos-Expires=86400，**只有 24 小时有效期**，必须落自有存储
+ *   - 结果 URL 带 X-Tos-Expires=86400，「只有 24 小时有效期」，必须落自有存储
  *   - 未开通的模型返回 404 + ModelNotOpen，与「模型不存在」不是一回事
  *
  * 为什么自己管轮询：现有能力调用层是同步请求模型（单次 60s 超时），
  * 视频生成是分钟级异步任务，撑不住。所以本模块导出 run()，由它内部
  * 完成「创建 → 轮询 → 取结果 → 上报用量」，调用层只需判断 cap.run 是否存在。
  *
- * 约束：ES2017（不用可选链 ?. 、不用 ?? 、不用 replaceAll / at / flat）
+ * 约束：ES2017（不用可选链、不用空值合并、不用 replaceAll / at / flat）
  *       不弹 alert / confirm / prompt
  * ============================================================= */
 (function (global) {

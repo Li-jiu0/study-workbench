@@ -2,7 +2,7 @@
  * 能力模块：翻译（火山方舟 doubao-seed-translation 专用）
  * -------------------------------------------------------------
  * 为什么单独一个模块（实测取证，2026-09-18）：
- *   doubao-seed-translation-250915 **不是 chat 模型**，打 /chat/completions 会 400：
+ *   doubao-seed-translation-250915 「不是 chat 模型」，打 /chat/completions 会 400：
  *     "the requested model doubao-seed-translation-250915 does not support this api."
  *   它走的是 /responses 端点，而且参数结构很别扭，逐个试出来的：
  *     - input 是字符串        → 400 "input string is not supported by translation model."
@@ -10,7 +10,7 @@
  *     - 没有 translation_options → 400 "missing `input.content.translation_options` parameter."
  *     - translation_options 放顶层 → 400 'unknown field "translation_options"'
  *   正确姿势：input 是数组，元素是 {role, content:[{type,text,translation_options}]}，
- *            **translation_options 必须嵌在 content 数组元素里**，不能放顶层。
+ *            「translation_options 必须嵌在 content 数组元素里」，不能放顶层。
  *
  * 实测 200 的请求体：
  *   POST https://ark.cn-beijing.volces.com/api/v3/responses
@@ -28,7 +28,7 @@
  * 响应：output[0].content[0].text
  * 用量：usage.{input_tokens, output_tokens, total_tokens}（注意不是 prompt/completion）
  *
- * 约束：ES2017（不用可选链 ?. 、不用 ?? 、不用 replaceAll / at / flat）
+ * 约束：ES2017（不用可选链、不用空值合并、不用 replaceAll / at / flat）
  *       不弹 alert / confirm / prompt
  * ============================================================= */
 (function (global) {

@@ -6,10 +6,10 @@
  *       与用量口径；本文件只做登记与查询，不含任何业务逻辑。
  *
  * 新增一种能力 = 新建一个 assets/ai-cap-xxx.js，在里面调一次
- * XT_AI_CAPS.register({...})，再在页面里加一个 script 标签即可，
+ * XT_AI_CAPS.register({ … })，再在页面里加一个 script 标签即可，
  * 不需要改动 ai-service.js 的分派逻辑。
  *
- * 约束：ES2017（不用可选链 ?. 、不用 ?? 、不用 replaceAll / at）
+ * 约束：ES2017（不用可选链、不用空值合并、不用 replaceAll / at）
  *       不弹 alert / confirm / prompt
  * ============================================================= */
 (function (global) {

@@ -1,6 +1,0 @@
-D:\下载的文件\学习工作台\演示.html -> D:\下载的文件\学习工作台\演示.html.bak-pre-b5-20260916
-    subst copy -> D:\下载的文件\学习工作台\_bak-pre-b5-subst\演示.html
-    size=52359 CRLF=800 bareLF=0 mtime=1789533826.579373
-D:\下载的文件\学习工作台\assets\data-ppt-tips.js -> D:\下载的文件\学习工作台\assets\data-ppt-tips.js.bak-pre-b5-20260916
-    subst copy -> D:\下载的文件\学习工作台\_bak-pre-b5-subst\data-ppt-tips.js
-    size=42681 CRLF=0 bareLF=794 mtime=1789481849.368102

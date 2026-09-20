@@ -7,7 +7,7 @@
  *     密钥只在服务端 .env，前端零密钥；「Key 与 ark 相同」这类明文配置已全删。
  *   用户自备 Key 的模型仍按原链路直连上游（Key 只进 localStorage，永不上行）。
  * 实测结论（2026-09-18，微软慧慧合成的真实中文普通话 6.16s 音频）：
- *   - **按秒计费，不是按 token**：usage = {type:'duration', seconds:N}
+ *   - 「按秒计费，不是按 token」：usage = {type:'duration', seconds:N}
  *   - 各家取整规则不同：同一段 6.16s，SenseVoice/Qwen3 记 7 秒，XingChen 记 6 秒
  *     → 如实记录各家返回值，不归一化，避免账目对不上
  *   - XingChen 系列返回 duration 字段；SenseVoice/Qwen3 返回 language 字段

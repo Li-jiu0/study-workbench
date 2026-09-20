@@ -3,8 +3,8 @@
    批次：2026-09-14 / R48「做真内容」/ 版本戳 20260914e
    ---------------------------------------------------------------------
    架构约定：
-     · 注册 window.PPTV2['ppt-templates'] = function (slotEl) {...}
-       宿主页面（演示.html）由 T00 预埋分发逻辑，本文件**不改任何 HTML**。
+     · 注册 window.PPTV2['ppt-templates'] = function (slotEl) {…}
+       宿主页面（演示.html）由 T00 预埋分发逻辑，本文件「不改任何 HTML」。
      · 数据来源：window.MINI_BANK['ppt-templates']（assets/data-ppt-templates.js）
      · 5 套模板 × 5 帧 = 25 个骨架预览，全部由 div + 内联 background 自绘，
        零外链图片、零 CDN、零 emoji。
@@ -713,7 +713,7 @@
    tpl-preview.js · B2 / N9-12「PPT版式库升级」渲染器（v3）
    批次：2026-09-16 / 版本戳 20260916（本波不 bump）
    ---------------------------------------------------------------------
-   独立 IIFE，**不改动上面 A7「实战模板库」渲染器的任何字节**。
+   独立 IIFE，「不改动上面 A7「实战模板库」渲染器的任何字节」。
    数据来源：window.MINI_BANK['ppt-layout-lib']（assets/data-ppt-templates.js）
    对外接口：
      · window.XtPptLib.mount(rootEl)   —— 把版式库完整 UI 渲染进 rootEl

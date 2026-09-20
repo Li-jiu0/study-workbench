@@ -1,6 +1,0 @@
-=== nominatim reverse (fallback branch) ===
-url=https://nominatim.openstreetmap.org/reverse?format=json&addressdetails=1&zoom=18&accept-language=zh-CN&lat=39.908722&lon=116.397499
-ERROR: URLError(OSError('Tunnel connection failed: 502 Bad Gateway'))
-
-=== tencent key status recheck ===
-status=121 message=此key每日调用量已达到上限

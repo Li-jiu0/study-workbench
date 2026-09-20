@@ -3,7 +3,7 @@
    批次：2026-09-14 / R48「做真内容」第 3 批 / 版本戳 20260914e
    ---------------------------------------------------------------------
    架构约定（ADR-1 数据外置 + 后置覆盖）：
-     · 本文件在 assets/mini-ppt.js **之后**加载，用新结构覆盖同名 key
+     · 本文件在 assets/mini-ppt.js 「之后」加载，用新结构覆盖同名 key
        PPT['ppt-tips']；mini-ppt.js 原有 5 张知识卡片一行不删、不动。
      · 旧内容去向（零删除）：mini-ppt.js 原 5 张卡的 title/body 原样保留在
        items[i].name 与 items[i].body（含 emoji 图标也保留在原字段 legacyIcon），

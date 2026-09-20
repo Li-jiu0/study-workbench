@@ -2,7 +2,7 @@
  * assets/design-class.js —— B2「PPT · 设计基础」课堂渲染器（v2）
  * -----------------------------------------------------------------------------
  * 加载位置：必须在 assets/data-ppt-class.js 与 assets/icon-map.js 之后。
- * 注册方式：window.PPTV2['ppt-design'] = function (slotEl) { ... }
+ * 注册方式：window.PPTV2['ppt-design'] = function (slotEl) { … }
  *          分发逻辑由宿主页（演示.html，T00 预埋）负责，本文件不改任何 HTML。
  * 结构：3 节课堂（可切换）→ 课后小测（复用 mini-ppt.js 原有 8 题）。
  * 兼容：ES5 语法为主，不用可选链 / 箭头函数 / 空值合并，兼容老 WebView。

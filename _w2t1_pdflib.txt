@@ -1,5 +1,0 @@
-pypdf:NO
-PyPDF2:NO
-fitz:NO
-pdfplumber:NO
-pdfminer:NO

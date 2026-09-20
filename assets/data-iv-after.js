@@ -3,7 +3,7 @@
    批次：2026-09-14 / R48「做真内容」第 3 批 / 版本戳 20260914e
    ---------------------------------------------------------------------
    架构约定（ADR-1 数据外置 + 后置覆盖）：
-     · 本文件在 assets/mini-interview.js **之后**加载，覆盖同名 key
+     · 本文件在 assets/mini-interview.js 「之后」加载，覆盖同名 key
        MINI_BANK['iv-after']；原 6 道复盘选择题一行不删、不动。
      · 旧内容去向（零删除）：覆盖前先把 window.MINI_BANK['iv-after'].q 抢救到
        window.__IV_AFTER_LEGACY__，渲染器在页面底部用原数据渲染

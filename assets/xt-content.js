@@ -5,7 +5,7 @@
    约束（架构 ADR-1 / ADR-2 + 项目铁律）：
      1. 零框架、零 CDN、零构建；ES5 语法为主（不用箭头函数 / 可选链 / 空值合并），
         兼容老 WebView 与 file:// 直开。
-     2. 只写自己的 localStorage 键（统一前缀 xtc:），**绝不调用 saveData()**（铁律 8）。
+     2. 只写自己的 localStorage 键（统一前缀 xtc:），「绝不调用 saveData()」（铁律 8）。
      3. 图标一律走 icon-map.js：lucideIcon(name,size) 内联，或 data-icon + lucideAutoRender；
         禁 mask / filter / symbol / use，禁 emoji。
      4. 不依赖 mini.js / app.js 的任何渲染函数；app.js 缺失时可降级运行。
@@ -31,7 +31,7 @@
      XTC.readFav(key)                 -> Object        {sgcc:1,...}
      XTC.isLearned(key, id)           -> boolean
      XTC.setLearned(key, id, on)      -> boolean       显式置位，返回新状态
-     XTC.markLearned(key, id)         -> boolean       **切换**已学标记，返回新状态（再次调用即取消）
+     XTC.markLearned(key, id)         -> boolean       「切换」已学标记，返回新状态（再次调用即取消）
      XTC.isFav(key, id)               -> boolean
      XTC.toggleFav(key, id)           -> boolean       切换收藏，返回新状态（true=已收藏）
      XTC.progress(key, idList)        -> {done,total,pct}  给进度条用；idList 为全部条目 id 数组
@@ -43,7 +43,7 @@
      XTC.dispatchView(regName, id, slotEl) -> boolean  命中则清空 slot 并 fn(slot)，返回 true；
                                                        未命中/缺参/fn 抛错 返回 false（由宿主页回退旧逻辑）
      XTC.hasView(regName, id)         -> boolean
-     例：XTC.registerView('PPTV2', 'ppt-templates', function (slot) {...})
+     例：XTC.registerView('PPTV2', 'ppt-templates', function (slot) {…})
 
    UI 组件（均直接写入 el.innerHTML；el 为空则静默返回）
      XTC.hero(el, cfg)                -> void   cfg:{icon,title,sub,tags:[],credit}

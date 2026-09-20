@@ -64,6 +64,8 @@ public class MainActivity extends Activity {
 
     private static final int REQ_FILE_CHOOSER = 1001;
     private WebView web;
+    // 【R-黑边】最近一次下发到前端的状态栏高度（px）；-1 = 尚未取到（用于页面加载完成后补发与变更去抖）
+    private int lastStatusBarTopPx = -1;
     private ValueCallback<Uri[]> filePathCallback;
 
     // ---- 【R103 需求1】H5 getUserMedia 麦克风授权：暂存的 WebView 权限请求 ----
@@ -115,6 +117,10 @@ public class MainActivity extends Activity {
 
         web = new WebView(this);
         setContentView(web);
+        // 【R-黑边】把系统状态栏高度实时注入前端 CSS 变量 --xt-satop
+        //   （老内核 WebView 不认 env(safe-area-inset-*)，viewport-fit=cover 后内容会顶进状态栏，
+        //    需要 .topbar 自己垫上状态栏高度才不会互相遮挡）。全程 try/catch，失败不影响启动。
+        installStatusBarInsetBridge();
 
         // 【原生 TTS】先试系统默认引擎，失败自动切换本机其他引擎（见 initTts/nextEngineOrGiveUp）
         initTts();
@@ -742,6 +748,8 @@ public class MainActivity extends Activity {
                 injectXtAppBridge(view);
                 // 【R103 需求2·动态版】注入自包含脚本：动态取页面真实顶部色设置状态栏
                 injectStatusBarColor(view);
+                // 【R-黑边】补发状态栏高度 CSS 变量：新文档的 documentElement 已丢掉 style，需重设
+                injectStatusBarInset(view);
                 // 【R105】页面加载完成：标记就绪，并补发冷启动时早于本回调的待处理深链
                 //   （onCreate 里 handleOpenIntent 那次调用会因 webPageReady=false 直接返回，属预期）
                 webPageReady = true;
@@ -1337,11 +1345,16 @@ public class MainActivity extends Activity {
             if (Build.VERSION.SDK_INT >= 21) {
                 window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
                 window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+                // 【R-黑边】打孔/刘海屏：允许内容铺到状态栏与挖孔区后面（API28+），API30+ 再关掉系统给 decor 的强制留白
+                applyCutoutMode(window);
+                applyNonDecorFits(window);
                 if (Build.VERSION.SDK_INT >= 23) {
                     window.setStatusBarColor(0x00000000); window.getDecorView().setSystemUiVisibility(window.getDecorView().getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN); // edge-to-edge：状态栏透明(0x00000000=Color.TRANSPARENT) + 内容铺满其下，由 .topbar 背景透出实现无缝顶栏
                     View decor = window.getDecorView();
                     decor.setSystemUiVisibility(
                             decor.getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+                    // 【R-黑边】API30+ 用 WindowInsetsController 再设一次深色图标（原生等价写法，与上面 flags 二选一生效，互不冲突）
+                    applyLightStatusBarsAppearance(window, true);
                 } else {
                     window.setStatusBarColor(colorFallback); window.getDecorView().setSystemUiVisibility(window.getDecorView().getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN); // API21-22 兜底：品牌蓝 + 同样铺满状态栏(edge-to-edge)
                 }
@@ -1450,21 +1463,128 @@ public class MainActivity extends Activity {
             if (Build.VERSION.SDK_INT >= 21) {
                 window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
                 window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+                // 【R-黑边】动态版同样要开 cutout 铺满 + API30 关 decor 留白（否则切页后黑边复现）
+                applyCutoutMode(window);
+                applyNonDecorFits(window);
                 if (Build.VERSION.SDK_INT >= 23) {
                     window.setStatusBarColor(0x00000000); window.getDecorView().setSystemUiVisibility(window.getDecorView().getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN); // 透明状态栏(edge-to-edge)，图标明暗交由下方 luminance 分支
                     final View decor = window.getDecorView();
                     int vis = decor.getSystemUiVisibility();
-                    if (relativeLuminance(color) > 0.6) {
+                    final boolean lightIcons = relativeLuminance(color) > 0.6;
+                    if (lightIcons) {
                         vis |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;  // 浅色底 → 深色图标
                     } else {
                         vis &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR; // 深色底 → 浅色图标
                     }
                     decor.setSystemUiVisibility(vis);
+                    // 【R-黑边】API30+ 原生等价写法（getInsetsController），取不到时静默跳过
+                    applyLightStatusBarsAppearance(window, lightIcons);
                 } else {
                     window.setStatusBarColor(0xFF5B8DEF); window.getDecorView().setSystemUiVisibility(window.getDecorView().getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN); // API21-22 兜底：品牌蓝 + 铺满状态栏(edge-to-edge)
                 }
             }
         } catch (Throwable e) { /* 设置失败：静默 */ }
+    }
+
+    /* ================= 【R-黑边】打孔屏铺满 + 状态栏高度注入前端 ================= */
+
+    /** 【R-黑边】API28+：允许窗口内容延伸到打孔/刘海区域（SHORT_EDGES）。
+     *  缺这步时，即使状态栏已透明 + SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN，打孔屏（新安卓）
+     *  仍把 WebView 视口压在状态栏下方 → 顶部一条纯黑不透明条（真机复现的根因）。
+     *  注意：WindowManager.LayoutParams.layoutInDisplayCutoutMode 字段 API28 才有，
+     *  常量值 SHORT_EDGES=1 会在编译期被 javac 内联（-source 8 亦可编译），
+     *  运行期再用 SDK_INT 判级兜底 + try/catch，API21-27 不进此分支、行为不变。 */
+    private void applyCutoutMode(final Window window) {
+        try {
+            if (Build.VERSION.SDK_INT < 28) return;
+            final android.view.WindowManager.LayoutParams lp = window.getAttributes();
+            lp.layoutInDisplayCutoutMode =
+                    android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            window.setAttributes(lp);
+        } catch (Throwable e) { /* 设置失败：沿用系统默认，不影响功能 */ }
+    }
+
+    /** 【R-黑边】API30+：等价 androidx WindowCompat.setDecorFitsSystemWindows(false) 的纯原生写法（零 androidx 依赖）。
+     *  API<30 不动 —— 维持既有 systemUiVisibility 的 LAYOUT_STABLE|LAYOUT_FULLSCREEN 分支，避免老设备回归。 */
+    private void applyNonDecorFits(final Window window) {
+        try {
+            if (Build.VERSION.SDK_INT < 30) return;
+            window.setDecorFitsSystemWindows(false);
+        } catch (Throwable e) { /* 设置失败：沿用系统默认，不影响功能 */ }
+    }
+
+    /** 【R-黑边】API30+：用 WindowInsetsController 设置状态栏图标明暗（等价 SYSTEM_UI_FLAG_LIGHT_STATUS_BAR）。
+     *  与上面 flags 双保险；controller 取不到（部分 ROM）时静默跳过，不影响老分支。 */
+    private void applyLightStatusBarsAppearance(final Window window, final boolean lightIcons) {
+        try {
+            if (Build.VERSION.SDK_INT < 30) return;
+            final android.view.WindowInsetsController c = window.getInsetsController();
+            if (c == null) return;
+            final int appearance = android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS;
+            c.setSystemBarsAppearance(lightIcons ? appearance : 0, appearance);
+        } catch (Throwable e) { /* 静默 */ }
+    }
+
+    /** 【R-黑边】把系统状态栏高度实时注入前端 CSS 变量 --xt-satop。
+     *  背景：老内核 WebView 不支持 env(safe-area-inset-*)，而 viewport-fit=cover 后页面内容
+     *  会顶进状态栏；.topbar 用 var(--xt-satop, env(...)) 自己垫高，状态栏区域才能露出顶栏底色。
+     *  实现：decorView.setOnApplyWindowInsetsListener → 回调里取状态栏 top(px) → 换算 dp(px/density)
+     *  → evaluateJavascript 设 documentElement 的 --xt-satop。px 变化才下发（天然去抖）。
+     *  API21-29 走 getSystemWindowInsetTop()，API30+ 走 getInsets(Type.statusBars())。
+     *  全程 try/catch，任何异常都不影响页面渲染与应用启动。 */
+    private void installStatusBarInsetBridge() {
+        try {
+            final Window window = getWindow();
+            if (window == null) return;
+            final View decor = window.getDecorView();
+            if (decor == null) return;
+            decor.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+                @Override
+                public android.view.WindowInsets onApplyWindowInsets(View v, android.view.WindowInsets insets) {
+                    try {
+                        int top = 0;
+                        if (Build.VERSION.SDK_INT >= 30) {
+                            final android.graphics.Insets sb =
+                                    insets.getInsets(android.view.WindowInsets.Type.statusBars());
+                            top = (sb == null) ? 0 : sb.top;
+                        } else {
+                            top = insets.getSystemWindowInsetTop();
+                        }
+                        if (top >= 0 && top != lastStatusBarTopPx) {
+                            lastStatusBarTopPx = top;
+                            // 密度现场取，避免分屏/显示器切换后 density 变化导致换算失真
+                            pushStatusBarInsetToWeb(top, getResources().getDisplayMetrics().density);
+                        }
+                    } catch (Throwable t1) { /* 单次取 inset 失败不影响布局分发 */ }
+                    return insets; // 不消费，按原样继续分发给子 View（WebView）
+                }
+            });
+            // 主动触发一次分发（部分机型挂完 listener 不主动回调）
+            try { decor.requestApplyInsets(); } catch (Throwable t3) { /* API19 以下无此方法，静默 */ }
+        } catch (Throwable e) { /* 不影响启动 */ }
+    }
+
+    /** 【R-黑边】把 px 高度换算成 dp 并注入前端。Float.toString 恒用 '.' 小数点，与 Locale 无关，
+     *  避免阿拉伯语等 locale 下生成 '24,0px' 这种非法 CSS 值。 */
+    private void pushStatusBarInsetToWeb(final int topPx, final float density) {
+        final WebView w = web;
+        if (w == null) return;
+        final float dp = (density > 0f) ? (topPx / density) : 0f;
+        final String js = "(function(){try{document.documentElement.style.setProperty('--xt-satop','" + dp + "px');}catch(e){}})();";
+        uiHandler.post(new Runnable() { @Override public void run() { evalJs(w, js); } });
+    }
+
+    /** 【R-黑边】onPageFinished 后补发一次：新文档的 documentElement 已丢掉 style，需重新设值。 */
+    private void injectStatusBarInset(final WebView view) {
+        if (view == null) return;
+        if (lastStatusBarTopPx < 0) return;
+        uiHandler.post(new Runnable() {
+            @Override public void run() {
+                try {
+                    pushStatusBarInsetToWeb(lastStatusBarTopPx, getResources().getDisplayMetrics().density);
+                } catch (Throwable t) { /* 静默 */ }
+            }
+        });
     }
 
     /* ================= 【R103 需求3】WebView H5 视频全屏 ================= */

@@ -1,3 +1,24 @@
+# ===== 2026-09-20 R137-GH：GitHub 上传准备补充 =====
+# 1) APK 构建产物（96MB/个，且每次打包都会变；分发走 GitHub Releases 或服务器 static/apk）
+#    历史说明：R130 提交曾把 星途-1.30.apk 入库作为发版归档，现改为统一不入库，避免仓库膨胀。
+*.apk
+# 2) 签名私钥（自签开发密钥，避免公开仓库被冒名打包）
+android/workbench.keystore
+# 3) 测试用数据库（非生产数据，但含测试账号，不入库）
+*.db
+# 4) 临时/过程目录（测试浏览器档案、QA 临时工作区、本批清理残留）
+.tmp_eng*/
+_tmp_*/
+_w2t1_img/
+_bak-pre*/
+_cleanup_scan.txt
+_cleanup_targets.txt
+# 5) 后端虚拟环境（本地依赖，用 pip install -r requirements.txt 还原）
+server/.venv/
+# 6) 部署工具二进制（随用随取，不入库）
+tools/plink.exe
+tools/pscp.exe
+
 # 构建产物
 android/build/
 android/gen/
@@ -192,3 +213,15 @@ tools/verifier/out_*.txt
 # tencent_2025_interim/ 是腾讯2025中期报告的本地参考资料（约19MB），
 # 20260914f 提交时曾被误扫入，已剔除；此规则防止复发。
 tencent_2025_interim/*.pdf
+
+# ===== 2026-09-20 R138：本批过程产物（临时目录 / 探针输出 / 截图）不入库 =====
+# 一律「下划线前缀 + 批次号」的临时物：线上快照目录、js 临时工作区、
+# 脚本输出 txt、QA 截图与探针报告。入库只会污染历史，需要时本地重跑即可。
+_r1*_prod/
+_r106_js_tmp/
+_r138_*_out.txt
+_qa_*.png
+_a8_*.txt
+server/zz_*.txt
+tools/tools_md5_r1*.txt
+tools/qa/_*_shot_*.png

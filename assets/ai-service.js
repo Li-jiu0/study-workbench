@@ -1,4 +1,4 @@
-// ========== AI 统一调用层（callAI / AI_SERVICE） ==========
+﻿// ========== AI 统一调用层（callAI / AI_SERVICE） ==========
 // 职责：根据 funcType 选模型与参数 -> Key 优先级 -> 流式 SSE 解析 ->
 //       错误降级（429/5xx/超时）-> 限频 -> 预设优先 -> 全失败本地兜底。
 // 遵循老 WebView 语法禁令：不使用可选链、空值合并、顶层 await 及正则后行断言等老内核不支持的写法。
@@ -8,7 +8,7 @@
 //   1) 图片按真实字节魔数推导 MIME，绝不写死 jpeg（此前把 dataURL 再拼一次前缀 = 必然 400）；
 //   2) 只有 429 / 5xx / 网络超时 才降级；400/403/404/422 直接把后端 message 抛给上层；
 //   3) 15 秒未出首字即切换下一个「快」模型，慢模型仅手选时进入链路；
-//   4) 单模型连续 2 次 429 -> 本次会话内跳过，并把 GLM-4.5-Flash / Qwen2.5-7B 提为首选；
+//   4) 单模型连续 2 次 429 -> 本次会话内跳过，并把限流备选快模型（RATE_LIMIT_RESCUE）提为首选；
 //   5) 错误对象带足 status / code / apiMessage / modelName 供上层渲染；
 //   6) 两处 getReader() 全部加守卫，老内核无 ReadableStream 时走整段读取兜底。
 
@@ -21,11 +21,15 @@
   // 单次请求总时长上限：兜底防挂死（不截断正常长回答）；
   // R83b：文档 §四的「30 秒」指首响应超时（TIMEOUT_RESPONSE），总时长回归 90 秒，避免长回答被判超时降级
   var TIMEOUT_TOTAL = 90000;
-  // 慢模型黑名单：仅用户手动选择时进入链路，自动降级链里排除（现役 16 模型均无慢速黑名单需求，置空）
+  // 慢模型黑名单：仅用户手动选择时进入链路，自动降级链里排除。
+  // 2026-09-20 核对：现役 66 个内置模型中仅视频/3D（seedance/seed3d/hyper3d/hitem3d）标「慢」，
+  // 它们只进 video/three_d 专属 funcType 链，永不进入文本自动链 -> 本名单置空、过滤逻辑保留，
+  // 日后若接入慢速文本模型（如深度推理 R1 系）再回填 id 即可。
   var SLOW_MODEL_IDS = [];
   // 连续多少次 429 后，本次会话内跳过该模型
   var RATE_LIMIT_SKIP = 2;
-  // 遭遇 429 后的备选首选模型（快模型）
+  // 遭遇 429 后的备选首选模型（快模型）：2026-09-20 按现役 builtinModels 重新指定——
+  // 三者均为「免费 / 快 / 每天约 200 万 token 额度」的轻量文本模型（原 glm-4.5-flash / qwen2.5-7b 已随旧列表下线）
   var RATE_LIMIT_RESCUE = ["ark-v4-flash", "ark-doubao-mini", "qf-ernie-32k"];
   // 不降级、直接抛给上层的 HTTP 状态（请求本身有问题，换模型没用）
   var NO_FALLBACK_STATUS = [400, 403, 404, 422];
@@ -134,7 +138,9 @@
         done = true;
         resolve({ ok: false, ms: Date.now() - startedAt, err: "timeout" });
       }, PROXY_PROBE_TIMEOUT);
-      fetch(target, { method: "GET", cache: "no-store" }).then(function () {
+      // R135fix：必须 no-cors —— 两家源地址（Google 404 / OpenRouter 403）不带 CORS 头，
+      // 普通 fetch 即使网络通也会被跨域拦截误判为「不可达」；no-cors 下网络通即 resolve（响应不透明，正是探测语义）。
+      fetch(target, { method: "GET", cache: "no-store", mode: "no-cors" }).then(function () {
         if (done) return;
         done = true;
         clearTimeout(timer);
@@ -966,6 +972,11 @@
     var mc = modelCfg || {};
     var own = (typeof mc.apiKey === "string" && mc.apiKey) ? String(mc.apiKey) : "";
     if (own) return { relay: false, key: own, from: "model" };
+    // provider级apiKey直接走前端直连，不经过服务器中转
+    var cfg = getConfig();
+    var provider = (mc.provider && cfg.providers) ? cfg.providers[mc.provider] : null;
+    var provKey = (provider && typeof provider.apiKey === "string" && provider.apiKey) ? provider.apiKey : "";
+    if (provKey) return { relay: false, key: provKey, from: "provider" };
     var uk = xtUserOwnKey(mc);
     if (uk) {
       var pn = String((mc.provider == null) ? "" : mc.provider);
@@ -1346,10 +1357,17 @@
             var cparts = (cg0 && cg0.content && cg0.content.parts) ? cg0.content.parts : null;
             if (cparts && cparts.length) {
               var gtext = "";
+              var gthink = "";
               for (var gi = 0; gi < cparts.length; gi++) {
                 var gp = cparts[gi];
-                if (gp && typeof gp.text === "string") gtext += gp.text;
+                if (gp && typeof gp.text === "string") {
+                  // R135：thought:true 的分片是思维链摘要，绝不混进正文
+                  if (gp.thought === true) { gthink += gp.text; }
+                  else { gtext += gp.text; }
+                }
               }
+              // R135：思维链挂到 sink.reasoning（requestModel 外层据此挂 resolve().reasoning）
+              if (gthink && sink) sink.reasoning = gthink;
               content = gtext;
             }
             if (!content && cg0 && typeof cg0.text === "string") content = cg0.text;
@@ -2926,6 +2944,13 @@
       };
     }
 
+    // R135：Gemini 深度思考 —— 页面开启「深度思考」时请求思维链摘要（includeThoughts）。
+    // 仅 gemini-* 文本模型：gemma 不支持 thinkingConfig（会 400），绝不加；生图模型不走本路径。
+    if (isGemini && opt.reasoning === true &&
+        String(modelConfig.model || "").indexOf("gemini") === 0) {
+      body.generationConfig.thinkingConfig = { includeThoughts: true };
+    }
+
     // Gemini 不发 Authorization（Key 已在 URL query），其余平台照旧
     var headers = { "Content-Type": "application/json" };
     if (!isGemini) headers["Authorization"] = "Bearer " + apiKey;
@@ -3111,6 +3136,10 @@
         e6.modelName = modelConfig.name;
         abortInFlight();   // 需求12：解析失败同样中止在途请求
         throw e6;
+      }
+      // R135：整段路径（Gemini 非流式）把思维链一次性推给页面（feature-detect，面板据此创建）
+      if (sink && sink.reasoning && onReasoningCb) {
+        try { onReasoningCb(sink.reasoning, sink.reasoning); } catch (eR0) { /* 忽略 */ }
       }
       if (fullText && onChunk && fullText.length > 24) {
         try { await simulateTyping(fullText, onChunk); } catch (e7) { /* 忽略 */ }
@@ -3309,7 +3338,9 @@
     var selIsImageGen = isImageGenModel(selModel);
     var realType = opts.image ? "vision"
       : (selIsImageGen ? "imagegen" : resolveFuncType(funcType, msgs, !!opts.image));
-    if (!opts.image && !selIsImageGen) {
+    // 先判断当前模型是否需要走直连（provider有内置Key的直接前端直连，不走中转）
+    var ch = selModel ? xtResolveChannel(selModel) : { relay: true };
+    if (!opts.image && !selIsImageGen && ch.relay) {
       var provs = await relayProviders();
       // R103：中转优先走「所选模型所属平台」，避免别的平台抢先接单跑默认模型（见 prioritizeProvider）
       if (selModel && selModel.provider) provs = prioritizeProvider(provs, selModel.provider);
@@ -3578,9 +3609,24 @@
   var HEALTH_TIMEOUT_PROXY = 15000;
 
   // err 分类如实：http_<code> / cors / network / timeout / empty
+  // R134fix：服务端中转统一错误体是「HTTP 200 + {ok:false,kind,error,...}」（见 server/routers/ai.py
+  // _err 约定），xtRelayError 抛出的错误已带 e.kind ∈ {quota_exhausted, network_limited,
+  // version_outdated, provider_error, bad_request, unavailable}。此时 e.status 是 HTTP 层的 200，
+  // 绝不能再按状态码归类成 http_200——与 ai-cap-3d.js / ai-cap-video.js / ai-cap-audio.js 的
+  // relay 判定口径对齐：先识别服务端结构化错误 kind，识别不了才按 HTTP 状态码归类。
+  var XT_RELAY_HEALTH_KINDS = {
+    quota_exhausted: true,
+    network_limited: true,
+    version_outdated: true,
+    provider_error: true,
+    bad_request: true,
+    unavailable: true
+  };
   function classifyHealthErr(e) {
     if (!e) return "network";
     if (e.timedOut) return "timeout";
+    // 服务端中转结构化错误：kind 直通作为 err 值（ai-settings.js healthReasonEx 有对应中文文案）
+    if (e.kind && Object.prototype.hasOwnProperty.call(XT_RELAY_HEALTH_KINDS, e.kind)) return e.kind;
     var msg = String(e && e.message ? e.message : "").toLowerCase();
     if (msg.indexOf("abort") !== -1) return "timeout";
     var st = (e.status != null) ? e.status : 0;

@@ -4,10 +4,10 @@
  * 页面：个人资料.html（根目录）。入口：个人中心.html →「个人资料」。
  *
  * 设计要点：
- *   1) 数据全部读本机 localStorage，**严禁虚构**：取不到就不显示（角标/小字），
+ *   1) 数据全部读本机 localStorage，「严禁虚构」：取不到就不显示（角标/小字），
  *      数字类无数据显示 0；
  *   2) 兼容老 WebView（ES2017 上限）：本文件只用 var / function / 字符串拼接，
- *      不用 ?. ?? 展开运算符 Object.fromEntries .at() 正则后行断言 ** 可选 catch；
+ *      不用 可选链、空值合并、展开运算符、fromEntries、at、正则后行断言、指数运算符、可选 catch；
  *   3) 复用既有全局（存在才用）：window.lucideAutoRender / window.saveData /
  *      window.setSetting / window.doLogout；
  *   4) 列表项落点全部指向真实存在的页面或页内子视图（见 GROUPS 定义）；
@@ -482,10 +482,10 @@
 
   /* ================================================ TA 视角（查看他人资料） */
   /* 入口：个人资料.html?user=<服务端数字 uid>（不带 ?user= → 本人视角，行为完全不变）。
-     ⚠️ 安全红线：TA 视角**只**渲染服务端公开白名单字段
+     ⚠️ 安全红线：TA 视角「只」渲染服务端公开白名单字段
      （nickname / avatarUrl / motto / bio / city / goal / createdAt / online /
        lastSeenAt / isFriend / stats / notes 条数）。
-     以下敏感字段即使接口返回，也**绝不渲染**：
+     以下敏感字段即使接口返回，也「绝不渲染」：
        phone / email / emailVerified / gender / birthday / privacy / username / token_version。 */
   /** 解析 URL 的 ?user=<uid>：仅接受纯数字（服务端 uid 为数字），
       非法值（含字母、% 编码、路径穿越）一律当「无参数」处理；整段 try/catch，老 WebView 不抛。 */
@@ -668,7 +668,7 @@
   }
 
   /** TA 视角整页绘制（与 renderPage() 并列）。
-      TA 视角**不存在**：学习记录 / 我的笔记 / 我的收藏 / 学习数据 / 作品集 /
+      TA 视角「不存在」：学习记录 / 我的笔记 / 我的收藏 / 学习数据 / 作品集 /
       AI对话记录 / 退出登录 —— 这些均为本人专属，groupDefs() 不会在此使用。
       R74-B：动作按钮并入 hero 右侧；「TA 的动态」为列表模块；
       moments 为可选参数（缺省沿用模块级缓存 OTHER_MOMENTS）。 */
@@ -1361,15 +1361,15 @@
    * 数据源与边界（调研结论，务必先读）：
    *   ① 本机 localStorage.ai_chat_history = 会话数组
    *      [{id:'chat_...', title, createdAt(ms), updatedAt(ms), messages:[{role,content,hasImage?}]}]
-   *      （写入方 assets/ai-page.js:1286；最多 50 会话）。**有稳定 id** → 可单条删/打标/批量/导出/备份。
-   *   ② 服务端 GET /api/ai/history 只返回**扁平消息**（无 id / 无标题 / 无标签），且服务端
-   *      **有 GET + POST(chat) + DELETE(history)（R91-A 新增 DELETE）** → 前端可清空服务端记录。
+   *      （写入方 assets/ai-page.js:1286；最多 50 会话）。「有稳定 id」→ 可单条删/打标/批量/导出/备份。
+   *   ② 服务端 GET /api/ai/history 只返回「扁平消息」（无 id / 无标题 / 无标签），且服务端
+   *      「有 GET + POST(chat) + DELETE(history)（R91-A 新增 DELETE）」→ 前端可清空服务端记录。
    *      故本页「管理」作用于【本机会话】；服务端记录不再展示（R91-A 移除 chatServerHtml），
    *      仅在「清空全部」时同步调用 DELETE /api/ai/history。
    *   ③ 标签 / 收藏等扩展信息写入本页自有键 xt_ai_chat_meta_v1（按会话 id 索引），
    *      不污染 ai_chat_history 的既有结构（否则会破坏 ai-page.js 的读取）。
    * ---------------------------------------------------------------------------
-   * 覆盖策略（备份恢复）：**按 id 合并**（导入中已存在的 id 以导入数据覆盖，不存在的新增）；
+   * 覆盖策略（备份恢复）：「按 id 合并」（导入中已存在的 id 以导入数据覆盖，不存在的新增）；
    *   理由：导入是「恢复备份」语义，合并可避免一键误操作把当前数据整体抹掉；同 id 覆盖保证
    *   备份里更新过的会话能还原。全量替换风险高（一次误点即丢全部现网数据），故不采用。
    * ------------------------------------------------------------------ */

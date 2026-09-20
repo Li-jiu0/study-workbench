@@ -2,10 +2,10 @@
 <html lang="zh-CN" data-page-node-id="WtXgoDSUv0J7LSBsD923Ef">
 <head data-page-node-id="W4XC2op4wBaMBxdB5J59sH">
 <meta charset="UTF-8" data-page-node-id="hAgaKx2UT0HPsNPVnzq7S1">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" data-page-node-id="OlgAXTFaD9mAg3AFsfpeiy">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" data-page-node-id="OlgAXTFaD9mAg3AFsfpeiy">
 <meta name="theme-color" content="#5B8DEF" data-page-node-id="XIP3tSfjex43vTn5HPKTvm">
 <title>首页 · 星途</title>
-<link rel="stylesheet" href="assets/common.css?v=20260919r" data-page-node-id="cG8803QAoDbKSd7v8tsEs9">
+<link rel="stylesheet" href="assets/common.css?v=20260920e" data-page-node-id="cG8803QAoDbKSd7v8tsEs9">
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O" data-page-node-id="">
 <link rel="stylesheet" href="assets/states.css?v=20260916O" data-page-node-id="">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O" data-page-node-id="lkxFYcwbHH3N6LYB00qIeL">
@@ -283,6 +283,16 @@
             .home-cards-carousel .recent-icon { width: 26px; height: 26px; font-size: 14px; }
             #carouselDots { margin-top: 8px; margin-bottom: 10px; }
           }
+          /* 【本轮修复·空态/卡底被裁】.home-cards-carousel 是 overflow-x:auto 的滚动盒，
+             overflow-y 会被浏览器计算为 auto，卡片底部内容一旦贴边就可能被滚动盒裁掉。
+             给滚动盒与卡片各留出底部呼吸空间；空态提示加行高，避免 12px 字在紧凑行内被切掉下半。
+             规则放在媒体查询之后，确保覆盖上方 480px 档的 padding 重置。 */
+          .home-cards-carousel { padding-bottom: 4px; }
+          .home-carousel-card { padding-bottom: 16px; }
+          .home-cards-carousel .stats-empty-hint { margin-top: 10px; padding: 8px 12px; line-height: 1.5; }
+          @media (max-width: 480px) {
+            .home-carousel-card { padding-bottom: 13px; }
+          }
         </style>
         <script>
           /* 圆点样式统一管理（幂等）：当前项高亮为长条，其余为小圆点。
@@ -427,7 +437,7 @@
 <script src="assets/icon-map.js?v=20260919l" defer></script>
 <script src="assets/xt-toast.js?v=20260916O" defer></script>
 <script src="assets/error-boundary.js?v=20260916O" defer></script>
-<script src="assets/app.js?v=20260919r" defer></script>
+<script src="assets/app.js?v=20260920e" defer></script>
 <script src="assets/quest.js?v=20260916O" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
 <script src="assets/api.js?v=20260917b" defer></script>
@@ -870,16 +880,16 @@
   }
 })();
 </script>
-<script src="assets/ai-config.js?v=20260919r"></script>
+<script src="assets/ai-config.js?v=20260920c"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
-<script src="assets/ai-service.js?v=20260919r"></script>
+<script src="assets/ai-service.js?v=20260920e"></script>
 <script src="assets/ai-cap-registry.js?v=20260918c"></script>
-<script src="assets/ai-cap-image.js?v=20260919r"></script>
-<script src="assets/ai-cap-vision.js?v=20260919r"></script>
-<script src="assets/ai-cap-audio.js?v=20260919r"></script>
-<script src="assets/ai-cap-embed.js?v=20260919r"></script>
-<script src="assets/ai-cap-translate.js?v=20260919r"></script>
-<script src="assets/ai-cap-video.js?v=20260919r"></script>
-<script src="assets/ai-cap-3d.js?v=20260919r"></script>
+<script src="assets/ai-cap-image.js?v=20260920c"></script>
+<script src="assets/ai-cap-vision.js?v=20260920c"></script>
+<script src="assets/ai-cap-audio.js?v=20260920c"></script>
+<script src="assets/ai-cap-embed.js?v=20260920c"></script>
+<script src="assets/ai-cap-translate.js?v=20260920c"></script>
+<script src="assets/ai-cap-video.js?v=20260920c"></script>
+<script src="assets/ai-cap-3d.js?v=20260920c"></script>
 </body>
 </html>
