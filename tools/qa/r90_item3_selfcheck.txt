@@ -1,0 +1,30 @@
+=== 行尾 / 体积复核 ===
+私聊.html                  bytes=78509   crlf=1182  loneLF=0    loneCR=0
+assets/xt-region.js      bytes=47437   crlf=0     loneLF=934  loneCR=0
+朋友圈发布.html               bytes=12612   crlf=170   loneLF=0    loneCR=0
+
+=== HTML 结构配对自检 ===
+   <!--       32    -->        32     OK
+   <div       179   </div      179    OK
+   <style     2     </style    2      OK
+   <script    28    </script   28     OK
+   <button    19    </button   19     OK
+
+=== 禁用语法扫描（xt-region.js） ===
+   \?\.                   hits=1
+   \?\?                   hits=1
+   \.replaceAll\(         hits=0
+   Object\.fromEntries    hits=0
+   \.at\(                 hits=0
+   catch\s*\{             hits=0
+   CSS clamp/min/max hits=0
+
+=== 原生弹窗扫描 ===
+   私聊.html                prompt/alert=[]
+   assets/xt-region.js    prompt/alert=[]
+
+=== 定位入口计数 ===
+   私聊.html #imLocBtn = 1
+   私聊.html imPlusPickLocation 调用点 = 2
+   私聊.html window.imPlusPickLocation 定义 = 1
+   私聊.html im-plus-item 总数 = 3

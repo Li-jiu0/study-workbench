@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#5B8DEF">
+<title>错题本 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260923c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<link rel="stylesheet" href="assets/polish.css?v=20260916O">
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
+</head>
+<body class="theme-home">
+
+<div class="app">
+<nav class="sidebar">
+    <div class="logo">
+      <div class="logo-icon" data-icon="book-open"></div>
+      <div>
+        <div class="logo-text">星途</div>
+        <div class="logo-sub">致追梦的人->修身</div>
+      </div>
+    </div>
+    <div class="nav-list">
+      <div class="nav-item" data-page="home">
+        <span class="nav-icon" data-icon="home"></span><span>首页</span>
+      </div>
+      <div class="nav-item" onclick="location.href='AI.html'">
+        <span class="nav-icon" data-icon="sparkles"></span><span>AI</span>
+      </div>
+      <div class="nav-section">学习模块</div>
+      <div class="nav-item" data-page="cet">
+        <span class="nav-icon" data-icon="book-open"></span><span>英语</span>
+      </div>
+      <div class="nav-item" data-page="exam">
+        <span class="nav-icon" data-icon="pencil"></span><span>行测</span>
+      </div>
+      <div class="nav-item" data-page="comm">
+        <span class="nav-icon" data-icon="message-square"></span><span>表达</span>
+      </div>
+      <div class="nav-item" data-page="interview">
+        <span class="nav-icon" data-icon="handshake"></span><span>面测</span>
+      </div>
+      <div class="nav-item" data-page="files">
+        <span class="nav-icon" data-icon="folder"></span><span>我的文件</span>
+      </div>
+      <div class="nav-section">创作</div>
+      <div class="nav-item" data-page="blog">
+        <span class="nav-icon" data-icon="globe"></span><span>社区</span>
+      </div>
+      <div class="nav-item" data-page="moments">
+        <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
+      </div>
+      <div class="nav-section">互动</div>
+      <div class="nav-item" data-external="1" onclick="gotoChat()" title="通讯录 · 添加好友（需在线模式）">
+        <span class="nav-icon" data-icon="users"></span><span>通讯录</span>
+      </div>
+      <div class="nav-section">中心</div>
+      <div class="nav-item active" data-page="wrong-book">
+        <span class="nav-icon" data-icon="book"></span><span>错题本</span>
+      </div>
+            <div class="nav-item" data-page="profile">
+        <span class="nav-icon" data-icon="user"></span><span>个人中心</span>
+      </div>
+<div class="nav-section">系统</div>
+      <div class="nav-item" data-page="settings">
+        <span class="nav-icon" data-icon="settings"></span><span>设置</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心">
+        <div class="user-avatar">学</div>
+        <div class="user-info">
+          <div class="user-name">同学</div>
+          <div class="user-streak"><span data-icon="fire" data-icon-size="14" style="vertical-align:-2px"></span> 连续打卡 0 天</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+<header class="topbar">
+      <div class="topbar-title" id="topbarTitle">错题本</div>
+      <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
+      <div class="gs-wrap" id="gsWrap">
+        <input type="text" class="gs-input" id="gsInput" placeholder="搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <div class="gs-dropdown" id="gsDropdown"></div>
+      </div>
+      <div class="topbar-stats">
+        <div class="stat-item"><span class="stat-icon" data-icon="fire"></span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="clock"></span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="check"></span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
+      </div>
+      <div class="topbar-date" id="topbarDate"></div>
+      <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="16"></span></div>
+    </header>
+<style>
+/* 错题本·题型分类筛选条（页面级样式，避免改动全站 common.css） */
+.wb-filter{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px;padding:0 2px}
+.wb-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--border);
+  border-radius:999px;background:var(--card);color:var(--text-secondary);font-size:13px;line-height:1.2;
+  cursor:pointer;transition:all .15s ease;user-select:none;white-space:nowrap}
+.wb-chip:hover{border-color:var(--primary);color:var(--primary)}
+.wb-chip.active{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:600}
+.wb-chip .wb-n{display:inline-block;min-width:18px;padding:0 5px;border-radius:9px;font-size:12px;
+  background:var(--bg-secondary,rgba(0,0,0,.06));color:inherit;text-align:center}
+.wb-chip.active .wb-n{background:rgba(255,255,255,.25)}
+/* 错题本·AI 分析（C18）：页面级样式，避免改动全站 common.css */
+.wb-ai-panel{margin:0 0 14px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--card)}
+.wb-ai-head{display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:14px;font-weight:600;color:var(--text)}
+.wb-ai-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.wb-ai-sel{flex:1 1 160px;min-width:150px;height:34px;padding:0 10px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:13px}
+.wb-ai-tip{margin-top:8px;font-size:12px;line-height:1.6;color:var(--text-secondary)}
+.wb-ai-out,.xt-wb-ai-slot{margin-top:12px;padding:12px;border-radius:10px;background:var(--bg-secondary,rgba(0,0,0,.05));font-size:13px;line-height:1.75;color:var(--text);word-break:break-word}
+.wb-ai-out ul{margin:6px 0;padding-left:20px}
+.wb-ai-out li{margin:2px 0}
+.wb-ai-out strong{color:var(--primary)}
+.wb-ai-h{font-weight:700;margin:10px 0 4px;color:var(--text)}
+.wb-ai-h:first-child{margin-top:0}
+.wb-ai-meta{margin-top:10px;padding-top:8px;border-top:1px dashed var(--border);font-size:12px;color:var(--text-secondary);display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.wb-ai-thinking{font-size:13px;color:var(--text-secondary)}
+.wb-ai-empty{font-size:13px;line-height:1.75;color:var(--text-secondary)}
+</style>
+<div class="page active" id="page-wrong-book">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></span>错题本</div>
+          <div>
+            <span class="tag tag-danger" id="wrongCount">共 0 题</span>
+            <button class="btn btn-outline btn-sm" style="margin-left:8px" onclick="clearWrongBook()">清空</button>
+          </div>
+        </div>
+        <div id="wrongTypeFilter" class="wb-filter"></div>
+        <!-- C18：AI 错题分析（模块级 + 单题级；单题「AI 分析」按钮由页面底部脚本注入到每道题的卡片里） -->
+        <div id="wbAiPanel" class="wb-ai-panel">
+          <div class="wb-ai-head"><span class="nav-icon" data-icon="sparkles" data-icon-size="16"></span><span>AI 错题分析</span></div>
+          <div class="wb-ai-row">
+            <select id="wbAiModuleSel" class="wb-ai-sel" aria-label="选择要分析的模块"></select>
+            <button type="button" class="btn btn-primary btn-sm" onclick="xtWbAnalyzeModule()">分析本模块</button>
+          </div>
+          <div class="wb-ai-tip">公共 Key 限 10 次/分钟。</div>
+          <div id="wbAiModuleOut" class="wb-ai-out" style="display:none"></div>
+        </div>
+        <div id="wrongList" style="display:flex;flex-direction:column;gap:12px"></div>
+        <div id="wrongEmpty" class="coming-soon" style="display:none">
+          <div class="cs-icon" data-icon="pen"></div>
+          <div class="cs-title">还没有错题</div>
+          <div class="cs-desc">去刷题吧，做错的题会自动收录到这里</div>
+          <button class="btn btn-primary" style="margin-top:16px" onclick="navigateTo('exam-center')">去刷题 <span data-icon="arrow-right" data-icon-size="16" style="vertical-align:-3px"></span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- 底部导航（手机端） -->
+    <nav class="bottom-nav">
+    <div class="bottom-nav-list">
+      <div class="bottom-nav-item" data-page="home">
+        <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
+      </div>
+      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
+            <div class="bottom-nav-item" onclick="location.href='AI.html'"><div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div></div>
+            <div class="bottom-nav-item" onclick="location.href='更多.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 更多面板遮罩 -->
+    <div class="more-overlay" onclick="toggleMorePanel()"></div>
+
+  <!-- 更多面板 -->
+  <div class="bottom-more-panel" id="morePanel">
+    <div class="bottom-more-title">更多功能</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="navigateTo('moments');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="rss" data-icon-size="20"></span></div><div class="bm-label">动态空间</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogStats()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
+      </div>
+      <div class="bottom-more-item" onclick="if(window.gotoBlogMine){gotoBlogMine()}else{location.href='社区.html#mine'}">
+        <div class="bm-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div><div class="bm-label">互动广场</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div><div class="bm-label">错题本</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div><div class="bm-label">设置</div>
+      </div>
+      <div class="bottom-more-item" onclick="showAbout()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div><div class="bm-label">关于</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加倒计时弹窗 -->
+  <div class="modal-overlay" id="countdownModal">    <div class="modal">
+      <div class="modal-title" id="countdownModalTitle">添加倒计时</div>
+      <div class="form-group">
+        <div class="form-label">名称</div>
+        <input type="text" class="form-input" id="cdName" placeholder="如：四级考试、秋招截止">
+      </div>
+      <div class="form-group">
+        <div class="form-label">日期</div>
+        <input type="date" class="form-input" id="cdDate">
+      </div>
+      <div class="form-group">
+        <div class="form-label">颜色</div>
+        <div class="color-picker" id="cdColorPicker">
+          <div class="color-dot active" style="background:#5B8DEF" data-color="#5B8DEF"></div>
+          <div class="color-dot" style="background:#E05040" data-color="#E05040"></div>
+          <div class="color-dot" style="background:#9B6BD9" data-color="#9B6BD9"></div>
+          <div class="color-dot" style="background:#D4A056" data-color="#D4A056"></div>
+          <div class="color-dot" style="background:#36CFC9" data-color="#36CFC9"></div>
+          <div class="color-dot" style="background:#FF9F68" data-color="#FF9F68"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--xt-font-base);color:var(--text-secondary)">
+          <input type="checkbox" id="cdPinned"> 置顶显示
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeCountdownModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveCountdown()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast提示 -->
+  <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center"></div>
+
+  <!-- ==================== AI学习助手（悬浮聊天窗口） ====================
+       说明：
+       1. 默认“本地演示模式”：不联网、不调API、无密钥，由内置规则引擎回复；
+       2. 【后续扩展点】启动 ai-server 后端后，把下方 JS 里的 AI_CONFIG.apiUrl
+          填上后端地址（如 http://localhost:3000/api/chat），即可切换为真实AI流式对话；
+       3. 安全约束：大模型密钥只放在后端 .env 里，前端代码永远不出现密钥。 -->
+  <!-- 悬浮头像：可按住拖拽到任意位置（见下方 JS.initAiFabDrag），点击打开/收起面板，双击复位 -->
+  <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">
+    <span class="nav-icon" data-icon="bot" data-icon-size="22"></span><span class="ai-mode-badge" id="aiModeBadge">演示</span>
+  </div>
+  <div class="ai-panel" id="aiPanel">
+    <div class="ai-panel-header">
+      <div class="ai-avatar"><span class="nav-icon" data-icon="bot" data-icon-size="20"></span></div>
+      <div style="flex:1">
+        <div class="ai-title">AI学习助手</div>
+        <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
+      </div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录"><span class="nav-icon" data-icon="delete" data-icon-size="16"></span></div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板"><span class="nav-icon" data-icon="close" data-icon-size="16"></span></div>
+    </div>
+    <div class="ai-messages" id="aiMessages"></div>
+    <div class="ai-input-row">
+      <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()"><span data-icon="arrow-right" data-icon-size="18"></span></div>
+    </div>
+  </div>
+
+
+
+</div>
+
+<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/xt-toast.js?v=20260923a" defer></script>
+<script src="assets/error-boundary.js?v=20260916O" defer></script>
+<script src="assets/app.js?v=20260923a" defer></script>
+<script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260922c" defer></script>
+<script src="assets/ai-config.js?v=20260920c"></script>
+<script src="assets/ai-presets.js?v=20260916O"></script>
+<script src="assets/ai-service.js?v=20260920e"></script>
+<script src="assets/ai-cap-registry.js?v=20260918c"></script>
+<script src="assets/ai-cap-image.js?v=20260920c"></script>
+<script src="assets/ai-cap-vision.js?v=20260920c"></script>
+<script src="assets/ai-cap-audio.js?v=20260920c"></script>
+<script src="assets/ai-cap-embed.js?v=20260920c"></script>
+<script src="assets/ai-cap-translate.js?v=20260920c"></script>
+<script src="assets/ai-cap-video.js?v=20260920c"></script>
+<script src="assets/ai-cap-3d.js?v=20260922a"></script>
+<script>
+/* ============ C18 · 错题本 AI 分析（接 assets/ai-service.js 的 window.callAI） ============
+ * 数据来源：localStorage 真实错题（study_workbench_data@账号 的 wrongQuestions 只存题 id，
+ *           正文回表 EXAM_BANK 还原；错因在 study_workbench_wrong_reasons@账号）。
+ * 调用口径：window.callAI(funcType, messages, opts)，与 AI 页 / 首页小助手同一套底座。
+ * 限频：公共 Key 10 次/分钟 → 只在用户点按钮时调 AI，结果本地缓存，可「重新分析」强制刷新。
+ * 老 WebView（Chrome 50~58 / ES2017）语法约束：无可选链、无空值合并、无对象展开、
+ *   无 replaceAll、无 Object.fromEntries、无 Array.at、无顶层 await、无正则后行断言。
+ * 不改 assets/app.js / assets/ai-service.js / assets/ai-config.js / assets/api.js。
+ */
+(function () {
+  'use strict';
+
+  var CACHE_KEY = 'xt_wrongbook_ai';
+
+  /* ---------- 基础工具 ---------- */
+  function esc(s) {
+    return String(s === null || s === undefined ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  /* 题干清洗：图片标记换成占位，压缩空白，避免把 [IMG:xxx] 原样喂给模型 */
+  function plain(s) {
+    return String(s === null || s === undefined ? '' : s)
+      .replace(/\[IMG:[^\]]*\]/g, '［图］')
+      .replace(/\s+/g, ' ')
+      .replace(/^\s+|\s+$/g, '');
+  }
+  function toast(msg) {
+    try { if (typeof window.xtToast === 'function') { window.xtToast('info', msg); return; } } catch (e) { /* 忽略 */ }
+    try { if (typeof window.showToast === 'function') { window.showToast(msg); return; } } catch (e2) { /* 忽略 */ }
+  }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+
+  /* 账号隔离的 localStorage 键（复用 app.js 的 window.lsKey，缺失时自建同名规则） */
+  function akey(name) {
+    try { if (typeof window.lsKey === 'function') return window.lsKey(name); } catch (e) { /* 忽略 */ }
+    var acct = '';
+    try { acct = window.CURRENT_ACCOUNT || ''; } catch (e2) { /* 忽略 */ }
+    if (!acct) { try { var a = JSON.parse(localStorage.getItem('study_workbench_auth')); if (a && a.account) acct = a.account; } catch (e3) { /* 忽略 */ } }
+    if (!acct) { try { acct = localStorage.getItem('study_workbench_last_account') || ''; } catch (e4) { /* 忽略 */ } }
+    if (!acct) acct = 'shared';
+    return name + '@' + acct;
+  }
+  function lsGetRaw(name) {
+    try {
+      var v = localStorage.getItem(akey(name));
+      if (v === null || v === undefined) v = localStorage.getItem(name);
+      return (v === null || v === undefined) ? null : v;
+    } catch (e) { return null; }
+  }
+  function lsSetRaw(name, val) {
+    try { localStorage.setItem(akey(name), val); } catch (e) { /* 忽略 */ }
+  }
+
+  /* ---------- 分析结果缓存（公共 Key 限频，能省一次是一次） ---------- */
+  function cacheRead(key) {
+    try {
+      var raw = lsGetRaw(CACHE_KEY);
+      if (!raw) return '';
+      var o = JSON.parse(raw);
+      return (o && o[key] && o[key].t) ? String(o[key].t) : '';
+    } catch (e) { return ''; }
+  }
+  function cacheWrite(key, text) {
+    try {
+      var o = {};
+      var raw = lsGetRaw(CACHE_KEY);
+      if (raw) { var p = JSON.parse(raw); if (p && typeof p === 'object') o = p; }
+      o[key] = { t: String(text), at: Date.now() };
+      lsSetRaw(CACHE_KEY, JSON.stringify(o));
+    } catch (e) { /* 忽略 */ }
+  }
+  function cacheTime(key) {
+    try {
+      var raw = lsGetRaw(CACHE_KEY);
+      if (!raw) return '';
+      var o = JSON.parse(raw);
+      var it = o ? o[key] : null;
+      if (!it || !it.at) return '';
+      var d = new Date(it.at);
+      return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate())
+        + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+    } catch (e) { return ''; }
+  }
+
+  /* ---------- 错题库读取（真实 localStorage 数据） ---------- */
+  function bank() {
+    var b = null;
+    try { if (typeof window.EXAM_BANK !== 'undefined' && window.EXAM_BANK) b = window.EXAM_BANK; } catch (e) { /* 忽略 */ }
+    if (!b) { try { if (typeof EXAM_BANK !== 'undefined' && EXAM_BANK) b = EXAM_BANK; } catch (e2) { /* 忽略 */ } }
+    return b || [];
+  }
+  function reasonOf(qid) {
+    try {
+      var raw = lsGetRaw('study_workbench_wrong_reasons');
+      if (!raw) return '';
+      var o = JSON.parse(raw);
+      return (o && o[qid]) ? String(o[qid]) : '';
+    } catch (e) { return ''; }
+  }
+  function wrongIds() {
+    try {
+      var raw = lsGetRaw('study_workbench_data');
+      if (!raw) return [];
+      var d = JSON.parse(raw);
+      var arr = (d && d.wrongQuestions) ? d.wrongQuestions : [];
+      return arr ? arr : [];
+    } catch (e) { return []; }
+  }
+  function allQuestions() {
+    var out = [];
+    var used = false;
+    if (typeof window.getWrongDetails === 'function') {
+      try {
+        var d = window.getWrongDetails(500);
+        if (d && d.length) {
+          for (var i = 0; i < d.length; i++) { if (d[i]) out.push(d[i]); }
+          used = true;
+        }
+      } catch (e) { /* 忽略 */ }
+    }
+    if (!used) {
+      var ids = wrongIds();
+      var bk = bank();
+      var map = {};
+      for (var k = 0; k < bk.length; k++) { map[bk[k].id] = bk[k]; }
+      for (var n = 0; n < ids.length; n++) {
+        var q = map[ids[n]];
+        if (!q) continue;
+        out.push({
+          id: ids[n], q: q.q, type: q.type || '', sub: q.sub || '',
+          o: q.o || [], a: q.a, x: q.x || '', reason: reasonOf(ids[n])
+        });
+      }
+    }
+    out.reverse(); // 与列表一致：后加入的排前面
+    return out;
+  }
+  function findQuestion(qid) {
+    var list = allQuestions();
+    for (var i = 0; i < list.length; i++) {
+      if (String(list[i].id) === String(qid)) return list[i];
+    }
+    var bk = bank();
+    for (var j = 0; j < bk.length; j++) {
+      if (String(bk[j].id) === String(qid)) {
+        var q = bk[j];
+        return {
+          id: q.id, q: q.q, type: q.type || '', sub: q.sub || '',
+          o: q.o || [], a: q.a, x: q.x || '', reason: reasonOf(qid)
+        };
+      }
+    }
+    return null;
+  }
+
+  /* ---------- 极简 Markdown（先转义再渲染，杜绝注入） ---------- */
+  function inlineMd(s) {
+    return esc(s).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  }
+  function md(text) {
+    var lines = String(text === null || text === undefined ? '' : text).split('\n');
+    var html = '';
+    var inUl = false;
+    for (var i = 0; i < lines.length; i++) {
+      var t = String(lines[i]).replace(/^\s+/, '').replace(/\s+$/, '');
+      if (!t) { if (inUl) { html += '</ul>'; inUl = false; } continue; }
+      var mh = /^(#{1,4})\s*(.*)$/.exec(t);
+      if (mh) { if (inUl) { html += '</ul>'; inUl = false; } html += '<div class="wb-ai-h">' + inlineMd(mh[2]) + '</div>'; continue; }
+      var mu = /^([-*•])\s*(.*)$/.exec(t);
+      if (mu) { if (!inUl) { html += '<ul>'; inUl = true; } html += '<li>' + inlineMd(mu[2]) + '</li>'; continue; }
+      var mo = /^(\d+)[.、)]\s*(.*)$/.exec(t);
+      if (mo) { if (inUl) { html += '</ul>'; inUl = false; } html += '<div>' + inlineMd(mo[1] + '. ' + mo[2]) + '</div>'; continue; }
+      if (inUl) { html += '</ul>'; inUl = false; }
+      html += '<div>' + inlineMd(t) + '</div>';
+    }
+    if (inUl) html += '</ul>';
+    return html;
+  }
+  function renderOut(el, text, metaText, retryOnclick) {
+    if (!el) return;
+    var h = md(text);
+    if (metaText || retryOnclick) {
+      h += '<div class="wb-ai-meta"><span>' + esc(metaText || '') + '</span>';
+      if (retryOnclick) {
+        h += '<button type="button" class="btn btn-outline btn-sm" onclick="' + esc(retryOnclick) + '">重新分析</button>';
+      }
+      h += '</div>';
+    }
+    el.innerHTML = h;
+    el.style.display = 'block';
+  }
+
+  /* ---------- 提示词 ---------- */
+  var LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+  function buildOnePrompt(item) {
+    var o = item.o || [];
+    var opts = '';
+    for (var i = 0; i < o.length; i++) {
+      opts += '\n' + (LABELS[i] || String(i + 1)) + '. ' + plain(o[i]);
+    }
+    var ans = '';
+    if (typeof item.a === 'number' && item.a >= 0) {
+      ans = (LABELS[item.a] || String(item.a + 1)) + '. ' + plain(o[item.a]);
+    }
+    var s = '你是考试辅导老师。请分析下面这道错题，严格按四个小标题输出：\n'
+      + '### 错因\n最可能做错的原因（结合题目特征，1 句话）\n'
+      + '### 考点\n考查的核心知识点或解题方法（1 句话）\n'
+      + '### 避坑\n下次遇到同类题要注意的点（2~3 条，每条用 - 开头）\n'
+      + '### 变式题\n出 1~2 道同类变式题，每题只给「题干 + 选项 + 答案」，不要长解析\n\n'
+      + '【题型】' + (item.type || '未分类') + ' · ' + (item.sub || '未分类') + '\n'
+      + '【题干】' + plain(item.q) + (opts ? '\n【选项】' + opts : '')
+      + (ans ? '\n【正确答案】' + ans : '')
+      + '\n【官方解析】' + (plain(item.x) || '（无）') + '\n'
+      + '【用户自评错因】' + (item.reason ? String(item.reason) : '未填写') + '\n\n'
+      + '要求：简体中文，条目化，总字数 400 字以内，不要复述题干，不要客套话。';
+    return s;
+  }
+  function buildModulePrompt(name, list) {
+    var n = Math.min(list.length, 12);
+    var s = '下面是我在「' + name + '」的错题记录（共 ' + list.length + ' 道，最多列出 ' + n + ' 道）：\n';
+    for (var i = 0; i < n; i++) {
+      var it = list[i];
+      s += (i + 1) + '. [' + (it.type || '未分类') + '·' + (it.sub || '') + '] '
+        + plain(it.q).substring(0, 80)
+        + (it.reason ? '（自评错因：' + String(it.reason) + '）' : '') + '\n';
+    }
+    s += '\n请输出该模块【最该补的 3 个考点】，每条按这个格式写：\n'
+      + '1. 考点名 —— 为什么它是短板（结合上面的错题，一句话）｜怎么补：20 分钟的具体做法\n\n'
+      + '要求：简体中文，只输出这 3 条，不要客套话，总字数 300 字以内。';
+    return s;
+  }
+
+  /* ---------- AI 调用（流式守卫 + 降级不白屏） ---------- */
+  function canStream() {
+    try {
+      return typeof ReadableStream !== 'undefined' && typeof TextDecoder !== 'undefined' && typeof window.fetch === 'function';
+    } catch (e) { return false; }
+  }
+  function failOut(el, err, retryOnclick, localTip) {
+    if (!el) return;
+    var reason = '网络异常或 AI 服务不可用';
+    if (err && err.rateLimited) reason = '提问太频繁了（公共 Key 限 10 次/分钟），请休息 1 分钟再试';
+    else if (err && err.message) reason = String(err.message);
+    var h = '<div class="wb-ai-thinking">AI 暂时不可用：' + esc(reason) + '</div>'
+      + '<div class="wb-ai-empty">' + esc(localTip || '可以先自己复盘：重做一遍 → 对照解析找出卡住的那一步 → 归纳考点 → 找 2 道同类题练手。') + '</div>';
+    if (retryOnclick) {
+      h += '<div class="wb-ai-meta"><button type="button" class="btn btn-outline btn-sm" onclick="' + esc(retryOnclick) + '">重试</button></div>';
+    }
+    el.innerHTML = h;
+    el.style.display = 'block';
+    toast('AI 暂时不可用，已给出本地复盘建议');
+  }
+  /* cfg: { funcType, messages, outEl, cacheKey, retryOnclick, localTip } */
+  function runAI(cfg) {
+    var el = cfg.outEl;
+    if (!el) return;
+    if (typeof window.callAI !== 'function') {
+      failOut(el, new Error('AI 底座（assets/ai-service.js）尚未就绪'), cfg.retryOnclick,
+        '请刷新页面后重试；若仍不可用，可在「设置 / AI 页设置」里填写自己的模型 Key。');
+      return;
+    }
+    var stream = canStream();
+    var settled = false;
+    var buf = '';
+    el.innerHTML = '<div class="wb-ai-thinking">AI 正在思考…</div>';
+    el.style.display = 'block';
+    // 软看门狗：20 秒还没结果就更新文案（不取消请求，用户可随时重试）
+    var wd = setTimeout(function () {
+      if (!settled) el.innerHTML = '<div class="wb-ai-thinking">AI 还在思考…（响应较慢，可稍后重试）</div>';
+    }, 20000);
+    var opts = {};
+    if (stream) {
+      // 有流式能力才逐字渲染；老内核（无 ReadableStream / TextDecoder）走整段返回
+      opts.onChunk = function (piece, full) {
+        if (full !== null && full !== undefined && full !== '') buf = String(full);
+        else buf += String(piece === null || piece === undefined ? '' : piece);
+        el.innerHTML = md(buf);
+      };
+    }
+    var p = null;
+    try {
+      p = window.callAI(cfg.funcType, cfg.messages, opts);
+    } catch (e1) {
+      clearTimeout(wd);
+      settled = true;
+      failOut(el, e1, cfg.retryOnclick, cfg.localTip);
+      return;
+    }
+    Promise.resolve(p).then(function (res) {
+      clearTimeout(wd);
+      if (settled) return;
+      settled = true;
+      var text = (res && (res.text || res.content)) ? String(res.text || res.content) : buf;
+      if (!text) { failOut(el, new Error('AI 返回了空内容'), cfg.retryOnclick, cfg.localTip); return; }
+      if (cfg.cacheKey) cacheWrite(cfg.cacheKey, text);
+      var meta = '';
+      if (res && res.degraded) meta = '网络不佳或未配置 Key，以下为本地参考';
+      else if (res && res.modelUsedName) meta = '由 ' + String(res.modelUsedName) + ' 生成';
+      renderOut(el, text, meta, cfg.retryOnclick);
+      if (res && res.degraded) toast('网络不佳，以下为本地参考');
+    }).catch(function (err) {
+      clearTimeout(wd);
+      if (settled) return;
+      settled = true;
+      failOut(el, err, cfg.retryOnclick, cfg.localTip);
+    });
+  }
+
+  /* ---------- 对外入口：单题分析 ---------- */
+  if (typeof window.xtWbAnalyzeOne !== 'function') {
+    window.xtWbAnalyzeOne = function (qid, force) {
+      var out = document.getElementById('xtWbAi_' + qid);
+      if (!out) { toast('分析区域未就绪，请刷新页面重试'); return; }
+      var item = findQuestion(qid);
+      if (!item) { toast('没有找到这道错题的数据'); return; }
+      var ck = 'q_' + qid;
+      var retry = 'xtWbAnalyzeOne(' + qid + ',1)';
+      if (!force) {
+        var cached = cacheRead(ck);
+        if (cached) {
+          renderOut(out, cached, '本地缓存的分析 · ' + (cacheTime(ck) || '未知时间'), retry);
+          return;
+        }
+      }
+      runAI({
+        // ai-config.js 现无错题分析专属 funcType，讲题类用最接近的 reasoning
+        funcType: 'reasoning',
+        messages: [{ role: 'user', content: buildOnePrompt(item) }],
+        outEl: out,
+        cacheKey: ck,
+        retryOnclick: retry,
+        localTip: '单题复盘四步：不看解析重做一遍 → 找出卡住的那一步 → 归纳考点 → 马上找 2 道同类题练手。'
+      });
+    };
+  }
+
+  /* ---------- 对外入口：模块级分析 ---------- */
+  if (typeof window.xtWbAnalyzeModule !== 'function') {
+    window.xtWbAnalyzeModule = function (force) {
+      var out = document.getElementById('wbAiModuleOut');
+      if (!out) { toast('分析区域未就绪，请刷新页面重试'); return; }
+      var list = allQuestions();
+      if (!list.length) {
+        out.innerHTML = '<div class="wb-ai-empty">错题本还是空的，先去行测刷题，做错的题会自动收录到这里，再来做 AI 分析。</div>';
+        out.style.display = 'block';
+        toast('还没有错题可分析');
+        return;
+      }
+      var sel = document.getElementById('wbAiModuleSel');
+      var type = sel ? String(sel.value || '') : '';
+      var picked = [];
+      for (var i = 0; i < list.length; i++) {
+        if (type === '' || type === '__all__' || (list[i].type || '其他') === type) picked.push(list[i]);
+      }
+      if (!picked.length) picked = list;
+      var key = 'm_' + (type || '__all__');
+      var retry = 'xtWbAnalyzeModule(1)';
+      if (!force) {
+        var cached = cacheRead(key);
+        if (cached) {
+          renderOut(out, cached, '本地缓存的分析 · ' + (cacheTime(key) || '未知时间'), retry);
+          return;
+        }
+      }
+      runAI({
+        funcType: 'general',
+        messages: [{ role: 'user', content: buildModulePrompt((type === '__all__' || type === '') ? '全部模块' : type, picked) }],
+        outEl: out,
+        cacheKey: key,
+        retryOnclick: retry,
+        localTip: '模块复盘思路：把错题按考点归类，出现次数最多的那个考点就是最该补的；先补它，再刷 10 道同类题验收。'
+      });
+    };
+  }
+
+  /* ---------- 把「AI 分析」按钮注入到 app.js 渲染的错题卡片（不改 app.js） ---------- */
+  function enhanceList() {
+    var list = document.getElementById('wrongList');
+    if (!list) return;
+    var cards = list.children;
+    for (var i = 0; i < cards.length; i++) {
+      var card = cards[i];
+      if (!card || card.getAttribute('data-xt-ai')) continue;
+      card.setAttribute('data-xt-ai', '1');
+      var btns = card.getElementsByTagName('button');
+      var qid = '';
+      var row = null;
+      for (var j = 0; j < btns.length; j++) {
+        var oc = btns[j].getAttribute('onclick') || '';
+        var m = /redoWrongQuestion\((\d+)\)/.exec(oc);
+        if (m) { qid = m[1]; row = btns[j].parentNode; }
+      }
+      if (!row || !qid) { card.setAttribute('data-xt-ai', 'skip'); continue; }
+      var ab = document.createElement('button');
+      ab.setAttribute('type', 'button');
+      ab.className = 'btn btn-outline btn-sm';
+      ab.setAttribute('onclick', 'xtWbAnalyzeOne(' + qid + ')');
+      ab.textContent = cacheRead('q_' + qid) ? '查看分析' : 'AI 分析';
+      row.appendChild(ab);
+      var slot = document.createElement('div');
+      slot.className = 'xt-wb-ai-slot';
+      slot.id = 'xtWbAi_' + qid;
+      slot.style.display = 'none';
+      card.appendChild(slot);
+    }
+  }
+  function refreshModuleSel() {
+    var sel = document.getElementById('wbAiModuleSel');
+    if (!sel) return;
+    var list = allQuestions();
+    var counter = {};
+    var order = [];
+    for (var i = 0; i < list.length; i++) {
+      var t = list[i].type || '其他';
+      if (!counter[t]) { counter[t] = 0; order.push(t); }
+      counter[t] = counter[t] + 1;
+    }
+    var cur = sel.value;
+    var h = '';
+    if (!order.length) {
+      h = '<option value="">（暂无错题）</option>';
+    } else {
+      h += '<option value="__all__">全部模块（' + list.length + ' 题）</option>';
+      for (var j = 0; j < order.length; j++) {
+        h += '<option value="' + esc(order[j]) + '">' + esc(order[j]) + '（' + counter[order[j]] + ' 题）</option>';
+      }
+    }
+    sel.innerHTML = h;
+    if (cur) { sel.value = cur; }
+    if (!sel.value) sel.selectedIndex = 0;
+  }
+  function enhance() {
+    try { enhanceList(); } catch (e) { /* 一处失败不影响另一处 */ }
+    try { refreshModuleSel(); } catch (e2) { /* 忽略 */ }
+  }
+
+  /* 包装 renderWrongBook：保留原实现与函数名，渲染完再补 AI 按钮，不删任何既有功能 */
+  function init() {
+    var orig = window.renderWrongBook;
+    if (typeof orig === 'function' && !orig.__xtWb) {
+      var patched = function () {
+        var r = orig.apply(this, arguments);
+        try { enhance(); } catch (e) { /* 忽略 */ }
+        return r;
+      };
+      patched.__xtWb = true;
+      window.renderWrongBook = patched;
+    }
+    enhance();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+  window.addEventListener('load', function () { try { enhance(); } catch (e) { /* 忽略 */ } });
+})();
+</script>
+</body>
+</html>

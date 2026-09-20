@@ -1,0 +1,73 @@
+================================================================================
+R91-D 报告 —— 用量页「按模型单独列出」模型排序 chips 组改造为收放列表
+执行人：software-engineer-任务一｜代码树：D:\下载的文件\学习工作台
+================================================================================
+
+一、需求
+--------------------------------------------------------------------------------
+ai-settings.html 用量区（assets/xt-aiusage.js 渲染）「按模型单独列出」小节下，
+模型级排序 5 个 chips（剩余可用量少→多 / 多→少 / 已使用量多→少 / 资源配额大→小 /
+模型名称）改为收放列表：收起时只显示一行（行尾展示当前选中值），点开才展开 chips，
+交互与同页「筛选」收放行（#UsageQuotaFilterToggle）完全一致；默认收起。
+
+二、查证结论（动手前）
+--------------------------------------------------------------------------------
+- chips 组真实位置：xt-aiusage.js skeleton() 内原 L890-897（#UsageQuotaSortBar，
+  data-quota-sort ×5）。已按要求与 #UsageSortSel（下拉，L872）和
+  #UsageQuotaFilterToggle/Fold/Bar（筛选收放，L898-910）严格区分，未误改。
+- chips state：state.quotaSort（L64，缺省 "remaining"）；绑定 bindChips(
+  "UsageQuotaSortBar", "data-quota-sort", ...)（bind() L1718）；排序消费
+  sortRowsByRemaining(rows, state.quotaSort)（L1095）。选中逻辑本次零改动，只加壳。
+- 复用范式：CSS 完全复用 ai-settings.html R90-2 既有规则
+  （.xt-us-foldrow/.xt-us-foldrow-cur/.xt-us-foldrow.open/.xt-us-arrow/.xt-us-foldbody(.open)，
+  L625-637），本次未加任何新 CSS；JS 照抄 bindQuotaFilterFold()（L1679-1695）与
+  syncQuotaFilterLabel()/QUOTA_FILTER_LABEL（L1591-1594）。
+
+三、改动明细（二进制编辑，逐条唯一命中断言；xt-aiusage.js 行号为改前行号）
+--------------------------------------------------------------------------------
+E1  skeleton（原 L890-897）：「排序方式」裸 sublabel + 裸 chips 结构改为——
+    toggle 行 <button class="xt-us-foldrow" id="UsageQuotaSortToggle" aria-expanded="false">
+    （<span>排序方式</span> + <span class="xt-us-foldrow-cur" id="UsageQuotaSortCur"> +
+    同款旋转箭头 svg）+ <div class="xt-us-foldbody" id="UsageQuotaSortFold"> 把
+    #UsageQuotaSortBar（5 chips 原样）包进 foldbody。默认无 .open = 收起。
+E2  QUOTA_FILTER_LABEL 块之后新增 QUOTA_SORT_LABEL（5 个排序值 → 中文文案，与
+    chips 文案逐字一致）+ syncQuotaSortLabel()（setText 到 #UsageQuotaSortCur）。
+E3  renderAll()：syncQuotaFilterLabel() 之后加 syncQuotaSortLabel()（每次渲染同步
+    行尾当前排序值，含点 chip 后 renderAll 触发的那次）。
+E4  bindQuotaFilterFold() 之后新增 bindQuotaSortFold()：照抄该范式——局部 var 捕获
+    tog/fold DOM（闭包纪律），toggle 点击切 .open / aria-expanded。
+E5  bind() 中 bindQuotaFilterFold() 之后挂 bindQuotaSortFold()。
+E6  ai-settings.html L870：<script src="assets/xt-aiusage.js?v=20260918c"> →
+    v=20260918e 强刷缓存。其余 8 处 ?v=20260918c 属 ai-config.js / ai-cap-*.js
+    等其他资源，按最小改动原则未动。
+
+四、字节 / 行尾
+--------------------------------------------------------------------------------
+assets/xt-aiusage.js  BEFORE: 75618 B, crlf=0, loneCR=0（纯 LF）
+                      AFTER : 77660 B, crlf=0, loneCR=0（纯 LF，回读一致，+2042 B）
+ai-settings.html     BEFORE: 46638 B, crlf=0, loneCR=0（纯 LF）
+                      AFTER : 46638 B, crlf=0, loneCR=0（纯 LF，回读一致，±0 B）
+新增脚本：tools/qa/r91d_edit.py、r91d_edit_result.txt、r91d_fixcheck.py、
+r91d_jsdom_smoke.js、r91d_jsdom_report.txt、r91d_escheck.txt、本报告。
+
+五、验证（一次跑完）
+--------------------------------------------------------------------------------
+1. escheck_es2017.js → DONE 0（PASS）。
+2. 源码核验：UsageQuotaSortToggle/Fold/Cur 各 ≥1；bindQuotaSortFold def+call=2；
+   #UsageQuotaSortBar 保留=1；5 个 data-quota-sort chips 保留=5；
+   bindQuotaFilterFold 未受影响（def+call=2）；版本号新旧命中正确
+   （r91d_edit_result.txt 内含一次过宽谓词误报及修正说明，实为 PASS）。
+3. jsdom 断言（#setPanelAbout.active + XT_AI_USAGE stub，全过）：
+   - 初始：toggle/fold/cur 存在，chips 5 个在 foldbody 内，收起态 class 正确，
+     行尾当前值=「剩余可用量（少 → 多）」，aria-expanded=false；
+   - 点 toggle → .open 展开、aria-expanded=true；
+   - 点「模型名称」chip → renderAll 后行尾值同步为「模型名称」；
+   - 再点 toggle → 收起、aria-expanded=false；
+   - 回归：「筛选」收放行点击展开正常；consoleErrors=0。
+   => JSDOM_ALL PASS（r91d_jsdom_report.txt）
+
+六、遗留
+--------------------------------------------------------------------------------
+无功能遗留。注：收起态下点开 chips 选择后行不自动收起——与「筛选」收放行既有交互
+完全一致（用户显式再点才收），未额外发明行为。
+================================================================================

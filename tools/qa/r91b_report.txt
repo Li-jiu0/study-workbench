@@ -1,0 +1,113 @@
+================================================================================
+R91-B 修复报告：互动页加号弹窗被底部 Tab 栏遮挡/截断
+工程师：software-engineer-任务二（寇豆码）
+日期：2026-09-19（R91）
+================================================================================
+
+一、实例排查清单（Grep 全项目：im-plus-menu / imPlusMenu / imPlusBtn / imPlusMask / 相册发图 / 发送文件）
+
+  活代码实例（非备份/文档/工具）：
+  1. 私聊.html
+     - #imPlusBtn       L176（输入栏「+」按钮，onclick=imTogglePlusMenu()）
+     - #imPlusMask      L184（onclick=imClosePlusMenu()）
+     - #imPlusMenu      L188-193（4 项：相册发图/拍摄/发送文件/定位，L192 为定位项 im-plus-ico--i4 红底）
+     - imOpen/imClose/imTogglePlusMenu  L893-908 一带
+     - #imPlusCss 注入 CSS           L1036-1066（injectCss，L1032 起）
+     - .im-loc-sheet（定位半屏层）    L1057
+  2. assets/chat-local.js —— 菜单项处理链路（imPlusPickImage/Camera/File/Location 分支在私聊.html 内，
+     chat-local 仅提供 imSendFile/imPickImage 等被调函数），无菜单 DOM/CSS。
+  其他命中均为 备份/、tools/_bak_*、docs、tools/qa 旧报告，不在修复范围。
+
+  是否已带 R89-A 修复（私聊.html）：
+  - 已带：L1039 含 max-height:82vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+          padding-bottom:calc(16px + env(safe-area-inset-bottom))
+  - 已带：L1055 @media (max-height:520px){...} 矮屏媒体查询
+  - 未带（本次缺口）：z-index 层级未抬 —— R89-A 只修了高度/内滚/安全区，没修层叠。
+
+二、截图页面判定：私聊.html（证据，非猜测）
+
+  1. 底部 Tab 栏五项 首页/互动/我的/AI/更多，且「互动」为 active：
+     私聊.html L240-248：<nav class="bottom-nav"> → L245
+     <div class="bottom-nav-item active" onclick="gotoChat()">互动</div>
+  2. 页头标题「通讯录」：私聊.html L103 <div class="topbar-title" id="topbarTitle">通讯录</div>
+     （L126 一带为搜索框/会话列表区）
+  3. 聊天对象「学习搭子-小星」：assets/chat-local.js L256
+     id:1, nickname:'学习搭子·小星' —— 会话列表默认首项，即截图会话。
+  4. 4 项菜单（含红底「定位」）全项目唯一活实例在 私聊.html L188-193；
+     「相册发图」「发送文件」文案仅存在于 私聊.html（其余命中皆为备份/工具/文档）。
+  结论：截图页面 = 私聊.html（经底部 Tab「互动」进入的聊天/通讯录页）。全项目无 互动.html 独立文件；
+  「互动」Tab 即跳转私聊页（gotoChat），不存在第二个同类实例。
+
+三、根因（实测）
+
+  - assets/common.css L1282-1291（⛔ 根锁文件，未改动）：
+    .bottom-nav { position:fixed; bottom:0; height:var(--bottom-nav-height)=64px; z-index:200;
+                  padding-bottom:env(safe-area-inset-bottom); }
+  - 私聊.html（改前）：#imPlusCss 注入
+    .im-plus-mask z-index:60（L1037）、.im-plus-menu z-index:61（L1039）、
+    .im-loc-sheet z-index:80（L1057）—— 三者全部 < 200。
+  - 菜单 bottom:0 贴屏幕底缘，第 4 项（定位）落在 Tab 栏(64px)覆盖区内，
+    且 z-index 61 < 200 → Tab 栏压在菜单上，第 4 项只露顶部一条边。与截图现象完全一致。
+
+四、改动点（最小改动，仅 私聊.html #imPlusCss 注入串 3 处 z-index）
+
+  工具：tools/qa/_r91b_patch.py（字节级替换，open(p,'rb')→replace→'wb'，不触行尾）
+  1. L1037  .im-plus-mask  z-index:60  →  z-index:210   （遮罩盖住全屏含 Tab 栏）
+  2. L1039  .im-plus-menu  z-index:61  →  z-index:211   （菜单浮于 Tab 栏之上，微信弹层范式）
+  3. L1057  .im-loc-sheet  z-index:80  →  z-index:215   （同源问题一并修：定位半屏层也低于 200）
+  层级序：Tab 栏 200 < 遮罩 210 < 菜单 211 < loc-sheet 215 < toast 2000 < 消息菜单 10000+。
+  方案取舍：Tab 栏为 fixed bottom:0 / 64px+safe-area / z-index:200（common.css 根锁）。
+  采用「遮罩+菜单整体抬到 200 以上」而非「菜单 bottom 预留 64px」：后者在桌面宽屏
+  （.bottom-nav display:none，媒体查询 ≤768px 才显示）会造成菜单悬空 64px，需再补媒体查询，
+  改动面更大；抬 z-index 一处改动即同时覆盖移动/桌面，且与 R89-A 的全屏遮罩 bottom-sheet
+  范式一致（遮罩把 Tab 栏一并罩住变暗不可点，即微信行为）。
+  R89-A 已有项（max-height:82vh + overflow-y 内滚 + @media max-height:520px 矮屏查询）
+  经核实已在位，未重复添加。
+
+五、前后字节/行尾
+
+  改前：78180 字节，CRLF=1180，LF_total=1180，pure_LF=0（纯 CRLF）
+  改后：78183 字节，CRLF=1180，LF_total=1180，pure_LF=0（纯 CRLF，行尾零污染）
+  差值 +3 字节 = 3 处 z-index 各多 1 位（60→210 / 61→211 / 80→215 各 +1 字符，其中 loc-sheet
+  80→215 +1，mask/menu 60→210、61→211 各 +1，共 +3）。
+  详见 tools/qa/r91b_patch_log.txt。
+
+六、命中核验（改后回读，工具：_r91b_patch.py VERIFY 段）
+
+  transition:opacity .2s ease;z-index:210}   hit=1   （旧 60 串 hit=0）
+  transition:transform .24s ease;z-index:211; hit=1  （旧 61 串 hit=0）
+  .im-loc-sheet{position:fixed;inset:0;z-index:215} hit=1 （旧 80 串 hit=0）
+
+七、验证结果
+
+  1. ES2017 检查：node tools/qa/escheck_es2017.js → 输出 tools/qa/r91b_escheck.txt
+     结果：DONE 0 ✅
+  2. 真实 Chrome CDP 布局实测（tools/qa/_r91b_cdp.js，headless Chrome + 裸 CDP WebSocket，
+     HTTP serve 项目根 + 种登录态 + imOpenChat(1) 打开「学习搭子·小星」会话 + 点 #imPlusBtn）：
+     输出 tools/qa/r91b_cdp_out.txt。视口 375x667 / 375x480 / 320x480 / 320x400 四档：
+     - V1 .bottom-nav 可见且 computed z-index=200 …… 4/4 PASS
+     - V2 mask computed z=210、menu computed z=211、menuOpen=true、mask>nav …… 16/16 PASS
+     - V3 第 4 项（定位）rect 完整在视口内（如 375x667：t=583 b=651 h=68；320x400：t=338 b=390）…… 4/4 PASS
+     - V4 elementFromPoint(定位项中心) 命中 SPAN.im-plus-txt（菜单内部），
+       未被 .bottom-nav 截获 —— 不重叠的实证 …… 4/4 PASS
+     - V5 定位项底缘伸入 Tab 栏区（item4.b=651 > nav.t=607 等），因 z=211>200 浮于其上，可见可点 …… 4/4 PASS
+     - V6 .im-loc-sheet 样式表规则 z-index=215 …… 4/4 PASS
+     汇总：pass=36 fail=0 → R91B_CDP_PASS
+  3. 验证级别：真实 Chrome（CDP）布局实测，非 jsdom 模拟。
+
+八、未动文件清单（合规确认）
+
+  - assets/common.css（根锁）：未动
+  - assets/xt-profile.js / assets/xt-profile.css / server/**：未动
+  - 私聊.html 以外页面：未动（全项目唯一实例即私聊.html）
+  - 禁 prompt/alert/confirm：本次纯 CSS z-index，无 JS 交互改动
+  - ES2017：无新增 JS（escheck DONE 0）
+  - CSS 无 clamp()/min()/max()：无新增 CSS 规则
+
+九、遗留说明
+
+  - 私聊.html L1050-1051 的 CSS 注释仍写「--i4 停用」（R90 item3 时的旧注释），与 L183/187 的
+    「R90 item3 修订：定位保留在加号菜单内」矛盾。纯注释过时、不影响功能（L192 定位项 +
+    L1052 --i4 配色规则均正常生效），按最小改动原则未动。
+================================================================================
+报告完

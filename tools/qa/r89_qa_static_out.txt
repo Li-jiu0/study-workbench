@@ -1,0 +1,171 @@
+======================================================================
+R89 QA 静态验证报告
+======================================================================
+
+### 0. 行尾 / 字节数
+  私聊.html                    size=77268   (exp 77268  ) CRLF=1169  loneLF=0    loneCR=0    eol=CRLF  exp=CRLF OK
+  assets/xt-profile.js       size=141938  (exp 141938 ) CRLF=2811  loneLF=0    loneCR=0    eol=CRLF  exp=CRLF OK
+  assets/xt-profile.css      size=39465   (exp 39465  ) CRLF=1235  loneLF=0    loneCR=0    eol=CRLF  exp=CRLF OK
+  地区选择.html                  size=19110   (exp 19110  ) CRLF=409   loneLF=0    loneCR=0    eol=CRLF  exp=CRLF OK
+  assets/xt-region.js        size=46800   (exp 46800  ) CRLF=0     loneLF=924  loneCR=0    eol=LF    exp=LF   OK
+  assets/xt-moments.js       size=58723   (exp 58723  ) CRLF=1182  loneLF=0    loneCR=0    eol=CRLF  exp=CRLF OK
+  更新.html                    size=23107   (exp 23107  ) CRLF=386   loneLF=0    loneCR=0    eol=CRLF  exp=CRLF OK
+  更多.html                    size=18875   (exp 18875  ) CRLF=319   loneLF=0    loneCR=0    eol=CRLF  exp=CRLF OK
+  朋友圈发布.html                 size=12612   (exp 12612  ) CRLF=170   loneLF=0    loneCR=0    eol=CRLF  exp=CRLF OK
+  assets/common.css          size=127605  (exp 127605 ) CRLF=2915  loneLF=0    loneCR=0    eol=CRLF  exp=CRLF OK
+  行尾判定: ALL OK
+
+### 1. common.css 未授权改动检查
+  字节数 = 127605 (应为 127605) OK
+  L68 = 'html, body { height: 100%; overflow: hidden; }'
+  L68 含 height:100% + overflow:hidden ? True
+
+### 2. server/ 目录检查（本批不应改动）
+  9/18 之后修改的 server 文件数 = 20
+     ('server\\.env', '2026-09-18 15:18')
+     ('server\\config.py', '2026-09-18 19:05')
+     ('server\\config.py.bak-r88f-pre', '2026-09-18 01:55')
+     ('server\\data.db', '2026-09-18 15:05')
+     ('server\\filecheck.py', '2026-09-18 19:06')
+     ('server\\main.py', '2026-09-18 19:05')
+     ('server\\quota_ledger.py', '2026-09-18 18:53')
+     ('server\\quota_ledger.py.bak-r88f-pre', '2026-09-18 15:18')
+     ('server\\rate_limit.py', '2026-09-18 18:17')
+     ('server\\schemas.py', '2026-09-18 15:03')
+     ('server\\data\\model_quota.json', '2026-09-18 15:26')
+     ('server\\data\\model_registry.json', '2026-09-18 15:25')
+     ('server\\data\\model_usage.json', '2026-09-18 18:33')
+     ('server\\routers\\ai.py', '2026-09-18 18:54')
+     ('server\\routers\\ai.py.bak-pre-402', '2026-09-18 01:38')
+     ('server\\routers\\ai.py.bak-r88f-pre', '2026-09-18 15:03')
+     ('server\\routers\\update.py', '2026-09-18 14:00')
+     ('server\\routers\\uploads.py', '2026-09-18 19:05')
+     ('server\\routers\\users.py', '2026-09-18 12:48')
+     ('server\\routers\\version.json', '2026-09-18 15:33')
+
+### 3. A2 个人资料.html 误导线扫描
+  个人资料.html: 旧原文(完整)命中=0  旧原文(前缀)命中=0
+      srvnote                命中行数=0 []
+      服务端                    命中行数=2 [14, 45]
+      去 AI 问答                命中行数=0 []
+      xtpM5GoAi              命中行数=0 []
+      META_KEY               命中行数=0 []
+      xt_ai_chat_meta_v1     命中行数=0 []
+      m5ClearAll             命中行数=0 []
+      m5Bind                 命中行数=0 []
+  assets/xt-profile.js: 旧原文(完整)命中=0  旧原文(前缀)命中=0
+      srvnote                命中行数=1 [1535]
+      服务端                    命中行数=31 [301, 309, 311, 364, 414, 544, 546, 547]
+      去 AI 问答                命中行数=2 [1893, 1903]
+      xtpM5GoAi              命中行数=2 [1892, 2180]
+      META_KEY               命中行数=8 [1628, 1677, 1706, 1717, 1925, 1942, 1961, 2118]
+      xt_ai_chat_meta_v1     命中行数=2 [1620, 1628]
+      m5ClearAll             命中行数=2 [1916, 2179]
+      m5Bind                 命中行数=2 [1585, 2136]
+
+### 4. A2 关键文案 / 结构断言
+  确认框含「服务端记录不受影响」                    PASS
+  toast含「服务端记录仍保留」                   PASS
+  #xtpM5GoAi 绑定存在                    PASS
+  META_KEY=xt_ai_chat_meta_v1        PASS
+  ai_chat_history 读写存在               PASS
+  无 clamp(/min(/max( CSS             FAIL
+  服务端记录不受影响 出现行: [1922]
+  服务端记录仍保留 出现行: [1928]
+  xtpM5GoAi 出现行: [1892, 2180]
+  AI.html 存在: True ->
+
+### 5. B1 地区选择.html 覆盖规则
+  html{height:auto;overflow-y:auto} : True
+  body.theme-home{...} : True
+  -webkit-overflow-scrolling:touch : False
+  overflow-x:hidden : False
+  首个 <link> 位置=251, 首个 <style> 位置=313 -> style 在 link 之后: True
+  .xtr-head sticky 规则 : True
+    -> .xtr-head { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 10px;   padding: 12px 16px; background: var(--card, #fff); border-b
+  clamp/min/max : False
+
+### 6. B2 assets/xt-region.js 结构
+  .xtlp{...} = position:fixed;inset:0;z-index:1200;background:#f5f7fb
+  .xtlp-body{...} = position:absolute;inset:0;display:flex;flex-direction:column
+  .xtlp-list{...} = flex:1 1 0%;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:10px 12px 0;background:#fff;border-radius:14px;border:1px solid #e6e9f0
+  .xtlp 仍含 display:flex ? False
+  .xtlp-list 含 flex:1 1 0% ? True
+  .xtlp-list 含 min-height:0 ? True
+  .xtlp-list 含 overflow-y:auto ? True
+  body.className = xtlp-body 挂载 : True
+  window.XT_LOC_PICK 导出 : True
+  openPicker: openPicker : True
+  resize removeEventListener 成对 : True | addEventListener resize: True
+  clamp/min/max : False
+
+### 7. B3 assets/xt-moments.js
+  xtmPickLocation      命中行数=3    [1002, 1048, 1050]
+  xtmNav               命中行数=6    [659, 660, 662, 1001, 1037, 1043]
+  xtmNavHook           命中行数=3    [659, 662, 1037]
+  xtmTakeRegionPick    命中行数=2    [670, 965]
+  xtmApplyLocation     命中行数=3    [682, 1008, 1020]
+  xt_region_pick       命中行数=2    [656, 1000]
+  xtmLocBtn            命中行数=2    [835, 1047]
+  xtmAtBtn             命中行数=1    [1049]
+  alert/prompt/confirm 裸调用 : []
+  confirmBox 出现次数 : 4
+  TTL 常量 : ['TTL（同 xt-profile.js / 地区选择.html 协议） */\r', 'TTL = 10 * 60 * 1000', "TTL），返回地址文本或 ''。 */\r", "TTL)) return ''", 'TTL 10 分钟）并写入草稿位置。 */\r']
+  lng/lat 进 UI 字符串风险 : ["t.style.transform = 'translateX(-50%) translateY(0)';", "setTimeout(function () { t.style.transform = 'translateX(-50%) translateY(-100px)'; }, 1800);"]
+  clamp/min/max : True
+
+### 8. C 更新.html
+  .morepage-title 计数 = 1 (应=1)
+  「检测更新」全文计数 = 4 (应=4)
+  data-icon="download" data-icon-size="18" = True
+    L215 = <div class="morepage-title"><span class="nav-icon" data-icon="download" data-icon-size="18"></span> 检测更新</div>
+  xt-up-brand 计数 = 15
+  data-icon="book-open" = True
+  新增 http 外链: []
+  png/svg/jpg 文件引用: []
+  .xt-up-* 规则数 = 46 ['.xt-up-actions', '.xt-up-arrow', '.xt-up-bar', '.xt-up-bar-fill', '.xt-up-bar-indet', '.xt-up-block', '.xt-up-block-head', '.xt-up-block-title', '.xt-up-brand', '.xt-up-brand-icon', '.xt-up-brand-info', '.xt-up-brand-name', '.xt-up-brand-sub', '.xt-up-card', '.xt-up-card-title', '.xt-up-guide', '.xt-up-guide-tip', '.xt-up-guide-title', '.xt-up-icon', '.xt-up-icon-bad']
+  clamp/min/max : False
+
+### 9. 更多.html 未改断言
+  字节 = 18875 (应 18875)
+  morepageUpdateCard             命中=1
+  xtMoreUpdateVer                命中=2
+  XTUpdate.openUpdatePage()      命中=1
+
+### 10. 朋友圈发布.html 未改断言
+  字节 = 12612 (应 12612)
+  xtmFileImg     命中=1
+  xtmFileVid     命中=1
+  按钮 id: ['xtmLocBtn', 'xtmVisBtn', 'xtmMentionBtn', 'xtmAtBtn', 'xtmVidBtn', 'xtmLinkBtn']
+
+### 11. HTML 结构配对（自算）
+  私聊.html              <!--=30/-->=30 OK | <div=180/</div=180 OK | <style=2/</style=2 OK | <script=28/</script=28 OK | <head=1/</head>=1 OK
+  地区选择.html            <!--=0/-->=0 OK | <div=22/</div=22 OK | <style=1/</style=1 OK | <script=3/</script=3 OK | <head=1/</head>=1 OK
+  更新.html              <!--=12/-->=12 OK | <div=145/</div=145 OK | <style=1/</style=1 OK | <script=8/</script=8 OK | <head=1/</head>=1 OK
+  更多.html              <!--=19/-->=19 OK | <div=153/</div=153 OK | <style=1/</style=1 OK | <script=23/</script=23 OK | <head=1/</head>=1 OK
+  朋友圈发布.html           <!--=11/-->=11 OK | <div=101/</div=101 OK | <style=0/</style=0 OK | <script=21/</script=21 OK | <head=1/</head>=1 OK
+  个人资料.html            <!--=3/-->=3 OK | <div=5/</div=5 OK | <style=0/</style=0 OK | <script=5/</script=5 OK | <head=1/</head>=1 OK
+  AI.html              <!--=14/-->=14 OK | <div=148/</div=148 OK | <style=1/</style=1 OK | <script=22/</script=22 OK | <head=1/</head>=1 OK
+
+### 12. 禁用语法独立扫描（真实违规 / 注释内命中）
+  assets/xt-profile.js
+    真实违规: NONE
+    注释内命中: {'\\?\\.': 1, '\\?\\?': 1, 'Object\\.fromEntries': 1, '\\.at\\(': 1}
+  assets/xt-region.js
+    真实违规: NONE
+    注释内命中: {'\\?\\.': 1, '\\?\\?': 1}
+  assets/xt-moments.js
+    真实违规: NONE
+    注释内命中: NONE
+
+### 13. 禁 prompt/alert/confirm（改动文件全批）
+  私聊.html                    裸调用命中=0 
+  assets/xt-profile.js       裸调用命中=0 
+  assets/xt-profile.css      裸调用命中=0 
+  地区选择.html                  裸调用命中=0 
+  assets/xt-region.js        裸调用命中=0 
+  assets/xt-moments.js       裸调用命中=0 
+  更新.html                    裸调用命中=0 
+  更多.html                    裸调用命中=0 
+  朋友圈发布.html                 裸调用命中=0 
+  assets/common.css          裸调用命中=1 [(2706, '* 禁 alert()/confirm()（PRD §7.12）；不用 .me-mask / .dialog / .modal')]

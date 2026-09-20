@@ -1,0 +1,8 @@
+A) engine pragmas: foreign_keys=0 journal_mode=delete busy_timeout=5000
+   engine url=sqlite:///D:/cache/temp/r73_v_nsipzdhy/probe.db
+   pool class=QueuePool
+B) moments._can_view defined at line 87
+   referenced globals in _can_view: ['_is_blocked_either', '_visibility_allows']
+   module has _visibility_allows? False
+   -> NameError on call? True
+   moments module line count = 304

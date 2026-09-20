@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#5B8DEF">
+<title>数据管理 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260923c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260922a">
+<link rel="stylesheet" href="assets/states.css?v=20260922a">
+<link rel="stylesheet" href="assets/polish.css?v=20260922a">
+<script src="assets/xt-polyfill.js?v=20260922a"></script>
+<script>window.__XT_PROD__=true;</script>
+<style>
+/* ==================== 数据管理页局部样式（需求 3 · 数据管理重构） ====================
+   微信「存储空间」风格：顶部总用量 + 分类占用列表（点击展开明细与清理操作）+ 底部维护区。
+   统计口径与原设置页 stRefreshOverview 完全一致（(k.length+v.length)*2，5MB 假设上限）。
+   样式走 common.css 既有令牌，深浅色由 body.dark 自动适配；移动优先，桌面 max-width 480px 居中。 */
+.dm-wrap{max-width:480px;margin:0 auto;padding-bottom:28px;}
+.dm-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:14px}
+/* 顶部总用量区 */
+.dm-total-num{font-size:26px;font-weight:800;color:var(--text);line-height:1.3}
+.dm-total-num small{font-size:13px;font-weight:600;color:var(--text-secondary);margin-left:6px}
+.dm-total-bar{height:10px;border-radius:6px;background:var(--bg);border:1px solid var(--border);overflow:hidden;margin-top:12px}
+.dm-total-bar i{display:block;height:100%;width:0;background:var(--primary);border-radius:6px;transition:width .4s ease}
+.dm-total-tx{font-size:12px;color:var(--text-muted);line-height:1.7;margin-top:8px}
+/* 分类占用列表：每行 图标+名称+占用值+细进度条；点击展开明细 */
+.dm-cat{border-bottom:1px solid var(--border)}
+.dm-cat:last-child{border-bottom:none}
+.dm-cat-row{display:flex;align-items:center;gap:12px;padding:13px 2px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.dm-cat-icon{width:34px;height:34px;border-radius:10px;background:rgba(91,141,239,.12);color:#5B8DEF;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+.dm-cat-main{flex:1;min-width:0}
+.dm-cat-name{font-size:14px;font-weight:600;color:var(--text)}
+.dm-cat-sub{font-size:11.5px;color:var(--text-secondary);margin-top:2px}
+.dm-cat-val{font-size:12.5px;color:var(--text-secondary);flex-shrink:0;font-variant-numeric:tabular-nums}
+.dm-cat-arrow{color:var(--text-secondary);font-size:14px;flex-shrink:0;transition:transform .2s}
+.dm-cat.open .dm-cat-arrow{transform:rotate(90deg)}
+.dm-cat-bar{height:5px;border-radius:4px;background:var(--bg);overflow:hidden;margin:-4px 0 10px 46px}
+.dm-cat-bar i{display:block;height:100%;width:0;background:var(--primary);border-radius:4px;transition:width .4s ease}
+/* 展开明细区（默认收起） */
+.dm-detail{display:none;padding:2px 2px 14px 46px}
+.dm-cat.open + .dm-detail{display:block}
+.dm-detail-item{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--text-secondary);
+  padding:6px 0;border-bottom:1px dashed var(--border)}
+.dm-detail-item:last-of-type{border-bottom:none}
+.dm-detail-item b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums;flex-shrink:0}
+.dm-detail-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.dm-detail-actions .btn{padding:6px 14px;font-size:var(--xt-font-sm,13px)}
+.dm-empty{font-size:12.5px;color:var(--text-muted);padding:6px 0}
+/* 底部维护区 */
+.dm-maint-title{font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;margin-bottom:4px}
+@media (max-width:380px){
+  .dm-card{padding:13px 12px}
+  .dm-detail{padding-left:2px}
+  .dm-cat-bar{margin-left:2px}
+  .dm-total-num{font-size:22px}
+}
+</style>
+</head>
+<body class="theme-home">
+
+<div class="app">
+<nav class="sidebar">
+    <div class="logo">
+      <div class="logo-icon" data-icon="book-open"></div>
+      <div>
+        <div class="logo-text">星途</div>
+        <div class="logo-sub">致追梦的人->修身</div>
+      </div>
+    </div>
+</nav>
+
+  <div class="main">
+<header class="topbar">
+      <div class="topbar-title">数据管理</div>
+      <div class="topbar-date"></div>
+      <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="18"></span></div>
+    </header>
+    <div class="content">
+      <div class="page active" id="page-datamanage">
+        <!-- 顶部返回（独立页，history.back 回上一页；无历史时回设置页） -->
+        <div class="morepage-head">
+          <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='设置.html'}" title="返回" aria-label="返回">←</button>
+          <div class="morepage-title"><span class="nav-icon" data-icon="package" data-icon-size="18"></span> 数据管理</div>
+        </div>
+
+        <div class="dm-wrap">
+          <!-- ① 顶部总用量区 -->
+          <div class="dm-card" id="dmTotalCard">
+            <div class="dm-total-num"><span id="dmTotalNum">…</span><small id="dmTotalLimit">/ 约 5 MB</small></div>
+            <div class="dm-total-bar"><i id="dmTotalBar"></i></div>
+            <div class="dm-total-tx" id="dmTotalTx">正在统计本机数据…</div>
+          </div>
+
+          <!-- ② 分类占用列表（点击行展开明细与清理操作） -->
+          <div class="dm-card" style="padding:4px 14px" id="dmCatCard"></div>
+
+          <!-- ③ 底部维护区（原设置页「维护与重置」卡功能迁入；检测更新从设置页收敛至此/关于页） -->
+          <div class="dm-card">
+            <div class="dm-maint-title"><span class="nav-icon" data-icon="wrench" data-icon-size="15"></span> 维护</div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-name">清理缓存与临时数据</div>
+                <div class="setting-desc">清除错误日志、未完成的发贴草稿、AI 悬浮球位置等临时数据；<b>不会删除</b>学习记录、发贴与错题</div>
+              </div>
+              <div class="setting-actions">
+                <button class="btn btn-outline" onclick="stClearCache()"><span class="nav-icon" data-icon="eraser" data-icon-size="14"></span> 清理缓存</button>
+              </div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-name">重置外观与偏好</div>
+                <div class="setting-desc">把主题、配色、字号、动效、紧凑模式等界面设置恢复为默认值（不影响学习数据）</div>
+              </div>
+              <div class="setting-actions">
+                <button class="btn btn-outline" onclick="stResetAppearance()"><span class="nav-icon" data-icon="rotate-ccw" data-icon-size="14"></span> 重置外观</button>
+              </div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-name">一键完整备份</div>
+                <div class="setting-desc">把全部本机数据导出为 JSON 备份文件（与「导出数据」一致）</div>
+              </div>
+              <div class="setting-actions">
+                <button class="btn btn-primary" onclick="dmBackup()"><span class="nav-icon" data-icon="package" data-icon-size="14"></span> 立即备份</button>
+              </div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-name">检测更新</div>
+                <div class="setting-desc">检查星途是否有新版本</div>
+              </div>
+              <div class="setting-actions">
+                <button class="btn btn-outline" onclick="dmOpenUpdate()"><span class="nav-icon" data-icon="download" data-icon-size="14"></span> 检测更新</button>
+              </div>
+            </div>
+            <!-- 【R3b-A / B3】导出运行日志：把原生崩溃 + 前端错误日志经系统分享面板发出，
+                 便于真机排查（仅原生 App 内可用，浏览器打开时提示）。 -->
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-name">导出运行日志</div>
+                <div class="setting-desc">把崩溃 / 错误日志分享给开发者定位问题（仅 App 内可用）</div>
+              </div>
+              <div class="setting-actions">
+                <button class="btn btn-outline" onclick="dmExportLogs()"><span class="nav-icon" data-icon="upload" data-icon-size="14"></span> 导出日志</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部导航（手机端）：首页 → 互动 → 我的 → AI → 更多 -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-list">
+      <div class="bottom-nav-item" onclick="location.href='学习工作台.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
+      </div>
+      <div class="bottom-nav-item" onclick="gotoChat()">
+        <div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div>
+      </div>
+      <div class="bottom-nav-item" onclick="location.href='个人中心.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div>
+      </div>
+      <div class="bottom-nav-item" onclick="location.href='AI.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div>
+      </div>
+      <div class="bottom-nav-item" onclick="location.href='更多.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
+      </div>
+    </div>
+  </nav>
+</div>
+
+<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/xt-toast.js?v=20260923a" defer></script>
+<script src="assets/error-boundary.js?v=20260922a" defer></script>
+<script src="assets/app.js?v=20260923a" defer></script>
+<script src="assets/xt-update.js?v=20260923a" defer></script>
+<script>
+/* ===================================================================
+   数据管理页 · 需求 3（微信存储空间风）
+   -------------------------------------------------------------------
+   统计与清理逻辑自 设置.html **函数迁移**而来（口径一致，非重写）：
+     · stFmtSize / stClearCache / stResetAppearance / resetAppearanceNow
+       与原实现逐行一致；stClearCache 末行原调 stRefreshOverview() 改调
+       本页 dmRefresh()（同为 (k.length+v.length)*2 全键求和口径）。
+     · 分类统计来源（localStorage 键）照设计稿 §3.2 表格：
+       学习记录=study_workbench_data；自建题库=study_workbench_custom；
+       AI 数据=ai_model_settings/ai_memory/ai_selected_model/ai_custom_models；
+       缓存与临时=study_workbench_errors/editor_draft_v1/ai_fab_pos + sessionStorage；
+       设置与偏好=study_workbench_settings/theme 等；其他数据=逐 key 兜底仅展示。
+   交互红线：清理一律 uiConfirm（全站禁用原生 confirm）；统计 try/catch，
+   localStorage 不可用时显示「无法读取本机存储」。ES2017 语法。
+   =================================================================== */
+
+/* ---------- 通用（自 设置.html stFmtSize 原样迁移） ---------- */
+function stFmtSize(b) {
+  return b < 1024 ? (b + ' B') : b < 1048576 ? (b / 1024).toFixed(1) + ' KB' : (b / 1048576).toFixed(2) + ' MB';
+}
+/* 键匹配：裸键或 lsKey 账号后缀变体（key / key@account），与 app.js lsKey 约束对齐 */
+function dmKeyIs(key, base) {
+  return key === base || key.indexOf(base + '@') === 0;
+}
+function dmSafeStorage() {
+  try {
+    if (!window.localStorage) return null;
+    localStorage.getItem('__dm_probe__'); return localStorage;
+  } catch (e) { return null; }
+}
+/* 全键字节求和（口径与原 stRefreshOverview 完全一致：(k.length+v.length)*2） */
+function dmTotalBytes() {
+  var total = 0, count = 0, ls = dmSafeStorage();
+  if (!ls) return { total: 0, count: 0, ok: false };
+  try {
+    for (var i = 0; i < ls.length; i++) {
+      var k = ls.key(i); if (!k) continue;
+      var v = ls.getItem(k) || '';
+      total += (k.length + v.length) * 2; count++;
+    }
+  } catch (e) { return { total: 0, count: 0, ok: false }; }
+  return { total: total, count: count, ok: true };
+}
+
+/* ---------- 分类定义（统计来源照设计稿 §3.2） ---------- */
+var DM_AI_KEYS = ['ai_model_settings', 'ai_memory', 'ai_selected_model', 'ai_custom_models'];
+var DM_CACHE_KEYS = ['study_workbench_errors', 'study_workbench_editor_draft_v1', 'study_workbench_ai_fab_pos'];
+var DM_PREF_BASES = ['study_workbench_settings', 'study_workbench_theme', 'study_workbench_skin',
+  'study_workbench_ai_fab_hidden', 'xt_notify_enabled', 'study_workbench_recent', 'study_workbench_home_show'];
+
+/* 统计某组键（裸键+账号后缀变体）的字节与命中键列表 */
+function dmStatBases(bases) {
+  var ls = dmSafeStorage(); var bytes = 0, keys = [];
+  if (!ls) return { bytes: 0, keys: [] };
+  try {
+    for (var i = 0; i < ls.length; i++) {
+      var k = ls.key(i); if (!k) continue;
+      for (var j = 0; j < bases.length; j++) {
+        if (dmKeyIs(k, bases[j])) {
+          var v = ls.getItem(k) || '';
+          bytes += (k.length + v.length) * 2;
+          keys.push(k);
+          break;
+        }
+      }
+    }
+  } catch (e) { }
+  return { bytes: bytes, keys: keys };
+}
+/* 「其他数据」：未归入任何已知分组的键，按字节求和列出 top 若干（仅展示，不提供盲删） */
+function dmStatOther() {
+  var ls = dmSafeStorage(); var items = [];
+  if (!ls) return { bytes: 0, items: [] };
+  try {
+    for (var i = 0; i < ls.length; i++) {
+      var k = ls.key(i); if (!k) continue;
+      if (dmKeyIs(k, 'study_workbench_data') || dmKeyIs(k, 'study_workbench_custom')) continue;
+      if (dmKeyIs(k, 'study_workbench_errors') || dmKeyIs(k, 'study_workbench_editor_draft_v1') || dmKeyIs(k, 'study_workbench_ai_fab_pos')) continue;
+      var hitPref = false;
+      for (var j = 0; j < DM_PREF_BASES.length; j++) { if (dmKeyIs(k, DM_PREF_BASES[j])) { hitPref = true; break; } }
+      if (hitPref) continue;
+      var hitAi = false;
+      for (var a = 0; a < DM_AI_KEYS.length; a++) { if (dmKeyIs(k, DM_AI_KEYS[a])) { hitAi = true; break; } }
+      if (hitAi) continue;
+      var v = ls.getItem(k) || '';
+      items.push({ k: k, bytes: (k.length + v.length) * 2 });
+    }
+  } catch (e) { }
+  items.sort(function (x, y) { return y.bytes - x.bytes; });
+  var sum = 0;
+  items.forEach(function (it) { sum += it.bytes; });
+  return { bytes: sum, items: items };
+}
+
+/* ---------- 学习记录 / 自建题库 明细解析 ---------- */
+function dmStudyDetail() {
+  var ls = dmSafeStorage(); var out = { notes: 0, drafts: 0, wrong: 0, tasks: 0, tasksDone: 0, vocab: 0, favs: 0, bytes: 0 };
+  if (!ls) return out;
+  try {
+    for (var i = 0; i < ls.length; i++) {
+      var k = ls.key(i); if (!k || !dmKeyIs(k, 'study_workbench_data')) continue;
+      var raw = ls.getItem(k) || '';
+      out.bytes += (k.length + raw.length) * 2;
+      var d = JSON.parse(raw || '{}');
+      out.notes += (d.notes || []).length;
+      out.drafts += (d.notes || []).filter(function (n) { return n.status === 'draft' || n.status === 'archived'; }).length;
+      out.wrong += (d.wrongQuestions || []).length;
+      out.tasks += (d.tasks || []).length;
+      out.tasksDone += (d.tasks || []).filter(function (t) { return t.done; }).length;
+      out.vocab += (d.vocabLearned || []).length;
+      out.favs += (d.favoriteNotes || []).length;
+    }
+  } catch (e) { }
+  return out;
+}
+function dmQbankDetail() {
+  var ls = dmSafeStorage(); var out = { total: 0, byType: [], bytes: 0 };
+  if (!ls) return out;
+  try {
+    for (var i = 0; i < ls.length; i++) {
+      var k = ls.key(i); if (!k || !dmKeyIs(k, 'study_workbench_custom')) continue;
+      var raw = ls.getItem(k) || '';
+      out.bytes += (k.length + raw.length) * 2;
+      var q = JSON.parse(raw || '{}');
+      Object.keys(q).forEach(function (t) {
+        var n = Array.isArray(q[t]) ? q[t].length : 0;
+        out.total += n;
+        out.byType.push({ t: t, n: n });
+      });
+    }
+  } catch (e) { }
+  return out;
+}
+function dmAiDetail() {
+  var ls = dmSafeStorage(); var out = { memory: 0, models: 0, bytes: 0 };
+  if (!ls) return out;
+  try {
+    for (var i = 0; i < ls.length; i++) {
+      var k = ls.key(i); if (!k) continue;
+      var isAi = false;
+      for (var j = 0; j < DM_AI_KEYS.length; j++) { if (dmKeyIs(k, DM_AI_KEYS[j])) { isAi = true; break; } }
+      if (!isAi) continue;
+      var raw = ls.getItem(k) || '';
+      out.bytes += (k.length + raw.length) * 2;
+      if (dmKeyIs(k, 'ai_memory')) {
+        try { var m = JSON.parse(raw || '[]'); out.memory = Array.isArray(m) ? m.length : 0; } catch (e1) { }
+      }
+      if (dmKeyIs(k, 'ai_custom_models')) {
+        try { var c = JSON.parse(raw || '[]'); out.models = Array.isArray(c) ? c.length : 0; } catch (e2) { }
+      }
+    }
+  } catch (e) { }
+  return out;
+}
+
+/* ---------- 渲染 ---------- */
+var DM_CATS = [
+  { id: 'study', name: '学习记录', icon: 'book', stat: function () { return dmStudyDetail().bytes; } },
+  { id: 'qbank', name: '自建题库', icon: 'puzzle', stat: function () { return dmQbankDetail().bytes; } },
+  { id: 'ai', name: 'AI 数据', icon: 'bot', stat: function () { return dmAiDetail().bytes; } },
+  { id: 'cache', name: '缓存与临时', icon: 'eraser', stat: function () { return dmStatBases(DM_CACHE_KEYS).bytes; } },
+  { id: 'prefs', name: '设置与偏好', icon: 'settings', stat: function () { return dmStatBases(DM_PREF_BASES).bytes; } },
+  { id: 'other', name: '其他数据', icon: 'inbox', stat: function () { return dmStatOther().bytes; } }
+];
+function dmCatSub(id) {
+  if (id === 'study') {
+    var d = dmStudyDetail();
+    return '发贴 ' + d.notes + ' · 错题 ' + d.wrong + ' · 任务 ' + d.tasksDone + '/' + d.tasks;
+  }
+  if (id === 'qbank') { return '各题型共 ' + dmQbankDetail().total + ' 题'; }
+  if (id === 'ai') { var a = dmAiDetail(); return '记忆 ' + a.memory + ' 条 · 自定义模型 ' + a.models + ' 个'; }
+  if (id === 'cache') { return '错误日志 · 编辑草稿 · 临时数据'; }
+  if (id === 'prefs') { return '主题 · 字号 · 偏好设置'; }
+  return '未归类键 ' + dmStatOther().items.length + ' 个（仅展示）';
+}
+function dmRenderCats(totalBytes) {
+  var box = document.getElementById('dmCatCard'); if (!box) return;
+  var html = '';
+  DM_CATS.forEach(function (c, idx) {
+    var b = c.stat();
+    var pct = totalBytes > 0 ? Math.min(100, Math.round(b / totalBytes * 100)) : 0;
+    html += '<div class="dm-cat' + (idx === 0 ? ' open' : '') + '" id="dmCat_' + c.id + '">'
+      + '<div class="dm-cat-row" onclick="dmToggleCat(\'' + c.id + '\')">'
+      + '<div class="dm-cat-icon"><span class="nav-icon" data-icon="' + c.icon + '" data-icon-size="16"></span></div>'
+      + '<div class="dm-cat-main"><div class="dm-cat-name">' + c.name + '</div><div class="dm-cat-sub" id="dmSub_' + c.id + '"></div></div>'
+      + '<div class="dm-cat-val">' + stFmtSize(b) + '</div>'
+      + '<div class="dm-cat-arrow">›</div>'
+      + '</div>'
+      + '<div class="dm-cat-bar"><i style="width:' + pct + '%"></i></div>'
+      + '</div>'
+      + '<div class="dm-detail" id="dmDetail_' + c.id + '"></div>';
+  });
+  box.innerHTML = html;
+  DM_CATS.forEach(function (c) { dmRenderDetail(c.id); });
+  if (typeof window.renderIcons === 'function') { try { window.renderIcons(box); } catch (e) { } }
+}
+function dmToggleCat(id) {
+  var el = document.getElementById('dmCat_' + id); if (!el) return;
+  el.classList.toggle('open');
+  if (el.classList.contains('open')) dmRenderDetail(id);
+}
+/* 各分类明细区：分项条数/字节 + 可执行操作（清理一律 uiConfirm） */
+function dmRenderDetail(id) {
+  var box = document.getElementById('dmDetail_' + id); if (!box) return;
+  var html = '';
+  if (id === 'study') {
+    var d = dmStudyDetail();
+    var rows = [
+      ['发贴总数', d.notes], ['草稿 / 归档', d.drafts], ['错题', d.wrong],
+      ['今日任务（完成/总）', d.tasksDone + ' / ' + d.tasks], ['已学词汇', d.vocab], ['收藏发贴', d.favs]
+    ];
+    html = rows.map(function (r) { return '<div class="dm-detail-item"><span>' + r[0] + '</span><b>' + r[1] + '</b></div>'; }).join('')
+      + '<div class="dm-detail-actions">'
+      + '<button class="btn btn-outline" onclick="dmExportStudy()"><span class="nav-icon" data-icon="upload" data-icon-size="14"></span> 导出 JSON</button>'
+      + '<button class="btn btn-outline" onclick="dmClearDrafts()"><span class="nav-icon" data-icon="trash" data-icon-size="14"></span> 删除草稿/归档</button>'
+      + '</div>';
+  } else if (id === 'qbank') {
+    var q = dmQbankDetail();
+    html = (q.byType.length
+      ? q.byType.map(function (r) { return '<div class="dm-detail-item"><span>' + r.t + '</span><b>' + r.n + ' 题</b></div>'; }).join('')
+      : '<div class="dm-empty">暂无自建题目</div>')
+      + '<div class="dm-detail-actions">'
+      + '<button class="btn btn-outline" onclick="dmExportQbank()"><span class="nav-icon" data-icon="upload" data-icon-size="14"></span> 导出</button>'
+      + '<button class="btn btn-outline" onclick="dmClearQbank()"><span class="nav-icon" data-icon="trash" data-icon-size="14"></span> 清空</button>'
+      + '</div>';
+  } else if (id === 'ai') {
+    var a = dmAiDetail();
+    html = '<div class="dm-detail-item"><span>AI 记忆条数</span><b>' + a.memory + '</b></div>'
+      + '<div class="dm-detail-item"><span>自定义模型数</span><b>' + a.models + '</b></div>'
+      + '<div class="dm-detail-actions">'
+      + '<button class="btn btn-outline" onclick="dmClearAiMemory()"><span class="nav-icon" data-icon="trash" data-icon-size="14"></span> 清空 AI 记忆</button>'
+      + '</div>';
+  } else if (id === 'cache') {
+    var s = dmStatBases(DM_CACHE_KEYS);
+    html = (s.keys.length
+      ? s.keys.map(function (k) {
+          var ls = dmSafeStorage(); var v = ls ? (ls.getItem(k) || '') : '';
+          return '<div class="dm-detail-item"><span>' + k + '</span><b>' + stFmtSize((k.length + v.length) * 2) + '</b></div>';
+        }).join('')
+      : '<div class="dm-empty">暂无缓存与临时数据</div>')
+      + '<div class="dm-detail-item"><span>sessionStorage（页面会话）</span><b>随页清空</b></div>'
+      + '<div class="dm-detail-actions">'
+      + '<button class="btn btn-outline" onclick="stClearCache()"><span class="nav-icon" data-icon="eraser" data-icon-size="14"></span> 清理缓存</button>'
+      + '</div>';
+  } else if (id === 'prefs') {
+    var p = dmStatBases(DM_PREF_BASES);
+    html = (p.keys.length
+      ? p.keys.map(function (k) {
+          var ls2 = dmSafeStorage(); var v2 = ls2 ? (ls2.getItem(k) || '') : '';
+          return '<div class="dm-detail-item"><span>' + k + '</span><b>' + stFmtSize((k.length + v2.length) * 2) + '</b></div>';
+        }).join('')
+      : '<div class="dm-empty">暂无设置与偏好数据</div>')
+      + '<div class="dm-detail-actions">'
+      + '<button class="btn btn-outline" onclick="stResetAppearance()"><span class="nav-icon" data-icon="rotate-ccw" data-icon-size="14"></span> 重置外观</button>'
+      + '</div>';
+  } else {
+    /* 其他数据：仅展示（不提供盲删，防误删 token / 登录态） */
+    var o = dmStatOther();
+    html = (o.items.length
+      ? o.items.slice(0, 12).map(function (it) {
+          return '<div class="dm-detail-item"><span>' + it.k + '</span><b>' + stFmtSize(it.bytes) + '</b></div>';
+        }).join('') + (o.items.length > 12 ? '<div class="dm-empty">其余 ' + (o.items.length - 12) + ' 个键从略（仅展示）</div>' : '')
+      : '<div class="dm-empty">暂无其他数据</div>')
+      + '<div class="dm-empty">为防误删登录态等关键数据，此分类仅展示、不提供清理。</div>';
+  }
+  box.innerHTML = html;
+  if (typeof window.renderIcons === 'function') { try { window.renderIcons(box); } catch (e) { } }
+  dmRefreshSubs();
+}
+function dmRefreshSubs() {
+  DM_CATS.forEach(function (c) {
+    var el = document.getElementById('dmSub_' + c.id);
+    if (el) el.textContent = dmCatSub(c.id);
+  });
+}
+
+/* ---------- 总用量刷新（口径与原 stRefreshOverview 一致） ---------- */
+function dmRefresh() {
+  var t = dmTotalBytes();
+  var num = document.getElementById('dmTotalNum');
+  var bar = document.getElementById('dmTotalBar');
+  var tx = document.getElementById('dmTotalTx');
+  if (!t.ok) {
+    if (num) num.textContent = '无法读取本机存储';
+    if (tx) tx.textContent = '浏览器隐私模式或存储被禁用，无法统计与清理。';
+    var card = document.getElementById('dmCatCard'); if (card) card.innerHTML = '<div class="dm-empty" style="padding:14px">无法读取本机存储</div>';
+    return;
+  }
+  var limit = 5 * 1024 * 1024;   // 浏览器 localStorage 常见上限约 5MB
+  var pct = Math.min(100, Math.round(t.total / limit * 100));
+  if (num) num.textContent = stFmtSize(t.total);
+  if (bar) bar.style.width = pct + '%';
+  if (tx) tx.textContent = '本机存储占用约 ' + stFmtSize(t.total) + ' / 约 5 MB（' + pct + '%，共 ' + t.count + ' 项）。' +
+    '数据只保存在本机浏览器，清理浏览器数据会一并清除，请定期点「立即备份」。';
+  dmRenderCats(t.total);
+}
+
+/* ---------- 学习记录操作 ---------- */
+function dmExportStudy() {
+  try { if (typeof exportData === 'function') { exportData(); return; } } catch (e) { }
+  if (typeof showToast === 'function') showToast('⚠️ 导出功能不可用（app.js 未加载）');
+}
+/* 定向删除草稿/归档发贴（uiConfirm 确认后执行；学习记录其余分毫不动） */
+function dmClearDrafts() {
+  uiConfirm('将删除全部「草稿 / 归档」状态的发贴（含其正文），已发布发贴与错题、词汇等其他学习数据不受影响。确定继续吗？', '删除').then(function (ok) {
+    if (!ok) return;
+    var ls = dmSafeStorage(); var n = 0;
+    if (!ls) { showToast('无法读取本机存储'); return; }
+    try {
+      for (var i = 0; i < ls.length; i++) {
+        var k = ls.key(i); if (!k || !dmKeyIs(k, 'study_workbench_data')) continue;
+        var d = JSON.parse(ls.getItem(k) || '{}');
+        if (!Array.isArray(d.notes)) continue;
+        var before = d.notes.length;
+        d.notes = d.notes.filter(function (nt) { return !(nt.status === 'draft' || nt.status === 'archived'); });
+        n += before - d.notes.length;
+        ls.setItem(k, JSON.stringify(d));
+      }
+    } catch (e) { showToast('⚠️ 删除失败，请重试'); return; }
+    dmRefreshSubs();
+    showToast(n > 0 ? ('已删除 ' + n + ' 条草稿/归档') : '没有可删除的草稿/归档');
+  });
+}
+
+/* ---------- 自建题库操作 ---------- */
+function dmDownloadJson(name, obj) {
+  try {
+    var blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 200);
+    return true;
+  } catch (e) { return false; }
+}
+function dmExportQbank() {
+  var ls = dmSafeStorage(); if (!ls) { showToast('无法读取本机存储'); return; }
+  var merged = {};
+  try {
+    for (var i = 0; i < ls.length; i++) {
+      var k = ls.key(i); if (!k || !dmKeyIs(k, 'study_workbench_custom')) continue;
+      var q = JSON.parse(ls.getItem(k) || '{}');
+      Object.keys(q).forEach(function (t) { merged[t] = q[t]; });
+    }
+  } catch (e) { }
+  showToast(dmDownloadJson('study_workbench_custom_backup.json', merged) ? '✅ 自建题库已导出' : '⚠️ 导出失败');
+}
+function dmClearQbank() {
+  uiConfirm('将清空全部自建题库数据（各题型题目全部删除）。该操作不可撤销，建议先「导出」备份。确定继续吗？', '清空').then(function (ok) {
+    if (!ok) return;
+    var ls = dmSafeStorage(); var n = 0;
+    if (!ls) { showToast('无法读取本机存储'); return; }
+    try {
+      var doomed = [];
+      for (var i = 0; i < ls.length; i++) { var k = ls.key(i); if (k && dmKeyIs(k, 'study_workbench_custom')) doomed.push(k); }
+      doomed.forEach(function (k) { ls.removeItem(k); n++; });
+    } catch (e) { showToast('⚠️ 清空失败，请重试'); return; }
+    dmRefresh();
+    showToast(n > 0 ? '自建题库已清空' : '暂无自建题库数据');
+  });
+}
+
+/* ---------- AI 数据操作 ---------- */
+function dmClearAiMemory() {
+  uiConfirm('将清空 AI 记忆（AI 页记忆面板会同步为空，不影响模型选择与聊天记录）。确定继续吗？', '清空').then(function (ok) {
+    if (!ok) return;
+    var ls = dmSafeStorage(); var n = 0;
+    if (!ls) { showToast('无法读取本机存储'); return; }
+    try {
+      var doomed = [];
+      for (var i = 0; i < ls.length; i++) { var k = ls.key(i); if (k && dmKeyIs(k, 'ai_memory')) doomed.push(k); }
+      doomed.forEach(function (k) { ls.removeItem(k); n++; });
+    } catch (e) { showToast('⚠️ 清空失败，请重试'); return; }
+    dmRefresh();
+    showToast(n > 0 ? 'AI 记忆已清空' : '暂无 AI 记忆');
+  });
+}
+
+/* ---------- 维护（自 设置.html 原样迁移；末行 stRefreshOverview → dmRefresh） ---------- */
+/* 全站禁用原生 confirm/prompt/alert：统一走 app.js 的 uiConfirm / uiPrompt / uiAlert（轻量页内层） */
+function stClearCache() {
+  uiConfirm('将清理错误日志、未完成的发贴草稿、AI 悬浮球位置等临时数据。\n学习记录、发贴、错题等业务数据不会被删除。确定继续吗？', '清理').then(function (ok) {
+    if (!ok) return;
+    var keys = ['study_workbench_errors', 'study_workbench_editor_draft_v1', 'study_workbench_ai_fab_pos'];
+    var n = 0;
+    keys.forEach(function (k) {
+      try { if (localStorage.getItem(k) !== null) { localStorage.removeItem(k); n++; } } catch (e) { }
+    });
+    try { sessionStorage.clear(); } catch (e) { }
+    var bar = document.getElementById('edDraftBar'); if (bar) bar.style.display = 'none';
+    dmRefresh();
+    showToast('已清理 ' + n + ' 项临时数据');
+  });
+}
+function stResetAppearance() {
+  uiConfirm('将把主题、配色、字号、动效、紧凑模式等外观偏好恢复为默认值（不影响学习数据）。确定吗？', '恢复默认').then(function (ok) {
+    if (!ok) return;
+    resetAppearanceNow();
+  });
+}
+function resetAppearanceNow() {
+  ['fontSize', 'readerFont', 'reduceMotion', 'compact'].forEach(function (k) {
+    try { setSetting(k, DEFAULT_SETTINGS[k]); } catch (e) { }
+  });
+  try { if (typeof setSkin === 'function') setSkin('default'); } catch (e) { }
+  try { if (typeof setTheme === 'function') setTheme('light'); } catch (e) { }
+  showToast('外观与偏好已恢复默认');
+}
+/* 一键完整备份（原设置页维护卡同款，走 app.js exportData 全量导出） */
+function dmBackup() {
+  try { if (typeof exportData === 'function') { exportData(); return; } } catch (e) { }
+  if (typeof showToast === 'function') showToast('⚠️ 备份功能不可用（app.js 未加载）');
+}
+/* 检测更新（自设置页维护卡原样迁入：XTUpdate.openUpdatePage()，桥缺失时 feature-detect 降级） */
+function dmOpenUpdate() {
+  try {
+    if (typeof XTUpdate !== 'undefined' && XTUpdate && typeof XTUpdate.openUpdatePage === 'function') { XTUpdate.openUpdatePage(); return; }
+  } catch (e) { }
+  if (typeof showToast === 'function') showToast('⚠️ 更新检测不可用（xt-update.js 未加载）');
+}
+
+/* ---------- 【R3b-A / B3】导出运行日志：原生桥 exportLogs() → 系统分享面板 ---------- */
+function dmExportLogs() {
+  try {
+    var bridge = window.XTAppBridge || window.AndroidBridge;
+    if (bridge && typeof bridge.exportLogs === 'function') {
+      bridge.exportLogs();
+      return;
+    }
+  } catch (e) { /* 桥异常：走下方降级提示 */ }
+  if (typeof showToast === 'function') showToast('⚠️ 仅星途 App 内可导出运行日志');
+}
+
+/* ---------- 初始化：defer 脚本（app.js 的 uiConfirm/showToast）就绪后统计渲染 ---------- */
+(function dmBoot() {
+  var go = function () { try { dmRefresh(); } catch (e) { /* 统计失败不阻塞页面 */ } };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go);
+  else go();
+})();
+</script>
+</body>
+</html>

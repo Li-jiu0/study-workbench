@@ -1,0 +1,3 @@
+DEFAULT_PWD_FOUND: True
+EQ_xingtu2026: False
+LEN: 10

@@ -1,0 +1,92 @@
+%% 星途 AI 模型设置整改・关键调用时序（3 张）
+%% 对应 ai-models-incremental-design-20260918.md §4
+
+%% ---------- 4.1 健康检查能力分派 ----------
+sequenceDiagram
+    autonumber
+    participant Q as 健康队列 (ai-settings.js pumpHealth/runHealthCheck)
+    participant HS as aiHealthCheckImpl (ai-service.js)
+    participant CAPS as XT_AI_CAPS 注册表
+    participant CAP as cap.probe() (ai-cap-*.js)
+    participant API as 平台端点
+    participant RH as recordHealth (ai-settings.js)
+    participant DOC as document
+
+    Q->>HS: aiHealthCheck(id)
+    HS->>HS: mc = applyOverrides(raw) / ov 临时配置
+    HS->>HS: eff = resolveEffectiveEndpointKey(mc)
+    alt !eff.apiUrl / !eff.apiKey
+        HS-->>Q: {ok:false, err:'no_endpoint'|'no_key'}
+    else isImageGenModel(mc)  (:3068 分支，保留)
+        HS->>API: images/generations 最小 prompt (60s)
+        API-->>HS: 200 / err
+    else 能力分派（:3068 之后、:3099 之前插入）
+        HS->>CAPS: xtResolveCapability(mc) -> {cap, kind}
+        alt cap 且 typeof cap.probe==='function'
+            HS->>CAP: cap.probe({modelCfg,provider,timeout})
+            CAP->>API: 端点级最小探测（asr/embed/rerank/video/3d/translate）
+            API-->>CAP: 200 / err
+            CAP-->>HS: {ok, err, detail}
+            HS-->>Q: {ok, ms, err, kind:cap.key}
+        else cap 但 !cap.probe
+            HS-->>Q: {ok:false, ms:0, err:'unsupported_probe', kind:cap.key}
+        else 无 cap（文本模型，兜底行为不变）
+            HS->>API: chat/completions maxTokens=1（5s/15s）
+            API-->>HS: text / err
+            HS-->>Q: {ok, ms, err:null|classify}
+        end
+    end
+    Q->>RH: recordHealth(id, r)   // 写 health[id]={ok,ms,err,at,kind} + saveSettings
+    RH->>DOC: dispatchEvent(CustomEvent('xt:health-changed'))   // 新增
+
+%% ---------- 4.2 隐藏 / 自动恢复 ----------
+sequenceDiagram
+    autonumber
+    participant U as 用户
+    participant P as AI 页 (ai-page.js)
+    participant LS as localStorage ai_model_settings
+    participant DOC as document
+    participant RH as recordHealth (ai-settings.js)
+
+    U->>P: 打开模型下拉（renderModelList -> applyListSettings）
+    P->>LS: 读 health / hideUnavailable / disabled / order
+    Note over P: 可见性 = 渲染期过滤（不写持久化、不改 disabled）
+    P->>P: 剔除 health[id].ok===false（hideUnavailable!==false 时）；无记录视为可见
+    P-->>U: 仅展示可见模型
+
+    Note over RH,DOC: 另一次检测完成 -> 广播事件
+    RH->>DOC: xt:health-changed
+    DOC-->>P: 监听触发（若下拉正开启）
+    P->>LS: 重新读 health（不缓存快照）
+    P->>P: 重算 applyListSettings
+    P-->>U: 恢复 ok=true 的模型自动回归（无需刷新、无需手工启用）
+    Note over P,LS: hideUnavailable 关闭时 -> 不可用模型全部重新出现
+
+%% ---------- 4.3 用量统计前后端联通 ----------
+sequenceDiagram
+    autonumber
+    participant U as 用户
+    participant AB as ai-settings.html (切到「关于」Tab -> setUsageRoot 置顶)
+    participant UU as xt-aiusage.js
+    participant LS as localStorage xt_ai_usage_v1 (本机记录)
+    participant SVC as XT_AI_USAGE.serverSnapshot (新增)
+    participant API as GET /api/ai/usage
+
+    U->>AB: 打开「关于」Tab
+    AB->>UU: 懒渲染触发（#setUsageRoot 为面板首子元素）
+    UU->>LS: 读本机账本（离线可用）
+    UU->>SVC: serverSnapshot()
+    SVC->>API: fetch(GET /api/ai/usage)（免登录）
+    alt 200 且有数据
+        API-->>SVC: {models, used, limit, date}
+        SVC-->>UU: 服务端口径
+        UU-->>U: 「服务端累计」+「本机记录」双栏并列（各带来源徽标/时间戳）
+    else 200 但全为 0
+        API-->>SVC: {models:{}, used:0,...}
+        SVC-->>UU: 空态
+        UU-->>U: 空态文案（不是「加载失败」）
+    else 401 / 网络异常
+        API-->>SVC: 错误
+        SVC-->>UU: 降级
+        UU-->>U: 本机口径 + 「服务端数据暂不可用」提示，不报错不空白
+    end

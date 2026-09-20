@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="ILb2qfr6MbhWBPIG1ihJzV">
+<head data-page-node-id="jxesVYkm0UckrxDhrOosue">
+<meta charset="UTF-8" data-page-node-id="yEhsxvyzz2jaB9PkJEj8Zc">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" data-page-node-id="scAqzajn3bTDCBBENuGZj0">
+<meta name="theme-color" content="#5B8DEF" data-page-node-id="xcIilqbK544vSHAWBPyO4w">
+<title>个人中心 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260923c" data-page-node-id="tBLcp6JxdB6dWCmMCCx7F8">
+<link rel="stylesheet" href="assets/page-head.css?v=20260923b">
+<link rel="stylesheet" href="assets/states.css?v=20260923b">
+<link rel="stylesheet" href="assets/polish.css?v=20260923b" data-page-node-id="uqByqsnHV08jClPBpI9G16">
+<style>
+/* 【FOUC 修复 20260923 / R7c 修正 2026-09-20】本页 5 个子页 [data-subpage] 区块防首帧闪现：
+   样式表置于 head 内（render-blocking）首绘前生效；但必须用 body:not(.sp-ready) 门控——
+   路由 init 第一时间给 body 加 sp-ready 后本规则永久失效，显隐交还路由内联样式。
+   （原裸规则会把显形压死：路由 style.display='' 只清内联样式，CSS display:none 继续生效
+   → 点进子页整页空白；1.37 真机 nav-trace 日志已实证 render 全触发仍空白。
+   注意：仅 [data-subpage] 生效，不含 .subpage-list（它由 subpageList 单独控制）。） */
+body:not(.sp-ready) [data-subpage]{display:none}
+/* ==================== 个人中心页内补充样式（K14 / K15，批次 20260913K） ==================== */
+/* K15-html：posts 子页与 profile 共享 #profileBox——进入 posts 时给 profileBox 加 .posts-mode，
+   隐藏其余资料卡、只保留「发贴统计」卡（id="ppStatsCard" 由 assets/app.js renderProfilePage 添加，
+   见批次 20260913K 任务 1-⑧ 契约）。 */
+.posts-mode .pp-card { display: none; }
+.posts-mode #ppStatsCard { display: block; }
+
+/* K14：学习偏好直设控件——复用设置页令牌（.setting-row / .form-input / .theme-option 已在
+   assets/common.css 全局定义），此处仅补齐本页行布局所需的命名类，避免依赖设置页内联样式。 */
+.pf-pref-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; padding: 13px 0; border-bottom: 1px solid var(--border);
+}
+.pf-pref-row:last-child { border-bottom: none; }
+.pf-pref-info { flex: 1; min-width: 0; }
+.pf-pref-name { font-size: var(--xt-font-base); font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 6px; }
+.pf-pref-desc { font-size: var(--xt-font-xs); color: var(--text-muted); margin-top: 2px; }
+/* 修「我的学习偏好」文字竖排：flex-basis 必须归零，否则回退读 .form-input{width:100%} 独占整行 */
+.pf-pref-row .form-input { width: auto; flex: 0 0 auto; min-width: 150px; }
+.pf-pref-actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; align-items: center; }
+.pf-pref-actions .theme-option.active { background: var(--primary); border-color: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(91,141,239,0.3); }
+.pf-pref-actions .theme-option:disabled { opacity: 0.45; cursor: not-allowed; }
+@media (max-width: 560px) {
+  .pf-pref-row { flex-wrap: wrap; row-gap: 10px; }
+  .pf-pref-info { flex: 1 1 100%; }
+}
+
+/* ==================== ADR-3：编辑资料 = 页面内区块（原 #profileEditModal 遮罩弹窗改造） ====================
+   原来 #profileEditModal 用 .modal-overlay 遮罩承载「头像/昵称/签名/性别/生日/城市/简介/标签/目标」大表单，
+   违反 ADR-3「核心内容必须走完整页面内布局」。现改为个人资料区的页面内展开/收起区块：
+   默认收起（display:none），加上 .active 即展开 —— 与 assets/api.js 的 editProfile()（加类）、
+   closeProfileEditor()（去类）语义完全兼容，无遮罩、无滚动锁。字段/校验/保存逻辑不动。 */
+.pe-inline { display: none; margin-top: 16px; }
+.pe-inline.active { display: block; }
+.pe-inline-card { margin: 0; padding: 18px 20px; }
+.pe-inline-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.pe-inline-title { font-size: 18px; font-weight: 700; color: var(--text); display: inline-flex; align-items: center; gap: 6px; }
+.pe-inline-fold { padding: 6px 14px; font-size: var(--xt-font-sm); flex: none; }
+.pe-inline-card .modal-actions { margin-top: 18px; justify-content: flex-end; }
+.pe-inline-card .modal-actions .btn { flex: none; min-width: 92px; }
+@media (max-width: 560px) {
+  .pe-inline-card { padding: 14px 14px; }
+  .pe-inline-card .pe-grid2 { grid-template-columns: 1fr; }
+  .pe-inline-card .modal-actions .btn { flex: 1; }
+}
+
+/* ==================== N9-4（批次 20260916 L12）：个人中心「我的作品集」 ====================
+   页内自洽样式，全部 .xtf- 前缀，不依赖 assets 新增文件。
+   说明：本页 .card 自带 padding:20px，故 .xtf-bar / .xtf-grid 一律不再加左右内边距。 */
+.xtf-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 0 0 12px; }
+.xtf-tab { padding: 5px 12px; border-radius: 999px; border: 1px solid var(--border); background: transparent;
+  color: var(--text-secondary); font-size: var(--xt-font-sm); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+.xtf-tab.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+.xtf-count { margin-left: auto; font-size: var(--xt-font-xs); color: var(--text-muted); }
+.xtf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; padding: 0; }
+.xtf-item { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--bg); position: relative; }
+.xtf-thumb { width: 100%; height: 118px; object-fit: cover; display: block; background: #f2f4f8; }
+.xtf-ph { width: 100%; height: 118px; display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted); background: var(--bg); font-size: var(--xt-font-xs); }
+.xtf-body { padding: 10px 12px 12px; }
+.xtf-title { font-size: var(--xt-font-base); font-weight: 700; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.xtf-meta { font-size: var(--xt-font-xs); color: var(--text-muted); margin-top: 4px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.xtf-tags { margin-top: 7px; display: flex; gap: 5px; flex-wrap: wrap; }
+.xtf-tag { font-size: 11px; padding: 2px 7px; border-radius: 999px; background: var(--bg);
+  border: 1px solid var(--border); color: var(--text-secondary); }
+.xtf-src { position: absolute; top: 8px; left: 8px; font-size: 11px; padding: 2px 7px;
+  border-radius: 999px; background: rgba(0,0,0,0.55); color: #fff; z-index: 1; }
+.xtf-fav { position: absolute; top: 6px; right: 6px; width: 30px; height: 30px; border-radius: 50%;
+  border: none; cursor: pointer; background: rgba(255,255,255,0.92); color: #D4A056;
+  font-size: 15px; line-height: 1; z-index: 1; }
+.xtf-fav.on { background: #D4A056; color: #fff; }
+.xtf-acts { display: flex; gap: 6px; margin-top: 10px; }
+.xtf-acts .btn { flex: 1; font-size: var(--xt-font-xs); padding: 5px 8px; min-width: 0; }
+.xtf-empty { grid-column: 1 / -1; padding: 26px 12px; text-align: center;
+  color: var(--text-muted); font-size: var(--xt-font-sm); }
+.xtf-tip { padding: 12px 0 0; font-size: var(--xt-font-xs); color: var(--text-muted); line-height: 1.7; }
+.xtf-thumbs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.xtf-thumb-item { position: relative; width: 66px; height: 66px; }
+.xtf-thumb-item img { width: 66px; height: 66px; object-fit: cover; border-radius: 8px; display: block; }
+.xtf-x { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--danger, #E05040); color: #fff; font-size: 12px; line-height: 18px; text-align: center; cursor: pointer; }
+.xtf-err { display: none; color: var(--danger, #E05040); font-size: var(--xt-font-xs); margin-top: 6px; }
+.xtf-invalid { border-color: var(--danger, #E05040) !important; }
+.xtf-vimg { width: 100%; max-height: 42vh; object-fit: contain; background: var(--bg);
+  border-radius: 10px; display: block; }
+.xtf-vnav { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
+.xtf-vnav .btn { flex: none; padding: 6px 12px; font-size: var(--xt-font-xs); }
+/* 老 WebView（Chrome 50~58）不认 CSS inset 简写，.app-modal-mask 会失位；此处显式补齐四边定位 */
+.xtf-mask { top: 0; left: 0; right: 0; bottom: 0; z-index: 1250; }
+/* 作品集弹窗沿用本页 .modal 观感（--card 底色），与 #logoutConfirmModal / #countdownModal 保持一致 */
+.xtf-mask .app-modal { background: var(--card); color: var(--text); }
+@media (max-width: 560px) { .xtf-grid { grid-template-columns: repeat(2, 1fr); } }
+
+/* ==================== R73 需求15 / 需求20-B 文字专项（A9–A11） ====================
+   分组卡（.subpage-group-card = icon + main + arrow）在窄屏 + 长文案下：
+   ① 文本侧 min-width:0，避免被 flex 挤压成「一行一个字」（A10）；
+   ② 标题/描述单行省略，长昵称/长签名不窜到箭头或图标下方（A9/A11）。 */
+.subpage-list .sgc-main { min-width: 0; }
+.subpage-list .sgc-title,
+.subpage-list .sgc-desc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.subpage-list .sgc-icon,
+.subpage-list .sgc-arrow { flex: 0 0 auto; }
+/* ==================== R86-B（2026-09-18）：生日校验 / 账号 / 变更频率 / 地区 ==================== */
+.xt-acc-row { display: flex; align-items: center; gap: 10px; }
+.xt-acc-val { font-size: var(--xt-font-base); font-weight: 600; color: var(--text); word-break: break-all; }
+.xt-acc-val.xt-acc-muted { color: var(--text-muted); font-weight: 400; }
+.xt-bd-msg { font-size: var(--xt-font-xs); margin-top: 6px; line-height: 1.6; }
+.xt-bd-msg.ok { color: var(--text-muted); }
+.xt-bd-msg.bad { color: var(--danger, #E05040); }
+.pe-bd-err { color: var(--danger, #E05040); font-size: var(--xt-font-xs); margin-top: 6px; line-height: 1.6; }
+.xt-bd-invalid { border-color: var(--danger, #E05040) !important; }
+.xt-lock-tip { font-size: var(--xt-font-xs); color: var(--danger, #E05040); margin-top: 6px; line-height: 1.7; }
+.xt-city-row { display: flex; align-items: center; gap: 8px; }
+.xt-city-row .form-input { flex: 1 1 auto; min-width: 0; }
+.xt-city-btn { flex: 0 0 auto; white-space: nowrap; padding: 8px 12px; font-size: var(--xt-font-sm); }
+.xt-city-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+</style>
+<body class="theme-home" data-page-node-id="YOxnETeT4z4J4WFn6FB0qJ">
+
+<div class="app" data-page-node-id="rC7PFhhDSQoJOtAFwVAjO6">
+<nav class="sidebar"> <div class="logo"> <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div> <div> <div class="logo-text">星途</div> <div class="logo-sub">致追梦的人->修身</div> </div> </div> <div class="nav-list"> <div class="nav-item" data-page="home"> <span class="nav-icon" data-icon="home"></span><span>首页</span> </div>  <div class="nav-item" onclick="location.href='AI.html'"> <span class="nav-icon" data-icon="sparkles"></span><span>AI</span> </div> <div class="nav-section">学习模块</div> <div class="nav-item" data-page="cet"> <span class="nav-icon" data-icon="book-open"></span><span>英语</span> </div> <div class="nav-item" data-page="exam"> <span class="nav-icon" data-icon="pencil"></span><span>行测</span> </div>
+<div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>面测</span> </div> <div class="nav-item" data-page="files"> <span class="nav-icon" data-icon="folder"></span><span>我的文件</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon" data-icon="globe"></span><span>社区</span> </div> <div class="nav-item" data-page="moments"> <span class="nav-icon" data-icon="rss"></span><span>动态空间</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="通讯录 · 添加好友（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>通讯录</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="book"></span><span>错题本</span> </div> <div class="nav-item active" data-page="profile"> <span class="nav-icon" data-icon="user"></span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon" data-icon="settings"></span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak"><span data-icon="fire" data-icon-size="14" style="vertical-align:-2px"></span> 连续打卡 0 天</div> </div> </div> </div> </nav>
+
+  <div class="main" data-page-node-id="9bopuDa08t6vS7NC3NKjd2">
+<header class="topbar" data-page-node-id="qJPc52dgEhqzp4JZlJYJfQ">
+      <div class="topbar-title" id="topbarTitle" data-page-node-id="wfikiVd1hSc2VfTug0Yur4">个人中心</div>
+      <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
+        <div class="gs-wrap" id="gsWrap" data-page-node-id="6gYY6LavKSwCiI5qXGPGNC">
+        <input type="text" class="gs-input" id="gsInput" placeholder="搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)" data-page-node-id="MbjNEcHyCNBsNjdCnacKgd">
+        <div class="gs-dropdown" id="gsDropdown" data-page-node-id="jCloUUasEijzjtk6yFVVQ3"></div>
+      </div>
+      <div class="topbar-stats" data-page-node-id="Q9uH1NL9k6fH6hnvuBq3lU">
+        <div class="stat-item" data-page-node-id="u6Bsn605aCoNDxlP81wDhU"><span class="stat-icon" data-icon="fire" data-icon-size="16" data-page-node-id="5Muitpm9E2nwJ8BvNxaWXl"></span><span data-page-node-id="ImgYpZ4AnqHIo3rNhfxNOR">连续 <span class="stat-value" id="streakDays" data-page-node-id="W5IovFFshDLk2x3RwoXbUl">0</span> 天</span></div>
+        <div class="stat-item" data-page-node-id="TJ57NJPJvNaMC6g141D90W"><span class="stat-icon" data-icon="clock" data-icon-size="16" data-page-node-id="4UibGPRCygoeW5KlZLyBQO"></span><span data-page-node-id="IpJeX0izoVMfkCCSXxidEU">今日 <span class="stat-value" id="todayMinutes" data-page-node-id="aWIVqV3EuE0vHlKwQs5FSb">0</span> 分钟</span></div>
+        <div class="stat-item" data-page-node-id="zGxhgNjdToyrJpWgAAUeaL"><span class="stat-icon" data-icon="check" data-icon-size="16" data-page-node-id="2uDvoLx5ivW76yvasZI8ba"></span><span data-page-node-id="0GUQeIKmRAqR4AeFWrf9dx">完成 <span class="stat-value" id="todayTasks" data-page-node-id="PTyLQX11XM68Ery4f46LMI">0</span>/<span id="totalTasks" data-page-node-id="hsmwD2vCvBmLPsqyqbC57k">5</span></span></div>
+      </div>
+      <div class="topbar-date" id="topbarDate" data-page-node-id="J19QYgTGLZpeMfWncLKl7f"></div>
+      <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0" data-page-node-id="ykzjsCUHFazDObE5rQ7EaI"><span class="nav-icon" data-icon="moon" data-icon-size="18"></span></div>
+    </header>
+<div class="page active" id="page-profile" data-page-node-id="aUD7wEjtCGd0SXKaPVQMgo">
+        <!-- T02 批次五 hash 路由：面包屑（router 维护）+ 第一层分组卡列表（默认显示） -->
+        <div class="subpage-header"></div>
+        <div class="subpage-list">
+          <!-- R73 需求15：进入资料页的入口改接全新「个人资料」页（等级 / 徽章墙 / 数据总览 / 设置区）。
+               原页内 #profileBox 子页（SubpageRouter.navigate('profile')）保留，可经 hash 直达。 -->
+          <div class="subpage-group-card" onclick="location.href='个人资料.html'">
+            <div class="sgc-icon" data-icon="user"></div>
+            <div class="sgc-main"><div class="sgc-title">个人资料</div><div class="sgc-desc">头像昵称签名 · 学习等级 · 徽章墙 · 数据总览</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
+          <div class="subpage-group-card" onclick="SubpageRouter.navigate('posts')">
+            <div class="sgc-icon" data-icon="chart-bar"></div>
+            <div class="sgc-main"><div class="sgc-title">发贴统计</div><div class="sgc-desc">发贴数、点赞、评论等数据</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
+          <!-- R74：原「我的动态」入口卡改为「动态空间」直达入口（页内我的动态子页仍可经 hash #moments 直达） -->
+          <div class="subpage-group-card" onclick="location.href='动态空间.html'">
+            <div class="sgc-icon" data-icon="rss"></div>
+            <div class="sgc-main"><div class="sgc-title">动态空间</div><div class="sgc-desc">朋友圈信息流 · 我的动态 · 发布打卡</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
+          <div class="subpage-group-card" onclick="SubpageRouter.navigate('prefs')">
+            <div class="sgc-icon" data-icon="settings"></div>
+            <div class="sgc-main"><div class="sgc-title">学习偏好</div><div class="sgc-desc">每日新增、专注时长、朗读、提醒</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
+          <!-- R72-7：「我的作品集」已并入「我的文件」独立页；此处改为直达入口卡。 -->
+          <div class="subpage-group-card" onclick="location.href='我的文件.html'">
+            <div class="sgc-icon" data-icon="folder"></div>
+            <div class="sgc-main"><div class="sgc-title">我的文件</div><div class="sgc-desc">题库 / 作品 / 笔记，一处归档</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
+          <!-- 需求 3（数据管理重构 20260922a）：新增「数据管理」直达入口卡（存储占用/分类清理/备份恢复） -->
+          <div class="subpage-group-card" onclick="location.href='数据管理.html'">
+            <div class="sgc-icon" data-icon="package"></div>
+            <div class="sgc-main"><div class="sgc-title">数据管理</div><div class="sgc-desc">存储占用 · 分类清理 · 备份恢复</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
+          <!-- N9-25（2026-09-15）：原「本机数据」入口卡（navigate('local-data')）按需求删除。
+               section[data-subpage="local-data"] 与 #localStats 保留（renderProfileOverview() 依赖），
+               仍可通过 hash 直达：个人中心.html#local-data -->
+        </div>
+        <div class="module-hero" style="display:none" data-page-node-id="WZ2Br25aKXQMUO9oVEEFI0"><!-- v1.14 豆包风格：隐藏旧横幅，DOM 保留 -->
+          <div class="module-hero-left" data-page-node-id="1U0Aepc037F7p7xu138z3J">
+            <div class="module-hero-title" data-page-node-id="0ce0n9DDRPzLOjxItNjvkQ"><span class="nav-icon" data-icon="user" data-icon-size="18"></span> 个人中心</div>
+            <div class="module-hero-desc" data-page-node-id="hcTWuEhLCGrmJdWA8L8V32">个人资料 · 发贴统计 · 数据导出 · 退出登录</div>
+          </div>
+        </div>
+
+        <!-- 个人中心内容（由 assets/app.js 的 renderProfilePage() 渲染，v1.14 豆包风格） -->
+        <!-- T02 批次五：profile / posts 共享 #profileBox（api.js 单函数渲染整盒，不破坏） -->
+        <section data-subpage="profile">
+        <div id="profileBox" data-page-node-id="pai821WhCBnDvGkFiQ3xiQ"></div>
+        <!-- feed-btn（B1，2026-09-16）：原「我的动态」大主按钮已从资料卡上方移除。
+             ① 节点挪到 #profileBox 之后（不再是资料卡上方的独立大按钮）；
+             ② btn-primary → btn-outline，降级为次按钮（视觉权重已低于「编辑资料」主按钮）；
+             ③ 运行时由 window.updateProfileFeedBtn() 把它搬进资料卡的「操作区」
+                ——即「编辑资料」按钮所在的那一行动作条（见本文件底部 feed-btn 脚本）；
+                操作区若已有同义按钮（在线模式 api.js 自视角已渲染「我的动态」）则自动隐藏，避免重复。
+             不改动 assets/app.js / assets/api.js 的 renderProfilePage。 -->
+        <div id="profileFeedBtnRow" style="display:none;margin-bottom:0">
+          <button class="btn btn-outline" id="profileFeedBtn" type="button">
+            <span data-icon="rss" data-icon-size="14" style="vertical-align:-2px"></span> <span id="profileFeedBtnText">我的动态</span>
+          </button>
+        </div>
+        <!-- ==================== 编辑资料（ADR-3：遮罩弹窗 → 页面内展开/收起区块） ====================
+             原为 .modal-overlay#profileEditModal 遮罩弹窗（承载头像/昵称/签名/性别/生日/城市/简介/标签/目标等大表单），
+             违反 ADR-3「核心内容必须走完整页面内布局」，现改为个人资料区的页面内区块：默认收起，加 .active 展开，再点收起。
+             assets/api.js 的 editProfile() 加 .active 类、closeProfileEditor() 去类，与本区块显隐语义完全一致；
+             表单控件 id 全部保留（peName/peMotto/peBio/peGender/peBirthday/peCity/pePhone/peTags/peGoal/peAvatarFile/peAvatarPreview …），
+             头像更换 / 保存 / 取消 / 各字段校验逻辑不变。标签 chips、字数统计、完成度、迷你预览见本文件底部脚本。 -->
+        <div class="pe-inline" id="profileEditModal" data-page-node-id="aN1QPjOJNhtQKAk7XF4hqn">
+          <div class="card pe-inline-card" data-page-node-id="haDi0aFDMHYXN8T3YHG7j5">
+            <div class="pe-inline-head">
+              <div class="pe-inline-title" data-page-node-id="MPmDoVnYVvApdyg8GjqPFs"><span class="nav-icon" data-icon="pencil" data-icon-size="18"></span> 编辑资料</div>
+              <button class="btn btn-outline pe-inline-fold" type="button" onclick="closeProfileEditor()">收起</button>
+            </div>
+
+            <div class="pe-complete-wrap">
+              <div class="pe-complete-head"><span style="display:inline-flex;align-items:center;gap:5px"><span class="nav-icon" data-icon="chart-bar" data-icon-size="14"></span>资料完成度</span><b id="pePct">0%</b></div>
+              <div class="pe-complete-bar"><i id="pePctBar" style="width:0%"></i></div>
+              <div class="pe-complete-tip" id="pePctTip">完善资料，让其他同学更了解你～</div>
+            </div>
+
+            <div class="pe-mini">
+              <div class="pe-mini-avatar" id="peMiniAvatar">学</div>
+              <div class="pe-mini-body">
+                <div class="pe-mini-name" id="peMiniName">同学</div>
+                <div class="pe-mini-motto" id="peMiniMotto">这个人很懒，什么都没写～</div>
+                <div class="pe-mini-tags" id="peMiniTags"></div>
+              </div>
+            </div>
+
+            <div class="pe-sec"><span class="nav-icon" data-icon="user" data-icon-size="16"></span> 基本资料</div>
+            <div class="form-group" data-page-node-id="XtKQK1EFwIknYNME6rOGVI">
+              <div class="form-label" data-page-node-id="RGAAfTZM54BJvxg3gbHOJy">头像</div>
+              <div class="pe-avatar-row" data-page-node-id="R1kfewVf9cI32WUpsUUvJt">
+                <div class="pe-avatar-preview" id="peAvatarPreview" data-page-node-id="sODU0FII3pE5MBXh7UeF3m"></div>
+                <div class="pe-avatar-btns" data-page-node-id="vzRdxSCoOzm6C0n6sFmV7c">
+                  <button class="btn btn-outline" onclick="document.getElementById('peAvatarFile').click()" data-page-node-id="bI5jpSBktzc53vaTPDDY8G"><span class="nav-icon" data-icon="image" data-icon-size="14"></span> 选择本地图片</button>
+                  <button class="btn btn-outline" onclick="resetProfileAvatar()" data-page-node-id="g5CDpMjwQ6TAO6gLYapgT8"><span class="nav-icon" data-icon="rotate-ccw" data-icon-size="14"></span> 恢复默认头像</button>
+                </div>
+                <input type="file" id="peAvatarFile" accept="image/*" style="display:none" onchange="onProfileAvatarFile(this)" data-page-node-id="Eua3wJxtXVi3gejFJjWjNO">
+              </div>
+              <div class="pe-tip" data-page-node-id="Zti7kWo3G3KCbGG7K8avMW">支持 JPG / PNG / WebP 等图片，自动居中裁圆压缩。在线模式上传到服务器，离线模式以 base64 存本机浏览器。</div>
+            </div>
+            <div class="form-group">
+              <div class="form-label">账号</div>
+              <div class="xt-acc-row"><span class="xt-acc-val xt-acc-muted" id="peAccount">未设置</span></div>
+              <div class="pe-tip">登录账号（用户名），对外展示的就是它；账号不支持修改。</div>
+            </div>
+            <div class="form-group" data-page-node-id="8UHhRo88ACHZXxGptoAGfR">
+              <div class="form-label" data-page-node-id="VVwiq1rZsyMfqfYc405M97">昵称 <span class="pe-counter" id="peCntName">0/20</span></div>
+              <input type="text" class="form-input" id="peName" maxlength="20" placeholder="输入新的昵称" data-page-node-id="cmv7HPtDsMYGxbTV6HPQdp">
+            </div>
+            <div class="pe-grid2">
+              <div class="form-group" data-page-node-id="t1LtDotadopge7TNYB8lTT">
+                <div class="form-label" data-page-node-id="IF9jSLt5nFZ6ZdUg4kPWGF">性别</div>
+                <select class="form-input" id="peGender" data-page-node-id="gdpytyluAUEB9sApFXqlJp">
+                  <option value="secret" data-page-node-id="nzVLniXoGWsVU2ndNnAc6m">保密</option>
+                  <option value="female" data-page-node-id="RdyEClmsgeBVxcULTmA211">女</option>
+                  <option value="male" data-page-node-id="Gm3JKDRJeHFrrrRbxHNTuM">男</option>
+                </select>
+              </div>
+              <div class="form-group" data-page-node-id="s48JYaLLym0HO04XTYONp2">
+                <div class="form-label" data-page-node-id="Dg2QLOf6IIhDeLWIFKTlGV">出生年月</div>
+                <input type="date" class="form-input" id="peBirthday" min="1950-01-01" max="2015-12-31" onchange="peBirthdayOnChange()" data-page-node-id="wmMbTNz3lwuG9Y0DIZuBu6">
+                <input type="text" class="form-input" id="peBirthdayText" placeholder="或手动输入：19900102 / 1990-01-02 / 1990年1月2日" style="margin-top:6px" oninput="peBirthdayOnInput()" onblur="peBirthdayOnBlur()">
+                <div class="xt-bd-msg ok" id="peBirthdayMsg">支持日期选择器或直接输入，统一格式 YYYY-MM-DD（1950-01-01 ~ 2015-12-31）</div>
+              </div>
+            </div>
+            <div class="pe-grid2">
+              <div class="form-group" data-page-node-id="U4j6ajc2Dys3OC03tzkfCK">
+                <div class="form-label" data-page-node-id="Ye7c6Te8QpYNOfsbA2RBz4">所在地区</div>
+                <div class="xt-city-row">
+                  <input type="text" class="form-input" id="peCity" maxlength="40" placeholder="如：广东省 广州市 天河区" data-page-node-id="6DiOx2SpMqj2g0GatJYOF7">
+                  <button class="btn btn-outline xt-city-btn" type="button" id="peCityPickBtn" onclick="xtOpenRegionPicker()"><span data-icon="map" data-icon-size="14" style="vertical-align:-2px"></span> 选择地区</button>
+                </div>
+                <div class="pe-tip">点「选择地区」可自动定位，或按 省 / 市 / 区 逐级点选，也支持关键词搜索。</div>
+              </div>
+              <div class="form-group">
+                <div class="form-label">手机号 <span class="pe-private" id="pePhoneMask">仅自己可见</span></div>
+                <input type="tel" class="form-input" id="pePhone" maxlength="11" inputmode="numeric" placeholder="11 位手机号（可选）">
+              </div>
+            </div>
+            <div class="pe-tip" style="margin-top:-2px" data-page-node-id="nR7oubbZ2Y1uJYQXtnB1Qp"><span data-icon="locked" data-icon-size="14" style="vertical-align:-3px"></span> 隐私说明：性别、生日、手机号仅自己可见（公开主页不展示）；地区、简介、标签、学习目标会展示。</div>
+
+            <div class="pe-sec"><span class="nav-icon" data-icon="message-square" data-icon-size="16"></span> 个性展示</div>
+            <div class="form-group" data-page-node-id="54KFGO7GdtfTWGda5GSuMp">
+              <div class="form-label" data-page-node-id="Gbf3TbE4OjxWvsoKK4Rzkn">个性签名 <span class="pe-counter" id="peCntMotto">0/60</span></div>
+              <input type="text" class="form-input" id="peMotto" maxlength="60" placeholder="一句话展示自己，如：每天背 50 个单词" data-page-node-id="LgqM083GYkBOvTdfFJRxrS">
+            </div>
+            <div class="form-group" data-page-node-id="eIfBnboPmMv09c5HMgECFO">
+              <div class="form-label" data-page-node-id="t3cJI4q2o0w3qS2G2NmEGT">个人简介 <span class="pe-counter" id="peCntBio">0/300</span></div>
+              <textarea class="form-input" id="peBio" maxlength="300" rows="2" style="resize:vertical" placeholder="介绍一下自己：学校 / 专业 / 备考阶段 / 兴趣…会展示在个人主页"></textarea>
+              <div class="pe-tip" data-page-node-id="DJF1jdTRO0mqeRioZy34E0">最多 300 字；在线模式下会同步到服务器数据库，离线模式下保存在本机。</div>
+            </div>
+
+            <div class="pe-sec"><span class="nav-icon" data-icon="target" data-icon-size="16"></span> 备考计划</div>
+            <div class="form-group">
+              <div class="form-label">备考方向标签 <span class="pe-counter" id="peCntTags">0/8</span></div>
+              <div class="pe-chips" id="peChips"></div>
+              <div class="pe-addrow">
+                <input type="text" class="form-input" id="peTagInput" maxlength="12" placeholder="自定义标签，如：六级600" onkeydown="if(event.key==='Enter'){peAddTag();return false;}">
+                <button class="btn btn-outline" type="button" onclick="peAddTag()">＋ 添加</button>
+              </div>
+              <input type="hidden" id="peTags">
+              <div class="pe-tip">选择或添加备考方向，其他同学访问你的主页时可以看到（最多 8 个，每个 ≤12 字）。</div>
+            </div>
+            <div class="form-group">
+              <div class="form-label">学习目标 <span class="pe-counter" id="peCntGoal">0/60</span></div>
+              <input type="text" class="form-input" id="peGoal" maxlength="60" placeholder="如：六级 600+ / 拿到国企 offer / 考研上岸">
+              <div class="pe-tip">写一个阶段性小目标，主页会用 🎯 展示，激励自己也告诉别人你在冲刺什么。</div>
+            </div>
+
+            <div class="modal-actions" data-page-node-id="DIxgsdUKfhYouitRbAse15">
+              <button class="btn btn-outline" onclick="closeProfileEditor()" data-page-node-id="FA3Xut1ss7ejC1AQ6wnQgf">取消</button>
+              <button class="btn btn-primary" id="peSaveBtn" onclick="saveProfileEditor()" data-page-node-id="NFZt2w0wBA6nI48B1EQtS9">保存</button>
+            </div>
+
+          </div>
+        </div>
+
+        </section>
+        <section data-subpage="posts">
+          <div id="profileBoxPostsHost" style="min-height:120px"></div>
+        </section>
+
+        <!-- R72-7：原「我的作品集」section（含弹窗与脚本）已整体迁至 我的文件.html，此处删除。 -->
+
+        <!-- R72-7：原「添加作品」弹窗已迁至 我的文件.html，此处删除。 -->
+
+        <!-- R72-7：原「查看作品」弹窗已迁至 我的文件.html，此处删除。 -->
+
+        <!-- 【后续扩展点】我的动态卡（T5 增量 2026-09-11）：本人动态列表（含删除），渲染逻辑见本文件底部脚本 -->
+        <section data-subpage="moments">
+        <div class="card" id="myMomentsCard">
+          <div class="card-header">
+            <div class="card-title"><span class="title-icon" data-icon="globe"></span>我的动态</div>
+            <div class="card-action" onclick="location.href='动态空间.html'">去发布 <span data-icon="arrow-right" data-icon-size="14" style="vertical-align:-3px"></span></div>
+          </div>
+          <div id="myMomentsBody" style="font-size:var(--xt-font-base);padding:12px 16px;color:var(--text-secondary)">加载中…</div>
+        </div>
+        </section>
+
+        <!-- 学习偏好（与设置联动）：v1.14 起由 renderProfilePage 的列表项呈现，DOM 保留；
+             T06 修复（2026-09-12）：去掉 .card 硬编码 display:none——subpage-router 显形 section 后
+             内部若仍 display:none 会呈现空白页。内容由本文件底部 renderProfileOverview() 填充。 -->
+        <section data-subpage="prefs">
+        <div class="card" data-page-node-id="sGYAklXD8EhseTlHlPE0D1">
+          <div class="card-header" data-page-node-id="tqhZHZtOh4Yd61ojVl1DWG">
+            <div class="card-title" data-page-node-id="p5GlIKE0zlSVR3I6zL7z43"><span class="title-icon" data-icon="settings" data-page-node-id="uVI9hxKN9DYqyHKSr2rtLn"></span>我的学习偏好</div>
+            <div class="card-action" onclick="location.href='设置.html'" data-page-node-id="sx2SGC8PGTYECiRyAKZ7xC">去调整 <span data-icon="arrow-right" data-icon-size="14" style="vertical-align:-3px"></span></div>
+          </div>
+          <div id="prefBody" style="font-size:var(--xt-font-base);color:var(--text-secondary);line-height:2" data-page-node-id="ImpNtv8ClqRtEER9p2aF2q">加载中…</div>
+        </div>
+        </section>
+
+        <!-- 本机学习数据一览：v1.14 起由 renderProfilePage 的列表项呈现，DOM 保留；
+             T06 修复（2026-09-12）：同 prefs，去掉 .card 硬编码 display:none（否则显形后仍空白）。
+             内容由本文件底部 renderProfileOverview() 填充 #localStats。 -->
+        <section data-subpage="local-data">
+        <div class="card" data-page-node-id="dds9xQfNYeivaK5Gv00VeE">
+          <div class="card-header" data-page-node-id="dde97TsGWeuPbfbZt37USs">
+            <div class="card-title" data-page-node-id="ByEMXihAHb97fvD4xnIY40"><span class="title-icon" data-icon="chart-bar" data-page-node-id="YojGDlEFwBR15cf2Q1gwU3"></span>本机学习数据</div>
+          </div>
+          <div id="localStats" style="font-size:var(--xt-font-base)" data-page-node-id="HfPDqxUDwtSE8sjLTEG9Mq">加载中…</div>
+        </div>
+        </section>
+
+      </div>
+  </div>
+
+
+
+  <!-- 底部导航（手机端） -->
+    <nav class="bottom-nav">
+    <div class="bottom-nav-list">
+      <div class="bottom-nav-item" data-page="home">
+        <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
+      </div>
+      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-square" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+      <div class="bottom-nav-item active" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
+            <div class="bottom-nav-item" onclick="location.href='AI.html'"><div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div></div>
+            <div class="bottom-nav-item" onclick="location.href='更多.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 更多面板遮罩 -->
+    <div class="more-overlay" onclick="toggleMorePanel()"></div>
+
+  <!-- 更多面板 -->
+  <div class="bottom-more-panel" id="morePanel">
+    <div class="bottom-more-title">更多功能</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="navigateTo('moments');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="rss" data-icon-size="20"></span></div><div class="bm-label">动态空间</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogStats()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
+      </div>
+      <div class="bottom-more-item" onclick="if(window.gotoBlogMine){gotoBlogMine()}else{location.href='社区.html#mine'}">
+        <div class="bm-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div><div class="bm-label">互动广场</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div><div class="bm-label">错题本</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div><div class="bm-label">设置</div>
+      </div>
+      <div class="bottom-more-item" onclick="showAbout()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div><div class="bm-label">关于</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 退出登录确认弹窗（防止误触，逻辑见 assets/app.js 的 doLogout()/confirmLogout()） -->
+  <div class="modal-overlay" id="logoutConfirmModal" data-page-node-id="w58HcoBkx3b7KH7ncV2jow">
+    <div class="modal" data-page-node-id="T8iuHo4jkOGZmyV5mZLZkm">
+      <div class="modal-title" data-page-node-id="pAbVHilpWNWZ0ALHCcPVYl"><span class="nav-icon" data-icon="logout" data-icon-size="18"></span> 退出登录</div>
+      <div style="font-size:var(--xt-font-base);color:var(--text-secondary);line-height:1.8;margin:6px 0 4px" data-page-node-id="ijNz0Qv1kyYXj2PAUWb78d">确定要退出登录吗？</div>
+      <div class="modal-actions" data-page-node-id="Bt6oNmEF4rV2196rRLErh8">
+        <button class="btn btn-outline" onclick="closeLogoutConfirm()" data-page-node-id="K2bLWlmXR6O8lQ7vvO1piG">取消</button>
+        <button class="btn btn-danger" onclick="confirmLogout()" data-page-node-id="uWfdHQHROGYLwCPnnFpJjG">确定退出</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加倒计时弹窗 -->
+  <div class="modal-overlay" id="countdownModal" data-page-node-id="MPAMZfA4d1RAAoHYPURepS">    <div class="modal" data-page-node-id="G6g88CbOBFrVqNHHuabA1b">
+      <div class="modal-title" id="countdownModalTitle" data-page-node-id="UCLQsqeDgudE3afaSBYAfw">添加倒计时</div>
+      <div class="form-group" data-page-node-id="zIGiRTvhfSJaBjmBYVAfII">
+        <div class="form-label" data-page-node-id="It9Zkmd435vD5cXn3kMOFg">名称</div>
+        <input type="text" class="form-input" id="cdName" placeholder="如：四级考试、秋招截止" data-page-node-id="wJfattStQ0GsGT7l9AY6VG">
+      </div>
+      <div class="form-group" data-page-node-id="o0XRyoUEGlIitcoo6g0IA6">
+        <div class="form-label" data-page-node-id="HEYcK7Jic1nnqNzDBuZJiA">日期</div>
+        <input type="date" class="form-input" id="cdDate" data-page-node-id="0l9CkFDYwECH1uyrHAwYiz">
+      </div>
+      <div class="form-group" data-page-node-id="DA28Vf2tDywMtAnvTOpB6p">
+        <div class="form-label" data-page-node-id="yRgnb68ptrAtESwlwJt7Yo">颜色</div>
+        <div class="color-picker" id="cdColorPicker" data-page-node-id="902gjnEL0xwYSwEA6cCLta">
+          <div class="color-dot active" style="background:#5B8DEF" data-color="#5B8DEF" data-page-node-id="4hecLw0sTATMC7TRJtTfC6"></div>
+          <div class="color-dot" style="background:#E05040" data-color="#E05040" data-page-node-id="TbbcbLh39tcMBlnrslFBTl"></div>
+          <div class="color-dot" style="background:#9B6BD9" data-color="#9B6BD9" data-page-node-id="2P90YQxYsygbOnQMCn1HxC"></div>
+          <div class="color-dot" style="background:#D4A056" data-color="#D4A056" data-page-node-id="5POHVUATGAsQuMWhoYz9ol"></div>
+          <div class="color-dot" style="background:#36CFC9" data-color="#36CFC9" data-page-node-id="GQTgGxMjXuUeRMUV21ZUHr"></div>
+          <div class="color-dot" style="background:#FF9F68" data-color="#FF9F68" data-page-node-id="pleX40Febe2CnXqIo7zweV"></div>
+        </div>
+      </div>
+      <div class="form-group" data-page-node-id="1L6oElG1XXS1siy2v3VChi">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--xt-font-base);color:var(--text-secondary)" data-page-node-id="mIWHPpdKIK6bGMoTJGcduW">
+          <input type="checkbox" id="cdPinned" data-page-node-id="w3watZAXjoRp4X60kZ1Pen"> 置顶显示
+        </label>
+      </div>
+      <div class="modal-actions" data-page-node-id="BBq1sWT6szKjlFlyI3FCTj">
+        <button class="btn btn-outline" onclick="closeCountdownModal()" data-page-node-id="djui0kilm0T19VZyGcZnW5">取消</button>
+        <button class="btn btn-primary" onclick="saveCountdown()" data-page-node-id="wiHGuWgeqRXHtFUPjGGeZE">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast提示 -->
+  <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center" data-page-node-id="RGRkLiMgmNfoboKViFBqyD"></div>
+
+  <!-- ==================== AI学习助手（悬浮聊天窗口） ====================
+       说明：
+       1. 默认“本地演示模式”：不联网、不调API、无密钥，由内置规则引擎回复；
+       2. 【后续扩展点】启动 ai-server 后端后，把下方 JS 里的 AI_CONFIG.apiUrl
+          填上后端地址（如 http://localhost:3000/api/chat），即可切换为真实AI流式对话；
+       3. 安全约束：大模型密钥只放在后端 .env 里，前端代码永远不出现密钥。 -->
+  <!-- 悬浮头像：可按住拖拽到任意位置（见下方 JS.initAiFabDrag），点击打开/收起面板，双击复位 -->
+  <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）" data-page-node-id="UZ8qh5HtqnmFlcxdmF8ZON">
+    <span class="nav-icon" data-icon="bot" data-icon-size="20"></span><span class="ai-mode-badge" id="aiModeBadge" data-page-node-id="MHICFUk2KfKbydxIjujJHC">演示</span>
+  </div>
+  <div class="ai-panel" id="aiPanel" data-page-node-id="9Oh00DcCzCQSOgnNe6aQlY">
+    <div class="ai-panel-header" data-page-node-id="RDnn5pWugDhap2aGgCKF4i">
+      <div class="ai-avatar" data-page-node-id="5zcEeLzTi4gGrh9LflRQnD"><span class="nav-icon" data-icon="bot" data-icon-size="20"></span></div>
+      <div style="flex:1" data-page-node-id="hINzgjyJezLHSqXw03HwAy">
+        <div class="ai-title" data-page-node-id="x6xVd4ASkoANddw3Kmavlp">AI学习助手</div>
+        <div class="ai-subtitle" id="aiSubtitle" data-page-node-id="1511BEr4NAUhGAUcBwoeBn">本地演示模式 · 历史已保存</div>
+      </div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录" data-page-node-id="S3FPwUgISTufZA2v4cy05F"><span class="nav-icon" data-icon="delete" data-icon-size="18"></span></div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板" data-page-node-id="X4n2qp305YeIG3KRP7x8ct"><span class="nav-icon" data-icon="close" data-icon-size="16"></span></div>
+    </div>
+    <div class="ai-messages" id="aiMessages" data-page-node-id="F11AaGG2r37IzKomXK1UnP"></div>
+    <div class="ai-input-row" data-page-node-id="smgWJJCunDasgtGImQQ1WI">
+      <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()" data-page-node-id="j9aMSMSRwY26Xk7AAMDagY"><span class="nav-icon" data-icon="arrow-right" data-icon-size="18"></span></div>
+    </div>
+  </div>
+
+
+
+</div>
+
+<script src="assets/xt-settings.js?v=20260923b"></script>
+<script src="assets/xt-polyfill.js?v=20260923b"></script>
+<script>window.__XT_PROD__=true;</script>
+<script src="assets/icon-map.js?v=20260923b" defer></script>
+<script src="assets/xt-toast.js?v=20260923b" defer></script>
+<script src="assets/error-boundary.js?v=20260923b" defer></script>
+<script src="assets/app.js?v=20260923b" defer></script>
+<script src="assets/quest.js?v=20260923b" defer></script>
+<script src="assets/config.js?v=20260923b" defer></script>
+<script src="assets/api.js?v=20260923b" defer></script>
+<script src="assets/subpage-router.js?v=20260923d" defer></script>
+
+<script>
+function overviewGo(key) {
+  var m = { wrong: '错题本.html', vocab: '四级词汇.html', settings: '设置.html' };
+  location.href = m[key] || '学习工作台.html';
+}
+/* ==================== K14（批次 20260913K）：学习偏好页内直设 ====================
+   读写走 assets/app.js 既有全局函数 setSetting()/loadAllSettings()（本文件不改动 app.js）。
+   控件样式对齐设置页 setting-row / form-input / theme-option 令牌（行布局类见页首 <style>）。
+   改动即存 + toast「已保存」；「去调整」链接（card-action）保留在卡片头。 */
+function pfPrefOptions(list, cur) {
+  // list: [value, label] 数组；cur: 当前值（转字符串比较）
+  var c = String(cur);
+  return list.map(function (x) {
+    return '<option value="' + x[0] + '"' + (String(x[0]) === c ? ' selected' : '') + '>' + x[1] + '</option>';
+  }).join('');
+}
+function pfPrefToast() {
+  if (typeof showToast === 'function') showToast('已保存');
+}
+function pfSetPref(key, val) {
+  // 统一保存入口：写全局设置 → toast → 重渲染偏好卡同步开关态
+  try { setSetting(key, val); } catch (e) { return; }
+  pfPrefToast();
+  renderProfileOverview();
+}
+function pfPrefIcon(name) {
+  return '<span class="nav-icon" data-icon="' + name + '" data-icon-size="15"></span>';
+}
+function renderProfileOverview() {
+  var pref = document.getElementById('prefBody');
+  if (pref) {
+    try {
+      var st = loadAllSettings();
+      var speakOn = st.autoSpeak !== false; // 与设置页口径一致：false 才算关闭
+      var rate = (st.voiceRate == null ? 0.9 : st.voiceRate);
+      pref.innerHTML = [
+        '<div class="pf-pref-row">' +
+          '<div class="pf-pref-info"><div class="pf-pref-name">' + pfPrefIcon('book-open') + '每日新增学习内容</div>' +
+          '<div class="pf-pref-desc">内容库（商务礼仪 / 面试题库 / PPT 版式 / 场景话术 / 金句）每天安排的新条目数</div></div>' +
+          '<select class="form-input" id="pfDailyNew" onchange="pfSetPref(\'dailyNew\', +this.value)">' +
+            pfPrefOptions([[1, '1 条/天'], [2, '2 条/天'], [3, '3 条/天'], [4, '4 条/天'], [5, '5 条/天'], [6, '6 条/天'], [8, '8 条/天'], [10, '10 条/天']], st.dailyNew == null ? 50 : st.dailyNew) +
+          '</select>' +
+        '</div>',
+        '<div class="pf-pref-row">' +
+          '<div class="pf-pref-info"><div class="pf-pref-name">' + pfPrefIcon('brain') + '专注默认时长</div>' +
+          '<div class="pf-pref-desc">番茄钟专注的默认分钟数，可在任意页面快速开始</div></div>' +
+          '<select class="form-input" id="pfFocus" onchange="pfSetPref(\'focusMinutes\', +this.value)">' +
+            pfPrefOptions([[15, '15 分钟'], [25, '25 分钟'], [45, '45 分钟'], [60, '60 分钟']], st.focusMinutes == null ? 25 : st.focusMinutes) +
+          '</select>' +
+        '</div>',
+        '<div class="pf-pref-row">' +
+          '<div class="pf-pref-info"><div class="pf-pref-name">' + pfPrefIcon('volume-2') + '朗读</div>' +
+          '<div class="pf-pref-desc">词汇 / 口语 / 面试练习里的语音朗读与默认语速</div></div>' +
+          '<div class="pf-pref-actions">' +
+            '<button type="button" class="theme-option' + (speakOn ? ' active' : '') + '" onclick="pfSetPref(\'autoSpeak\', true)">开启</button>' +
+            '<button type="button" class="theme-option' + (speakOn ? '' : ' active') + '" onclick="pfSetPref(\'autoSpeak\', false)">关闭</button>' +
+            '<select class="form-input" id="pfVoiceRate" style="min-width:92px"' + (speakOn ? '' : ' disabled') + ' onchange="pfSetPref(\'voiceRate\', +this.value)" title="' + (speakOn ? '朗读语速' : '朗读关闭时不可调') + '">' +
+              pfPrefOptions([[0.7, '慢速'], [0.9, '标准'], [1.15, '较快'], [1.4, '快速']], rate) +
+            '</select>' +
+          '</div>' +
+        '</div>',
+        '<div class="pf-pref-row">' +
+          '<div class="pf-pref-info"><div class="pf-pref-name">' + pfPrefIcon('bell') + '新私信提醒</div>' +
+          '<div class="pf-pref-desc">在线登录后，收到好友新私信时给出网页提示（需允许通知权限）</div></div>' +
+          '<div class="pf-pref-actions">' +
+            '<button type="button" class="theme-option' + (st.chatNotify !== false ? ' active' : '') + '" onclick="pfSetPref(\'chatNotify\', true)">开启</button>' +
+            '<button type="button" class="theme-option' + (st.chatNotify !== false ? '' : ' active') + '" onclick="pfSetPref(\'chatNotify\', false)">关闭</button>' +
+          '</div>' +
+        '</div>'
+      ].join('');
+    } catch (e) { pref.innerHTML = '偏好设置读取失败'; }
+  }
+  var ls = document.getElementById('localStats');
+  if (ls) {
+    try {
+      var d = (appData && appData.stats) || {};
+      var acc = d.totalQuestions > 0 ? Math.round(d.correctQuestions / d.totalQuestions * 100) : 0;
+      var chips = [
+        ['wrong', 'book', '错题本'], ['vocab', 'book-open', '四级词汇'], ['settings', 'settings', '偏好设置']
+      ].map(function (x) {
+        return '<button class="btn btn-outline" style="font-size:var(--xt-font-sm);padding:6px 12px;display:inline-flex;align-items:center;gap:6px" onclick="overviewGo(' + "'" + x[0] + "'" + ')">' +
+          '<span class="nav-icon" data-icon="' + x[1] + '" data-icon-size="14"></span>' + x[2] + '</button>';
+      }).join('');
+      ls.innerHTML = '<div class="profile-grid">' +
+        [['clock', d.totalHours || 0, '总学习(h)'], ['clipboard', d.totalQuestions || 0, '做题数'],
+         ['target', acc + '%', '正确率'], ['fire', d.streakDays || 0, '连续打卡']].map(function (x) {
+          return '<div class="profile-stat"><div class="ps-num" style="display:inline-flex;align-items:center;gap:6px"><span class="nav-icon" data-icon="' + x[0] + '" data-icon-size="16"></span>' + x[1] + '</div><div class="ps-label">' + x[2] + '</div></div>';
+        }).join('') + '</div>' +
+        '<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">' + chips + '</div>';
+    } catch (e) { ls.innerHTML = '数据读取失败'; }
+  }
+  // K11：动态插入的 data-icon 元素需要手动触发 icon-map.js 的扫描渲染
+  if (typeof window.lucideAutoRender === 'function') window.lucideAutoRender();
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(renderProfileOverview, 300); });
+else setTimeout(renderProfileOverview, 300);
+</script>
+
+  <!-- 工具面板遮罩 -->
+  <div class="more-overlay" onclick="toggleToolsPanel()" id="toolsOverlay"></div>
+
+  <!-- 工具面板 -->
+  <div class="bottom-more-panel" id="toolsPanel">
+    <div class="bottom-more-title"><span class="nav-icon" data-icon="wrench" data-icon-size="16"></span> 更多工具</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="location.href='AI模拟面试.html';toggleToolsPanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="mic" data-icon-size="20"></span></div><div class="bm-label">AI面试</div>
+      </div>
+      <div class="bottom-more-item" onclick="location.href='PPT版式库.html';toggleToolsPanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">PPT版式</div>
+      </div>
+      <div class="bottom-more-item" onclick="location.href='四级经验分享.html';toggleToolsPanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div><div class="bm-label">四级经验</div>
+      </div>
+      <div class="bottom-more-item" onclick="if(window.openQuest){openQuest()}else{location.href='工具.html'};toggleToolsPanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="zap" data-icon-size="20"></span></div><div class="bm-label">穿越英语</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// 页面加载完成后渲染个人中心
+window.addEventListener('load', function() {
+  if (typeof renderProfilePage === 'function') {
+    renderProfilePage();
+  }
+});
+
+/* ==================== 编辑资料弹窗 v3 页面级交互 ====================
+   标签 chips / 字数统计 / 资料完成度 / 迷你实时预览 / 保存按钮状态。
+   字段回填与保存在 assets/api.js（在线存服务器，离线存本机）。 */
+(function () {
+  var PRESET_TAGS = ['四级', '六级', '考研', '考公', '行测', '申论', '国企笔试', '面试', '英语口语', 'PPT', '求职简历', '词汇'];
+  var $ = function (id) { return document.getElementById(id); };
+  if (!$('peChips')) return; // 仅个人中心页执行
+
+  function getTags() {
+    var v = ($('peTags') && $('peTags').value) || '';
+    return v.split(',').map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 8);
+  }
+  function setTags(arr) {
+    if (!$('peTags')) return;
+    $('peTags').value = arr.slice(0, 8).join(',');
+    renderChips();
+    peSyncUI();
+  }
+  // 标签内容安全化：去掉引号/反斜杠/逗号，避免破坏 onclick 属性与存储格式
+  function safeTag(t) { return (t || '').replace(/[,"'\\\s]+/g, '').slice(0, 12); }
+  window.peToggleTag = function (t) {
+    var arr = getTags();
+    var i = arr.indexOf(t);
+    if (i >= 0) arr.splice(i, 1);
+    else {
+      if (arr.length >= 8) { showToast('⚠️ 最多 8 个标签'); return; }
+      arr.push(t);
+    }
+    setTags(arr);
+  };
+  window.peAddTag = function () {
+    var inp = $('peTagInput'); if (!inp) return;
+    var t = safeTag(inp.value);
+    if (!t) { showToast('⚠️ 先输入标签内容'); return; }
+    var arr = getTags();
+    if (arr.indexOf(t) >= 0) { showToast('⚠️ 标签已存在'); inp.value = ''; return; }
+    if (arr.length >= 8) { showToast('⚠️ 最多 8 个标签'); return; }
+    arr.push(t);
+    inp.value = '';
+    setTags(arr);
+  };
+  function chipHtml(t, on, extra) {
+    var label = (on ? '✓ ' : '') + t + (extra ? ' ✕' : '');
+    return '<button type="button" class="pe-chip' + (on ? ' on' : '') + (extra ? ' custom' : '') + '" onclick="peToggleTag(\'' + t + '\')">' + label + '</button>';
+  }
+  function renderChips() {
+    var box = $('peChips'); if (!box) return;
+    var cur = getTags();
+    var html = PRESET_TAGS.map(function (t) { return chipHtml(t, cur.indexOf(t) >= 0, false); }).join('');
+    cur.forEach(function (t) { if (PRESET_TAGS.indexOf(t) < 0) html += chipHtml(t, true, true); });
+    box.innerHTML = html;
+  }
+
+  // 实时联动：字数统计 + 资料完成度 + 迷你预览（editProfile() 打开弹窗后由包装过的 renderPeAvatarPreview 触发）
+  window.peSyncUI = function () {
+    if (!$('peName')) return;
+    var val = function (id) { var el = $(id); return el ? el.value : ''; };
+    // 生日选择器：max 动态设为今天（避免选到未来日期）
+    var bd = $('peBirthday');
+    if (bd) {
+      bd.max = '2015-12-31';
+      bd.min = '1950-01-01';
+    }
+    var cnt = function (id, n, max) { var el = $(id); if (el) el.textContent = n + '/' + max; };
+    cnt('peCntName', val('peName').length, 20);
+    cnt('peCntMotto', val('peMotto').length, 60);
+    cnt('peCntBio', val('peBio').length, 300);
+    cnt('peCntGoal', val('peGoal').length, 60);
+    cnt('peCntTags', getTags().length, 8);
+    // 手机号：仅数字，11 位；实时回显（脱敏预览 + 合法性提示）
+    var phEl = $('pePhone');
+    if (phEl) {
+      var raw = phEl.value.replace(/\D/g, '').slice(0, 11);
+      if (raw !== phEl.value) phEl.value = raw;
+      var hint = $('pePhoneMask');
+      if (hint) {
+        if (!raw) hint.textContent = '仅自己可见';
+        else if (raw.length === 11) hint.textContent = raw.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') + ' ✓';
+        else hint.textContent = '还需 ' + (11 - raw.length) + ' 位';
+      }
+    }
+    var items = [
+      !!(typeof apiAvatarTemp !== 'undefined' && apiAvatarTemp),
+      !!val('peName').trim(),
+      !!val('peMotto').trim(),
+      val('peBio').trim().length >= 10,
+      val('peGender') !== 'secret',
+      !!val('peBirthday'),
+      !!val('peCity').trim(),
+      getTags().length > 0,
+      val('peGoal').trim().length >= 4
+    ];
+    var done = items.filter(Boolean).length;
+    var pct = Math.round(done / items.length * 100);
+    if ($('pePct')) $('pePct').textContent = pct + '%';
+    if ($('pePctBar')) $('pePctBar').style.width = pct + '%';
+    var tips = ['头像', '昵称', '个性签名', '个人简介（≥10字）', '性别', '生日', '城市', '备考标签', '学习目标'];
+    var miss = tips.filter(function (t, i) { return !items[i]; });
+    if ($('pePctTip')) $('pePctTip').textContent = pct >= 100 ? '🎉 太棒了！资料已全部完善' : ('还可以完善：' + miss.slice(0, 3).join('、'));
+    // 迷你预览
+    var src = $('peAvatarPreview'), img = src && src.querySelector('img'), ma = $('peMiniAvatar');
+    if (ma) {
+      if (img) ma.innerHTML = '<img src="' + img.getAttribute('src') + '" alt="">';
+      else ma.textContent = (val('peName').trim().slice(0, 1)) || '学';
+    }
+    if ($('peMiniName')) $('peMiniName').textContent = val('peName').trim() || '同学';
+    if ($('peMiniMotto')) $('peMiniMotto').textContent = val('peMotto').trim() || '这个人很懒，什么都没写～';
+    if ($('peMiniTags')) {
+      var ts = getTags();
+      $('peMiniTags').innerHTML = ts.slice(0, 4).map(function (t) { return '<span>' + t + '</span>'; }).join('') + (ts.length > 4 ? '<span>+' + (ts.length - 4) + '</span>' : '');
+    }
+  };
+
+  // 输入联动
+  ['peName', 'peMotto', 'peBio', 'peGoal', 'peCity', 'peGender', 'peBirthday', 'pePhone'].forEach(function (id) {
+    var el = $(id); if (!el) return;
+    el.addEventListener('input', peSyncUI);
+    el.addEventListener('change', peSyncUI);
+  });
+
+  // 头像预览刷新后同步迷你预览（api.js 的 renderPeAvatarPreview 选图/恢复默认时都会调用）
+  var _rpe = window.renderPeAvatarPreview;
+  if (typeof _rpe === 'function') {
+    window.renderPeAvatarPreview = function () { _rpe(); peSyncUI(); };
+  }
+  // 保存按钮 loading 态（api.js saveProfileEditor 期间禁用，1.5s 后兜底恢复）
+  var _save = window.saveProfileEditor;
+  if (typeof _save === 'function') {
+    window.saveProfileEditor = function () {
+      var btn = $('peSaveBtn');
+      if (btn) { btn.disabled = true; btn.textContent = '保存中…'; }
+      try { return _save(); }
+      finally { setTimeout(function () { if (btn) { btn.disabled = false; btn.textContent = '保存'; } }, 1500); }
+    };
+  }
+})();
+</script>
+
+<script>
+/* ==================== 我的动态（T5 增量 2026-09-11） ====================
+   拉取本人动态列表（/api/moments/user/{我的id}），支持删除自己的动态。
+   离线/未登录降级为友好提示，不影响页面其他功能。 */
+(function () {
+  'use strict';
+  function $id(x) { return document.getElementById(x); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function apiBase() { return (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000')); }
+  function tok() { return localStorage.getItem('study_workbench_token') || ''; }
+
+  /* ===== R4-D / C7：列表三态渲染（加载中 / 空数据 / 加载失败可重试）===== */
+  function xtListLoading(box, text) {
+    if (!box) return;
+    box.innerHTML = '<div class="xt-list-state xt-list-state-loading">' + esc(text || '加载中…') + '</div>';
+  }
+  function xtListError(box, msg, retryFn) {
+    if (!box) return;
+    var m = esc(msg || '加载失败');
+    var btn = (typeof retryFn === 'function')
+      ? '<div><button type="button" class="xt-list-state-retry" data-xt-retry="1">点击重试</button></div>'
+      : '';
+    box.innerHTML = '<div class="xt-list-state xt-list-state-error">' + m + btn + '</div>';
+    /* 重试按钮就地查找（在 box 内），避免同页多个列表共用 id 时串绑 */
+    var b = box.querySelector('[data-xt-retry]');
+    if (b && typeof retryFn === 'function') { b.onclick = function () { retryFn(); }; }
+  }
+  function xtListEmpty(box, text) {
+    if (!box) return;
+    box.innerHTML = '<div class="xt-list-state xt-list-state-empty">' + (text || '暂无数据') + '</div>';
+  }
+
+  function loadMyMoments() {
+    var box = $id('myMomentsBody');
+    if (!box) return;
+    if (!tok()) { box.innerHTML = '登录后可查看和发布动态（<a href="动态空间.html">去动态页</a>）'; return; }
+    xtListLoading(box, '加载中…');
+    fetch(apiBase() + '/api/auth/me', { headers: { 'Authorization': 'Bearer ' + tok() } })
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error((d && d.detail) || ('HTTP ' + r.status)); return d; }); })
+      .then(function (me) {
+        if (!me || !me.id) throw new Error('未登录');
+        return fetch(apiBase() + '/api/moments/user/' + me.id + '?limit=10', { headers: { 'Authorization': 'Bearer ' + tok() } })
+          .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error((d && d.detail) || ('HTTP ' + r.status)); return d; }); });
+      })
+      .then(function (d) {
+        var items = d.items || [];
+        if (!items.length) { xtListEmpty(box, '还没有动态，<a href="动态空间.html">去发布第一条打卡</a>'); return; }
+        box.innerHTML = items.map(function (m) {
+          var imgCount = (m.images || []).length;
+          return '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">' +
+            '<div style="flex:1;min-width:0"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)">' + esc(m.content || '[图片]') + '</div>' +
+            '<div style="font-size:var(--xt-font-xs);color:var(--text-secondary);margin-top:2px">❤ ' + (m.likes || []).length + ' · 💬 ' + (m.comments || []).length + (imgCount ? ' · 🖼 ' + imgCount : '') + ' · ' + esc(m.createdAt || '') + '</div></div>' +
+            '<span style="color:var(--danger);font-size:var(--xt-font-sm);cursor:pointer;flex-shrink:0" onclick="window.mmDelete(' + m.id + ')">删除</span>' +
+            '</div>';
+        }).join('');
+      })
+      .catch(function (e) { xtListError(box, (e && e.message ? e.message : '动态加载失败，请检查网络'), function () { loadMyMoments(); }); });
+  }
+
+  /* 全站禁用原生 confirm/alert，改用 app.js 的 uiConfirm（轻量页内确认层） */
+  window.mmDelete = function (mid) {
+    uiConfirm('删除这条动态？点赞与评论会一并删除。', '删除').then(function (ok) {
+      if (!ok) return;
+      fetch(apiBase() + '/api/moments/' + mid, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + tok() } })
+        .then(function (r) { if (!r.ok) throw new Error('删除失败'); loadMyMoments(); })
+        .catch(function (e) { showToast(e.message || '网络错误'); });
+    });
+  };
+
+  if (document.readyState !== 'loading') loadMyMoments();
+  else document.addEventListener('DOMContentLoaded', loadMyMoments);
+})();
+</script>
+<script>
+/* T02 批次五（寇豆码 2026-09-12）：生日 normalize + onBlur + hash 路由初始化
+   R86-B（2026-09-18）：生日校验逻辑统一上移到页尾 R86-B 脚本（window.xtValidateBirthday /
+   window.normalizeBirthdayText / window.peBirthdayOnBlur / peBirthdayOnInput / peBirthdayOnChange），
+   本块不再重复定义，避免两套实现互相打架；hash 路由初始化保持原样。 */
+(function () {
+  function boot() {
+    /* R7b nav-trace（2026-09-20）：App 内子页空白取证打点（浏览器 console，App 内落盘） */
+    try { if (window.errorBoundary && typeof window.errorBoundary.report === 'function') window.errorBoundary.report('nav-trace: profile boot, SubpageRouter=' + (typeof SubpageRouter), '', 'nav-trace'); } catch (e) {}
+    if (typeof SubpageRouter === 'undefined' || !SubpageRouter || typeof SubpageRouter.init !== 'function') return;
+    SubpageRouter.init({
+      rootSelector: '#page-profile',
+      defaultSubpage: 'list',
+      sectionsSelector: '[data-subpage]',
+      breadcrumbSelector: '.subpage-header',
+      pageTitle: '个人中心',
+      rootHref: '个人中心.html'
+    });
+    try { if (window.errorBoundary && typeof window.errorBoundary.report === 'function') window.errorBoundary.report('nav-trace: profile subpage init ok', '', 'nav-trace'); } catch (e) {}
+    var pb = document.getElementById('profileBox');
+    var profSec = document.querySelector('#page-profile [data-subpage="profile"]');
+    var postsSec = document.querySelector('#page-profile [data-subpage="posts"]');
+    var postsHost = document.getElementById('profileBoxPostsHost');
+    SubpageRouter.onSubpageChange(function (key) {
+      try { if (window.errorBoundary && typeof window.errorBoundary.report === 'function') window.errorBoundary.report('nav-trace: profile subpage render: ' + key, '', 'nav-trace'); } catch (e) {}
+      /* K15-html（批次 20260913K）：posts 子页与 profile 共享 #profileBox——
+         进入 posts 时给 profileBox 加 .posts-mode（页首 <style> 据此只保留「发贴统计」卡
+         #ppStatsCard，隐藏其余 .pp-card）；离开 posts（含 profile / moments / prefs 等）移除。
+         返回与面包屑由 SubpageRouter 维护，此处不动其逻辑。 */
+      if (pb) {
+        if (key === 'posts') { if (pb.classList && !pb.classList.contains('posts-mode')) pb.classList.add('posts-mode'); }
+        else if (pb.classList && pb.classList.contains('posts-mode')) pb.classList.remove('posts-mode');
+      }
+      if (key === 'profile') {
+        if (pb && profSec && pb.parentNode !== profSec) profSec.appendChild(pb);
+        try { if (typeof renderProfilePage === 'function') renderProfilePage(); } catch (e) { if (window.console) console.warn('renderProfilePage error', e); }
+        /* feed-btn（2026-09-15）：profile 子页显形时填充「查看动态」按钮（不改动 renderProfilePage 任何判定） */
+        try { if (typeof window.updateProfileFeedBtn === 'function') window.updateProfileFeedBtn(); } catch (e) { if (window.console) console.warn('updateProfileFeedBtn error', e); }
+      } else if (key === 'posts') {
+        /* 【R61】posts 子页只渲染「发贴统计」内容到 #profileBoxPostsHost，
+           不再把整块 #profileBox（资料头/概览/时长/成就/菜单行）搬过来堆进子页。
+           renderPostStatsOnly 缺失时（旧 app.js）自动回退到原行为。 */
+        if (postsHost && typeof renderPostStatsOnly === 'function') {
+          // 回退路径可能已经把 profileBox 移到 posts 宿主里，这里先搬回 profile 区
+          if (pb && profSec && pb.parentNode !== profSec) profSec.appendChild(pb);
+          if (pb && pb.classList && pb.classList.contains('posts-mode')) pb.classList.remove('posts-mode');
+          try { renderPostStatsOnly(postsHost); } catch (e) { if (window.console) console.warn('renderPostStatsOnly error', e); }
+        } else {
+          if (pb && postsHost && pb.parentNode !== postsHost) postsHost.appendChild(pb);
+          try { if (typeof renderProfilePage === 'function') renderProfilePage(); } catch (e) { if (window.console) console.warn('renderProfilePage error', e); }
+        }
+      } else if (key === 'moments') {
+        try { if (typeof window.loadMyMoments === 'function') window.loadMyMoments(); } catch (e) {}
+      } else if (key === 'prefs' || key === 'local-data') {
+        try { if (typeof renderProfileOverview === 'function') renderProfileOverview(); } catch (e) {}
+      }
+    });
+    /* fix-bug4（2026-09-15）：解析 ?user=<uid>，直达 TA 的公开主页。
+       根因：SubpageRouter 初始化后默认停在 'list'（分组卡列表），而 #profileBox 位于
+       [data-subpage="profile"] 内，在 list 态是被 display:none 的；api.js renderProfilePage()
+       里已有的 ?user= 分支（→ renderUserHome）其实写了，只是渲染结果藏在隐藏 section 里看不见，
+       表现为「个人中心.html 不解析 ?user=，只显示登录者自己的资料」。
+       这里仅「带 user 参数时自动跳到 profile 子页」，不改动 renderProfilePage 的任何判定
+       （含 isMe 回跳、CURRENT_USER 在线/离线旁路），无 user 参数时行为与改动前完全一致。 */
+    try {
+      var _uid = new URLSearchParams(location.search).get('user');
+      if (_uid && /^\d+$/.test(String(_uid).trim())) SubpageRouter.navigate('profile');
+    } catch (e) { /* URLSearchParams 不可用时保持原样，绝不阻断页面 */ }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+</script>
+
+<script>
+/* feed-btn（2026-09-15 建，B1 2026-09-16 挪位）：个人资料页「查看动态」按钮逻辑。
+   约定（沿用项目既有）：他人视角 ?user=<uid> → 文案「查看 TA 的动态」；
+   自视角（无 user 参数）→ 文案「我的动态」。点击统一跳 动态空间.html?user=<uid>。
+
+   【B1 挪位】用户 2026-09-15 23:13 截图反馈：原来它是资料卡上方的「大橙钮」（btn-primary），
+   视觉权重过高。改动（全部页内，不碰 assets/app.js、assets/api.js）：
+     1) 节点已从 #profileBox 上方移到 #profileBox 之后（见 HTML 里的 [data-subpage="profile"]）；
+     2) 按钮类 btn-primary → btn-outline，降级为次按钮；
+     3) 本脚本的 placeFeedBtn() 在 renderProfilePage() 渲染完资料卡后，把节点搬进
+        资料卡的「操作区」——即「编辑资料」按钮所在的那一行动作条
+        （在线模式 api.js 自视角已在该行渲染了「我的动态」，此时自动隐藏本按钮避免重复）；
+     4) renderProfilePage() 会整块重写 #profileBox.innerHTML，把节点冲掉；
+        这里用 MutationObserver 监听 #profileBox，被冲掉后自动重新归位（老 WebView Chrome 50+ 支持）。
+   不直接改 assets/app.js / assets/api.js。 */
+(function () {
+  'use strict';
+  function $id(x) { return document.getElementById(x); }
+  function apiBase() { return (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000')); }
+  function tok() { try { return localStorage.getItem('study_workbench_token') || ''; } catch (e) { return ''; } }
+  function viewUid() { try { var u = new URLSearchParams(location.search).get('user'); if (u && /^\d+$/.test(String(u).trim())) return String(u).trim(); } catch (e) {} return null; }
+
+  window.gotoUserMoments = function (uid) { if (uid) location.href = '动态空间.html?user=' + encodeURIComponent(uid); };
+
+  function renderBtn() {
+    if (typeof window.lucideAutoRender === 'function') window.lucideAutoRender();
+  }
+
+  /** 找资料卡的「操作区」：优先「编辑资料」按钮所在的动作条，否则退回资料卡本身 */
+  function actionHost() {
+    var box = $id('profileBox');
+    if (!box) return null;
+    var edit = box.querySelector('button[onclick="editProfile()"]');
+    if (edit && edit.parentNode && edit.parentNode.tagName === 'DIV') return edit.parentNode;
+    return box.querySelector('.card');
+  }
+
+  /** 操作区里是否已经有同义的「动态」按钮（在线模式 api.js 已渲染，避免重复） */
+  function hasSiblingFeedBtn(host) {
+    if (!host || !host.querySelectorAll) return false;
+    var bs = host.querySelectorAll('button');
+    for (var i = 0; i < bs.length; i++) {
+      if (bs[i] === $id('profileFeedBtn')) continue;
+      var t = bs[i].textContent || '';
+      if (t.indexOf('动态') >= 0) return true;
+    }
+    return false;
+  }
+
+  /* 【A7 修复 2026-09-16】renderProfilePage() 整块重写 #profileBox.innerHTML 时，
+     会把已归位到资料卡操作条里的 #profileFeedBtnRow 一起销毁；
+     这里保留一份克隆模板，节点一旦被冲掉即按模板重建，保证按钮不丢。 */
+  var rowTemplate = null;
+  function $mk(tag) { return document.createElement(tag); }
+
+  /** 节点被 innerHTML 重写销毁后，用克隆模板重建并先挂到文档末尾待归位 */
+  function ensureRow() {
+    var row = $id('profileFeedBtnRow');
+    if (row) {
+      if (!rowTemplate && row.cloneNode) {
+        try { rowTemplate = row.cloneNode(true); } catch (e) { rowTemplate = null; }
+      }
+      return row;
+    }
+    if (!rowTemplate || !rowTemplate.cloneNode) return null;
+    var fresh = null;
+    try { fresh = rowTemplate.cloneNode(true); } catch (e) { return null; }
+    if (!fresh) return null;
+    var btn = fresh.querySelector ? fresh.querySelector('button') : null;
+    if (btn) btn.onclick = null;   // 残留句柄不跨节点复用，后续由 updateProfileFeedBtn 重绑
+    try {
+      var holder = document.body || document.documentElement;
+      if (holder && holder.appendChild) holder.appendChild(fresh);
+      else return null;
+    } catch (e2) { return null; }
+    return $id('profileFeedBtnRow');
+  }
+
+  /** 把 #profileFeedBtnRow 挪进资料卡操作区；返回是否成功归位 */
+  function placeFeedBtn() {
+    var row = ensureRow();
+    if (!row) return false;
+    var host = actionHost();
+    if (!host) { row.style.display = 'none'; return false; }
+    if (hasSiblingFeedBtn(host)) { row.style.display = 'none'; return false; }
+    if (row.parentNode !== host) host.appendChild(row);
+    row.style.marginBottom = '0';
+    row.style.display = 'block';
+    return true;
+  }
+
+  var observer = null;
+  function watchProfileBox() {
+    var box = $id('profileBox');
+    if (!box || observer || typeof window.MutationObserver !== 'function') return;
+    observer = new window.MutationObserver(function () {
+      // 资料卡被重渲染 → 节点可能被连根冲掉（A7 修复：允许从模板重建）→ 重新归位
+      var row = ensureRow();
+      if (!row) return;
+      var host = actionHost();
+      if (!host) return;
+      if (row.parentNode === host) return;
+      if (row.style.display === 'none' && hasSiblingFeedBtn(host)) return;
+      placeFeedBtn();
+    });
+    try { observer.observe(box, { childList: true, subtree: true }); } catch (e) { observer = null; }
+  }
+
+  window.updateProfileFeedBtn = function () {
+    var row = ensureRow();
+    if (!row) return;
+    var btn = $id('profileFeedBtn');
+    var txt = $id('profileFeedBtnText');
+    if (!btn || !txt) { row.style.display = 'none'; return; }
+    // B1：强制次按钮外观（防止被外部样式重新拉回主按钮权重）
+    if (btn.className.indexOf('btn-outline') < 0) btn.className = 'btn btn-outline';
+    var vu = viewUid();
+    if (vu) {
+      txt.textContent = '查看 TA 的动态';
+      btn.onclick = function () { window.gotoUserMoments(vu); };
+      placeFeedBtn();
+      renderBtn();
+      watchProfileBox();
+      return;
+    }
+    // 自视角：取自己的 uid（localStorage 优先，否则 /api/auth/me）
+    var own = '';
+    try { own = localStorage.getItem('study_workbench_uid') || ''; } catch (e) {}
+    function showSelf(id) {
+      txt.textContent = '我的动态';
+      btn.onclick = function () { window.gotoUserMoments(id); };
+      placeFeedBtn();
+      renderBtn();
+      watchProfileBox();
+    }
+    function hide() { row.style.display = 'none'; }
+    if (own && /^\d+$/.test(String(own).trim())) { showSelf(String(own).trim()); return; }
+    fetch(apiBase() + '/api/auth/me', { headers: { 'Authorization': 'Bearer ' + tok() } })
+      .then(function (r) { return r.json(); })
+      .then(function (me) { if (me && me.id) showSelf(String(me.id)); else hide(); })
+      .catch(function () { hide(); });
+  };
+})();
+</script>
+
+<script>
+/* ==================== ADR-3：编辑资料区块的页内展开 / 收起 ====================
+   #profileEditModal 已由遮罩弹窗改为 [data-subpage="profile"] 内的页面展开区块（.pe-inline）：
+   默认 display:none，加 .active 展开。assets/api.js 的 editProfile() 负责加类、
+   closeProfileEditor() 负责去类（含「取消 / 收起」按钮），两者无需改动。
+   本脚本只补三件「页内形态」才需要的事：
+   1) 再点一次「编辑资料」＝收起（原实现只会加类，不是切换）；
+   2) 展开后滚动到表单区块，避免表单落在长资料卡下方看不见；
+   3) 展开后焦点落在昵称输入框（沿用 api.js editProfile 里的聚焦语义）。
+   load 后执行，确保 assets/app.js、assets/api.js 的 editProfile 已定义。 */
+(function () {
+  'use strict';
+  function afterEditorsReady(fn) {
+    if (document.readyState === 'complete') { setTimeout(fn, 0); return; }
+    window.addEventListener('load', function () { setTimeout(fn, 0); });
+  }
+  afterEditorsReady(function () {
+    var peBlock = document.getElementById('profileEditModal');
+    var origEdit = window.editProfile;
+    if (!peBlock || typeof origEdit !== 'function') return;
+    window.editProfile = function () {
+      if (peBlock.classList.contains('active')) {
+        if (typeof window.closeProfileEditor === 'function') window.closeProfileEditor();
+        return false;
+      }
+      var r;
+      try { r = origEdit.apply(this, arguments); } catch (e) { return r; }
+      if (peBlock.classList.contains('active')) {
+        if (peBlock.scrollIntoView) peBlock.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        var nm = document.getElementById('peName');
+        if (nm && nm.focus) { try { nm.focus({ preventScroll: true }); } catch (e2) { nm.focus(); } }
+      }
+      return r;
+    };
+  });
+})();
+</script>
+<script src="assets/ai-config.js?v=20260923b"></script>
+<script src="assets/ai-presets.js?v=20260923b"></script>
+<script src="assets/ai-service.js?v=20260923b"></script>
+<script src="assets/ai-cap-registry.js?v=20260923b"></script>
+<script src="assets/ai-cap-image.js?v=20260923b"></script>
+<script src="assets/ai-cap-vision.js?v=20260923b"></script>
+<script src="assets/ai-cap-audio.js?v=20260923b"></script>
+<script src="assets/ai-cap-embed.js?v=20260923b"></script>
+<script src="assets/ai-cap-translate.js?v=20260923b"></script>
+<script src="assets/ai-cap-video.js?v=20260923b"></script>
+<script src="assets/ai-cap-3d.js?v=20260923b"></script>
+<script>
+/* ==================== R86-B（2026-09-18）：个人信息页四项改造 ====================
+   ① 生日：统一 YYYY-MM-DD；输入即时校验（格式 / 不存在的日期 / 未来日期 / 越界年月）；
+      日期选择器与手动输入双向同步；保存前本地拦截；后端拒绝时沿用页面既有 toast 提示。
+   ② 账号：编辑区只读展示登录账号（CURRENT_USER.username），拿不到时显示占位符「未设置」。
+   ③ 变更频率：拉 /api/users/me/change-locks，锁定字段置灰 + 提示下次可改时间；
+      离线模式走 xt-settings.js 的本地同口径兜底（服务端已做权威校验，前端只是配合）。
+   ④ 地区：跳 地区选择.html（自动定位 / 逐级点选 / 关键词搜索），回写 #peCity 走现有保存链路。
+   约束：ES5 语法（无可选链 / 空值合并 / 顶层 await / 正则后行断言）；禁用 alert / confirm / prompt。
+   不改动 assets/app.js、assets/api.js、assets/xt-profile.js。 */
+(function () {
+  'use strict';
+  function $(id) { return document.getElementById(id); }
+  function toast(msg) { try { if (typeof window.xtToast === 'function') { window.xtToast('info', String(msg)); return; } } catch (e0) { /* 忽略 */ } try { if (typeof showToast === 'function') showToast(String(msg)); } catch (e) {} }
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+  function apiBase() {
+    return (window.STUDY_API_BASE != null ? window.STUDY_API_BASE
+      : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000'));
+  }
+  function tok() { try { return localStorage.getItem('study_workbench_token') || ''; } catch (e) { return ''; } }
+  function isOnline() { try { return !!(typeof CURRENT_USER !== 'undefined' && CURRENT_USER); } catch (e) { return false; } }
+
+  /* ---------------- ① 生日校验 ---------------- */
+  var BD_MIN_Y = 1950;
+  var BD_MAX = { y: 2015, m: 12, d: 31 };
+  var BD_HINT = '支持日期选择器或直接输入，统一格式 YYYY-MM-DD（1950-01-01 ~ 2015-12-31）';
+
+  window.xtValidateBirthday = function (raw) {
+    var s = String(raw == null ? '' : raw).trim();
+    if (!s) return { ok: true, empty: true, msg: '', value: '' };
+    var m = s.match(/^(\d{4})(\d{2})(\d{2})$/);
+    if (m) s = m[1] + '-' + m[2] + '-' + m[3];
+    s = s.replace(/年|月|日/g, '-');
+    s = s.replace(/[-./\s]+$/, '');
+    m = s.match(/^(\d{4})[-./\s](\d{1,2})([-./\s](\d{1,2}))?$/);
+    if (!m) return { ok: false, msg: '日期格式不对，请用 YYYY-MM-DD（如 1990-01-02）', value: '' };
+    var y = parseInt(m[1], 10), mo = parseInt(m[2], 10), d = m[4] ? parseInt(m[4], 10) : 0;
+    if (!d) return { ok: false, msg: '还缺「日」，完整示例：1990-01-02', value: '' };
+    if (!(mo >= 1 && mo <= 12)) return { ok: false, msg: '月份需在 1~12 之间', value: '' };
+    var dim = new Date(y, mo, 0).getDate();
+    if (!(d >= 1 && d <= dim)) return { ok: false, msg: mo + ' 月没有 ' + d + ' 日，请检查日期', value: '' };
+    if (y < BD_MIN_Y) return { ok: false, msg: '年份不能早于 ' + BD_MIN_Y + ' 年', value: '' };
+    if (y > BD_MAX.y || (y === BD_MAX.y && (mo > BD_MAX.m || (mo === BD_MAX.m && d > BD_MAX.d)))) {
+      return { ok: false, msg: '出生年月不能晚于 2015-12-31（不能填未来日期）', value: '' };
+    }
+    return { ok: true, empty: false, msg: '', value: y + '-' + pad2(mo) + '-' + pad2(d) };
+  };
+
+  /* 兼容 T02 的老入口，语义完全不变（非法 / 越界一律 null） */
+  window.normalizeBirthdayText = function (raw) {
+    var r = window.xtValidateBirthday(raw);
+    return (r.ok && !r.empty) ? r.value : null;
+  };
+
+  function xtAgeOf(v) {
+    var r = window.xtValidateBirthday(v);
+    if (!r.ok || r.empty) return '';
+    var y = parseInt(r.value.slice(0, 4), 10);
+    var now = new Date();
+    var age = now.getFullYear() - y;
+    if (r.value.slice(5) > (pad2(now.getMonth() + 1) + '-' + pad2(now.getDate()))) age -= 1;
+    return age + ' 岁';
+  }
+
+  function xtBdMsg(msg, bad) {
+    var el = $('peBirthdayMsg');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.className = 'xt-bd-msg ' + (bad ? 'bad' : 'ok');
+  }
+
+  function xtBdFlag(bad) {
+    var ids = ['peBirthday', 'peBirthdayText'], i, e, c;
+    for (i = 0; i < ids.length; i++) {
+      e = $(ids[i]);
+      if (!e) continue;
+      c = e.className || '';
+      if (bad) { if (c.indexOf('xt-bd-invalid') < 0) e.className = c + ' xt-bd-invalid'; }
+      else { e.className = c.replace(/\s*xt-bd-invalid/g, ''); }
+    }
+  }
+
+  function xtBdErr(msg) {
+    var txt = $('peBirthdayText');
+    if (!txt || !txt.parentNode) return;
+    var ex = $('peBirthdayTextErr');
+    if (!ex) {
+      ex = document.createElement('div');
+      ex.id = 'peBirthdayTextErr';
+      ex.className = 'pe-bd-err';
+      txt.parentNode.insertBefore(ex, txt.nextSibling);
+    }
+    ex.textContent = msg || '';
+  }
+
+  function xtBdErrClear() {
+    var ex = $('peBirthdayTextErr');
+    if (ex && ex.parentNode) ex.parentNode.removeChild(ex);
+  }
+
+  window.peBirthdayOnInput = function () {
+    var txt = $('peBirthdayText');
+    if (!txt) return;
+    var v = String(txt.value || '').trim();
+    if (!v) { xtBdFlag(false); xtBdErrClear(); xtBdMsg(BD_HINT, false); return; }
+    if (v.replace(/\D/g, '').length < 8) { xtBdFlag(false); xtBdErrClear(); xtBdMsg('继续输入，完整示例：1990-01-02', false); return; }
+    var r = window.xtValidateBirthday(v);
+    if (r.ok && !r.empty) { xtBdFlag(false); xtBdErrClear(); xtBdMsg('将识别为 ' + r.value + '（' + xtAgeOf(r.value) + '），点空白处即生效', false); }
+    else { xtBdFlag(true); xtBdMsg(r.msg, true); }
+  };
+
+  window.peBirthdayOnChange = function () {
+    var dt = $('peBirthday'), txt = $('peBirthdayText');
+    if (!dt) return;
+    var r = window.xtValidateBirthday(dt.value);
+    if (!r.ok && !r.empty) { xtBdFlag(true); xtBdMsg(r.msg, true); toast('⚠️ ' + r.msg); return; }
+    xtBdFlag(false);
+    xtBdErrClear();
+    if (txt) txt.value = '';
+    if (r.empty) { xtBdMsg(BD_HINT, false); }
+    else { dt.value = r.value; xtBdMsg('已选择 ' + r.value + '（' + xtAgeOf(r.value) + '）', false); }
+    if (typeof window.peSyncUI === 'function') window.peSyncUI();
+  };
+
+  window.peBirthdayOnBlur = function () {
+    var dt = $('peBirthday'), txt = $('peBirthdayText');
+    if (!txt || !dt) return;
+    var v = String(txt.value || '').trim();
+    if (!v) { xtBdFlag(false); xtBdErrClear(); xtBdMsg(BD_HINT, false); return; }
+    var r = window.xtValidateBirthday(v);
+    if (r.ok && !r.empty) {
+      dt.value = r.value;
+      txt.value = '';
+      xtBdFlag(false);
+      xtBdErrClear();
+      xtBdMsg('已识别为 ' + r.value + '（' + xtAgeOf(r.value) + '）', false);
+      if (typeof window.peSyncUI === 'function') window.peSyncUI();
+    } else {
+      xtBdFlag(true);
+      xtBdMsg(r.msg, true);
+      xtBdErr(r.msg);
+      toast('⚠️ ' + r.msg);
+    }
+  };
+
+  /* ---------------- ② 账号展示（替换原「用户ID」位） ---------------- */
+  var ACC_EMPTY = '未设置';
+
+  function xtAccountText() {
+    var a = '';
+    try { if (isOnline()) a = CURRENT_USER.username || CURRENT_USER.account || ''; } catch (e) {}
+    if (!a) { try { a = localStorage.getItem('study_workbench_username') || ''; } catch (e2) {} }
+    if (!a) {
+      try {
+        var raw = localStorage.getItem('study_workbench_profile');
+        if (raw) { var o = JSON.parse(raw); a = (o && (o.username || o.account)) || ''; }
+      } catch (e3) {}
+    }
+    return String(a || '').trim();
+  }
+  window.xtAccountText = xtAccountText;
+
+  function xtInjectAccountRow() {
+    var box = $('profileBox');
+    if (!box) return;
+    var card = box.querySelector('.card');
+    if (!card) return;
+    var a = xtAccountText();
+    var row = card.querySelector('#xtAcctRow');
+    if (!row) {
+      var act = card.querySelector('.card-action');
+      if (a && act && act.textContent && act.textContent.indexOf('@' + a) >= 0) return; /* 卡头已展示 @账号 */
+      row = document.createElement('div');
+      row.id = 'xtAcctRow';
+      row.setAttribute('style', 'font-size:12px;color:var(--text-secondary);margin-top:8px;line-height:1.6');
+      var hdr = card.querySelector('.card-header');
+      if (hdr && hdr.parentNode === card) card.insertBefore(row, hdr.nextSibling);
+      else card.insertBefore(row, card.firstChild);
+    }
+    var acctText = '账号：' + (a || ACC_EMPTY);
+    /* R91-C：值未变不重写 DOM——textContent setter 即使同值也会重建文本节点，
+       会再次触发 #profileBox 上的 MutationObserver（xtWatchAccount），
+       形成「观察→渲染→再观察」无限微任务循环，页面完全卡死。 */
+    if (row.textContent !== acctText) { row.textContent = acctText; }
+  }
+
+  function xtRenderAccount() {
+    var el = $('peAccount');
+    var a = xtAccountText();
+    window.XT_ACCOUNT = a;
+    if (el) {
+      /* R91-C：同上，值未变不重写，避免自触发死循环 */
+      var accVal = a || ACC_EMPTY;
+      if (el.textContent !== accVal) { el.textContent = accVal; }
+      el.className = 'xt-acc-val' + (a ? '' : ' xt-acc-muted');
+    }
+    xtInjectAccountRow();
+  }
+  window.xtRenderAccount = xtRenderAccount;
+
+  /* ---------------- ③ 变更频率限制（配合服务端，权威在服务端） ---------------- */
+  var LOCK_MAP = [
+    { f: 'nickname', ids: ['peName'] },
+    { f: 'motto', ids: ['peMotto'] },
+    { f: 'bio', ids: ['peBio'] },
+    { f: 'gender', ids: ['peGender'] },
+    { f: 'birthday', ids: ['peBirthday', 'peBirthdayText'] },
+    { f: 'city', ids: ['peCity', 'peCityPickBtn'] },
+    { f: 'phone', ids: ['pePhone'] },
+    { f: 'goal', ids: ['peGoal'] },
+    { f: 'tags', ids: ['peTagInput'] }
+  ];
+  var LOCK_LABEL = {
+    nickname: '昵称', motto: '个性签名', bio: '个人简介', gender: '性别', birthday: '出生年月',
+    city: '所在地区', phone: '手机号', goal: '学习目标', tags: '备考方向标签'
+  };
+
+  function xtSetLockTip(field, text) {
+    var cfg = null, i, j, last = null;
+    for (i = 0; i < LOCK_MAP.length; i++) { if (LOCK_MAP[i].f === field) { cfg = LOCK_MAP[i]; break; } }
+    if (!cfg) return;
+    for (j = 0; j < cfg.ids.length; j++) { var e = $(cfg.ids[j]); if (e) last = e; }
+    if (!last || !last.parentNode) return;
+    var tip = $('xtLockTip_' + field);
+    if (!tip) {
+      tip = document.createElement('div');
+      tip.id = 'xtLockTip_' + field;
+      tip.className = 'xt-lock-tip';
+      last.parentNode.appendChild(tip);
+    }
+    if (text) { tip.textContent = text; tip.style.display = 'block'; }
+    else { tip.textContent = ''; tip.style.display = 'none'; }
+  }
+
+  window.xtApplyChangeLocks = function (locks) {
+    locks = locks || {};
+    window.__xtLocks = locks;
+    var i, j, cfg, lk, locked, el;
+    for (i = 0; i < LOCK_MAP.length; i++) {
+      cfg = LOCK_MAP[i];
+      lk = locks[cfg.f];
+      locked = !!(lk && lk.locked);
+      for (j = 0; j < cfg.ids.length; j++) {
+        el = $(cfg.ids[j]);
+        if (!el) continue;
+        try { el.disabled = locked; } catch (e) {}
+      }
+      if (cfg.f === 'tags') {
+        var chips = $('peChips');
+        if (chips) { chips.style.pointerEvents = locked ? 'none' : ''; chips.style.opacity = locked ? '0.5' : ''; }
+      }
+      xtSetLockTip(cfg.f, locked
+        ? ('🔒 ' + (LOCK_LABEL[cfg.f] || cfg.f) + '每月仅可修改一次，下次可改时间：' + (lk.nextAvailableAt || '—') + '。其他信息仍可正常修改。')
+        : '');
+    }
+  };
+
+  window.xtRefreshChangeLocks = function () {
+    if (!isOnline() || !tok()) {
+      window.xtApplyChangeLocks(typeof window.xtLocalLocks === 'function' ? window.xtLocalLocks(30) : {});
+      xtRenderAccount();
+      return;
+    }
+    fetch(apiBase() + '/api/users/me/change-locks', { headers: { 'Authorization': 'Bearer ' + tok() } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { window.xtApplyChangeLocks((d && d.locks) || {}); xtRenderAccount(); })
+      .catch(function () { window.xtApplyChangeLocks({}); });
+  };
+
+  /* ---------------- ④ 地区选择 ---------------- */
+  window.xtOpenRegionPicker = function () {
+    var el = $('peCity');
+    var cur = el ? (el.value || '') : '';
+    var back = '个人中心.html';
+    try {
+      var pn = location.pathname || '';
+      var k = pn.lastIndexOf('/');
+      if (k >= 0 && pn.length > k + 1) back = decodeURIComponent(pn.substring(k + 1));
+    } catch (e) {}
+    location.href = '地区选择.html?cur=' + encodeURIComponent(cur) + '&back=' + encodeURIComponent(back);
+  };
+
+  function xtTakeRegionPick() {
+    var raw = '';
+    try { raw = localStorage.getItem('xt_region_pick') || ''; } catch (e) { return ''; }
+    if (!raw) return '';
+    var obj = null;
+    try { obj = JSON.parse(raw); } catch (e2) { obj = null; }
+    try { localStorage.removeItem('xt_region_pick'); } catch (e3) {}
+    if (!obj || !obj.text) return '';
+    try { if (obj.ts && (Date.now() - obj.ts > 10 * 60 * 1000)) return ''; } catch (e4) { return ''; }
+    return String(obj.text).slice(0, 40);
+  }
+
+  var pendingRegion = xtTakeRegionPick();
+
+  /* ---------------- 编辑器打开 / 保存的拦截与联动 ---------------- */
+  var xtLastSnapshot = {};
+  var SNAP_IDS = ['peName', 'peMotto', 'peBio', 'peGender', 'peBirthday', 'peCity', 'pePhone', 'peGoal', 'peTags'];
+  var FIELD2ID = {
+    nickname: 'peName', motto: 'peMotto', bio: 'peBio', gender: 'peGender', birthday: 'peBirthday',
+    city: 'peCity', phone: 'pePhone', goal: 'peGoal', tags: 'peTags'
+  };
+
+  function xtSnapshot() {
+    var s = {}, i, e;
+    for (i = 0; i < SNAP_IDS.length; i++) { e = $(SNAP_IDS[i]); s[SNAP_IDS[i]] = e ? e.value : ''; }
+    return s;
+  }
+
+  function xtBlockedFields(snap) {
+    var out = [], f, e, nv, ov, lk;
+    for (f in FIELD2ID) {
+      if (!Object.prototype.hasOwnProperty.call(FIELD2ID, f)) continue;
+      lk = (window.__xtLocks && window.__xtLocks[f]) ? window.__xtLocks[f] : null;
+      if (!lk || !lk.locked) continue;
+      e = $(FIELD2ID[f]);
+      nv = e ? e.value : '';
+      ov = (snap && snap[FIELD2ID[f]] != null) ? snap[FIELD2ID[f]] : '';
+      if (String(nv) !== String(ov)) out.push(f);
+    }
+    return out;
+  }
+
+  function xtWrapEdit() {
+    var orig = window.editProfile;
+    if (typeof orig !== 'function') return;
+    window.editProfile = function () {
+      var r = orig.apply(this, arguments);
+      xtLastSnapshot = xtSnapshot();
+      xtRenderAccount();
+      window.xtRefreshChangeLocks();
+      return r;
+    };
+  }
+
+  function xtWrapSave() {
+    var orig = window.saveProfileEditor;
+    if (typeof orig !== 'function') return;
+    window.saveProfileEditor = function () {
+      var dtEl = $('peBirthday'), txtEl = $('peBirthdayText');
+      var raw = (txtEl && String(txtEl.value).trim()) ? txtEl.value : ((dtEl && dtEl.value) ? dtEl.value : '');
+      var r = window.xtValidateBirthday(raw);
+      if (!r.ok) {
+        xtBdFlag(true);
+        xtBdMsg(r.msg, true);
+        xtBdErr(r.msg);
+        toast('⚠️ ' + r.msg);
+        if (txtEl && txtEl.focus) { try { txtEl.focus(); } catch (e) {} }
+        return false;
+      }
+      if (dtEl) dtEl.value = r.value || '';
+      if (txtEl) txtEl.value = '';
+      xtBdFlag(false);
+      xtBdErrClear();
+
+      var blocked = xtBlockedFields(xtLastSnapshot);
+      if (blocked.length) {
+        var lb = LOCK_LABEL[blocked[0]] || blocked[0];
+        var lk = (window.__xtLocks && window.__xtLocks[blocked[0]]) ? window.__xtLocks[blocked[0]] : {};
+        toast('🔒 ' + lb + '每月仅可修改一次，下次可改时间：' + (lk.nextAvailableAt || '—'));
+        return false;
+      }
+
+      var snap = xtLastSnapshot;
+      var ret = orig.apply(this, arguments);
+
+      if (!isOnline() && typeof window.xtLocalRecord === 'function') {
+        var changed = [], f, e2;
+        for (f in FIELD2ID) {
+          if (!Object.prototype.hasOwnProperty.call(FIELD2ID, f)) continue;
+          if (f === 'phone') continue;
+          e2 = $(FIELD2ID[f]);
+          if (e2 && String(e2.value) !== String(snap[FIELD2ID[f]] == null ? '' : snap[FIELD2ID[f]])) changed.push(f);
+        }
+        if (changed.length) {
+          window.xtLocalRecord(changed);
+          window.xtApplyChangeLocks(window.xtLocalLocks(30));
+        }
+      }
+      setTimeout(function () { window.xtRefreshChangeLocks(); }, 1300);
+      return ret;
+    };
+  }
+
+  var xtAcctObs = null;
+  function xtWatchAccount() {
+    var box = $('profileBox');
+    if (!box || xtAcctObs || typeof window.MutationObserver !== 'function') return;
+    xtAcctObs = new window.MutationObserver(function () { xtRenderAccount(); });
+    try { xtAcctObs.observe(box, { childList: true, subtree: true }); } catch (e) { xtAcctObs = null; }
+  }
+
+  function xtBoot() {
+    xtWrapEdit();
+    xtWrapSave();
+    xtRenderAccount();
+    xtWatchAccount();
+    if (pendingRegion) {
+      setTimeout(function () {
+        try {
+          if (typeof SubpageRouter !== 'undefined' && SubpageRouter && typeof SubpageRouter.navigate === 'function') {
+            SubpageRouter.navigate('profile');
+          }
+        } catch (e) {}
+        setTimeout(function () {
+          if (typeof window.editProfile === 'function') { try { window.editProfile(); } catch (e2) {} }
+          var el = $('peCity');
+          if (el && pendingRegion) {
+            el.value = pendingRegion;
+            if (typeof window.peSyncUI === 'function') window.peSyncUI();
+            toast('📍 已选择地区：' + pendingRegion + '，确认后点「保存」');
+          }
+          pendingRegion = null;
+        }, 320);
+      }, 700);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(xtBoot, 60); });
+  } else {
+    setTimeout(xtBoot, 60);
+  }
+})();
+</script>
+
+</body>
+</html>

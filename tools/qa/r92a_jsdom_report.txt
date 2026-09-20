@@ -1,0 +1,6 @@
+[case1] sent=true capCalls=[{"id":"ark-seedance-1-0-pro","prompt":"生成一段视频"}] chatCalls=[]
+[case2] sent=true capCalls=[{"id":"ark-seedance-1-0-pro","prompt":"生成一段视频"}] chatCalls=[{"ft":"general"}]
+[errors] qa=[] jsdom=[] console=[]
+CASE1(video->xtRunCapability) => PASS
+CASE2(normal->callAI)         => PASS
+JSDOM_ALL => PASS

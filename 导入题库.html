@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#5B8DEF">
+<title>导入题库 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260923c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<link rel="stylesheet" href="assets/polish.css?v=20260916O">
+<style>
+/* ==================== R72-8（20260917）：导入题库 · 独立整页 ====================
+   由 更多.html 的页内全屏视图（批次 20260913k）升级为独立页面；
+   向导逻辑仍全部复用 assets/importer.js（openImporter / __impDo 等），本页只提供承载容器与返回。 */
+.importer-page-body{background:var(--card);color:var(--text);border-radius:18px;padding:16px;box-shadow:0 10px 30px -18px rgba(0,0,0,.25)}
+/* importer.js 的 ensureCss() 给 .imp-body 设了 overflow-y:auto;flex:1（弹层内用），整页里要放开 */
+.importer-page-body .imp-body{overflow:visible;padding:0;flex:none}
+/* 我的导入题库（按文件名自动生成的自定义题库，数据来自 localStorage 的 study_workbench_imports） */
+.imp-libs{margin-top:16px}
+.imp-libs-t{font-size:13px;font-weight:700;color:var(--text-secondary);margin:0 0 8px}
+.imp-lib{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px}
+.imp-lib-h{display:flex;align-items:center;gap:8px;cursor:pointer}
+.imp-lib-n{flex:1;font-weight:700;font-size:14px;color:var(--text)}
+.imp-lib-c{font-size:12px;color:var(--text-secondary)}
+.imp-lib-b{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;padding:2px 6px}
+.imp-lib-items{display:none;margin-top:8px;max-height:240px;overflow:auto;font-size:12px;line-height:1.8;color:var(--text-secondary);white-space:pre-wrap;background:var(--bg);border-radius:10px;padding:10px}
+.imp-lib.open .imp-lib-items{display:block}
+.imp-empty{font-size:12px;color:var(--text-muted);padding:8px 2px;line-height:1.7}
+/* 需求20-B（2026-09-17）：窄屏加固 —— 长文本/表格内容可断行，页面不横向滚动，卡片与列表项不挤压。 */
+.imp-lib-items{overflow-wrap:anywhere;word-break:break-word}
+.imp-lib-n{word-break:break-word}
+@media (max-width:560px){
+  .importer-page-body{padding:12px}
+  .importer-page-body .imp-body{padding:0}
+  .imp-lib-h{flex-wrap:wrap;gap:4px}
+  .imp-lib-c{flex:1 1 100%}
+}
+</style>
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
+</head>
+<body class="theme-home">
+
+<div class="app">
+<nav class="sidebar">
+    <div class="logo">
+      <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div>
+      <div>
+        <div class="logo-text">星途</div>
+        <div class="logo-sub">致追梦的人->修身</div>
+      </div>
+    </div>
+    <div class="nav-list">
+      <div class="nav-item" data-page="home">
+        <span class="nav-icon" data-icon="home"></span><span>首页</span>
+      </div>
+      <div class="nav-item" onclick="location.href='AI.html'">
+        <span class="nav-icon" data-icon="sparkles"></span><span>AI</span>
+      </div>
+      <div class="nav-section">学习模块</div>
+      <div class="nav-item" data-page="cet">
+        <span class="nav-icon" data-icon="book-open"></span><span>英语</span>
+      </div>
+      <div class="nav-item" data-page="exam">
+        <span class="nav-icon" data-icon="pencil"></span><span>行测</span>
+      </div>
+      <div class="nav-item" data-page="comm">
+        <span class="nav-icon" data-icon="message-square"></span><span>表达</span>
+      </div>
+      <div class="nav-item" data-page="interview">
+        <span class="nav-icon" data-icon="handshake"></span><span>面测</span>
+      </div>
+      <div class="nav-item" data-page="files">
+        <span class="nav-icon" data-icon="folder"></span><span>我的文件</span>
+      </div>
+      <div class="nav-section">创作</div>
+      <div class="nav-item" data-page="blog">
+        <span class="nav-icon" data-icon="globe"></span><span>社区</span>
+      </div>
+      <div class="nav-item" data-page="moments">
+        <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
+      </div>
+      <div class="nav-section">互动</div>
+      <div class="nav-item" data-external="1" onclick="gotoChat()" title="通讯录 · 添加好友（需在线模式）">
+        <span class="nav-icon" data-icon="users"></span><span>通讯录</span>
+      </div>
+      <div class="nav-section">中心</div>
+      <div class="nav-item" data-page="wrong-book">
+        <span class="nav-icon" data-icon="book"></span><span>错题本</span>
+      </div>
+      <div class="nav-item" data-page="profile">
+        <span class="nav-icon" data-icon="user"></span><span>个人中心</span>
+      </div>
+      <div class="nav-section">系统</div>
+      <div class="nav-item" data-page="settings">
+        <span class="nav-icon" data-icon="settings"></span><span>设置</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心">
+        <div class="user-avatar">学</div>
+        <div class="user-info">
+          <div class="user-name">同学</div>
+          <div class="user-streak"><span class="nav-icon" data-icon="fire" data-icon-size="14"></span> 连续打卡 0 天</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+<header class="topbar">
+      <div class="topbar-title" id="topbarTitle">导入题库</div>
+      <div class="gs-wrap" id="gsWrap">
+        <input type="text" class="gs-input" id="gsInput" placeholder="搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <div class="gs-dropdown" id="gsDropdown"></div>
+      </div>
+      <div class="topbar-stats">
+        <div class="stat-item"><span class="stat-icon" data-icon="fire" data-icon-size="16"></span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="clock" data-icon-size="16"></span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="check" data-icon-size="16"></span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
+      </div>
+      <div class="topbar-date" id="topbarDate"></div>
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="20"></span></div>
+    </header>
+    <div class="content">
+      <div class="page active" id="page-importer">
+        <!-- 顶部返回（独立页，history.back 回上一页；无历史时回更多页） -->
+        <div class="morepage-head">
+          <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='更多.html'}" title="返回" aria-label="返回"><span data-icon="arrow-left" data-icon-size="18"></span></button>
+          <div class="morepage-title"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span> 导入题库</div>
+        </div>
+
+        <!-- 导入向导承载：id=importerView 让 importer.js 收尾走 closeImporterView（本页重载向导，而非弹层 closeI） -->
+        <div class="importer-view" id="importerView">
+          <div class="importer-page-body"><div class="imp-body" id="impBody"></div></div>
+        </div>
+
+        <!-- 我的导入题库：按文件名自动生成，数据由 assets/importer.js 写入 localStorage['study_workbench_imports'] -->
+        <div class="imp-libs" id="impLibs"></div>
+
+        <div class="mf-tip" style="padding:12px 2px 0;font-size:12px;color:var(--text-muted);line-height:1.7">
+          导入的题库会自动出现在这里，可展开查看或删除；作品与题库也可在「<a href="我的文件.html" style="color:var(--primary,#5B8DEF)">我的文件</a>」统一查看。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部导航（手机端） -->
+    <nav class="bottom-nav">
+    <div class="bottom-nav-list">
+      <div class="bottom-nav-item" data-page="home">
+        <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
+      </div>
+      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-square" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
+      <div class="bottom-nav-item" onclick="location.href='AI.html'"><div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div></div>
+      <div class="bottom-nav-item" onclick="location.href='更多.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 更多面板遮罩（全站共用 DOM） -->
+    <div class="more-overlay" onclick="toggleMorePanel()"></div>
+
+  <!-- 更多面板（全站共用 DOM） -->
+  <div class="bottom-more-panel" id="morePanel">
+    <div class="bottom-more-title">更多功能</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="navigateTo('moments');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="rss" data-icon-size="20"></span></div><div class="bm-label">动态空间</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogStats()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
+      </div>
+      <div class="bottom-more-item" onclick="if(window.gotoBlogMine){gotoBlogMine()}else{location.href='社区.html#mine'}">
+        <div class="bm-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div><div class="bm-label">互动广场</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div><div class="bm-label">错题本</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div><div class="bm-label">设置</div>
+      </div>
+      <div class="bottom-more-item" onclick="showAbout()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div><div class="bm-label">关于</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 工具面板遮罩 + 工具面板（全站共用 DOM，app.js 的 toggleToolsPanel 需要它们存在） -->
+  <div class="more-overlay" onclick="toggleToolsPanel()" id="toolsOverlay"></div>
+  <div class="bottom-more-panel" id="toolsPanel">
+    <div class="bottom-more-title"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span> 更多工具</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="location.href='AI模拟面试.html';toggleToolsPanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="mic" data-icon-size="20"></span></div><div class="bm-label">AI面试</div>
+      </div>
+      <div class="bottom-more-item" onclick="location.href='PPT版式库.html';toggleToolsPanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">PPT版式</div>
+      </div>
+      <div class="bottom-more-item" onclick="location.href='四级经验分享.html';toggleToolsPanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div><div class="bm-label">四级经验</div>
+      </div>
+      <div class="bottom-more-item" onclick="if(window.openQuest){openQuest()}else{location.href='工具.html'};toggleToolsPanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="zap" data-icon-size="20"></span></div><div class="bm-label">穿越英语</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加倒计时弹窗（全站共用 DOM，app.js 顶层无守卫监听它，必须存在） -->
+  <div class="modal-overlay" id="countdownModal">    <div class="modal">
+      <div class="modal-title" id="countdownModalTitle">添加倒计时</div>
+      <div class="form-group">
+        <div class="form-label">名称</div>
+        <input type="text" class="form-input" id="cdName" placeholder="如：四级考试、秋招截止">
+      </div>
+      <div class="form-group">
+        <div class="form-label">日期</div>
+        <input type="date" class="form-input" id="cdDate">
+      </div>
+      <div class="form-group">
+        <div class="form-label">颜色</div>
+        <div class="color-picker" id="cdColorPicker">
+          <div class="color-dot active" style="background:#5B8DEF" data-color="#5B8DEF"></div>
+          <div class="color-dot" style="background:#E05040" data-color="#E05040"></div>
+          <div class="color-dot" style="background:#9B6BD9" data-color="#9B6BD9"></div>
+          <div class="color-dot" style="background:#D4A056" data-color="#D4A056"></div>
+          <div class="color-dot" style="background:#36CFC9" data-color="#36CFC9"></div>
+          <div class="color-dot" style="background:#FF9F68" data-color="#FF9F68"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--xt-font-base);color:var(--text-secondary)">
+          <input type="checkbox" id="cdPinned"> 置顶显示
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeCountdownModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveCountdown()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast提示 -->
+  <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center"></div>
+
+  <!-- ==================== AI学习助手（悬浮聊天窗口） ==================== -->
+  <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">
+    <span class="nav-icon" data-icon="bot" data-icon-size="20"></span><span class="ai-mode-badge" id="aiModeBadge">AI</span>
+  </div>
+  <div class="ai-panel" id="aiPanel">
+    <div class="ai-panel-header">
+      <div class="ai-avatar"><span class="nav-icon" data-icon="bot" data-icon-size="20"></span></div>
+      <div style="flex:1">
+        <div class="ai-title">AI学习助手</div>
+        <div class="ai-subtitle" id="aiSubtitle">已接入 AI · 模型：自动（推荐）</div>
+      </div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录"><span class="nav-icon" data-icon="delete" data-icon-size="18"></span></div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板"><span class="nav-icon" data-icon="close" data-icon-size="16"></span></div>
+    </div>
+    <div class="ai-messages" id="aiMessages"></div>
+    <div class="ai-input-row">
+      <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()"><span class="nav-icon" data-icon="arrow-right" data-icon-size="18"></span></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/xt-toast.js?v=20260923a" defer></script>
+<script src="assets/error-boundary.js?v=20260916O" defer></script>
+<script src="assets/app.js?v=20260923a" defer></script>
+<script src="assets/quest.js?v=20260916O" defer></script>
+<script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260922c" defer></script>
+<script src="assets/qbank.js?v=20260916O" defer></script>
+<script src="assets/importer.js?v=20260917b" defer></script>
+<script src="assets/study-stats.js?v=20260916O" defer></script>
+<script src="assets/ai-config.js?v=20260920c"></script>
+<script src="assets/ai-presets.js?v=20260916O"></script>
+<script src="assets/ai-service.js?v=20260920e"></script>
+<script src="assets/ai-cap-registry.js?v=20260918c"></script>
+<script src="assets/ai-cap-image.js?v=20260920c"></script>
+<script src="assets/ai-cap-vision.js?v=20260920c"></script>
+<script src="assets/ai-cap-audio.js?v=20260920c"></script>
+<script src="assets/ai-cap-embed.js?v=20260920c"></script>
+<script src="assets/ai-cap-translate.js?v=20260920c"></script>
+<script src="assets/ai-cap-video.js?v=20260920c"></script>
+<script src="assets/ai-cap-3d.js?v=20260922a"></script>
+<script>
+/* ==================== R72-8（20260917）：导入题库 · 独立页接线 ====================
+   向导主体全部复用 assets/importer.js（openImporter / __impDo / __impBanks / __impDelBank）。
+   本页只做三件事：① 初始化向导并把 #impBody 迁入页面容器；② 导入完成后重载向导（供再导入）；
+   ③ 渲染「我的导入题库」列表。整页布局，无弹层遮罩。 */
+(function () {
+  'use strict';
+
+  function $id(x) { return document.getElementById(x); }
+
+  function escImp(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function impItemText(it) {
+    if (!it) return '(空)';
+    if (it.q) return it.q + (it.options && it.options.length ? '（' + it.options.join(' / ').slice(0, 80) + '）' : '');
+    if (it.text) return it.text;
+    if (it.question) return it.question;
+    if (it.word) return it.word + (it.meaning ? '  ' + it.meaning : '');
+    return JSON.stringify(it).slice(0, 80);
+  }
+
+  /* 打开/重载向导：由 importer.js 的 openImporter() 初始化状态与步骤 DOM，
+     再把向导主体 #impBody 从弹层外壳搬进本页容器并移除弹层外壳（不改动 importer.js 任何函数）。 */
+  function openImporterView() {
+    if (!window.openImporter) { location.href = '设置.html'; return; }
+    window.openImporter();
+    var mask = $id('impMask');
+    var body = $id('impBody');
+    var host = $id('importerView');
+    if (mask && body && host) {
+      var wrap = host.querySelector('.importer-page-body') || host;
+      // 清掉上一次遗留的 #impBody，避免重复 id 让向导渲染进已被替换的旧节点（表现为点了没反应）
+      var olds = wrap.querySelectorAll('#impBody');
+      for (var oi = 0; oi < olds.length; oi++) {
+        if (olds[oi] !== body && olds[oi].parentNode) olds[oi].parentNode.removeChild(olds[oi]);
+      }
+      wrap.appendChild(body);
+      if (mask.parentNode) mask.parentNode.removeChild(mask);
+    }
+  }
+  /* importer.js 导入成功后回调：本页重载向导（准备再导入一份），而非弹层 closeI（那会清空 S 让向导失效） */
+  function closeImporterView() { openImporterView(); }
+
+  window.openImporterView = openImporterView;
+  window.closeImporterView = closeImporterView;
+
+  /* ---------- 我的导入题库（自定义题库列表，来源 assets/importer.js 写入的 localStorage） ---------- */
+  function renderImportLibs() {
+    var host = $id('impLibs');
+    if (!host) return;
+    if (typeof window.__impBanks !== 'function') {
+      host.innerHTML = '<div class="imp-libs-t">我的导入题库</div><div class="imp-empty">导入向导尚未就绪（assets/importer.js 未加载），请刷新页面重试。</div>';
+      return;
+    }
+    var banks = window.__impBanks() || {};
+    var names = Object.keys(banks);
+    if (!names.length) {
+      host.innerHTML = '<div class="imp-libs-t">我的导入题库</div><div class="imp-empty">还没有导入记录。导入后会自动按文件名生成自定义题库（例如「自定义·四级词汇表」），出现在这里，可展开查看、也可在导入时选它继续追加。</div>';
+      return;
+    }
+    host.innerHTML = '<div class="imp-libs-t">我的导入题库（' + names.length + '）</div>' + names.map(function (n) {
+      var b = banks[n] || {}, items = b.items || [];
+      var prev = items.slice(0, 30).map(function (it, i) { return (i + 1) + '. ' + impItemText(it); }).join('\n');
+      return '<div class="imp-lib" data-n="' + escImp(n) + '">' +
+        '<div class="imp-lib-h" onclick="this.parentNode.classList.toggle(\'open\')">' +
+        '<span class="imp-lib-n">📦 ' + escImp(n) + '</span>' +
+        '<span class="imp-lib-c">' + items.length + ' 条 · ' + escImp(b.updatedAt || '') + ' ›</span>' +
+        '</div>' +
+        '<div class="imp-lib-items">' + escImp(prev || '（该题库暂无内容）') + (items.length > 30 ? '\n… 仅显示前 30 条' : '') + '</div>' +
+        '<div style="margin-top:6px;text-align:right"><button class="imp-lib-b" onclick="removeImportLib(this)">删除该题库</button></div>' +
+        '</div>';
+    }).join('');
+  }
+
+  function removeImportLib(btn) {
+    var box = btn && btn.parentNode ? btn.parentNode : null;
+    while (box && box.className && String(box.className).indexOf('imp-lib') < 0) box = box.parentNode;
+    var n = box ? box.getAttribute('data-n') : '';
+    if (!n) return;
+    if (typeof window.__impDelBank === 'function') window.__impDelBank(n);
+    renderImportLibs();
+    if (typeof window.xtToast === 'function') window.xtToast('info', '已删除自定义题库「' + n + '」');
+  }
+  window.removeImportLib = removeImportLib;
+  window.renderImportLibs = renderImportLibs;
+  /* importer.js 导入成功后回调，用于刷新本列表 */
+  window.__impAfterImport = renderImportLibs;
+
+  function boot() {
+    openImporterView();
+    renderImportLibs();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+  /* importer.js 带 defer，晚于本内联脚本执行：DOMContentLoaded 时再渲染一次，避免首屏显示“未就绪” */
+  window.addEventListener('DOMContentLoaded', renderImportLibs);
+})();
+</script>
+</body>
+</html>

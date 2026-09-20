@@ -1,0 +1,31 @@
+[PASS] 源码: ai-settings.html 图标 emoji 0 命中
+[PASS] 源码: ai-settings.js 图标 emoji 0 命中（★ 经 \u2605 转义保留数据解析）
+[PASS] 源码: html 内联 svg ≥6 处（含页头返回按钮）  count=6
+[PASS] 源码: js 图标库内联 svg ≥3 行  count=3
+[PASS] SVG: #setBatchHealth 含内联 svg + 文本 span
+[PASS] SVG: #setBatchHealthTxt 初始文案=批量检测
+[PASS] SVG: #setFmKeyEye 含内联 svg
+[PASS] SVG: #setFmAdvToggle 含旋转箭头 svg.xt-adv-arrow + 文本 span
+[PASS] SVG: #setRedetectAll 含内联 svg
+[PASS] SVG: 记忆管理标题含内联 svg
+[PASS] SVG: 模型行拖拽手柄 svg（无 ⠿）
+[PASS] SVG: 编辑按钮 svg（无 ✏）
+[PASS] SVG: 上移/下移按钮 svg（无 ↑↓）
+[PASS] SVG: 星级实心 svg（点亮=fill currentColor）
+[PASS] SVG: 星级描边 svg（未点亮=fill none）
+[PASS] SVG: 健康徽章(正常)含 check svg
+[PASS] SVG: 健康徽章(失败)含 cross svg
+[PASS] SVG: 健康徽章(待检测)含 svg
+[PASS] SVG: 自定义行删除按钮 svg（无 🗑）
+[PASS] SVG: 分类链上移/移出按钮 svg（无 ↑ ✕）
+[PASS] SVG: 记忆删除按钮 svg（无 🗑）
+[PASS] SVG: 表单星级按钮 svg（无 ★ 字符）
+[PASS] SVG: Key 状态行含锁形 svg（无 🔒 emoji）
+[PASS] 行为: 编辑表单打开（事件委托未破）
+[PASS] 行为: 星级点击仍写 stars
+[PASS] 行为: 高级设置展开（display block + .open 类旋转箭头）
+[PASS] 行为: 高级设置折叠复位
+[PASS] 行为: 批量按钮文案 span 可更新（SVG 不被抹掉）
+[PASS] DOM: 全页渲染后图标 emoji 0 命中
+
+===== R67 线1 图标测试汇总: PASS=29 FAIL=0 =====

@@ -1,0 +1,92 @@
+/* assets/page-head.css — P0-B T04-00 公共基础 · 顶部结构 + 面包屑
+ * --------------------------------------------------------------------
+ * 1. xt-page-head：24 页统一顶部（标题 + 副标题 + 返回 + 操作）
+ * 2. xt-subpage-header：面包屑（与 subpage-router.js 配合）
+ * --------------------------------------------------------------------
+ * 颜色/圆角/阴影走 --xt-* 设计令牌
+ */
+
+/* === 页面统一顶部 === */
+.xt-page-head {
+  padding: var(--xt-space-4) var(--xt-space-5);
+  background: var(--xt-bg-card);
+  border-bottom: 1px solid var(--xt-border);
+  display: flex;
+  align-items: center;
+  gap: var(--xt-space-3);
+}
+.xt-page-head .xt-page-title {
+  font-size: var(--xt-font-lg);
+  font-weight: 500;
+  color: var(--xt-text);
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.xt-page-head .xt-page-subtitle {
+  font-size: var(--xt-font-sm);
+  color: var(--xt-text-dim);
+  margin: 0;
+}
+.xt-page-head .xt-page-back {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--xt-text-dim);
+  padding: var(--xt-space-1);
+  border-radius: var(--xt-radius-sm);
+  font-size: var(--xt-font-lg);
+  line-height: 1;
+  flex-shrink: 0;
+  transition: all var(--xt-transition);
+}
+.xt-page-head .xt-page-back:hover {
+  background: var(--xt-bg-muted);
+  color: var(--xt-text);
+}
+.xt-page-head .xt-page-back:focus-visible {
+  outline: 2px solid var(--xt-primary);
+  outline-offset: 2px;
+}
+.xt-page-head .xt-page-actions {
+  margin-left: auto;
+  display: flex;
+  gap: var(--xt-space-2);
+  flex-shrink: 0;
+}
+
+/* === 子页面包屑 === */
+.xt-subpage-header {
+  padding: var(--xt-space-3) var(--xt-space-5);
+  background: var(--xt-bg-muted);
+  font-size: var(--xt-font-sm);
+  color: var(--xt-text-dim);
+  display: flex;
+  align-items: center;
+  gap: var(--xt-space-2);
+  border-bottom: 1px solid var(--xt-border);
+}
+.xt-subpage-header a {
+  color: var(--xt-text-dim);
+  text-decoration: none;
+  transition: color var(--xt-transition);
+}
+.xt-subpage-header a:hover {
+  color: var(--xt-primary);
+}
+.xt-subpage-header a:focus-visible {
+  outline: 2px solid var(--xt-primary);
+  outline-offset: 2px;
+  border-radius: var(--xt-radius-sm);
+}
+.xt-subpage-header .xt-breadcrumb-sep {
+  opacity: 0.5;
+  color: var(--xt-text-hint);
+}
+.xt-subpage-header .xt-breadcrumb-current {
+  color: var(--xt-text);
+  font-weight: 500;
+}

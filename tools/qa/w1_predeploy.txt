@@ -1,0 +1,28 @@
+[1] 私聊.html 未命中注释模式，<style> 计数仍为 2
+[2] 四级备考.html cet-read.js 版本戳 bump -> 20260915f (改动 1 行)
+      <script src="assets/data-cet-read.js?v=20260915f" defer></script>
+      <script src="assets/cet-read.js?v=20260915f" defer></script>
+      /* ① 解析期同步建表：cet-read.js / cet-translate.js 等 defer 脚本早于 DOMContentLoaded 执行 */
+
+[3] 配对终校
+  [OK]   商务礼仪面试.html           
+  [OK]   私聊.html               
+  [OK]   工具.html               
+  [OK]   更多.html               
+  [OK]   四级备考.html             
+  [OK]   assets/cet-read.js    
+
+[4] node --check
+  rc=0  assets/cet-read.js
+  rc=0  assets/app.js
+  rc=0  assets/api.js
+
+[5] git diff --stat
+assets/cet-read.js                    | 105 ++++++++++++++++++++++-
+ 任务执行文档-20260915-全线自主执行.md | 137 +++++++++++++++++++++++++++++
+ 商务礼仪面试.html                     | 156 +++++++++++++++++++++++++++++-----
+ 四级备考.html                         |   4 +-
+ 工具.html                             |  47 ++++++++--
+ 更多.html                             |  44 ++++++++--
+ 私聊.html                             |  60 ++++++++++++-
+ 7 files changed, 513 insertions(+), 40 deletions(-)

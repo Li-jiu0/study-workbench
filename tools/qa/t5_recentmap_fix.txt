@@ -1,0 +1,10 @@
+命中次数 = 1
+'listen' 在 app.js 中出现次数（改前）= 5
+定位行号 = 6778
+改前:     '四级词汇.html': 'cet', '英语.html': 'listen', '设置.html': 'settings', '个人中心.html': 'settings'
+改后:     '四级词汇.html': 'cet', '英语.html': 'cet', '设置.html': 'settings', '个人中心.html': 'settings'
+  
+已写盘
+'listen' 在 app.js 中出现次数（改后）= 4
+CRLF=9070  纯LF=0  -> CRLF
+app.js 行数(\n 计数) = 9070

@@ -1,0 +1,71 @@
+=== 1. node --check（改动过的 js）===
+  ai-page.js             PASS 
+  ai-presets.js          PASS 
+  api.js                 PASS 
+  app.js                 PASS 
+  cet-read.js            PASS 
+  cet-translate.js       PASS 
+  chat-local.js          PASS 
+  comm-cases.js          PASS 
+  data-exam-company.js   PASS 
+  design-class.js        PASS 
+  group-discussion.js    PASS 
+  mini-cet.js            PASS 
+  mini-comm.js           PASS 
+  mini-exam.js           PASS 
+  mini-interview.js      PASS 
+  mini-ppt.js            PASS 
+  ppt-tips.js            PASS 
+  ppt-works.js           PASS 
+  qbank.js               PASS 
+  roleplay.js            PASS 
+  topic-express.js       PASS 
+  tpl-preview.js         PASS 
+  node --check 失败数 = 0
+
+=== 2. node tools/qa/escheck_es2017.js ===
+DONE 3
+  exit=0
+
+=== 3. node tools/qa/multi_check.js ===
+DONE
+  exit=0
+
+=== 4. 禁用语法扫描（改动过的 js + 改动的 html）===
+  禁用语法命中 = 0
+
+=== 5. HTML 标签配对（<!--/--> 与 div）===
+  AI.html            <!--=13 -->=13  div=142 /div=142  OK
+  PPT案例拆解.html       <!--=9 -->=9  div=111 /div=111  OK
+  PPT版式库.html        <!--=10 -->=10  div=112 /div=112  OK
+  blog_wechat.html   <!--=23 -->=23  div=177 /div=177  OK
+  mock_exam.html     <!--=9 -->=9  div=19 /div=19  OK
+  万能金句库.html         <!--=9 -->=9  div=112 /div=112  OK
+  个人中心.html          <!--=22 -->=22  div=225 /div=225  OK
+  企业定向库.html         <!--=10 -->=10  div=117 /div=117  OK
+  动态.html            <!--=11 -->=11  div=109 /div=109  OK
+  商务礼仪.html          <!--=9 -->=9  div=112 /div=112  OK
+  四级词汇.html          <!--=10 -->=10  div=137 /div=137  OK
+  场景话术库.html         <!--=9 -->=9  div=112 /div=112  OK
+  学习工作台.html         <!--=18 -->=18  div=173 /div=173  OK
+  学途.html            <!--=3 -->=3  div=24 /div=24  OK
+  工具.html            <!--=17 -->=17  div=142 /div=142  OK
+  时政热点.html          <!--=12 -->=12  div=129 /div=129  OK
+  更多.html            <!--=30 -->=31  div=162 /div=162  <<< 不配对
+  申论刷题.html          <!--=13 -->=13  div=130 /div=130  OK
+  私聊.html            <!--=24 -->=24  div=153 /div=153  OK
+  管理员.html           <!--=14 -->=14  div=148 /div=148  OK
+  行测刷题.html          <!--=10 -->=10  div=123 /div=123  OK
+  设置.html            <!--=38 -->=38  div=475 /div=475  OK
+  错题本.html           <!--=9 -->=9  div=117 /div=117  OK
+  面试题库.html          <!--=9 -->=9  div=111 /div=111  OK
+  社区.html            <!--=24 -->=24  div=164 /div=164  OK
+  英语.html            <!--=38 -->=38  div=189 /div=189  OK
+  行测.html            <!--=16 -->=16  div=157 /div=157  OK
+  表达.html            <!--=13 -->=13  div=164 /div=164  OK
+  面测.html            <!--=29 -->=29  div=213 /div=213  OK
+  演示.html            <!--=23 -->=23  div=183 /div=183  OK
+  不配对文件数 = 1
+
+=== 6. alert/confirm/prompt 扫描（改动文件）===
+  命中 = 0（本次为纯文本/文件名替换，应为既有值）

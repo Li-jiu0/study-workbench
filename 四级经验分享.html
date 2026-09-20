@@ -1,0 +1,619 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>四级经验分享 - 星途</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: #f5f7fa;
+  min-height: 100vh;
+}
+.header {
+  background: linear-gradient(135deg, #5B8DEF 0%, #7B61FF 100%);
+  padding: calc(16px + env(safe-area-inset-top, 0px)) 20px 16px;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+.header-back {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  border: none;
+  color: white;
+}
+.header-title {
+  font-size: 18px;
+  font-weight: 700;
+  flex: 1;
+}
+.header-desc {
+  font-size: 12px;
+  opacity: 0.8;
+}
+.content {
+  padding: 16px;
+  padding-bottom: 40px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.tips-banner {
+  background: linear-gradient(135deg, #eff6ff, #e0e7ff);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border-left: 4px solid #5B8DEF;
+}
+.tips-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e40af;
+  margin-bottom: 8px;
+}
+.tips-content {
+  font-size: 13px;
+  color: #3730a3;
+  line-height: 1.7;
+}
+.article-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.article-item {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  transition: box-shadow 0.2s;
+}
+.article-item:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.article-header {
+  padding: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.article-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.article-info { flex: 1; min-width: 0; }
+.article-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+.article-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.source-tag {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.source-bilibili { background: #ffe4e6; color: #e11d48; }
+.source-zhihu { background: #e0f2fe; color: #0284c7; }
+.source-douyin { background: #f3e8ff; color: #9333ea; }
+.source-xdf { background: #dcfce7; color: #16a34a; }
+.source-blog { background: #fef3c7; color: #d97706; }
+.article-date {
+  font-size: 12px;
+  color: #999;
+}
+.article-arrow {
+  color: #ccc;
+  font-size: 20px;
+  transition: transform 0.3s;
+  flex-shrink: 0;
+  margin-top: 10px;
+}
+.article-item.open .article-arrow {
+  transform: rotate(180deg);
+}
+.article-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.article-item.open .article-content {
+  max-height: 2000px;
+}
+.article-body {
+  padding: 0 16px 16px 72px;
+  font-size: 14px;
+  color: #555;
+  line-height: 1.8;
+}
+.article-body h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #333;
+  margin: 14px 0 8px;
+}
+.article-body p {
+  margin-bottom: 10px;
+}
+.article-body ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+.article-body li {
+  margin-bottom: 6px;
+}
+.article-body .highlight {
+  background: #f0f4ff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border-left: 3px solid #5B8DEF;
+  margin: 10px 0;
+}
+.article-body .tip {
+  background: #fff8e1;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border-left: 3px solid #ff9800;
+  margin: 10px 0;
+  font-size: 13px;
+}
+.article-footer {
+  padding: 12px 16px 16px 72px;
+  border-top: 1px solid #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.article-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.article-tag {
+  padding: 3px 8px;
+  background: #f0f4ff;
+  color: #5B8DEF;
+  border-radius: 10px;
+  font-size: 11px;
+}
+.view-original {
+  color: #5B8DEF;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+.view-original:hover {
+  text-decoration: underline;
+}
+/* ===== R73 需求20-B 移动端适配（≤768px）=====
+   仅作用于窄屏；桌面端(>768px)渲染零影响（本块整体位于媒体查询内）。
+   1) 内嵌媒体兜底 max-width，防 JS 注入内容/未来素材撑破窄屏；
+   2) 宽表格窄屏内横向滚动，避免整页横向溢出（需求20-B #2）；
+   3) 字号下限兜底：common.css 的 .bn-label(10px)/.ai-mode-badge(9px)/
+      .study-stats-bar b(9px) 低于 A7 辅助≥11px，页内窄屏提升到 11px（不改共享 common.css）。 */
+@media (max-width: 768px) {
+  img, video, canvas, iframe { max-width: 100%; height: auto; }
+  table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bottom-nav-item .bn-label, .ai-mode-badge, .study-stats-bar b { font-size: 11px; }
+}
+</style>
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
+</head>
+<body>
+
+<div class="header">
+  <button class="header-back" onclick="goBack()"><span data-icon="arrow-left" data-icon-size="18" style="vertical-align:-3px"></span></button>
+  <div>
+    <div class="header-title">四级经验分享</div>
+    <div class="header-desc">来自B站/知乎/抖音/新东方的学霸经验</div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="tips-banner">
+    <div class="tips-title"><span data-icon="lightbulb" data-icon-size="16" style="vertical-align:-3px"></span> 使用指南</div>
+    <div class="tips-content">
+      点击文章标题即可展开查看完整内容，再次点击收起。每个人基础不同，经验仅供参考，找到适合自己的方法最重要。建议先看「备考计划」类，再针对薄弱板块看具体技巧。
+    </div>
+  </div>
+
+  <div class="article-list" id="articleList">
+    <!-- 文章由JS动态生成 -->
+  </div>
+</div>
+
+<script src="assets/config.js?v=20260916O"></script>
+<script>
+// 经验分享数据（完整内容）
+var articles = [
+  {
+    id: 1,
+    icon: '📅',
+    iconBg: '#dbeafe',
+    title: '四级考前一个月怎么冲刺？各板块提分计划速查',
+    source: '中国教育在线',
+    sourceType: 'blog',
+    date: '2026-07-25',
+    tags: ['1个月冲刺', '提分计划', '各板块攻略'],
+    url: 'http://www.eol.cn/kaoshi/ky/cet/202607/t20260724_2759967.shtml',
+    content: `
+      <h4>核心策略</h4>
+      <p>考前一个月核心策略是<strong>"稳住阅读和听力，写作翻译保底线"</strong>。阅读和听力合计占70%分值，冲刺阶段优先确保这两块的正确率，写作翻译做模板储备即可。</p>
+      
+      <h4>各板块时间分配</h4>
+      <ul>
+        <li><strong>听力（35%）</strong>：每天精听1套真题，重点练短篇新闻和长对话</li>
+        <li><strong>阅读（35%）</strong>：每天2篇仔细阅读+1篇匹配，先读题再定位</li>
+        <li><strong>写作（15%）</strong>：背3套模板，每周仿写2篇，积累高级句式</li>
+        <li><strong>翻译（15%）</strong>：积累中国文化/历史/经济常用表达</li>
+      </ul>
+      
+      <div class="highlight">
+        <strong>💡 最后一周：</strong>用近2年真题进行全真模拟，严格按考试时间（上午9:00-11:25），培养考试状态，熟悉时间分配。
+      </div>
+    `
+  },
+  {
+    id: 2,
+    icon: '🔥',
+    iconBg: '#fee2e2',
+    title: '1个月拿下四六级630+！全题型复习冲刺教程',
+    source: '抖音',
+    sourceType: 'douyin',
+    date: '2026-05-17',
+    tags: ['630+高分', '1个月计划', '全题型'],
+    url: 'https://www.iesdouyin.com/share/video/7640667754794019249',
+    content: `
+      <h4>学霸背景</h4>
+      <p>四级裸考653，六级二刷635。把一个月拆成三个循序渐进的备考阶段，每天具体做什么都列得清清楚楚，跟着执行就行。</p>
+      
+      <h4>三阶段备考法</h4>
+      <ul>
+        <li><strong>第1-2周（夯实基础）</strong>：熟悉真题考察套路，每天背50个单词，精听1篇听力</li>
+        <li><strong>第3周（分题型突破）</strong>：掌握各题型做题技巧，听力4遍法，阅读定位法</li>
+        <li><strong>第4周（全真模拟）</strong>：查缺补漏，每天1套真题，分析错题</li>
+      </ul>
+      
+      <h4>四大题型具体技巧</h4>
+      <ul>
+        <li><strong>听力</strong>：听到什么选什么，重点关注转折词（but/however）后面的内容</li>
+        <li><strong>阅读</strong>：仔细阅读先读题再定位，匹配题先划关键词速查</li>
+        <li><strong>写作</strong>：三段式结构，开头引入+主体2个论点+结尾总结</li>
+        <li><strong>翻译</strong>：先找主干，再添加修饰，遇到不会的词用同义词替换</li>
+      </ul>
+      
+      <div class="tip">
+        <strong>💡 提分关键：</strong>根据分数性价比，优先突破听力和阅读两大板块，这两块占70%分值。
+      </div>
+    `
+  },
+  {
+    id: 3,
+    icon: '📝',
+    iconBg: '#fef3c7',
+    title: '大学英语四六级30天保姆级冲刺攻略',
+    source: '厦门工学院',
+    sourceType: 'blog',
+    date: '2026-05-22',
+    tags: ['30天计划', '保姆级', '写作模板'],
+    url: 'https://www.xit.edu.cn/sie/2026/0522/c1022a88843/page.psp',
+    content: `
+      <h4>写作万能模板</h4>
+      <p><strong>开头（引入+观点）：</strong>现象引入（Nowadays, ...）+ 明确观点（We should ...）</p>
+      <p><strong>主体（2-3个分论点）：</strong>每段用First and foremost/In addition/Finally这类逻辑词衔接，每个论点搭配一个简单的例子支撑，清晰明了不混乱。</p>
+      <p><strong>结尾（总结+升华）：</strong>重申核心观点，再稍微延伸提到话题对现实的意义，比如"对个人发展/社会进步有什么深远影响"，完整收尾。</p>
+      
+      <div class="highlight">
+        <strong>💡 冲击高分：</strong>在关键位置适当插入高级句式，如倒装句（Only in this way can we...）、强调句（It is...that...）、虚拟语气（If I were you, I would...）。
+      </div>
+      
+      <h4>30天每日任务</h4>
+      <ul>
+        <li><strong>第1-10天：</strong>每天背40个单词，精听1篇听力，阅读2篇</li>
+        <li><strong>第11-20天：</strong>分题型突破，掌握做题技巧，每周写2篇作文</li>
+        <li><strong>第21-30天：</strong>每天1套真题模拟，分析错题，背作文模板</li>
+      </ul>
+    `
+  },
+  {
+    id: 4,
+    icon: '🎧',
+    iconBg: '#e0f2fe',
+    title: '学姐分享英语四级高效备考经验：听力4遍法',
+    source: '抖音',
+    sourceType: 'douyin',
+    date: '2025-10-12',
+    tags: ['听力4遍法', '错题精听', '跟读模仿'],
+    url: 'https://www.iesdouyin.com/share/video/7560315969396591929',
+    content: `
+      <h4>听力4遍法（核心方法）</h4>
+      <p>做听力的核心方法就是把整个听力听4遍，每一遍都有不同的重点：</p>
+      <ul>
+        <li><strong>第一遍：</strong>先根据完整的听力材料走一遍，然后修改答案。这一遍模拟真实考试，不要暂停。</li>
+        <li><strong>第二遍：</strong>把错误的听力题给单独拎出来再听一遍，看自己是哪里听漏了，重点关注错题对应的原文。</li>
+        <li><strong>第三遍：</strong>根据听力材料把文本找出来，对照文本去听错题，看看是单词不认识还是连读没听出来。</li>
+        <li><strong>第四遍：</strong>跟读模仿语音语调，培养语感，同时积累听力高频词汇。</li>
+      </ul>
+      
+      <div class="tip">
+        <strong>💡 小技巧：</strong>也可以通过最简单的方式就是"听到什么就选什么"，四级听力答案通常就是原文的同义替换。
+      </div>
+      
+      <h4>听力预判技巧</h4>
+      <p>审题时快速浏览题目，圈画人名、动词、时间、数字等重点词汇，根据选项预判听力内容，听的时候重点关注预判的信息点。</p>
+    `
+  },
+  {
+    id: 5,
+    icon: '📖',
+    iconBg: '#dcfce7',
+    title: '南邮大神提分秘籍：阅读先读题再定位原文',
+    source: '中国大学生在线',
+    sourceType: 'blog',
+    date: '2025-11-21',
+    tags: ['阅读技巧', '时间分配', '听力预判'],
+    url: 'https://xyh.univs.cn/a/xyh_xyh_njyddx/251121/2024663.shtml',
+    content: `
+      <h4>核心观点</h4>
+      <p>四六级考试本质是<strong>时间与精力的策略分配</strong>。大多数初考四级的同学都因不知如何分配时间精力而丢失分数。</p>
+      
+      <h4>阅读各题型策略</h4>
+      <ul>
+        <li><strong>仔细阅读（2篇，20题）：</strong>主攻题型，先读题再定位原文，找到答案依据再选</li>
+        <li><strong>匹配题（1篇，10题）：</strong>先划关键词速查，注意同义替换，不要逐字读</li>
+        <li><strong>词汇填空（1篇，10题）：</strong>难度大分值低，建议最后做，先判断词性再选</li>
+      </ul>
+      
+      <h4>听力策略</h4>
+      <p>听力审题时快速浏览题目，圈画人名、动词等重点词汇并进行预判，听力的核心在于<strong>预判与高效应对</strong>。</p>
+      
+      <div class="highlight">
+        <strong>💡 时间分配建议：</strong>听力30分钟（边听边涂卡），阅读40分钟（仔细阅读25分钟+匹配10分钟+词汇5分钟），写作30分钟，翻译30分钟。
+      </div>
+    `
+  },
+  {
+    id: 6,
+    icon: '✍️',
+    iconBg: '#f3e8ff',
+    title: '英语四六级备考实用经验：写作仿写+语料积累',
+    source: '中国大学生在线',
+    sourceType: 'blog',
+    date: '2026-06-12',
+    tags: ['写作仿写', '语料积累', '高级句式'],
+    url: 'https://xyh.univs.cn/a/xyh_xyh_fgmdmgzs/260612/2044226.shtml',
+    content: `
+      <h4>写作两步法</h4>
+      <p><strong>第一步：仿写范文（每周2篇）</strong></p>
+      <ul>
+        <li>选择真题范文，拆解结构（引言-论点-结论）</li>
+        <li>模仿高级句式（如倒装句、虚拟语气、强调句）</li>
+        <li>替换模板句：将"With the development of society"改为"In the context of globalization"</li>
+      </ul>
+      
+      <p><strong>第二步：积累语料</strong></p>
+      <ul>
+        <li><strong>万能论点：</strong>环保（sustainable development）、科技（double-edged sword）、教育（critical thinking）</li>
+        <li><strong>高阶词汇：</strong>用important → crucial/vital，many → numerous/a multitude of</li>
+        <li><strong>逻辑连接词：</strong>First and foremost, In addition, Last but not least</li>
+      </ul>
+      
+      <div class="tip">
+        <strong>💡 注意：</strong>不要死背模板，要学会灵活运用，把模板句改成自己的话，避免千篇一律。
+      </div>
+    `
+  },
+  {
+    id: 7,
+    icon: '🎯',
+    iconBg: '#fce7f3',
+    title: '英语四级备考全攻略！零基础也能搞定的实用干货',
+    source: '新东方网',
+    sourceType: 'xdf',
+    date: '2025-10-09',
+    tags: ['零基础', '真题模拟', '时间分配'],
+    url: 'https://mtoutiao.xdf.cn/cet4-6/202510/14961690.html',
+    content: `
+      <h4>模拟考试方法</h4>
+      <p>用近2年的真题套卷，严格按照考试时间（上午9:00-11:25）进行模拟，模拟过程中不翻书、不查资料，培养考试状态，熟悉时间分配。</p>
+      
+      <h4>各板块时间分配</h4>
+      <ul>
+        <li>听力：30分钟（边听边涂卡，听完立即收卡）</li>
+        <li>阅读：40分钟（仔细阅读优先）</li>
+        <li>写作：30分钟（先列提纲再写）</li>
+        <li>翻译：30分钟（先找主干再修饰）</li>
+      </ul>
+      
+      <h4>查漏补缺</h4>
+      <p>每次模拟后，对照答案分析错题，找出薄弱环节，针对性强化。错题要搞清楚为什么错，是单词不认识、句子没读懂、还是技巧没掌握。</p>
+      
+      <div class="highlight">
+        <strong>💡 零基础建议：</strong>先背高频词汇（前1000个），再练听力和阅读，写作翻译最后突击模板。不要一开始就做整套真题，会打击信心。
+      </div>
+    `
+  },
+  {
+    id: 8,
+    icon: '🏆',
+    iconBg: '#fef3c7',
+    title: '2026年上半年四六级考试备考干货指南',
+    source: '新东方网',
+    sourceType: 'xdf',
+    date: '2026-01-15',
+    tags: ['写作框架', '高分技巧', '模板直接套'],
+    url: 'http://mtoutiao.xdf.cn/cet4-6/202601/15077064.html',
+    content: `
+      <h4>写作框架模板（直接套）</h4>
+      <p><strong>开头：</strong>现象引入（Nowadays, AI tools have been widely used in college study...）+ 明确观点（We should use AI rationally to balance efficiency and independent thinking.）</p>
+      <p><strong>主体：</strong></p>
+      <ul>
+        <li>分论点1 + 案例/论据（Firstly, AI can improve learning efficiency, such as helping with paper retrieval...）</li>
+        <li>分论点2 + 转折/补充（However, over-reliance on AI may...）</li>
+      </ul>
+      <p><strong>结尾：</strong>总结观点 + 展望未来（In conclusion, ... Only in this way can we...）</p>
+      
+      <div class="tip">
+        <strong>💡 冲击高分：</strong>在关键位置适当插入高级句式，如倒装句、强调句、虚拟语气、非谓语动词等，让文章更有亮点。
+      </div>
+      
+      <h4>各题型备考重点</h4>
+      <ul>
+        <li><strong>听力：</strong>精听真题，关注转折词和数字</li>
+        <li><strong>阅读：</strong>先题后文，定位原文，同义替换</li>
+        <li><strong>写作：</strong>背模板+仿写，积累高级句式</li>
+        <li><strong>翻译：</strong>积累中国特色词汇，先主干后修饰</li>
+      </ul>
+    `
+  },
+  {
+    id: 9,
+    icon: '📚',
+    iconBg: '#e0f2fe',
+    title: '英语四级备考小技巧：单词是基础，方法是关键',
+    source: '河北科技师范学院',
+    sourceType: 'blog',
+    date: '2026-05-11',
+    tags: ['单词记忆', '碎片时间', '基础打牢'],
+    url: 'https://xsc.hevttc.edu.cn/info/1186/2423.htm',
+    content: `
+      <h4>单词是基础</h4>
+      <p>单词是学习各种语言的基础！没有单词作为根基，你就建不成大房子。就连我们以前学习语文的时候都要背课文背词语，那英语怎么可能不用背单词呢？</p>
+      <p>重要的是，以下的多个学习方法都建立在拥有一定词汇量的基础上！</p>
+      
+      <h4>手机软件背单词</h4>
+      <p>好处是随时随地可以背，利用碎片时间（排队、等车、睡前）。建议选择有艾宾浩斯遗忘曲线复习功能的APP，每天背30-50个新词，同时复习旧词。</p>
+      
+      <div class="highlight">
+        <strong>💡 最后一个月小目标：</strong>先把四级高频词汇（约2000个）背完，不需要会拼写，看到认识就行。听力和阅读中反复出现的词重点记。
+      </div>
+      
+      <h4>单词记忆技巧</h4>
+      <ul>
+        <li><strong>词根词缀法：</strong>记住一个词根就能记住一串单词</li>
+        <li><strong>联想记忆法：</strong>把单词和生活场景联系起来</li>
+        <li><strong>语境记忆法：</strong>在例句中记单词，记得更牢</li>
+        <li><strong>艾宾浩斯复习：</strong>按1天、2天、4天、7天、15天间隔复习</li>
+      </ul>
+    `
+  },
+  {
+    id: 10,
+    icon: '⭐',
+    iconBg: '#fee2e2',
+    title: '南邮大神们的提分秘籍来了！四六级过过过',
+    source: '中国大学生在线',
+    sourceType: 'blog',
+    date: '2025-11-21',
+    tags: ['学霸经验', '多板块技巧', '策略分配'],
+    url: 'https://dxs.moe.gov.cn/zx/a/xzbx_xy/251121/2024665.shtml',
+    content: `
+      <h4>多位学霸联合分享</h4>
+      <p>考四六级的核心是<strong>策略分配</strong>，不要在难题上死磕，把时间花在能拿分的地方。</p>
+      
+      <h4>各板块核心技巧</h4>
+      <ul>
+        <li><strong>听力：</strong>核心在于预判与高效应对，审题时圈画重点词汇，听的时候重点关注预判的信息点</li>
+        <li><strong>阅读：</strong>主攻仔细阅读，先读题再定位原文；匹配题先划关键词速查；词汇填空难度不大建议最后做</li>
+        <li><strong>写作：</strong>三段式结构，开头引入+主体2个论点+结尾总结，每个论点配例子</li>
+        <li><strong>翻译：</strong>先找句子主干（主谓宾），再添加修饰成分（定语、状语），遇到不会的词用同义词替换</li>
+      </ul>
+      
+      <div class="tip">
+        <strong>💡 学霸忠告：</strong>不要追求完美，四级是通过性考试，425分就过了。把会做的题都做对，不会的题蒙一个，就够了。
+      </div>
+      
+      <h4>考前心态</h4>
+      <p>考前不要焦虑，按自己的节奏复习就行。考前一天看看错题本，背背作文模板，早点休息，保持好状态。</p>
+    `
+  }
+];
+
+// 来源类型对应的样式
+var sourceStyles = {
+  bilibili: { class: 'source-bilibili', name: 'B站' },
+  zhihu: { class: 'source-zhihu', name: '知乎' },
+  douyin: { class: 'source-douyin', name: '抖音' },
+  xdf: { class: 'source-xdf', name: '新东方' },
+  blog: { class: 'source-blog', name: '博客' }
+};
+
+// 渲染文章列表
+function renderArticles() {
+  var list = document.getElementById('articleList');
+  list.innerHTML = articles.map(function(a) {
+    var source = sourceStyles[a.sourceType] || sourceStyles.blog;
+    return '<div class="article-item" id="article-' + a.id + '">' +
+      '<div class="article-header" onclick="toggleArticle(' + a.id + ')">' +
+        '<div class="article-icon" style="background:' + a.iconBg + '">' + a.icon + '</div>' +
+        '<div class="article-info">' +
+          '<div class="article-title">' + a.title + '</div>' +
+          '<div class="article-meta">' +
+            '<span class="source-tag ' + source.class + '">' + source.name + '</span>' +
+            '<span>' + a.source + '</span>' +
+            '<span class="article-date">📅 ' + a.date + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="article-arrow">▼</div>' +
+      '</div>' +
+      '<div class="article-content">' +
+        '<div class="article-body">' + a.content + '</div>' +
+        '<div class="article-footer">' +
+          '<div class="article-tags">' +
+            a.tags.map(function(t) { return '<span class="article-tag">' + t + '</span>'; }).join('') +
+          '</div>' +
+          '<a class="view-original" onclick="event.stopPropagation();window.open(\'' + a.url + '\',\'_blank\')">查看原文 →</a>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// 展开/收起文章
+function toggleArticle(id) {
+  var item = document.getElementById('article-' + id);
+  item.classList.toggle('open');
+}
+
+// 返回 —— N9-25（2026-09-15）：改为「智能返回」，有历史记录就回到跳转前页面
+// （从个人中心进来就回个人中心），无历史时兜底回首页。原实现硬跳首页，会丢失来处。
+function goBack() {
+  if (history.length > 1) { history.back(); return; }
+  var ref = document.referrer || '';
+  if (ref.indexOf('个人中心.html') >= 0) { location.href = '个人中心.html'; return; }
+  location.href = '学习工作台.html';
+}
+
+// 初始化
+renderArticles();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,127 @@
+%% 星途 AI 模型设置整改・类图 / 数据结构
+%% 对应 ai-models-incremental-design-20260918.md §3
+
+classDiagram
+  class ModelSettings {
+    +disabled: object
+    +order: array
+    +overrides: object
+    +catModels: object
+    +categories: array
+    +health: object
+    +stars: object
+    +catSchema: number
+    +hideUnavailable: boolean
+    +lastSort: object
+  }
+  class HealthResult {
+    +ok: boolean
+    +ms: number
+    +err: string
+    +at: number
+    +kind: string
+  }
+  class ProbeResult {
+    +ok: boolean
+    +err: string
+    +detail: any
+  }
+  class AISettingsModule {
+    +BUILTIN_CATS: array
+    +CAT_OF_TYPE: object
+    +ALL_TYPE_KEYS: array
+    +RESERVED_KEYS: array
+    +FAMILY_OF_CAT: object
+    +ERR_TEXT: object
+    +getSettings()
+    +migrateCatSchema()
+    +usableIds()
+    +visibleModels()
+    +mapToAiList()
+    +sortByCategory()
+    +recordHealth()
+    +introCardHtml()
+    +renderAbout()
+  }
+  class AIPageModule {
+    +getModelSettings()
+    +applyListSettings()
+    +onHealthChanged()
+  }
+  class AIServiceModule {
+    +aiHealthCheckImpl(modelId, cfgOverride)
+    +xtResolveCapability(mc)
+    +XT_KIND_BY_TYPE
+    +XT_NON_CHAT_TYPES
+    +XT_KIND_LIST
+  }
+  class XT_AI_CAPS {
+    +register(cap)
+    +get(keyOrType)
+    +byType(t)
+    +endpoint(cap, provider)
+    +usage(o)
+    +errText(json, fb)
+  }
+  class Capability {
+    +key: string
+    +types: array
+    +defaultUrl: string
+    +timeout: number
+    +probeTimeout: number
+    +build(ctx)
+    +parse(json, ctx)
+    +probe(ctx) ProbeResult
+  }
+  class CapAudio { key=asr }
+  class CapEmbed { key=embed }
+  class CapRerank { key=rerank }
+  class CapImage { key=imagegen }
+  class CapVision { key=image }
+  class CapTranslate { key=translate }
+  class CapVideo { key=video }
+  class Cap3D { key=model3d }
+
+  class XT_AI_USAGE {
+    +record()
+    +list()
+    +summarize()
+    +serverSnapshot()
+  }
+  class UsageView {
+    +mountSetUsageRoot()
+    +render()
+    +sortRows()
+  }
+  class BackendApi {
+    +GET_ai_usage()
+    +POST_usage_consume()
+    +GET_app_version()
+  }
+  class VersionManifest {
+    +version: string
+    +versionCode: number
+    +apkFileName: string
+    +notes: array
+  }
+
+  AISettingsModule --> ModelSettings : read/write
+  AISettingsModule --> HealthResult : write
+  AIPageModule --> ModelSettings : read
+  AIServiceModule --> XT_AI_CAPS : byType
+  AIServiceModule --> Capability : probe
+  Capability <|-- CapAudio
+  Capability <|-- CapEmbed
+  Capability <|-- CapRerank
+  Capability <|-- CapImage
+  Capability <|-- CapVision
+  Capability <|-- CapTranslate
+  Capability <|-- CapVideo
+  Capability <|-- Cap3D
+  Capability --> ProbeResult
+  XT_AI_CAPS --> Capability : register
+  UsageView --> XT_AI_USAGE : consume
+  XT_AI_USAGE --> BackendApi : serverSnapshot
+  BackendApi --> VersionManifest : app/version
+  AIServiceModule --> HealthResult : produce
+  AISettingsModule --> UsageView : host setUsageRoot

@@ -1,0 +1,178 @@
+=== app.js 规模 ===
+  行数 8913  字节 3123392
+
+=== app.js 启动/入口线索 ===
+  L8910   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', xtStartPoll);
+
+=== app.js 顶层立即执行的函数调用（load 时同步执行，抛错即后续全挂） ===
+  L3775   _initBoard()
+  L6568   __tryInit()
+  L6569   __tryInit()
+  L6572   __tryInit()
+  L6573   __tryInit()
+  L6574   __tryInit()
+  L6575   __tryInit()
+  L6576   __tryInit()
+  L6577   __tryInit()
+  L6578   __tryInit()
+  L6579   __tryInit()
+  L6580   __tryInit()
+  L6581   __tryInit()
+  L6582   __tryInit()
+  L6681   initAiFabDrag()
+  L7784   updateProfileUI()
+  合计 16
+
+=== app.js 中 bind*/init* 函数体内的 getElementById 链式绑定 ===
+  applySettings                L141   -202  链式绑定 1 处: aiFabBtn
+  doLogout                     L233   -244  链式绑定 1 处: logoutConfirmModal
+  closeLogoutConfirm           L245   -247  链式绑定 1 处: logoutConfirmModal
+  navigateTo                   L1291  -1331  链式绑定 1 处: topbarTitle
+  toggleMorePanel              L1339  -1345  链式绑定 1 处: morePanel
+  closeMorePanel               L1346  -1351  链式绑定 1 处: morePanel
+  toggleToolsPanel             L1352  -1363  链式绑定 3 处: morePanel, toolsPanel, toolsOverlay
+  closeToolsPanel              L1364  -1369  链式绑定 2 处: toolsPanel, toolsOverlay
+  renderGreeting               L1383  -1392  链式绑定 1 处: greetingText
+  renderCountdowns             L1421  -1458  链式绑定 1 处: countdownRow
+  renderTasks                  L1460  -1480  链式绑定 1 处: taskList
+  startTodayLearning           L1512  -1523  链式绑定 1 处: ctaSubtitle
+  renderStats                  L1525  -1556  链式绑定 1 处: statsEmptyHint
+  updateGoalProgress           L1571  -1597  链式绑定 3 处: goalRing, goalPercent, goalText
+  renderWeekChart              L1599  -1632  链式绑定 1 处: weekChart
+  renderModuleProgress         L2255  -2303  链式绑定 1 处: moduleProgressGrid
+  renderWeakPoints             L2335  -2355  链式绑定 1 处: weakList
+  renderRecentLearning         L2357  -2377  链式绑定 1 处: recentList
+  refreshHomeCards             L2384  -2394  链式绑定 3 处: moduleProgressGrid, weakList, recentList
+  openCountdownModal           L2423  -2448  链式绑定 8 处: countdownModal, countdownModalTitle, cdName, cdDate, cdPinned, cdName, cdDate, cdPinned
+  closeCountdownModal          L2450  -2453  链式绑定 1 处: countdownModal
+  saveCountdown                L2469  -2492  链式绑定 3 处: cdName, cdDate, cdPinned
+  closeAppModal                L2524  -2535  链式绑定 1 处: vpMask
+  showToast                    L2551  -2559  链式绑定 1 处: toast
+  applyTheme                   L2583  -2599  链式绑定 1 处: themeToggle
+  openAiQuickActions           L2928  -2950  链式绑定 2 处: aiPanel, aiQuickBar
+  useAiQuickAction             L2953  -2967  链式绑定 1 处: aiInput
+  renderAiPartnerBar           L2988  -2996  链式绑定 3 处: aiPartnerEmoji, aiPartnerName, aiPartnerTag
+  ensureAiPartnerPickerCss     L3000  -3014  链式绑定 1 处: aiPartnerPickerCss
+  ensureAiPartnerUI            L3016  -3043  链式绑定 2 处: aiPanel, aiPartnerBar
+  renderAiPartnerList          L3044  -3059  链式绑定 1 处: aiPartnerList
+  openAiPartnerPicker          L3060  -3065  链式绑定 1 处: aiPartnerPicker
+  closeAiPartnerPicker         L3066  -3069  链式绑定 1 处: aiPartnerPicker
+  toggleAiPanel                L3086  -3109  链式绑定 4 处: aiPanel, aiModeBadge, aiSubtitle, aiInput
+  sendAiMsg                    L3127  -3143  链式绑定 2 处: aiInput, aiSendBtn
+  createStreamingBubble        L3549  -3557  链式绑定 1 处: aiMessages
+  finishStreaming              L3581  -3585  链式绑定 1 处: aiSendBtn
+  renderAiMessages             L3600  -3611  链式绑定 1 处: aiMessages
+  scrollAiMessages             L3616  -3619  链式绑定 1 处: aiMessages
+  addBoardMsg                  L3630  -3640  链式绑定 1 处: boardInput
+  renderBoard                  L3725  -3768  链式绑定 1 处: boardList
+  toggleSpeakingPlay           L3795  -3813  链式绑定 6 处: speakingPlayBtn, charShopkeeper, speakingPlayBtn, charShopkeeper, speakingPlayBtn, charShopkeeper
+  toggleSpeakingRecord         L3815  -3887  链式绑定 7 处: speakingRecordBtn, charUser, speakingDialogue, charUser, speakingDialogue, speakingEval, charUser
+  nextSpeakingSentence         L3889  -3907  链式绑定 4 处: speakingCurrent, speakingProgress, speakingEval, speakingDialogue
+  answerQuestion               L3914  -3937  链式绑定 2 处: examExplanation, examExplanation
+  toggleRpVoice                L3947  -3978  链式绑定 2 处: rpVoiceBtn, rpInput
+  submitRoleplay               L3980  -3986  链式绑定 3 处: rpInput, rpEval, rpEval
+  nextRoleplayRound            L3988  -4008  链式绑定 4 处: rpCurrent, rpEval, rpInput, rpDialogue
+  toggleIvVoice                L4025  -4056  链式绑定 2 处: ivVoiceBtn, ivInput
+  submitInterview              L4058  -4064  链式绑定 3 处: ivInput, ivEval, ivEval
+  nextInterviewQuestion        L4066  -4085  链式绑定 5 处: ivCurrent, ivEval, ivInput, charInterviewer, charInterviewer
+  openFocusTimer               L4910  -4933  链式绑定 4 处: focusTimerMask, focusClock, focusTimerMask, focusToggleBtn
+  updateModuleStats            L5126  -5151  链式绑定 2 处: cetWords, examQuestions
+  renderEtiquette              L5165  -5199  链式绑定 1 处: etiquetteList
+  renderIvQuestions            L5232  -5266  链式绑定 1 处: ivQuestionList
+  renderLayoutFilter           L5323  -5364  链式绑定 1 处: layoutFilter
+  updateLayoutFilterActive     L5366  -5375  链式绑定 1 处: layoutFilter
+  renderLayouts                L5392  -5428  链式绑定 1 处: layoutList
+  renderPptCases               L5459  -5482  链式绑定 1 处: caseList
+  renderCommScenes             L5497  -5541  链式绑定 1 处: commSceneList
+  renderQuotes                 L5628  -5665  链式绑定 1 处: quoteList
+  updateDate                   L5861  -5868  链式绑定 1 处: topbarDate
+  switchExamMode               L5878  -5909  链式绑定 3 处: examModeNew, examModeReview, examModeInfo
+  ensureXtImgStyle             L5964  -5976  链式绑定 1 处: xtImgStyle
+  renderExamQuestion           L6000  -6039  链式绑定 10 处: ecQuestionText, ecOptions, ecProgress, ecType, ecSub, ecDiff, ecQuestionText, ecOptions
+  updateExamAccuracy           L6042  -6048  链式绑定 1 处: ecAccuracy
+  answerExamQuestion           L6050  -6090  链式绑定 1 处: ecExplanation
+  showExamExplanation          L6092  -6108  链式绑定 4 处: ecResult, ecExpText, ecTipText, ecExplanation
+  renderWrongBook              L6161  -6212  链式绑定 4 处: wrongList, wrongEmpty, wrongTypeFilter, wrongCount
+  switchVocabMode              L6258  -6284  链式绑定 3 处: vocabModeNew, vocabModeReview, vocabModeInfo
+  renderVocab                  L6304  -6375  链式绑定 26 处: vocabProgress, vocabLearned, vocabWord, vocabPhonetic, vocabMeaning, vocabExample1, vocabExample2, vocabExample2
+  renderVocabReviewEmpty       L6378  -6402  链式绑定 8 处: vocabWord, vocabPhonetic, vocabMeaning, vocabDetail, vocabHint, vocabProgress, vocabPercent, vocabBar
+  toggleVocabMeaning           L6404  -6409  链式绑定 3 处: vocabMeaning, vocabDetail, vocabHint
+  speakWord                    L6412  -6421  链式绑定 1 处: vocabWord
+  markVocabKnown               L6461  -6490  链式绑定 1 处: vocabProgress
+  renderHomeQuick              L6517  -6540  链式绑定 1 处: homeQuickNav
+  decorateHome                 L6543  -6552  链式绑定 3 处: page-home, homeQuickNav, homeOnlineNav
+  restoreAiFabPos              L6606  -6621  链式绑定 1 处: aiFab
+  initAiFabDrag                L6623  -6678  链式绑定 1 处: aiFab
+  renderBlogFilters            L6825  -6871  链式绑定 3 处: blogFilterChips, blogCatDrop, blogSearchInput
+  toggleBlogCatDrop            L6872  -6876  链式绑定 1 处: blogCatDropPanel
+  pickBlogCat                  L6877  -6884  链式绑定 1 处: blogCatDropPanel
+  renderBlogList               L6894  -6905  链式绑定 3 处: blogSearchInput, blogGrid, blogListEmpty
+  renderBlogMineTabs           L6910  -6950  链式绑定 1 处: blogMineTabs
+  renderBlogMine               L6951  -6961  链式绑定 1 处: blogMineGrid
+  renderBlogDetail             L7044  -7084  链式绑定 3 处: blogDetailBox, blogDetailBox, bcInput
+  addBlogComment               L7107  -7114  链式绑定 1 处: bcInput
+  loadBlogEditor               L7166  -7180  链式绑定 4 处: beCat, bePrivacy, beTags, blogEditorInput
+  updateEditorPreview          L7181  -7187  链式绑定 2 处: blogEditorInput, blogEditorPreview
+  editorTool                   L7188  -7215  链式绑定 1 处: blogEditorInput
+  editorInsertImage            L7216  -7231  链式绑定 1 处: blogEditorInput
+  saveBlogNote                 L7232  -7256  链式绑定 7 处: beTitle, blogEditorInput, beCat, bePrivacy, beCover, beTags, beTitle
+  clearEditorFields            L7257  -7267  链式绑定 7 处: beTitle, beCover, beCat, bePrivacy, beTags, blogEditorInput, blogEditStatus
+  startEditNote                L7275  -7287  链式绑定 7 处: beTitle, beCat, bePrivacy, beCover, beTags, blogEditorInput, blogEditStatus
+  editorAiAssist               L7307  -7365  链式绑定 3 处: beTitle, blogEditorInput, blogEditorInput
+  renderBlogStats              L7368  -7401  链式绑定 1 处: blogStatsBox
+  renderProfilePage            L7404  -7595  链式绑定 1 处: profileBox
+  editProfile                  L7653  -7676  链式绑定 3 处: profileEditModal, peName, peMotto
+  renderPeAvatarPreview        L7680  -7688  链式绑定 1 处: peAvatarPreview
+  saveProfileEditor            L7727  -7737  链式绑定 2 处: peName, peMotto
+  closeProfileEditor           L7738  -7740  链式绑定 1 处: profileEditModal
+  openBlogStats                L7759  -7762  链式绑定 1 处: page-blog
+  openBlogFavorites            L7763  -7766  链式绑定 1 处: page-blog
+  globalSearch                 L7818  -7858  链式绑定 2 处: gsDropdown, page-blog
+  closeGsDropdown              L7859  -7864  链式绑定 2 处: gsDropdown, gsInput
+  renderAiProviderForm         L7875  -7971  链式绑定 1 处: aiProviderForm
+  quickSelectModel             L7974  -7977  链式绑定 1 处: aipModel
+  setAiIcon                    L7980  -7998  链式绑定 1 处: aiFab
+  clearAiHistory               L8010  -8018  链式绑定 1 处: aiMessages
+  onAiProviderChange           L8026  -8033  链式绑定 4 处: aipSelect, aipBaseUrl, aipModel, aipKey
+  saveAiProviderForm           L8034  -8046  链式绑定 4 处: aipSelect, aipBaseUrl, aipModel, aipKey
+  testAiConnection             L8055  -8077  链式绑定 4 处: aipSelect, aipBaseUrl, aipModel, aipKey
+  uiPopup                      L8090  -8095  链式绑定 1 处: uiConfirmMask
+  showAbout                    L8446  -8485  链式绑定 2 处: aboutModal, aboutClose
+  showStudyLimitModal          L8572  -8594  链式绑定 3 处: studyLimitModal, slmRest, slmGo
+  syncStudyLimitUI             L8623  -8652  链式绑定 6 处: stLimitBar, stLimitTodayDesc, stLimitTip, pcStudyTime, pcStudyTimeBar, pcStudyTimeTip
+  seedStudyLimitUI             L8658  -8665  链式绑定 2 处: stLimitOn, stLimitHours
+  ensureWrap                   L8701  -8711  链式绑定 1 处: xtToastWrap
+
+=== 页面引入 app.js 的方式（位置 / defer / async） ===
+  AI.html                      body  第4个script  attr=defer  相对位置99%
+  PPT案例拆解.html                 body  第4个script  attr=defer  相对位置97%
+  PPT版式库.html                  body  第4个script  attr=defer  相对位置97%
+  PPT训练.html                   body  第4个script  attr=defer  相对位置66%
+  blog_wechat.html             body  第4个script  attr=defer  相对位置92%
+  mock_exam.html               head  第4个script  attr=defer  相对位置3%
+  mock_exam_result.html        head  第4个script  attr=defer  相对位置6%
+  mock_exam_run.html           head  第4个script  attr=defer  相对位置2%
+  万能金句库.html                   body  第4个script  attr=defer  相对位置97%
+  个人中心.html                    body  第4个script  attr=defer  相对位置54%
+  企业定向库.html                   body  第4个script  attr=defer  相对位置96%
+  动态.html                      body  第4个script  attr=defer  相对位置48%
+  商务礼仪.html                    body  第4个script  attr=defer  相对位置97%
+  商务礼仪面试.html                  body  第4个script  attr=defer  相对位置61%
+  四级备考.html                    body  第4个script  attr=defer  相对位置70%
+  四级词汇.html                    body  第4个script  attr=defer  相对位置94%
+  场景话术库.html                   body  第4个script  attr=defer  相对位置93%
+  央国企笔试.html                   body  第4个script  attr=defer  相对位置95%
+  学习博客.html                    body  第4个script  attr=defer  相对位置62%
+  学习工作台.html                   body  第5个script  attr=defer  相对位置62%
+  学途.html                      body  第1个script  attr=-  相对位置31%
+  工具.html                      body  第5个script  attr=defer  相对位置98%
+  时政热点.html                    body  第4个script  attr=defer  相对位置95%
+  更多.html                      body  第4个script  attr=defer  相对位置97%
+  申论刷题.html                    body  第4个script  attr=defer  相对位置29%
+  私聊.html                      body  第4个script  attr=defer  相对位置51%
+  管理员.html                     body  第4个script  attr=defer  相对位置97%
+  行测刷题.html                    body  第4个script  attr=defer  相对位置94%
+  设置.html                      body  第4个script  attr=defer  相对位置64%
+  错题本.html                     body  第4个script  attr=defer  相对位置98%
+  面试题库.html                    body  第4个script  attr=defer  相对位置97%
+  高情商表达.html                   body  第4个script  attr=defer  相对位置79%

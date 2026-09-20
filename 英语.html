@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#5B8DEF">
+<title>英语 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260923c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<link rel="stylesheet" href="assets/polish.css?v=20260916O">
+<style>
+  /* ==================== 阅读理解/翻译专项：页面内全屏视图（本页局部样式，20260913k） ====================
+     原为 mini.js 生成的居中 modal（.mz-mask 弹窗），现参照本页「听力训练」面板的展开/返回
+     交互改造为全屏视图；题目渲染/判分/解析逻辑全部保留在 assets/mini.js，仅替换呈现载体。 */
+  .cet-quiz-view{position:fixed;inset:0;z-index:1900;background:var(--bg);display:none;flex-direction:column}
+  .cet-quiz-view.open{display:flex}
+  .cet-quiz-top{flex:none;display:flex;align-items:center;gap:12px;padding:12px 16px;background:linear-gradient(135deg,var(--primary),var(--g2));color:#fff}
+  .cet-quiz-top b{flex:1;font-size:15px}
+  .cet-quiz-back{background:rgba(255,255,255,.18);border:none;color:#fff;padding:6px 12px;border-radius:8px;font-size:13px;cursor:pointer;line-height:1.4}
+  .cet-quiz-slot{flex:1;min-height:0;position:relative;overflow:hidden}
+  /* mini.js 载体替换：#mzMask 由全屏弹窗改为面板内普通填充（引擎渲染/判分逻辑不变） */
+  .cet-quiz-slot .mz-mask{position:absolute;inset:0;z-index:auto;display:flex;align-items:stretch;justify-content:stretch;padding:0;background:transparent;backdrop-filter:none;animation:none}
+  .cet-quiz-slot .mz-box{width:100%;max-width:none;height:100%;max-height:none;border-radius:0;box-shadow:none;animation:none}
+  .cet-quiz-slot .mz-head{display:none} /* 标题/关闭改由 cet-quiz-top 返回栏承担 */
+  .cet-quiz-slot .mz-body{flex:1}
+/* ===== R73 需求20-B 移动端适配（≤768px）=====
+   仅作用于窄屏；桌面端(>768px)渲染零影响（本块整体位于媒体查询内）。
+   1) 内嵌媒体兜底 max-width，防 JS 注入内容/未来素材撑破窄屏；
+   2) 宽表格窄屏内横向滚动，避免整页横向溢出（需求20-B #2）；
+   3) 字号下限兜底：common.css 的 .bn-label(10px)/.ai-mode-badge(9px)/
+      .study-stats-bar b(9px) 低于 A7 辅助≥11px，页内窄屏提升到 11px（不改共享 common.css）。 */
+@media (max-width: 768px) {
+  img, video, canvas, iframe { max-width: 100%; height: auto; }
+  table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bottom-nav-item .bn-label, .ai-mode-badge, .study-stats-bar b { font-size: 11px; }
+}
+</style>
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
+</head>
+<body class="theme-cet">
+
+<div class="app">
+<nav class="sidebar">
+    <div class="logo">
+      <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div>
+      <div>
+        <div class="logo-text">星途</div>
+        <div class="logo-sub">致追梦的人->修身</div>
+      </div>
+    </div>
+    <div class="nav-list">
+      <div class="nav-item" data-page="home">
+        <span class="nav-icon" data-icon="home"></span><span>首页</span>
+      </div>
+      <div class="nav-item" onclick="location.href='AI.html'">
+        <span class="nav-icon" data-icon="sparkles"></span><span>AI</span>
+      </div>
+      <div class="nav-section">学习模块</div>
+      <div class="nav-item active" data-page="cet">
+        <span class="nav-icon" data-icon="book-open"></span><span>英语</span>
+      </div>
+      <div class="nav-item" data-page="exam">
+        <span class="nav-icon" data-icon="pencil"></span><span>行测</span>
+      </div>
+      <div class="nav-item" data-page="comm">
+        <span class="nav-icon" data-icon="message-square"></span><span>表达</span>
+      </div>
+      <div class="nav-item" data-page="interview">
+        <span class="nav-icon" data-icon="handshake"></span><span>面测</span>
+      </div>
+      <div class="nav-item" data-page="files">
+        <span class="nav-icon" data-icon="folder"></span><span>我的文件</span>
+      </div>
+      <div class="nav-section">创作</div>
+      <div class="nav-item" data-page="blog">
+        <span class="nav-icon" data-icon="globe"></span><span>社区</span>
+      </div>
+      <div class="nav-item" data-page="moments">
+        <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
+      </div>
+      <div class="nav-section">互动</div>
+      <div class="nav-item" data-external="1" onclick="gotoChat()" title="通讯录 · 添加好友（需在线模式）">
+        <span class="nav-icon" data-icon="users"></span><span>通讯录</span>
+      </div>
+      <div class="nav-section">中心</div>
+      <div class="nav-item" data-page="wrong-book">
+        <span class="nav-icon" data-icon="book"></span><span>错题本</span>
+      </div>
+            <div class="nav-item" data-page="profile">
+        <span class="nav-icon" data-icon="user"></span><span>个人中心</span>
+      </div>
+<div class="nav-section">系统</div>
+      <div class="nav-item" data-page="settings">
+        <span class="nav-icon" data-icon="settings"></span><span>设置</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心">
+        <div class="user-avatar">学</div>
+        <div class="user-info">
+          <div class="user-name">同学</div>
+          <div class="user-streak"><span data-icon="fire" data-icon-size="14" style="vertical-align:-2px"></span> 连续打卡 0 天</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+<header class="topbar">
+      <div class="topbar-title" id="topbarTitle">英语</div>
+      <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
+      <div class="gs-wrap" id="gsWrap">
+        <input type="text" class="gs-input" id="gsInput" placeholder="搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <div class="gs-dropdown" id="gsDropdown"></div>
+      </div>
+      <div class="topbar-stats">
+        <div class="stat-item"><span class="stat-icon"><span class="nav-icon" data-icon="fire" data-icon-size="16"></span></span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon"><span class="nav-icon" data-icon="clock" data-icon-size="16"></span></span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+        <div class="stat-item"><span class="stat-icon"><span class="nav-icon" data-icon="check" data-icon-size="16"></span></span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
+      </div>
+      <div class="topbar-date" id="topbarDate"></div>
+      <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage；图标由 icon-map.js 渲染，moon/sun 由 appjs 线注册） -->
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式"><span class="nav-icon" data-icon="moon" data-icon-size="18"></span></div>
+    </header>
+    <div class="content">
+<div class="page active" id="page-cet">
+        <!-- 【20260913k】英雄卡（module hero）整块删除：页面顶部直接从学习概况卡开始
+             （原三个统计位随卡删除；app.js 相关 update 已有空值保护） -->
+
+        <!-- 【后续扩展点】T7 增量（2026-09-11）：学习概况统计卡（study-stats.js 渲染，本地优先可离线） -->
+        <div id="cetStatsCard" class="study-stats-card"></div>
+
+        <!-- 【后续扩展点】T7 增量（P0-9）：🎯 考试冲刺卡——倒计时 + 每日任务三勾选 + 完成率环形 -->
+        <div class="sprint-card" id="cetSprintCard">
+          <div class="sprint-head"><span><span class="nav-icon" data-icon="target" data-icon-size="16" style="vertical-align:-3px"></span> 考试冲刺</span><span id="sprintGoalLabel" style="font-size:var(--xt-font-sm);color:var(--text-secondary);font-weight:400">未设置目标日期</span></div>
+          <div class="sprint-main">
+            <div class="sprint-count"><b id="sprintDays">--</b><span>距目标考试（天）</span></div>
+            <div class="sprint-ring" id="sprintRing"><i id="sprintPct">0%</i></div>
+            <div class="sprint-tasks">
+              <label class="sprint-task"><input type="checkbox" id="sprintTaskWords" onchange="sprintSaveTasks()"> 背 50 个高频词</label>
+              <label class="sprint-task"><input type="checkbox" id="sprintTaskRead" onchange="sprintSaveTasks()"> 完成 1 篇阅读</label>
+              <label class="sprint-task"><input type="checkbox" id="sprintTaskListen" onchange="sprintSaveTasks()"> 完成 1 套听力</label>
+            </div>
+          </div>
+          <div class="sprint-date">目标考试日期：<input type="date" id="sprintDate" onchange="sprintSaveDate()"> <span id="sprintDoneTip"></span></div>
+        </div>
+
+        <div class="feature-grid">
+          <div class="feature-card" onclick="navigateTo('cet-vocab')">
+            <div class="feature-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div>
+            <div class="feature-title">词汇打卡</div>
+            <div class="feature-desc">50个高频核心词，卡片式学习，点击显示释义，标记认识进度</div>
+            </div>
+          <!-- 【20260913K/K1】原「情景对话」独立卡删除：口语跟读并入听力训练面板内双 tab
+               （openVoiceTrain('speak') 仍可用，由面板顶部 tab 承接入口） -->
+          <div class="feature-card" onclick="openVoiceTrain('listen')">
+            <div class="feature-icon"><span class="nav-icon" data-icon="headphones" data-icon-size="20"></span></div>
+            <div class="feature-title">听力训练</div>
+            <div class="feature-desc">听力精听 + 口语跟读双 tab，新闻/长对话/短文/情景对话逐句跟练</div>
+          </div>
+          <div class="feature-card" onclick="openCetQuizView('cet-read')">
+            <div class="feature-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div>
+            <div class="feature-title">阅读理解</div>
+            <div class="feature-desc">仔细阅读/长篇阅读/选词填空，技巧+刷题</div>
+          </div>
+          <div class="feature-card" onclick="openCetQuizView('cet-translate')">
+            <div class="feature-icon"><span class="nav-icon" data-icon="languages" data-icon-size="20"></span></div>
+            <div class="feature-title">翻译专项</div>
+            <div class="feature-desc">中国文化/历史/经济话题，常用表达积累</div>
+          </div>
+          <div class="feature-card" onclick="window.location.href='mock_exam.html?cat=cet-mock'">
+            <div class="feature-icon"><span class="nav-icon" data-icon="clipboard" data-icon-size="20"></span></div>
+            <div class="feature-title">真题模考</div>
+            <!-- 【P0-B T03-06】改跳独立页 mock_exam.html（三独立页 + 9 题型 + 计时 + 答题卡 + 成绩页） -->
+            <div class="feature-desc">套卷模考 + 计时判分 + 成绩归档</div>
+          </div>
+          <!-- 【批次 20260913m】考试指南入口已并入真题模拟（用户拍板）：
+               原「考试指南」入口卡已删除，指南内容现于 mock_exam.html「考试指南」tab 呈现 -->
+        </div>
+      </div>
+
+<div class="page" id="page-speaking-demo">
+        <div class="player-container">
+          <div class="player-header">
+            <div class="player-title"><span data-icon="coffee" data-icon-size="16" style="vertical-align:-3px"></span> 咖啡店点单 · 中级</div>
+            <div class="player-progress-text">第 <span id="speakingCurrent">1</span> / 6 句</div>
+          </div>
+          <div class="player-stage">
+            <div class="player-chars">
+              <div class="character-container">
+                <div class="character" id="charShopkeeper">
+                  <svg viewBox="0 0 120 140" class="char-svg">
+                    <!-- 尾巴 -->
+                    <path d="M90 110 Q110 100 105 80 Q100 70 92 75" fill="none" stroke="#9E9E9E" stroke-width="10" stroke-linecap="round"/>
+                    <path d="M90 110 Q110 100 105 80 Q100 70 92 75" fill="none" stroke="#2D3436" stroke-width="3" stroke-linecap="round" fill="none"/>
+                    <!-- 身体 -->
+                    <ellipse cx="60" cy="105" rx="32" ry="28" fill="#E0E0E0" stroke="#2D3436" stroke-width="3"/>
+                    <ellipse cx="60" cy="110" rx="20" ry="18" fill="#F5F5F5"/>
+                    <!-- 前爪 -->
+                    <ellipse cx="42" cy="128" rx="10" ry="8" fill="#E0E0E0" stroke="#2D3436" stroke-width="3"/>
+                    <ellipse cx="78" cy="128" rx="10" ry="8" fill="#E0E0E0" stroke="#2D3436" stroke-width="3"/>
+                    <!-- 头 -->
+                    <circle cx="60" cy="52" r="36" fill="#F5F5F5" stroke="#2D3436" stroke-width="3"/>
+                    <!-- 耳朵 -->
+                    <path d="M30 30 L25 10 L45 22 Z" fill="#9E9E9E" stroke="#2D3436" stroke-width="3" stroke-linejoin="round"/>
+                    <path d="M90 30 L95 10 L75 22 Z" fill="#9E9E9E" stroke="#2D3436" stroke-width="3" stroke-linejoin="round"/>
+                    <path d="M32 26 L30 16 L40 22 Z" fill="#FFB5B5"/>
+                    <path d="M88 26 L90 16 L80 22 Z" fill="#FFB5B5"/>
+                    <!-- 头顶斑纹 -->
+                    <path d="M45 22 Q48 32 45 40" stroke="#9E9E9E" stroke-width="4" fill="none" stroke-linecap="round"/>
+                    <path d="M60 18 Q60 28 60 36" stroke="#9E9E9E" stroke-width="4" fill="none" stroke-linecap="round"/>
+                    <path d="M75 22 Q72 32 75 40" stroke="#9E9E9E" stroke-width="4" fill="none" stroke-linecap="round"/>
+                    <!-- 腮红 -->
+                    <ellipse cx="36" cy="60" rx="7" ry="5" fill="#FFB5B5" opacity="0.7"/>
+                    <ellipse cx="84" cy="60" rx="7" ry="5" fill="#FFB5B5" opacity="0.7"/>
+                    <!-- 眼睛 -->
+                    <g class="char-eyes">
+                      <ellipse cx="46" cy="52" rx="7" ry="9" fill="#5D4037"/>
+                      <ellipse cx="74" cy="52" rx="7" ry="9" fill="#5D4037"/>
+                      <circle cx="48" cy="49" r="2.5" fill="#fff"/>
+                      <circle cx="76" cy="49" r="2.5" fill="#fff"/>
+                      <circle cx="44" cy="55" r="1.2" fill="#fff" opacity="0.6"/>
+                      <circle cx="72" cy="55" r="1.2" fill="#fff" opacity="0.6"/>
+                    </g>
+                    <!-- 鼻子 -->
+                    <ellipse cx="60" cy="62" rx="3.5" ry="2.5" fill="#FF8A80" stroke="#2D3436" stroke-width="1.5"/>
+                    <!-- 嘴巴 -->
+                    <path class="char-mouth-svg" d="M54 66 Q57 70 60 67 Q63 70 66 66" stroke="#2D3436" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                    <!-- 胡须 -->
+                    <line x1="20" y1="58" x2="34" y2="60" stroke="#2D3436" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="20" y1="64" x2="34" y2="64" stroke="#2D3436" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="86" y1="60" x2="100" y2="58" stroke="#2D3436" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="86" y1="64" x2="100" y2="64" stroke="#2D3436" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="char-name">店员喵</div>
+              </div>
+              <div class="character-container">
+                <div class="character" id="charUser">
+                  <svg viewBox="0 0 120 140" class="char-svg">
+                    <!-- 身体 -->
+                    <ellipse cx="60" cy="105" rx="32" ry="28" fill="#A1887F" stroke="#2D3436" stroke-width="3"/>
+                    <ellipse cx="60" cy="110" rx="20" ry="18" fill="#D7CCC8"/>
+                    <!-- 前爪 -->
+                    <ellipse cx="42" cy="128" rx="10" ry="8" fill="#A1887F" stroke="#2D3436" stroke-width="3"/>
+                    <ellipse cx="78" cy="128" rx="10" ry="8" fill="#A1887F" stroke="#2D3436" stroke-width="3"/>
+                    <!-- 耳朵 -->
+                    <circle cx="32" cy="26" r="12" fill="#A1887F" stroke="#2D3436" stroke-width="3"/>
+                    <circle cx="88" cy="26" r="12" fill="#A1887F" stroke="#2D3436" stroke-width="3"/>
+                    <circle cx="32" cy="26" r="6" fill="#D7CCC8"/>
+                    <circle cx="88" cy="26" r="6" fill="#D7CCC8"/>
+                    <!-- 头 -->
+                    <circle cx="60" cy="52" r="34" fill="#A1887F" stroke="#2D3436" stroke-width="3"/>
+                    <!-- 脸部浅色区域 -->
+                    <ellipse cx="60" cy="58" rx="22" ry="18" fill="#D7CCC8"/>
+                    <!-- 腮红 -->
+                    <ellipse cx="38" cy="60" rx="6" ry="4" fill="#FFB5B5" opacity="0.7"/>
+                    <ellipse cx="82" cy="60" rx="6" ry="4" fill="#FFB5B5" opacity="0.7"/>
+                    <!-- 眼睛 -->
+                    <g class="char-eyes">
+                      <ellipse cx="48" cy="50" rx="6" ry="8" fill="#2D3436"/>
+                      <ellipse cx="72" cy="50" rx="6" ry="8" fill="#2D3436"/>
+                      <circle cx="50" cy="47" r="2" fill="#fff"/>
+                      <circle cx="74" cy="47" r="2" fill="#fff"/>
+                    </g>
+                    <!-- 鼻子（熊的大鼻子） -->
+                    <ellipse cx="60" cy="60" rx="6" ry="4.5" fill="#5D4037" stroke="#2D3436" stroke-width="2"/>
+                    <ellipse cx="58" cy="58.5" rx="1.5" ry="1" fill="#8D6E63"/>
+                    <!-- 嘴巴 -->
+                    <path class="char-mouth-svg" d="M54 66 Q60 72 66 66" stroke="#2D3436" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                    <line x1="60" y1="64.5" x2="60" y2="67" stroke="#2D3436" stroke-width="1.5"/>
+                  </svg>
+                </div>
+                <div class="char-name">你（小熊）</div>
+              </div>
+            </div>
+            <div class="player-dialogue" id="speakingDialogue">
+              <div class="chat-bubble ai">Hi, what can I get for you today?</div>
+              <div class="player-subtitle">你好，今天想喝点什么？</div>
+            </div>
+          </div>
+          <div class="player-controls">
+            <div class="player-btn" onclick="showToast('上一句')"><span data-icon="skip-back" data-icon-size="18"></span></div>
+            <div class="player-btn play" id="speakingPlayBtn" onclick="toggleSpeakingPlay()"><span data-icon="play" data-icon-size="18"></span></div>
+            <div class="player-btn" onclick="showToast('下一句')"><span data-icon="skip-forward" data-icon-size="18"></span></div>
+            <div class="player-progress"><div class="player-progress-fill" id="speakingProgress" style="width:16%"></div></div>
+            <div class="player-time">00:12 / 01:30</div>
+            <div class="player-btn" onclick="showToast('字幕开关')"><span data-icon="file-text" data-icon-size="18"></span></div>
+          </div>
+        </div>
+        <div style="text-align:center;margin:20px 0">
+          <button class="player-record-btn" id="speakingRecordBtn" onclick="toggleSpeakingRecord()">
+            <span data-icon="mic" data-icon-size="16" style="vertical-align:-3px"></span> 点击说话回答
+          </button>
+        </div>
+        <div id="speakingEval" style="display:none">
+          <div class="eval-panel">
+            <div class="eval-title"><span data-icon="chart-bar" data-icon-size="16" style="vertical-align:-3px"></span> 本句评定</div>
+            <div class="eval-scores">
+              <div class="eval-score-item"><div class="eval-score-label">语法</div><div class="eval-stars"><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span></div></div>
+              <div class="eval-score-item"><div class="eval-score-label">用词</div><div class="eval-stars"><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span></div></div>
+              <div class="eval-score-item"><div class="eval-score-label">流利度</div><div class="eval-stars"><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span><span data-icon="star" data-icon-size="14"></span></div></div>
+            </div>
+            <div class="eval-feedback good">
+              <div class="eval-feedback-title"><span data-icon="check" data-icon-size="16" style="vertical-align:-3px"></span> 做得好</div>
+              <div class="eval-feedback-content">latte发音准确，句末please升调礼貌，整体句式正确。</div>
+            </div>
+            <div class="eval-feedback tip">
+              <div class="eval-feedback-title"><span data-icon="lightbulb" data-icon-size="16" style="vertical-align:-3px"></span> 改进建议</div>
+              <div class="eval-feedback-content">"I want" 不如 "I'd like" 礼貌地道，口语中建议用 I'd like a medium hot latte with less sugar, please.</div>
+            </div>
+            <div class="eval-reference">
+              <div class="eval-reference-title"><span data-icon="volume-2" data-icon-size="16" style="vertical-align:-3px"></span> 参考发音</div>
+              <div class="eval-reference-text">I'd like a medium hot latte with less sugar, please.</div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:14px">
+              <button class="btn btn-secondary btn-sm" onclick="showToast('播放参考发音')"><span data-icon="volume-2" data-icon-size="16" style="vertical-align:-3px"></span> 听参考</button>
+              <button class="btn btn-primary btn-sm" onclick="showToast('跟读功能')"><span data-icon="mic" data-icon-size="16" style="vertical-align:-3px"></span> 跟读一遍</button>
+              <button class="btn btn-outline btn-sm" onclick="nextSpeakingSentence()">下一句 <span data-icon="arrow-right" data-icon-size="16" style="vertical-align:-3px"></span></button>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:20px">
+          <button class="btn btn-outline" onclick="navigateTo('cet')"><span data-icon="arrow-left" data-icon-size="16" style="vertical-align:-3px"></span> 返回四级</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- 底部导航（手机端） -->
+    <nav class="bottom-nav">
+    <div class="bottom-nav-list">
+      <div class="bottom-nav-item" data-page="home">
+        <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
+      </div>
+      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
+            <div class="bottom-nav-item" onclick="location.href='AI.html'"><div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div></div>
+            <div class="bottom-nav-item" onclick="location.href='更多.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 更多面板遮罩 -->
+    <div class="more-overlay" onclick="toggleMorePanel()"></div>
+
+  <!-- 更多面板 -->
+  <div class="bottom-more-panel" id="morePanel">
+    <div class="bottom-more-title">更多功能</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="navigateTo('moments');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="rss" data-icon-size="20"></span></div><div class="bm-label">动态空间</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogStats()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
+      </div>
+      <div class="bottom-more-item" onclick="if(window.gotoBlogMine){gotoBlogMine()}else{location.href='社区.html#mine'}">
+        <div class="bm-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div><div class="bm-label">互动广场</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div><div class="bm-label">错题本</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div><div class="bm-label">设置</div>
+      </div>
+      <div class="bottom-more-item" onclick="showAbout()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div><div class="bm-label">关于</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 阅读理解 / 翻译专项：页面内全屏视图（原 modal 弹窗改造，20260913k）
+       交互参照「听力训练」面板：顶部返回栏 + ESC 退出 + 锁滚动；
+       题目渲染/判分/解析复用 assets/mini.js 引擎，本页仅替换呈现载体 -->
+  <div class="cet-quiz-view" id="cetQuizView">
+    <div class="cet-quiz-top">
+      <button class="cet-quiz-back" onclick="closeCetQuizView()"><span data-icon="arrow-left" data-icon-size="16" style="vertical-align:-3px"></span> 返回</button>
+      <b id="cetQuizTitle">阅读理解</b>
+    </div>
+    <div class="cet-quiz-slot" id="cetQuizSlot"></div>
+  </div>
+
+  <!-- 添加倒计时弹窗 -->
+  <div class="modal-overlay" id="countdownModal">    <div class="modal">
+      <div class="modal-title" id="countdownModalTitle">添加倒计时</div>
+      <div class="form-group">
+        <div class="form-label">名称</div>
+        <input type="text" class="form-input" id="cdName" placeholder="如：四级考试、秋招截止">
+      </div>
+      <div class="form-group">
+        <div class="form-label">日期</div>
+        <input type="date" class="form-input" id="cdDate">
+      </div>
+      <div class="form-group">
+        <div class="form-label">颜色</div>
+        <div class="color-picker" id="cdColorPicker">
+          <div class="color-dot active" style="background:#5B8DEF" data-color="#5B8DEF"></div>
+          <div class="color-dot" style="background:#E05040" data-color="#E05040"></div>
+          <div class="color-dot" style="background:#9B6BD9" data-color="#9B6BD9"></div>
+          <div class="color-dot" style="background:#D4A056" data-color="#D4A056"></div>
+          <div class="color-dot" style="background:#36CFC9" data-color="#36CFC9"></div>
+          <div class="color-dot" style="background:#FF9F68" data-color="#FF9F68"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary)">
+          <input type="checkbox" id="cdPinned"> 置顶显示
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeCountdownModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveCountdown()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast提示 -->
+  <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center"></div>
+
+  <!-- ==================== AI学习助手（悬浮聊天窗口） ====================
+       说明：
+       1. 默认“本地演示模式”：不联网、不调API、无密钥，由内置规则引擎回复；
+       2. 【后续扩展点】启动 ai-server 后端后，把下方 JS 里的 AI_CONFIG.apiUrl
+          填上后端地址（如 http://localhost:3000/api/chat），即可切换为真实AI流式对话；
+       3. 安全约束：大模型密钥只放在后端 .env 里，前端代码永远不出现密钥。 -->
+  <!-- 悬浮头像：可按住拖拽到任意位置（见下方 JS.initAiFabDrag），点击打开/收起面板，双击复位 -->
+  <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">
+    <span class="nav-icon" data-icon="bot" data-icon-size="22"></span><span class="ai-mode-badge" id="aiModeBadge">演示</span>
+  </div>
+  <div class="ai-panel" id="aiPanel">
+    <div class="ai-panel-header">
+      <div class="ai-avatar"><span class="nav-icon" data-icon="bot" data-icon-size="20"></span></div>
+      <div style="flex:1">
+        <div class="ai-title">AI学习助手</div>
+        <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
+      </div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录" aria-label="清空聊天记录" role="button" tabindex="0"><span class="nav-icon" data-icon="delete" data-icon-size="16"></span></div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板" aria-label="收起AI面板" role="button" tabindex="0"><span class="nav-icon" data-icon="close" data-icon-size="16"></span></div>
+    </div>
+    <div class="ai-messages" id="aiMessages"></div>
+    <div class="ai-input-row">
+      <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()"><span data-icon="arrow-right" data-icon-size="18"></span></div>
+    </div>
+  </div>
+
+
+
+</div>
+
+<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/xt-toast.js?v=20260923a" defer></script>
+<script src="assets/error-boundary.js?v=20260916O" defer></script>
+<script src="assets/app.js?v=20260923a" defer></script>
+<script src="assets/voiceplayer.js?v=20260920c" defer></script>
+<script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260922c" defer></script>
+
+<script src="assets/mini-cet.js?v=20260916O" defer></script>
+<!-- 【P0-B T03-06】删除弹窗版 mock-exam.js 引入（mock 已迁到 mock_exam.html 三独立页） -->
+<script src="assets/mini.js?v=20260916O" defer></script>
+<script src="assets/study-stats.js?v=20260916O" defer></script>
+
+<!-- ==================== R48 第 2 批（20260914e）：A1 阅读理解 / A2 翻译专项 做真内容 ====================
+     ADR-1 数据外置 + 后置覆盖：以下 5 个文件全部在 mini-cet.js / mini.js 之后加载，
+     旧数据（MINI_BANK['cet-read'] / ['cet-translate']）一行未删，仅降级为「技巧速览 / 表达积累」tab；
+     回滚只需删掉这 5 个 script 标签（注：注释内不写字面标签，免得配对脚本误判）。
+     顺序铁律：xt-content.js（共用契约基建）必须最先，data-*.js 次之，渲染器最后。 -->
+<script src="assets/xt-content.js?v=20260916O" defer></script>
+<script src="assets/data-cet-read.js?v=20260916O" defer></script>
+<script src="assets/data-cet-translate.js?v=20260916O" defer></script>
+<script src="assets/cet-read.js?v=20260916O" defer></script>
+<script src="assets/cet-translate.js?v=20260916O" defer></script>
+<script>
+/* ==================== T7 增量（P0-8/P0-9）：统计卡 + 考试冲刺 ==================== */
+(function () {
+  'use strict';
+  function $id(x) { return document.getElementById(x); }
+  var GOAL_KEY = window.lsKey ? window.lsKey('study_workbench_cet4_goal_date') : 'study_workbench_cet4_goal_date';
+  var TASK_KEY = window.lsKey ? window.lsKey('study_workbench_cet4_daily_tasks') : 'study_workbench_cet4_daily_tasks'; // { 'YYYY-MM-DD': {words:1,read:1,listen:1} }
+
+  function todayKey() {
+    var d = new Date();
+    var p = function (n) { return String(n).padStart(2, '0'); };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  }
+  function loadTasks() {
+    try { return JSON.parse(localStorage.getItem(TASK_KEY) || '{}') || {}; } catch (e) { return {}; }
+  }
+
+  function renderSprint() {
+    var goal = localStorage.getItem(GOAL_KEY) || '';
+    var dateInp = $id('sprintDate');
+    if (dateInp && !dateInp.value) dateInp.value = goal;
+    var label = $id('sprintGoalLabel');
+    var daysEl = $id('sprintDays');
+    if (goal) {
+      var target = new Date(goal + 'T23:59:59');
+      var diff = Math.ceil((target - new Date()) / 86400000);
+      if (daysEl) daysEl.textContent = diff > 0 ? diff : (diff === 0 ? '今天' : '已开考');
+      if (label) label.textContent = '目标：' + goal;
+    } else {
+      if (daysEl) daysEl.textContent = '--';
+      if (label) label.textContent = '未设置目标日期';
+    }
+    // 每日任务勾选（按日期重置）
+    var t = loadTasks()[todayKey()] || {};
+    if ($id('sprintTaskWords')) $id('sprintTaskWords').checked = !!t.words;
+    if ($id('sprintTaskRead')) $id('sprintTaskRead').checked = !!t.read;
+    if ($id('sprintTaskListen')) $id('sprintTaskListen').checked = !!t.listen;
+    // 完成率环形（conic-gradient 纯 CSS）
+    var done = [t.words, t.read, t.listen].filter(Boolean).length;
+    var pct = Math.round(done / 3 * 100);
+    var ring = $id('sprintRing');
+    if (ring) ring.style.background = 'conic-gradient(var(--primary) ' + pct + '%, var(--bg) 0)';
+    var pctEl = $id('sprintPct');
+    if (pctEl) pctEl.textContent = pct + '%';
+    var tip = $id('sprintDoneTip');
+    if (tip) tip.textContent = done === 3 ? '今日任务全部完成 🎉' : '';
+  }
+
+  window.sprintSaveDate = function () {
+    var v = ($id('sprintDate') || {}).value || '';
+    if (v) { localStorage.setItem(GOAL_KEY, v); if (window.StudyStats) StudyStats.track('cet4', 'goal_set', { date: v }); }
+    renderSprint();
+  };
+
+  window.sprintSaveTasks = function () {
+    var t = loadTasks();
+    t[todayKey()] = {
+      words: $id('sprintTaskWords') && $id('sprintTaskWords').checked ? 1 : 0,
+      read: $id('sprintTaskRead') && $id('sprintTaskRead').checked ? 1 : 0,
+      listen: $id('sprintTaskListen') && $id('sprintTaskListen').checked ? 1 : 0
+    };
+    localStorage.setItem(TASK_KEY, JSON.stringify(t));
+    if (window.StudyStats) StudyStats.track('cet4', 'task', { task: 'daily' });
+    renderSprint();
+  };
+
+  if (document.readyState !== 'loading') { if (window.StudyStats) StudyStats.render('cetStatsCard', 'cet4'); renderSprint(); }
+  else document.addEventListener('DOMContentLoaded', function () { if (window.StudyStats) StudyStats.render('cetStatsCard', 'cet4'); renderSprint(); });
+})();
+</script>
+<script>
+/* ==================== 阅读理解/翻译专项：modal → 页面内全屏视图（20260913k） ====================
+   题目渲染/判分/解析/学习数据联动逻辑全部保留在 assets/mini.js（openMiniQuiz 引擎），零改动；
+   本脚本只做「呈现载体」替换：引擎生成的 #mzMask 被迁入 #cetQuizView 全屏面板，
+   交互模式参照本页「听力训练」面板（顶部返回栏 / ESC 退出 / 锁滚动）。 */
+(function () {
+  'use strict';
+  var TITLES = { 'cet-read': '阅读理解', 'cet-translate': '翻译专项' };
+  var PANEL_ID = 'cetQuizView', SLOT_ID = 'cetQuizSlot';
+  var engineFn = null; // mini.js 引擎原函数（未包装前的引用，防自递归）
+
+  function $id(x) { return document.getElementById(x); }
+  function panelOpen() { var p = $id(PANEL_ID); return !!(p && p.classList.contains('open')); }
+
+  /* 把引擎生成的 #mzMask 迁入全屏面板（仅移动 DOM 节点，不改引擎内部状态） */
+  function mountMask() {
+    var m = $id('mzMask'), slot = $id(SLOT_ID);
+    if (m && slot && m.parentElement !== slot) slot.appendChild(m);
+  }
+  function hidePanel() {
+    var p = $id(PANEL_ID);
+    if (p) {
+      p.classList.remove('open');
+      var s = $id(SLOT_ID);
+      if (s) s.innerHTML = '';
+    }
+    if (window.closeAppModal) { try { window.closeAppModal(PANEL_ID); } catch (e) { /* 忽略 */ } }
+  }
+
+  /* 入口：本页「阅读理解」「翻译专项」两卡片调用（其余类目透传原引擎） */
+  window.openCetQuizView = function (id) {
+    if (!TITLES[id]) { if (window.openMiniQuiz) window.openMiniQuiz(id); return; }
+    var engine = engineFn || window.openMiniQuiz;
+    if (!engine || engine.__cetPatched) { if (window.showToast) window.showToast('内容加载中，请稍后再试'); return; }
+    var t = $id('cetQuizTitle'); if (t) t.textContent = TITLES[id];
+    var p = $id(PANEL_ID); if (p) p.classList.add('open');
+    if (window.openAppModal) { try { window.openAppModal(PANEL_ID); } catch (e) { /* 忽略 */ } } // 锁滚动，与听力面板一致
+    engine(id);   // 引擎照常渲染题目/解析/判分（逻辑零改动）
+    mountMask();  // 呈现载体迁入全屏面板
+  };
+
+  window.closeCetQuizView = function () {
+    if (window.openMiniQuiz && window.openMiniQuiz.__close) window.openMiniQuiz.__close(); // 引擎清理会话/移除 mzMask
+    hidePanel();
+  };
+
+  function setup() {
+    // 入口改指新视图：包装 openMiniQuiz，本页两个类目转由全屏面板承载，其余类目透传
+    var raw = window.openMiniQuiz;
+    if (raw && !raw.__cetPatched) {
+      engineFn = raw;
+      var wrapped = function (id) {
+        if (TITLES[id]) window.openCetQuizView(id);
+        else raw(id);
+      };
+      wrapped.__pick = raw.__pick;
+      wrapped.__next = raw.__next;
+      wrapped.__again = raw.__again;
+      wrapped.__finish = raw.__finish;
+      wrapped.__close = raw.__close;
+      wrapped.__cetPatched = true;
+      window.openMiniQuiz = wrapped;
+    }
+    // 兜底同步：引擎内部可能重建（再来一组）或移除（点遮罩关闭）#mzMask，观察 body 统一联动
+    // R48 T20：V2 渲染期（window.__cetV2Active）不接管面板，避免 body 子节点变动误关 V2 视图
+    if (window.MutationObserver) {
+      new MutationObserver(function () {
+        if (!panelOpen() || window.__cetV2Active) return;
+        if ($id('mzMask')) mountMask();
+        else hidePanel();
+      }).observe(document.body, { childList: true });
+    }
+    // ESC 退出全屏视图（对齐听力面板交互）
+    document.addEventListener('keydown', function (e) {
+      if ((e.key === 'Escape' || e.keyCode === 27) && panelOpen()) window.closeCetQuizView();
+    });
+  }
+
+  if (document.readyState !== 'loading') setup();
+  else document.addEventListener('DOMContentLoaded', setup);
+})();
+</script>
+<script>
+/* ==================== R48 T20 · CETV2 注册表预埋（20260914e，一次性冻结） ====================
+   ADR-2：宿主页只在此处预埋一次注册表与分发逻辑，之后 A1(阅读理解)/A2(翻译专项)
+   只调用 XTC.registerView('CETV2', id, fn) 注册渲染函数，**禁止再改本 HTML**（规避并行覆盖）。
+   铁律 1：未命中注册表的 id 一律原样透传旧的 openCetQuizView / openMiniQuiz 逻辑，一行未删。
+   挂载点沿用既有 #cetQuizView / #cetQuizSlot（页内全屏视图，**非弹窗**，ADR-3），不新建容器。
+
+   ★ 时序（对齐 演示.html T00 的 F12 修正，两条硬约束）：
+     1) 代理必须包进 DOMContentLoaded：本页内联脚本在解析期执行，早于所有 defer 脚本与页尾
+        DOMContentLoaded 回调；只有在 DOMContentLoaded 里取到的 window.openCetQuizView 才是最终实现。
+     2) #cetQuizSlot 每次调用时重新取：面板子节点可能被重建，缓存引用会写进已被丢弃的旧节点。
+     注：注册表对象 CETV2 仍必须在解析期同步创建 —— defer 的业务脚本早于 DOMContentLoaded 注册。
+
+   ★ mountMask 判定结论（20260914e，实测依据）：
+     mini.js 的 renderShell() 生成 #mzMask 时只赋 className＝'mz-mask'，**没有内联 style**；
+     其 position:fixed 来自 mini.js 注入到 head 的 #miniStyle 样式表，而本页头部 style 块中
+     `.cet-quiz-slot .mz-mask{position:absolute;inset:0;...}` 以更高特异性（0,2,0 > 0,1,0）覆盖之。
+     故「mountMask 把 #mzMask 挪进 slot」对**旧 mini.js 内容**确为可用的内联渲染方案（原样保留）。
+     但 A1/A2 新内容为原创长文 + 输入框，不需要也不应依赖 mini.js 引擎，
+     因此新内容走「注册表直渲」：fn(slot) 直接写 #cetQuizSlot，无 mask、无弹窗、无 mountMask。 */
+(function () {
+  'use strict';
+  /* ① 解析期同步建表：cet-read.js / cet-translate.js 等 defer 脚本早于 DOMContentLoaded 执行 */
+  window.CETV2 = window.CETV2 || {};   // { 'cet-read': fn(slotEl), 'cet-translate': fn(slotEl) }
+  window.__cetV2Active = false;        // V2 视图打开标记（供上方 MutationObserver 判断）
+
+  function $id(x) { return document.getElementById(x); }
+  function findSlot() { return $id('cetQuizSlot'); }   // ★ 每次现取，绝不缓存
+
+  function fallback(_legacy, id) {
+    if (typeof _legacy === 'function') return _legacy.call(window, id);
+    if (typeof window.openMiniQuiz === 'function') return window.openMiniQuiz(id);
+    if (window.console && console.warn) console.warn('[CETV2] openCetQuizView / openMiniQuiz 均不可用：' + id);
+    return undefined;
+  }
+
+  /** 关闭时执行各渲染器注册的清理钩子（目前主要是阅读模块的计时器） */
+  function destroyHooks() {
+    var hs = (window.CETV2 && window.CETV2.__hooks) || [], i;
+    for (i = 0; i < hs.length; i++) {
+      try { hs[i](); } catch (e) { /* 清理异常不影响关闭 */ }
+    }
+  }
+
+  function boot() {
+    var _legacy = window.openCetQuizView;          // ★ 此处才拿得到最终实现
+    var _legacyClose = window.closeCetQuizView;
+    if (typeof _legacy !== 'function') {
+      // 不静默吞掉：拿不到就明确告警并停止包装，避免又是一个零报错的坑
+      if (window.console && console.warn) console.warn('[CETV2] legacy openCetQuizView 未就绪，跳过包装');
+      return;
+    }
+    if (window.console && console.log) {
+      var names = Object.keys(window.CETV2 || {}).filter(function (k) { return typeof window.CETV2[k] === 'function'; });
+      console.log('[CETV2] 已接管 openCetQuizView；已注册视图 = ' + names.join(','));
+    }
+
+    window.openCetQuizView = function (id) {
+      var fn = (window.CETV2 || {})[id];
+      var panel = $id('cetQuizView');
+      var slot = findSlot();
+      if (typeof fn !== 'function' || !panel || !slot) {
+        window.__cetV2Active = false;              // 未命中 → 原样透传旧逻辑
+        return fallback(_legacy, id);
+      }
+      var title = $id('cetQuizTitle');
+      if (title) {
+        if (id === 'cet-read') title.textContent = '阅读理解';
+        else if (id === 'cet-translate') title.textContent = '翻译专项';
+      }
+      window.__cetV2Active = true;
+      try {
+        slot.innerHTML = '';
+        panel.classList.add('open');
+        if (typeof window.openAppModal === 'function') {
+          try { window.openAppModal('cetQuizView'); } catch (e) { /* 锁滚动失败不影响展示 */ }
+        }
+        fn(slot);
+        if (window.XTC && typeof window.XTC.renderIcons === 'function') {
+          try { window.XTC.renderIcons(slot); } catch (e) { /* 忽略 */ }
+        }
+        return true;
+      } catch (err) {
+        // 异常自动回退旧路径，绝不白屏
+        window.__cetV2Active = false;
+        if (window.console && console.error) console.error('[CETV2] ' + id + ' 渲染失败，回退旧逻辑', err);
+        slot.innerHTML = '';
+        return fallback(_legacy, id);
+      }
+    };
+
+    if (typeof _legacyClose === 'function') {
+      window.closeCetQuizView = function () {
+        window.__cetV2Active = false;
+        destroyHooks();
+        return _legacyClose.apply(this, arguments);
+      };
+    }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+</script>
+<script src="assets/ai-config.js?v=20260920c"></script>
+<script src="assets/ai-presets.js?v=20260916O"></script>
+<script src="assets/ai-service.js?v=20260920e"></script>
+<script src="assets/ai-cap-registry.js?v=20260918c"></script>
+<script src="assets/ai-cap-image.js?v=20260920c"></script>
+<script src="assets/ai-cap-vision.js?v=20260920c"></script>
+<script src="assets/ai-cap-audio.js?v=20260920c"></script>
+<script src="assets/ai-cap-embed.js?v=20260920c"></script>
+<script src="assets/ai-cap-translate.js?v=20260920c"></script>
+<script src="assets/ai-cap-video.js?v=20260920c"></script>
+<script src="assets/ai-cap-3d.js?v=20260922a"></script>
+</body>
+</html>

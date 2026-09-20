@@ -1,0 +1,92 @@
+[
+ {
+  "file": "assets\\ai-settings.js",
+  "exists": true,
+  "size": 131393,
+  "crlf": 0,
+  "lf_total": 3238,
+  "lf_only": 3238,
+  "eol": "LF"
+ },
+ {
+  "file": "ai-settings.html",
+  "exists": true,
+  "size": 42908,
+  "crlf": 0,
+  "lf_total": 808,
+  "lf_only": 808,
+  "eol": "LF"
+ },
+ {
+  "file": "assets\\ai-service.js",
+  "exists": true,
+  "size": 146973,
+  "crlf": 0,
+  "lf_total": 3252,
+  "lf_only": 3252,
+  "eol": "LF"
+ },
+ {
+  "file": "assets\\ai-config.js",
+  "exists": true,
+  "size": 46895,
+  "crlf": 1101,
+  "lf_total": 1101,
+  "lf_only": 0,
+  "eol": "CRLF"
+ },
+ {
+  "file": "assets\\ai-page.js",
+  "exists": true,
+  "size": 131014,
+  "crlf": 0,
+  "lf_total": 2418,
+  "lf_only": 2418,
+  "eol": "LF"
+ },
+ {
+  "file": "assets\\xt-aiusage.js",
+  "exists": true,
+  "size": 58485,
+  "crlf": 0,
+  "lf_total": 1421,
+  "lf_only": 1421,
+  "eol": "LF"
+ },
+ {
+  "file": "assets\\ai-cap-registry.js",
+  "exists": true,
+  "size": 4343,
+  "crlf": 0,
+  "lf_total": 104,
+  "lf_only": 104,
+  "eol": "LF"
+ },
+ {
+  "file": "assets\\ai-cap-video.js",
+  "exists": true,
+  "size": 14861,
+  "crlf": 0,
+  "lf_total": 313,
+  "lf_only": 313,
+  "eol": "LF"
+ },
+ {
+  "file": "assets\\ai-cap-3d.js",
+  "exists": true,
+  "size": 15769,
+  "crlf": 0,
+  "lf_total": 296,
+  "lf_only": 296,
+  "eol": "LF"
+ },
+ {
+  "file": "assets\\ai-cap-translate.js",
+  "exists": true,
+  "size": 11357,
+  "crlf": 0,
+  "lf_total": 254,
+  "lf_only": 254,
+  "eol": "LF"
+ }
+]

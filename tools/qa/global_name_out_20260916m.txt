@@ -1,0 +1,233 @@
+############################################################
+# 跨文件全局名唯一性扫描  global_name_scan_20260916m.py
+# 项目根: D:\下载的文件\学习工作台
+# 时间  : 2026-09-20T06:33:50.374173
+# 扫描文件数: 121 (assets js + 根HTML内联)
+############################################################
+
+== 白名单校验 (已知误报应被放行) ==
+  ** 指数运算符: AST 实计数 = 0 (字符串内的 ** 不计入 AST, 故 9 处 markdown 字符串已自然排除)
+  数组展开 [...] = 9 处 (ES2015 允许, 不报); 对象展开 {...} = 0 处 (ES2018 禁止, 若>0才需关注)
+  -> 二者均为“运算符/语法形态”, 不会进入 identifier 冲突清单, 确认已放行。
+
+== 守卫写法覆盖率 (合规全局定义 vs 裸声明) ==
+  裸全局定义(计数, 含 var/const/let/function/class/implicit): 1022
+  守卫式 window.X= 定义(计数): 543
+  typeof/!/比较 守卫条件出现次数: 417
+  守卫覆盖率: 34.7%
+
+== 冲突清单 (同一全局名出现在 >=2 个不同文件) ==
+   严重度: FATAL=两文件都是 let/const/class(必崩) | RISK=let/const 配 var/function(看加载顺序) | WARN=仅 var/function/implicit(非致命)
+
+  [RISK(看加载顺序可能崩)] AUTH_KEY  出现于 2 个文件
+      - assets/app.js  : const
+      - 登录.html  : var
+
+  [RISK(看加载顺序可能崩)] INTERVIEW_QUESTIONS  出现于 2 个文件
+      - AI模拟面试.html  : var
+      - assets/app.js  : const
+
+  [RISK(看加载顺序可能崩)] USERS_KEY  出现于 2 个文件
+      - assets/app.js  : const
+      - 登录.html  : var
+
+  [RISK(看加载顺序可能崩)] toastTimer  出现于 2 个文件
+      - AI模拟面试.html  : var
+      - assets/app.js  : let
+
+  [WARN(非致命重声明)] addBlogComment  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] aiChatHistory  出现于 2 个文件
+      - assets/api.js  : implicit
+      - assets/app.js  : let
+
+  [WARN(非致命重声明)] aiStreaming  出现于 2 个文件
+      - assets/api.js  : implicit
+      - assets/app.js  : let
+
+  [WARN(非致命重声明)] apiTryRefresh  出现于 2 个文件
+      - assets/api.js  : function
+      - 登录.html  : function
+
+  [WARN(非致命重声明)] archiveNote  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] blogLocChipHtml  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] blogMineType  出现于 2 个文件
+      - assets/api.js  : implicit
+      - assets/app.js  : let
+
+  [WARN(非致命重声明)] clearAiProviderConfig  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] closeLogoutConfirm  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] closeProfileEditor  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] confirmLogout  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] currentNoteId  出现于 2 个文件
+      - assets/api.js  : implicit
+      - assets/app.js  : let
+
+  [WARN(非致命重声明)] deleteBlogComment  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] deleteNote  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] doLogout  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] editProfile  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] editingNoteId  出现于 2 个文件
+      - assets/api.js  : implicit
+      - assets/app.js  : let
+
+  [WARN(非致命重声明)] editorInsertImage  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] exportAllNotesMd  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] exportCurrentNoteMd  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] globalSearch  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] goBack  出现于 6 个文件
+      - AI模拟面试.html  : function
+      - PPT素材库.html  : function
+      - mock_exam.html  : function
+      - mock_exam_result.html  : function
+      - mock_exam_run.html  : function
+      - 四级经验分享.html  : function
+
+  [WARN(非致命重声明)] noteCardHtml  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] onProfileAvatarFile  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] openBlogDetail  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] pwStrongEnough  出现于 2 个文件
+      - 登录.html  : function
+      - 设置.html  : function
+
+  [WARN(非致命重声明)] pwTooCommon  出现于 2 个文件
+      - 登录.html  : function
+      - 设置.html  : function
+
+  [WARN(非致命重声明)] quickSelectModel  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] renderBlogDetail  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] renderBlogList  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] renderBlogMine  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] renderBlogStats  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] renderPeAvatarPreview  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] renderProfilePage  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] resetProfileAvatar  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] saveAiProviderForm  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] saveBlogNote  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] saveProfileEditor  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] sendAiMsg  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] startEditNote  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] testAiConnection  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] toggleNoteFavorite  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] toggleNoteLike  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] unarchiveNote  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] updateProfileUI  出现于 2 个文件
+      - assets/api.js  : function
+      - assets/app.js  : function
+
+  [WARN(非致命重声明)] vocabCurrentIndex  出现于 2 个文件
+      - assets/app.js  : let
+      - 四级词汇.html  : implicit
+
+  [WARN(非致命重声明)] vocabModeList  出现于 2 个文件
+      - assets/app.js  : let
+      - 四级词汇.html  : implicit
+
+============================================================
+===== 全局名唯一性: 51 项冲突 (FATAL=0, RISK=4, WARN=47) =====
+============================================================
+注意: 此刻 12 条工程线仍在改文件, 上方为“半成品快照”基线, 仅记录数字, 勿据此改动任何文件。

@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#5B8DEF">
+<title>表达 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260923c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<link rel="stylesheet" href="assets/polish.css?v=20260916O">
+<style>
+  /* ==================== 表达 · K 批改造（20260913K） ====================
+     ①案例拆解库/i人伙伴团：原 mini.js / i-partner.js 生成的居中弹窗改为页面内全屏面板
+       （顶部返回栏 + ESC 退出 + 锁滚动）；引擎渲染/判分/聊天逻辑零改动，仅替换呈现载体。
+     ②原「i人专区」菜单删除，内容并入「i人伙伴团」面板的心法区（重构为图标卡宫格）。
+     ③原剧本演练（RP）菜单与其独立页面已下线：完整实现抽取为可复用资产
+       assets/roleplay.js（window.mountRolePlay(containerEl, options)），
+       由 i人伙伴团面板按需挂载，功能 id（rpCurrent/rpDialogue/rpInput/rpEval）与交互逻辑不变。 */
+  .gq-view{position:fixed;inset:0;z-index:1900;background:var(--bg);display:none;flex-direction:column}
+  .gq-view.open{display:flex}
+  .gq-view-top{flex:none;display:flex;align-items:center;gap:12px;padding:12px 16px;background:linear-gradient(135deg,var(--primary),var(--g2));color:#fff}
+  .gq-view-top b{flex:1;font-size:15px}
+  .gq-view-back{background:rgba(255,255,255,.18);border:none;color:#fff;padding:6px 12px;border-radius:8px;font-size:13px;cursor:pointer;line-height:1.4}
+  .gq-view-scroll{flex:1;min-height:0;overflow-y:auto;padding:16px 16px 24px}
+
+  /* 案例拆解库：mini.js 引擎生成的 #mzMask 由全屏弹窗改为面板内普通填充 */
+  .gq-cases-slot{flex:1;min-height:0;position:relative;overflow:hidden}
+  .gq-cases-slot .mz-mask{position:absolute;inset:0;z-index:auto;display:flex;align-items:stretch;justify-content:stretch;padding:0;background:transparent;backdrop-filter:none;animation:none}
+  .gq-cases-slot .mz-box{width:100%;max-width:none;height:100%;max-height:none;border-radius:0;box-shadow:none;animation:none}
+  .gq-cases-slot .mz-head{display:none} /* 标题/关闭改由 gq-view-top 返回栏承担 */
+  .gq-cases-slot .mz-body{flex:1}
+
+  /* i人伙伴团：i-partner.js 生成的 #ipMask 由遮罩弹窗改为面板内填充（含聊天室） */
+  .gq-ip-slot{position:relative;height:min(640px,72vh);min-height:480px;margin:0 0 20px;border:1px solid var(--border);border-radius:16px;overflow:hidden;background:var(--card);box-shadow:0 6px 18px -8px rgba(0,0,0,.12)}
+  .gq-ip-slot .ip-mask{position:absolute;inset:0;z-index:auto;display:flex;align-items:stretch;justify-content:stretch;padding:0;background:transparent;backdrop-filter:none}
+  .gq-ip-slot .ip-panel{width:100%;max-width:none;height:100%;max-height:none;border-radius:0;box-shadow:none}
+  .gq-ip-slot .ip-close{display:none} /* 关闭改由返回栏承担 */
+
+  /* i人心法（原「i人专区」内容并入）：图标+标题+正文的卡宫格 */
+  .gq-mindset{margin-bottom:20px}
+  .gq-mindset-head{display:flex;align-items:center;gap:8px;margin:0 0 4px;font-size:16px;font-weight:800;color:var(--text)}
+  .gq-mindset-head .nav-icon{color:var(--primary)}
+  .gq-mindset-sub{font-size:var(--xt-font-sm);color:var(--text-secondary);margin:0 0 12px}
+  .gq-mindset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+  .gq-mindset-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;transition:border-color .15s,transform .15s}
+  .gq-mindset-card:hover{border-color:var(--primary);transform:translateY(-2px)}
+  .gq-mindset-ic{width:34px;height:34px;border-radius:10px;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+  .gq-mindset-t{font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px}
+  .gq-mindset-b{font-size:13px;line-height:1.7;color:var(--text-secondary)}
+
+  /* ==================== 布局重排（20260916L）：统一本页间距与对齐 ====================
+     背景：用户反馈本页整体布局不和谐。本页实际结构为「学习概况统计卡 + 功能卡网格」
+     两栏式内容（无站内搜索/清空行——该控件不在本页，见 team 汇报），故本次重排聚焦
+     ①纵向节奏统一为 16px（原统计卡 14px 与卡片网格 gap 14px 参差）；
+     ②功能卡改为等高弹性列，标题/描述垂直对齐，图标与文字间距归 12px；
+     ③全屏面板（案例拆解库 / i人伙伴团）返回栏控件高度统一 36px，内容区间距同 16px。
+     仅动 CSS：DOM id、onclick、全局函数名全部原样保留。 */
+  #page-comm.active{display:flex;flex-direction:column;gap:16px}
+  #page-comm>#eqStatsCard{margin-bottom:0}
+  #page-comm .feature-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+    gap:16px;
+    align-items:stretch;
+    margin:0
+  }
+  #page-comm .feature-card{
+    display:flex;flex-direction:column;
+    height:100%;min-height:168px;
+    padding:16px;box-sizing:border-box
+  }
+  #page-comm .feature-card .feature-icon{margin:0 0 12px;flex:none}
+  #page-comm .feature-card .feature-title{margin:0 0 8px;font-size:15px;line-height:1.4}
+  /* 描述占据剩余高度 → 四张卡底部对齐，不再因文案长短出现参差留白 */
+  #page-comm .feature-card .feature-desc{flex:1 1 auto;margin:0;font-size:13px;line-height:1.6}
+
+  /* 全屏面板：返回栏控件 36px 齐高，内容区间距与内容页同节奏 */
+  .gq-view-top{min-height:56px;box-sizing:border-box}
+  .gq-view-back{
+    height:36px;padding:0 14px;flex:none;
+    display:inline-flex;align-items:center;justify-content:center;
+    font-size:13px;line-height:1
+  }
+  .gq-view-scroll{padding:16px;display:flex;flex-direction:column;gap:16px}
+  .gq-ip-slot{flex:none;margin:0}
+  .gq-mindset{margin-bottom:0}
+  .gq-mindset-head{margin:0 0 8px}
+  .gq-mindset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+  .gq-mindset-card{display:flex;flex-direction:column;height:100%;padding:16px;box-sizing:border-box}
+  .gq-mindset-ic{flex:none;margin:0 0 12px}
+  .gq-mindset-t{margin:0 0 8px;line-height:1.4}
+  .gq-mindset-b{flex:1 1 auto;margin:0}
+
+  /* 【R104 项2】i人伙伴团 · 页内双 Tab（参照 mock_exam.html 合并页范式：同款类名 + .open 显隐语义） */
+  .gq-ip-tabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:4px;width:fit-content;max-width:100%}
+  .gq-ip-tab{border:none;background:transparent;padding:8px 14px;border-radius:9px;font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:6px;line-height:1.4}
+  .gq-ip-tab.on{background:var(--primary);color:#fff}
+  .gq-ip-tab:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  .gq-ip-panel{display:none}
+  .gq-ip-panel.open{display:block}
+
+  @media (max-width:560px){
+    #page-comm .feature-grid{grid-template-columns:1fr}
+    #page-comm .feature-card{min-height:0}
+    .gq-mindset-grid{grid-template-columns:1fr}
+    .gq-ip-tabs{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .gq-ip-tab{white-space:nowrap}
+  }
+
+/* ===== R73 需求20-B 移动端适配（≤768px）=====
+   仅作用于窄屏；桌面端(>768px)渲染零影响（本块整体位于媒体查询内）。
+   1) 内嵌媒体兜底 max-width，防 JS 注入内容/未来素材撑破窄屏；
+   2) 宽表格窄屏内横向滚动，避免整页横向溢出（需求20-B #2）；
+   3) 字号下限兜底：common.css 的 .bn-label(10px)/.ai-mode-badge(9px)/
+      .study-stats-bar b(9px) 低于 A7 辅助≥11px，页内窄屏提升到 11px（不改共享 common.css）。 */
+@media (max-width: 768px) {
+  img, video, canvas, iframe { max-width: 100%; height: auto; }
+  table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bottom-nav-item .bn-label, .ai-mode-badge, .study-stats-bar b { font-size: 11px; }
+}
+</style>
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
+</head>
+<body class="theme-comm">
+
+<div class="app">
+<nav class="sidebar">
+    <div class="logo">
+      <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div>
+      <div>
+        <div class="logo-text">星途</div>
+        <div class="logo-sub">致追梦的人->修身</div>
+      </div>
+    </div>
+    <div class="nav-list">
+      <div class="nav-item" data-page="home">
+        <span class="nav-icon" data-icon="home"></span><span>首页</span>
+      </div>
+      <div class="nav-item" onclick="location.href='AI.html'">
+        <span class="nav-icon" data-icon="sparkles"></span><span>AI</span>
+      </div>
+      <div class="nav-section">学习模块</div>
+      <div class="nav-item" data-page="cet">
+        <span class="nav-icon" data-icon="book-open"></span><span>英语</span>
+      </div>
+      <div class="nav-item" data-page="exam">
+        <span class="nav-icon" data-icon="pencil"></span><span>行测</span>
+      </div>
+      <div class="nav-item active" data-page="comm">
+        <span class="nav-icon" data-icon="message-square"></span><span>表达</span>
+      </div>
+      <div class="nav-item" data-page="interview">
+        <span class="nav-icon" data-icon="handshake"></span><span>面测</span>
+      </div>
+      <div class="nav-item" data-page="files">
+        <span class="nav-icon" data-icon="folder"></span><span>我的文件</span>
+      </div>
+      <div class="nav-section">创作</div>
+      <div class="nav-item" data-page="blog">
+        <span class="nav-icon" data-icon="globe"></span><span>社区</span>
+      </div>
+      <div class="nav-item" data-page="moments">
+        <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
+      </div>
+      <div class="nav-section">互动</div>
+      <div class="nav-item" data-external="1" onclick="gotoChat()" title="通讯录 · 添加好友（需在线模式）">
+        <span class="nav-icon" data-icon="users"></span><span>通讯录</span>
+      </div>
+      <div class="nav-section">中心</div>
+      <div class="nav-item" data-page="wrong-book">
+        <span class="nav-icon" data-icon="book"></span><span>错题本</span>
+      </div>
+            <div class="nav-item" data-page="profile">
+        <span class="nav-icon" data-icon="user"></span><span>个人中心</span>
+      </div>
+<div class="nav-section">系统</div>
+      <div class="nav-item" data-page="settings">
+        <span class="nav-icon" data-icon="settings"></span><span>设置</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心">
+        <div class="user-avatar">学</div>
+        <div class="user-info">
+          <div class="user-name">同学</div>
+          <div class="user-streak">🔥 连续打卡 0 天</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+<header class="topbar">
+      <div class="topbar-title" id="topbarTitle">表达</div>
+      <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
+      <div class="gs-wrap" id="gsWrap">
+        <input type="text" class="gs-input" id="gsInput" placeholder="搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <div class="gs-dropdown" id="gsDropdown"></div>
+      </div>
+      <div class="topbar-stats">
+        <div class="stat-item"><span class="stat-icon"><span class="nav-icon" data-icon="fire" data-icon-size="14"></span></span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon"><span class="nav-icon" data-icon="clock" data-icon-size="14"></span></span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+        <div class="stat-item"><span class="stat-icon"><span class="nav-icon" data-icon="check" data-icon-size="14"></span></span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
+      </div>
+      <div class="topbar-date" id="topbarDate"></div>
+      <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="16"></span></div>
+    </header>
+    <div class="content">
+<div class="page active" id="page-comm">
+        <!-- 【后续扩展点】T7 增量（2026-09-11）：学习概况统计卡（study-stats.js 渲染） -->
+        <div id="eqStatsCard" class="study-stats-card"></div>
+
+        <div class="feature-grid">
+          <div class="feature-card" onclick="navigateTo('comm-quotes')">
+            <div class="feature-icon" data-icon="sparkles" data-icon-size="20"></div>
+            <div class="feature-title">万能金句库</div>
+            <div class="feature-desc">18句万能金句，直接套用，拒绝/赞美/道歉/催更全覆盖</div>
+            </div>
+          <div class="feature-card" onclick="navigateTo('comm-scenes')">
+            <div class="feature-icon" data-icon="pen" data-icon-size="20"></div>
+            <div class="feature-title">场景话术库</div>
+            <div class="feature-desc">12个高频场景，错误示范vs高情商回答+话术公式，即学即用</div>
+            </div>
+          <div class="feature-card" onclick="openGqCasesView()">
+            <div class="feature-icon" data-icon="search" data-icon-size="20"></div>
+            <div class="feature-title">案例拆解库</div>
+            <div class="feature-desc">8 个场景四段式拆解：背景 → 冲突 → 处理 → 要点 + 可复用公式</div>
+          </div>
+          <div class="feature-card" onclick="openGqIpartnerView()">
+            <div class="feature-icon" data-icon="users" data-icon-size="20"></div>
+            <div class="feature-title">i人伙伴团</div>
+            <div class="feature-desc">5个不同性格虚拟伙伴，文字聊天练社交，安全不尴尬</div>
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- 底部导航（手机端） -->
+    <nav class="bottom-nav">
+    <div class="bottom-nav-list">
+      <div class="bottom-nav-item" data-page="home">
+        <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
+      </div>
+      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-square" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
+            <div class="bottom-nav-item" onclick="location.href='AI.html'"><div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div></div>
+            <div class="bottom-nav-item" onclick="location.href='更多.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 更多面板遮罩 -->
+    <div class="more-overlay" onclick="toggleMorePanel()"></div>
+
+  <!-- 更多面板 -->
+  <div class="bottom-more-panel" id="morePanel">
+    <div class="bottom-more-title">更多功能</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="navigateTo('moments');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="rss" data-icon-size="20"></span></div><div class="bm-label">动态空间</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogStats()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
+      </div>
+      <div class="bottom-more-item" onclick="if(window.gotoBlogMine){gotoBlogMine()}else{location.href='社区.html#mine'}">
+        <div class="bm-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div><div class="bm-label">互动广场</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div><div class="bm-label">错题本</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div><div class="bm-label">设置</div>
+      </div>
+      <div class="bottom-more-item" onclick="showAbout()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div><div class="bm-label">关于</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加倒计时弹窗 -->
+  <div class="modal-overlay" id="countdownModal">    <div class="modal">
+      <div class="modal-title" id="countdownModalTitle">添加倒计时</div>
+      <div class="form-group">
+        <div class="form-label">名称</div>
+        <input type="text" class="form-input" id="cdName" placeholder="如：四级考试、秋招截止">
+      </div>
+      <div class="form-group">
+        <div class="form-label">日期</div>
+        <input type="date" class="form-input" id="cdDate">
+      </div>
+      <div class="form-group">
+        <div class="form-label">颜色</div>
+        <div class="color-picker" id="cdColorPicker">
+          <div class="color-dot active" style="background:#5B8DEF" data-color="#5B8DEF"></div>
+          <div class="color-dot" style="background:#E05040" data-color="#E05040"></div>
+          <div class="color-dot" style="background:#9B6BD9" data-color="#9B6BD9"></div>
+          <div class="color-dot" style="background:#D4A056" data-color="#D4A056"></div>
+          <div class="color-dot" style="background:#36CFC9" data-color="#36CFC9"></div>
+          <div class="color-dot" style="background:#FF9F68" data-color="#FF9F68"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--xt-font-base);color:var(--text-secondary)">
+          <input type="checkbox" id="cdPinned"> 置顶显示
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeCountdownModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveCountdown()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 【20260913K】案例拆解库：页面内全屏面板（原 mini.js 居中弹窗改造；题目渲染/判分逻辑保留在 assets/mini.js，零改动） -->
+  <div class="gq-view" id="gqCasesView">
+    <div class="gq-view-top">
+      <button class="gq-view-back" onclick="closeGqCasesView()">← 返回</button>
+      <b>案例拆解库</b>
+    </div>
+    <div class="gq-cases-slot" id="gqCasesSlot"></div>
+  </div>
+
+  <!-- 【20260913K】i人伙伴团：页面内全屏面板（原 i-partner.js 遮罩弹窗改造，聊天逻辑零改动）；
+       原「i人专区」菜单已删除，其内容重构为下方「i人心法」卡宫格并入本面板 -->
+  <div class="gq-view" id="gqIpartnerView">
+    <div class="gq-view-top">
+      <button class="gq-view-back" onclick="closeGqIpartnerView()">← 返回</button>
+      <b>i人伙伴团</b>
+    </div>
+    <div class="gq-view-scroll">
+      <div class="gq-ip-tabs" role="tablist" aria-label="i人伙伴团分区">
+        <button type="button" class="gq-ip-tab on" id="gqIpTabBtnPartner" role="tab"
+                aria-selected="true" aria-controls="gqIpTabPartner" onclick="switchGqIpTab('partner')">
+          <span class="nav-icon" data-icon="users" data-icon-size="16"></span>i人伙伴团
+        </button>
+        <button type="button" class="gq-ip-tab" id="gqIpTabBtnMind" role="tab"
+                aria-selected="false" aria-controls="gqIpTabMind" onclick="switchGqIpTab('mind')">
+          <span class="nav-icon" data-icon="sparkles" data-icon-size="16"></span>i人心法 · 沟通专区
+        </button>
+      </div>
+      <div id="gqIpTabPartner" class="gq-ip-panel open" role="tabpanel">
+        <div class="gq-ip-slot" id="gqIpartnerSlot"></div>
+      </div>
+      <div id="gqIpTabMind" class="gq-ip-panel" role="tabpanel">
+      <div class="gq-mindset">
+        <div class="gq-mindset-head"><span class="nav-icon" data-icon="sparkles" data-icon-size="17"></span>i人心法 · 沟通专区</div>
+        <p class="gq-mindset-sub">不用变e人！i人专属沟通策略，共7条。其中「提前准备」「文字辅助」是两个可以直接照做的小工具：开口前先写三行、说不出口就先打字。选好伙伴先聊两句，再看看下面几条心法。</p>
+        <div class="gq-mindset-grid">
+          <div class="gq-mindset-card"><div class="gq-mindset-ic"><span class="nav-icon" data-icon="zap" data-icon-size="17"></span></div><div class="gq-mindset-t">承认“充电模式”</div><div class="gq-mindset-b">i人不是不会社交，而是社交后需要独处回血。把高强度社交排开，预留独处时间，状态反而更稳。</div></div>
+          <div class="gq-mindset-card"><div class="gq-mindset-ic"><span class="nav-icon" data-icon="message-square" data-icon-size="17"></span></div><div class="gq-mindset-t">一对一的优势</div><div class="gq-mindset-b">i人更适合深度一对一交流：主动约“边喝咖啡边聊”，比大场面更能发挥你的倾听与思考优势。</div></div>
+          <div class="gq-mindset-card"><div class="gq-mindset-ic"><span class="nav-icon" data-icon="pencil" data-icon-size="17"></span></div><div class="gq-mindset-t">小步骤热身</div><div class="gq-mindset-b">大型场合先从“提前准备2个问题”开始，用提问代替发言，慢慢找到参与节奏，不必逼自己喧哗。</div></div>
+          <div class="gq-mindset-card"><div class="gq-mindset-ic"><span class="nav-icon" data-icon="target" data-icon-size="17"></span></div><div class="gq-mindset-t">把“内向”转卖点</div><div class="gq-mindset-b">面试/自我介绍时强调：思考先行、善于倾听、专注深入——这些恰是很多岗位需要的。</div></div>
+          <div class="gq-mindset-card"><div class="gq-mindset-ic"><span class="nav-icon" data-icon="clock" data-icon-size="17"></span></div><div class="gq-mindset-t">电量管家小技巧</div><div class="gq-mindset-b">重要社交前不安排太多事；中间借口“去倒杯水”给自己缓冲；结束后允许自己安静半小时。</div></div>
+          <div class="gq-mindset-card"><div class="gq-mindset-ic"><span class="nav-icon" data-icon="clipboard" data-icon-size="17"></span></div><div class="gq-mindset-t">提前准备：开口前先写三行</div><div class="gq-mindset-b">i人临场组织语言慢，提前把“开场第一句”写死，节奏就稳了。重要对话（汇报、求助、拒绝、道歉）前花3分钟写三行：我要对方做什么／对方最可能担心什么／我第一句怎么说。万能开场句：「打扰你两分钟，关于__，我想跟你说下__，你现在方便吗？」再顺手给对方的追问各备一句，心里就不慌。</div></div>
+          <div class="gq-mindset-card"><div class="gq-mindset-ic"><span class="nav-icon" data-icon="file-text" data-icon-size="17"></span></div><div class="gq-mindset-t">文字辅助：说不出就先打字</div><div class="gq-mindset-b">口头表达吃力时，用文字铺路：谈事前先发一段消息把背景和诉求写清楚，给对方缓冲，也省掉自己临时组织语言的压力；聊完再补一条文字小结，能补上口头遗漏。模板：「刚才说的__，我整理一下：__，有遗漏你随时纠正我。」「这事我有点想法，怕当面讲不清楚，先打字跟你说：__。」注意：涉及情绪和冲突的事别只用文字，先约个时间当面或通话说，避免被误读。</div></div>
+        </div>
+      </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast提示 -->
+  <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center"></div>
+
+  <!-- ==================== AI学习助手（悬浮聊天窗口） ====================
+       说明：
+       1. 默认“本地演示模式”：不联网、不调API、无密钥，由内置规则引擎回复；
+       2. 【后续扩展点】启动 ai-server 后端后，把下方 JS 里的 AI_CONFIG.apiUrl
+          填上后端地址（如 http://localhost:3000/api/chat），即可切换为真实AI流式对话；
+       3. 安全约束：大模型密钥只放在后端 .env 里，前端代码永远不出现密钥。 -->
+  <!-- 悬浮头像：可按住拖拽到任意位置（见下方 JS.initAiFabDrag），点击打开/收起面板，双击复位 -->
+  <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">
+    🤖<span class="ai-mode-badge" id="aiModeBadge">演示</span>
+  </div>
+  <div class="ai-panel" id="aiPanel">
+    <div class="ai-panel-header">
+      <div class="ai-avatar">🤖</div>
+      <div style="flex:1">
+        <div class="ai-title">AI学习助手</div>
+        <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
+      </div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录"><span class="nav-icon" data-icon="eraser" data-icon-size="15"></span></div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板"><span class="nav-icon" data-icon="close" data-icon-size="15"></span></div>
+    </div>
+    <div class="ai-messages" id="aiMessages"></div>
+    <div class="ai-input-row">
+      <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()"><span class="nav-icon" data-icon="send" data-icon-size="15"></span></div>
+    </div>
+  </div>
+
+
+
+</div>
+
+<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/xt-toast.js?v=20260923a" defer></script>
+<script src="assets/error-boundary.js?v=20260916O" defer></script>
+<script src="assets/app.js?v=20260923a" defer></script>
+<script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260922c" defer></script>
+
+<script src="assets/mini-comm.js?v=20260916O" defer></script>
+<!-- ===== R48 第 3 批（A3 案例拆解库「做真内容」） =====
+     顺序铁律：xt-content.js 必须在最前；data-comm-cases.js 必须在 mini-comm.js **之后**
+     （ADR-1 后置覆盖同名 key，旧 8 道情景题由数据文件在覆盖前抢救并降级为案例验证题）。
+     挂载点沿用既有 #gqCasesView / #gqCasesSlot，只注册渲染函数，不改 HTML 结构（ADR-2）。
+     回滚：删掉这三个 script 标签即可回到原来的四选一题库。 -->
+<script src="assets/xt-content.js?v=20260916O" defer></script>
+<script src="assets/data-comm-cases.js?v=20260916O" defer></script>
+<script src="assets/comm-cases.js?v=20260916O" defer></script>
+<script src="assets/mini.js?v=20260916O" defer></script>
+<script src="assets/i-partner.js?v=20260916O" defer></script>
+<script src="assets/roleplay.js?v=20260916O" defer></script>
+<script src="assets/study-stats.js?v=20260916O" defer></script>
+<script>
+/* ==================== T7 增量（P0-8）：学习概况统计卡（study-stats.js 渲染） ====================
+   说明：本页原情景问答题卡（P0-11 情景题 + AI 点评）已按功能删减 B3 下线，
+   此处仅保留统计卡的共享启动逻辑，相关独占处理函数与题库数据一并移除。 */
+(function () {
+  'use strict';
+  if (document.readyState !== 'loading') boot();
+  else document.addEventListener('DOMContentLoaded', boot);
+  function boot() {
+    if (window.StudyStats) StudyStats.render('eqStatsCard', 'eq');
+  }
+})();
+</script>
+<script>
+/* ==================== 20260913K：弹窗 → 页面内全屏面板（呈现载体替换，引擎零改动） ====================
+   ①案例拆解库：assets/mini.js 的 openMiniQuiz('comm-cases') 引擎照常渲染，生成的 #mzMask 迁入
+     #gqCasesView 全屏面板（顶部返回栏 / ESC 退出 / openAppModal 锁滚动）。
+   ②i人伙伴团：assets/i-partner.js 的 IPartner.open() 照常渲染，生成的 #ipMask 迁入
+     #gqIpartnerView 全屏面板；关闭统一走返回栏/ESC。
+   ③原「i人专区」菜单已删除，内容重构为 i人伙伴团面板内的「i人心法」卡宫格。 */
+(function () {
+  'use strict';
+  var CASES_ID = 'comm-cases';
+  var engineFn = null; // mini.js 引擎原函数（未包装前的引用，防自递归）
+
+  function $id(x) { return document.getElementById(x); }
+  function panelOpen(pid) { var p = $id(pid); return !!(p && p.classList.contains('open')); }
+  function openPanel(pid) {
+    var p = $id(pid);
+    if (p) p.classList.add('open');
+    if (window.openAppModal) { try { window.openAppModal(pid); } catch (e) { /* 忽略 */ } }
+  }
+  function closePanel(pid) {
+    var p = $id(pid);
+    if (p) p.classList.remove('open');
+    if (window.closeAppModal) { try { window.closeAppModal(pid); } catch (e) { /* 忽略 */ } }
+  }
+
+  /* 把引擎生成的弹窗根节点迁入面板槽位（仅移动 DOM 节点，不改引擎内部状态） */
+  function mountInto(maskId, slotId) {
+    var m = $id(maskId), s = $id(slotId);
+    if (m && s && m.parentElement !== s) s.appendChild(m);
+  }
+
+  /* ---------- ① 案例拆解库（mini.js 引擎承载） ---------- */
+  window.openGqCasesView = function () {
+    var engine = engineFn || window.openMiniQuiz;
+    if (!engine) { if (window.showToast) window.showToast('内容加载中，请稍后再试'); return; }
+    openPanel('gqCasesView');
+    engine(CASES_ID);   // 引擎照常渲染题目/解析/判分（逻辑零改动）
+    mountInto('mzMask', 'gqCasesSlot');
+  };
+  window.closeGqCasesView = function () {
+    if (window.openMiniQuiz && window.openMiniQuiz.__close) window.openMiniQuiz.__close(); // 引擎清理会话/移除 mzMask
+    closePanel('gqCasesView');
+    var s = $id('gqCasesSlot'); if (s) s.innerHTML = '';
+  };
+
+  /* ---------- ② i人伙伴团（i-partner.js 承载） ---------- */
+  window.openGqIpartnerView = function () {
+    openPanel('gqIpartnerView');
+    if (window.IPartner && window.IPartner.open) window.IPartner.open(); // 伙伴选择/聊天室渲染逻辑零改动
+    mountInto('ipMask', 'gqIpartnerSlot');
+  };
+  window.closeGqIpartnerView = function () {
+    if (window.IPartner && window.IPartner.close) window.IPartner.close(); // 引擎移除 ipMask
+    closePanel('gqIpartnerView');
+  };
+
+  /* ---------- ③ i人伙伴团 · 页内双 Tab（R104 项2；参照 mock_exam.html switchMockTab） ----------
+     仅切换外层容器显隐（class on/open + aria-selected），不重建任何 DOM：
+     伙伴选择/聊天/剧本状态因此得以保留，切回「i人伙伴团」即原样恢复。 */
+  window.switchGqIpTab = function (t) {
+    var isMind = (t === 'mind');
+    var bP = $id('gqIpTabBtnPartner'), bM = $id('gqIpTabBtnMind');
+    var pP = $id('gqIpTabPartner'), pM = $id('gqIpTabMind');
+    if (!bP || !bM || !pP || !pM) return;
+    bP.className = 'gq-ip-tab' + (isMind ? '' : ' on');
+    bM.className = 'gq-ip-tab' + (isMind ? ' on' : '');
+    bP.setAttribute('aria-selected', isMind ? 'false' : 'true');
+    bM.setAttribute('aria-selected', isMind ? 'true' : 'false');
+    pP.className = 'gq-ip-panel' + (isMind ? '' : ' open');
+    pM.className = 'gq-ip-panel' + (isMind ? ' open' : '');
+    /* 修复：切换 Tab 后滚动容器保留上一 Tab 的滚动位置，导致 Tab 条被吸顶栏截断 —— 归零 */
+    var sc = document.querySelector('#gqIpartnerView .gq-view-scroll');
+    if (sc) sc.scrollTop = 0;
+  };
+
+  function setup() {
+    // 入口改指新视图：包装 openMiniQuiz，本页「comm-cases」转由全屏面板承载，其余类目透传
+    var raw = window.openMiniQuiz;
+    if (raw && !raw.__gqPatched) {
+      engineFn = raw;
+      var wrapped = function (id) {
+        if (id === CASES_ID) window.openGqCasesView();
+        else raw(id);
+      };
+      ['__pick', '__next', '__again', '__finish', '__close'].forEach(function (k) {
+        if (raw[k]) wrapped[k] = raw[k];
+      });
+      wrapped.__gqPatched = true;
+      window.openMiniQuiz = wrapped;
+    }
+    // 兜底同步：引擎内部可能重建（再来一组）或移除 #mzMask，观察 body 统一联动
+    if (window.MutationObserver) {
+      new MutationObserver(function () {
+        /* R48 守卫：V2 视图激活期（window.__gqV2Active，由 assets/comm-cases.js 置位）
+           不接管面板。缺少这个守卫，V2 里任何一次动态插入节点都会被误判为
+           "引擎已关闭"，进而把正在阅读的案例面板直接关掉（零报错的那种坑）。 */
+        if (window.__gqV2Active) return;
+        if (panelOpen('gqCasesView')) {
+          if ($id('mzMask')) mountInto('mzMask', 'gqCasesSlot');
+          else window.closeGqCasesView();
+        }
+        if (panelOpen('gqIpartnerView') && $id('ipMask')) mountInto('ipMask', 'gqIpartnerSlot');
+      }).observe(document.body, { childList: true });
+    }
+    // ESC 退出全屏面板（对齐站内面板交互）
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' || e.keyCode === 27) {
+        if (panelOpen('gqCasesView')) window.closeGqCasesView();
+        else if (panelOpen('gqIpartnerView')) window.closeGqIpartnerView();
+      }
+    });
+  }
+
+  if (document.readyState !== 'loading') setup();
+  else document.addEventListener('DOMContentLoaded', setup);
+})();
+</script>
+<script src="assets/ai-config.js?v=20260920c"></script>
+<script src="assets/ai-presets.js?v=20260916O"></script>
+<script src="assets/ai-service.js?v=20260920e"></script>
+<script src="assets/ai-cap-registry.js?v=20260918c"></script>
+<script src="assets/ai-cap-image.js?v=20260920c"></script>
+<script src="assets/ai-cap-vision.js?v=20260920c"></script>
+<script src="assets/ai-cap-audio.js?v=20260920c"></script>
+<script src="assets/ai-cap-embed.js?v=20260920c"></script>
+<script src="assets/ai-cap-translate.js?v=20260920c"></script>
+<script src="assets/ai-cap-video.js?v=20260920c"></script>
+<script src="assets/ai-cap-3d.js?v=20260922a"></script>
+</body>
+</html>

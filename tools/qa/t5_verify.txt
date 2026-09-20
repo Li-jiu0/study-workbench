@@ -1,0 +1,58 @@
+=== 1. 文件重命名结果 ===
+  旧 学习博客.html        存在=False | 新 社区.html    存在=True
+  旧 四级备考.html        存在=False | 新 英语.html    存在=True
+  旧 央国企笔试.html       存在=False | 新 行测.html    存在=True
+  旧 高情商表达.html       存在=False | 新 表达.html    存在=True
+  旧 商务礼仪面试.html      存在=False | 新 面测.html    存在=True
+  旧 PPT训练.html       存在=False | 新 演示.html    存在=True
+  保留 行测刷题.html        存在=True
+  保留 商务礼仪.html        存在=True
+  保留 四级词汇.html        存在=True
+  保留 面试题库.html        存在=True
+
+=== 2. 旧文件名残留（文件名引用，目标=0）===
+  旧文件名残留合计 = 0
+
+=== 3. 旧展示名残留（不含受保护项）===
+  旧展示名残留合计 = 0
+
+=== 3b. 「广场」残存（应均为受保护项）===
+  OK-受保护 : 45
+
+=== 4. 死链扫描（站内 .html 引用 -> 文件不存在）===
+  检查引用 358 条，死链 = 0
+
+=== 5. 换行符复核（CRLF/LF 不得混变）===
+  CRLF : 72 个文件
+  LF : 20 个文件
+  MIXED 文件: 无
+
+=== 6. app.js HOME_DEF 与 recentMap ===
+  6719: var HOME_DEF = [
+  6720:   { k: 'plaza', ic: '🌍', dc: 'globe', t: '社区', d: '看大家的', url: '社区.html' },
+  6721:   { k: 'cet', ic: '📖', dc: 'book-open', t: '英语', d: '词汇听力阅读', url: '英语.html' },
+  6722:   { k: 'exam', ic: '📝', dc: 'pencil', t: '行测', d: '行测刷题', url: '行测.html' },
+  6723:   { k: 'comm', ic: '💬', dc: 'message-square', t: '表达', d: '场景话术', url: '表达.html' },
+  6724:   { k: 'interview', ic: '🤝', dc: 'handshake', t: '面测', d: '面试题库', url: '面测.html' },
+  6725:   { k: 'ppt', ic: '🎨', dc: 'palette', t: '演示', d: '版式案例', url: '演示.html' }
+  6726: ];
+  6727: var HOME_SHOW_KEY = lsKey('study_workbench_home_show');
+  6776:   var recentMap = {
+  6777:     '社区.html': 'blog', '私聊.html': 'chat', '行测刷题.html': 'exam', '面试题库.html': 'iv',
+  6778:     '四级词汇.html': 'cet', '英语.html': 'listen', '设置.html': 'settings', '个人中心.html': 'settings'
+  6779:   };
+  6780:   var name = decodeURIComponent(location.pathname.split('/').pop());
+  6781:   if (recentMap[name]) {
+
+=== 7. 新名统计 ===
+  社区.html      : 23
+  英语.html      : 15
+  行测.html      : 12
+  表达.html      : 4
+  面测.html      : 7
+  演示.html      : 9
+  文案 社区       : 201
+  文案 英语       : 200
+  文案 行测       : 213
+  文案 面测       : 51
+  文案 演示       : 186

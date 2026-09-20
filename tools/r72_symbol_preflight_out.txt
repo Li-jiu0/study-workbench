@@ -1,0 +1,19 @@
+=== 闸2：新增符号（应 >=1）===
+  assets/importer.js       xtFilesRegister          count=3 OK
+  我的文件.html                xtFilesRender            count=2 OK
+  我的文件.html                mfList                   count=3 OK
+  导入题库.html                openImporter             count=10 OK
+  assets/chat-local.js     imGoRemark               count=0 *** FAIL
+  assets/chat-local.js     imOpenRemarkEditor       count=3 OK
+  assets/api.js            apiGetChatConversations  count=3 OK
+  assets/app.js            AndroidBridge.notify     count=2 OK
+  assets/ai-service.js     allowPreset              count=2 OK
+  assets/ai-settings.js    BATCH_CONCURRENCY        count=3 OK
+  登录.html                  祝君一切安好                   count=2 OK
+  assets/ai-settings.js    识图                       count=5 OK
+
+=== 闸3：已删符号（应 =0）===
+  个人中心.html                xtFolioToggleFav         count=0 OK
+  更多.html                  穿越英语                     count=0 OK
+  SITEWIDE data-page="ppt"                count=0 []
+  SITEWIDE location.href='演示.html'        count=0 []

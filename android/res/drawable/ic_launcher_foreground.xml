@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 星途 · 自适应图标前景层（白色五角星矢量）
+     视口 108x108（= 自适应图标标准画布 108dp），几何与 make_icon.py 的
+     五角星完全一致（顶角朝上，外接半径 33、内外半径比 0.42）。
+     星形外接半径 33 → 直径 66，完整落在 72dp(66.7%) 安全圆内，
+     被系统裁成圆角方形/圆形/水滴形时白星均完整、不变形。
+     自包含矢量（无任何位图/字体依赖），任意密度渲染一致。 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="@color/ic_launcher_foreground_tint"
+        android:pathData="M 54.000,21.000 L 62.147,42.787 L 85.385,43.802 L 67.182,58.283 L 73.397,80.698 L 54.000,67.860 L 34.603,80.698 L 40.818,58.283 L 22.615,43.802 L 45.853,42.787 Z" />
+</vector>

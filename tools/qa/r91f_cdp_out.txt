@@ -1,0 +1,17 @@
+=== R91-F CDP status-card icon verification (更新.html, real Chrome) ===
+--- Phase 1: error state (backend absent) ---
+  PASS  S1a page stayed on 更新.html  :: href=%E6%9B%B4%E6%96%B0.html
+  PASS  S1b error state reached (检测失败)  :: title=检测失败
+  PASS  S1c .xt-up-icon-bad contains rendered svg  :: {"svgCount":1,"w":52,"h":52,"firstSvgW":"26"}
+  PASS  S1d brand block svg intact (R89-C regression)  :: {"svgCount":1,"w":52,"h":52,"firstSvgW":"28"}
+--- Phase 2: latest state (stub v1.24) ---
+  PASS  S2a recheck ran  :: recheck-called
+  PASS  S2b latest state reached (已是最新版本)  :: title=已是最新版本
+  PASS  S2c .xt-up-icon-ok contains rendered svg  :: {"svgCount":1,"w":52,"h":52,"firstSvgW":"26"}
+  PASS  S2d brand block svg intact
+--- Phase 3: new state (stub v9.9.9) ---
+  PASS  S3a recheck ran  :: recheck-called
+  PASS  S3b action button contains rendered svg  :: {"svgCount":1,"w":456,"h":43,"firstSvgW":"14"}
+  PASS  S3c brand block svg intact
+SUMMARY pass=11 fail=0
+R91F_CDP_PASS

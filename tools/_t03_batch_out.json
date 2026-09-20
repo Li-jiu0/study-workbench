@@ -1,0 +1,15 @@
+{
+ "boot_errors": [],
+ "has_xtAiSettings": true,
+ "batch_calls": [
+  "glm-4.7"
+ ],
+ "health_calls": [],
+ "video_in_batch": false,
+ "d3_in_batch": false,
+ "text_in_batch": true,
+ "video_row_found": true,
+ "uiConfirm_called": true,
+ "confirm_msg_has_cost": true,
+ "video_health_called_after_reject": false
+}

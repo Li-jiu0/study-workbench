@@ -1,0 +1,108 @@
+本地静态服务器: http://127.0.0.1:62476（根 = D:\下载的文件\学习工作台）
+
+== B3-1 发布页真实加载：xt-moments.js 真执行 + 两按钮各自发起整页跳转 ==
+typeof window.XTM = object
+typeof window.XT_LOC_PICK = object
+typeof window.XT_TOAST / toast = undefined / function
+body[data-xtm] = "publish"
+服务器已服务文件数 = 50，脚本类 = 20
+[PASS] B3-1.0 发布页真实加载，xt-moments.js 真执行并暴露 XTM
+[PASS] B3-1.1 #xtmLocBtn 存在
+[PASS] B3-1.2 #xtmAtBtn 存在
+[PASS] B3-1.2b #xtmLocBtn.onclick 是函数（原生 boot 已绑定） || function
+[PASS] B3-1.2c #xtmAtBtn.onclick 是函数（原生 boot 已绑定） || function
+#xtmLocBtn 点击 → nav = ["地区选择.html?cur=&back=%E6%9C%8B%E5%8F%8B%E5%9C%88%E5%8F%91%E5%B8%83.html"] err=""
+#xtmAtBtn  点击 → nav = ["地区选择.html?cur=&back=%E6%9C%8B%E5%8F%8B%E5%9C%88%E5%8F%91%E5%B8%83.html"] err=""
+[PASS] B3-1.3 #xtmLocBtn 发起整页跳转（URL 非空） || ["地区选择.html?cur=&back=%E6%9C%8B%E5%8F%8B%E5%9C%88%E5%8F%91%E5%B8%83.html"]
+[PASS] B3-1.4 #xtmAtBtn 发起整页跳转（URL 非空） || ["地区选择.html?cur=&back=%E6%9C%8B%E5%8F%8B%E5%9C%88%E5%8F%91%E5%B8%83.html"]
+[PASS] B3-1.5-loc.1 URL 指向 地区选择.html || 地区选择.html?cur=&back=朋友圈发布.html
+[PASS] B3-1.5-loc.2 URL 带 cur= 参数 || 地区选择.html?cur=&back=朋友圈发布.html
+[PASS] B3-1.5-loc.3 URL 带 back= 参数 || 地区选择.html?cur=&back=朋友圈发布.html
+[PASS] B3-1.5-loc.4 back 解码 = 朋友圈发布.html（回跳发表页，非默认 个人中心） || 地区选择.html?cur=&back=朋友圈发布.html
+[PASS] B3-1.5-at.1 URL 指向 地区选择.html || 地区选择.html?cur=&back=朋友圈发布.html
+[PASS] B3-1.5-at.2 URL 带 cur= 参数 || 地区选择.html?cur=&back=朋友圈发布.html
+[PASS] B3-1.5-at.3 URL 带 back= 参数 || 地区选择.html?cur=&back=朋友圈发布.html
+[PASS] B3-1.5-at.4 back 解码 = 朋友圈发布.html（回跳发表页，非默认 个人中心） || 地区选择.html?cur=&back=朋友圈发布.html
+[PASS] B3-1.6 两按钮产生完全相同的跳转 URL（共用同一处理器 xtmPickLocation） || 地区选择.html?cur=&back=%E6%9C%8B%E5%8F%8B%E5%9C%88%E5%8F%91%E5%B8%83.html VS 地区选择.html?cur=&back=%E6%9C%8B%E5%8F%8B%E5%9C%88%E5%8F%91%E5%B8%83.html
+[PASS] B3-1.7 首选是整页跳转而非页内弹层（XT_LOC_PICK 存在但未被调用） || XT_LOC_PICK=object nav=["地区选择.html?cur=&back=%E6%9C%8B%E5%8F%8B%E5%9C%88%E5%8F%91%E5%B8%83.html"]
+
+== B3-2 闭环证明：地区选择页 ?back=朋友圈发布.html → goBack()/pick() 真跳回 ==
+goBack 源码（L347 起）:
+   goBack: function () {
+   if (state.back) { try { location.replace(state.back); } catch (e) { location.href = state.back; } return; }
+   try { history.back(); } catch (e2) {}
+   },
+   goLevel: function (lv) {
+[PASS] B3-2.1 goBack 使用 state.back
+[PASS] B3-2.2 goBack 首选 location.replace(state.back)
+[PASS] B3-2.3 默认 back = 个人中心.html（说明 back 参数非默认值）
+[PASS] B3-2.4 boot 读 param('back') 覆盖 state.back
+pick() 源码（L207 起，节选）:
+   function pick(text) {
+   text = String(text || '').trim();
+   if (!text) { toast('请先选择一个地区'); return; }
+   try {
+   localStorage.setItem(PICK_KEY, JSON.stringify({ text: text, ts: Date.now() }));
+   } catch (e) { /* 隐私模式下 setItem 可能抛异常，忽略（下方仍会跳转） */ }
+   recentPush(text);   /* R88-J：选中即入常用城市 */
+   toast('已选择：' + text);
+   setTimeout(function () {
+   try { location.replace(state.back); } catch (e2) { location.href = state.back; }
+   }, 260);
+   }
+[PASS] B3-2.5 pick() 选中后也跳 state.back（回写+回跳一体）
+[PASS] B3-2.6 pick() 把 {text,ts} 写入 localStorage（回写数据源）
+typeof XtrPage = object
+goBack() 后 location.href = http://127.0.0.1:62476/%E5%9C%B0%E5%8C%BA%E9%80%89%E6%8B%A9.html?back=%E6%9C%8B%E5%8F%8B%E5%9C%88%E5%8F%91%E5%B8%83.html  err=""
+[PASS] B3-2R.1 goBack() 真跳回 朋友圈发布.html（闭环达成，非仅参数存在） || http://127.0.0.1:62476/%E5%9C%B0%E5%8C%BA%E9%80%89%E6%8B%A9.html?back=%E6%9C%8B%E5%8F%8B%E5%9C%88%E5%8F%91%E5%B8%83.html
+[PASS] B3-2R.2 goBack() 未跳向默认 个人中心.html || http://127.0.0.1:62476/%E5%9C%B0%E5%8C%BA%E9%80%89%E6%8B%A9.html?back=%E6%9C%8B%E5%8F%8B%E5%9C%88%E5%8F%91%E5%B8%83.html
+（对照）无 back 参数 goBack() 后 href = http://127.0.0.1:62476/%E5%9C%B0%E5%8C%BA%E9%80%89%E6%8B%A9.html
+[FAIL] B3-2R.3 对照：无 back 参数时回跳默认 个人中心.html（证明 back 是决定因素） || http://127.0.0.1:62476/%E5%9C%B0%E5%8C%BA%E9%80%89%E6%8B%A9.html
+pick() 后 localStorage[xt_region_pick] = "{\"text\":\"R90省 R90市\",\"ts\":1789733271424}" err=""
+[PASS] B3-2R.4 pick() 真写入回写键 {text,ts} || {"text":"R90省 R90市","ts":1789733271424}
+pick() 延迟后 href = http://127.0.0.1:62476/%E5%9C%B0%E5%8C%BA%E9%80%89%E6%8B%A9.html?cur=&back=%E6%9C%8B%E5%8F%8B%E5%9C%88%E5%8F%91%E5%B8%83.html
+[PASS] B3-2R.5 pick() 真回跳到 朋友圈发布.html（完整闭环：选→回写→回跳） || http://127.0.0.1:62476/%E5%9C%B0%E5%8C%BA%E9%80%89%E6%8B%A9.html?cur=&back=%E6%9C%8B%E5%8F%8B%E5%9C%88%E5%8F%91%E5%B8%83.html
+
+== B3-3 降级链路：跳转被拒 → openPicker（不抛）→ openPicker 挂 → 本页输入层 ==
+A) hook=false → openPickerCalled=true opts={"title":"选择位置","confirmText":"确定","current":""} err=""
+[PASS] B3-3.1 整页跳转被拒（hook 返回 false）→ 降级调用 openPicker
+[PASS] B3-3.2 降级调用签名正确（opts 含 title/confirmText/current；第二参是回调） || {"title":"选择位置","confirmText":"确定","current":""} cb=function
+[PASS] B3-3.3 降级过程不抛异常
+A) 回调后 #xtmChosen = "R90降级值" class="xtm-fn on"
+[PASS] B3-3.4 降级回调真写入位置显示区（#xtmChosen 含值 + 按钮 on 态） || " R90降级值" | xtm-fn on
+B) openPicker 抛异常 → 上层异常="" 弹层=xtm-overlay display=block
+[PASS] B3-3.5 openPicker 异常被吞（未冒泡到调用方）
+[PASS] B3-3.6 继续降级到本页输入层（真出现可见弹层，不白屏不静默） || xtm-overlay display=block
+[PASS] B3-3.7 双降级都不可用时仍不抛异常（有兜底）
+[PASS] B3-3.8 双降级时本页输入层仍出现 || xtm-overlay
+
+== B3-4 回写链路端到端：地区选择页真写入 → 回跳发布页真消费/回填 ==
+种子（取自地区选择页 pick() 的真实写入）= {"text":"R90省 R90市","ts":1789733271424}
+回跳后：key=null #xtmChosen="R90省 R90市" class="xtm-fn on"
+[PASS] B3-4.1 新鲜回写值被消费（一次性：key 被删除） || null
+[PASS] B3-4.2 值真回填到位置显示区（#xtmChosen 含地址） || " R90省 R90市"
+[PASS] B3-4.3 位置按钮进入已选态（class 含 xtm-fn on） || xtm-fn on
+无 key 页 #xtmChosen = ""
+[PASS] B3-4.4 无 key 时不残留任何位置值（二次消费被拒） || ""
+TTL 过期页 #xtmChosen = "" key=null
+[PASS] B3-4.5 TTL 过期值被拒绝（不回填） || ""
+[PASS] B3-4.6 TTL 过期值仍被消费掉（key 删除，不留脏数据） || null
+TTL 边界内（9 分钟）页 #xtmChosen = "R90边界内值"
+[PASS] B3-4.7 对照：TTL 边界内（9 分钟）值被接受（证明 TTL 判断有效而非一刀切） || " R90边界内值"
+畸形 JSON 页 #xtmChosen = "" key=null err=""
+[PASS] B3-4.8 畸形 JSON 不抛异常且不回填 ||  | ""
+[PASS] B3-4.9 畸形 JSON 的 key 也被清掉（不留脏键） || null
+
+== B3-5 朋友圈发布.html 变更审计（任务书声称未改 = 12612 字节） ==
+实测字节 = 12612（任务书 12612，差 0）
+页面 id="xtm*" = ["xtmCancel","xtmSubmit","xtmText","xtmMedia","xtmFileImg","xtmFileVid","xtmFuncbar","xtmLocBtn","xtmVisBtn","xtmMentionBtn","xtmAtBtn","xtmVidBtn","xtmLinkBtn","xtmChosen"]
+[PASS] B3-5.1 #xtmFileImg 在位
+[PASS] B3-5.2 #xtmFileVid 在位
+[PASS] B3-5.3 #xtmCancel / #xtmSubmit 在位
+[PASS] B3-5.4 #xtmLocBtn / #xtmAtBtn 在位
+[PASS] B3-5.5 功能栏 6 按钮齐全 || ["xtmCancel","xtmSubmit","xtmText","xtmMedia","xtmFileImg","xtmFileVid","xtmFuncbar","xtmLocBtn","xtmVisBtn","xtmMentionBtn","xtmAtBtn","xtmVidBtn","xtmLinkBtn","xtmChosen"]
+[PASS] B3-5.6 字节数 == 12612（任务书期望未改） || 实测 12612（差 0）
+
+== 汇总（块3） ==
+通过 50 / 51
+  FAIL: B3-2R.3 对照：无 back 参数时回跳默认 个人中心.html（证明 back 是决定因素） || http://127.0.0.1:62476/%E5%9C%B0%E5%8C%BA%E9%80%89%E6%8B%A9.html

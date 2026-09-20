@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#5B8DEF">
+<title>学习概括 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260923c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<link rel="stylesheet" href="assets/polish.css?v=20260916O">
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
+<style>
+/* ===== 学习概括页局部样式（全部以 .xg- 前缀限定，不外溢到其它页面） ===== */
+.xg-wrap{max-width:720px;margin:0 auto;padding-bottom:24px;}
+.xg-card{background:var(--card,#fff);border:1px solid var(--border,#e5e7eb);border-radius:14px;padding:16px;margin-top:14px;}
+.xg-card-title{display:-webkit-box;display:flex;-webkit-box-align:center;align-items:center;gap:8px;
+  font-size:15px;font-weight:800;color:var(--text,#1a1b1c);margin-bottom:12px;}
+.xg-card-title .xg-ti{width:24px;height:24px;border-radius:8px;background:var(--bg-sub,#f3f4f6);
+  display:-webkit-box;display:flex;-webkit-box-align:center;align-items:center;-webkit-box-pack:center;justify-content:center;flex:0 0 24px;}
+.xg-card-title .xg-ti svg{display:block;}
+.xg-text{font-size:13px;color:var(--text-secondary,#4b5563);line-height:1.8;}
+.xg-note{font-size:12px;color:var(--text-secondary,#9ca3af);line-height:1.7;margin-top:10px;}
+.xg-kpi{display:-webkit-box;display:flex;flex-wrap:wrap;gap:8px;}
+.xg-kpi-cell{-webkit-box-flex:1;flex:1 1 calc(50% - 4px);min-width:132px;background:var(--bg-sub,#f3f4f6);
+  border-radius:12px;padding:12px 14px;box-sizing:border-box;}
+.xg-kpi-cell b{display:block;font-size:22px;font-weight:800;color:var(--text,#1a1b1c);line-height:1.2;}
+.xg-kpi-cell span{display:block;font-size:12px;color:var(--text-secondary,#6b7280);margin-top:4px;}
+/* 近 7 天柱状图（纯 CSS，无第三方库） */
+.xg-bars{display:-webkit-box;display:flex;-webkit-box-align:flex-end;align-items:flex-end;gap:6px;height:120px;
+  padding-top:6px;border-bottom:1px solid var(--border,#e5e7eb);}
+.xg-bar{-webkit-box-flex:1;flex:1;display:-webkit-box;display:flex;-webkit-box-orient:vertical;
+  -webkit-flex-direction:column;flex-direction:column;-webkit-box-align:center;align-items:center;
+  -webkit-box-pack:end;justify-content:flex-end;height:100%;}
+.xg-bar i{display:block;width:100%;max-width:26px;min-height:3px;border-radius:6px 6px 0 0;
+  background:var(--primary-soft,#DCE7FF);}
+.xg-bar.today i{background:var(--primary,#2F6BFF);}
+.xg-bar b{font-size:11px;color:var(--text-secondary,#6b7280);margin-top:6px;font-weight:600;}
+.xg-bar em{font-size:11px;color:var(--text-secondary,#9ca3af);font-style:normal;margin-top:2px;}
+/* 模块占比环形图（纯 SVG） */
+.xg-donut{display:-webkit-box;display:flex;-webkit-box-align:center;align-items:center;gap:16px;flex-wrap:wrap;}
+.xg-donut-svg{position:relative;width:120px;height:120px;flex:0 0 120px;}
+.xg-donut-svg svg{display:block;}
+.xg-donut-center{position:absolute;left:0;top:0;width:120px;height:120px;
+  display:-webkit-box;display:flex;-webkit-box-orient:vertical;-webkit-flex-direction:column;flex-direction:column;
+  -webkit-box-align:center;align-items:center;-webkit-box-pack:center;justify-content:center;pointer-events:none;}
+.xg-donut-center b{font-size:18px;font-weight:800;color:var(--text,#1a1b1c);line-height:1.1;}
+.xg-donut-center span{font-size:11px;color:var(--text-secondary,#9ca3af);margin-top:2px;}
+.xg-legend{-webkit-box-flex:1;flex:1;min-width:160px;}
+.xg-legend-row{display:-webkit-box;display:flex;-webkit-box-align:center;align-items:center;gap:8px;
+  font-size:13px;color:var(--text-secondary,#4b5563);padding:4px 0;}
+.xg-legend-dot{width:10px;height:10px;border-radius:3px;flex:0 0 10px;}
+.xg-legend-name{-webkit-box-flex:1;flex:1;}
+.xg-legend-val{font-size:12px;color:var(--text-secondary,#6b7280);}
+/* 行测各模块表 */
+.xg-tr{display:-webkit-box;display:flex;-webkit-box-align:center;align-items:center;
+  padding:9px 2px;border-top:1px solid var(--border,#e5e7eb);font-size:13px;}
+.xg-tr:first-child{border-top:none;}
+.xg-tr span{flex:1;min-width:0;color:var(--text,#1a1b1c);text-align:center;}
+.xg-tr span:first-child{text-align:left;color:var(--text,#1a1b1c);font-weight:600;}
+.xg-th{font-size:12px;color:var(--text-secondary,#9ca3af);font-weight:700;}
+.xg-th span{font-weight:700;color:var(--text-secondary,#9ca3af);}
+/* 最近学习记录 */
+.xg-list{font-size:13px;}
+.xg-row{display:-webkit-box;display:flex;-webkit-box-align:center;align-items:center;gap:10px;
+  padding:9px 2px;border-top:1px solid var(--border,#e5e7eb);}
+.xg-row:first-child{border-top:none;}
+.xg-row-ic{width:26px;height:26px;flex:0 0 26px;border-radius:8px;background:var(--bg-sub,#f3f4f6);
+  color:var(--text-secondary,#6b7280);display:-webkit-box;display:flex;-webkit-box-align:center;
+  align-items:center;-webkit-box-pack:center;justify-content:center;}
+.xg-row-ic svg{display:block;}
+.xg-row-tx{-webkit-box-flex:1;flex:1;min-width:0;}
+.xg-row-t1{color:var(--text,#1a1b1c);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.xg-row-t2{font-size:12px;color:var(--text-secondary,#9ca3af);margin-top:2px;}
+.xg-row-tm{font-size:12px;color:var(--text-secondary,#9ca3af);flex:0 0 auto;}
+/* 空态 */
+.xg-empty{background:var(--card,#fff);border:1px solid var(--border,#e5e7eb);border-radius:14px;
+  padding:28px 18px;text-align:center;margin-top:14px;}
+.xg-empty-ic{width:52px;height:52px;margin:0 auto 12px;border-radius:14px;background:var(--bg-sub,#f3f4f6);
+  color:var(--text-secondary,#9ca3af);display:-webkit-box;display:flex;-webkit-box-align:center;
+  align-items:center;-webkit-box-pack:center;justify-content:center;}
+.xg-empty-ic svg{display:block;}
+.xg-empty-tx{font-size:15px;font-weight:800;color:var(--text,#1a1b1c);}
+.xg-empty-sub{font-size:13px;color:var(--text-secondary,#6b7280);line-height:1.8;margin-top:6px;}
+.xg-empty-btn{display:inline-block;margin-top:14px;padding:9px 20px;border-radius:20px;
+  background:var(--primary,#2F6BFF);color:#fff;font-size:14px;font-weight:700;}
+/* 数据来源键名 */
+.xg-keys{margin-top:8px;}
+.xg-key{display:-webkit-box;display:flex;-webkit-box-align:center;align-items:center;gap:8px;
+  font-size:12px;color:var(--text-secondary,#6b7280);padding:6px 0;border-top:1px dashed var(--border,#e4e3dd);}
+.xg-key:first-child{border-top:none;}
+.xg-key code{flex:0 0 auto;background:var(--bg-sub,#f3f4f6);border-radius:6px;padding:2px 6px;
+  font-size:11px;color:var(--text,#1a1b1c);word-break:break-all;}
+.xg-key em{font-style:normal;-webkit-box-flex:1;flex:1;min-width:0;}
+@media (max-width:640px){
+  .xg-kpi-cell{flex:1 1 100%;}
+  .xg-donut{-webkit-box-pack:center;justify-content:center;}
+}
+/* ===== R73 需求20-B 移动端适配（≤768px）=====
+   仅作用于窄屏；桌面端(>768px)渲染零影响（本块整体位于媒体查询内）。
+   1) 内嵌媒体兜底 max-width，防 JS 注入内容/未来素材撑破窄屏；
+   2) 宽表格窄屏内横向滚动，避免整页横向溢出（需求20-B #2）；
+   3) 字号下限兜底：common.css 的 .bn-label(10px)/.ai-mode-badge(9px)/
+      .study-stats-bar b(9px) 低于 A7 辅助≥11px，页内窄屏提升到 11px（不改共享 common.css）。 */
+@media (max-width: 768px) {
+  img, video, canvas, iframe { max-width: 100%; height: auto; }
+  table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bottom-nav-item .bn-label, .ai-mode-badge, .study-stats-bar b { font-size: 11px; }
+  /* 行内 nowrap 文本：窄屏允许换行（#4 定点收敛） */
+  .xg-row-t1 { white-space: normal; }
+}
+</style>
+</head>
+<body class="theme-home">
+
+<div class="app">
+<nav class="sidebar">
+    <div class="logo">
+      <div class="logo-icon" data-icon="book-open"></div>
+      <div>
+        <div class="logo-text">星途</div>
+        <div class="logo-sub">致追梦的人->修身</div>
+      </div>
+    </div>
+    <div class="nav-list">
+      <div class="nav-item" onclick="location.href='学习工作台.html'">
+        <span class="nav-icon" data-icon="home"></span><span>首页</span>
+      </div>
+      <div class="nav-item" onclick="location.href='AI.html'">
+        <span class="nav-icon" data-icon="sparkles"></span><span>AI</span>
+      </div>
+      <div class="nav-section">学习模块</div>
+      <div class="nav-item" onclick="location.href='英语.html'">
+        <span class="nav-icon" data-icon="book-open"></span><span>英语</span>
+      </div>
+      <div class="nav-item" onclick="location.href='行测.html'">
+        <span class="nav-icon" data-icon="pencil"></span><span>行测</span>
+      </div>
+      <div class="nav-item" onclick="location.href='表达.html'">
+        <span class="nav-icon" data-icon="message-square"></span><span>表达</span>
+      </div>
+      <div class="nav-item" onclick="location.href='面测.html'">
+        <span class="nav-icon" data-icon="handshake"></span><span>面测</span>
+      </div>
+      <div class="nav-item" onclick="location.href='我的文件.html'">
+        <span class="nav-icon" data-icon="folder"></span><span>我的文件</span>
+      </div>
+      <div class="nav-section">创作</div>
+      <div class="nav-item" onclick="location.href='社区.html'">
+        <span class="nav-icon" data-icon="globe"></span><span>社区</span>
+      </div>
+      <div class="nav-item" data-page="moments">
+        <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
+      </div>
+      <div class="nav-section">互动</div>
+      <div class="nav-item" onclick="gotoChat()" title="通讯录 · 添加好友（需在线模式）">
+        <span class="nav-icon" data-icon="users"></span><span>通讯录</span>
+      </div>
+      <div class="nav-section">中心</div>
+      <div class="nav-item" onclick="location.href='错题本.html'">
+        <span class="nav-icon" data-icon="book"></span><span>错题本</span>
+      </div>
+      <div class="nav-item" onclick="location.href='个人中心.html'">
+        <span class="nav-icon" data-icon="user"></span><span>个人中心</span>
+      </div>
+      <div class="nav-section">系统</div>
+      <div class="nav-item" onclick="location.href='设置.html'">
+        <span class="nav-icon" data-icon="settings"></span><span>设置</span>
+      </div>
+      <div class="nav-item active" onclick="location.href='更多.html'">
+        <span class="nav-icon" data-icon="menu"></span><span>更多</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心">
+        <div class="user-avatar">学</div>
+        <div class="user-info">
+          <div class="user-name">同学</div>
+          <div class="user-streak"><span data-icon="fire" data-icon-size="14" style="vertical-align:-2px"></span> 连续打卡 0 天</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-title" id="topbarTitle">学习概括</div>
+      <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
+      <div class="gs-wrap" id="gsWrap">
+        <input type="text" class="gs-input" id="gsInput" placeholder="搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <div class="gs-dropdown" id="gsDropdown"></div>
+      </div>
+      <div class="topbar-stats">
+        <div class="stat-item"><span class="stat-icon" data-icon="fire"></span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="clock"></span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+      </div>
+      <div class="topbar-date" id="topbarDate"></div>
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="16"></span></div>
+    </header>
+    <div class="content">
+      <div class="page active" id="page-summary">
+        <!-- 顶部返回（独立页，history.back 回上一页；无历史时回更多页） -->
+        <div class="morepage-head">
+          <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='更多.html'}" title="返回" aria-label="返回">←</button>
+          <div class="morepage-title"><span class="nav-icon" data-icon="chart-bar" data-icon-size="18"></span> 学习概括</div>
+        </div>
+
+        <div class="xg-wrap">
+          <!-- ===== 空态（本机一条学习记录都没有时才显示） ===== -->
+          <div class="xg-empty" id="xgEmpty" style="display:none">
+            <div class="xg-empty-ic"><span class="nav-icon" data-icon="chart-bar" data-icon-size="26"></span></div>
+            <div class="xg-empty-tx">还没有学习记录</div>
+            <div class="xg-empty-sub">这一页只显示你本机真实发生过的数据，不含任何示例值。<br>去首页背几个单词、刷几道题，回来就能看到你的学习画像。</div>
+            <div class="xg-empty-btn" onclick="location.href='学习工作台.html'">去首页开始学习</div>
+          </div>
+
+          <div id="xgBody">
+            <!-- ===== 核心指标 ===== -->
+            <div class="xg-card">
+              <div class="xg-card-title"><span class="xg-ti"><span class="nav-icon" data-icon="target" data-icon-size="16"></span></span>核心指标</div>
+              <div class="xg-kpi">
+                <div class="xg-kpi-cell"><b id="xgStreak">0</b><span>连续打卡（天）</span></div>
+                <div class="xg-kpi-cell"><b id="xgHours">0</b><span>总学习时长（小时）</span></div>
+                <div class="xg-kpi-cell"><b id="xgQuestions">0</b><span>做题总数（题）</span></div>
+                <div class="xg-kpi-cell"><b id="xgAccuracy">0%</b><span>正确率</span></div>
+              </div>
+              <div class="xg-note" id="xgKpiNote"></div>
+            </div>
+
+            <!-- ===== 学习时长 ===== -->
+            <div class="xg-card">
+              <div class="xg-card-title"><span class="xg-ti"><span class="nav-icon" data-icon="clock" data-icon-size="16"></span></span>学习时长</div>
+              <div class="xg-kpi">
+                <div class="xg-kpi-cell"><b id="xgTodayMin">0</b><span>今日（分钟）</span></div>
+                <div class="xg-kpi-cell"><b id="xgWeekMin">0</b><span>本周（分钟）</span></div>
+                <div class="xg-kpi-cell"><b id="xgTotalMin">0</b><span>累计（分钟）</span></div>
+                <div class="xg-kpi-cell"><b id="xgEvents">0</b><span>累计学习次数</span></div>
+              </div>
+            </div>
+
+            <!-- ===== 近 7 天学习时长柱状图 ===== -->
+            <div class="xg-card">
+              <div class="xg-card-title"><span class="xg-ti"><span class="nav-icon" data-icon="chart-bar" data-icon-size="16"></span></span>近 7 天学习时长</div>
+              <div class="xg-bars" id="xgBars"></div>
+              <div class="xg-note" id="xgBarsNote"></div>
+            </div>
+
+            <!-- ===== 各模块学习占比（纯 SVG 环形图） ===== -->
+            <div class="xg-card">
+              <div class="xg-card-title"><span class="xg-ti"><span class="nav-icon" data-icon="chart" data-icon-size="16"></span></span>各模块学习占比</div>
+              <div class="xg-donut">
+                <div class="xg-donut-svg" id="xgDonut"></div>
+                <div class="xg-legend" id="xgLegend"></div>
+              </div>
+              <div class="xg-note" id="xgDonutNote"></div>
+            </div>
+
+            <!-- ===== 行测各模块正确率 ===== -->
+            <div class="xg-card">
+              <div class="xg-card-title"><span class="xg-ti"><span class="nav-icon" data-icon="clipboard-list" data-icon-size="16"></span></span>行测各模块正确率</div>
+              <div class="xg-table" id="xgExamTable"></div>
+              <div class="xg-note">题量与正确数来自本机做题记录（appData.examTypeProgress），没刷过的题型一律显示 0。</div>
+            </div>
+
+            <!-- ===== 最近学习记录 ===== -->
+            <div class="xg-card">
+              <div class="xg-card-title"><span class="xg-ti"><span class="nav-icon" data-icon="notebook" data-icon-size="16"></span></span>最近学习记录</div>
+              <div class="xg-list" id="xgRecent"></div>
+            </div>
+
+            <!-- ===== 积累与错题 ===== -->
+            <div class="xg-card">
+              <div class="xg-card-title"><span class="xg-ti"><span class="nav-icon" data-icon="book" data-icon-size="16"></span></span>积累与错题</div>
+              <div class="xg-kpi">
+                <div class="xg-kpi-cell"><b id="xgWrong">0</b><span>错题（道）</span></div>
+                <div class="xg-kpi-cell"><b id="xgVocab">0</b><span>已学单词（个）</span></div>
+                <div class="xg-kpi-cell"><b id="xgMock">0</b><span>模考（场）</span></div>
+                <div class="xg-kpi-cell"><b id="xgNotes">0</b><span>我的发贴</span></div>
+              </div>
+              <div class="xg-note" id="xgShenlunNote"></div>
+            </div>
+
+            <!-- ===== 本周报告（吸收原「学习统计」能力） ===== -->
+            <div class="xg-card">
+              <div class="xg-card-title"><span class="xg-ti"><span class="nav-icon" data-icon="award" data-icon-size="16"></span></span>本周报告</div>
+              <div class="xg-text" id="xgWeekReport"></div>
+            </div>
+
+            <!-- ===== 数据来源 ===== -->
+            <div class="xg-card">
+              <div class="xg-card-title"><span class="xg-ti"><span class="nav-icon" data-icon="info" data-icon-size="16"></span></span>数据来源</div>
+              <div class="xg-text">本页数字全部实时读自你本机的 localStorage，不联网、不上传，也没有任何写死的示例值：没学过的模块一律显示 0。切换账号后数据随账号隔离（键名带 <span id="xgAccount">shared</span> 后缀）。</div>
+              <div class="xg-keys" id="xgKeys"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部导航（手机端）：首页 → 互动 → 我的 → AI → 更多 -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-list">
+      <div class="bottom-nav-item" onclick="location.href='学习工作台.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
+      </div>
+      <div class="bottom-nav-item" onclick="gotoChat()">
+        <div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div>
+      </div>
+      <div class="bottom-nav-item" onclick="openBlogProfile()">
+        <div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div>
+      </div>
+      <div class="bottom-nav-item" onclick="location.href='AI.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div>
+      </div>
+      <div class="bottom-nav-item active" onclick="location.href='更多.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 更多面板遮罩（全站共用 DOM） -->
+  <div class="more-overlay" onclick="toggleMorePanel()"></div>
+
+  <!-- 更多面板（全站共用 DOM） -->
+  <div class="bottom-more-panel" id="morePanel">
+    <div class="bottom-more-title">更多功能</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="navigateTo('moments');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="rss" data-icon-size="20"></span></div><div class="bm-label">动态空间</div>
+      </div>
+      <div class="bottom-more-item" onclick="location.href='学习概括.html';toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习概括</div>
+      </div>
+      <div class="bottom-more-item" onclick="if(window.gotoBlogMine){gotoBlogMine()}else{location.href='社区.html#mine'}">
+        <div class="bm-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div><div class="bm-label">互动广场</div>
+      </div>
+      <div class="bottom-more-item" onclick="location.href='错题本.html';toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div><div class="bm-label">错题本</div>
+      </div>
+      <div class="bottom-more-item" onclick="location.href='设置.html';toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div><div class="bm-label">设置</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 工具面板遮罩 + 工具面板（全站共用 DOM，app.js 的 toggleToolsPanel 需要它们存在） -->
+  <div class="more-overlay" onclick="toggleToolsPanel()" id="toolsOverlay"></div>
+  <div class="bottom-more-panel" id="toolsPanel">
+    <div class="bottom-more-title">更多工具</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="location.href='AI模拟面试.html';toggleToolsPanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="mic" data-icon-size="20"></span></div><div class="bm-label">AI面试</div>
+      </div>
+      <div class="bottom-more-item" onclick="location.href='PPT版式库.html';toggleToolsPanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">PPT版式</div>
+      </div>
+      <div class="bottom-more-item" onclick="location.href='四级经验分享.html';toggleToolsPanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div><div class="bm-label">四级经验</div>
+      </div>
+      <div class="bottom-more-item" onclick="if(window.openQuest){openQuest()}else{location.href='工具.html'};toggleToolsPanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="zap" data-icon-size="20"></span></div><div class="bm-label">穿越英语</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加倒计时表单（全站共用 DOM，app.js 顶层无守卫监听它，必须存在） -->
+  <div id="countdownModal" class="xt-inline-form">
+    <div class="xt-inline-form-inner">
+      <div class="modal-title" id="countdownModalTitle">添加倒计时</div>
+      <div class="form-group">
+        <div class="form-label">名称</div>
+        <input type="text" class="form-input" id="cdName" placeholder="如：四级考试、秋招截止">
+      </div>
+      <div class="form-group">
+        <div class="form-label">日期</div>
+        <input type="date" class="form-input" id="cdDate">
+      </div>
+      <div class="form-group">
+        <div class="form-label">颜色</div>
+        <div class="color-picker" id="cdColorPicker">
+          <div class="color-dot active" style="background:#5B8DEF" data-color="#5B8DEF"></div>
+          <div class="color-dot" style="background:#E05040" data-color="#E05040"></div>
+          <div class="color-dot" style="background:#9B6BD9" data-color="#9B6BD9"></div>
+          <div class="color-dot" style="background:#D4A056" data-color="#D4A056"></div>
+          <div class="color-dot" style="background:#36CFC9" data-color="#36CFC9"></div>
+          <div class="color-dot" style="background:#FF9F68" data-color="#FF9F68"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--xt-font-base);color:var(--text-secondary)">
+          <input type="checkbox" id="cdPinned"> 置顶显示
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeCountdownModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveCountdown()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast提示 -->
+  <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center"></div>
+
+  <!-- ==================== AI学习助手（悬浮聊天窗口） ====================
+       首页小助手与 AI 页共用同一套 AI 底座（assets/ai-service.js 的 window.callAI），
+       同一份模型选择（ai_selected_model）与同一份对话历史（ai_chat_history）。 -->
+  <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">
+    <span class="nav-icon" data-icon="sparkles" data-icon-size="22"></span><span class="ai-mode-badge" id="aiModeBadge">AI</span>
+  </div>
+  <div class="ai-panel" id="aiPanel">
+    <div class="ai-panel-header">
+      <div class="ai-avatar"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div>
+      <div style="flex:1">
+        <div class="ai-title">AI伙伴 · 小助手</div>
+        <div class="ai-subtitle" id="aiSubtitle">已接入 AI · 模型：自动（推荐）</div>
+      </div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录" aria-label="清空聊天记录" role="button" tabindex="0"><span class="nav-icon" data-icon="delete" data-icon-size="16"></span></div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板" aria-label="收起AI面板" role="button" tabindex="0"><span class="nav-icon" data-icon="close" data-icon-size="16"></span></div>
+    </div>
+    <div class="ai-messages" id="aiMessages"></div>
+    <div class="ai-input-row">
+      <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()"><span data-icon="arrow-right" data-icon-size="18"></span></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/xt-toast.js?v=20260923a" defer></script>
+<script src="assets/error-boundary.js?v=20260916O" defer></script>
+<script src="assets/app.js?v=20260923a" defer></script>
+<script src="assets/quest.js?v=20260916O" defer></script>
+<script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260922c" defer></script>
+<script src="assets/study-stats.js?v=20260916O" defer></script>
+<script src="assets/ai-config.js?v=20260920c"></script>
+<script src="assets/ai-presets.js?v=20260916O"></script>
+<script src="assets/ai-service.js?v=20260920e"></script>
+<script src="assets/ai-cap-registry.js?v=20260918c"></script>
+<script src="assets/ai-cap-image.js?v=20260920c"></script>
+<script src="assets/ai-cap-vision.js?v=20260920c"></script>
+<script src="assets/ai-cap-audio.js?v=20260920c"></script>
+<script src="assets/ai-cap-embed.js?v=20260920c"></script>
+<script src="assets/ai-cap-translate.js?v=20260920c"></script>
+<script src="assets/ai-cap-video.js?v=20260920c"></script>
+<script src="assets/ai-cap-3d.js?v=20260922a"></script>
+<script>
+/* =====================================================================
+   学习概括页渲染：全部数据实时读 localStorage 真实学习记录。
+   口径与首页 renderStats() / StudyStats.getSummary() 保持一致
+   （连续打卡取全局 Streak，学习时长取 study-stats 分钟数），
+   一律不做「取不到就编一个数」的处理：没有就是 0。
+   ===================================================================== */
+(function () {
+  'use strict';
+
+  /* ---------- 常量表 ---------- */
+  var MODULES = ['cet4', 'xingce', 'eq', 'etiquette', 'ppt', 'tools'];
+  var MODULE_NAME = { cet4: '英语', xingce: '行测', eq: '表达', etiquette: '礼仪', ppt: '演示', tools: '工具' };
+  var MODULE_COLOR = { cet4: '#2F6BFF', xingce: '#E05040', eq: '#9B6BD9', etiquette: '#D4A056', ppt: '#36CFC9', tools: '#5BBF7A' };
+  var EXAM_TYPES = ['图形推理', '定义判断', '类比推理', '逻辑判断', '言语理解', '数量关系', '资料分析'];
+  var WEEK_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
+  var TYPE_LABEL = { vocab: '背单词', exam: '刷题', fav: '收藏', listen: '听力', other: '学习' };
+  var MODULE_LABEL = { cet: '英语', exam: '行测', comm: '表达', interview: '面测', ppt: '演示', etiquette: '礼仪', shenlun: '申论' };
+  var KEY_DESC = [
+    ['study_workbench_data', '做题数 / 正确数 / 各题型进度 / 错题 / 已学单词 / 行为日志 / 模考 / 发贴'],
+    ['study_workbench_stats', '各学习模块每日分钟数与学习次数（六模块：英语·行测·表达·礼仪·演示·工具）'],
+    ['study_workbench_streak', '全局连续打卡（count / lastDay）'],
+    ['xt_custom_tasks_v1', '首页自定义任务'],
+    ['shenlun_answers', '申论作答记录（历史裸键，未按账号隔离）']
+  ];
+
+  /* ---------- 小工具 ---------- */
+  function LK(k) {
+    try { if (typeof window.lsKey === 'function') return window.lsKey(k); } catch (e) { /* 回退裸键 */ }
+    return k;
+  }
+  function readJSON(key) {
+    try {
+      var raw = localStorage.getItem(key);
+      if (!raw) return null;
+      var o = JSON.parse(raw);
+      return (o && typeof o === 'object') ? o : null;
+    } catch (e) { return null; }
+  }
+  function num(v, dft) {
+    var n = Number(v);
+    if (typeof n === 'number' && isFinite(n)) return n;
+    return (typeof dft === 'number') ? dft : 0;
+  }
+  function pad2(n) { n = num(n, 0); return (n < 10 ? '0' : '') + n; }
+  function dayKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+  function setTxt(id, v) { var el = document.getElementById(id); if (el) el.textContent = String(v); }
+  function setHTML(id, v) { var el = document.getElementById(id); if (el) el.innerHTML = String(v); }
+  function hasOwn(o, k) { return !!(o && Object.prototype.hasOwnProperty.call(o, k)); }
+
+  /* ---------- 数据源 ---------- */
+  var data = readJSON(LK('study_workbench_data')) || {};
+  var stats = (data && data.stats && typeof data.stats === 'object') ? data.stats : {};
+  var store = readJSON(LK('study_workbench_stats')) || { modules: {}, streak: 0 };
+  var storeModules = (store && store.modules && typeof store.modules === 'object') ? store.modules : {};
+
+  /* 汇总：优先复用 StudyStats.getSummary()（与首页同一口径），缺失时本地按同样口径重算 */
+  function buildSummary() {
+    if (window.StudyStats && typeof window.StudyStats.getSummary === 'function') {
+      try {
+        var s = window.StudyStats.getSummary();
+        if (s && typeof s === 'object') return s;
+      } catch (e) { /* 落到本地重算 */ }
+    }
+    var totalMinutes = 0, totalEvents = 0, todayMinutes = 0;
+    var tk = dayKey(new Date());
+    for (var i = 0; i < MODULES.length; i++) {
+      var mm = storeModules[MODULES[i]];
+      if (!mm || !mm.days) continue;
+      totalEvents += num(mm.total, 0);
+      for (var k in mm.days) {
+        if (!hasOwn(mm.days, k)) continue;
+        totalMinutes += num(mm.days[k] && mm.days[k].minutes, 0);
+      }
+      if (mm.days[tk]) todayMinutes += num(mm.days[tk].minutes, 0);
+    }
+    var now = new Date();
+    var dow = now.getDay();
+    var mondayOffset = (dow === 0) ? 6 : (dow - 1);
+    var week = [];
+    var weekMinutes = 0;
+    for (var w = 0; w < 7; w++) {
+      var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - mondayOffset + w);
+      var kk = dayKey(d);
+      var mins = 0;
+      for (var m = 0; m < MODULES.length; m++) {
+        var m2 = storeModules[MODULES[m]];
+        if (m2 && m2.days && m2.days[kk]) mins += num(m2.days[kk].minutes, 0);
+      }
+      week.push({ date: kk, minutes: mins });
+      weekMinutes += mins;
+    }
+    return {
+      todayMinutes: todayMinutes,
+      totalMinutes: totalMinutes,
+      totalEvents: totalEvents,
+      streak: num(store && store.streak, 0),
+      week: week,
+      weekMinutes: weekMinutes,
+      hasData: totalEvents > 0
+    };
+  }
+
+  var summ = buildSummary();
+
+  /* 连续打卡：全局 Streak（单一口径）与 appData / study-stats 取较大者，不归零 */
+  function streakValue() {
+    var v = num(stats.streakDays, 0);
+    try { if (window.Streak && typeof window.Streak.get === 'function') v = Math.max(v, num(window.Streak.get(), 0)); } catch (e) { /* 静默 */ }
+    v = Math.max(v, num(summ.streak, 0));
+    return v;
+  }
+
+  /* 近 7 天（今天往前 6 天）各日分钟数，跨全部学习模块求和 */
+  function last7() {
+    var out = [];
+    for (var i = 6; i >= 0; i--) {
+      var d = new Date();
+      d.setDate(d.getDate() - i);
+      var k = dayKey(d);
+      var mins = 0;
+      for (var m = 0; m < MODULES.length; m++) {
+        var mm = storeModules[MODULES[m]];
+        if (mm && mm.days && mm.days[k]) mins += num(mm.days[k].minutes, 0);
+      }
+      out.push({ key: k, label: '周' + WEEK_NAMES[d.getDay()], mins: mins, isToday: (i === 0) });
+    }
+    return out;
+  }
+
+  /* 各模块累计分钟数（用于环形图占比） */
+  function moduleMinutes() {
+    var out = [];
+    for (var i = 0; i < MODULES.length; i++) {
+      var key = MODULES[i];
+      var mm = storeModules[key];
+      var mins = 0;
+      if (mm && mm.days) {
+        for (var k in mm.days) {
+          if (hasOwn(mm.days, k)) mins += num(mm.days[k] && mm.days[k].minutes, 0);
+        }
+      }
+      out.push({ key: key, name: MODULE_NAME[key] || key, minutes: mins, color: MODULE_COLOR[key] || '#9ca3af' });
+    }
+    return out;
+  }
+
+  /* ---------- 渲染：核心指标 ---------- */
+  function renderKpi() {
+    var totalQuestions = num(stats.totalQuestions, 0);
+    var correctQuestions = num(stats.correctQuestions, 0);
+    var acc = totalQuestions > 0 ? Math.round(correctQuestions / totalQuestions * 100) : 0;
+    var appHours = num(stats.totalHours, 0);
+    var statHours = Math.round(num(summ.totalMinutes, 0) / 60);
+    var hours = Math.max(appHours, statHours);
+    var streak = streakValue();
+
+    setTxt('xgStreak', streak);
+    setTxt('xgHours', hours);
+    setTxt('xgQuestions', totalQuestions);
+    setTxt('xgAccuracy', acc + '%');
+
+    var note = '总学习时长取「本机统计分钟数 ÷ 60」与历史存档小时数的较大值；'
+      + '做题 ' + totalQuestions + ' 题 / 答对 ' + correctQuestions + ' 题。'
+      + '连续打卡取全局唯一口径（各来源取较大值）。';
+    setTxt('xgKpiNote', note);
+  }
+
+  /* ---------- 渲染：学习时长 ---------- */
+  function renderMinutes() {
+    setTxt('xgTodayMin', num(summ.todayMinutes, 0));
+    setTxt('xgWeekMin', num(summ.weekMinutes, 0));
+    setTxt('xgTotalMin', num(summ.totalMinutes, 0));
+    setTxt('xgEvents', num(summ.totalEvents, 0));
+  }
+
+  /* ---------- 渲染：近 7 天柱状图 ---------- */
+  function renderBars() {
+    var bars = last7();
+    var maxV = 1, i;
+    for (i = 0; i < bars.length; i++) { if (bars[i].mins > maxV) maxV = bars[i].mins; }
+    var html = '';
+    var sum = 0;
+    for (i = 0; i < bars.length; i++) {
+      var b = bars[i];
+      sum += b.mins;
+      var h = Math.round((b.mins / maxV) * 78) + 4;
+      html += '<div class="xg-bar' + (b.isToday ? ' today' : '') + '">'
+        + '<em>' + b.mins + '</em>'
+        + '<i style="height:' + h + 'px" title="' + b.key + ' · ' + b.mins + ' 分钟"></i>'
+        + '<b>' + b.label + '</b>'
+        + '</div>';
+    }
+    setHTML('xgBars', html);
+    var note = sum > 0
+      ? ('近 7 天合计 ' + sum + ' 分钟，日均 ' + Math.round(sum / 7) + ' 分钟；蓝色柱为今天。')
+      : '近 7 天还没有记录到学习时长（分钟数由页面停留与学习动作累计，需满 1 分钟才计入）。';
+    setTxt('xgBarsNote', note);
+  }
+
+  /* ---------- 渲染：各模块占比环形图 ---------- */
+  function renderDonut() {
+    var segs = moduleMinutes();
+    var total = 0, i;
+    for (i = 0; i < segs.length; i++) total += segs[i].minutes;
+
+    var R = 46;
+    var C = 2 * Math.PI * R;
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">';
+    svg += '<circle cx="60" cy="60" r="' + R + '" fill="none" stroke="#e5e7eb" stroke-width="16"></circle>';
+    var off = 0;
+    var legend = '';
+    for (i = 0; i < segs.length; i++) {
+      var s = segs[i];
+      var pct = total > 0 ? Math.round(s.minutes / total * 100) : 0;
+      legend += '<div class="xg-legend-row">'
+        + '<span class="xg-legend-dot" style="background:' + s.color + '"></span>'
+        + '<span class="xg-legend-name">' + s.name + '</span>'
+        + '<span class="xg-legend-val">' + s.minutes + ' 分钟 · ' + pct + '%</span>'
+        + '</div>';
+      if (s.minutes <= 0 || total <= 0) continue;
+      var len = (s.minutes / total) * C;
+      svg += '<circle cx="60" cy="60" r="' + R + '" fill="none" stroke="' + s.color + '" stroke-width="16"'
+        + ' stroke-dasharray="' + len.toFixed(2) + ' ' + (C - len).toFixed(2) + '"'
+        + ' stroke-dashoffset="' + (-off).toFixed(2) + '"'
+        + ' transform="rotate(-90 60 60)"></circle>';
+      off += len;
+    }
+    svg += '</svg>';
+    svg += '<div class="xg-donut-center"><b>' + total + '</b><span>累计分钟</span></div>';
+    setHTML('xgDonut', svg);
+    setHTML('xgLegend', legend);
+
+    var top = null;
+    for (i = 0; i < segs.length; i++) {
+      if (!top || segs[i].minutes > top.minutes) top = segs[i];
+    }
+    var note = total > 0
+      ? ('占比按各模块累计学习分钟计算；目前投入最多的是「' + top.name + '」，' + top.minutes + ' 分钟。')
+      : '还没有可统计的模块时长。分钟数来自各学习模块的停留与动作累计（study_workbench_stats）。';
+    setTxt('xgDonutNote', note);
+  }
+
+  /* ---------- 渲染：行测各模块正确率 ---------- */
+  function renderExamTable() {
+    var ep = (data && data.examTypeProgress && typeof data.examTypeProgress === 'object') ? data.examTypeProgress : {};
+    var html = '<div class="xg-tr xg-th"><span>模块</span><span>题量</span><span>答对</span><span>正确率</span></div>';
+    var sumT = 0, sumC = 0;
+    for (var i = 0; i < EXAM_TYPES.length; i++) {
+      var t = EXAM_TYPES[i];
+      var v = ep[t] || { total: 0, correct: 0 };
+      var tot = num(v && v.total, 0);
+      var cor = num(v && v.correct, 0);
+      sumT += tot;
+      sumC += cor;
+      var pct = tot > 0 ? Math.round(cor / tot * 100) : 0;
+      html += '<div class="xg-tr"><span>' + t + '</span><span>' + tot + '</span><span>' + cor + '</span><span>' + pct + '%</span></div>';
+    }
+    var all = sumT > 0 ? Math.round(sumC / sumT * 100) : 0;
+    html += '<div class="xg-tr xg-th"><span>合计</span><span>' + sumT + '</span><span>' + sumC + '</span><span>' + all + '%</span></div>';
+    setHTML('xgExamTable', html);
+  }
+
+  /* ---------- 渲染：最近学习记录 ---------- */
+  function relTime(ts) {
+    var diff = Date.now() - num(ts, 0);
+    if (!isFinite(diff) || diff < 0) return '';
+    var m = Math.floor(diff / 60000);
+    if (m < 1) return '刚刚';
+    if (m < 60) return m + ' 分钟前';
+    var h = Math.floor(m / 60);
+    if (h < 24) return h + ' 小时前';
+    var d = Math.floor(h / 24);
+    if (d < 30) return d + ' 天前';
+    return '很久以前';
+  }
+
+  function renderRecent() {
+    var log = (data && data.activityLog && typeof data.activityLog.length === 'number') ? data.activityLog : [];
+    if (!log.length) {
+      setHTML('xgRecent', '<div class="xg-note" style="margin-top:0">还没有行为记录。背单词、刷题、收藏都会记在这里（最多保留最近 200 条）。</div>');
+      return;
+    }
+    var n = log.length > 8 ? 8 : log.length;
+    var html = '';
+    for (var i = 0; i < n; i++) {
+      var it = log[log.length - 1 - i] || {};
+      var type = String(it.type || 'other');
+      var mod = String(it.module || '');
+      var t1 = (TYPE_LABEL[type] || '学习') + ' · ' + (MODULE_LABEL[mod] || (mod || '未分类'));
+      var ref = String(it.ref === null || it.ref === undefined ? '' : it.ref);
+      var t2 = ref ? ('内容：' + ref) : '—';
+      html += '<div class="xg-row">'
+        + '<span class="xg-row-ic"><span class="nav-icon" data-icon="notebook" data-icon-size="14"></span></span>'
+        + '<span class="xg-row-tx"><span class="xg-row-t1">' + t1 + '</span><span class="xg-row-t2">' + t2 + '</span></span>'
+        + '<span class="xg-row-tm">' + relTime(it.t) + '</span>'
+        + '</div>';
+    }
+    setHTML('xgRecent', html);
+    // 动态插入的 data-icon 需要补一次渲染（icon-map.js 的 autoRender 已跑过）
+    try { if (typeof window.lucideAutoRender === 'function') window.lucideAutoRender(); } catch (e) { /* 静默 */ }
+  }
+
+  /* ---------- 渲染：积累与错题 ---------- */
+  function renderAccumulate() {
+    var wrong = (data && typeof data.wrongQuestions.length === 'number') ? data.wrongQuestions.length : 0;
+    var vocab = (data && typeof data.vocabLearned.length === 'number') ? data.vocabLearned.length : 0;
+    var mock = (data && typeof data.mockExams.length === 'number') ? data.mockExams.length : 0;
+    var notes = (data && typeof data.notes.length === 'number') ? data.notes.length : 0;
+    setTxt('xgWrong', wrong);
+    setTxt('xgVocab', vocab);
+    setTxt('xgMock', mock);
+    setTxt('xgNotes', notes);
+
+    var sl = null;
+    try {
+      var raw = localStorage.getItem('shenlun_answers');
+      var o = raw ? JSON.parse(raw) : null;
+      if (o && typeof o === 'object') {
+        var done = 0;
+        for (var k in o) { if (hasOwn(o, k) && o[k]) done++; }
+        sl = done;
+      }
+    } catch (e) { sl = null; }
+    setTxt('xgShenlunNote', (sl === null)
+      ? '申论作答记录：本机暂无（shenlun_answers）。'
+      : ('申论已作答 ' + sl + ' 题（读自 shenlun_answers，该键为历史裸键，不随账号隔离）。'));
+  }
+
+  /* ---------- 渲染：本周报告 ---------- */
+  function renderWeekReport() {
+    var wm = num(summ.weekMinutes, 0);
+    var tm = num(summ.todayMinutes, 0);
+    var ev = num(summ.totalEvents, 0);
+    var st = streakValue();
+    var week = (summ.week && typeof summ.week.length === 'number') ? summ.week : [];
+    var best = null;
+    for (var i = 0; i < week.length; i++) {
+      var cell = week[i] || {};
+      if (!best || num(cell.minutes, 0) > num(best.minutes, 0)) best = cell;
+    }
+    var txt = '本周（周一 → 周日）合计学习 ' + wm + ' 分钟，今日 ' + tm + ' 分钟，累计产生 '
+      + ev + ' 次学习动作，连续打卡 ' + st + ' 天。';
+    if (best && num(best.minutes, 0) > 0) {
+      txt += '本周投入最多的一天是 ' + best.date + '（' + num(best.minutes, 0) + ' 分钟）。';
+    } else {
+      txt += '本周还没有记录到学习时长。';
+    }
+    setTxt('xgWeekReport', txt);
+  }
+
+  /* ---------- 渲染：数据来源 ---------- */
+  function renderKeys() {
+    var acct = 'shared';
+    try {
+      if (window.CURRENT_ACCOUNT) acct = String(window.CURRENT_ACCOUNT);
+      else {
+        var a = JSON.parse(localStorage.getItem('study_workbench_auth') || 'null');
+        if (a && a.account) acct = String(a.account);
+        else acct = String(localStorage.getItem('study_workbench_last_account') || 'shared');
+      }
+    } catch (e) { acct = 'shared'; }
+    setTxt('xgAccount', acct);
+
+    var html = '';
+    for (var i = 0; i < KEY_DESC.length; i++) {
+      var base = KEY_DESC[i][0];
+      var desc = KEY_DESC[i][1];
+      var real = LK(base);
+      var has = false;
+      try { has = localStorage.getItem(real) !== null; } catch (e2) { has = false; }
+      html += '<div class="xg-key"><code>' + real + '</code><em>' + desc + '（' + (has ? '本机有数据' : '本机暂无') + '）</em></div>';
+    }
+    setHTML('xgKeys', html);
+  }
+
+  /* ---------- 空态判断 ---------- */
+  function renderEmpty() {
+    var totalQuestions = num(stats.totalQuestions, 0);
+    var wrong = (data && typeof data.wrongQuestions.length === 'number') ? data.wrongQuestions.length : 0;
+    var vocab = (data && typeof data.vocabLearned.length === 'number') ? data.vocabLearned.length : 0;
+    var log = (data && typeof data.activityLog.length === 'number') ? data.activityLog.length : 0;
+    var hasData = !!summ.hasData || totalQuestions > 0 || num(summ.totalMinutes, 0) > 0
+      || wrong > 0 || vocab > 0 || log > 0 || num(summ.streak, 0) > 0;
+    var empty = document.getElementById('xgEmpty');
+    var body = document.getElementById('xgBody');
+    if (empty) empty.style.display = hasData ? 'none' : 'block';
+    if (body) body.style.display = hasData ? 'block' : 'none';
+  }
+
+  /* ---------- 主流程 ---------- */
+  function renderAll() {
+    renderKpi();
+    renderMinutes();
+    renderBars();
+    renderDonut();
+    renderExamTable();
+    renderRecent();
+    renderAccumulate();
+    renderWeekReport();
+    renderKeys();
+    renderEmpty();
+  }
+
+  renderAll();
+
+  /* 离开页面再回来时刷新一次（其它页面产生的学习记录要能立刻反映） */
+  window.addEventListener('focus', renderAll);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') renderAll();
+  });
+})();
+</script>
+</body>
+</html>

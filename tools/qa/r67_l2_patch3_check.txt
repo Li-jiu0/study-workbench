@@ -1,0 +1,16 @@
+REP js_comment_emoji_clean count=1 expect=1
+WROTE ai-page.js 86982 bytes
+SPAN line captured, len = 577 head =                   <span class="ai-ctx-usage" id="aiCtxUsage"
+REP html_span_remove_old_pos count=1 expect=1
+REP html_span_insert_before_model_btn count=1 expect=1
+REP html_css_margin count=1 expect=1
+REP html_css_comment count=1 expect=1
+WROTE AI.html 54485 bytes
+order check: aiCtxUsage@37098 < aiModelBtn@37691 < aiAttachBtn@38079 => True
+emoji in ai-page.js: False (期望 False)
+emoji in AI.html: False (期望 False)
+EOL ai-page.js CRLF=0 loneLF=1752 loneCR=0
+  EOL OK: True
+EOL AI.html CRLF=939 loneLF=0 loneCR=0
+  EOL OK: True
+ALL DONE

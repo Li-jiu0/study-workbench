@@ -1,0 +1,8 @@
+assets\chat-local.js               size=209022   CRLF=3865   LF_total=3865   loneLF=0
+assets\api.js                      size=111979   CRLF=1667   LF_total=1667   loneLF=0
+server\database.py                 size=26678    CRLF=495    LF_total=495    loneLF=0
+server\schemas.py                  size=10503    CRLF=290    LF_total=290    loneLF=0
+server\routers\chat.py             size=11094    CRLF=249    LF_total=249    loneLF=0
+server\routers\friends.py          size=16563    CRLF=362    LF_total=362    loneLF=0
+server\routers\groups.py           size=17803    CRLF=406    LF_total=406    loneLF=0
+server\建表SQL.sql                   size=9944     CRLF=181    LF_total=181    loneLF=0

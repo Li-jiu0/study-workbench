@@ -1,0 +1,161 @@
+================================================================
+R91 独立回归验证报告 (QA: 严过关)
+验证范围：A线 / B线 / C线   （不扩大至 xt-aiusage.js / ai-settings.html /
+朋友圈发布.html / xt-moments.js / 更新.html —— 由其他线负责）
+验证原则：只验证、不信任自述；一切以实测为准；未改动任何源码。
+================================================================
+
+【总体结论】PASS —— A / B / C 三线全部通过，无失败项，无源码 Bug 反馈。
+
+----------------------------------------------------------------
+A线：AI对话记录页「服务端记录区块移除 + 清空全部联动删除服务端」
+涉及文件：assets/xt-profile.js (141684 B, 纯 CRLF)、server/routers/ai.py (18969 B, 纯 CRLF)
+----------------------------------------------------------------
+A1 服务端记录区块已移出 AI对话记录页
+    声明：暂不支持删除 命中=0、chatServerHtml( 命中=0
+    实测：assets/xt-profile.js 中
+          「暂不支持删除」命中数 = 0
+          「chatServerHtml(」 命中数 = 0
+          （另有注释保留 chatServerHtml 字样说明移除原因，非代码调用）
+    判定：PASS
+    证据：_r91qa_static_out.txt（A1 段）
+
+A2 chatBadge() 只按 localChatCount()，无 AI_CHAT.total 分支
+    实测：function chatBadge() 函数体 =
+        function chatBadge() {
+          /* R91-A：角标改本机口径——不再读取服务端条数（AI_CHAT.total），只按本机会话数显示 */
+          var n = localChatCount();
+          return n > 0 ? String(n) : '';
+        }
+      正文仅调用 localChatCount()；AI_CHAT.total 仅出现在注释（函数体内 0 处代码引用）。
+    判定：PASS
+    证据：_r91qa_detail_out.txt（A2 chatBadge 函数体）
+
+A3 m5ClearAll 含 DELETE /api/ai/history 调用（含失败降级分支）
+    实测：m5ClearAll() 内部：
+        window.api('/api/ai/history', { method: 'DELETE' })
+          .then(function () { toast(...已清空本机与服务端对话记录...); renderPage(); })
+          ['catch'](function () {
+             toast(...已清空本机会话；服务端记录删除失败，请稍后重试...); renderPage();
+          });
+      失败降级分支（.catch 如实说明服务端删除失败、仅清本机）存在。
+      DELETE /api/ai/history 命中 = 2（注释标注 + 实际 fetch 调用各 1）。
+    判定：PASS
+    证据：_r91qa_detail2_out.txt（A3 m5ClearAll 完整函数体）
+
+A4 ai.py 有 @router.delete("/history")，与 GET 同套鉴权 + AiLog 按 user_id 隔离；
+    ast.parse 语法 PASS；GET/POST 未被改坏
+    实测：
+      ast.parse(ai.py) -> PASS（语法 OK）
+      @router.delete("/history") 存在 (L198)
+         def ai_history_delete(ids: str = "", user: User = Depends(get_current_user),
+                               db: Session = Depends(get_db)):
+         """...与 GET /history 同库...删我的 AI 对话记录..."""
+         -> 使用 get_current_user 鉴权，AiLog.user_id == user.id 隔离
+      get_current_user 命中=7，AiLog 命中=9，user_id 隔离命中=8
+      路由完整性（应仍在）：
+         GET /models=1  GET /usage=1  POST /usage/consume=1
+         POST /usage/reset=1  POST /chat=1  GET /history=1  DELETE /history=1
+    判定：PASS
+    证据：_r91qa_static_out.txt（A4 段）、_r91qa_detail_out.txt（A4 路由一览）
+
+A5 escheck 权威检具 DONE 0
+    实测：node tools/qa/escheck_es2017.js -> 控制台输出 "DONE 0"
+          详情文件："(全部脚本 ES2017 解析通过)"
+    判定：PASS
+    证据：_escheck_stdout.txt / _escheck_out.txt
+
+----------------------------------------------------------------
+B线：私聊「加号」菜单 z-index 抬升至盖过底部 Tab 栏
+涉及文件：私聊.html (78183 B, 纯 CRLF)
+----------------------------------------------------------------
+B1 #imPlusCss 注入串 z-index：.im-plus-mask 210 / .im-plus-menu 211 / .im-loc-sheet 215
+    旧值(60/61/80)对应规则 0 命中；Tab 栏 z=200 < 210
+    实测（私聊.html 内联注入串）：
+      .im-plus-mask{...z-index:210}
+      .im-plus-menu{...z-index:211;...}
+      .im-loc-sheet{position:fixed;inset:0;z-index:215}
+      z-index:210 -> 1   z-index:211 -> 1   z-index:215 -> 1
+      z-index:200 -> 0   z-index:60  -> 0   z-index:61  -> 0   z-index:80 -> 0
+      Tab 栏基准：assets/common.css 中 .bottom-nav { ... z-index: 200; } （外壳通用文件，锁定）
+      底部栏 display:none 默认，页面内由 <style> 控制显示；基准 z=200 低于菜单 211。
+    判定：PASS（静态）
+    证据：_r91qa_static_out.txt（B1 段）、_r91qa_detail_out.txt（B1 CSS 片段）、_r91qa_bottomnav_out.txt
+
+B2 真实 Chrome CDP 四档视口实测（复用 tools/qa/_r91b_cdp.js）
+    视口：375x667 / 375x480 / 320x480 / 320x400
+    打开私聊页 → 开会话 → 点加号，断言：
+      V1 底部栏可见 + z=200：四档均 PASS
+      V2a mask z=210 / V2b menu z=211>nav / V2c menuOpen / V2d maskZ>navZ：四档均 PASS
+      V3 菜单第4项(定位) rect 完整在视口内（bottom ≤ 视口高）：四档均 PASS
+           例 375x667：rect={"t":583,"b":651,"l":0,"r":375,"w":375,"h":68}
+      V4 elementFromPoint(定位项中心) 命中菜单内部（SPAN.im-plus-txt）而非 .bottom-nav：四档均 PASS
+      V5 第4项延伸覆盖 Tab 栏区域（被 z 盖住仍可见）：四档均 PASS
+      V6 .im-loc-sheet z=215：四档均 PASS
+    汇总：pass=36 fail=0  ->  R91B_CDP_PASS
+    判定：PASS
+    证据：_r91b_cdp_out.txt
+
+----------------------------------------------------------------
+C线：个人中心 MutationObserver 死循环卡死修复（幂等守卫）
+涉及文件：个人中心.html (95991 B, 纯 CRLF)
+----------------------------------------------------------------
+C1 根因幂等守卫（值未变不写 DOM）
+    实测（个人中心.html 注入守卫逻辑）：
+      L1281: var acctText = '账号：' + (a || ACC_EMPTY);
+      L1282-1284: /* R91-C：值未变不重写 DOM——textContent setter 即使同值也会重建文本节点，
+                    会再次触发 #profileBox 上的 MutationObserver(xtWatchAccount)，
+                    形成「观察→渲染→再观察」无限微任务循环，页面完全卡死。 */
+      L1285: if (row.textContent !== acctText) { row.textContent = acctText; }
+      L1292: if (el) {
+      L1293: /* R91-C：同上，值未变不重写，避免自触发死循环 */
+      L1294: var accVal = a || ACC_EMPTY;
+      L1295: if (el.textContent !== accVal) { el.textContent = accVal; }
+    两处守卫均满足「值未变不写」，从根因上切断自触发回路。
+    判定：PASS
+    证据：_r91qa_static_out.txt（C1 段）
+
+C2 重跑复现脚本 node tools/qa/r91c_cdp_freeze.js（预置登录态 + 50 会话）
+    实测（三页均预置 study_workbench_token + ai_chat_history(50 会话)）：
+      个人中心(logged-in):
+        [probe:load] mainThreadAlive=true
+        [probe:center-clicks] mainThreadAlive=true
+        未触发 Debugger.paused（即无卡死阻塞栈）
+        profiler top: (idle)7488 / (program)176 / setItem 5 / drawStars 1 ... 无 xtAccountText/xtInjectAccountRow/xtRenderAccount
+      个人资料(logged-in): [probe:load] mainThreadAlive=true / [probe:chat-view] mainThreadAlive=true
+      私聊(logged-in):     [probe:load] mainThreadAlive=true
+    主线程 '1+1' 不超时；无卡死调用栈（xtAccountText/xtInjectAccountRow/xtRenderAccount 不出现在阻塞栈）。
+    注：控制台大量 file:// 资源加载(ERR_FAILED/CORS)与 401 网络错误属离线 file:// 环境正常现象，
+        不阻塞主线程，与卡死修复无关。
+    判定：PASS
+    证据：tools/qa/r91c_cdp_report.txt
+
+C3 escheck 权威检具 DONE 0（同 A5 整树扫描）
+    实测：node tools/qa/escheck_es2017.js -> "DONE 0"；"(全部脚本 ES2017 解析通过)"
+    判定：PASS
+    证据：_escheck_stdout.txt / _escheck_out.txt
+
+----------------------------------------------------------------
+智能路由判定
+----------------------------------------------------------------
+全部 13 项（A1-A5、B1-B2、C1-C3）PASS，0 FAIL。
+  - 源码 Bug 反馈：无
+  - 测试脚本 Bug：无（参考脚本 _r91b_cdp.js / r91c_cdp_freeze.js 及本 QA 自写核查脚本均一次跑通）
+  - 结论：R91 A/B/C 三线独立回归 PASS，可放行。
+
+----------------------------------------------------------------
+证据文件索引（均位于 D:\下载的文件\学习工作台\tools\qa\）
+----------------------------------------------------------------
+  _r91qa_static_out.txt                 A/B/C 静态文本核查（A1-A4/B1/C1 + ai.py 路由）
+  _r91qa_detail_out.txt                 chatBadge 函数体 / m5ClearAll / DELETE ctx / imPlusCss CSS / ai.py 路由一览
+  _r91qa_detail2_out.txt                m5ClearAll 完整函数体（含 .catch 降级）
+  _r91qa_detail3_out.txt                私聊.html 全量 z-index 分布
+  _r91qa_bottomnav_out.txt              common.css .bottom-nav z-index:200
+  _r91qa_assets_out.txt                 外壳 css 文件清单
+  C:\Users\ATM\_escheck_out.txt          escheck 详情（A5/C3）
+  C:\Users\ATM\_escheck_stdout.txt       escheck 控制台（DONE 0）
+  C:\Users\ATM\_r91b_cdp_out.txt         B2 CDP 实测（pass=36 fail=0 / R91B_CDP_PASS）
+  tools/qa/r91c_cdp_report.txt          C2 冻结复现（三页 mainThreadAlive=true）
+
+报告生成时间：R91 独立回归（单次跑判，不做多轮回跑）
+================================================================

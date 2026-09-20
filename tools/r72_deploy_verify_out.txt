@@ -1,0 +1,29 @@
+RC=0
+PROD_HTML_COUNT=50
+EOL_HTML_loneLF_nonzero=1 [('ai-settings.html', 638)]
+NEWSYM assets/importer.js       xtFilesRegister        = 3 OK
+NEWSYM 我的文件.html                xtFilesRender          = 2 OK
+NEWSYM 我的文件.html                mfList                 = 3 OK
+NEWSYM 导入题库.html                openImporter           = 10 OK
+NEWSYM assets/chat-local.js     imOpenRemarkEditor     = 3 OK
+NEWSYM assets/api.js            apiGetChatConversations = 3 OK
+NEWSYM assets/app.js            AndroidBridge.notify   = 2 OK
+NEWSYM assets/ai-service.js     allowPreset            = 2 OK
+NEWSYM assets/ai-settings.js    BATCH_CONCURRENCY      = 3 OK
+NEWSYM assets/ai-settings.js    识图                     = 5 OK
+NEWSYM 登录.html                  祝君一切安好                 = 2 OK
+DELSYM 个人中心 xtFolioToggleFav = 0
+DELSYM 更多 穿越英语 = 0
+DELSYM sitewide data-page="ppt" = 10
+DELSYM sitewide location.href little-demo = 0
+PROD_STAMP_DIST=[('20260915c', 32), ('20260916O', 464), ('20260916R', 36), ('20260916S', 106), ('20260916k', 109)]
+--- (4) 带戳真实拉取（curl）---
+2
+3
+--- 探活 ---
+home=200
+health=200
+--- 临时 tar 是否残留 ---
+TAR_GONE
+
+[STDERR] 

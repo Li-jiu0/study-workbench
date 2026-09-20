@@ -1,0 +1,1 @@
+window.__XT_PROD__=true;

@@ -1,0 +1,28 @@
+{
+  "A": {
+    "label": "A: xt-update 先 + readyState=interactive",
+    "forcedReadyState": "interactive",
+    "STUDY_API_BASE_at_end": "http://110.42.134.62:8000",
+    "calls": [
+      {
+        "url": "/api/app/version",
+        "STUDY_API_BASE": "undefined",
+        "getApiBase": "no-fn"
+      }
+    ],
+    "descText": "发现新版本 v1.24（当前 v1.23） · 安装包暂不可用：服务端尚未放好本次安装包（apkReady=false）"
+  },
+  "B": {
+    "label": "B: config 先 + readyState=interactive",
+    "forcedReadyState": "interactive",
+    "STUDY_API_BASE_at_end": "http://110.42.134.62:8000",
+    "calls": [
+      {
+        "url": "http://110.42.134.62:8000/api/app/version",
+        "STUDY_API_BASE": "http://110.42.134.62:8000",
+        "getApiBase": "http://110.42.134.62:8000"
+      }
+    ],
+    "descText": "发现新版本 v1.24（当前 v1.23） · 安装包暂不可用：服务端尚未放好本次安装包（apkReady=false）"
+  }
+}

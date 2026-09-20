@@ -1,0 +1,60 @@
+day 后 卡片=1
+[PASS] S8-3 today 下 1 张卡正常 || 实测=1
+
+== S9 ★闭包陷阱回归：搜索框 / 时间筛选 / 重置按钮 三者互不串扰 ==
+S9-0 元素在位: range=%s kw=%s tag=%s fav=%s 卡片=%d
+A-1 搜索「对话 3」后 卡片=1 kw="对话 3"
+[PASS] S9-1 搜索生效：1 张卡 || 实测=1
+A-2 再切 d7 后 卡片=0 range=d7
+[PASS] S9-2 搜索后仍能切筛选（range 元素=d7） || d7
+[PASS] S9-3 双重过滤：0 张（对话3 在 100 天前） || 实测=0
+[PASS] S9-4 重绘后搜索框保留关键词 || "对话 3"
+[PASS] S9-5 出现重置按钮
+A-3 重置后 卡片=3 kw="" range=all
+[PASS] S9-6 重置后 3 张卡全回 || 实测=3
+[PASS] S9-7 重置后搜索框清空 || ""
+B-1 先 d7 再搜索「对话 1」→ 卡片=1 range=d7
+[FAIL] S9-8 先筛选后搜索：0 张（对话1 在 2025 年） || 实测=1
+[PASS] S9-9 先筛选后搜索：range 未被搜索破坏 || d7
+B-2 再次重置 → 卡片=1
+[FAIL] S9-10 再次重置恢复 3 张卡（处理器未失效） || 实测=1
+C-1 tag=甲 + d7 → 卡片=1 重置按钮=false
+[FAIL] S9-11 tag 下拉仍可被程序赋值并生效 || ""
+[FAIL] S9-12 tag+d7 复合空态出现重置按钮
+C-2 重置后 卡片=1 tag=""
+[FAIL] S9-13 重置后 tag 清空、卡片恢复 3 || cards=1 tag=""
+D-1 favOnly + d7 → 卡片=0 favOn=true
+[PASS] S9-14 favOnly 与 range 可叠加
+D-2 重置后 卡片=3 favOn=false
+[PASS] S9-15 重置后 favOnly 关闭、卡片恢复
+
+== S10 真因A 回归：清空确认框 / toast 文案点明「服务端记录不受影响 / 仍保留」 ==
+confirmBox 调用片段:
+confirmBox('清空全部对话记录',
+      '将删除本机全部 ' + n + ' 条会话（共 ' + totalMsg + ' 条消息），此操作不可恢复。\n（服务端记录不受影响，如需删除请联系管理员或等待后续版本支持）\n建议先「备份」。确定继续吗？',
+      '清空', true, function () {
+        localStorage.removeItem('ai_chat_history');
+[PASS] S10-1 confirm 文案含「本机全部 N 条会话」
+[PASS] S10-2 confirm 文案含「服务端记录不受影响」
+toast 片段: toast('已清空本机会话，服务端记录仍保留')
+[PASS] S10-3 toast 文案含「服务端记录仍保留」
+运行时可达性: typeof window.toast=undefined typeof window.confirmBox=undefined
+运行时可达性: typeof window.xtpOpenView=function
+【标注】S10-1..3 为**源码级验证**；confirmBox/toast 是 IIFE 内闭包函数，未挂 window，
+        jsdom 下无法调用捕获其运行时字符串，故不声称运行时验证。
+
+== S11 结构不变量：重置按钮仅在「列表空 && 本机>0 && 有筛选」三条同时成立时出现 ==
+无筛选: 卡片=1 重置=false
+[PASS] S11-1 无筛选 → 无重置按钮
+本机 0: 卡片=0 重置=false
+[PASS] S11-2 本机 0 → 无重置按钮
+有筛选且仍 >0: 卡片=1 重置=false
+[PASS] S11-3 有筛选但列表非空 → 无重置按钮
+
+== 汇总 ==
+通过 54 / 59
+  FAIL: S9-8 先筛选后搜索：0 张（对话1 在 2025 年） || 实测=1
+  FAIL: S9-10 再次重置恢复 3 张卡（处理器未失效） || 实测=1
+  FAIL: S9-11 tag 下拉仍可被程序赋值并生效 || ""
+  FAIL: S9-12 tag+d7 复合空态出现重置按钮 || 
+  FAIL: S9-13 重置后 tag 清空、卡片恢复 3 || cards=1 tag=""

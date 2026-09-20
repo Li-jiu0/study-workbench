@@ -1,0 +1,5 @@
+私聊.html 71537 B CRLF=1068 loneLF=0
+im-plus-ico items = 4
+hue i1..i4 refs = 3,2,2,2
+data-icon image/camera/file/map-pin kept = 1,1,1,1
+onclick handlers = 1,1,1,1

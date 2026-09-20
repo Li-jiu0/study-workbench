@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 星途 · 自适应图标（adaptive-icon，API 26+）
+     背景层 = 品牌蓝纯色（@color/ic_launcher_background）；
+     前景层 = 白色五角星矢量（@drawable/ic_launcher_foreground）。
+
+     安全区约定：自适应图标 108dp 画布中，系统会裁成任意形状，仅有中心
+     72dp(66.7%) 直径区域保证可见。故前景星形的外接半径严格控制在约
+     33dp（约 30.6% 画布半径），完整落在 66% 安全圆内，无论被裁成圆角
+     方形 / 圆形 / 水滴形，白星均不变形、不被切边。
+
+     API 21-25 无自适应图标支持，回退到 mipmap-xxxhdpi 等各密度
+     ic_launcher.png 位图。 -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+</adaptive-icon>

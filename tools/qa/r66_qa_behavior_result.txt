@@ -1,0 +1,19 @@
+[PASS] ① 接口暴露: aiGetModelSettings
+[PASS] ④ 接口暴露: AI_SERVICE.buildChain/findModel/applyOverrides
+[PASS] ③ 接口暴露: aiHealthCheck（2 参签名）  length=2
+[FAIL] ① 清洗: 平台相等 apiKey 已从 overrides[glm-4.7-flash] 删除  entry={"apiKey":"339ab396568541d0b7c0be4a577e5e53.VM5HxadQcgew1JdB","model":"glm-4.7-flash","apiUrl":"https://x","apiFormat":"openai","extraHeaders":{},"temperature":0.5,"maxTokens":1500,"name":"X","provider":"zhipu","tag":"t"}
+[PASS] ① 清洗: 其余 9 字段无损（glm-4.7-flash）
+[PASS] ① 清洗: 用户自填 key 保留（glm-4.5-flash）
+[FAIL] ① 写回: localStorage ai_model_settings 不含任何平台密钥明文  泄漏: 339ab396568541d0b7c0be4a577e5e53.VM5HxadQcgew1JdB|339ab396568541d0b7c0be4a577e5e53.VM5HxadQcgew1JdB
+[FAIL] ① 幂等: 二次调用后仍无平台密钥明文
+[PASS] ① 幂等: 二次读取结构稳定（glm-4.5-flash 仍保留用户 key）
+[FAIL] ① 全量 dump: 所有 localStorage key 值均不含 6 平台密钥明文  命中 key: ai_model_settings,ai_model_settings
+[PASS] ② 契约: aiGetModelSettings 返回 7 字段对象  disabled/order/overrides/catModels/categories/health/stars 齐全
+[PASS] ③ 健康: 缺端点返回 err=no_endpoint  err=no_endpoint
+[PASS] ③ 健康: 缺密钥返回 err=no_key  err=no_key
+[PASS] ③ 健康: 临时配置（带 apiUrl+apiKey）未返回 no_key/no_endpoint（走真实请求路径）  err=network
+[PASS] ③ 健康: 临时配置未写入 overrides（无持久化）  overrides[glm-4.7-flash].apiKey=339ab396568541d0b7c0be4a577e5e53.VM5HxadQcgew1JdB
+[PASS] ④ 集成: 禁用模型（glm-flash）不进入 buildChain 链  chain=glm-4.7>ark-v4-flash>qf-ernie-32k
+[ERROR] TypeError: Cannot read properties of null (reading 'temperature')
+    at D:\下载的文件\学习工作台\tools\qa\r66_qa_behavior.js:156:52
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)

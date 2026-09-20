@@ -1,0 +1,2 @@
+REP js_tip_removed count=0 expect=1
+FAIL ABORT

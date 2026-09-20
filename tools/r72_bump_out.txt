@@ -1,0 +1,51 @@
+root html count = 42
+NEW stamp = 20260916S
+BEFORE stamp dist = {'20260916O': 536, '20260916R': 70, '，主理人波末统一打戳）': 1}
+changed files = 38
+per-asset hits = {'ai-service.js': 34, 'ai-settings.js': 1, 'api.js': 33, 'app.js': 37, 'chat-local.js': 1, 'importer.js': 3}
+assertion bad = NONE
+
+-- loneLF check --
+files with loneLF!=0 = ['ai-settings.html loneLF=638']
+
+AFTER stamp dist = {'20260916O': 462, '20260916R': 35, '20260916S': 109, '，主理人波末统一打戳）': 1}
+
+-- per-file change detail --
+   AI.html                      {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   AI模拟面试.html                  {'ai-service.js': 1} NEW-BKP
+   PPT案例拆解.html                 {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   PPT版式库.html                  {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   ai-settings.html             {'app.js': 1, 'api.js': 1, 'ai-service.js': 1, 'ai-settings.js': 1} REUSED
+   blog_wechat.html             {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   mock_exam.html               {'app.js': 1} NEW-BKP
+   mock_exam_result.html        {'app.js': 1} NEW-BKP
+   mock_exam_run.html           {'app.js': 1} NEW-BKP
+   万能金句库.html                   {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   个人中心.html                    {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   企业定向库.html                   {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   关于.html                      {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   动态.html                      {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   商务礼仪.html                    {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   四级词汇.html                    {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   场景话术库.html                   {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   学习工作台.html                   {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   学习概括.html                    {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   学途.html                      {'app.js': 1} NEW-BKP
+   导入题库.html                    {'app.js': 1, 'api.js': 1, 'importer.js': 1, 'ai-service.js': 1} NEW-BKP
+   工具.html                      {'app.js': 1, 'api.js': 1, 'importer.js': 1, 'ai-service.js': 1} REUSED
+   我的文件.html                    {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} NEW-BKP
+   时政热点.html                    {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   更多.html                      {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   演示.html                      {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   申论刷题.html                    {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   社区.html                      {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   私聊.html                      {'app.js': 1, 'api.js': 1, 'chat-local.js': 1, 'ai-service.js': 1} REUSED
+   管理员.html                     {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   英语.html                      {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   行测.html                      {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   行测刷题.html                    {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   表达.html                      {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   设置.html                      {'app.js': 1, 'api.js': 1, 'importer.js': 1, 'ai-service.js': 1} REUSED
+   错题本.html                     {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   面测.html                      {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED
+   面试题库.html                    {'app.js': 1, 'api.js': 1, 'ai-service.js': 1} REUSED

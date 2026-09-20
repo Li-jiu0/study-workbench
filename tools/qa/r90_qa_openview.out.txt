@@ -1,0 +1,190 @@
+ 1131|     return '<section class="xtp-hero" id="xtpHero" data-act="edit">' +
+ 1132|       '<div class="xtp-hero-avatar" id="xtpHeroAvatar" title="点击更换头像">' + avInner + '</div>' +
+ 1133|       '<div class="xtp-hero-main">' +
+ 1134|         '<div class="xtp-hero-name-row">' +
+ 1135|           '<div class="xtp-hero-name" id="xtpHeroName">' + esc(userName()) + '</div>' + lvChip +
+ 1136|         '</div>' +
+ 1137|         '<div class="xtp-hero-id">ID：<b>' + esc(userId()) + '</b>' +
+ 1138|           '<span class="xtp-hero-qr" title="用户ID">' + QR_SVG + '</span></div>' +
+ 1139|         (motto ? '<div class="xtp-hero-motto">' + esc(motto) + '</div>' : '') +
+ 1140|       '</div>' +
+ 1141|       '<span class="xtp-hero-arrow"><span class="nav-icon" data-icon="chevron-right" data-icon-size="18"></span></span>' +
+ 1142|       '</section>';
+ 1143|   }
+ 1144| 
+ 1145|   /* ================================================================ 渲染主页 */
+ 1146|   function renderPage() {
+ 1147|     var root = $('xtProfileRoot');
+ 1148|     if (!root) return;
+ 1149|     var m = metrics();
+ 1150|     var groups = groupDefs(m);
+ 1151|     var html = heroHtml(m), gi;
+ 1152|     for (gi = 0; gi < groups.length; gi++) { html += groupHtml(groups[gi]); }
+ 1153|     if (!isOtherMode() && getItem('study_workbench_token')) {
+ 1154|       html += '<div class="xtp-group"><div class="xtp-cell" role="button" tabindex="0" data-act="logout">' +
+ 1155|         '<span class="xtp-cell-ic"><span class="nav-icon" data-icon="logout" data-icon-size="16"></span></span>' +
+ 1156|         '<div class="xtp-cell-title" style="color:var(--xtp-danger,#ff4d4f)">退出登录</div>' +
+ 1157|         '<div class="xtp-cell-right"><span class="xtp-cell-arrow"><span class="nav-icon" data-icon="chevron-right" data-icon-size="18"></span></span></div>' +
+ 1158|         '</div></div>';
+ 1159|     }
+ 1160|     root.innerHTML = html;
+ 1161|     bindHero();
+ 1162|     if (typeof window.lucideAutoRender === 'function') { window.lucideAutoRender(); }
+ 1163|     bindRoot();
+ 1164|   }
+ 1165| 
+ 1166|   /** 事件委托：整栏点击进编辑页 / 头像单独点击只上传 */
+ 1167|   function bindHero() {
+ 1168|     var hero = $('xtpHero');
+ 1169|     if (hero) {
+ 1170|       hero.addEventListener('click', function () { openView('edit'); });
+ 1171|     }
+ 1172|     var av = $('xtpHeroAvatar');
+ 1173|     if (av) {
+ 1174|       av.addEventListener('click', function (ev) {
+ 1175|         ev.stopPropagation();
+ 1176|         ev.preventDefault();
+ 1177|         xtpPickAvatar();
+ 1178|       });
+ 1179|     }
+ 1180|   }
+ 1181|   /** 事件委托（委托根取 .xtp-wrap：同时涵盖顶栏「返回/主题」键与 #xtProfileRoot 内容区）：
+ 1182|       列表项 data-href / data-view / data-act（about/logout/back/theme/edit）统一在此分发。 */
+ 1183|   function bindRoot() {
+ 1184|     var root = document.querySelector('.xtp-wrap') || $('xtProfileRoot');
+ 1185|     if (!root || root.getAttribute('data-bound') === '1') return;
+ 1186|     root.setAttribute('data-bound', '1');
+ 1187|     root.addEventListener('click', function (ev) {
+ 1188|       var el = ev.target;
+ 1189|       while (el && el !== root) {
+ 1190|         if (el.getAttribute) {
+ 1191|           var href = el.getAttribute('data-href');
+ 1192|           if (href) { location.href = href; return; }
+ 1193|           var view = el.getAttribute('data-view');
+ 1194|           if (view) { openView(view); return; }
+ 1195|           var act = el.getAttribute('data-act');
+ 1196|           if (act === 'about') { xtpAbout(); return; }
+ 1197|           if (act === 'logout') { xtpLogout(); return; }
+ 1198|           if (act === 'back') { xtpBack(); return; }
+ 1199|           if (act === 'theme') { toggleTheme(); return; }
+ 1200|           if (el.id === 'xtpHeroAvatar') { return; }   // 头像自处理
+ 1201|           if (act === 'edit') { return; }              // hero 自处理
+ 1202|         }
+ 1203|         el = el.parentNode;
+ 1204|       }
+ 1205|     });
+ 1206|   }
+ 1207| 
+ 1208|   /* ============================================================== 子视图层 */
+ 1209|   var viewStack = [];
+ 1210|   var pushOk = {};
+ 1211|   function ensureView(id) {
+ 1212|     var el = $('xtpView_' + id);
+ 1213|     if (el) return el;
+ 1214|     el = document.createElement('div');
+ 1215|     el.className = 'xtp-view';
+ 1216|     el.id = 'xtpView_' + id;
+ 1217|     var host = $('xtpViews') || document.body;
+ 1218|     host.appendChild(el);
+ 1219|     return el;
+ 1220|   }
+ 1221|   function openView(id) {
+ 1222|     var el = ensureView(id);
+ 1223|     renderView(id, el);
+ 1224|     void el.offsetWidth;
+ 1225|     el.classList.add('on');
+ 1226|     viewStack.push(id);
+ 1227|     pushOk[id] = false;
+ 1228|     try { history.pushState({ xtp: viewStack.length }, ''); pushOk[id] = true; } catch (e) { /* 忽略 */ }
+ 1229|   }
+ 1230|   function hideView(id) {
+ 1231|     var el = $('xtpView_' + id);
+ 1232|     if (el) { el.classList.remove('on'); }
+ 1233|     var i = viewStack.lastIndexOf(id);
+ 1234|     if (i >= 0) { viewStack.splice(i, 1); }
+ 1235|   }
+ 1236|   function backView(id) {
+ 1237|     if (pushOk[id]) { try { history.back(); return; } catch (e) { /* 继续兜底 */ } }
+ 1238|     hideView(id);
+ 1239|   }
+ 1240|   window.addEventListener('popstate', function () {
+ 1241|     var id = viewStack.pop();
+ 1242|     if (id) { hideView(id); }
+ 1243|   });
+ 1244| 
+ 1245|   function viewBar(title, backId) {
+ 1246|     return '<div class="xtp-view-bar">' +
+ 1247|       '<button class="xtp-view-back" type="button" id="xtpViewBack_' + esc(backId) + '">' +
+ 1248|         '<span class="nav-icon" data-icon="arrow-left" data-icon-size="18"></span> 返回</button>' +
+ 1249|       '<div class="xtp-view-title">' + esc(title) + '</div>' +
+ 1250|       '<div class="xtp-view-gap"></div>' +
+ 1251|       '</div>';
+ 1252|   }
+ 1253|   function renderView(id, el) {
+ 1254|     var body = '';
+ 1255|     var title = '';
+ 1256|     if (id === 'edit') { title = '个人信息'; body = editBody(); }
+ 1257|     else if (id === 'notes') { title = '我的笔记'; body = notesBody(); }
+ 1258|     else if (id === 'fav') { title = '我的收藏'; body = favBody(); }
+ 1259|     else if (id === 'data') { title = '学习数据'; body = dataBody(); }
+ 1260|     else if (id === 'chat') { title = 'AI对话记录'; body = chatBody(); }
+ 1261|     el.innerHTML = viewBar(title, id) + '<div class="xtp-view-body">' + body + '</div>';
+ 1262|     var back = $('xtpViewBack_' + id);
+ 1263|     if (back) { back.addEventListener('click', function () { backView(id); }); }
+ 1264|     afterRenderView(id, el);
+ 1265|     if (window.lucideAutoRender) { window.lucideAutoRender(); }
+ 1266|   }
+ 1267|   function afterRenderView(id, el) {
+ 1268|     if (id === 'edit') { bindEditView(el); }
+ 1269|     if (id === 'data') { animateNumbers(el); }
+ 1270|     if (id === 'chat') { bindChatView(el); }
+ 1271|   }
+ 1272| 
+ 1273|   /* -------------------------------------------- 编辑页：扩展字段行（地区/手机号/邮箱/生日/目标） */
+ 1274|   /** 列表式字段行：左侧 label、右侧值（灰、右对齐）、行尾箭头、行高 50px */
+ 1275|   function frowHtml(key, label, value, note) {
+ 1276|     var v = value ? String(value) : '';
+ 1277|     return '<div class="xtp-frow" data-frow="' + esc(key) + '" role="button" tabindex="0">' +
+ 1278|       '<div class="xtp-frow-label">' + esc(label) + '</div>' +
+ 1279|       '<div class="xtp-frow-main">' +
+ 1280|         '<div class="xtp-frow-val' + (v ? '' : ' none') + '">' + esc(v || '未填写') + '</div>' +
+ 1281|         (note ? '<div class="xtp-frow-note">' + esc(note) + '</div>' : '') +
+ 1282|       '</div>' +
+ 1283|       '<span class="xtp-frow-arrow"><span class="nav-icon" data-icon="chevron-right" data-icon-size="18"></span></span>' +
+ 1284|       '</div>';
+ 1285|   }
+ 1286|   function fieldsSection() {
+ 1287|     var em = emailInfo();
+ 1288|     return '<section class="xtp-sec">' +
+ 1289|       frowHtml('region', '地区', regionVal(), '') +
+ 1290|       frowHtml('phone', '手机号', phoneVal(), '仅本机保存 · 未验证') +
+ 1291|       frowHtml('email', '邮箱', em.value, em.verified ? '已绑定' : '未验证') +
+ 1292|       frowHtml('birthday', '生日', birthdayVal(), '') +
+ 1293|       frowHtml('goal', '目标', goalVal(), '') +
+ 1294|       '</section>';
+ 1295|   }
+ 1296| 
+ 1297|   /* -------------------------------------------------------- 个人信息编辑页 */
+ 1298|   function editBody() {
+ 1299|     var m = metrics();
+ 1300|     var lv = levelOf(m);
+ 1301|     var src = avatarSrc();
+ 1302|     var initial = userName().slice(0, 1) || '学';
+ 1303|     var avInner = src ? '<img src="' + esc(src) + '" alt="">' : esc(initial);
+ 1304|     var g = userGender();
+ 1305|     var lvRight = m.hasAny
+ 1306|       ? '<span class="xtp-lv-chip">Lv.' + lv.lv + ' ' + esc(lv.name) + '</span>'
+ 1307|       : '<span class="xtp-readval">暂无数据</span>';
+ 1308|     return '' +
+ 1309|       '<section class="xtp-sec">' +
+ 1310|         '<div class="xtp-avatar-row">' +
+ 1311|           '<div class="xtp-avatar-sm" id="xtpEditAvatar">' + avInner + '</div>' +
+ 1312|           '<div class="xtp-avatar-row-main">' +
+ 1313|             '<div class="xtp-li-title">头像</div>' +
+ 1314|             '<div class="xtp-li-meta">点击左侧头像上传本地图片</div>' +
+ 1315|           '</div>' +
+ 1316|           '<button class="xtp-mini-btn" type="button" id="xtpEditAvatarBtn">更换</button>' +
+ 1317|         '</div>' +
+ 1318|       '</section>' +
+ 1319|       '<section class="xtp-sec">' +
+ 1320|         '<div class="xtp-field">' +

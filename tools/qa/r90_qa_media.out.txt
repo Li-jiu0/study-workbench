@@ -1,0 +1,5 @@
+L724   @media，禁 clamp/min/max。 */
+L725   @media (max-height:560px){'+
+
+--- max-height / max-width 出现 ---
+L725   max-height:560px

@@ -1,0 +1,123 @@
+=== ① 行尾（CRLF，loneLF==0）===
+PASS | loneLF==0 学习工作台.html | loneLF=0
+PASS | loneLF==0 演示.html | loneLF=0
+PASS | loneLF==0 个人中心.html | loneLF=0
+PASS | loneLF==0 更多.html | loneLF=0
+PASS | loneLF==0 关于.html | loneLF=0
+PASS | loneLF==0 学习概括.html | loneLF=0
+PASS | loneLF==0 我的文件.html | loneLF=0
+PASS | loneLF==0 导入题库.html | loneLF=0
+PASS | loneLF==0 assets/app.js | loneLF=0
+PASS | loneLF==0 assets/importer.js | loneLF=0
+PASS | loneLF==0 AI.html | loneLF=0
+PASS | loneLF==0 blog_wechat.html | loneLF=0
+PASS | loneLF==0 PPT案例拆解.html | loneLF=0
+PASS | loneLF==0 PPT版式库.html | loneLF=0
+PASS | loneLF==0 万能金句库.html | loneLF=0
+PASS | loneLF==0 企业定向库.html | loneLF=0
+PASS | loneLF==0 动态.html | loneLF=0
+PASS | loneLF==0 商务礼仪.html | loneLF=0
+PASS | loneLF==0 四级词汇.html | loneLF=0
+PASS | loneLF==0 场景话术库.html | loneLF=0
+PASS | loneLF==0 时政热点.html | loneLF=0
+PASS | loneLF==0 工具.html | loneLF=0
+PASS | loneLF==0 私聊.html | loneLF=0
+PASS | loneLF==0 申论刷题.html | loneLF=0
+PASS | loneLF==0 社区.html | loneLF=0
+PASS | loneLF==0 英语.html | loneLF=0
+PASS | loneLF==0 行测刷题.html | loneLF=0
+PASS | loneLF==0 管理员.html | loneLF=0
+PASS | loneLF==0 行测.html | loneLF=0
+PASS | loneLF==0 面试题库.html | loneLF=0
+PASS | loneLF==0 设置.html | loneLF=0
+PASS | loneLF==0 错题本.html | loneLF=0
+PASS | loneLF==0 面测.html | loneLF=0
+PASS | loneLF==0 表达.html | loneLF=0
+=== ② 见 node --check 输出（bash） ===
+=== ③ ES2017 禁令逐项 0 命中（在去除注释与字符串字面后的代码上判定）===
+PASS | ES2017 学习工作台.html
+PASS | ES2017 演示.html
+PASS | ES2017 个人中心.html
+PASS | ES2017 更多.html
+PASS | ES2017 关于.html
+PASS | ES2017 学习概括.html
+PASS | ES2017 我的文件.html
+PASS | ES2017 导入题库.html
+PASS | ES2017 assets/app.js
+      (注) assets/app.js：以下禁令仅出现在注释/字符串字面中（非真实语法）：对象展开 {...
+PASS | ES2017 assets/importer.js
+PASS | ES2017 AI.html
+PASS | ES2017 blog_wechat.html
+PASS | ES2017 PPT案例拆解.html
+PASS | ES2017 PPT版式库.html
+PASS | ES2017 万能金句库.html
+PASS | ES2017 企业定向库.html
+PASS | ES2017 动态.html
+PASS | ES2017 商务礼仪.html
+PASS | ES2017 四级词汇.html
+PASS | ES2017 场景话术库.html
+PASS | ES2017 时政热点.html
+PASS | ES2017 工具.html
+PASS | ES2017 私聊.html
+PASS | ES2017 申论刷题.html
+PASS | ES2017 社区.html
+PASS | ES2017 英语.html
+PASS | ES2017 行测刷题.html
+PASS | ES2017 管理员.html
+PASS | ES2017 行测.html
+PASS | ES2017 面试题库.html
+PASS | ES2017 设置.html
+      (注) 设置.html：以下禁令仅出现在注释/字符串字面中（非真实语法）：对象展开 {...
+PASS | ES2017 错题本.html
+      (注) 错题本.html：以下禁令仅出现在注释/字符串字面中（非真实语法）：Object.fromEntries
+PASS | ES2017 面测.html
+PASS | ES2017 表达.html
+PASS | ES2017 工具.html
+=== ④ 全局名交集 ===
+PASS | xtFiles 仅出现在 我的文件.html + importer.js | ['我的文件.html', 'importer.js']
+PASS | typeof 守卫 xtFilesRender
+PASS | typeof 守卫 xtFilesFilter
+PASS | typeof 守卫 xtFilesOpen
+PASS | typeof 守卫 xtFilesDel
+PASS | typeof 守卫 xtFilesAdd
+PASS | typeof 守卫 xtFilesRegister
+PASS | typeof 守卫 xtFilesRemove
+=== ⑦ 关于.html 版本号与 chips ===
+PASS | 关于.html 含 v2.3 版本（span+script+日志） | count=3
+PASS | 关于.html span id=aboutVersion 为 v2.3
+PASS | 关于.html 脚本 textContent v2.3
+PASS | 关于.html chips 无「演示」
+PASS | 关于.html chips 有「我的文件」
+PASS | app.js showAboutDialog v2.3
+PASS | app.js 无 星途 v2.2
+=== ⑧ 演示.html 停引 + 文件仍在磁盘 ===
+PASS | 演示.html 不引用 ppt-works.js
+PASS | 演示.html 不引用 ppt-tips.js
+PASS | 演示.html 不引用 tpl-preview.js
+PASS | 演示.html 不引用 design-class.js
+PASS | 演示.html 不引用 mini-ppt.js
+PASS | 演示.html 不引用 data-ppt-
+PASS | 演示.html 不引用 xt-content.js
+PASS | 演示.html 不引用 mini.js
+PASS | 磁盘仍存在 assets/ppt-works.js
+PASS | 磁盘仍存在 assets/ppt-tips.js
+PASS | 磁盘仍存在 assets/tpl-preview.js
+PASS | 磁盘仍存在 assets/design-class.js
+PASS | 磁盘仍存在 assets/mini-ppt.js
+PASS | 磁盘仍存在 assets/xt-content.js
+PASS | 磁盘仍存在 assets/mini.js
+PASS | 磁盘仍存在 assets/data-ppt-templates.js
+PASS | 磁盘仍存在 assets/data-ppt-class.js
+PASS | 磁盘仍存在 assets/data-ppt-tips.js
+=== 附：app.js 登记点 ===
+PASS | PAGE_FILES 含 files
+PASS | PAGE_FILES ppt 改指新页
+PASS | HOME_DEF 我的文件
+PASS | MODULE_INDEX 我的文件
+PASS | migrate 不再 removeItem 裸键
+PASS | notify 原生桥 AndroidBridge.notify
+=== ⑥ 批量改名残留 ===
+PASS | 除演示页外无 data-page="ppt" 残留 | []
+PASS | 更多.html 导入题库卡 onclick
+
+FAIL=0

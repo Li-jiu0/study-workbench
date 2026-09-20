@@ -1,0 +1,25 @@
+=== node --check 语法检查（node22，仅暴露真语法错，不覆盖老内核兼容） ===
+  [SYNTAX ERROR] tools/qa/_ipartner_commit.js
+      D:\下载的文件\学习工作台\tools\qa\_ipartner_commit.js:14
+            personality: '娓╂煍娌绘剤鍨?,
+                         ^^^^^^^^^^
+      
+  [SYNTAX ERROR] tools/qa/_ipartner_prev.js
+      D:\下载的文件\学习工作台\tools\qa\_ipartner_prev.js:14
+            personality: '娓╂煍娌绘剤鍨?,
+                         ^^^^^^^^^^
+      
+  [SYNTAX ERROR] tools/qa/_minicomm_prev.js
+      D:\下载的文件\学习工作台\tools\qa\_minicomm_prev.js:8
+          { q: '鍚屼簨鍦ㄧ兢閲孈浣狅細鈥滆繖浜嬩綘鎬庝箞鍙堝紕閿欎簡锛熲€濇洿绋崇殑鍥炲簲鏄紵', o: ['鈥滀綘琛屼綘鏉モ€?, '鈥滆阿璋㈡彁閱掞紝鎴戞煡涓€涓嬪師鍥狅紝椹笂缁欎綘涓粨璁恒€傗€?, '鈥滀笉鏄垜鐨勯敊鈥?, '鈥滀笉鍥炰簡鈥?], a: 1, x: '鍏堟帴浣忛棶棰樿〃鏄庤礋璐ｏ紝鍐嶇粰琛屽姩锛岄伩鍏嶆儏缁崌绾с€? },
+                                                                             ^^^^
+      
+  [SYNTAX ERROR] tools/qa/_miniexam_prev.js
+      D:\下载的文件\学习工作台\tools\qa\_miniexam_prev.js:8
+          { q: '宸ョ▼闃熶慨璺紝鐢查槦鐙仛闇€10澶╋紝涔欓槦鐙仛闇€15澶╋紝涓ら槦鍚堝仛鍑犲ぉ瀹屾垚锛?, o: ['5澶?, '6澶?, '7.5澶?, '12澶?], a: 1, x: '鍚堝仛鏁堢巼=1/10+1/15=1/6锛屾晠6澶┿€? },
+                                                                        ^
+      
+  js 文件 217 个，语法错 4 个
+
+=== HTML 内联脚本语法检查 ===
+  内联脚本语法错 0 处

@@ -1,0 +1,13 @@
+  PASS  V1 ai-config.js loads without error
+  PASS  V1b AI_CONFIG exported
+  [info] builtinModels.length=44
+  PASS  V2 builtinModels = 47 - 3 = 44 (removed exactly 3)  :: len=44
+  PASS  V3 no removed id anywhere in AI_CONFIG  :: clean
+  PASS  V4 no dangling fallback references  :: clean
+  PASS  V5a kept ark-seedance-1-0-pro
+  PASS  V5b kept ark-seedance-1-0-pro-fast
+  PASS  V6 modelModes chains clean  :: clean
+  [info] modelDetails keys=44
+  PASS  V7 modelDetails has kept seedance entries
+SUMMARY pass=9 fail=0
+R92B_LOAD_PASS

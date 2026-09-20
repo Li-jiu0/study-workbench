@@ -1,0 +1,1514 @@
+{
+ "3940": {
+  "tiben_idx": 39,
+  "jiexi_idx": 40,
+  "app_answer": "B",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "3999": {
+  "tiben_idx": 99,
+  "jiexi_idx": 100,
+  "app_answer": "C",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4019": {
+  "tiben_idx": 119,
+  "jiexi_idx": 120,
+  "app_answer": "A",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4038": {
+  "tiben_idx": 138,
+  "jiexi_idx": 140,
+  "app_answer": "B",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4039": {
+  "tiben_idx": 139,
+  "jiexi_idx": 141,
+  "app_answer": "B",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4075": {
+  "tiben_idx": 176,
+  "jiexi_idx": 180,
+  "app_answer": "A",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4076": {
+  "tiben_idx": 177,
+  "jiexi_idx": 181,
+  "app_answer": "D",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4078": {
+  "tiben_idx": 179,
+  "jiexi_idx": 183,
+  "app_answer": "A",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4080": {
+  "tiben_idx": 181,
+  "jiexi_idx": 185,
+  "app_answer": "B",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4081": {
+  "tiben_idx": 182,
+  "jiexi_idx": 186,
+  "app_answer": "D",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4083": {
+  "tiben_idx": 184,
+  "jiexi_idx": 188,
+  "app_answer": "B",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4084": {
+  "tiben_idx": 185,
+  "jiexi_idx": 189,
+  "app_answer": "B",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4085": {
+  "tiben_idx": 186,
+  "jiexi_idx": 190,
+  "app_answer": "D",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4086": {
+  "tiben_idx": 187,
+  "jiexi_idx": 191,
+  "app_answer": "A",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4089": {
+  "tiben_idx": 190,
+  "jiexi_idx": 194,
+  "app_answer": "B",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4090": {
+  "tiben_idx": 191,
+  "jiexi_idx": 195,
+  "app_answer": "C",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4091": {
+  "tiben_idx": 192,
+  "jiexi_idx": 196,
+  "app_answer": "B",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4092": {
+  "tiben_idx": 193,
+  "jiexi_idx": 197,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4093": {
+  "tiben_idx": 194,
+  "jiexi_idx": 198,
+  "app_answer": "A",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4094": {
+  "tiben_idx": 195,
+  "jiexi_idx": 199,
+  "app_answer": "A",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4098": {
+  "tiben_idx": 199,
+  "jiexi_idx": 203,
+  "app_answer": "B",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4100": {
+  "tiben_idx": 201,
+  "jiexi_idx": 205,
+  "app_answer": "D",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4101": {
+  "tiben_idx": 202,
+  "jiexi_idx": 206,
+  "app_answer": "B",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4103": {
+  "tiben_idx": 204,
+  "jiexi_idx": 208,
+  "app_answer": "A",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4104": {
+  "tiben_idx": 205,
+  "jiexi_idx": 209,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4105": {
+  "tiben_idx": 206,
+  "jiexi_idx": 210,
+  "app_answer": "B",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4106": {
+  "tiben_idx": 207,
+  "jiexi_idx": 211,
+  "app_answer": "C",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4109": {
+  "tiben_idx": 210,
+  "jiexi_idx": 214,
+  "app_answer": "D",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4110": {
+  "tiben_idx": 211,
+  "jiexi_idx": 215,
+  "app_answer": "D",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4111": {
+  "tiben_idx": 212,
+  "jiexi_idx": 216,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4112": {
+  "tiben_idx": 213,
+  "jiexi_idx": 217,
+  "app_answer": "B",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4113": {
+  "tiben_idx": 214,
+  "jiexi_idx": 218,
+  "app_answer": "C",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4114": {
+  "tiben_idx": 215,
+  "jiexi_idx": 219,
+  "app_answer": "D",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4115": {
+  "tiben_idx": 216,
+  "jiexi_idx": 220,
+  "app_answer": "B",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4152": {
+  "tiben_idx": 255,
+  "jiexi_idx": 258,
+  "app_answer": "B",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4153": {
+  "tiben_idx": 256,
+  "jiexi_idx": 259,
+  "app_answer": "D",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4171": {
+  "tiben_idx": 275,
+  "jiexi_idx": 278,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4172": {
+  "tiben_idx": 276,
+  "jiexi_idx": 279,
+  "app_answer": "C",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4189": {
+  "tiben_idx": 295,
+  "jiexi_idx": 298,
+  "app_answer": "B",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4190": {
+  "tiben_idx": 296,
+  "jiexi_idx": 299,
+  "app_answer": "A",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4208": {
+  "tiben_idx": 315,
+  "jiexi_idx": 318,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4209": {
+  "tiben_idx": 316,
+  "jiexi_idx": 319,
+  "app_answer": "B",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4227": {
+  "tiben_idx": 334,
+  "jiexi_idx": 340,
+  "app_answer": "B",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4246": {
+  "tiben_idx": 354,
+  "jiexi_idx": 360,
+  "app_answer": "A",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4299": {
+  "tiben_idx": 414,
+  "jiexi_idx": 420,
+  "app_answer": "A",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4318": {
+  "tiben_idx": 433,
+  "jiexi_idx": 439,
+  "app_answer": "D",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4319": {
+  "tiben_idx": 434,
+  "jiexi_idx": 440,
+  "app_answer": "B",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4337": {
+  "tiben_idx": 452,
+  "jiexi_idx": 459,
+  "app_answer": "B",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4339": {
+  "tiben_idx": 454,
+  "jiexi_idx": 461,
+  "app_answer": "D",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4357": {
+  "tiben_idx": 472,
+  "jiexi_idx": 479,
+  "app_answer": "A",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4358": {
+  "tiben_idx": 473,
+  "jiexi_idx": 480,
+  "app_answer": "D",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4359": {
+  "tiben_idx": 474,
+  "jiexi_idx": 481,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4377": {
+  "tiben_idx": 493,
+  "jiexi_idx": 499,
+  "app_answer": "C",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4378": {
+  "tiben_idx": 494,
+  "jiexi_idx": 500,
+  "app_answer": "A",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4411": {
+  "tiben_idx": 531,
+  "jiexi_idx": 538,
+  "app_answer": "C",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4458": {
+  "tiben_idx": 580,
+  "jiexi_idx": 588,
+  "app_answer": "A",
+  "jiexi_answer": "D",
+  "jiexi_tail": "A"
+ },
+ "4486": {
+  "tiben_idx": 610,
+  "jiexi_idx": 618,
+  "app_answer": "C",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4505": {
+  "tiben_idx": 630,
+  "jiexi_idx": 638,
+  "app_answer": "D",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4523": {
+  "tiben_idx": 649,
+  "jiexi_idx": 658,
+  "app_answer": "A",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4543": {
+  "tiben_idx": 669,
+  "jiexi_idx": 678,
+  "app_answer": "B",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4562": {
+  "tiben_idx": 688,
+  "jiexi_idx": 698,
+  "app_answer": "A",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4563": {
+  "tiben_idx": 689,
+  "jiexi_idx": 699,
+  "app_answer": "C",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4564": {
+  "tiben_idx": 690,
+  "jiexi_idx": 700,
+  "app_answer": "D",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4565": {
+  "tiben_idx": 691,
+  "jiexi_idx": 701,
+  "app_answer": "D",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4566": {
+  "tiben_idx": 692,
+  "jiexi_idx": 702,
+  "app_answer": "B",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4567": {
+  "tiben_idx": 693,
+  "jiexi_idx": 703,
+  "app_answer": "C",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4570": {
+  "tiben_idx": 696,
+  "jiexi_idx": 706,
+  "app_answer": "D",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4571": {
+  "tiben_idx": 697,
+  "jiexi_idx": 707,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4572": {
+  "tiben_idx": 698,
+  "jiexi_idx": 708,
+  "app_answer": "B",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4573": {
+  "tiben_idx": 699,
+  "jiexi_idx": 709,
+  "app_answer": "D",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4574": {
+  "tiben_idx": 700,
+  "jiexi_idx": 711,
+  "app_answer": "A",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4575": {
+  "tiben_idx": 701,
+  "jiexi_idx": 712,
+  "app_answer": "C",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4577": {
+  "tiben_idx": 703,
+  "jiexi_idx": 714,
+  "app_answer": "D",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4578": {
+  "tiben_idx": 704,
+  "jiexi_idx": 715,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4581": {
+  "tiben_idx": 707,
+  "jiexi_idx": 718,
+  "app_answer": "B",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4582": {
+  "tiben_idx": 708,
+  "jiexi_idx": 719,
+  "app_answer": "B",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4583": {
+  "tiben_idx": 709,
+  "jiexi_idx": 720,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4585": {
+  "tiben_idx": 711,
+  "jiexi_idx": 722,
+  "app_answer": "D",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4586": {
+  "tiben_idx": 712,
+  "jiexi_idx": 723,
+  "app_answer": "D",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4587": {
+  "tiben_idx": 713,
+  "jiexi_idx": 724,
+  "app_answer": "B",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4588": {
+  "tiben_idx": 714,
+  "jiexi_idx": 725,
+  "app_answer": "A",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4589": {
+  "tiben_idx": 715,
+  "jiexi_idx": 726,
+  "app_answer": "C",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4590": {
+  "tiben_idx": 716,
+  "jiexi_idx": 727,
+  "app_answer": "B",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4592": {
+  "tiben_idx": 718,
+  "jiexi_idx": 729,
+  "app_answer": "C",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4594": {
+  "tiben_idx": 720,
+  "jiexi_idx": 731,
+  "app_answer": "B",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4595": {
+  "tiben_idx": 721,
+  "jiexi_idx": 732,
+  "app_answer": "A",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4596": {
+  "tiben_idx": 722,
+  "jiexi_idx": 733,
+  "app_answer": "A",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4597": {
+  "tiben_idx": 723,
+  "jiexi_idx": 734,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4598": {
+  "tiben_idx": 724,
+  "jiexi_idx": 735,
+  "app_answer": "B",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4600": {
+  "tiben_idx": 726,
+  "jiexi_idx": 737,
+  "app_answer": "B",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4601": {
+  "tiben_idx": 727,
+  "jiexi_idx": 738,
+  "app_answer": "D",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4602": {
+  "tiben_idx": 728,
+  "jiexi_idx": 739,
+  "app_answer": "A",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4603": {
+  "tiben_idx": 729,
+  "jiexi_idx": 740,
+  "app_answer": "B",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4604": {
+  "tiben_idx": 730,
+  "jiexi_idx": 741,
+  "app_answer": "B",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4606": {
+  "tiben_idx": 732,
+  "jiexi_idx": 743,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4607": {
+  "tiben_idx": 733,
+  "jiexi_idx": 744,
+  "app_answer": "C",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4608": {
+  "tiben_idx": 734,
+  "jiexi_idx": 745,
+  "app_answer": "B",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4609": {
+  "tiben_idx": 735,
+  "jiexi_idx": 746,
+  "app_answer": "D",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4610": {
+  "tiben_idx": 737,
+  "jiexi_idx": 748,
+  "app_answer": "D",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4611": {
+  "tiben_idx": 739,
+  "jiexi_idx": 750,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4612": {
+  "tiben_idx": 740,
+  "jiexi_idx": 751,
+  "app_answer": "D",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4613": {
+  "tiben_idx": 741,
+  "jiexi_idx": 752,
+  "app_answer": "B",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4614": {
+  "tiben_idx": 742,
+  "jiexi_idx": 753,
+  "app_answer": "D",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4615": {
+  "tiben_idx": 743,
+  "jiexi_idx": 754,
+  "app_answer": "B",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4616": {
+  "tiben_idx": 744,
+  "jiexi_idx": 755,
+  "app_answer": "C",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4617": {
+  "tiben_idx": 745,
+  "jiexi_idx": 756,
+  "app_answer": "D",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4618": {
+  "tiben_idx": 746,
+  "jiexi_idx": 757,
+  "app_answer": "A",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4619": {
+  "tiben_idx": 747,
+  "jiexi_idx": 758,
+  "app_answer": "C",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4620": {
+  "tiben_idx": 748,
+  "jiexi_idx": 759,
+  "app_answer": "A",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4621": {
+  "tiben_idx": 749,
+  "jiexi_idx": 760,
+  "app_answer": "B",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4622": {
+  "tiben_idx": 750,
+  "jiexi_idx": 761,
+  "app_answer": "D",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4624": {
+  "tiben_idx": 752,
+  "jiexi_idx": 763,
+  "app_answer": "B",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4625": {
+  "tiben_idx": 753,
+  "jiexi_idx": 764,
+  "app_answer": "A",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4626": {
+  "tiben_idx": 754,
+  "jiexi_idx": 765,
+  "app_answer": "D",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4627": {
+  "tiben_idx": 755,
+  "jiexi_idx": 766,
+  "app_answer": "B",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4628": {
+  "tiben_idx": 756,
+  "jiexi_idx": 767,
+  "app_answer": "C",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4634": {
+  "tiben_idx": 762,
+  "jiexi_idx": 773,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4635": {
+  "tiben_idx": 763,
+  "jiexi_idx": 774,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4639": {
+  "tiben_idx": 767,
+  "jiexi_idx": 778,
+  "app_answer": "A",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4640": {
+  "tiben_idx": 768,
+  "jiexi_idx": 779,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4641": {
+  "tiben_idx": 769,
+  "jiexi_idx": 780,
+  "app_answer": "D",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4642": {
+  "tiben_idx": 771,
+  "jiexi_idx": 782,
+  "app_answer": "B",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4643": {
+  "tiben_idx": 772,
+  "jiexi_idx": 783,
+  "app_answer": "C",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4645": {
+  "tiben_idx": 774,
+  "jiexi_idx": 785,
+  "app_answer": "A",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4646": {
+  "tiben_idx": 775,
+  "jiexi_idx": 786,
+  "app_answer": "D",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4647": {
+  "tiben_idx": 776,
+  "jiexi_idx": 787,
+  "app_answer": "D",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4648": {
+  "tiben_idx": 777,
+  "jiexi_idx": 788,
+  "app_answer": "C",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4651": {
+  "tiben_idx": 780,
+  "jiexi_idx": 792,
+  "app_answer": "D",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4652": {
+  "tiben_idx": 781,
+  "jiexi_idx": 793,
+  "app_answer": "B",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4653": {
+  "tiben_idx": 782,
+  "jiexi_idx": 794,
+  "app_answer": "B",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4654": {
+  "tiben_idx": 783,
+  "jiexi_idx": 795,
+  "app_answer": "D",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4655": {
+  "tiben_idx": 784,
+  "jiexi_idx": 797,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4657": {
+  "tiben_idx": 786,
+  "jiexi_idx": 799,
+  "app_answer": "D",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4658": {
+  "tiben_idx": 787,
+  "jiexi_idx": 800,
+  "app_answer": "A",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4660": {
+  "tiben_idx": 789,
+  "jiexi_idx": 802,
+  "app_answer": "B",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4662": {
+  "tiben_idx": 791,
+  "jiexi_idx": 804,
+  "app_answer": "B",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4663": {
+  "tiben_idx": 792,
+  "jiexi_idx": 805,
+  "app_answer": "D",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4664": {
+  "tiben_idx": 793,
+  "jiexi_idx": 806,
+  "app_answer": "C",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4665": {
+  "tiben_idx": 794,
+  "jiexi_idx": 807,
+  "app_answer": "C",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4666": {
+  "tiben_idx": 795,
+  "jiexi_idx": 808,
+  "app_answer": "D",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4667": {
+  "tiben_idx": 796,
+  "jiexi_idx": 809,
+  "app_answer": "B",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4668": {
+  "tiben_idx": 797,
+  "jiexi_idx": 810,
+  "app_answer": "A",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4669": {
+  "tiben_idx": 798,
+  "jiexi_idx": 811,
+  "app_answer": "B",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4670": {
+  "tiben_idx": 799,
+  "jiexi_idx": 812,
+  "app_answer": "A",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4672": {
+  "tiben_idx": 801,
+  "jiexi_idx": 814,
+  "app_answer": "C",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4673": {
+  "tiben_idx": 802,
+  "jiexi_idx": 815,
+  "app_answer": "B",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4675": {
+  "tiben_idx": 804,
+  "jiexi_idx": 817,
+  "app_answer": "B",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4679": {
+  "tiben_idx": 810,
+  "jiexi_idx": 821,
+  "app_answer": "D",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4680": {
+  "tiben_idx": 811,
+  "jiexi_idx": 822,
+  "app_answer": "C",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4682": {
+  "tiben_idx": 813,
+  "jiexi_idx": 824,
+  "app_answer": "D",
+  "jiexi_answer": "A",
+  "jiexi_tail": ""
+ },
+ "4683": {
+  "tiben_idx": 814,
+  "jiexi_idx": 826,
+  "app_answer": "A",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4685": {
+  "tiben_idx": 816,
+  "jiexi_idx": 828,
+  "app_answer": "A",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4686": {
+  "tiben_idx": 817,
+  "jiexi_idx": 829,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4687": {
+  "tiben_idx": 818,
+  "jiexi_idx": 830,
+  "app_answer": "B",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4688": {
+  "tiben_idx": 819,
+  "jiexi_idx": 831,
+  "app_answer": "A",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4690": {
+  "tiben_idx": 821,
+  "jiexi_idx": 833,
+  "app_answer": "A",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4691": {
+  "tiben_idx": 822,
+  "jiexi_idx": 834,
+  "app_answer": "A",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4693": {
+  "tiben_idx": 824,
+  "jiexi_idx": 836,
+  "app_answer": "A",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4694": {
+  "tiben_idx": 826,
+  "jiexi_idx": 838,
+  "app_answer": "D",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4695": {
+  "tiben_idx": 827,
+  "jiexi_idx": 839,
+  "app_answer": "A",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4696": {
+  "tiben_idx": 828,
+  "jiexi_idx": 840,
+  "app_answer": "D",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4697": {
+  "tiben_idx": 829,
+  "jiexi_idx": 841,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4698": {
+  "tiben_idx": 830,
+  "jiexi_idx": 842,
+  "app_answer": "C",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4699": {
+  "tiben_idx": 831,
+  "jiexi_idx": 843,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4701": {
+  "tiben_idx": 833,
+  "jiexi_idx": 845,
+  "app_answer": "B",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4702": {
+  "tiben_idx": 834,
+  "jiexi_idx": 846,
+  "app_answer": "D",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4703": {
+  "tiben_idx": 835,
+  "jiexi_idx": 847,
+  "app_answer": "D",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4704": {
+  "tiben_idx": 836,
+  "jiexi_idx": 848,
+  "app_answer": "B",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4705": {
+  "tiben_idx": 837,
+  "jiexi_idx": 849,
+  "app_answer": "B",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4706": {
+  "tiben_idx": 838,
+  "jiexi_idx": 850,
+  "app_answer": "A",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4707": {
+  "tiben_idx": 839,
+  "jiexi_idx": 851,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4708": {
+  "tiben_idx": 840,
+  "jiexi_idx": 852,
+  "app_answer": "D",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4710": {
+  "tiben_idx": 842,
+  "jiexi_idx": 854,
+  "app_answer": "B",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4711": {
+  "tiben_idx": 843,
+  "jiexi_idx": 855,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4712": {
+  "tiben_idx": 844,
+  "jiexi_idx": 856,
+  "app_answer": "D",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4713": {
+  "tiben_idx": 845,
+  "jiexi_idx": 857,
+  "app_answer": "D",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4714": {
+  "tiben_idx": 846,
+  "jiexi_idx": 858,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4715": {
+  "tiben_idx": 847,
+  "jiexi_idx": 859,
+  "app_answer": "B",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4716": {
+  "tiben_idx": 848,
+  "jiexi_idx": 860,
+  "app_answer": "A",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4717": {
+  "tiben_idx": 849,
+  "jiexi_idx": 861,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4718": {
+  "tiben_idx": 850,
+  "jiexi_idx": 862,
+  "app_answer": "D",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4719": {
+  "tiben_idx": 851,
+  "jiexi_idx": 863,
+  "app_answer": "B",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4720": {
+  "tiben_idx": 852,
+  "jiexi_idx": 864,
+  "app_answer": "A",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4721": {
+  "tiben_idx": 853,
+  "jiexi_idx": 865,
+  "app_answer": "D",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4723": {
+  "tiben_idx": 855,
+  "jiexi_idx": 867,
+  "app_answer": "C",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4724": {
+  "tiben_idx": 856,
+  "jiexi_idx": 868,
+  "app_answer": "A",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4725": {
+  "tiben_idx": 857,
+  "jiexi_idx": 869,
+  "app_answer": "D",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4726": {
+  "tiben_idx": 858,
+  "jiexi_idx": 870,
+  "app_answer": "D",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4727": {
+  "tiben_idx": 859,
+  "jiexi_idx": 871,
+  "app_answer": "B",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4729": {
+  "tiben_idx": 861,
+  "jiexi_idx": 873,
+  "app_answer": "B",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4730": {
+  "tiben_idx": 862,
+  "jiexi_idx": 874,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4731": {
+  "tiben_idx": 863,
+  "jiexi_idx": 875,
+  "app_answer": "B",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4732": {
+  "tiben_idx": 864,
+  "jiexi_idx": 876,
+  "app_answer": "A",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4733": {
+  "tiben_idx": 865,
+  "jiexi_idx": 877,
+  "app_answer": "C",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4734": {
+  "tiben_idx": 866,
+  "jiexi_idx": 878,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4736": {
+  "tiben_idx": 868,
+  "jiexi_idx": 880,
+  "app_answer": "A",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4737": {
+  "tiben_idx": 870,
+  "jiexi_idx": 882,
+  "app_answer": "D",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4738": {
+  "tiben_idx": 871,
+  "jiexi_idx": 883,
+  "app_answer": "D",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4740": {
+  "tiben_idx": 873,
+  "jiexi_idx": 885,
+  "app_answer": "B",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4741": {
+  "tiben_idx": 874,
+  "jiexi_idx": 886,
+  "app_answer": "C",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4742": {
+  "tiben_idx": 875,
+  "jiexi_idx": 887,
+  "app_answer": "D",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4743": {
+  "tiben_idx": 876,
+  "jiexi_idx": 888,
+  "app_answer": "D",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4744": {
+  "tiben_idx": 877,
+  "jiexi_idx": 889,
+  "app_answer": "B",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4745": {
+  "tiben_idx": 878,
+  "jiexi_idx": 890,
+  "app_answer": "B",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4746": {
+  "tiben_idx": 879,
+  "jiexi_idx": 891,
+  "app_answer": "D",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4749": {
+  "tiben_idx": 882,
+  "jiexi_idx": 894,
+  "app_answer": "B",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4751": {
+  "tiben_idx": 884,
+  "jiexi_idx": 896,
+  "app_answer": "B",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4752": {
+  "tiben_idx": 885,
+  "jiexi_idx": 897,
+  "app_answer": "D",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4755": {
+  "tiben_idx": 888,
+  "jiexi_idx": 901,
+  "app_answer": "B",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4757": {
+  "tiben_idx": 890,
+  "jiexi_idx": 903,
+  "app_answer": "D",
+  "jiexi_answer": "C",
+  "jiexi_tail": "C"
+ },
+ "4807": {
+  "tiben_idx": 943,
+  "jiexi_idx": 958,
+  "app_answer": "C",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4808": {
+  "tiben_idx": 944,
+  "jiexi_idx": 959,
+  "app_answer": "C",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ },
+ "4825": {
+  "tiben_idx": 962,
+  "jiexi_idx": 978,
+  "app_answer": "B",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4826": {
+  "tiben_idx": 963,
+  "jiexi_idx": 979,
+  "app_answer": "D",
+  "jiexi_answer": "B",
+  "jiexi_tail": "B"
+ },
+ "4827": {
+  "tiben_idx": 964,
+  "jiexi_idx": 980,
+  "app_answer": "C",
+  "jiexi_answer": "A",
+  "jiexi_tail": "A"
+ },
+ "4844": {
+  "tiben_idx": 984,
+  "jiexi_idx": 998,
+  "app_answer": "A",
+  "jiexi_answer": "D",
+  "jiexi_tail": "D"
+ }
+}
