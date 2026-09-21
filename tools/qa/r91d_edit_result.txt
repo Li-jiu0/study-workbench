@@ -1,0 +1,28 @@
+xt-aiusage.js BEFORE: size=75618 crlf=0 loneCR=0 (expect 0/0 => pure LF)
+[OK] E1 skeleton foldrow shell (old 846 B -> new 1362 B)
+[OK] E2 QUOTA_SORT_LABEL + syncQuotaSortLabel (old 246 B -> new 737 B)
+[OK] E3 renderAll sync call (old 28 B -> new 110 B)
+[OK] E4 bindQuotaSortFold fn (old 24 B -> new 952 B)
+[OK] E5 bind() hook (old 27 B -> new 52 B)
+xt-aiusage.js AFTER: size=77660 crlf=0 loneCR=0 (delta=+2042 B)
+[OK] xt-aiusage.js 回读一致，纯 LF
+ai-settings.html BEFORE: size=46638 crlf=0 loneCR=0 (expect 0/0 => pure LF)
+[OK] E6 version bump 20260918c -> 20260918e (old 62 B -> new 62 B)
+ai-settings.html AFTER: size=46638 crlf=0 loneCR=0 (delta=+0 B)
+[OK] ai-settings.html 回读一致，纯 LF
+[PASS] js: UsageQuotaSortToggle >=1
+[PASS] js: UsageQuotaSortFold >=1
+[PASS] js: UsageQuotaSortCur >=1
+[PASS] js: bindQuotaSortFold def+call =2
+[PASS] js: UsageQuotaSortBar 保留 =1
+[PASS] js: 5 个 data-quota-sort chips 保留 =5
+[PASS] js: bindQuotaFilterFold 未受影响
+[FAIL] html: 旧版本号 20260918c =0
+[PASS] html: 新版本号 20260918e =1
+EDIT_ALL=FAIL
+[CORRECTION] 上一条 [FAIL]「旧版本号 20260918c =0」谓词过宽：ai-settings.html 中
+其余 8 处 ?v=20260918c 属于 ai-config.js / ai-cap-*.js 等其他资源（本任务不可动）。
+正确谓词核验：
+[PASS] html: xt-aiusage.js?v=20260918c = 0
+[PASS] html: xt-aiusage.js?v=20260918e = 1
+EDIT_ALL=PASS（谓词修正后）

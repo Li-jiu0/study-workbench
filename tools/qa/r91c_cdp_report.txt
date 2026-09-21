@@ -1,0 +1,132 @@
+[chrome] headless ready port=9333
+========== PAGE 个人中心(logged-in) ==========
+[probe:load] mainThreadAlive=true
+[probe] centerCards="clicked=0 total=0"
+[probe:center-clicks] mainThreadAlive=true
+[profiler] top nodes:
+  hits=7488 (idle) @:0
+  hits=176 (program) @:0
+  hits=5 setItem @:0
+  hits=1 drawStars @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E7%99%BB%E5%BD%95.html:316
+  hits=0 (root) @:0
+  hits=0 (anon) @:1
+  hits=0 (anon) @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E7%99%BB%E5%BD%95.html:223
+[console] 39 entries (first 40):
+  [log] [ai-config] 结构校验通过：47 个模型 / 7 个平台
+  [log] [XT-TOAST] ready
+  [log] [XT-BOUNDARY] ready, mode=prod
+  [log] [inline-quant] 合并数量关系题 718 道，实际新增 718 道
+  [log] [inline-judge] 合并判断推理题 940 道，实际新增 940 道
+  [log] [inline-ziliao] 合并资料分析题 959 道，实际新增 959 道
+  [log] [inline-yanyu] 合并言语理解题 1010 道，实际新增 979 道
+  [log] [inline-changshi] 合并常识判断题 861 道，实际新增 851 道
+  [log] 📚 星途已启动
+  [log] 💡 提示：所有数据保存在本地浏览器中
+  [log:error] Access to fetch at 'file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/vocab-cet4-ext-index.json?v=20260915b' from origin 'null' has bee @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E4%B8%AA%E4%BA%BA%E4%B8%AD%E5%BF%83.html:NaN
+  [log:error] Failed to load resource: net::ERR_FAILED @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/vocab-cet4-ext-index.json?v=20260915b:NaN
+  [log:error] Access to fetch at 'file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/exam-bank.json?v=20260915b' from origin 'null' has been blocked b @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E4%B8%AA%E4%BA%BA%E4%B8%AD%E5%BF%83.html:NaN
+  [log:error] Failed to load resource: net::ERR_FAILED @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/exam-bank.json?v=20260915b:NaN
+  [log:error] Access to fetch at 'file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/exam-bank-ext-index.json?v=20260915b' from origin 'null' has been @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E4%B8%AA%E4%BA%BA%E4%B8%AD%E5%BF%83.html:NaN
+  [log:error] Failed to load resource: net::ERR_FAILED @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/exam-bank-ext-index.json?v=20260915b:NaN
+  [log:error] Access to XMLHttpRequest at 'file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/vocab-cet4-ext-index.json?v=20260915b' from origin 'null @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E4%B8%AA%E4%BA%BA%E4%B8%AD%E5%BF%83.html:NaN
+  [warning] [vocab] 词库扩展索引加载失败，回退内置 466： assets/data/vocab-cet4-ext-index.json?v=20260915b XHR 0 assets/data/vocab-cet4-ext-index.json?v=20260915b
+  [warning] [data] 词库扩展 加载失败，回退内置数据： assets/data/vocab-cet4-ext-index.json?v=20260915b
+  [log:error] Failed to load resource: net::ERR_FAILED @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/vocab-cet4-ext-index.json?v=20260915b:NaN
+  [log:error] Access to XMLHttpRequest at 'file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/exam-bank.json?v=20260915b' from origin 'null' has been  @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E4%B8%AA%E4%BA%BA%E4%B8%AD%E5%BF%83.html:NaN
+  [warning] [exam] 题库分片加载失败，回退内置： assets/data/exam-bank.json?v=20260915b XHR 0 assets/data/exam-bank.json?v=20260915b
+  [warning] [data] 题库扩展 加载失败，回退内置数据： assets/data/exam-bank.json?v=20260915b
+  [log:error] Failed to load resource: net::ERR_FAILED @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/exam-bank.json?v=20260915b:NaN
+  [log:error] Access to XMLHttpRequest at 'file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/exam-bank-ext-index.json?v=20260915b' from origin 'null' @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E4%B8%AA%E4%BA%BA%E4%B8%AD%E5%BF%83.html:NaN
+  [warning] [exam] 题库分片索引加载失败，回退内置 + 覆盖层： assets/data/exam-bank-ext-index.json?v=20260915b XHR 0 assets/data/exam-bank-ext-index.json?v=20260915b
+  [log:error] Failed to load resource: net::ERR_FAILED @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/exam-bank-ext-index.json?v=20260915b:NaN
+  [log:error] Access to fetch at 'https://generativelanguage.googleapis.com/' from origin 'null' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E4%B8%AA%E4%BA%BA%E4%B8%AD%E5%BF%83.html:NaN
+  [log:error] Failed to load resource: net::ERR_FAILED @https://generativelanguage.googleapis.com/:NaN
+  [log:error] Failed to load resource: the server responded with a status of 401 (Unauthorized) @http://110.42.134.62:8000/api/auth/me:NaN
+  [log:error] Failed to load resource: the server responded with a status of 401 (Unauthorized) @http://110.42.134.62:8000/api/chat/unread:NaN
+  [log:error] Access to fetch at 'https://openrouter.ai/' from origin 'null' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E4%B8%AA%E4%BA%BA%E4%B8%AD%E5%BF%83.html:NaN
+  [log:error] Failed to load resource: net::ERR_FAILED @https://openrouter.ai/:NaN
+  [log:error] Failed to load resource: the server responded with a status of 401 (Unauthorized) @http://110.42.134.62:8000/api/auth/me:NaN
+  [log:error] Failed to load resource: the server responded with a status of 401 (Unauthorized) @http://110.42.134.62:8000/api/auth/refresh:NaN
+  [log] [XT-TOAST] ready
+  [log] [XT-BOUNDARY] ready, mode=dev
+  [log:error] Failed to load resource: the server responded with a status of 401 (Unauthorized) @http://110.42.134.62:8000/api/auth/me:NaN
+  [log:error] Failed to load resource: the server responded with a status of 401 (Unauthorized) @http://110.42.134.62:8000/api/auth/refresh:NaN
+[done] 个人中心(logged-in) elapsed=14573ms
+========== PAGE 个人资料(logged-in) ==========
+[probe:load] mainThreadAlive=true
+[probe] openChatView="no-chat-cell"
+[probe:chat-view] mainThreadAlive=true
+[probe] chatViewState={"open":false,"hasLocal":false,"hasSrv":false,"len":0}
+[profiler] top nodes:
+  hits=7937 (idle) @:0
+  hits=197 (program) @:0
+  hits=4 setItem @:0
+  hits=1 (anon) @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E7%99%BB%E5%BD%95.html:223
+  hits=1 fetch @:0
+  hits=0 (root) @:0
+  hits=0 (anon) @:1
+  hits=0 (anon) @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E7%99%BB%E5%BD%95.html:426
+[console] 9 entries (first 40):
+  [log:error] Access to fetch at 'file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E5%85%B3%E4%BA%8E.html?v=20260917' from origin 'null' has been blocked by CO @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E4%B8%AA%E4%BA%BA%E8%B5%84%E6%96%99.html:NaN
+  [log:error] Failed to load resource: net::ERR_FAILED @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E5%85%B3%E4%BA%8E.html?v=20260917:NaN
+  [log:error] Failed to load resource: the server responded with a status of 401 (Unauthorized) @http://110.42.134.62:8000/api/auth/me:NaN
+  [log:error] Failed to load resource: the server responded with a status of 401 (Unauthorized) @http://110.42.134.62:8000/api/auth/me:NaN
+  [log:error] Failed to load resource: the server responded with a status of 401 (Unauthorized) @http://110.42.134.62:8000/api/auth/refresh:NaN
+  [log] [XT-TOAST] ready
+  [log] [XT-BOUNDARY] ready, mode=dev
+  [log:error] Failed to load resource: the server responded with a status of 401 (Unauthorized) @http://110.42.134.62:8000/api/auth/me:NaN
+  [log:error] Failed to load resource: the server responded with a status of 401 (Unauthorized) @http://110.42.134.62:8000/api/auth/refresh:NaN
+[done] 个人资料(logged-in) elapsed=14566ms
+========== PAGE 私聊(logged-in) ==========
+[probe:load] mainThreadAlive=true
+[profiler] top nodes:
+  hits=5455 (idle) @:0
+  hits=156 (program) @:0
+  hits=10 renderChats @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/chat-local.js?v=20260917b:1108
+  hits=4 setItem @:0
+  hits=1 imBuildLocalChats @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/chat-local.js?v=20260917b:920
+  hits=1 (anon) @:1
+  hits=1 drawStars @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E7%99%BB%E5%BD%95.html:316
+  hits=0 (root) @:0
+[console] 42 entries (first 40):
+  [log] [ai-config] 结构校验通过：47 个模型 / 7 个平台
+  [log] [XT-TOAST] ready
+  [log] [XT-BOUNDARY] ready, mode=prod
+  [log] [inline-quant] 合并数量关系题 718 道，实际新增 718 道
+  [log] [inline-judge] 合并判断推理题 940 道，实际新增 940 道
+  [log] [inline-ziliao] 合并资料分析题 959 道，实际新增 959 道
+  [log] [inline-yanyu] 合并言语理解题 1010 道，实际新增 979 道
+  [log] [inline-changshi] 合并常识判断题 861 道，实际新增 851 道
+  [log] 📚 星途已启动
+  [log] 💡 提示：所有数据保存在本地浏览器中
+  [log:error] Access to fetch at 'file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/vocab-cet4-ext-index.json?v=20260915b' from origin 'null' has bee @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E7%A7%81%E8%81%8A.html:NaN
+  [log:error] Failed to load resource: net::ERR_FAILED @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/vocab-cet4-ext-index.json?v=20260915b:NaN
+  [log:error] Access to fetch at 'file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/exam-bank.json?v=20260915b' from origin 'null' has been blocked b @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E7%A7%81%E8%81%8A.html:NaN
+  [log:error] Failed to load resource: net::ERR_FAILED @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/exam-bank.json?v=20260915b:NaN
+  [log:error] Access to fetch at 'file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/exam-bank-ext-index.json?v=20260915b' from origin 'null' has been @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E7%A7%81%E8%81%8A.html:NaN
+  [log:error] Failed to load resource: net::ERR_FAILED @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/exam-bank-ext-index.json?v=20260915b:NaN
+  [log:error] Access to fetch at 'https://generativelanguage.googleapis.com/' from origin 'null' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E7%A7%81%E8%81%8A.html:NaN
+  [log:error] Failed to load resource: net::ERR_FAILED @https://generativelanguage.googleapis.com/:NaN
+  [log:error] Access to fetch at 'https://openrouter.ai/' from origin 'null' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E7%A7%81%E8%81%8A.html:NaN
+  [log:error] Failed to load resource: net::ERR_FAILED @https://openrouter.ai/:NaN
+  [log:error] Access to XMLHttpRequest at 'file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/vocab-cet4-ext-index.json?v=20260915b' from origin 'null @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E7%A7%81%E8%81%8A.html:NaN
+  [warning] [vocab] 词库扩展索引加载失败，回退内置 466： assets/data/vocab-cet4-ext-index.json?v=20260915b XHR 0 assets/data/vocab-cet4-ext-index.json?v=20260915b
+  [warning] [data] 词库扩展 加载失败，回退内置数据： assets/data/vocab-cet4-ext-index.json?v=20260915b
+  [log:error] Failed to load resource: net::ERR_FAILED @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/vocab-cet4-ext-index.json?v=20260915b:NaN
+  [log:error] Access to XMLHttpRequest at 'file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/exam-bank.json?v=20260915b' from origin 'null' has been  @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E7%A7%81%E8%81%8A.html:NaN
+  [warning] [exam] 题库分片加载失败，回退内置： assets/data/exam-bank.json?v=20260915b XHR 0 assets/data/exam-bank.json?v=20260915b
+  [warning] [data] 题库扩展 加载失败，回退内置数据： assets/data/exam-bank.json?v=20260915b
+  [log:error] Failed to load resource: net::ERR_FAILED @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/exam-bank.json?v=20260915b:NaN
+  [log:error] Access to XMLHttpRequest at 'file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/exam-bank-ext-index.json?v=20260915b' from origin 'null' @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/%E7%A7%81%E8%81%8A.html:NaN
+  [warning] [exam] 题库分片索引加载失败，回退内置 + 覆盖层： assets/data/exam-bank-ext-index.json?v=20260915b XHR 0 assets/data/exam-bank-ext-index.json?v=20260915b
+  [log:error] Failed to load resource: net::ERR_FAILED @file:///D:/%E4%B8%8B%E8%BD%BD%E7%9A%84%E6%96%87%E4%BB%B6/%E5%AD%A6%E4%B9%A0%E5%B7%A5%E4%BD%9C%E5%8F%B0/assets/data/exam-bank-ext-index.json?v=20260915b:NaN
+  [log:error] Failed to load resource: the server responded with a status of 401 (Unauthorized) @http://110.42.134.62:8000/api/auth/me:NaN
+  [log:error] Failed to load resource: the server responded with a status of 401 (Unauthorized) @http://110.42.134.62:8000/api/admin/contact:NaN
+  [log:error] Failed to load resource: the server responded with a status of 401 (Unauthorized) @http://110.42.134.62:8000/api/chat/unread:NaN
+  [log:error] Failed to load resource: the server responded with a status of 401 (Unauthorized) @http://110.42.134.62:8000/api/groups:NaN
+  [log:error] Failed to load resource: the server responded with a status of 401 (Unauthorized) @http://110.42.134.62:8000/api/admin/contact:NaN
+  [log:error] Failed to load resource: the server responded with a status of 401 (Unauthorized) @http://110.42.134.62:8000/api/auth/me:NaN
+  [log:error] Failed to load resource: the server responded with a status of 401 (Unauthorized) @http://110.42.134.62:8000/api/auth/refresh:NaN
+  [log] [XT-TOAST] ready
+  [log] [XT-BOUNDARY] ready, mode=dev
+[done] 私聊(logged-in) elapsed=10549ms

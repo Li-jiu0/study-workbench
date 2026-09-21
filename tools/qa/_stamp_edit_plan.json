@@ -1,0 +1,716 @@
+[
+  {
+    "page": "ai-settings.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "ai-settings.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "ai-settings.html",
+    "asset": "ai-settings.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "AI.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "AI.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "AI.html",
+    "asset": "ai-page.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "AI模拟面试.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "AI模拟面试.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "blog_wechat.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "blog_wechat.html",
+    "asset": "ai-config.js",
+    "old": "20260918b",
+    "new": "20260918d",
+    "kind": "bw-extra-stamped"
+  },
+  {
+    "page": "blog_wechat.html",
+    "asset": "ai-service.js",
+    "old": "20260918b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "blog_wechat.html",
+    "asset": "ai-cap-registry.js",
+    "old": null,
+    "new": "20260918d",
+    "kind": "bw-extra-nostamp"
+  },
+  {
+    "page": "blog_wechat.html",
+    "asset": "ai-cap-image.js",
+    "old": null,
+    "new": "20260918d",
+    "kind": "bw-extra-nostamp"
+  },
+  {
+    "page": "blog_wechat.html",
+    "asset": "ai-cap-vision.js",
+    "old": null,
+    "new": "20260918d",
+    "kind": "bw-extra-nostamp"
+  },
+  {
+    "page": "blog_wechat.html",
+    "asset": "ai-cap-audio.js",
+    "old": null,
+    "new": "20260918d",
+    "kind": "bw-extra-nostamp"
+  },
+  {
+    "page": "blog_wechat.html",
+    "asset": "ai-cap-embed.js",
+    "old": null,
+    "new": "20260918d",
+    "kind": "bw-extra-nostamp"
+  },
+  {
+    "page": "blog_wechat.html",
+    "asset": "ai-cap-translate.js",
+    "old": null,
+    "new": "20260918d",
+    "kind": "bw-extra-nostamp"
+  },
+  {
+    "page": "blog_wechat.html",
+    "asset": "ai-cap-video.js",
+    "old": null,
+    "new": "20260918d",
+    "kind": "bw-extra-nostamp"
+  },
+  {
+    "page": "blog_wechat.html",
+    "asset": "ai-cap-3d.js",
+    "old": null,
+    "new": "20260918d",
+    "kind": "bw-extra-nostamp"
+  },
+  {
+    "page": "mock_exam.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "mock_exam_result.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "mock_exam_run.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "PPT案例拆解.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "PPT案例拆解.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "PPT版式库.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "PPT版式库.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "万能金句库.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "万能金句库.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "个人中心.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "个人中心.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "个人资料.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "个人资料.html",
+    "asset": "xt-profile.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "个人资料.html",
+    "asset": "xt-profile.js",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "企业定向库.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "企业定向库.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "关于.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "关于.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "动态空间.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "动态空间.html",
+    "asset": "xt-moments.js",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "动态空间.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "商务礼仪.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "商务礼仪.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "四级词汇.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "四级词汇.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "地区选择.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "场景话术库.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "场景话术库.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "好友申请.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "学习工作台.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "学习工作台.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "学习概括.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "学习概括.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "学途.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "导入题库.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "导入题库.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "工具.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "工具.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "我的动态.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "我的动态.html",
+    "asset": "xt-moments.js",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "我的动态.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "我的文件.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "我的文件.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "时政热点.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "时政热点.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "更多.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "更多.html",
+    "asset": "xt-update.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "更多.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "更新.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "更新.html",
+    "asset": "xt-update.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "朋友圈发布.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "朋友圈发布.html",
+    "asset": "xt-moments.js",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "朋友圈发布.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "演示.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "演示.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "申论刷题.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "申论刷题.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "登录.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "社区.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "社区.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "私聊.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "私聊.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "管理员.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "管理员.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "英语.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "英语.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "行测.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "行测.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "行测刷题.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "行测刷题.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "表达.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "表达.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "设置.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "设置.html",
+    "asset": "xt-update.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "设置.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "赞助.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "赞助.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "错题本.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "错题本.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "面测.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "面测.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "面试题库.html",
+    "asset": "common.css",
+    "old": "20260917b",
+    "new": "20260918d",
+    "kind": "bump"
+  },
+  {
+    "page": "面试题库.html",
+    "asset": "ai-service.js",
+    "old": "20260918c",
+    "new": "20260918d",
+    "kind": "bump"
+  }
+]

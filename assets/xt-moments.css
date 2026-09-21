@@ -1,0 +1,249 @@
+/* =====================================================================
+   assets/xt-moments.css — 需求11「动态空间」共享样式
+   朋友圈信息流 / 我的朋友圈 / 发布编辑页 三页共用（仅新增，不改公共 CSS）。
+
+   移动端单列竖向流式布局。兼容性（旧安卓 WebView / Chrome 76）：
+   - 不使用 flex gap（改用 margin），grid gap 可用；
+   - 不使用 inset 简写（改用 top/right/bottom/left）；
+   - 不使用 CSS 的 min/max 取值函数，窄屏用 max-width + @media；
+   - 所有正文/评论/链接容器声明 word-break:break-word（A11）。
+
+   文字显示专项（A9–A13）：flex 文本侧统一 min-width:0（A10）；
+   字号：正文 ≥12px、辅助 ≥11px、标题 ≥ 正文（A7/A12）；
+   无固定 height 承载多行文本（A13）。
+   ===================================================================== */
+
+/* ---------- 顶部导航（左上返回 / 居中标题 / 右上相机） ---------- */
+.xtm-nav {
+  position: -webkit-sticky; position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center;
+  padding: 10px 12px; margin: 0 0 10px;
+  background: var(--card); border-bottom: 1px solid var(--border);
+  border-radius: 0 0 14px 14px;
+}
+.xtm-nav-btn {
+  width: 38px; height: 38px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border: none; background: transparent; color: var(--text);
+  font-size: 20px; line-height: 1; cursor: pointer; border-radius: 10px;
+  -webkit-tap-highlight-color: transparent;
+}
+.xtm-nav-btn:active { background: var(--bg-sub); }
+.xtm-nav-title { flex: 1; min-width: 0; text-align: center; font-size: 17px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.xtm-nav-spacer { width: 38px; flex-shrink: 0; }
+
+/* ---------- R-MOMENTSFIX 手机端（≤768px）----------
+   1) 隐藏全局 topbar，避免与页内 .xtm-nav 双头部叠加；
+      通知入口页内已有 .xtm-bell，私信走底部导航「互动」，功能不丢。
+   2) 吸顶 .xtm-nav 改通栏（保持 sticky）：负 margin 抵消 .xtm-wrap 左右 10px 内边距，
+      蓝→橙渐变封面滚动时不再从导航下露橙线、头像卡不被切。 */
+@media (max-width: 768px) {
+  body[data-xtm] .topbar { display: none; }
+  .xtm-nav { border-radius: 0; margin: 0 -10px 10px; }
+}
+
+/* ---------- 通用容器 ---------- */
+/* R-MOMENTSFIX2：底部留白必须 ≥ 底栏真实高度（64px + safe-area），写死 84/88px 在
+   手势条机型（env≈24-34px）上会被 .bottom-nav 压住最后一行点赞/评论。
+   统一改为 calc(底栏高度 + 安全区 + 24px 余量)；env 不支持时回落 0px，仍有 88px。 */
+.xtm-wrap { max-width: 680px; margin: 0 auto; padding: 0 10px calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 24px); width: 100%; box-sizing: border-box; }
+.xtm-feed { display: block; }
+.xtm-feed > .xtm-card { margin-bottom: 12px; }
+.xtm-empty { text-align: center; padding: 52px 16px; color: var(--text-secondary); font-size: 13px; line-height: 1.8; }
+.xtm-offline { background: #fff7ed; border: 1px solid #fdba74; color: #c2410c; font-size: 13px; border-radius: 10px; padding: 10px 12px; margin: 10px 0; word-break: break-word; }
+.xtm-sentinel { height: 1px; }
+
+/* ---------- 卡片 ---------- */
+.xtm-card { background: var(--card); border-radius: 16px; padding: 14px; box-shadow: var(--shadow); }
+.xtm-head { display: flex; align-items: flex-start; }
+.xtm-avatar {
+  width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0; overflow: hidden;
+  margin-right: 10px;
+  background: linear-gradient(135deg, var(--primary-light), #e9ecff);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; color: var(--primary); cursor: pointer;
+}
+.xtm-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.xtm-head-main { flex: 1; min-width: 0; }
+.xtm-name { font-size: 14px; font-weight: 600; color: var(--text); cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.xtm-meta { display: flex; flex-wrap: wrap; align-items: center; margin-top: 3px; font-size: 11px; color: var(--text-secondary); }
+.xtm-meta > * { margin-right: 6px; margin-bottom: 2px; }
+.xtm-time { color: var(--text-secondary); }
+.xtm-loc { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 62%; }
+.xtm-more { margin-left: 8px; color: var(--text-secondary); cursor: pointer; padding: 2px 10px; font-size: 18px; line-height: 1; border-radius: 8px; flex-shrink: 0; }
+.xtm-more:active { background: var(--bg-sub); }
+
+.xtm-chip { display: inline-block; font-size: 11px; border-radius: 999px; padding: 2px 8px; background: var(--primary-light); color: var(--primary); white-space: nowrap; }
+.xtm-chip-vis { cursor: default; }
+
+/* 可折叠正文：默认最多 6 行，点击展开（保持 -webkit-box，仅放开行数，减少跳动） */
+.xtm-text {
+  font-size: 14px; line-height: 1.7; color: var(--text);
+  margin: 10px 0 0; white-space: pre-wrap;
+  word-break: break-word; overflow-wrap: break-word;
+  cursor: pointer;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden;
+}
+.xtm-text.open { -webkit-line-clamp: unset; overflow: visible; }
+
+/* ---------- 媒体区 ---------- */
+.xtm-media-single { margin-top: 10px; border-radius: 12px; overflow: hidden; cursor: pointer; max-width: 72%; }
+.xtm-media-single img { width: 100%; display: block; max-height: 320px; object-fit: cover; }
+.xtm-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 10px; }
+.xtm-cell { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: var(--bg-sub); cursor: pointer; }
+.xtm-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.xtm-video { margin-top: 10px; border-radius: 12px; overflow: hidden; background: #000; }
+.xtm-video video { width: 100%; display: block; max-height: 340px; }
+.xtm-link {
+  margin-top: 10px; display: flex; align-items: center;
+  padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px;
+  background: var(--bg-sub); color: var(--text); text-decoration: none; font-size: 13px;
+}
+.xtm-link-ico { width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0; margin-right: 8px; background: linear-gradient(135deg, var(--primary), var(--accent)); }
+.xtm-link-t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- 互动入口 / 点赞 / 评论预览 ---------- */
+.xtm-bar { display: flex; margin-top: 12px; padding-top: 9px; border-top: 1px solid var(--border); }
+.xtm-act { font-size: 13px; color: var(--text-secondary); cursor: pointer; user-select: none; margin-right: 22px; -webkit-tap-highlight-color: transparent; }
+.xtm-act.on { color: #ff5d5d; font-weight: 600; }
+.xtm-likes { font-size: 12px; color: #ff5d5d; margin-top: 8px; line-height: 1.7; word-break: break-word; overflow-wrap: break-word; }
+.xtm-cmts { margin-top: 8px; background: var(--bg-sub); border-radius: 10px; padding: 8px 10px; }
+.xtm-cmt-row { font-size: 13px; line-height: 1.7; color: var(--text); word-break: break-word; overflow-wrap: break-word; }
+.xtm-cmt-row b { cursor: pointer; font-weight: 600; }
+.xtm-reply-to { color: var(--text-secondary); }
+.xtm-cmt-del { color: var(--text-secondary); font-size: 11px; cursor: pointer; margin-left: 6px; }
+.xtm-cmt-more { font-size: 12px; color: var(--primary); cursor: pointer; margin-top: 4px; }
+
+/* ---------- 互动面板（底部弹出：点赞列表 + 评论列表 + 回复） ---------- */
+.xtm-overlay { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 1600; background: rgba(0,0,0,.42); }
+.xtm-sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; max-height: 78vh;
+  display: flex; flex-direction: column;
+  background: var(--card); border-radius: 18px 18px 0 0; overflow: hidden;
+  animation: xtmUp .22s ease;
+}
+@keyframes xtmUp { from { transform: translateY(30px); opacity: .6; } to { transform: translateY(0); opacity: 1; } }
+.xtm-sheet-hd { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 15px; font-weight: 700; color: var(--text); }
+.xtm-sheet-x { cursor: pointer; color: var(--text-secondary); font-size: 16px; padding: 0 6px; flex-shrink: 0; }
+.xtm-sheet-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 8px 16px 12px; }
+.xtm-sec { margin-top: 12px; }
+.xtm-sec-t { font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px; }
+.xtm-like-list { display: flex; flex-wrap: wrap; }
+.xtm-like-name { font-size: 12px; color: var(--primary); background: var(--primary-light); border-radius: 999px; padding: 3px 10px; margin: 0 6px 6px 0; }
+.xtm-none { font-size: 12px; color: var(--text-secondary); padding: 4px 0; }
+.xtm-cmt-item { padding: 7px 0; border-bottom: 1px dashed var(--border); }
+.xtm-cmt-item:last-child { border-bottom: none; }
+.xtm-cmt-item.is-reply { margin-left: 26px; padding-left: 10px; border-left: 2px solid var(--border); }
+.xtm-cmt-item .xtm-cmt-hd { display: flex; align-items: center; }
+.xtm-cmt-item .xtm-cmt-av { width: 26px; height: 26px; border-radius: 50%; overflow: hidden; flex-shrink: 0; margin-right: 8px; background: var(--primary-light); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--primary); }
+.xtm-cmt-item .xtm-cmt-av img { width: 100%; height: 100%; object-fit: cover; }
+.xtm-cmt-item .xtm-cmt-nm { font-size: 13px; font-weight: 600; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.xtm-cmt-item .xtm-cmt-tm { font-size: 11px; color: var(--text-secondary); margin-left: auto; padding-left: 8px; flex-shrink: 0; }
+.xtm-cmt-item .xtm-cmt-tx { font-size: 13px; line-height: 1.7; color: var(--text); margin: 3px 0 0 34px; word-break: break-word; overflow-wrap: break-word; }
+.xtm-cmt-item.is-reply .xtm-cmt-tx { margin-left: 0; }
+.xtm-cmt-ops { margin-left: 34px; font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.xtm-cmt-item.is-reply .xtm-cmt-ops { margin-left: 0; }
+.xtm-cmt-ops span { cursor: pointer; margin-right: 12px; color: var(--primary); }
+.xtm-reply-bar { padding: 8px 16px; font-size: 12px; color: var(--text-secondary); border-top: 1px solid var(--border); }
+.xtm-reply-cancel { color: var(--primary); cursor: pointer; margin-left: 8px; }
+.xtm-sheet-ft { display: flex; padding: 10px 16px 16px; border-top: 1px solid var(--border); }
+.xtm-sheet-ft input { flex: 1; min-width: 0; margin-right: 8px; border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; font-size: 14px; outline: none; background: var(--bg); color: var(--text); box-sizing: border-box; }
+.xtm-sheet-ft input:focus { border-color: var(--primary); }
+.xtm-sheet-ft button { border: none; background: linear-gradient(90deg, var(--primary), var(--accent)); color: #fff; border-radius: 10px; padding: 0 18px; font-size: 14px; cursor: pointer; }
+
+/* ---------- 大图查看器 ---------- */
+.xtm-viewer { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 1800; background: rgba(0,0,0,.94); display: flex; align-items: center; justify-content: center; }
+.xtm-viewer img { max-width: 96%; max-height: 88%; object-fit: contain; }
+.xtm-viewer-x { position: absolute; top: 14px; right: 16px; color: #fff; font-size: 26px; cursor: pointer; line-height: 1; }
+.xtm-viewer-idx { position: absolute; bottom: 20px; left: 0; right: 0; text-align: center; color: #fff; font-size: 13px; opacity: .85; }
+
+/* ---------- 我的朋友圈：头部封面 + 时间轴 ---------- */
+.xtm-header { position: relative; margin: 0 0 12px; }
+.xtm-cover { height: 168px; border-radius: 0 0 16px 16px; background: linear-gradient(135deg, var(--primary), var(--accent)); background-size: cover; background-position: center; }
+.xtm-header-card { display: flex; align-items: flex-end; margin: -34px 14px 0; position: relative; }
+.xtm-header-av { width: 72px; height: 72px; border-radius: 14px; overflow: hidden; margin-right: 12px; border: 3px solid var(--card); background: var(--card); box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; font-size: 26px; color: var(--primary); flex-shrink: 0; }
+.xtm-header-av img { width: 100%; height: 100%; object-fit: cover; }
+.xtm-header-info { padding-bottom: 6px; min-width: 0; flex: 1; }
+.xtm-header-nm { font-size: 17px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.xtm-header-sub { font-size: 12px; color: var(--text-secondary); margin-top: 3px; }
+.xtm-bell { position: absolute; top: 12px; right: 14px; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,.9); color: var(--text); display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; box-shadow: var(--shadow); }
+.xtm-bell-dot { position: absolute; top: -2px; right: -2px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; background: #ff5d5d; color: #fff; font-size: 10px; line-height: 16px; text-align: center; box-sizing: border-box; }
+.xtm-album-btn { display: inline-flex; align-items: center; margin: 10px 14px 0; font-size: 12px; color: var(--text-secondary); cursor: pointer; }
+.xtm-album-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin: 10px 14px 0; }
+.xtm-album-cell { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; cursor: pointer; background: var(--bg-sub); }
+.xtm-album-cell img { width: 100%; height: 100%; object-fit: cover; }
+.xtm-album-y { position: absolute; left: 4px; bottom: 4px; font-size: 10px; color: #fff; background: rgba(0,0,0,.45); border-radius: 6px; padding: 1px 5px; }
+
+.xtm-tl { display: block; }
+.xtm-tl > .xtm-card { margin-bottom: 10px; }
+.xtm-tl-divider { display: flex; align-items: center; margin: 8px 2px; }
+.xtm-tl-divider::before, .xtm-tl-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.xtm-tl-divider span { font-size: 12px; font-weight: 700; color: var(--text-secondary); white-space: nowrap; padding: 0 10px; }
+
+/* ---------- 发布编辑页 ---------- */
+.xtm-pub-top { position: -webkit-sticky; position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--card); border-bottom: 1px solid var(--border); }
+.xtm-pub-top button { border: none; background: transparent; font-size: 15px; cursor: pointer; padding: 8px 6px; border-radius: 10px; }
+.xtm-pub-cancel { color: var(--text-secondary); }
+.xtm-pub-submit { color: #fff; background: linear-gradient(90deg, var(--primary), var(--accent)) !important; padding: 8px 18px !important; font-weight: 600; }
+.xtm-pub-submit:disabled { opacity: .55; }
+.xtm-pub-body { background: var(--card); border-radius: 16px; padding: 14px; box-shadow: var(--shadow); margin-top: 12px; }
+.xtm-pub-text { width: 100%; min-height: 140px; resize: vertical; border: none; outline: none; background: transparent; color: var(--text); font-size: 15px; line-height: 1.7; font-family: inherit; box-sizing: border-box; word-break: break-word; overflow-wrap: break-word; }
+.xtm-pub-media { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.xtm-pub-cell { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--bg-sub); }
+.xtm-pub-cell img, .xtm-pub-cell video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.xtm-pub-cell-del { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; line-height: 20px; text-align: center; background: rgba(0,0,0,.55); color: #fff; border-radius: 50%; font-size: 12px; cursor: pointer; }
+.xtm-pub-cell-edit { position: absolute; left: 4px; bottom: 4px; font-size: 11px; color: #fff; background: rgba(0,0,0,.5); border-radius: 6px; padding: 2px 7px; cursor: pointer; }
+.xtm-pub-add { display: flex; align-items: center; justify-content: center; border: 1px dashed var(--border); border-radius: 10px; color: var(--text-secondary); font-size: 26px; cursor: pointer; aspect-ratio: 1; background: var(--bg-sub); }
+.xtm-funcbar { display: flex; flex-wrap: wrap; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+.xtm-fn { display: inline-flex; align-items: center; font-size: 13px; color: var(--text-secondary); cursor: pointer; border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px; background: var(--bg); margin: 0 8px 8px 0; }
+.xtm-fn.on { color: var(--primary); border-color: var(--primary); background: var(--primary-light); }
+.xtm-pub-loc { display: flex; align-items: center; margin-top: 10px; }
+.xtm-pub-loc input { flex: 1; min-width: 0; margin-right: 8px; border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; font-size: 13px; outline: none; background: var(--bg); color: var(--text); box-sizing: border-box; }
+.xtm-chosen { display: flex; flex-wrap: wrap; margin-top: 10px; }
+.xtm-chosen span { font-size: 12px; background: var(--primary-light); color: var(--primary); border-radius: 999px; padding: 3px 10px; margin: 0 6px 6px 0; word-break: break-word; }
+
+/* ---------- 好友选择器（复用 .xtm-sheet 结构） ---------- */
+.xtm-picker-search { padding: 10px 16px; }
+.xtm-picker-search input { width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; font-size: 14px; outline: none; background: var(--bg); color: var(--text); box-sizing: border-box; }
+.xtm-picker-list { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 16px 10px; flex: 1; max-height: 52vh; }
+.xtm-picker-row { display: flex; align-items: center; padding: 10px 2px; border-bottom: 1px solid var(--border); cursor: pointer; }
+.xtm-picker-row:last-child { border-bottom: none; }
+.xtm-picker-av { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; flex-shrink: 0; margin-right: 10px; background: var(--primary-light); display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--primary); }
+.xtm-picker-av img { width: 100%; height: 100%; object-fit: cover; }
+.xtm-picker-nm { flex: 1; min-width: 0; font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.xtm-picker-ck { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; box-sizing: border-box; }
+.xtm-picker-row.sel .xtm-picker-ck { border-color: var(--primary); background: var(--primary); }
+.xtm-picker-ft { display: flex; padding: 10px 16px 16px; border-top: 1px solid var(--border); }
+.xtm-picker-ft button { flex: 1; border: none; border-radius: 10px; padding: 11px 0; font-size: 14px; cursor: pointer; }
+.xtm-picker-ft button:first-child { margin-right: 10px; }
+.xtm-picker-ft .ok { background: linear-gradient(90deg, var(--primary), var(--accent)); color: #fff; }
+.xtm-picker-ft .no { background: var(--bg-sub); color: var(--text); border: 1px solid var(--border); }
+
+/* ---------- 下拉刷新指示 ---------- */
+.xtm-refresh { text-align: center; font-size: 12px; color: var(--text-secondary); height: 0; min-height: 0; padding: 0; overflow: hidden; transition: min-height .18s ease; line-height: 1.4; }
+/* R-MOMENTSFIX：默认 height:0 隐藏静态文字，仅下拉手势进行中（.show）展开；xt-moments.js 的 touch 监听不变 */
+.xtm-refresh.show { height: 34px; min-height: 34px; padding: 8px 0; }
+
+/* ---------- R82：动态插入的 lucide 图标容器（xt-moments.js ico() 使用） ----------
+   与静态 data-icon 共用同一套 LUCIDE_ICONS 字典；stroke 为 currentColor，随主题/父级文字色变化。
+   固定值对齐：vertical-align:-3px 让 12–13px 图标与 13px 正文基线齐平。 */
+.xtm-ico { display: inline-flex; align-items: center; line-height: 1; vertical-align: -3px; }
+.xtm-ico svg { display: block; }
+.xtm-sheet-x .xtm-ico, .xtm-viewer-x .xtm-ico, .xtm-pub-cell-del .xtm-ico { display: flex; align-items: center; justify-content: center; }
+
+/* ---------- 响应式（窄屏断点） ---------- */
+@media (max-width: 760px) {
+  .xtm-wrap { padding: 0 8px calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 24px); }
+  .xtm-cover { height: 140px; }
+  .xtm-card { border-radius: 14px; padding: 12px; }
+  /* R-MOMENTSFIX：≤760px 时 .xtm-wrap 内边距为 8px，负 margin 同步改为 -8px，避免横向溢出 */
+  .xtm-nav { margin-left: -8px; margin-right: -8px; }
+}
+@media (max-width: 360px) {
+  .xtm-wrap { padding: 0 6px calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 24px); }
+  .xtm-avatar { width: 38px; height: 38px; margin-right: 8px; }
+  .xtm-header-av { width: 60px; height: 60px; margin-right: 10px; }
+  .xtm-fn { font-size: 12px; padding: 6px 10px; }
+  .xtm-media-single { max-width: 100%; }
+  .xtm-grid { gap: 4px; }
+}

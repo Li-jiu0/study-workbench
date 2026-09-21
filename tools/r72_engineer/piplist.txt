@@ -1,0 +1,7 @@
+Package                Version
+---------------------- ---------
+git-filter-repo        2.47.0
+opencv-python-headless 4.13.0.92
+pillow                 12.3.0
+pip                    26.1.2
+pytesseract            0.3.13

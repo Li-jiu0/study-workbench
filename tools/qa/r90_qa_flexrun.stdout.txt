@@ -1,0 +1,66 @@
+======================================================================
+375x667  ok=True  mq={"maxH560": false, "maxH520": false, "maxH450": false, "innerHeight": 667}
+  head    rectH=56      cssHeight=56px     flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  search  rectH=39      cssHeight=39px     flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  map     rectH=107     cssHeight=107px    flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  list    rectH=367     cssHeight=367px    flexShrink=1 flex=1 1 auto minH=180px maxH=367px inlineH=''
+  foot    rectH=68      cssHeight=68px     flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  body={"rectH": 667, "clientH": 667, "scrollH": 667, "display": "flex", "flexDir": "column", "overflowY": "visible"}
+  sumOfBlocks=637  detail=["xtlp-head=56.0", "xtlp-search=39.0", "xtlp-map=107.0", "xtlp-list=367.0", "xtlp-foot=68.0"]
+  mapVerdict={"observed": 107, "expectedIfMediaApplied_110": 110, "expectedIfBase_168": 168, "flexShrinkIs1": true, "conclusion": "被 flex 收缩到 107px（既非 110 也非 168）"}
+  listConflict={"minH": "180px", "maxH": "367px", "computedH": "367px", "clientH": 365, "conflict": false}
+======================================================================
+375x560  ok=True  mq={"maxH560": true, "maxH520": false, "maxH450": false, "innerHeight": 560}
+  head    rectH=50      cssHeight=50px     flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  search  rectH=33      cssHeight=33px     flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  map     rectH=110     cssHeight=110px    flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  list    rectH=260     cssHeight=260px    flexShrink=1 flex=1 1 auto minH=180px maxH=260px inlineH=''
+  foot    rectH=60      cssHeight=60px     flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  body={"rectH": 560, "clientH": 560, "scrollH": 560, "display": "flex", "flexDir": "column", "overflowY": "visible"}
+  sumOfBlocks=513  detail=["xtlp-head=50.0", "xtlp-search=33.0", "xtlp-map=110.0", "xtlp-list=260.0", "xtlp-foot=60.0"]
+  mapVerdict={"observed": 110, "expectedIfMediaApplied_110": 110, "expectedIfBase_168": 168, "flexShrinkIs1": true, "conclusion": "媒体规则生效(110)"}
+  listConflict={"minH": "180px", "maxH": "260px", "computedH": "260px", "clientH": 258, "conflict": false}
+======================================================================
+375x480  ok=True  mq={"maxH560": true, "maxH520": true, "maxH450": false, "innerHeight": 480}
+  head    rectH=50      cssHeight=50px     flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  search  rectH=33      cssHeight=33px     flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  map     rectH=110     cssHeight=110px    flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  list    rectH=180     cssHeight=180px    flexShrink=1 flex=1 1 auto minH=180px maxH=180px inlineH=''
+  foot    rectH=60      cssHeight=60px     flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  body={"rectH": 480, "clientH": 480, "scrollH": 480, "display": "flex", "flexDir": "column", "overflowY": "visible"}
+  sumOfBlocks=433  detail=["xtlp-head=50.0", "xtlp-search=33.0", "xtlp-map=110.0", "xtlp-list=180.0", "xtlp-foot=60.0"]
+  mapVerdict={"observed": 110, "expectedIfMediaApplied_110": 110, "expectedIfBase_168": 168, "flexShrinkIs1": true, "conclusion": "媒体规则生效(110)"}
+  listConflict={"minH": "180px", "maxH": "180px", "computedH": "180px", "clientH": 178, "conflict": false}
+======================================================================
+320x480  ok=True  mq={"maxH560": true, "maxH520": true, "maxH450": false, "innerHeight": 480}
+  head    rectH=50      cssHeight=50px     flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  search  rectH=33      cssHeight=33px     flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  map     rectH=110     cssHeight=110px    flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  list    rectH=180     cssHeight=180px    flexShrink=1 flex=1 1 auto minH=180px maxH=180px inlineH=''
+  foot    rectH=60      cssHeight=60px     flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  body={"rectH": 480, "clientH": 480, "scrollH": 480, "display": "flex", "flexDir": "column", "overflowY": "visible"}
+  sumOfBlocks=433  detail=["xtlp-head=50.0", "xtlp-search=33.0", "xtlp-map=110.0", "xtlp-list=180.0", "xtlp-foot=60.0"]
+  mapVerdict={"observed": 110, "expectedIfMediaApplied_110": 110, "expectedIfBase_168": 168, "flexShrinkIs1": true, "conclusion": "媒体规则生效(110)"}
+  listConflict={"minH": "180px", "maxH": "180px", "computedH": "180px", "clientH": 178, "conflict": false}
+======================================================================
+320x400  ok=True  mq={"maxH560": true, "maxH520": true, "maxH450": true, "innerHeight": 400}
+  head    rectH=50      cssHeight=50px     flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  search  rectH=33      cssHeight=33px     flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  map     rectH=56      cssHeight=56px     flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  list    rectH=180     cssHeight=180px    flexShrink=1 flex=1 1 auto minH=180px maxH=120px inlineH=''
+  foot    rectH=60      cssHeight=60px     flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  body={"rectH": 400, "clientH": 400, "scrollH": 400, "display": "flex", "flexDir": "column", "overflowY": "visible"}
+  sumOfBlocks=379  detail=["xtlp-head=50.0", "xtlp-search=33.0", "xtlp-map=56.0", "xtlp-list=180.0", "xtlp-foot=60.0"]
+  mapVerdict={"observed": 56, "expectedIfMediaApplied_110": 110, "expectedIfBase_168": 168, "flexShrinkIs1": true, "conclusion": "被 flex 收缩到 56px（既非 110 也非 168）"}
+  listConflict={"minH": "180px", "maxH": "120px", "computedH": "180px", "clientH": 178, "conflict": true}
+======================================================================
+375x360  ok=True  mq={"maxH560": true, "maxH520": true, "maxH450": true, "innerHeight": 360}
+  head    rectH=50      cssHeight=50px     flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  search  rectH=33      cssHeight=33px     flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  map     rectH=16      cssHeight=16px     flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  list    rectH=180     cssHeight=180px    flexShrink=1 flex=1 1 auto minH=180px maxH=120px inlineH=''
+  foot    rectH=60      cssHeight=60px     flexShrink=1 flex=0 1 auto minH=auto maxH=none inlineH=''
+  body={"rectH": 360, "clientH": 360, "scrollH": 360, "display": "flex", "flexDir": "column", "overflowY": "visible"}
+  sumOfBlocks=339  detail=["xtlp-head=50.0", "xtlp-search=33.0", "xtlp-map=16.0", "xtlp-list=180.0", "xtlp-foot=60.0"]
+  mapVerdict={"observed": 16, "expectedIfMediaApplied_110": 110, "expectedIfBase_168": 168, "flexShrinkIs1": true, "conclusion": "被 flex 收缩到 16px（既非 110 也非 168）"}
+  listConflict={"minH": "180px", "maxH": "120px", "computedH": "180px", "clientH": 178, "conflict": true}

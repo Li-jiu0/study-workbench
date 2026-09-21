@@ -1,0 +1,8 @@
+APPLY=True
+== 改法 A: 朋友圈发布.html 补引 xt-region.js ==
+  before=12521  after=12612  delta=+91
+  [html-after] bytes=12612 CRLF=170 loneLF=0 loneCR=0
+== 改法 B + C: xt-moments.js ==
+  before=54595  after=55240  delta=+645
+  [js-after] bytes=55240 CRLF=1121 loneLF=0 loneCR=0
+EXIT=0

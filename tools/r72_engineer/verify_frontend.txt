@@ -1,0 +1,36 @@
+== node --check ==
+node --check OK   assets\chat-local.js
+node --check OK   assets\api.js
+
+== 行尾（改后，loneLF 必须 0） ==
+assets\chat-local.js     CRLF=3865   loneLF=0
+assets\api.js            CRLF=1667   loneLF=0
+
+== ES2017 禁令 10 项 —— 仅统计『可执行代码』（已剥离注释/字符串/正则） ==
+-- assets\chat-local.js
+   1 可选链 ?.                       0
+   2 空值合并 ??                      0
+   3 对象展开 {...obj}                0
+   4 对象剩余解构 {a,...r}              0
+   5 .replaceAll(                 0
+   6 Object.fromEntries           0
+   7 .at(                         0
+   8 正则后行断言 (?<=/(?<!             0
+   9 指数运算符 **                     0
+   10 可选 catch 绑定 catch {         0
+-- assets\api.js
+   1 可选链 ?.                       0
+   2 空值合并 ??                      0
+   3 对象展开 {...obj}                0
+   4 对象剩余解构 {a,...r}              0
+   5 .replaceAll(                 0
+   6 Object.fromEntries           0
+   7 .at(                         0
+   8 正则后行断言 (?<=/(?<!             0
+   9 指数运算符 **                     0
+   10 可选 catch 绑定 catch {         0
+EXECUTABLE_BAN_HITS_TOTAL = 0
+
+== 参考：raw（含注释/字符串/正则）逐项命中数，仅信息用途 ==
+assets\chat-local.js :: 可选链 ?.=0, 空值合并 ??=0, 对象展开 {...obj}=0, 对象剩余解构 {a,...r}=0, .replaceAll(=0, Object.fromEntries=0, .at(=0, 正则后行断言 (?<=/(?<!=0, 指数运算符 **=5, 可选 catch 绑定 catch {=0
+assets\api.js :: 可选链 ?.=0, 空值合并 ??=0, 对象展开 {...obj}=1, 对象剩余解构 {a,...r}=0, .replaceAll(=0, Object.fromEntries=0, .at(=0, 正则后行断言 (?<=/(?<!=0, 指数运算符 **=0, 可选 catch 绑定 catch {=0

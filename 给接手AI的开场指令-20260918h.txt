@@ -1,0 +1,250 @@
+════════════════════════════════════════════════════════════
+星途（原「学习工作台」）· 接手 AI 开场指令 · 2026-09-18h（第六批 R87）
+════════════════════════════════════════════════════════════
+
+你是本项目的新一任执行 AI（主理人）。上一轮已于 2026-09-18 16:50 收尾。
+**代码层全部落盘并自测通过；未做的是"最后一公里"：刷戳 / 版本号一致化 / 部署 / QA 独立回归 / git 提交。**
+
+把下面这段直接当你的工作上下文，不要凭记忆开工。
+
+
+────────────────────────────────────────
+【第一步 · 先读这三份文件（10 分钟内读完，别跳）】
+────────────────────────────────────────
+1. D:\下载的文件\学习工作台\交接文档-20260918h-第六批执行现状与对接.md
+   ← 主入口。先读 §0（30 秒速览）、§2（八条需求对照）、§5（即办清单）
+2. D:\下载的文件\学习工作台\更新日志-20260918-第六批-R87.md
+   ← §三 改动明细、§四 踩坑、§五 数据契约、§七 未完成权威清单
+3. D:\下载的文件\学习工作台\用户需求与决策总账.md
+   ← 需求编号口径（R86/R87 待你补记）
+
+另有交付物：deliverables\software-company\ai-models-incremental-PRD-20260918.md（685 行）
+            deliverables\software-company\ai-models-incremental-design-20260918.md（753 行，改过 5 版）
+
+
+────────────────────────────────────────
+【项目铁律（违反＝返工，逐条照办）】
+────────────────────────────────────────
+· 唯一可写代码树 = D:\下载的文件\学习工作台
+  ⛔ 绝对不碰 C:\Users\ATM\WorkBuddy\Worktrees\学习工作台\main-*
+     （停在 R70 的过期空壳；本项目已发生过"跑错树导致整批结论作废"的事故）
+
+· 【行尾矩阵 · 本批逐字节实测，权威版】
+  LF：ai-settings.html（根目录）/ assets/ai-settings.js / ai-page.js / ai-service.js
+      / 8 个 assets/ai-cap-*.js（含 registry）
+      / assets/xt-aiusage.js / assets/xt-update.js
+  CRLF：assets/ai-config.js ← 注意！这个不是 LF
+      / 其余根 HTML / 其余 assets/*.js|css / server/**/*.py
+  ⚠️ 旧文档（截至 20260917g）说"LF 白名单只有 4 个、cap 文件是 CRLF"——错的，别信。
+  改文件一律二进制读写：open(p,'rb') → 字节级替换 → open(p,'wb')。禁止 text 模式（静默 CRLF→LF）。
+  判断"行尾是否被改坏"必须与 .bak-pre-* 备份逐字节比对，不要凭主观"应该是什么"下结论。
+
+· 【ES2017 语法上限】（安卓老 WebView 硬约束）
+  禁：?.  ??  对象展开 {...obj}  对象剩余解构  .replaceAll(  Object.fromEntries  .at(
+      正则后行断言 (?<= (?<!  指数 **  可选 catch 绑定 catch {
+  ★ node --check 抓不到这些！必须 Grep 逐项自查 0 命中。
+  ★ 权威检具：node tools/qa/escheck_es2017.js <文件...> → 本项目要求输出 "DONE 0"
+  CSS 另禁 clamp()/min()/max() → 固定值 + @media 分级。
+
+· 【本机环境：bash 没有 coreutils】
+  ls / grep / cat / head / tail / cp / dirname 全部 command not found（实测 exit 127）。
+  → 一律 Write 落盘 .py/.js 再执行；含中文/反引号的代码绝不内联给 bash（会被吞）。
+  → 统计结果写 UTF-8 文件再 Read（PowerShell stdout 常被吞成空）。
+  python = C:/Users/ATM/.workbuddy/binaries/python/versions/3.13.12/python.exe
+  node   = C:/Users/ATM/.workbuddy/binaries/node/versions/22.22.2-3/node.exe
+  jsdom  = C:/Users/ATM/node_modules/jsdom（jsdom 30，不导出 ResourceLoader → 页面真实源码内联后执行；
+           localStorage 需 http origin，起临时 127.0.0.1 静态服务；location 只读，抓跳转用作用域遮蔽）
+
+· 顶层禁重复声明已有全局名（本项目"AI 功能集体失效"的历史元凶）；新增全局写 typeof 守卫。
+· 禁原生 alert/confirm/prompt（用 uiConfirm/toast）；不删现有功能、保留既有 DOM id 与全局函数名。
+· 改文件先备份：xxx.bak-pre-rNN-日期。⛔ 不要清理任何 .bak-pre-*（回滚要用）。
+· assets/app.js 里有一条约 2.7 MB 的超长行 → 任何批量脚本都不要碰它。
+· 同一消息里对同一文件发多个 Edit 会 last-write-wins（只有最后一处生效）→ 逐条串行改。
+
+· 【版本戳】全部验证通过后才打；只 bump 内容真改过的资产；不复用旧戳；不顺手刷未改资源的戳
+  （项目审计靠 mtime，无谓改动会被误判）。打戳六项约束见 r87_stamp_apply.py 的 docstring。
+  当前戳分布：20260916O×455 / 20260917b×141 / 20260918b×76 / 20260917×3 / 20260918a×1
+  下一版戳 = 20260918c（本轮刷戳目标）
+
+· 【git】工作树有 941 条 M 漂移（含 server/）+ 881 条未跟踪垃圾 —— 属常态。
+  判断"本批改了什么"用 mtime + 内容对照备份，不要用 git status 全收。
+  两条提交红线（沿用）：① 先 git add 我的动态.html（未跟踪，漏加会远端死链）
+                        ② git rm --cached 学习工作台-安卓App.apk（96 MB 二进制已被跟踪，勿推远端）
+  git push 需走动态代理（第一优先读环境变量 HTTP_PROXY/HTTPS_PROXY，备选 127.0.0.1:7897）。
+
+· 生产操作（删用户数据 / 改 nginx / 部署上线）必须先问用户。
+  ✅ 本轮用户已明确授权：部署上线由执行方操作并验证；APK 由用户本地打包后上传。
+
+
+────────────────────────────────────────
+【第二步 · 当前待办（按优先级，命令可直接粘）】
+────────────────────────────────────────
+工作目录：cd "D:\下载的文件\学习工作台"
+
+P0（阻断上线）
+
+1. 🔴 刷版本戳 --apply（现在磁盘上仍是旧戳，只跑过 dry-run）
+   实测：8 个 ai-cap-*.js + xt-aiusage.js + xt-update.js 全裸无 ?v=；
+        ai-config.js / ai-service.js / ai-settings.js / ai-page.js 是 ?v=20260918b。
+   "$PY" tools/r87_stamp_apply.py            # 再确认 dry-run（预期 14 资产全 PASS）
+   "$PY" tools/r87_stamp_apply.py --apply    # 真正写盘 → 目标 ?v=20260918c
+   前置：T01–T05 五条线已全部冻结 ✅（本轮已确认）
+
+2. 🔴 版本号五处不一致（python tools/qa/check_version_consistency.py 当前 exit=1）
+   实测：version.json / server/routers/version.json = 1.24 / code 25
+        android/AndroidManifest.xml                = 1.23 / code 24
+        assets/xt-update.js CURRENT_VERSION        = 1.23
+        web/static/apk/星途-1.24.apk               = 不存在
+   两个方案，**先问用户选哪个**：
+     方案 A（推荐·随 APK 发版）：用户打包前跑 python tools/bump_versions_safe.py --apply 统一到 1.24
+     方案 B（保留"待发布"态）：version.json 保持 1.24、manifest 与 xt-update 保持 1.23
+       → 更新检查会真实报"发现新版本 1.24"，适合演示需求 ⑧；此时 exit=1 属**预期**，
+         必须在文档里写明"有意为之"，否则下一轮会被当 bug 反复修。
+   ★ 无论哪个方案，APK 必须真的落到 web/static/apk/（否则 /api/app/version 永远
+     apkReady=false / apkUrl=""，前端只能显示「安装包暂时不可用」，需求 ⑧ 等于没完成）。
+
+3. 🔴 部署上线（✅ 用户已授权）
+   "$PY" tools/deploy_update_20260918r87.py            # dry-run（已跑过，三闸全过）
+   "$PY" tools/deploy_update_20260918r87.py --apply    # 真上传（pscp/plink 已在 tools/ 就位）
+   目标：root@110.42.134.62 → /opt/study-workbench/（凭据长度 9，脚本不打印）
+   内容：47 个根 HTML（排除 blog_wechat.html）+ 13 个 assets + version.json + apk 目录
+   部署后必做：① 远端文件数/MD5 manifest 对照；② curl 抽查 ai-settings.html 里能看到 20260918c；
+              ③ 确认 /api/ai/usage 返回 200。
+
+P1（验收欠账）
+
+4. 🟡 QA 独立回归（尚未开始）
+   ⚠️ 派 QA 必须用 subagent_type: "general-purpose"
+      （software-qa-engineer 类型没有 Bash，拉起约 6 秒即挂；name 可仍写 software-qa-engineer）
+   验收重点（别只重跑实现方跑过的东西）：
+     · 需求① 12 类 × 6 族渲染正确、空族不渲染、catSchema 1→2 迁移**幂等**（跑两次结果一致）
+     · 需求③④ 造 recordHealth(id,'http_400') → AI 页该模型消失；改成成功 → 自动回来；
+               probeNoAuto 模型（视频/3D）**不被**批量隐藏
+     · 需求⑤ audio/embedding/rerank 不再落到 chat/completions（不再 400）；视频/3D 不参与批量自动检测
+     · 需求⑦ 四态降级（401 / 404 / 网络 / 非 JSON）文案必须互不相同且不谎报成功
+     · 需求⑧ 更新检查三态 + reasonCode；APK 缺失时文案是「安装包暂时不可用」而不是崩
+
+5. 🟡 git 提交 + push（红线上见"项目铁律"）
+
+P2（小尾巴）
+6. ⚪ assets/api.js:354-355 空壳 if（历史遗留，非本批引入）
+7. ⚪ 工具.html 也有 .morepage-list，口径未裁定
+8. ⚪ 用户需求与决策总账.md 补记 R86 / R87
+9. ⚪ 用户侧：ai.hub.camera 端点已死需换；ADMIN_PASSWORD 与各平台 AI Key 待轮换
+
+
+────────────────────────────────────────
+【本批核心成果（背景知识，别重复做）】
+────────────────────────────────────────
+八条需求全部有代码落地：
+
+① 功能分类页按真实能力重做
+   assets/ai-settings.js：BUILTIN_CATS 10 → **12 类**；FAMILY_OF_CAT + FAMILY_ORDER **6 族**
+   （text 文本 / vision 视觉 / audio 语音 / retrieval 检索 / video 视频 / three_d 3D）；
+   FAMILY_LABEL 六组中文标签；RESERVED_KEYS=[]（本期无预留类）；
+   CAT_OF_TYPE 14 键（含 '3d' → 'three_d' 归一）；
+   migrateCatSchema 幂等迁移（catSchema=2 为闸，旧设置无损升级）。
+   ⚠️ 分类 key 'vision' **不能改名**（ai-service.js 硬编码依赖），只能改 label → 已改成「视觉识图」。
+
+② 「按功能分类排序」：setSortCat / setSortCatInner / lastSort 持久化；ai-settings.html 排序弹窗加分类下拉。
+
+③ 只把健康检查可用的模型映射到 AI 页：ai-page.js 的 isHiddenByHealth / usableIds / visibleModels；
+   无健康记录时**兜底放行**（避免新用户什么都看不到）。
+
+④ 隐藏 + 自动回归闭环：recordHealth 派发 'xt:health-changed' → ai-page.js 监听同名事件 → 实时重绘。
+
+⑤ 图像/视觉/语音真能跑：7 个 ai-cap-*.js 各加 probe(ctx)；视觉 64×64 PNG + HTTP-400 文本回退；
+   3D 512×512 PNG；translate 读 provider.responsesUrl；视频/3D 标 CAP.probeNoAuto=true。
+
+⑥ 模型说明优化：五段式描述 + modelDetails 47 键全量 stars/speed；
+   3 个退役视频模型（ark-seedance-1-5-pro / ark-seedance-1-0-lite-t2v / -i2v）打 tag:"即将下线"
+   → 角标 + 排序置末 + 禁止设为默认。
+
+⑦ 用量统计挪到「关于」页顶部 + 真连通：
+   ai-settings.html 的 #setUsageRoot 已移到 #setPanelAbout **首子元素**；
+   assets/xt-aiusage.js 真 fetch GET /api/ai/usage + AbortController 超时 + serverSnapshot 双口径对照
+   + 四态降级（401/404/网络/坏JSON，文案互不相同）+ sortRows 三层排序 + clampPct 封顶 100
+   + displayNameOf（用户覆盖 > 内置名 > 原始 id）；
+   后端 server/routers/ai.py 提供 GET /usage（mtime 09-18 15:03:50，六路由之一）。
+
+⑧ 检测更新真能用（代码完成，**缺 APK**）：
+   assets/xt-update.js 三态文案 + reasonCode（失败带原因，不吞异常）；
+   web/static/apk/ 目录**原本不存在**（这本身就是更新检查失败的直接原因之一）→ 已新建 .gitkeep + README.md。
+   仍缺：web/static/apk/星途-1.24.apk 实体文件。
+
+【本批最核心的一个技术修复】
+旧 aiHealthCheckImpl() 对**所有**非 imagegen 模型都发 chat/completions 文本探针 →
+音频 / 嵌入 / 重排这些**没有专用探针分支**的模型被拿去打硅基流动的 chat/completions → **一律 HTTP 400**
+→ 它们在设置页永远显示"不可用"、AI 页永远看不到它们。
+修法：① ai-service.js 改**按能力分派**（cap.probe 优先）；② 各 cap 模块补 probe；
+      ③ 未实现探针的能力如实报 unsupported_probe（不再伪造成 400）；
+      ④ 批量跳过返回 skipped:true，recordHealth 遇 skipped/unsupported_probe **不落库**。
+
+【本批关键决策与纠错（别再犯）】
+· rate = 倍率（渲染成「… 倍率」），tag 才是标签 → 退役标记必须写 tag:"即将下线"。
+  追加坑：ai-settings.js 的模型角标读的是 m.custom（不是 m.tag）→ 光加 tag 不会自动上浮层。
+· 命名统一：T01 自造 probeCostly → 统一 probeNoAuto，Grep 残留 0。
+· 链式风险：批量跳过若被当失败落库 → 视频/3D 被自动隐藏（与需求④相反）→ 用 skipped 语义隔离。
+· 批量入口错位：batchHealthCheck 与 pendingHealthIds **两处**都过滤 isProbeNoAutoId。
+· 视觉探针 1×1 PNG 被尺寸校验拒（伪 400）→ 64×64；3D → 512×512。
+· translate 探针端点：硅基流动没有 responsesUrl → 读 provider.responsesUrl，缺失回落 chat。
+· 展示名举例给错过：真实内置名是 Seedream-4.0-Fast，不是 Doubao-Seedream-4.0。
+  任务书里的"举例"必须从配置文件真值拷贝。
+· 行尾"回归"误报：ai-settings.html 报 loneLF=808，拿 bak-pre-r72 一比它**本来也是 LF** → 不是回归，无需修。
+· tools/bump_versions_safe.py 早在 2026-09-11 就弃用（只处理 3 个资产）→ 本批**重写**为四处版本同步，
+  不是重复造轮子，不存在双写冲突。
+
+
+────────────────────────────────────────
+【已验证证据（真实输出，可直接引用）】
+────────────────────────────────────────
+· ES2017 真内核解析：node tools/qa/escheck_es2017.js → **DONE 0**
+  （tools/_r87_escheck.txt、_r87_escheck2.txt，各 7 B）
+· 部署三闸（dry-run）：闸1 行尾 47 页**违规 0**；闸2 新增符号 9 项**缺失 0**；闸3 已删符号 1 项**残留 0**
+· 打包：62 成员 / 573018 B → tools/frontend_r87_20260918.tar.gz
+· 刷戳 dry-run：14 资产全 PASS；.js.js?v= 命中 0；非属性命中 0；行尾 loneLF 违规 0
+· 符号在位：probeNoAuto(video 2 / 3d 2) · aiHealthCheckBatch(7) · unsupported_probe(7) · skipped(6)
+             · xt:health-changed(各 1) · displayNameOf(3) · clampPct(3) · reasonCode(2)
+· 符号清零：probeCostly 在 ai-cap-video.js / ai-cap-3d.js / ai-service.js **均 0**
+· 模型真值（node 求值 AI_CONFIG，非正则猜）：builtinModels = 47、modelDetails = 47 键
+  按平台 ark 23 / siliconflow 12 / zhipu 3 / openrouter 3 / gemini 2 / qianfan 2 / arkimage 2
+  按能力 general 25 / reasoning 5 / video 5 / audio 5 / 3d 3 / image 3 / imagegen 3 / embedding 3
+         / creative 3 / longtext 2 / math 1 / translate 1 / rerank 1
+· 页面覆盖：8 个 ai-cap-*.js **各被 37 个根 HTML 引用**（translate/video/3d 从 0 → 36/37）
+
+
+────────────────────────────────────────
+【派活口径（本项目验证有效，照抄）】
+────────────────────────────────────────
+· 多线并行：派活前先列**独占文件清单**保证零重叠；共享文件（app.js / api.js / common.css）
+  同一时刻只许一条线改。
+· 子代理类型：工程师线用 software-engineer（**有 Bash**）；
+  **QA 线必须用 general-purpose**（software-qa-engineer 无 Bash，拉起 6 秒即挂），name 仍可写 software-qa-engineer。
+· 429 / 配额耗尽时 spawn 指定 model: "lite" 可立刻恢复（UI 切模型对子代理无效）。
+· 每份任务书必须自带：唯一可写树 + 独占文件 + 逐文件行尾要求（指明 LF/CRLF）+ ES2017 禁令清单
+  + 全局名守卫 + 不 bump 戳 + 备份命名 + 跨线契约（结构/签名一字不改）
+  + 自测清单（node --check / 行尾字节 / ES2017 Grep / 全局名交集 / jsdom 行为断言）
+  +「直接给结论、不反复验证」的工作风格。
+· **成员自述 ≠ 事实**：收工前务必实测落盘状态（mtime + 内容签名 + 计数对照备份）。
+  本项目发生过多次虚假/超前汇报（跑错工作树、拿改动前文件属性当写入证据、
+  声称清零三次而磁盘三次未动）→ 所有汇报必须附 mtime + 关键行回读原文。
+· 主理人 turn 被取消时，所有后台成员立刻变 paused → 一轮只推一条线、做完就汇报，把长链条切短。
+
+
+────────────────────────────────────────
+【禁止事项】
+────────────────────────────────────────
+· 不要把「开发自测通过」写成「已验证通过」——QA 独立回归**尚未开始**。
+· 不要改 C:\Users\ATM\WorkBuddy\Worktrees\学习工作台\main-*
+· 不要顺手刷新**未改动**资源的版本戳。
+· 不要清理任何 .bak-pre-*。
+· 不要按 git status 全量提交（941 条 M + 881 条未跟踪垃圾）。
+· 不要用 node --check 代替 ES2017 检查。
+· 不要删 blog_wechat.html（部署排除 ≠ 删除）。
+· 不要把平台密钥说成"已保密"——各平台 Key 明文在 assets/ai-config.js，前端直连架构下无法真保密；
+  已交付的只是「UI 不回填 + 不复制进 localStorage + 清洗存量副本」。
+
+════════════════════════════════════════════
+读完就动手：先跑 §第二步 的 P0-1（刷戳 dry-run 复核 → --apply），
+然后问用户选 P0-2 的方案 A 还是 B。
+════════════════════════════════════════════

@@ -1,0 +1,15 @@
+py_compile OK   server\database.py
+py_compile OK   server\schemas.py
+py_compile OK   server\routers\chat.py
+py_compile OK   server\routers\friends.py
+py_compile OK   server\routers\groups.py
+
+== 行尾（改后） ==
+assets\chat-local.js               CRLF=3865   loneLF=0
+assets\api.js                      CRLF=1667   loneLF=0
+server\database.py                 CRLF=495    loneLF=0
+server\schemas.py                  CRLF=290    loneLF=0
+server\routers\chat.py             CRLF=249    loneLF=0
+server\routers\friends.py          CRLF=362    loneLF=0
+server\routers\groups.py           CRLF=406    loneLF=0
+server\建表SQL.sql                   CRLF=181    loneLF=0

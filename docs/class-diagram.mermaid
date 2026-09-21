@@ -1,0 +1,88 @@
+classDiagram
+    class XT_REGION {
+        <<existing, assets/xt-region.js>>
+        +Object DATA
+        +Object GEO
+        +provinces()
+        +citiesOf(p)
+        +districtsOf(p,c)
+        +textOf(p,c,d) String
+        +search(kw) Array
+        +parseText(txt) Obj
+        +reverseGeocode(lat,lng,cb) void 'cb(null) on fail'
+        +locate(cb) void 'cb({ok,reason})'
+    }
+
+    class XT_LOC_PICK {
+        <<NEW, appended in assets/xt-region.js>>
+        +LAST_KEY: 'xt_loc_last'
+        +pick(opts, cb) void
+        +last(cb) void
+        +isCoordinateText(s) Boolean
+    }
+
+    class LocObj {
+        +String text 'only field allowed in DOM'
+        +String province
+        +String city
+        +String district
+        +Number lat 'store-only, never render'
+        +Number lng 'store-only, never render'
+        +String source 'gps|manual'
+    }
+
+    class IconMap {
+        <<existing, assets/icon-map.js>>
+        +LUCIDE_ICONS: {map-pin,navigation,camera,...}
+        +lucideIcon(name,size) String
+        +lucideAutoRender() void
+    }
+
+    class MomentsJS {
+        <<assets/xt-moments.js>>
+        +inputSheet(title,ph,val,onOk)
+        +pickerSheet(title,sel,onDone)
+        +ico(name,size,fallback)
+        +renderChosen()
+        +pubSubmit()
+        +xtmAtBtn.handler NEW 'call XT_LOC_PICK.pick'
+    }
+
+    class ChatLocalJS {
+        <<assets/chat-local.js>>
+        +imPickImage()
+        +imSendImage(inp)
+        +imSendText()
+        +imSendLocation(text) NEW 'kind=location'
+    }
+
+    class PrivateChatPage {
+        <<私聊.html>>
+        +imTogglePlusMenu() NEW
+        +imPlusMenu 'image/map-pin items'
+    }
+
+    class PublishPage {
+        <<朋友圈发布.html>>
+        +xtmLocBtn 'data-icon=map-pin'
+        +xtmAtBtn 'data-icon=navigation'
+    }
+
+    class CommunityPage {
+        <<社区.html>>
+        +blogPickLoc() NEW
+        +blogRenderLocChip() NEW
+        +saveBlogNote(stage) 'writes location'
+    }
+
+    XT_LOC_PICK ..> XT_REGION : calls locate/reverseGeocode
+    XT_LOC_PICK --> LocObj : produces
+    MomentsJS ..> XT_LOC_PICK : pick (onManual=inputSheet)
+    PublishPage ..> MomentsJS : host
+    CommunityPage ..> XT_LOC_PICK : pick
+    PrivateChatPage ..> XT_LOC_PICK : pick
+    ChatLocalJS <-- PrivateChatPage : menu triggers
+    MomentsJS ..> IconMap : ico/map-pin
+    CommunityPage ..> IconMap : data-icon
+    PrivateChatPage ..> IconMap : data-icon
+    PublishPage ..> IconMap : data-icon

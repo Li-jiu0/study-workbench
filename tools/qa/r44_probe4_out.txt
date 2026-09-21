@@ -1,0 +1,37 @@
+=== users 表是否含 is_admin 列 ===
+HAS_IS_ADMIN: NO
+HAS_TOKEN_VERSION: YES
+
+=== messages 概况 ===
+MSG_TOTAL: 123
+LAST_15 (id,sender,receiver,kind,group,read?,created):
+   125 2 9 text None unread 2026-09-13 23:34:58
+   124 2 9 text None unread 2026-09-13 23:34:49
+   123 2 1 text None READ 2026-09-13 23:34:35
+   122 2 9 text None unread 2026-09-13 23:34:08
+   121 1 2 text None READ 2026-09-13 23:27:15
+   120 2 1 text None READ 2026-09-13 23:27:09
+   119 1 2 text None READ 2026-09-13 23:26:59
+   118 1 2 text None READ 2026-09-13 23:26:51
+   117 1 2 text None READ 2026-09-13 23:26:46
+   116 2 1 text None READ 2026-09-13 23:25:40
+   115 1 2 text None READ 2026-09-13 23:25:07
+   114 2 1 text None READ 2026-09-13 23:24:18
+   113 2 1 text None READ 2026-09-13 23:24:09
+   112 2 1 text None READ 2026-09-13 23:23:59
+   111 2 1 text None READ 2026-09-13 23:23:46
+
+=== 近 24h 消息数 ===
+MSG_24H: 20
+
+=== friends 关系对 ===
+  FRIEND 2 1 <-> 4 2026-09-11 00:15:44
+  FRIEND 3 2 <-> 4 2026-09-11 09:31:20
+  FRIEND 4 4 <-> 7 2026-09-11 09:39:13
+  FRIEND 5 1 <-> 2 2026-09-11 22:36:26
+  FRIEND 6 2 <-> 9 2026-09-13 23:34:01
+
+=== friend_requests ===
+  REQ 5 4 -> 2 accepted 2026-09-11 09:29:56
+  REQ 7 1 -> 2 accepted 2026-09-11 22:09:41
+  REQ 8 9 -> 2 accepted 2026-09-13 23:33:45

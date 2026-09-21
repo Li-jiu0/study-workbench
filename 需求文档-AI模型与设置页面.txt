@@ -1,0 +1,460 @@
+# 星途学习工作台 - AI模型接入与模型设置页面需求文档
+
+> 日期：2026-09-16
+> 目标：接入6个免费AI模型平台 + 新建独立的模型设置页面，统一管理所有模型
+
+---
+
+## 一、已接入平台（保持不变）
+
+### 1.1 智谱（国内直连）
+- 端点：`https://open.bigmodel.cn/api/paas/v4/chat/completions`
+- Key：`<REDACTED-32HEX-旧KEY>.Uvg73xeMhVdN7crs`
+- 已接模型（5个）：glm-4.7-flash、glm-4.5-flash、glm-4-flash、glm-4.6v-flash（视觉）、glm-4v-flash（视觉）
+
+### 1.2 硅基（国内直连）
+- 端点：`https://api.siliconflow.cn/v1/chat/completions`
+- Key：`***REMOVED-BY-R2C***`
+- 已接模型（6个）：Qwen2.5-7B、Qwen3-8B、Qwen3.5-4B、DeepSeek-R1-8B（推理）、GLM-4-9B、Hunyuan-MT-7B（翻译）
+
+---
+
+## 二、新增平台
+
+### 2.1 百度千帆（国内直连）
+- 端点：`https://qianfan.baidubce.com/v2/chat/completions`
+- Key：`<REDACTED-QIANFAN-API-KEY>`
+- 认证：Bearer token（完整key，含 `bce-v3/` 前缀）
+- 免费政策：新用户每模型100万token（3个月有效），部分模型额度可能已用完
+- 实测当前可用2个：
+
+| 显示名称 | 模型 ID | 响应时间 | 星级 |
+|---------|---------|---------|------|
+| ERNIE-4.5-Turbo | `ernie-4.5-turbo-32k` | 1.4s | ⭐⭐⭐⭐ |
+| ERNIE-4.5-Turbo-128K | `ernie-4.5-turbo-128k` | 2.3s | ⭐⭐⭐⭐ |
+
+### 2.2 火山方舟（国内直连）
+- 端点：`https://ark.cn-beijing.volces.com/api/v3/chat/completions`
+- Key：`<REDACTED-ARK-API-KEY>`
+- 免费政策：协作奖励计划每天200万token（需账号已加入且在有效期）
+- 全量测试133个模型，推荐接入6个：
+
+| 显示名称 | 模型 ID | 响应时间 | 星级 |
+|---------|---------|---------|------|
+| DeepSeek-V4-Flash | `deepseek-v4-flash-ga-260731` | 0.9s | ⭐⭐⭐⭐⭐ |
+| Doubao-Mini | `doubao-seed-2-0-mini-260428` | 0.9s | ⭐⭐⭐⭐ |
+| DeepSeek-V4.1-Flash | `deepseek-v4-1-flash-260910` | 0.9s | ⭐⭐⭐⭐⭐ |
+| DeepSeek-V4-Pro | `deepseek-v4-pro-ga-260813` | 1.8s | ⭐⭐⭐⭐⭐ |
+| Doubao-Pro | `doubao-seed-2-1-pro-260915` | 2.8s | ⭐⭐⭐⭐⭐ |
+| GLM-5.3-Flash | `glm-5-3-flash-260828` | 2.9s | ⭐⭐⭐⭐ |
+
+### 2.3 OpenRouter（需梯子）
+- 端点：`https://openrouter.ai/api/v1/chat/completions`
+- Key：`***REMOVED-BY-R2C***`
+- 额外头：`HTTP-Referer: http://110.42.134.62`，`X-Title: Xingtu Learning`
+- 免费政策：50次/天，20次/分钟
+- 推荐接入4个：
+
+| 显示名称 | 模型 ID | 响应时间 | 星级 |
+|---------|---------|---------|------|
+| OR-Auto | `openrouter/free` | 1.9s | ⭐⭐⭐⭐ |
+| Nemotron-Super | `nvidia/nemotron-3-super-120b-a12b:free` | 1.9s | ⭐⭐⭐⭐ |
+| Gemma-4-31B | `google/gemma-4-31b-it:free` | 2.1s | ⭐⭐⭐ |
+| Nemotron-Ultra | `nvidia/nemotron-3-ultra-550b-a55b:free` | 10.9s | ⭐⭐⭐⭐⭐ |
+
+### 2.4 Google Gemini（需梯子）
+- 端点：`https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`
+- Key：`AQ.***REDACTED-已泄露作废-需换新KEY***`
+- 认证：URL参数 `?key=xxx`（非Authorization header）
+- 免费政策：免费额度，有速率限制
+- ⚠️ 非OpenAI兼容格式，需单独适配（详见第七节）
+- 推荐接入2个：
+
+| 显示名称 | 模型 ID | 响应时间 | 星级 |
+|---------|---------|---------|------|
+| Gemini-3.5-Flash | `gemini-3.5-flash` | 6.4s | ⭐⭐⭐⭐ |
+| Gemini-3.5-Lite | `gemini-3.5-flash-lite` | 1.1s | ⭐⭐⭐ |
+
+---
+
+## 三、ai-config.js 配置要求
+
+### 3.1 providers 新增4个平台（接在智谱、硅基后面）
+
+```javascript
+// 百度千帆
+qianfan: {
+  name: "百度千帆",
+  apiUrl: "https://qianfan.baidubce.com/v2/chat/completions",
+  apiKey: "<REDACTED-QIANFAN-API-KEY>"
+},
+
+// 火山方舟
+ark: {
+  name: "火山方舟",
+  apiUrl: "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
+  apiKey: "<REDACTED-ARK-API-KEY>"
+},
+
+// OpenRouter
+openrouter: {
+  name: "OpenRouter",
+  apiUrl: "https://openrouter.ai/api/v1/chat/completions",
+  apiKey: "***REMOVED-BY-R2C***",
+  extraHeaders: {
+    "HTTP-Referer": "http://110.42.134.62",
+    "X-Title": "Xingtu Learning"
+  }
+},
+
+// Google Gemini（非OpenAI兼容，需单独适配）
+gemini: {
+  name: "Google Gemini",
+  apiUrl: "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+  apiKey: "AQ.***REDACTED-已泄露作废-需换新KEY***",
+  apiFormat: "gemini",
+  keyInQuery: true
+}
+```
+
+### 3.2 builtinModels 新增14个（全部接在硅基模型后面）
+
+**百度千帆2个：**
+```javascript
+{ id: "qianfan-ernie-45", name: "ERNIE-4.5-Turbo", provider: "qianfan", model: "ernie-4.5-turbo-32k", types: ["text"], rate: "1x", temperature: 0.7, maxTokens: 1000, rating: 4, fallback: "qianfan-ernie-128" },
+{ id: "qianfan-ernie-128", name: "ERNIE-4.5-Turbo-128K", provider: "qianfan", model: "ernie-4.5-turbo-128k", types: ["text"], rate: "1x", temperature: 0.7, maxTokens: 2000, rating: 4, fallback: "glm-4-flash" }
+```
+
+**火山方舟6个：**
+```javascript
+{ id: "ark-ds-v4-flash", name: "DeepSeek-V4-Flash", provider: "ark", model: "deepseek-v4-flash-ga-260731", types: ["text"], rate: "1x", temperature: 0.7, maxTokens: 1000, rating: 5, fallback: "ark-doubao-mini" },
+{ id: "ark-doubao-mini", name: "Doubao-Mini", provider: "ark", model: "doubao-seed-2-0-mini-260428", types: ["text"], rate: "1x", temperature: 0.7, maxTokens: 1000, rating: 4, fallback: "ark-ds-v41" },
+{ id: "ark-ds-v41", name: "DeepSeek-V4.1-Flash", provider: "ark", model: "deepseek-v4-1-flash-260910", types: ["text"], rate: "1x", temperature: 0.7, maxTokens: 1000, rating: 5, fallback: "ark-ds-v4-pro" },
+{ id: "ark-ds-v4-pro", name: "DeepSeek-V4-Pro", provider: "ark", model: "deepseek-v4-pro-ga-260813", types: ["text"], rate: "1x", temperature: 0.7, maxTokens: 1000, rating: 5, fallback: "ark-doubao-pro" },
+{ id: "ark-doubao-pro", name: "Doubao-Pro", provider: "ark", model: "doubao-seed-2-1-pro-260915", types: ["text"], rate: "0.5x", temperature: 0.7, maxTokens: 2000, rating: 5, fallback: "ark-glm-53" },
+{ id: "ark-glm-53", name: "GLM-5.3-Flash", provider: "ark", model: "glm-5-3-flash-260828", types: ["text"], rate: "1x", temperature: 0.7, maxTokens: 1000, rating: 4, fallback: "glm-4-flash" }
+```
+
+**OpenRouter 4个：**
+```javascript
+{ id: "or-auto", name: "OR-Auto", provider: "openrouter", model: "openrouter/free", types: ["text"], rate: "1x", temperature: 0.7, maxTokens: 1000, rating: 4, fallback: "or-nemotron-super" },
+{ id: "or-nemotron-super", name: "Nemotron-Super", provider: "openrouter", model: "nvidia/nemotron-3-super-120b-a12b:free", types: ["text"], rate: "1x", temperature: 0.7, maxTokens: 1000, rating: 4, fallback: "or-gemma-31b" },
+{ id: "or-gemma-31b", name: "Gemma-4-31B", provider: "openrouter", model: "google/gemma-4-31b-it:free", types: ["text"], rate: "1x", temperature: 0.7, maxTokens: 1000, rating: 3, fallback: "gemini-flash-lite" },
+{ id: "or-nemotron-ultra", name: "Nemotron-Ultra", provider: "openrouter", model: "nvidia/nemotron-3-ultra-550b-a55b:free", types: ["text","reasoning"], rate: "0.5x", temperature: 0.3, maxTokens: 2000, rating: 5, fallback: "deepseek-r1-8b" }
+```
+
+**Google Gemini 2个：**
+```javascript
+{ id: "gemini-flash", name: "Gemini-3.5-Flash", provider: "gemini", model: "gemini-3.5-flash", types: ["text","vision"], rate: "1x", temperature: 0.7, maxTokens: 1000, rating: 4, fallback: "gemini-flash-lite" },
+{ id: "gemini-flash-lite", name: "Gemini-3.5-Lite", provider: "gemini", model: "gemini-3.5-flash-lite", types: ["text"], rate: "1x", temperature: 0.7, maxTokens: 1000, rating: 3, fallback: "glm-4-flash" }
+```
+
+> 注意：每个模型增加 `rating` 字段（1-5星），`types` 按能力分类（text文本、vision视觉、reasoning推理、translation翻译、code代码），不使用场景分类字样。
+
+---
+
+## 四、模型选择下拉列表
+
+AI页面底部输入框旁边的模型选择下拉列表：
+- **所有模型直接平铺，不设任何分组标题**
+- 顺序：智谱 → 硅基 → 百度千帆 → 火山方舟 → OpenRouter → Gemini
+- 每个模型显示：图标首字母 + 名称 + 星级（⭐）+ 速率（1x/0.5x）
+- 最后一条分隔线 + "⚙ 模型设置"（点击跳转到模型设置页面）
+- 侧边栏不再显示当前模型，统一在此处选择
+
+```
+┌───────────────────────────────────┐
+│  G GLM-4.7-Flash     ⭐⭐⭐⭐⭐ 1x │
+│  G GLM-4.5-Flash     ⭐⭐⭐⭐  1x │
+│  ...（智谱+硅基+千帆+方舟）        │
+│  O OR-Auto           ⭐⭐⭐⭐  1x │
+│  N Nemotron-Super    ⭐⭐⭐⭐  1x │
+│  G Gemma-4-31B       ⭐⭐⭐   1x │
+│  N Nemotron-Ultra    ⭐⭐⭐⭐⭐ 0.5x│
+│  G Gemini-3.5-Flash  ⭐⭐⭐⭐  1x │
+│  G Gemini-3.5-Lite   ⭐⭐⭐   1x │
+│  ───────────────────────────────  │
+│  ⚙ 模型设置                          │
+└───────────────────────────────────┘
+```
+
+---
+
+## 五、模型设置页面（新建独立页面）
+
+### 5.1 入口改造
+
+**当前侧边栏底部结构：**
+```
+┌─────────────────────────────┐
+│  模型 · GLM-4.6V-Flash       │  ← 删除
+│  [+ 添加模型]                │  ← 改为"⚙ 模型设置"，点击跳转页面
+│  清除所有对话（红色）          │
+├─────────────────────────────┤
+│  👤 树枝              ☰ 菜单 │
+└─────────────────────────────┘
+```
+
+**改造要求：**
+1. **删除"模型 · GLM-4.6V-Flash"这一行**
+2. **"+ 添加模型"按钮** 文字改为 **"⚙ 模型设置"**，点击跳转到独立页面 `ai-settings.html`
+3. **侧边栏的"模型说明"入口**（如有）移除，内容整合到模型设置页面
+4. 用户在模型设置页面选择当前模型后，对话页底部下拉列表同步更新为选中的模型
+
+**改造后侧边栏底部：**
+```
+┌─────────────────────────────┐
+│  [⚙ 模型设置]                │
+│  清除所有对话（红色）          │
+├─────────────────────────────┤
+│  👤 树枝              ☰ 菜单 │
+└─────────────────────────────┘
+```
+
+### 5.2 整体布局与视觉规范
+
+**桌面端布局：**
+```
+┌──────────────────────────────────────────────────────────┐
+│ ← 返回    模型设置                                        │
+├──────────────┬───────────────────────────────────────────┤
+│              │                                           │
+│  📋 模型列表   │  （右侧内容区，随左侧导航切换）            │
+│  🏷 功能分类   │                                           │
+│  📖 模型说明   │                                           │
+│  ➕ 添加模型   │                                           │
+│              │                                           │
+│  ─────────   │                                           │
+│  ℹ️ 关于       │                                           │
+│              │                                           │
+└──────────────┴───────────────────────────────────────────┘
+```
+
+- 左侧导航：宽200px，白底，右侧1px边框；选中项橙色文字+浅橙背景圆角
+- **"添加模型"和模型列表、功能分类、模型说明平级**，是左侧导航的一项，不是右上角按钮
+- 右侧内容区：最大宽度720px，左右留白，卡片式排列
+- **所有页面内容超出时可滚动**（左侧导航固定，右侧内容区独立滚动）
+- 移动端：左侧导航变为顶部横向Tab，可滑动切换
+
+**视觉规范（与项目现有风格统一）：**
+- 背景色：#f7f7f8（页面），#ffffff（卡片）
+- 主色调：橙色 #ff6b35
+- 文字：#1a1a1a（标题），#666666（正文），#999999（辅助）
+- 圆角：卡片12px，按钮8px，开关20px
+- 间距：卡片内边距20px，卡片间距16px
+- 阴影：卡片 0 1px 3px rgba(0,0,0,0.08)
+
+### 5.3 模型列表（默认页）
+
+- 顶部说明："选择当前使用的模型，点击即可切换"（12px灰色）
+- 按平台分组，每个平台一个卡片
+- **每个模型可点击选中**，选中后高亮（橙色边框/背景），并同步到对话页下拉列表
+- 每个模型显示：名称、所属平台、能力标签、星级、启用开关、编辑按钮
+
+**平台卡片样式：**
+```
+┌───────────────────────────────────────────────────────┐
+│  🟠 智谱AI                            5个模型 · 5启用   │
+├───────────────────────────────────────────────────────┤
+│  [选中] G GLM-4.7-Flash   文本  ⭐⭐⭐⭐⭐ [●━━━] ✏️ │
+│         G GLM-4.5-Flash   文本  ⭐⭐⭐⭐  [●━━━] ✏️ │
+│         G GLM-4.6V-Flash  视觉  ⭐⭐⭐⭐  [●━━━] ✏️ │
+│  ...                                                    │
+└───────────────────────────────────────────────────────┘
+```
+
+- **选中状态**：橙色左边框 + 浅橙背景，模型名称前加"●"标记
+- **点击模型行**：设为当前使用模型，同步到对话页
+- **启用开关**：iOS风格toggle，关闭的模型在下拉列表中不显示
+- **编辑按钮（✏️）**：点击跳转到编辑模型页面（和添加模型共用表单）
+- **星级**：显示⭐（1-5星），从ai-config.js的rating字段读取
+- **能力标签**：按模型能力显示（文本/视觉/推理/翻译/代码）
+- **禁用的模型**：整行透明度0.5，不可选中
+- **自定义模型**：名称旁加"自定义"小标签，可删除
+- 页面底部："恢复默认"文字按钮
+
+### 5.4 功能分类
+
+- 顶部说明："按模型能力分类，方便快速筛选"（12px灰色）
+- **分类依据是模型本身的能力**（文本、视觉、推理、翻译、代码），不是使用场景
+- **删除所有场景分类字样**（如"通用问答、学习方法""数量/资料/判断推理讲题""拍题、截图识别"等）
+- 每个能力分类一个卡片，展示该分类下的模型
+
+**分类卡片样式：**
+```
+┌─────────────────────────────────────────────────┐
+│  💬 文本能力（15个）                              │
+├─────────────────────────────────────────────────┤
+│  [GLM-4.7-Flash] [DeepSeek-V4] [Qwen3-8B] ...  │
+│                                                   │
+│  👁 视觉能力（3个）                               │
+│  [GLM-4.6V-Flash] [Gemini-3.5-Flash] ...        │
+│                                                   │
+│  🧠 推理能力（2个）                               │
+│  [DeepSeek-R1] [Nemotron-Ultra]                 │
+│                                                   │
+│  🌐 翻译能力（1个）                               │
+│  [Hunyuan-MT-7B]                                 │
+│                                                   │
+│  💻 代码能力（1个）                               │
+│  [CodeLlama]                                     │
+└─────────────────────────────────────────────────┘
+```
+
+- 预设5个能力分类：文本、视觉、推理、翻译、代码
+- 每个分类下列出属于该能力的模型（标签形式，不可点击修改，只读展示）
+- 模型的能力类型从 ai-config.js 的 `types` 字段读取
+- 支持用户新增自定义能力分类（如"长文本"）
+
+### 5.5 模型说明
+
+- 顶部搜索框：按模型名/平台搜索
+- 每个模型一个可展开卡片，默认收起，点击展开，一次只展开一个
+- **每个模型标注星级强弱**（⭐1-5星）
+
+**模型卡片样式：**
+```
+┌─────────────────────────────────────────────────┐
+│  G  GLM-4.7-Flash    智谱AI   文本  ⭐⭐⭐⭐⭐  ▾ │
+├─────────────────────────────────────────────────┤
+│  ✅ 文本理解  ✅ 文本生成  ❌ 图片理解  ❌ 推理   │
+│                                                   │
+│  综合评分：⭐⭐⭐⭐⭐（5/5）                       │
+│  响应速度：快（约0.8秒）                           │
+│  优势：响应快，通用问答效果好，适合日常使用         │
+│  免费政策：免费额度，速率限制 1x                   │
+│  国内直连：✅ 是                                 │
+└─────────────────────────────────────────────────┘
+```
+
+- 能力用 ✅/❌ 图标展示
+- **综合评分用星级展示**（1-5星），从ai-config.js的rating字段读取
+- 响应速度、优势、免费政策、国内直连分行展示
+- 内容从 ai-config.js 读取，不写死
+- 自定义模型的说明由用户填写
+
+### 5.6 添加模型（独立页面）
+
+- 点击左侧导航"➕ 添加模型"，右侧切换到添加模型页面（不是弹窗）
+- 页面标题：添加自定义模型
+- 完整表单，支持配置各种类型的模型
+
+**页面结构：**
+```
+┌─────────────────────────────────────────────────┐
+│  添加自定义模型                                  │
+├─────────────────────────────────────────────────┤
+│  模型名称 *                                      │
+│  [____________________________________]         │
+│                                                   │
+│  API格式 *  [OpenAI兼容 ▾]                       │
+│                                                   │
+│  API端点 *                                      │
+│  [https://____________________________]         │
+│                                                   │
+│  API Key *                                      │
+│  [____________________________________] 👁      │
+│                                                   │
+│  模型ID *                                        │
+│  [____________________________________]         │
+│                                                   │
+│  额外请求头（可选）  [+ 添加Header]               │
+│                                                   │
+│  能力标签  [文本 ▾] [视觉] [推理] [+]            │
+│                                                   │
+│  星级评分  [⭐⭐⭐⭐☆] （点击选择1-5星）          │
+│                                                   │
+│  速率      [1x ▾]                                │
+│  温度      [0.7  ──●── 1.0]                      │
+│  最大token [1000]                                │
+│  顶部P     [0.9  ──●── 1.0]                      │
+│                                                   │
+│  降级模型  [自动选择 ▾]                           │
+│                                                   │
+│  模型说明（可选）                                  │
+│  [____________________________________]         │
+│  [____________________________________]         │
+│                                                   │
+│           [取消]  [保存模型]                      │
+└─────────────────────────────────────────────────┘
+```
+
+**支持的API格式：**
+- **OpenAI兼容**（默认）：智谱、硅基、百度千帆、火山方舟、OpenRouter等
+  - 请求体：`{"model": "...", "messages": [...]}`
+  - 响应：`choices[0].message.content`
+- **Gemini格式**：Google Gemini
+  - 请求体：`{"contents": [{"parts": [{"text": "..."}]}`
+  - Key：URL参数 `?key=xxx`
+  - 响应：`candidates[0].content.parts[0].text`
+- **自定义格式**：高级用户可自定义请求体模板和响应解析路径
+
+**其他配置项：**
+- 额外请求头：支持添加自定义HTTP Header（如OpenRouter的HTTP-Referer）
+- 能力标签：文本/视觉/推理/翻译/代码，多选
+- 星级评分：点击星星选择1-5星
+- 温度：0-1滑块，默认0.7
+- 最大token：数字输入，默认1000
+- 顶部P（top_p）：0-1滑块，默认0.9（高级参数，可展开）
+- 速率：1x/0.5x/0.25x
+- 降级模型：调用失败时自动切换的模型
+- 模型说明：优势、特点、使用场景
+
+**编辑模型：**
+- 在模型列表页点击✏️，跳转到添加模型页面，表单预填该模型数据
+- 内置模型编辑后保存为"自定义覆盖"，可恢复默认
+- 自定义模型可删除
+
+### 5.7 关于
+
+- 项目名称、版本号
+- AI模型总数、已启用数、自定义模型数
+- 数据存储说明（本地存储，不上传）
+
+### 5.8 交互动效
+
+- 开关切换：0.2s平滑过渡
+- 卡片展开/收起：0.3s高度动画
+- 页面切换：右侧内容淡入（0.2s）
+- 保存成功：右上角toast提示"已保存"
+- 选中模型：橙色高亮过渡
+
+### 5.9 数据存储
+
+- 所有设置（当前模型、启用状态、自定义模型、功能分类）存 localStorage
+- key：`ai_model_settings`
+- 当前模型选择单独存：`ai_current_model`
+- 不修改 ai-config.js（内置模型配置保持只读）
+
+---
+
+## 六、降级链要求
+
+1. 国内平台优先（智谱 → 硅基 → 百度千帆 → 火山方舟）
+2. 国内全部失败后才降级到海外模型（OpenRouter → Gemini）
+3. 429限流时自动切换下一个模型；400参数错误不降级（修参数）
+4. 超时设为15秒，超时自动降级
+5. 海外模型调用失败时，提示用户"当前网络可能无法访问海外服务，已切换国内模型"
+6. 启动时后台异步自检所有模型可用性，不可用的自动标记
+
+---
+
+## 七、Gemini 格式适配要求
+
+Gemini 不是 OpenAI 兼容格式，ai-service.js 需单独处理：
+- 请求体格式：`{"contents": [{"parts": [{"text": "用户问题"}]}`
+- Key 传递：URL 参数 `?key=xxx`，不是 Authorization header
+- 响应解析：`response.candidates[0].content.parts[0].text`
+- 多轮对话：把历史消息拼进 contents 数组
+
+---
+
+## 八、不做的事
+
+- 不接联网搜索（各平台搜索工具不稳定，404多）
+- 不接图片生成（项目暂不需要）
+- 不接语音/视频模型
+- 不修改现有智谱、硅基的配置
+- 不写死模型列表，全部从 ai-config.js 读取
+- 模型设置页面不做用户登录/云同步，纯本地存储
+- 功能分类不使用场景分类（如学习方法、讲题、拍题等），只按模型能力分类

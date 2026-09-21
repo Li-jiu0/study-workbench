@@ -1,0 +1,125 @@
+== 各页面 assets/*.js 加载顺序（live html）==
+-- AI.html (13)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> quest.js -> config.js -> api.js -> study-stats.js -> ai-config.js -> ai-presets.js -> ai-service.js -> ai-page.js
+-- AI模拟面试.html (6)
+   xt-polyfill.js -> config.js -> icon-map.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- PPT案例拆解.html (11)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> config.js -> api.js -> qbank.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- PPT版式库.html (13)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> config.js -> api.js -> qbank.js -> ai-config.js -> ai-presets.js -> ai-service.js -> data-ppt-templates.js -> tpl-preview.js
+-- PPT素材库.html (3)
+   xt-polyfill.js -> config.js -> icon-map.js
+-- ai-settings.html (9)
+   icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> config.js -> api.js -> ai-config.js -> ai-service.js -> ai-settings.js
+-- blog_wechat.html (9)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> api.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- mock_exam.html (8)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> mock-engine.js -> mini-cet.js -> mini-exam.js
+-- mock_exam_result.html (7)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> mock-engine.js -> mock-result.js
+-- mock_exam_run.html (6)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> mock-engine.js
+-- 万能金句库.html (11)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> config.js -> api.js -> qbank.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 个人中心.html (13)
+   xt-settings.js -> xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> quest.js -> config.js -> api.js -> subpage-router.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 企业定向库.html (13)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> config.js -> api.js -> mini-exam.js -> data-exam-company.js -> company-lib.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 关于.html (12)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> quest.js -> config.js -> api.js -> study-stats.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 动态.html (10)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> config.js -> api.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 商务礼仪.html (11)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> config.js -> api.js -> qbank.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 四级经验分享.html (2)
+   xt-polyfill.js -> config.js
+-- 四级词汇.html (11)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> config.js -> api.js -> qbank.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 场景话术库.html (11)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> config.js -> api.js -> qbank.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 好友申请.html (2)
+   xt-polyfill.js -> config.js
+-- 学习工作台.html (12)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> quest.js -> config.js -> api.js -> study-stats.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 学习概括.html (12)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> quest.js -> config.js -> api.js -> study-stats.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 学途.html (5)
+   xt-polyfill.js -> app.js -> icon-map.js -> voiceplayer.js -> config.js
+-- 导入题库.html (14)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> quest.js -> config.js -> api.js -> qbank.js -> importer.js -> study-stats.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 工具.html (13)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> quest.js -> config.js -> api.js -> importer.js -> study-stats.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 我的文件.html (12)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> quest.js -> config.js -> api.js -> study-stats.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 时政热点.html (11)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> config.js -> api.js -> hotnews.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 更多.html (13)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> quest.js -> config.js -> api.js -> admin.js -> study-stats.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 演示.html (11)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> config.js -> api.js -> study-stats.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 申论刷题.html (11)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> config.js -> api.js -> qbank.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 登录.html (5)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> config.js
+-- 社区.html (10)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> config.js -> api.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 私聊.html (12)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> config.js -> api.js -> chat-local.js -> admin-contact.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 管理员.html (13)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> quest.js -> config.js -> api.js -> admin.js -> study-stats.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 英语.html (19)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> voiceplayer.js -> config.js -> api.js -> mini-cet.js -> mini.js -> study-stats.js -> xt-content.js -> data-cet-read.js -> data-cet-translate.js -> cet-read.js -> cet-translate.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 行测.html (16)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> config.js -> api.js -> mini-exam.js -> mini.js -> topic-express.js -> qbank.js -> hotnews.js -> study-stats.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 行测刷题.html (11)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> config.js -> api.js -> qbank.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 表达.html (18)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> config.js -> api.js -> mini-comm.js -> xt-content.js -> data-comm-cases.js -> comm-cases.js -> mini.js -> i-partner.js -> roleplay.js -> study-stats.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 设置.html (14)
+   xt-settings.js -> xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> config.js -> api.js -> subpage-router.js -> qbank.js -> importer.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 错题本.html (10)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> config.js -> api.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 面测.html (19)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> config.js -> api.js -> mini-interview.js -> xt-content.js -> data-iv-prep.js -> iv-prep.js -> data-iv-after.js -> iv-after.js -> mini.js -> group-discussion.js -> study-stats.js -> ai-config.js -> ai-presets.js -> ai-service.js
+-- 面试题库.html (11)
+   xt-polyfill.js -> icon-map.js -> xt-toast.js -> error-boundary.js -> app.js -> config.js -> api.js -> qbank.js -> ai-config.js -> ai-presets.js -> ai-service.js
+
+== 同时含 api.js 与 app.js 的页面及其顺序 ==
+   AI.html                  api@7 app@4  -> api.js 后加载(覆盖 app.js)
+   PPT案例拆解.html             api@6 app@4  -> api.js 后加载(覆盖 app.js)
+   PPT版式库.html              api@6 app@4  -> api.js 后加载(覆盖 app.js)
+   ai-settings.html         api@5 app@3  -> api.js 后加载(覆盖 app.js)
+   blog_wechat.html         api@5 app@4  -> api.js 后加载(覆盖 app.js)
+   万能金句库.html               api@6 app@4  -> api.js 后加载(覆盖 app.js)
+   个人中心.html                api@8 app@5  -> api.js 后加载(覆盖 app.js)
+   企业定向库.html               api@6 app@4  -> api.js 后加载(覆盖 app.js)
+   关于.html                  api@7 app@4  -> api.js 后加载(覆盖 app.js)
+   动态.html                  api@6 app@4  -> api.js 后加载(覆盖 app.js)
+   商务礼仪.html                api@6 app@4  -> api.js 后加载(覆盖 app.js)
+   四级词汇.html                api@6 app@4  -> api.js 后加载(覆盖 app.js)
+   场景话术库.html               api@6 app@4  -> api.js 后加载(覆盖 app.js)
+   学习工作台.html               api@7 app@4  -> api.js 后加载(覆盖 app.js)
+   学习概括.html                api@7 app@4  -> api.js 后加载(覆盖 app.js)
+   导入题库.html                api@7 app@4  -> api.js 后加载(覆盖 app.js)
+   工具.html                  api@7 app@4  -> api.js 后加载(覆盖 app.js)
+   我的文件.html                api@7 app@4  -> api.js 后加载(覆盖 app.js)
+   时政热点.html                api@6 app@4  -> api.js 后加载(覆盖 app.js)
+   更多.html                  api@7 app@4  -> api.js 后加载(覆盖 app.js)
+   演示.html                  api@6 app@4  -> api.js 后加载(覆盖 app.js)
+   申论刷题.html                api@6 app@4  -> api.js 后加载(覆盖 app.js)
+   社区.html                  api@6 app@4  -> api.js 后加载(覆盖 app.js)
+   私聊.html                  api@6 app@4  -> api.js 后加载(覆盖 app.js)
+   管理员.html                 api@7 app@4  -> api.js 后加载(覆盖 app.js)
+   英语.html                  api@7 app@4  -> api.js 后加载(覆盖 app.js)
+   行测.html                  api@6 app@4  -> api.js 后加载(覆盖 app.js)
+   行测刷题.html                api@6 app@4  -> api.js 后加载(覆盖 app.js)
+   表达.html                  api@6 app@4  -> api.js 后加载(覆盖 app.js)
+   设置.html                  api@7 app@5  -> api.js 后加载(覆盖 app.js)
+   错题本.html                 api@6 app@4  -> api.js 后加载(覆盖 app.js)
+   面测.html                  api@6 app@4  -> api.js 后加载(覆盖 app.js)
+   面试题库.html                api@6 app@4  -> api.js 后加载(覆盖 app.js)
+
+== 含 api.js 的页面 ==
+   
+== 含 app.js 的页面 ==
+   

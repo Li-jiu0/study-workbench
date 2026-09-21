@@ -1,0 +1,17 @@
+PASS  A1 无筛选：显示全部 7 个非 auto 模型  :: 实际 7 -> ["ark-v4-flash","ark-doubao-pro","ark-seedream-4-0415","sf-sensevoice","sf-bge-m3","ark-seedance-video","ark-seedance-lite"]
+PASS  A1b 无筛选：视频/嵌入/生图模型均在列（无遗漏）
+PASS  A2 选「视频生成」：仅剩支持视频生成的 2 个模型（自动隐藏不匹配）  :: ["ark-seedance-video","ark-seedance-lite"]
+PASS  A3 切「图像生成」：仅剩 Seedream（列表实时更新）  :: ["ark-seedream-4-0415"]
+PASS  A4 切「语音识别」：仅剩 SenseVoice  :: ["sf-sensevoice"]
+PASS  A5 切回「无筛选」：行数立即恢复（可逆）  :: 恢复 7 / 基线 7
+PASS  A6 隐藏期间未删 catModels.video（配置数据保留）
+PASS  A7 隐藏期间未删 overrides（配置数据保留）
+PASS  A8 分类×健康取交集：视频分类 2 个 ∩ 健康可用 1 个 = 1 个  :: ["ark-seedance-video"]
+PASS  A9 R87 健康过滤独立生效（未选分类时仍隐藏不可用模型）  :: ["ark-v4-flash","ark-doubao-pro","ark-seedream-4-0415","sf-sensevoice","sf-bge-m3","ark-seedance-video"]
+PASS  B0 AI_SERVICE.callAI 挂载存在
+PASS  B1 命中 /api/ai/chat 请求
+PASS  B2 请求体含 modelId = 用户选中模型 id  :: body.modelId=ark-v4-flash
+PASS  B3 请求体旧字段 provider/messages 保持（向后兼容）
+PASS  B4 服务端回 X-Ai-Model-Used → 账本记录真实模型名  :: model=deepseek-v4-flash-ga-260731
+PASS  B5 无 header 时回落到选中模型真实 model 串（不伪造平台名）  :: model=deepseek-v4-flash-ga-260731
+PASS  B6 绝不显示为「平台名」（此前 Bug 的根因）

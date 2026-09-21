@@ -1,0 +1,93 @@
+{
+  "T1_settings": {
+    "desc": "已是「最新版本」· 当前 v1.24（无需更新）",
+    "fetch_calls": [
+      {
+        "url": "assets/data/vocab-cet4-ext-index.json?v=20260915b",
+        "base": "undefined"
+      },
+      {
+        "url": "assets/data/exam-bank.json?v=20260915b",
+        "base": "undefined"
+      },
+      {
+        "url": "assets/data/exam-bank-ext-index.json?v=20260915b",
+        "base": "undefined"
+      },
+      {
+        "url": "https://openrouter.ai",
+        "base": "http://110.42.134.62:8000"
+      },
+      {
+        "url": "https://generativelanguage.googleapis.com",
+        "base": "http://110.42.134.62:8000"
+      },
+      {
+        "url": "http://110.42.134.62:8000/api/app/version",
+        "base": "http://110.42.134.62:8000"
+      },
+      {
+        "url": "http://110.42.134.62:8000/api/app/version",
+        "base": "http://110.42.134.62:8000"
+      }
+    ],
+    "CURRENT_VERSION": "1.24"
+  },
+  "T1b_settings_interactive": {
+    "desc": "已是「最新版本」· 当前 v1.24（无需更新）",
+    "fetch_calls": [
+      {
+        "url": "assets/data/vocab-cet4-ext-index.json?v=20260915b",
+        "base": "undefined"
+      },
+      {
+        "url": "assets/data/exam-bank.json?v=20260915b",
+        "base": "undefined"
+      },
+      {
+        "url": "assets/data/exam-bank-ext-index.json?v=20260915b",
+        "base": "undefined"
+      },
+      {
+        "url": "http://110.42.134.62:8000/api/app/version",
+        "base": "http://110.42.134.62:8000"
+      },
+      {
+        "url": "https://openrouter.ai",
+        "base": "http://110.42.134.62:8000"
+      },
+      {
+        "url": "https://generativelanguage.googleapis.com",
+        "base": "http://110.42.134.62:8000"
+      }
+    ],
+    "CURRENT_VERSION": "1.24"
+  },
+  "T2_more": {
+    "card_exists": true,
+    "ver_text": "当前版本 v1.24 · 查看是否有新版本",
+    "xt_update_after_config": false,
+    "idx_config": -1,
+    "idx_update": -1,
+    "has_XTUpdate": "object",
+    "CURRENT_VERSION": "1.24"
+  },
+  "T3_config_missing": {
+    "STUDY_API_BASE": "undefined",
+    "fetch_calls": [],
+    "desc": "当前版本 v1.24 · 检测失败：检测服务地址未配置：页面未加载 assets/config.js（缺 STUDY_API_BASE / STUDY_API_SERVER），无法访问检测服务。",
+    "lastState": {
+      "state": "error",
+      "message": "检测失败：检测服务地址未配置：页面未加载 assets/config.js（缺 STUDY_API_BASE / STUDY_API_SERVER），无法访问检测服务。",
+      "code": "config_missing"
+    }
+  },
+  "T4_more_intact": {
+    "morepage_list": true,
+    "morePanel": true,
+    "toolsPanel": true,
+    "card_count": 8,
+    "has_toggleMorePanel_typeof": "function",
+    "has_toggleToolsPanel_typeof": "function"
+  }
+}

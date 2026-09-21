@@ -1,0 +1,1318 @@
+{
+  "total_html": 93,
+  "pages": [
+    ".qa/live_chat.html",
+    ".tmp_eng/backup_a8/AI模拟面试.html",
+    ".tmp_eng/backup_a8/PPT案例拆解.html",
+    ".tmp_eng/backup_a8/PPT版式库.html",
+    ".tmp_eng/backup_a8/PPT素材库.html",
+    ".tmp_eng/backup_a8/blog_wechat.html",
+    ".tmp_eng/backup_a8/mock_exam.html",
+    ".tmp_eng/backup_a8/mock_exam_result.html",
+    ".tmp_eng/backup_a8/mock_exam_run.html",
+    ".tmp_eng/backup_a8/万能金句库.html",
+    ".tmp_eng/backup_a8/企业定向库.html",
+    ".tmp_eng/backup_a8/商务礼仪.html",
+    ".tmp_eng/backup_a8/四级经验分享.html",
+    ".tmp_eng/backup_a8/四级词汇.html",
+    ".tmp_eng/backup_a8/场景话术库.html",
+    ".tmp_eng/backup_a8/学习概括.html",
+    ".tmp_eng/backup_a8/学途.html",
+    ".tmp_eng/backup_a8/工具.html",
+    ".tmp_eng/backup_a8/时政热点.html",
+    ".tmp_eng/backup_a8/申论刷题.html",
+    ".tmp_eng/backup_a8/管理员.html",
+    ".tmp_eng/backup_a8/英语.html",
+    ".tmp_eng/backup_a8/行测.html",
+    ".tmp_eng/backup_a8/行测刷题.html",
+    ".tmp_eng/backup_a8/表达.html",
+    ".tmp_eng/backup_a8/面测.html",
+    ".tmp_eng/backup_a8/面试题库.html",
+    ".tmp_eng/backup_a8b_学途.html",
+    ".tmp_eng/backup_a8c_ai-settings.html",
+    ".tmp_eng/chrome-prof-run/WasmTtsEngine/20260826.1/offscreen.html",
+    ".tmp_eng/chrome-prof/WasmTtsEngine/20260826.1/offscreen.html",
+    ".tmp_eng/chrome-profile2/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/html/craw_window.html",
+    ".tmp_eng/chrome-profile5/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/html/craw_window.html",
+    ".tmp_eng/chrome-profileE/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/html/craw_window.html",
+    ".tmp_eng/chrome-profileE/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_1/html/craw_window.html",
+    ".tmp_eng/chrome-profileU/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/html/craw_window.html",
+    ".tmp_eng/chrome-profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/html/craw_window.html",
+    ".tmp_eng/prof-run2/WasmTtsEngine/20260826.1/offscreen.html",
+    "AI.html",
+    "AI模拟面试.html",
+    "PPT案例拆解.html",
+    "PPT版式库.html",
+    "PPT素材库.html",
+    "_bak-pre-b5-subst/演示.html",
+    "_w2t1_img/node_modules/playwright-core/lib/vite/htmlReport/index.html",
+    "_w2t1_img/node_modules/playwright-core/lib/vite/recorder/index.html",
+    "_w2t1_img/node_modules/playwright-core/lib/vite/traceViewer/embedded.html",
+    "_w2t1_img/node_modules/playwright-core/lib/vite/traceViewer/index.html",
+    "_w2t1_img/node_modules/playwright-core/lib/vite/traceViewer/snapshot.html",
+    "_w2t1_img/node_modules/playwright-core/lib/vite/traceViewer/uiMode.html",
+    "ai-settings.html",
+    "blog_wechat.html",
+    "mock_exam.html",
+    "mock_exam_result.html",
+    "mock_exam_run.html",
+    "万能金句库.html",
+    "个人中心.html",
+    "个人资料.html",
+    "企业定向库.html",
+    "关于.html",
+    "动态空间.html",
+    "商务礼仪.html",
+    "四级经验分享.html",
+    "四级词汇.html",
+    "地区选择.html",
+    "场景话术库.html",
+    "好友申请.html",
+    "学习工作台.html",
+    "学习概括.html",
+    "学途.html",
+    "导入题库.html",
+    "工具.html",
+    "我的动态.html",
+    "我的文件.html",
+    "时政热点.html",
+    "更多.html",
+    "更新.html",
+    "朋友圈发布.html",
+    "演示.html",
+    "申论刷题.html",
+    "登录.html",
+    "社区.html",
+    "私聊.html",
+    "管理员.html",
+    "英语.html",
+    "行测.html",
+    "行测刷题.html",
+    "表达.html",
+    "设置.html",
+    "赞助.html",
+    "错题本.html",
+    "面测.html",
+    "面试题库.html"
+  ],
+  "resources": {
+    "common.css": {
+      "script_src": {},
+      "link_href": {
+        "20260916O": [
+          ".tmp_eng/backup_a8/AI模拟面试.html",
+          ".tmp_eng/backup_a8/PPT案例拆解.html",
+          ".tmp_eng/backup_a8/PPT版式库.html",
+          ".tmp_eng/backup_a8/blog_wechat.html",
+          ".tmp_eng/backup_a8/mock_exam.html",
+          ".tmp_eng/backup_a8/mock_exam_result.html",
+          ".tmp_eng/backup_a8/mock_exam_run.html",
+          ".tmp_eng/backup_a8/万能金句库.html",
+          ".tmp_eng/backup_a8/企业定向库.html",
+          ".tmp_eng/backup_a8/商务礼仪.html",
+          ".tmp_eng/backup_a8/四级词汇.html",
+          ".tmp_eng/backup_a8/场景话术库.html",
+          ".tmp_eng/backup_a8/学习概括.html",
+          ".tmp_eng/backup_a8/学途.html",
+          ".tmp_eng/backup_a8/工具.html",
+          ".tmp_eng/backup_a8/时政热点.html",
+          ".tmp_eng/backup_a8/申论刷题.html",
+          ".tmp_eng/backup_a8/管理员.html",
+          ".tmp_eng/backup_a8/英语.html",
+          ".tmp_eng/backup_a8/行测.html",
+          ".tmp_eng/backup_a8/行测刷题.html",
+          ".tmp_eng/backup_a8/表达.html",
+          ".tmp_eng/backup_a8/面测.html",
+          ".tmp_eng/backup_a8/面试题库.html",
+          ".tmp_eng/backup_a8b_学途.html",
+          ".tmp_eng/backup_a8c_ai-settings.html"
+        ],
+        "20260917b": [
+          "AI.html",
+          "AI模拟面试.html",
+          "PPT案例拆解.html",
+          "PPT版式库.html",
+          "ai-settings.html",
+          "blog_wechat.html",
+          "mock_exam.html",
+          "mock_exam_result.html",
+          "mock_exam_run.html",
+          "万能金句库.html",
+          "个人中心.html",
+          "个人资料.html",
+          "企业定向库.html",
+          "关于.html",
+          "动态空间.html",
+          "商务礼仪.html",
+          "四级词汇.html",
+          "地区选择.html",
+          "场景话术库.html",
+          "好友申请.html",
+          "学习工作台.html",
+          "学习概括.html",
+          "学途.html",
+          "导入题库.html",
+          "工具.html",
+          "我的动态.html",
+          "我的文件.html",
+          "时政热点.html",
+          "更多.html",
+          "更新.html",
+          "朋友圈发布.html",
+          "演示.html",
+          "申论刷题.html",
+          "登录.html",
+          "社区.html",
+          "私聊.html",
+          "管理员.html",
+          "英语.html",
+          "行测.html",
+          "行测刷题.html",
+          "表达.html",
+          "设置.html",
+          "赞助.html",
+          "错题本.html",
+          "面测.html",
+          "面试题库.html"
+        ],
+        "20260916L": [
+          "_bak-pre-b5-subst/演示.html"
+        ]
+      },
+      "at_import": {},
+      "nostamp": [
+        {
+          "page": ".qa/live_chat.html",
+          "tag": "link",
+          "url": "assets/common.css"
+        }
+      ],
+      "count_script_src": 0,
+      "count_link_href": 73,
+      "count_at_import": 0,
+      "count_tag_total": 73,
+      "stamps_summary": {
+        "script_src": {},
+        "link_href": {
+          "20260916O": 26,
+          "20260917b": 46,
+          "20260916L": 1
+        },
+        "at_import": {}
+      }
+    },
+    "app.js": {
+      "script_src": {
+        "20260911c": [
+          ".qa/live_chat.html"
+        ],
+        "20260916S": [
+          ".tmp_eng/backup_a8/PPT案例拆解.html",
+          ".tmp_eng/backup_a8/PPT版式库.html",
+          ".tmp_eng/backup_a8/blog_wechat.html",
+          ".tmp_eng/backup_a8/mock_exam.html",
+          ".tmp_eng/backup_a8/mock_exam_result.html",
+          ".tmp_eng/backup_a8/mock_exam_run.html",
+          ".tmp_eng/backup_a8/万能金句库.html",
+          ".tmp_eng/backup_a8/企业定向库.html",
+          ".tmp_eng/backup_a8/商务礼仪.html",
+          ".tmp_eng/backup_a8/四级词汇.html",
+          ".tmp_eng/backup_a8/场景话术库.html",
+          ".tmp_eng/backup_a8/学习概括.html",
+          ".tmp_eng/backup_a8/学途.html",
+          ".tmp_eng/backup_a8/工具.html",
+          ".tmp_eng/backup_a8/时政热点.html",
+          ".tmp_eng/backup_a8/申论刷题.html",
+          ".tmp_eng/backup_a8/管理员.html",
+          ".tmp_eng/backup_a8/英语.html",
+          ".tmp_eng/backup_a8/行测.html",
+          ".tmp_eng/backup_a8/行测刷题.html",
+          ".tmp_eng/backup_a8/表达.html",
+          ".tmp_eng/backup_a8/面测.html",
+          ".tmp_eng/backup_a8/面试题库.html",
+          ".tmp_eng/backup_a8b_学途.html",
+          ".tmp_eng/backup_a8c_ai-settings.html"
+        ],
+        "20260917b": [
+          "AI.html",
+          "PPT案例拆解.html",
+          "PPT版式库.html",
+          "ai-settings.html",
+          "blog_wechat.html",
+          "mock_exam.html",
+          "mock_exam_result.html",
+          "mock_exam_run.html",
+          "万能金句库.html",
+          "个人中心.html",
+          "企业定向库.html",
+          "关于.html",
+          "动态空间.html",
+          "商务礼仪.html",
+          "四级词汇.html",
+          "场景话术库.html",
+          "学习工作台.html",
+          "学习概括.html",
+          "学途.html",
+          "导入题库.html",
+          "工具.html",
+          "我的动态.html",
+          "我的文件.html",
+          "时政热点.html",
+          "更多.html",
+          "更新.html",
+          "朋友圈发布.html",
+          "演示.html",
+          "申论刷题.html",
+          "社区.html",
+          "私聊.html",
+          "管理员.html",
+          "英语.html",
+          "行测.html",
+          "行测刷题.html",
+          "表达.html",
+          "设置.html",
+          "赞助.html",
+          "错题本.html",
+          "面测.html",
+          "面试题库.html"
+        ],
+        "20260916L": [
+          "_bak-pre-b5-subst/演示.html"
+        ]
+      },
+      "link_href": {},
+      "at_import": {},
+      "nostamp": [],
+      "count_script_src": 68,
+      "count_link_href": 0,
+      "count_at_import": 0,
+      "count_tag_total": 68,
+      "stamps_summary": {
+        "script_src": {
+          "20260911c": 1,
+          "20260916S": 25,
+          "20260917b": 41,
+          "20260916L": 1
+        },
+        "link_href": {},
+        "at_import": {}
+      }
+    },
+    "api.js": {
+      "script_src": {
+        "20260911c": [
+          ".qa/live_chat.html"
+        ],
+        "20260916S": [
+          ".tmp_eng/backup_a8/PPT案例拆解.html",
+          ".tmp_eng/backup_a8/PPT版式库.html",
+          ".tmp_eng/backup_a8/blog_wechat.html",
+          ".tmp_eng/backup_a8/万能金句库.html",
+          ".tmp_eng/backup_a8/企业定向库.html",
+          ".tmp_eng/backup_a8/商务礼仪.html",
+          ".tmp_eng/backup_a8/四级词汇.html",
+          ".tmp_eng/backup_a8/场景话术库.html",
+          ".tmp_eng/backup_a8/学习概括.html",
+          ".tmp_eng/backup_a8/工具.html",
+          ".tmp_eng/backup_a8/时政热点.html",
+          ".tmp_eng/backup_a8/申论刷题.html",
+          ".tmp_eng/backup_a8/管理员.html",
+          ".tmp_eng/backup_a8/英语.html",
+          ".tmp_eng/backup_a8/行测.html",
+          ".tmp_eng/backup_a8/行测刷题.html",
+          ".tmp_eng/backup_a8/表达.html",
+          ".tmp_eng/backup_a8/面测.html",
+          ".tmp_eng/backup_a8/面试题库.html",
+          ".tmp_eng/backup_a8c_ai-settings.html"
+        ],
+        "20260917b": [
+          "AI.html",
+          "PPT案例拆解.html",
+          "PPT版式库.html",
+          "ai-settings.html",
+          "blog_wechat.html",
+          "万能金句库.html",
+          "个人中心.html",
+          "个人资料.html",
+          "企业定向库.html",
+          "关于.html",
+          "动态空间.html",
+          "商务礼仪.html",
+          "四级词汇.html",
+          "场景话术库.html",
+          "学习工作台.html",
+          "学习概括.html",
+          "导入题库.html",
+          "工具.html",
+          "我的动态.html",
+          "我的文件.html",
+          "时政热点.html",
+          "更多.html",
+          "朋友圈发布.html",
+          "演示.html",
+          "申论刷题.html",
+          "社区.html",
+          "私聊.html",
+          "管理员.html",
+          "英语.html",
+          "行测.html",
+          "行测刷题.html",
+          "表达.html",
+          "设置.html",
+          "赞助.html",
+          "错题本.html",
+          "面测.html",
+          "面试题库.html"
+        ],
+        "20260916L": [
+          "_bak-pre-b5-subst/演示.html"
+        ]
+      },
+      "link_href": {},
+      "at_import": {},
+      "nostamp": [],
+      "count_script_src": 59,
+      "count_link_href": 0,
+      "count_at_import": 0,
+      "count_tag_total": 59,
+      "stamps_summary": {
+        "script_src": {
+          "20260911c": 1,
+          "20260916S": 20,
+          "20260917b": 37,
+          "20260916L": 1
+        },
+        "link_href": {},
+        "at_import": {}
+      }
+    },
+    "config.js": {
+      "script_src": {
+        "20260911d": [
+          ".qa/live_chat.html"
+        ],
+        "20260916O": [
+          ".tmp_eng/backup_a8/AI模拟面试.html",
+          ".tmp_eng/backup_a8/PPT案例拆解.html",
+          ".tmp_eng/backup_a8/PPT版式库.html",
+          ".tmp_eng/backup_a8/PPT素材库.html",
+          ".tmp_eng/backup_a8/万能金句库.html",
+          ".tmp_eng/backup_a8/企业定向库.html",
+          ".tmp_eng/backup_a8/商务礼仪.html",
+          ".tmp_eng/backup_a8/四级经验分享.html",
+          ".tmp_eng/backup_a8/四级词汇.html",
+          ".tmp_eng/backup_a8/场景话术库.html",
+          ".tmp_eng/backup_a8/学习概括.html",
+          ".tmp_eng/backup_a8/学途.html",
+          ".tmp_eng/backup_a8/工具.html",
+          ".tmp_eng/backup_a8/时政热点.html",
+          ".tmp_eng/backup_a8/申论刷题.html",
+          ".tmp_eng/backup_a8/管理员.html",
+          ".tmp_eng/backup_a8/英语.html",
+          ".tmp_eng/backup_a8/行测.html",
+          ".tmp_eng/backup_a8/行测刷题.html",
+          ".tmp_eng/backup_a8/表达.html",
+          ".tmp_eng/backup_a8/面测.html",
+          ".tmp_eng/backup_a8/面试题库.html",
+          ".tmp_eng/backup_a8b_学途.html",
+          ".tmp_eng/backup_a8c_ai-settings.html",
+          "AI.html",
+          "AI模拟面试.html",
+          "PPT案例拆解.html",
+          "PPT版式库.html",
+          "PPT素材库.html",
+          "ai-settings.html",
+          "万能金句库.html",
+          "个人中心.html",
+          "企业定向库.html",
+          "关于.html",
+          "动态空间.html",
+          "商务礼仪.html",
+          "四级经验分享.html",
+          "四级词汇.html",
+          "场景话术库.html",
+          "好友申请.html",
+          "学习工作台.html",
+          "学习概括.html",
+          "学途.html",
+          "导入题库.html",
+          "工具.html",
+          "我的动态.html",
+          "我的文件.html",
+          "时政热点.html",
+          "更多.html",
+          "更新.html",
+          "朋友圈发布.html",
+          "演示.html",
+          "申论刷题.html",
+          "登录.html",
+          "社区.html",
+          "私聊.html",
+          "管理员.html",
+          "英语.html",
+          "行测.html",
+          "行测刷题.html",
+          "表达.html",
+          "设置.html",
+          "赞助.html",
+          "错题本.html",
+          "面测.html",
+          "面试题库.html"
+        ],
+        "20260916L": [
+          "_bak-pre-b5-subst/演示.html"
+        ],
+        "20260917": [
+          "个人资料.html"
+        ]
+      },
+      "link_href": {},
+      "at_import": {},
+      "nostamp": [],
+      "count_script_src": 69,
+      "count_link_href": 0,
+      "count_at_import": 0,
+      "count_tag_total": 69,
+      "stamps_summary": {
+        "script_src": {
+          "20260911d": 1,
+          "20260916O": 66,
+          "20260916L": 1,
+          "20260917": 1
+        },
+        "link_href": {},
+        "at_import": {}
+      }
+    },
+    "icon-map.js": {
+      "script_src": {
+        "20260916O": [
+          ".tmp_eng/backup_a8/AI模拟面试.html",
+          ".tmp_eng/backup_a8/PPT案例拆解.html",
+          ".tmp_eng/backup_a8/PPT版式库.html",
+          ".tmp_eng/backup_a8/PPT素材库.html",
+          ".tmp_eng/backup_a8/blog_wechat.html",
+          ".tmp_eng/backup_a8/mock_exam.html",
+          ".tmp_eng/backup_a8/mock_exam_result.html",
+          ".tmp_eng/backup_a8/mock_exam_run.html",
+          ".tmp_eng/backup_a8/万能金句库.html",
+          ".tmp_eng/backup_a8/企业定向库.html",
+          ".tmp_eng/backup_a8/商务礼仪.html",
+          ".tmp_eng/backup_a8/四级词汇.html",
+          ".tmp_eng/backup_a8/场景话术库.html",
+          ".tmp_eng/backup_a8/学习概括.html",
+          ".tmp_eng/backup_a8/学途.html",
+          ".tmp_eng/backup_a8/工具.html",
+          ".tmp_eng/backup_a8/时政热点.html",
+          ".tmp_eng/backup_a8/申论刷题.html",
+          ".tmp_eng/backup_a8/管理员.html",
+          ".tmp_eng/backup_a8/英语.html",
+          ".tmp_eng/backup_a8/行测.html",
+          ".tmp_eng/backup_a8/行测刷题.html",
+          ".tmp_eng/backup_a8/表达.html",
+          ".tmp_eng/backup_a8/面测.html",
+          ".tmp_eng/backup_a8/面试题库.html",
+          ".tmp_eng/backup_a8b_学途.html",
+          ".tmp_eng/backup_a8c_ai-settings.html",
+          "AI.html",
+          "AI模拟面试.html",
+          "PPT案例拆解.html",
+          "PPT版式库.html",
+          "PPT素材库.html",
+          "ai-settings.html",
+          "blog_wechat.html",
+          "mock_exam.html",
+          "mock_exam_result.html",
+          "mock_exam_run.html",
+          "万能金句库.html",
+          "个人中心.html",
+          "企业定向库.html",
+          "关于.html",
+          "动态空间.html",
+          "商务礼仪.html",
+          "四级词汇.html",
+          "地区选择.html",
+          "场景话术库.html",
+          "学习工作台.html",
+          "学习概括.html",
+          "学途.html",
+          "导入题库.html",
+          "工具.html",
+          "我的动态.html",
+          "我的文件.html",
+          "时政热点.html",
+          "更多.html",
+          "更新.html",
+          "朋友圈发布.html",
+          "演示.html",
+          "申论刷题.html",
+          "登录.html",
+          "社区.html",
+          "私聊.html",
+          "管理员.html",
+          "英语.html",
+          "行测.html",
+          "行测刷题.html",
+          "表达.html",
+          "设置.html",
+          "赞助.html",
+          "错题本.html",
+          "面测.html",
+          "面试题库.html"
+        ],
+        "20260916L": [
+          "_bak-pre-b5-subst/演示.html"
+        ],
+        "20260917": [
+          "个人资料.html"
+        ]
+      },
+      "link_href": {},
+      "at_import": {},
+      "nostamp": [],
+      "count_script_src": 74,
+      "count_link_href": 0,
+      "count_at_import": 0,
+      "count_tag_total": 74,
+      "stamps_summary": {
+        "script_src": {
+          "20260916O": 72,
+          "20260916L": 1,
+          "20260917": 1
+        },
+        "link_href": {},
+        "at_import": {}
+      }
+    },
+    "polish.css": {
+      "script_src": {},
+      "link_href": {
+        "20260911c": [
+          ".qa/live_chat.html"
+        ],
+        "20260916O": [
+          ".tmp_eng/backup_a8/PPT案例拆解.html",
+          ".tmp_eng/backup_a8/PPT版式库.html",
+          ".tmp_eng/backup_a8/blog_wechat.html",
+          ".tmp_eng/backup_a8/万能金句库.html",
+          ".tmp_eng/backup_a8/企业定向库.html",
+          ".tmp_eng/backup_a8/商务礼仪.html",
+          ".tmp_eng/backup_a8/四级词汇.html",
+          ".tmp_eng/backup_a8/场景话术库.html",
+          ".tmp_eng/backup_a8/学习概括.html",
+          ".tmp_eng/backup_a8/工具.html",
+          ".tmp_eng/backup_a8/时政热点.html",
+          ".tmp_eng/backup_a8/申论刷题.html",
+          ".tmp_eng/backup_a8/管理员.html",
+          ".tmp_eng/backup_a8/英语.html",
+          ".tmp_eng/backup_a8/行测.html",
+          ".tmp_eng/backup_a8/行测刷题.html",
+          ".tmp_eng/backup_a8/表达.html",
+          ".tmp_eng/backup_a8/面测.html",
+          ".tmp_eng/backup_a8/面试题库.html",
+          ".tmp_eng/backup_a8c_ai-settings.html",
+          "AI.html",
+          "PPT案例拆解.html",
+          "PPT版式库.html",
+          "ai-settings.html",
+          "blog_wechat.html",
+          "万能金句库.html",
+          "个人中心.html",
+          "企业定向库.html",
+          "关于.html",
+          "动态空间.html",
+          "商务礼仪.html",
+          "四级词汇.html",
+          "场景话术库.html",
+          "学习工作台.html",
+          "学习概括.html",
+          "导入题库.html",
+          "工具.html",
+          "我的动态.html",
+          "我的文件.html",
+          "时政热点.html",
+          "更多.html",
+          "更新.html",
+          "朋友圈发布.html",
+          "演示.html",
+          "申论刷题.html",
+          "社区.html",
+          "私聊.html",
+          "管理员.html",
+          "英语.html",
+          "行测.html",
+          "行测刷题.html",
+          "表达.html",
+          "设置.html",
+          "赞助.html",
+          "错题本.html",
+          "面测.html",
+          "面试题库.html"
+        ],
+        "20260916L": [
+          "_bak-pre-b5-subst/演示.html"
+        ]
+      },
+      "at_import": {},
+      "nostamp": [],
+      "count_script_src": 0,
+      "count_link_href": 59,
+      "count_at_import": 0,
+      "count_tag_total": 59,
+      "stamps_summary": {
+        "script_src": {},
+        "link_href": {
+          "20260911c": 1,
+          "20260916O": 57,
+          "20260916L": 1
+        },
+        "at_import": {}
+      }
+    },
+    "states.css": {
+      "script_src": {},
+      "link_href": {
+        "20260916O": [
+          ".tmp_eng/backup_a8/PPT案例拆解.html",
+          ".tmp_eng/backup_a8/PPT版式库.html",
+          ".tmp_eng/backup_a8/blog_wechat.html",
+          ".tmp_eng/backup_a8/mock_exam.html",
+          ".tmp_eng/backup_a8/mock_exam_result.html",
+          ".tmp_eng/backup_a8/mock_exam_run.html",
+          ".tmp_eng/backup_a8/万能金句库.html",
+          ".tmp_eng/backup_a8/企业定向库.html",
+          ".tmp_eng/backup_a8/商务礼仪.html",
+          ".tmp_eng/backup_a8/四级词汇.html",
+          ".tmp_eng/backup_a8/场景话术库.html",
+          ".tmp_eng/backup_a8/学习概括.html",
+          ".tmp_eng/backup_a8/工具.html",
+          ".tmp_eng/backup_a8/时政热点.html",
+          ".tmp_eng/backup_a8/申论刷题.html",
+          ".tmp_eng/backup_a8/管理员.html",
+          ".tmp_eng/backup_a8/英语.html",
+          ".tmp_eng/backup_a8/行测.html",
+          ".tmp_eng/backup_a8/行测刷题.html",
+          ".tmp_eng/backup_a8/表达.html",
+          ".tmp_eng/backup_a8/面测.html",
+          ".tmp_eng/backup_a8/面试题库.html",
+          ".tmp_eng/backup_a8c_ai-settings.html",
+          "AI.html",
+          "PPT案例拆解.html",
+          "PPT版式库.html",
+          "ai-settings.html",
+          "blog_wechat.html",
+          "mock_exam.html",
+          "mock_exam_result.html",
+          "mock_exam_run.html",
+          "万能金句库.html",
+          "个人中心.html",
+          "企业定向库.html",
+          "关于.html",
+          "动态空间.html",
+          "商务礼仪.html",
+          "四级词汇.html",
+          "场景话术库.html",
+          "学习工作台.html",
+          "学习概括.html",
+          "导入题库.html",
+          "工具.html",
+          "我的动态.html",
+          "我的文件.html",
+          "时政热点.html",
+          "更多.html",
+          "更新.html",
+          "朋友圈发布.html",
+          "演示.html",
+          "申论刷题.html",
+          "登录.html",
+          "社区.html",
+          "私聊.html",
+          "管理员.html",
+          "英语.html",
+          "行测.html",
+          "行测刷题.html",
+          "表达.html",
+          "设置.html",
+          "赞助.html",
+          "错题本.html",
+          "面测.html",
+          "面试题库.html"
+        ],
+        "20260916L": [
+          "_bak-pre-b5-subst/演示.html"
+        ]
+      },
+      "at_import": {},
+      "nostamp": [],
+      "count_script_src": 0,
+      "count_link_href": 65,
+      "count_at_import": 0,
+      "count_tag_total": 65,
+      "stamps_summary": {
+        "script_src": {},
+        "link_href": {
+          "20260916O": 64,
+          "20260916L": 1
+        },
+        "at_import": {}
+      }
+    },
+    "xt-toast.js": {
+      "script_src": {
+        "20260916O": [
+          ".tmp_eng/backup_a8/PPT案例拆解.html",
+          ".tmp_eng/backup_a8/PPT版式库.html",
+          ".tmp_eng/backup_a8/blog_wechat.html",
+          ".tmp_eng/backup_a8/mock_exam.html",
+          ".tmp_eng/backup_a8/mock_exam_result.html",
+          ".tmp_eng/backup_a8/mock_exam_run.html",
+          ".tmp_eng/backup_a8/万能金句库.html",
+          ".tmp_eng/backup_a8/企业定向库.html",
+          ".tmp_eng/backup_a8/商务礼仪.html",
+          ".tmp_eng/backup_a8/四级词汇.html",
+          ".tmp_eng/backup_a8/场景话术库.html",
+          ".tmp_eng/backup_a8/学习概括.html",
+          ".tmp_eng/backup_a8/工具.html",
+          ".tmp_eng/backup_a8/时政热点.html",
+          ".tmp_eng/backup_a8/申论刷题.html",
+          ".tmp_eng/backup_a8/管理员.html",
+          ".tmp_eng/backup_a8/英语.html",
+          ".tmp_eng/backup_a8/行测.html",
+          ".tmp_eng/backup_a8/行测刷题.html",
+          ".tmp_eng/backup_a8/表达.html",
+          ".tmp_eng/backup_a8/面测.html",
+          ".tmp_eng/backup_a8/面试题库.html",
+          ".tmp_eng/backup_a8c_ai-settings.html",
+          "AI.html",
+          "PPT案例拆解.html",
+          "PPT版式库.html",
+          "ai-settings.html",
+          "blog_wechat.html",
+          "mock_exam.html",
+          "mock_exam_result.html",
+          "mock_exam_run.html",
+          "万能金句库.html",
+          "个人中心.html",
+          "企业定向库.html",
+          "关于.html",
+          "动态空间.html",
+          "商务礼仪.html",
+          "四级词汇.html",
+          "场景话术库.html",
+          "学习工作台.html",
+          "学习概括.html",
+          "导入题库.html",
+          "工具.html",
+          "我的动态.html",
+          "我的文件.html",
+          "时政热点.html",
+          "更多.html",
+          "更新.html",
+          "朋友圈发布.html",
+          "演示.html",
+          "申论刷题.html",
+          "登录.html",
+          "社区.html",
+          "私聊.html",
+          "管理员.html",
+          "英语.html",
+          "行测.html",
+          "行测刷题.html",
+          "表达.html",
+          "设置.html",
+          "赞助.html",
+          "错题本.html",
+          "面测.html",
+          "面试题库.html"
+        ],
+        "20260916L": [
+          "_bak-pre-b5-subst/演示.html"
+        ]
+      },
+      "link_href": {},
+      "at_import": {},
+      "nostamp": [],
+      "count_script_src": 65,
+      "count_link_href": 0,
+      "count_at_import": 0,
+      "count_tag_total": 65,
+      "stamps_summary": {
+        "script_src": {
+          "20260916O": 64,
+          "20260916L": 1
+        },
+        "link_href": {},
+        "at_import": {}
+      }
+    },
+    "page-head.css": {
+      "script_src": {},
+      "link_href": {
+        "20260916O": [
+          ".tmp_eng/backup_a8/PPT案例拆解.html",
+          ".tmp_eng/backup_a8/PPT版式库.html",
+          ".tmp_eng/backup_a8/blog_wechat.html",
+          ".tmp_eng/backup_a8/mock_exam.html",
+          ".tmp_eng/backup_a8/mock_exam_result.html",
+          ".tmp_eng/backup_a8/mock_exam_run.html",
+          ".tmp_eng/backup_a8/万能金句库.html",
+          ".tmp_eng/backup_a8/企业定向库.html",
+          ".tmp_eng/backup_a8/商务礼仪.html",
+          ".tmp_eng/backup_a8/四级词汇.html",
+          ".tmp_eng/backup_a8/场景话术库.html",
+          ".tmp_eng/backup_a8/学习概括.html",
+          ".tmp_eng/backup_a8/工具.html",
+          ".tmp_eng/backup_a8/时政热点.html",
+          ".tmp_eng/backup_a8/申论刷题.html",
+          ".tmp_eng/backup_a8/管理员.html",
+          ".tmp_eng/backup_a8/英语.html",
+          ".tmp_eng/backup_a8/行测.html",
+          ".tmp_eng/backup_a8/行测刷题.html",
+          ".tmp_eng/backup_a8/表达.html",
+          ".tmp_eng/backup_a8/面测.html",
+          ".tmp_eng/backup_a8/面试题库.html",
+          ".tmp_eng/backup_a8c_ai-settings.html",
+          "AI.html",
+          "PPT案例拆解.html",
+          "PPT版式库.html",
+          "ai-settings.html",
+          "blog_wechat.html",
+          "mock_exam.html",
+          "mock_exam_result.html",
+          "mock_exam_run.html",
+          "万能金句库.html",
+          "个人中心.html",
+          "企业定向库.html",
+          "关于.html",
+          "动态空间.html",
+          "商务礼仪.html",
+          "四级词汇.html",
+          "场景话术库.html",
+          "学习工作台.html",
+          "学习概括.html",
+          "导入题库.html",
+          "工具.html",
+          "我的动态.html",
+          "我的文件.html",
+          "时政热点.html",
+          "更多.html",
+          "更新.html",
+          "朋友圈发布.html",
+          "演示.html",
+          "申论刷题.html",
+          "登录.html",
+          "社区.html",
+          "私聊.html",
+          "管理员.html",
+          "英语.html",
+          "行测.html",
+          "行测刷题.html",
+          "表达.html",
+          "设置.html",
+          "赞助.html",
+          "错题本.html",
+          "面测.html",
+          "面试题库.html"
+        ],
+        "20260916L": [
+          "_bak-pre-b5-subst/演示.html"
+        ]
+      },
+      "at_import": {},
+      "nostamp": [],
+      "count_script_src": 0,
+      "count_link_href": 65,
+      "count_at_import": 0,
+      "count_tag_total": 65,
+      "stamps_summary": {
+        "script_src": {},
+        "link_href": {
+          "20260916O": 64,
+          "20260916L": 1
+        },
+        "at_import": {}
+      }
+    },
+    "xt-update.js": {
+      "script_src": {
+        "20260918c": [
+          "更多.html",
+          "更新.html",
+          "设置.html"
+        ]
+      },
+      "link_href": {},
+      "at_import": {},
+      "nostamp": [],
+      "count_script_src": 3,
+      "count_link_href": 0,
+      "count_at_import": 0,
+      "count_tag_total": 3,
+      "stamps_summary": {
+        "script_src": {
+          "20260918c": 3
+        },
+        "link_href": {},
+        "at_import": {}
+      }
+    },
+    "xt-profile.js": {
+      "script_src": {
+        "20260917b": [
+          "个人资料.html"
+        ]
+      },
+      "link_href": {},
+      "at_import": {},
+      "nostamp": [],
+      "count_script_src": 1,
+      "count_link_href": 0,
+      "count_at_import": 0,
+      "count_tag_total": 1,
+      "stamps_summary": {
+        "script_src": {
+          "20260917b": 1
+        },
+        "link_href": {},
+        "at_import": {}
+      }
+    },
+    "xt-profile.css": {
+      "script_src": {},
+      "link_href": {
+        "20260917b": [
+          "个人资料.html"
+        ]
+      },
+      "at_import": {},
+      "nostamp": [],
+      "count_script_src": 0,
+      "count_link_href": 1,
+      "count_at_import": 0,
+      "count_tag_total": 1,
+      "stamps_summary": {
+        "script_src": {},
+        "link_href": {
+          "20260917b": 1
+        },
+        "at_import": {}
+      }
+    },
+    "xt-moments.js": {
+      "script_src": {
+        "20260917b": [
+          "动态空间.html",
+          "我的动态.html",
+          "朋友圈发布.html"
+        ]
+      },
+      "link_href": {},
+      "at_import": {},
+      "nostamp": [],
+      "count_script_src": 3,
+      "count_link_href": 0,
+      "count_at_import": 0,
+      "count_tag_total": 3,
+      "stamps_summary": {
+        "script_src": {
+          "20260917b": 3
+        },
+        "link_href": {},
+        "at_import": {}
+      }
+    },
+    "ai-service.js": {
+      "script_src": {
+        "20260916S": [
+          ".tmp_eng/backup_a8/AI模拟面试.html",
+          ".tmp_eng/backup_a8/PPT案例拆解.html",
+          ".tmp_eng/backup_a8/PPT版式库.html",
+          ".tmp_eng/backup_a8/blog_wechat.html",
+          ".tmp_eng/backup_a8/万能金句库.html",
+          ".tmp_eng/backup_a8/企业定向库.html",
+          ".tmp_eng/backup_a8/商务礼仪.html",
+          ".tmp_eng/backup_a8/四级词汇.html",
+          ".tmp_eng/backup_a8/场景话术库.html",
+          ".tmp_eng/backup_a8/学习概括.html",
+          ".tmp_eng/backup_a8/工具.html",
+          ".tmp_eng/backup_a8/时政热点.html",
+          ".tmp_eng/backup_a8/申论刷题.html",
+          ".tmp_eng/backup_a8/管理员.html",
+          ".tmp_eng/backup_a8/英语.html",
+          ".tmp_eng/backup_a8/行测.html",
+          ".tmp_eng/backup_a8/行测刷题.html",
+          ".tmp_eng/backup_a8/表达.html",
+          ".tmp_eng/backup_a8/面测.html",
+          ".tmp_eng/backup_a8/面试题库.html",
+          ".tmp_eng/backup_a8c_ai-settings.html"
+        ],
+        "20260918c": [
+          "AI.html",
+          "AI模拟面试.html",
+          "PPT案例拆解.html",
+          "PPT版式库.html",
+          "ai-settings.html",
+          "万能金句库.html",
+          "个人中心.html",
+          "企业定向库.html",
+          "关于.html",
+          "动态空间.html",
+          "商务礼仪.html",
+          "四级词汇.html",
+          "场景话术库.html",
+          "学习工作台.html",
+          "学习概括.html",
+          "导入题库.html",
+          "工具.html",
+          "我的动态.html",
+          "我的文件.html",
+          "时政热点.html",
+          "更多.html",
+          "朋友圈发布.html",
+          "演示.html",
+          "申论刷题.html",
+          "社区.html",
+          "私聊.html",
+          "管理员.html",
+          "英语.html",
+          "行测.html",
+          "行测刷题.html",
+          "表达.html",
+          "设置.html",
+          "赞助.html",
+          "错题本.html",
+          "面测.html",
+          "面试题库.html"
+        ],
+        "20260916L": [
+          "_bak-pre-b5-subst/演示.html"
+        ],
+        "20260918b": [
+          "blog_wechat.html"
+        ]
+      },
+      "link_href": {},
+      "at_import": {},
+      "nostamp": [],
+      "count_script_src": 59,
+      "count_link_href": 0,
+      "count_at_import": 0,
+      "count_tag_total": 59,
+      "stamps_summary": {
+        "script_src": {
+          "20260916S": 21,
+          "20260918c": 36,
+          "20260916L": 1,
+          "20260918b": 1
+        },
+        "link_href": {},
+        "at_import": {}
+      }
+    },
+    "ai-settings.js": {
+      "script_src": {
+        "20260916S": [
+          ".tmp_eng/backup_a8c_ai-settings.html"
+        ],
+        "20260918c": [
+          "ai-settings.html"
+        ]
+      },
+      "link_href": {},
+      "at_import": {},
+      "nostamp": [],
+      "count_script_src": 2,
+      "count_link_href": 0,
+      "count_at_import": 0,
+      "count_tag_total": 2,
+      "stamps_summary": {
+        "script_src": {
+          "20260916S": 1,
+          "20260918c": 1
+        },
+        "link_href": {},
+        "at_import": {}
+      }
+    },
+    "ai-page.js": {
+      "script_src": {
+        "20260918c": [
+          "AI.html"
+        ]
+      },
+      "link_href": {},
+      "at_import": {},
+      "nostamp": [],
+      "count_script_src": 1,
+      "count_link_href": 0,
+      "count_at_import": 0,
+      "count_tag_total": 1,
+      "stamps_summary": {
+        "script_src": {
+          "20260918c": 1
+        },
+        "link_href": {},
+        "at_import": {}
+      }
+    },
+    "xt-aiusage.js": {
+      "script_src": {
+        "20260918c": [
+          "ai-settings.html"
+        ]
+      },
+      "link_href": {},
+      "at_import": {},
+      "nostamp": [],
+      "count_script_src": 1,
+      "count_link_href": 0,
+      "count_at_import": 0,
+      "count_tag_total": 1,
+      "stamps_summary": {
+        "script_src": {
+          "20260918c": 1
+        },
+        "link_href": {},
+        "at_import": {}
+      }
+    },
+    "xt-region.js": {
+      "script_src": {
+        "20260918a": [
+          "地区选择.html",
+          "社区.html",
+          "私聊.html"
+        ]
+      },
+      "link_href": {},
+      "at_import": {},
+      "nostamp": [],
+      "count_script_src": 3,
+      "count_link_href": 0,
+      "count_at_import": 0,
+      "count_tag_total": 3,
+      "stamps_summary": {
+        "script_src": {
+          "20260918a": 3
+        },
+        "link_href": {},
+        "at_import": {}
+      }
+    },
+    "chat-local.js": {
+      "script_src": {
+        "20260917b": [
+          "私聊.html"
+        ]
+      },
+      "link_href": {},
+      "at_import": {},
+      "nostamp": [
+        {
+          "page": ".qa/live_chat.html",
+          "tag": "script",
+          "url": "assets/chat-local.js"
+        }
+      ],
+      "count_script_src": 1,
+      "count_link_href": 0,
+      "count_at_import": 0,
+      "count_tag_total": 1,
+      "stamps_summary": {
+        "script_src": {
+          "20260917b": 1
+        },
+        "link_href": {},
+        "at_import": {}
+      }
+    },
+    "ai-config.js": {
+      "script_src": {
+        "20260916R": [
+          ".tmp_eng/backup_a8/AI模拟面试.html",
+          ".tmp_eng/backup_a8/PPT案例拆解.html",
+          ".tmp_eng/backup_a8/PPT版式库.html",
+          ".tmp_eng/backup_a8/blog_wechat.html",
+          ".tmp_eng/backup_a8/万能金句库.html",
+          ".tmp_eng/backup_a8/企业定向库.html",
+          ".tmp_eng/backup_a8/商务礼仪.html",
+          ".tmp_eng/backup_a8/四级词汇.html",
+          ".tmp_eng/backup_a8/场景话术库.html",
+          ".tmp_eng/backup_a8/学习概括.html",
+          ".tmp_eng/backup_a8/工具.html",
+          ".tmp_eng/backup_a8/时政热点.html",
+          ".tmp_eng/backup_a8/申论刷题.html",
+          ".tmp_eng/backup_a8/管理员.html",
+          ".tmp_eng/backup_a8/英语.html",
+          ".tmp_eng/backup_a8/行测.html",
+          ".tmp_eng/backup_a8/行测刷题.html",
+          ".tmp_eng/backup_a8/表达.html",
+          ".tmp_eng/backup_a8/面测.html",
+          ".tmp_eng/backup_a8/面试题库.html",
+          ".tmp_eng/backup_a8c_ai-settings.html"
+        ],
+        "20260918c": [
+          "AI.html",
+          "AI模拟面试.html",
+          "PPT案例拆解.html",
+          "PPT版式库.html",
+          "ai-settings.html",
+          "万能金句库.html",
+          "个人中心.html",
+          "企业定向库.html",
+          "关于.html",
+          "动态空间.html",
+          "商务礼仪.html",
+          "四级词汇.html",
+          "场景话术库.html",
+          "学习工作台.html",
+          "学习概括.html",
+          "导入题库.html",
+          "工具.html",
+          "我的动态.html",
+          "我的文件.html",
+          "时政热点.html",
+          "更多.html",
+          "朋友圈发布.html",
+          "演示.html",
+          "申论刷题.html",
+          "社区.html",
+          "私聊.html",
+          "管理员.html",
+          "英语.html",
+          "行测.html",
+          "行测刷题.html",
+          "表达.html",
+          "设置.html",
+          "赞助.html",
+          "错题本.html",
+          "面测.html",
+          "面试题库.html"
+        ],
+        "20260916L": [
+          "_bak-pre-b5-subst/演示.html"
+        ],
+        "20260918b": [
+          "blog_wechat.html"
+        ]
+      },
+      "link_href": {},
+      "at_import": {},
+      "nostamp": [],
+      "count_script_src": 59,
+      "count_link_href": 0,
+      "count_at_import": 0,
+      "count_tag_total": 59,
+      "stamps_summary": {
+        "script_src": {
+          "20260916R": 21,
+          "20260918c": 36,
+          "20260916L": 1,
+          "20260918b": 1
+        },
+        "link_href": {},
+        "at_import": {}
+      }
+    }
+  }
+}

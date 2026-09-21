@@ -1,0 +1,51 @@
+ai-page.js BEFORE: size=133571 crlf=0 loneCR=0 (expect 0/0 pure LF)
+[OK] P1 insert capability routing before askAI (old 31 B -> new 4826 B)
+[OK] P2 askAI hook after predictFuncType (old 51 B -> new 224 B)
+ai-page.js AFTER: size=138539 crlf=0 loneCR=0 (delta=+4968 B)
+[OK] ai-page.js 回读一致，纯 LF
+ai-service.js BEFORE: size=148942 crlf=0 loneCR=0 (expect 0/0 pure LF)
+[OK] S1 xtRunCapability: cap.run async dispatch (old 80 B -> new 1303 B)
+[OK] S2 export window.xtRunCapability (old 28 B -> new 232 B)
+ai-service.js AFTER: size=150369 crlf=0 loneCR=0 (delta=+1427 B)
+[OK] ai-service.js 回读一致，纯 LF
+AI.html BEFORE: size=56608 crlf=975 loneCR=0 (expect loneCR=0)
+[OK] C1 AI.html ai-service.js d -> e (old 32 B -> new 32 B)
+[OK] C2 AI.html ai-page.js d -> e (old 29 B -> new 29 B)
+AI.html AFTER: size=56608 crlf=975 loneCR=0 (delta=+0 B)
+[OK] AI.html 回读一致
+[FAIL] ai-page: routeCapabilityModel def+hook =2
+[FAIL] ai-page: CAP_MODEL_TYPES =1
+[PASS] ai-page: i2v / i23d 模式接好
+[PASS] ai-page: <video> 回显 =1
+[FAIL] ai-page: xtRunCapability 引用 =1
+[PASS] ai-page: 原链路 callAI 调用保留
+[PASS] ai-svc: cap.run dispatch =1
+[FAIL] ai-svc: export xtRunCapability =1
+[PASS] ai-svc: xtCallCapability 原链路保留
+[PASS] AI.html: ai-page.js v=20260918e =1
+[PASS] AI.html: ai-service.js v=20260918e =1
+[PASS] AI.html: 旧 v=20260918d（page/svc）=0
+EDIT_ALL=FAIL
+---- fixround ----
+ai-page.js BEFORE: size=138539 crlf=0 loneCR=0
+[OK] F1 routeCapabilityModel -> capRunner() (old 79 B -> new 126 B)
+ai-page.js AFTER: size=138586 crlf=0 loneCR=0 (delta=+47 B)
+[OK] ai-page.js 回读一致，纯 LF
+ai-service.js BEFORE: size=150369 crlf=0 loneCR=0
+[OK] F2 AI_SERVICE.xtRunCapability export (old 27 B -> new 224 B)
+ai-service.js AFTER: size=150566 crlf=0 loneCR=0 (delta=+197 B)
+[OK] ai-service.js 回读一致，纯 LF
+[PASS] ai-page: routeCapabilityModel def =1
+[PASS] ai-page: routeCapabilityModel hook call =1
+[PASS] ai-page: var CAP_MODEL_TYPES def =1
+[PASS] ai-page: capRunner() 复用（route 内）
+[PASS] ai-page: isCapabilityModel def =1
+[PASS] ai-page: i2v / i23d 各=1
+[PASS] ai-page: createElement('video') =1
+[PASS] ai-page: 原链路 callAI 调用保留 =1
+[PASS] ai-svc: cap.run dispatch =1
+[PASS] ai-svc: cap.run await =1
+[PASS] ai-svc: window.xtRunCapability 守卫导出 =2
+[PASS] ai-svc: AI_SERVICE.xtRunCapability =1
+[PASS] ai-svc: xtCallCapability 原链路保留 =1
+FIX_ALL=PASS

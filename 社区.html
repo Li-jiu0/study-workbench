@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#5B8DEF">
+<title>社区 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260923c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<link rel="stylesheet" href="assets/polish.css?v=20260916O">
+<style>
+/* =====================================================================
+   批次 20260913K（kou-k-blog）：按钮栏固定到预览卡下方 + 评论区嵌套/折叠样式
+   —— 仅作用于本页；公共 CSS（common.css/polish.css）不动。
+   ===================================================================== */
+/* ② 编辑器工具条上的小型实时字数指示 + 未保存草稿轻提示（平时隐藏） */
+.ed-live-stats { margin-left: auto; font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+.ed-live-stats b { font-weight: 800; color: var(--primary); }
+.ed-draft-state {
+  font-size: 11px; font-weight: 600; color: #D4A056; white-space: nowrap;
+  background: color-mix(in srgb, #D4A056 14%, transparent);
+  padding: 3px 9px; border-radius: 999px;
+}
+/* ③ 操作栏不再吸底悬浮：固定在实时预览卡片正下方（in-flow） */
+.ed-actions-bar {
+  position: static; bottom: auto; z-index: auto;
+  margin-top: 2px; padding: 12px 14px; border-radius: 16px;
+  flex-wrap: wrap; overflow-x: visible;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card) 90%, transparent);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 16px 34px -24px rgba(0,0,0,.55);
+}
+/* 取消 common.css 为吸底栏预留的内容让位 padding */
+.blog-editor { padding-bottom: 20px; }
+/* ④ 评论区（K5 配合）：嵌套子楼层缩进 + 展开/收起按钮
+   —— markup 由 app.js 渲染：class="bc-item bc-reply" 与 class="bc-fold-btn" */
+.bc-item.bc-reply {
+  margin-top: 8px; margin-left: 34px; padding-left: 12px;
+  border-left: 2px solid var(--border);
+}
+.bc-fold-btn {
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  width: 100%; margin-top: 8px; padding: 6px 0;
+  font-size: 12px; font-weight: 600; color: var(--primary);
+  background: transparent; border: none; cursor: pointer;
+}
+.bc-fold-btn:hover {
+  color: color-mix(in srgb, var(--primary) 70%, var(--text));
+}
+/* ⑥ R55（20260914）：帖子卡片分享 —— 统计行右侧按钮 + 浮动小菜单
+   —— 仅作用于本页；不改动 common.css / polish.css。 */
+.nc-share-btn {
+  display: inline-flex; align-items: center; gap: 3px;
+  margin-left: auto; padding: 2px 9px;
+  border: 1px solid var(--border); border-radius: 999px;
+  background: transparent; color: var(--text-secondary);
+  font-size: 11px; font-weight: 600; line-height: 1.7;
+  white-space: nowrap; cursor: pointer;
+}
+.nc-share-btn:hover {
+  color: var(--primary); border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+}
+.xt-share-menu {
+  position: fixed; z-index: 1900; min-width: 170px; padding: 6px;
+  background: var(--card, #fff); border: 1px solid var(--border);
+  border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,.18);
+  display: none;
+}
+.xt-share-menu.open { display: block; }
+.xt-share-item {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 9px 10px; border: none; border-radius: 8px;
+  background: transparent; color: var(--text);
+  font-size: 13px; font-weight: 600; text-align: left; cursor: pointer;
+}
+.xt-share-item:hover { background: var(--bg-sub); color: var(--primary); }
+/* ===== R73 文字专项（需求20-B · A9/A10/A11）：本页局部加固，不改 common.css =====
+   ① 评论头行（头像+昵称+时间）允许换行：长昵称不再把时间挤成一列/压盖；
+   ② 正文/摘要/评论内的长英文、URL、连续数字可断行，不撑破卡片。 */
+.bc-item .bc-body { min-width: 0; }
+.bc-item .bc-head { flex-wrap: wrap; }
+.bc-item .bc-head > span:first-child { min-width: 0; overflow-wrap: break-word; }
+.note-body .nc-title,
+.note-body .nc-excerpt,
+.note-detail-box .nd-content,
+.bc-item .bc-text { word-break: break-word; overflow-wrap: break-word; }
+/* R88-H / T04：社区发贴「所在位置」入口 + 位置 chip（仅本页；只读文字地址，不涉坐标） */
+.blog-loc-bar { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.blog-loc-btn { display: inline-flex; align-items: center; gap: 4px; background: none; border: 1px dashed var(--border); color: var(--text-secondary); cursor: pointer; font-size: 12px; padding: 6px 10px; border-radius: 8px; transition: color .15s, border-color .15s; }
+.blog-loc-btn:hover { color: var(--primary); border-color: var(--primary); }
+.blog-loc-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, transparent); border-radius: 999px; padding: 4px 10px; max-width: 240px; }
+.blog-loc-chip .blog-loc-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.blog-loc-chip .blog-loc-x { cursor: pointer; font-weight: 700; opacity: .7; }
+.blog-loc-chip .blog-loc-x:hover { opacity: 1; }
+</style>
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
+</head>
+<body class="theme-home">
+
+<div class="app">
+<nav class="sidebar">
+    <div class="logo">
+      <div class="logo-icon"><span class="nav-icon" data-icon="book-open"></span></div>
+      <div>
+        <div class="logo-text">星途</div>
+        <div class="logo-sub">致追梦的人->修身</div>
+      </div>
+    </div>
+    <div class="nav-list">
+      <div class="nav-item" data-page="home">
+        <span class="nav-icon" data-icon="home"></span><span>首页</span>
+      </div>
+      <div class="nav-item" onclick="location.href='AI.html'">
+        <span class="nav-icon" data-icon="sparkles"></span><span>AI</span>
+      </div>
+      <div class="nav-section">学习模块</div>
+      <div class="nav-item" data-page="cet">
+        <span class="nav-icon" data-icon="book-open"></span><span>英语</span>
+      </div>
+      <div class="nav-item" data-page="exam">
+        <span class="nav-icon" data-icon="pencil"></span><span>行测</span>
+      </div>
+      <div class="nav-item" data-page="comm">
+        <span class="nav-icon" data-icon="message-square"></span><span>表达</span>
+      </div>
+      <div class="nav-item" data-page="interview">
+        <span class="nav-icon" data-icon="handshake"></span><span>面测</span>
+      </div>
+      <div class="nav-item" data-page="files">
+        <span class="nav-icon" data-icon="folder"></span><span>我的文件</span>
+      </div>
+      <div class="nav-section">创作</div>
+      <div class="nav-item active" data-page="blog">
+        <span class="nav-icon" data-icon="globe"></span><span>社区</span>
+      </div>
+      <div class="nav-item" data-page="moments">
+        <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
+      </div>
+      <div class="nav-section">互动</div>
+      <div class="nav-item" data-external="1" onclick="gotoChat()" title="通讯录 · 添加好友（需在线模式）">
+        <span class="nav-icon" data-icon="users"></span><span>通讯录</span>
+      </div>
+      <div class="nav-section">中心</div>
+      <div class="nav-item" data-page="wrong-book">
+        <span class="nav-icon" data-icon="book"></span><span>错题本</span>
+      </div>
+            <div class="nav-item" data-page="profile">
+        <span class="nav-icon" data-icon="user"></span><span>个人中心</span>
+      </div>
+<div class="nav-section">系统</div>
+      <div class="nav-item" data-page="settings">
+        <span class="nav-icon" data-icon="settings"></span><span>设置</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心">
+        <div class="user-avatar">学</div>
+        <div class="user-info">
+          <div class="user-name">同学</div>
+          <div class="user-streak"><span class="nav-icon" data-icon="fire" data-icon-size="14"></span> 连续打卡 0 天</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+<header class="topbar">
+      <div class="topbar-title" id="topbarTitle">社区</div>
+      <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
+      <div class="gs-wrap" id="gsWrap">
+        <input type="text" class="gs-input" id="gsInput" placeholder="搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <div class="gs-dropdown" id="gsDropdown"></div>
+      </div>
+      <div class="topbar-stats">
+        <div class="stat-item"><span class="stat-icon" data-icon="fire"></span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="clock"></span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="check"></span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
+      </div>
+      <div class="topbar-date" id="topbarDate"></div>
+      <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="18"></span></div>
+    </header>
+<div class="page active" id="page-blog">
+        <!-- 需求10（C2 20260913h）：删除顶端说明性卡片；「社区/我的文章/写发贴/统计」提升为顶端主导航 -->
+
+        <!-- 博客主导航（原子导航提级，语义与跳转目标不变） -->
+        <div class="blog-subnav">
+          <div class="sb-tab active" id="blogTabList" onclick="showBlogView('list')"><span class="nav-icon" data-icon="globe" data-icon-size="20"></span><span>社区</span></div>
+          <div class="sb-tab" id="blogTabMine" onclick="showBlogView('mine')"><span class="nav-icon" data-icon="user" data-icon-size="20"></span><span>我的文章</span></div>
+          <div class="sb-tab" id="blogTabEdit" onclick="showBlogView('edit')"><span class="nav-icon" data-icon="pen" data-icon-size="20"></span><span>写发贴</span></div>
+          <div class="sb-tab" id="blogTabStats" onclick="showBlogView('stats')"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span><span>统计</span></div>
+        </div>
+
+        <!-- ===== 视图：社区 ===== -->
+        <div class="blog-wrap" id="blogViewList">
+          <div class="blog-toolbar">
+            <div class="blog-search-row">
+              <input type="text" id="blogSearchInput" placeholder="搜索标题、内容、标签…" oninput="renderBlogList()">
+            </div>
+            <div class="blog-filters" id="blogFilterChips"></div>
+          </div>
+          <div class="blog-empty" id="blogListEmpty" style="display:none;text-align:center;padding:40px;color:var(--text-secondary);font-size:var(--xt-font-base)">
+            还没有公开的发贴，点上方「写发贴」发布第一篇吧～
+          </div>
+          <div class="blog-grid" id="blogGrid"></div>
+        </div>
+
+        <!-- ===== 视图：我的文章 ===== -->
+        <div class="blog-wrap" id="blogViewMine" style="display:none">
+          <div class="blog-toolbar">
+            <div class="blog-filters" id="blogMineTabs"></div>
+          </div>
+          <div class="blog-grid" id="blogMineGrid"></div>
+        </div>
+
+        <!-- ===== 视图：编辑器（写作工作台） ===== -->
+        <div class="blog-wrap blog-editor" id="blogViewEdit" style="display:none">
+
+          <!-- 未完成草稿恢复条（本机存在自动保存的草稿时才出现） -->
+          <div class="ed-draft-bar" id="edDraftBar" style="display:none">
+            <span class="ed-draft-tx" id="edDraftTx"></span>
+            <button class="btn btn-primary" onclick="edRestoreDraft()"><span class="nav-icon" data-icon="rotate-ccw" data-icon-size="16"></span> 恢复</button>
+            <button class="btn btn-outline" onclick="edDiscardDraft()">丢弃</button>
+          </div>
+
+          <!-- 快速模板：一键插入常用写作骨架 -->
+          <div class="ed-tpl-row">
+            <span class="ed-tpl-label"><span class="nav-icon" data-icon="zap" data-icon-size="14"></span> 快速模板</span>
+            <button class="ed-tpl" onclick="edInsertTemplate('review')"><span class="nav-icon" data-icon="pencil" data-icon-size="14"></span> 复习提纲</button>
+            <button class="ed-tpl" onclick="edInsertTemplate('wrong')"><span class="nav-icon" data-icon="close" data-icon-size="14"></span> 错题总结</button>
+            <button class="ed-tpl" onclick="edInsertTemplate('note')"><span class="nav-icon" data-icon="book-open" data-icon-size="14"></span> 课程/读书笔记</button>
+            <button class="ed-tpl" onclick="edInsertTemplate('mind')"><span class="nav-icon" data-icon="brain" data-icon-size="14"></span> 知识点梳理</button>
+            <button class="ed-tpl" onclick="edInsertTemplate('plan')"><span class="nav-icon" data-icon="target" data-icon-size="14"></span> 今日计划</button>
+          </div>
+
+          <!-- 步骤一：基本信息 -->
+          <div class="ed-step">
+            <div class="ed-step-head"><span class="ed-step-no">1</span>基本信息<span class="ed-step-tip">标题必填，其余可留空</span></div>
+            <div class="editor-field">
+              <label>标题 <span style="color:#E05040">*</span></label>
+              <input type="text" id="beTitle" placeholder="给这篇发贴起个吸引人的标题…">
+            </div>
+            <div class="editor-row">
+              <div class="editor-field">
+                <label>分类（绑定侧边栏模块）</label>
+                <select id="beCat"></select>
+              </div>
+              <div class="editor-field">
+                <label>可见范围</label>
+                <select id="bePrivacy">
+                  <option value="public">公开（所有人可见）</option>
+                  <option value="private">私密（仅自己可见）</option>
+                </select>
+              </div>
+              <div class="editor-field">
+                <label>封面（emoji 或图片URL）</label>
+                <input type="text" id="beCover" placeholder="emoji 或 https://…">
+              </div>
+            </div>
+            <div class="editor-row">
+              <div class="editor-field editor-tags-input">
+                <label>自定义标签（用逗号分开，如：错题总结,英语单词）</label>
+                <input type="text" id="beTags" placeholder="错题总结, 英语单词">
+              </div>
+              <div class="editor-field">
+                <label>截图 / 插图（本地文件，会以 base64 存入）</label>
+                <input type="file" id="beImageInput" accept="image/*" style="padding:8px;background:var(--card);border:1px solid var(--border);border-radius:10px;font-size:12px" onchange="editorInsertImage(event)">
+              </div>
+            </div>
+          </div>
+
+          <!-- 步骤二：正文 -->
+          <div class="ed-step">
+            <div class="ed-step-head"><span class="ed-step-no">2</span>正文内容<span class="ed-step-tip">写清「结论 / 依据 / 下一步」更利于复习</span></div>
+            <div class="ed-pane-wrap">
+              <!-- 富文本工具栏（分组：字符格式 / 段落结构 / 插入） -->
+              <div class="rt-toolbar">
+                <div class="rt-tool" title="加粗" onclick="editorTool('bold')"><b>B</b></div>
+                <div class="rt-tool" title="斜体" onclick="editorTool('italic')"><i>I</i></div>
+                <div class="rt-tool" title="行内代码" onclick="editorTool('inline')">`</div>
+                <div class="rt-sep"></div>
+                <div class="rt-tool" title="标题" onclick="editorTool('h2')">H₂</div>
+                <div class="rt-tool" title="无序列表" onclick="editorTool('ul')">•≡</div>
+                <div class="rt-tool" title="待办清单" onclick="editorTool('task')"><span class="nav-icon" data-icon="check" data-icon-size="14"></span></div>
+                <div class="rt-tool" title="引用" onclick="editorTool('quote')"><span data-icon="quote" data-icon-size="16"></span></div>
+                <div class="rt-sep"></div>
+                <div class="rt-tool" title="代码块" onclick="editorTool('code')">&lt;/&gt;</div>
+                <div class="rt-tool" title="公式" onclick="editorTool('formula')">∑</div>
+                <div class="rt-tool" title="图片链接" onclick="editorTool('image')"><span class="nav-icon" data-icon="image" data-icon-size="14"></span></div>
+                <div class="rt-tool" title="分割线" onclick="editorTool('hr')">—</div>
+                <!-- ② 小型实时指示：字数/阅读时长随输入更新；草稿状态仅未保存时轻提示 -->
+                <span class="ed-live-stats"><b id="edWordCount">0</b> 字 · 约 <b id="edReadTime">0</b> 分钟</span>
+                <span class="ed-draft-state" id="edDraftState" style="display:none"></span>
+              </div>
+
+              <!-- 左写右预览 -->
+              <div class="editor-panes">
+                <div class="editor-pane-box">
+                  <div class="pane-label"><span><span class="nav-icon" data-icon="pencil" data-icon-size="14"></span> 编辑</span><span class="pane-hint">支持 Markdown</span></div>
+                  <textarea id="blogEditorInput" placeholder="请编辑....."></textarea>
+                </div>
+                <div class="editor-pane-box">
+                  <div class="pane-label"><span><span class="nav-icon" data-icon="eye" data-icon-size="14"></span> 实时预览</span><span class="pane-hint" id="edPreviewHint"></span></div>
+                  <div class="blog-preview" id="blogEditorPreview"></div>
+                </div>
+              </div>
+
+              <!-- 操作区（20260913k：固定在实时预览卡片正下方，事件绑定不变） -->
+              <div class="editor-actions ed-actions-bar">
+                <button class="btn btn-primary" onclick="saveBlogNote('published')"><span class="nav-icon" data-icon="upload" data-icon-size="16"></span> 发布</button>
+                <button class="btn btn-outline" onclick="saveBlogNote('draft')"><span class="nav-icon" data-icon="save" data-icon-size="16"></span> 存草稿</button>
+                <button class="btn btn-outline" onclick="resetBlogEditor()"><span class="nav-icon" data-icon="rotate-ccw" data-icon-size="16"></span> 清空</button>
+                <span class="blog-loc-bar">
+                  <button type="button" class="blog-loc-btn" id="blogLocBtn" onclick="blogPickLoc()"><span class="nav-icon" data-icon="map-pin" data-icon-size="14"></span> 所在位置</button>
+                  <span class="blog-loc-chip" id="blogLocChip" data-loc="" style="display:none"><span class="nav-icon" data-icon="map-pin" data-icon-size="12"></span><span class="blog-loc-text" id="blogLocText"></span><span class="blog-loc-x" onclick="blogClearLoc()" title="清除位置">&times;</span></span>
+                </span>
+                <div class="spacer"></div>
+                <span id="blogEditStatus" style="font-size:var(--xt-font-sm);color:var(--text-secondary)"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 视图：文章详情 ===== -->
+        <div class="blog-wrap blog-detail" id="blogViewDetail" style="display:none">
+          <button class="btn btn-outline" style="align-self:flex-start" onclick="showBlogView('list')"><span data-icon="arrow-left" data-icon-size="16" style="vertical-align:-3px"></span> 返回列表</button>
+          <div id="blogDetailBox"></div>
+        </div>
+
+        <!-- ===== 视图：统计 ===== -->
+        <div class="blog-wrap" id="blogViewStats" style="display:none">
+          <div id="blogStatsBox"></div>
+        </div>
+      </div>
+  </div>
+
+
+
+  <!-- 底部导航（手机端） -->
+    <nav class="bottom-nav">
+    <div class="bottom-nav-list">
+      <div class="bottom-nav-item" data-page="home">
+        <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
+      </div>
+      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
+            <div class="bottom-nav-item" onclick="location.href='AI.html'"><div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div></div>
+            <div class="bottom-nav-item" onclick="location.href='更多.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 更多面板遮罩 -->
+    <div class="more-overlay" onclick="toggleMorePanel()"></div>
+
+  <!-- 更多面板 -->
+  <div class="bottom-more-panel" id="morePanel">
+    <div class="bottom-more-title">更多功能</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="navigateTo('moments');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="rss" data-icon-size="20"></span></div><div class="bm-label">动态空间</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogStats()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
+      </div>
+      <div class="bottom-more-item" onclick="if(window.gotoBlogMine){gotoBlogMine()}else{location.href='社区.html#mine'}">
+        <div class="bm-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div><div class="bm-label">互动广场</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div><div class="bm-label">错题本</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div><div class="bm-label">设置</div>
+      </div>
+      <div class="bottom-more-item" onclick="showAbout()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div><div class="bm-label">关于</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加倒计时弹窗 -->
+  <div class="modal-overlay" id="countdownModal">    <div class="modal">
+      <div class="modal-title" id="countdownModalTitle">添加倒计时</div>
+      <div class="form-group">
+        <div class="form-label">名称</div>
+        <input type="text" class="form-input" id="cdName" placeholder="如：四级考试、秋招截止">
+      </div>
+      <div class="form-group">
+        <div class="form-label">日期</div>
+        <input type="date" class="form-input" id="cdDate">
+      </div>
+      <div class="form-group">
+        <div class="form-label">颜色</div>
+        <div class="color-picker" id="cdColorPicker">
+          <div class="color-dot active" style="background:#5B8DEF" data-color="#5B8DEF"></div>
+          <div class="color-dot" style="background:#E05040" data-color="#E05040"></div>
+          <div class="color-dot" style="background:#9B6BD9" data-color="#9B6BD9"></div>
+          <div class="color-dot" style="background:#D4A056" data-color="#D4A056"></div>
+          <div class="color-dot" style="background:#36CFC9" data-color="#36CFC9"></div>
+          <div class="color-dot" style="background:#FF9F68" data-color="#FF9F68"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary)">
+          <input type="checkbox" id="cdPinned"> 置顶显示
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeCountdownModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveCountdown()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast提示 -->
+  <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center"></div>
+
+  <!-- ==================== AI学习助手（悬浮聊天窗口） ====================
+       说明：
+       1. 默认“本地演示模式”：不联网、不调API、无密钥，由内置规则引擎回复；
+       2. 【后续扩展点】启动 ai-server 后端后，把下方 JS 里的 AI_CONFIG.apiUrl
+          填上后端地址（如 http://localhost:3000/api/chat），即可切换为真实AI流式对话；
+       3. 安全约束：大模型密钥只放在后端 .env 里，前端代码永远不出现密钥。 -->
+  <!-- 悬浮头像：可按住拖拽到任意位置（见下方 JS.initAiFabDrag），点击打开/收起面板，双击复位 -->
+  <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">
+    <span class="nav-icon" data-icon="bot" data-icon-size="22"></span><span class="ai-mode-badge" id="aiModeBadge">演示</span>
+  </div>
+  <div class="ai-panel" id="aiPanel">
+    <div class="ai-panel-header">
+      <div class="ai-avatar"><span class="nav-icon" data-icon="bot" data-icon-size="20"></span></div>
+      <div style="flex:1">
+        <div class="ai-title">AI学习助手</div>
+        <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
+      </div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录"><span class="nav-icon" data-icon="eraser" data-icon-size="16"></span></div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板"><span class="nav-icon" data-icon="close" data-icon-size="16"></span></div>
+    </div>
+    <div class="ai-messages" id="aiMessages"></div>
+    <div class="ai-input-row">
+      <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()"><span class="nav-icon" data-icon="send" data-icon-size="16"></span></div>
+    </div>
+  </div>
+
+
+
+</div>
+
+<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/xt-toast.js?v=20260923a" defer></script>
+<script src="assets/error-boundary.js?v=20260924a" defer></script>
+<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/xt-region.js?v=20260919j" defer></script>
+<script src="assets/api.js?v=20260924a" defer></script>
+<script>
+/* ===================================================================
+   社区（发贴）编辑页增强：【字数统计 / 阅读时长 / 草稿自动保存 / 快速模板】
+   -------------------------------------------------------------------
+   设计原则：不修改 assets/app.js 中任何既有函数的内部实现，
+             只在其之上「叠加」行为（包装 clearEditorFields / updateEditorPreview），
+             因此不会影响原有发布、存草稿、AI 辅助等逻辑。
+   【后续扩展点】：可在此接入云端草稿（api.js 的 /api/notes 草稿接口）。
+   =================================================================== */
+(function () {
+  var DRAFT_KEY = 'study_workbench_editor_draft_v1';
+  // 快速模板骨架
+  var TPLS = {
+    review: '## 复习提纲\n\n**一、核心考点**\n- \n\n**二、易错点**\n- \n\n**三、复习建议**\n1. \n2. \n3. \n',
+    wrong: '## 错题总结\n\n**题目**：\n\n**我的错误**：\n\n**正确思路**：\n\n**同类题特征**：\n\n**下次注意**：\n',
+    note: '## 课程 / 读书笔记\n\n**来源**：\n\n**核心结论（3 条以内）**\n1. \n\n**关键概念**\n- \n\n**我的疑问**\n- \n',
+    mind: '## 知识点梳理\n\n**主知识点**：\n\n**分支一**\n- \n\n**分支二**\n- \n\n> 一句话总结：\n',
+    plan: '## 今日计划\n\n- [ ] \n- [ ] \n- [ ] \n\n**时间安排**\n| 时间段 | 任务 | 状态 |\n| --- | --- | --- |\n| 09:00-10:00 |  |  |\n| 14:00-15:00 |  |  |\n'
+  };
+  function $(id) { return document.getElementById(id); }
+  function isEditing() { try { return (typeof editingNoteId !== 'undefined') && !!editingNoteId; } catch (e) { return false; } }
+  function fmt(ts) {
+    var d = new Date(ts || Date.now());
+    function p(n) { return (n < 10 ? '0' : '') + n; }
+    return (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  // ① 字数 / 阅读时长统计
+  function edStats() {
+    var ta = $('blogEditorInput'); if (!ta) return;
+    var txt = ta.value || '';
+    var words = (txt.match(/[\u4e00-\u9fa5]/g) || []).length + (txt.match(/[A-Za-z0-9]+/g) || []).length;
+    if ($('edWordCount')) $('edWordCount').textContent = words;
+    if ($('edReadTime')) $('edReadTime').textContent = words ? Math.max(1, Math.round(words / 300)) : 0;
+    if ($('edPreviewHint')) $('edPreviewHint').textContent = words ? (words + ' 字') : '';
+  }
+  // ② 草稿状态：仅在存在未保存/编辑中/已恢复草稿时显示轻提示（工具条小胶囊），平时隐藏
+  function edState(text) {
+    var el = $('edDraftState'); if (!el) return;
+    if (!text || text === '新发贴') { el.style.display = 'none'; return; }
+    el.textContent = '● ' + text + '（未发布）';
+    el.style.display = '';
+  }
+
+  // ② 草稿自动保存到本机（防误关丢失）
+  function saveDraft() {
+    var ta = $('blogEditorInput'); if (!ta) return;
+    if (!(ta.value || '').trim()) { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} return; }
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        title: ($('beTitle') || {}).value || '', content: ta.value, ts: Date.now()
+      }));
+    } catch (e) { /* 存储已满等，忽略 */ }
+  }
+  var timer = null;
+  function onInput() {
+    edStats();
+    edState(isEditing() ? '编辑中' : '未保存');
+    clearTimeout(timer);
+    timer = setTimeout(saveDraft, 900);
+  }
+
+  // ③ 未完成草稿恢复条
+  function showDraftBar() {
+    var raw = null;
+    try { raw = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (e) { }
+    if (!raw || !(raw.content || '').trim()) return;
+    var bar = $('edDraftBar'), tx = $('edDraftTx');
+    if (!bar || !tx) return;
+    tx.textContent = '发现未完成的草稿（' + fmt(raw.ts) + ' 自动保存 · ' + raw.content.length + ' 字符）';
+    bar.style.display = 'flex';
+  }
+  window.edRestoreDraft = function () {
+    var raw = null;
+    try { raw = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (e) { }
+    if (!raw) return;
+    var t = $('beTitle'); if (t && raw.title) t.value = raw.title;
+    var ta = $('blogEditorInput'); if (ta) ta.value = raw.content || '';
+    if (typeof updateEditorPreview === 'function') updateEditorPreview();
+    var bar = $('edDraftBar'); if (bar) bar.style.display = 'none';
+    edState('已恢复草稿');
+    if (typeof showToast === 'function') showToast('↺ 已恢复上次未完成的草稿');
+  };
+  window.edDiscardDraft = function () {
+    try { localStorage.removeItem(DRAFT_KEY); } catch (e) { }
+    var bar = $('edDraftBar'); if (bar) bar.style.display = 'none';
+    edState('新发贴');
+    if (typeof showToast === 'function') showToast('🗑️ 已丢弃本地草稿');
+  };
+
+  // ④ 快速模板插入
+  window.edInsertTemplate = function (kind) {
+    var ta = $('blogEditorInput'); if (!ta) return;
+    var t = TPLS[kind] || ''; if (!t) return;
+    /* 全站禁用原生 confirm：改走 app.js 的 uiConfirm（轻量页内确认层） */
+    function doInsert() {
+      ta.value = (ta.value || '').replace(/\s*$/, '') + ((ta.value || '').trim() ? '\n\n' : '') + t;
+      if (typeof updateEditorPreview === 'function') updateEditorPreview();
+      onInput(); saveDraft();
+      ta.focus();
+      ta.setSelectionRange(ta.value.length, ta.value.length);
+      if (typeof showToast === 'function') showToast('已插入模板，按需修改即可');
+    }
+    if ((ta.value || '').trim() && typeof uiConfirm === 'function') {
+      uiConfirm('编辑器里已有内容，模板将追加到末尾，继续吗？', '继续').then(function (ok) { if (ok) doInsert(); });
+      return;
+    }
+    doInsert();
+  };
+
+  // ⑤ 叠加：保存 / 清空后自动清掉本地草稿
+  if (typeof window.clearEditorFields === 'function') {
+    var _clear = window.clearEditorFields;
+    window.clearEditorFields = function () {
+      try { localStorage.removeItem(DRAFT_KEY); } catch (e) { }
+      var r = _clear.apply(this, arguments);
+      edStats(); edState('新发贴');
+      var bar = $('edDraftBar'); if (bar) bar.style.display = 'none';
+      return r;
+    };
+  }
+  // 叠加：任何预览刷新（含 startEditNote / AI 回填）后同步统计
+  if (typeof window.updateEditorPreview === 'function') {
+    var _upd = window.updateEditorPreview;
+    window.updateEditorPreview = function () {
+      var r = _upd.apply(this, arguments);
+      try { edStats(); } catch (e) { }
+      return r;
+    };
+  }
+
+  function initEd() {
+    var ta = $('blogEditorInput');
+    if (ta) ta.addEventListener('input', onInput);
+    edStats();
+    edState(isEditing() ? '编辑中' : '新发贴');
+    showDraftBar();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initEd);
+  else initEd();
+})();
+</script>
+<script>
+/* ===================================================================
+   R55（20260914）：社区帖子分享 —— 复制链接 / 转发给好友 / 系统分享
+   -------------------------------------------------------------------
+   设计原则：不修改 app.js / api.js 中任何既有函数的内部实现，只在卡片渲染
+   完成后向统计行（.note-body > .nc-actions，第一个）右侧「叠加」分享按钮。
+   点赞 / 评论 / 浏览三个计数与卡片原有 onclick 打开详情的行为完全不变。
+
+   兼容两套渲染器：
+     · 本地模式 assets/app.js  renderBlogList()  —— 同步，id 形如 openBlogDetail('abc')
+     · 在线模式 assets/api.js  renderBlogList()  —— 异步，id 形如 openBlogDetail(123)
+   因此用 MutationObserver 监听两个 grid 的 childList，而不是包一层函数。
+
+   【B 转发契约】写入 localStorage 键 study_workbench_share_forward_v1，
+   再调用站内现成的 gotoChat()（assets/api.js）跳转私聊页；私聊页读取该键
+   后即可把卡片渲染进输入框发送（读取侧不在本页实现范围）。
+   【C 系统分享】navigator.share 不可用（如 file:// 协议）时自动回退到 A。
+   =================================================================== */
+(function () {
+  var FWD_KEY = 'study_workbench_share_forward_v1';
+
+  function toast(msg) { try { if (typeof showToast === 'function') showToast(msg); } catch (e) { } }
+
+  // 从卡片 onclick 提取发贴 id（兼容带引号 / 不带引号两种写法）
+  function cardId(card) {
+    var m = /openBlogDetail\(\s*['"]?([^'")\s]+)['"]?\s*\)/.exec(card.getAttribute('onclick') || '');
+    return m ? m[1] : '';
+  }
+  // 深链：沿用 app.js 已有的 #note=ID 约定（app.js 初始化处会解析并打开详情）
+  function shareUrl(id) { return location.href.split('#')[0] + '#note=' + encodeURIComponent(id); }
+
+  function payload(id) {
+    var n = null;
+    try {
+      var arr = (typeof appData !== 'undefined' && appData.notes) || [];
+      for (var i = 0; i < arr.length; i++) { if (String(arr[i].id) === String(id)) { n = arr[i]; break; } }
+    } catch (e) { }
+    n = n || {};
+    var ex = n.excerpt || '';
+    if (!ex && n.content) ex = String(n.content).replace(/[#*`>\-]/g, '').slice(0, 60);
+    return { v: 1, type: 'note', id: String(id), title: n.title || '', excerpt: ex, cover: n.cover || '', url: shareUrl(id), ts: Date.now() };
+  }
+
+  // ---- A 复制链接：Clipboard API 优先，失败回退 execCommand ----
+  function legacyCopy(text) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;top:-1000px;left:-1000px;opacity:0';
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch (e) { return false; }
+  }
+  function copyText(text) {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text).then(function () { return true; }, function () { return legacyCopy(text); });
+      }
+    } catch (e) { }
+    return Promise.resolve(legacyCopy(text));
+  }
+  function doCopy(id) {
+    copyText(shareUrl(id)).then(function (ok) {
+      toast(ok ? '🔗 帖子链接已复制，粘贴给同学吧～' : '⚠️ 复制失败，请手动复制地址栏链接');
+    });
+  }
+
+  // ---- B 转发给好友 / 群：存卡片 → gotoChat()（在线校验由 gotoChat 负责）----
+  function doForward(id) {
+    var p = payload(id);
+    try { localStorage.setItem(FWD_KEY, JSON.stringify(p)); } catch (e) { }
+    var t = (p.title || '').slice(0, 12);
+    toast('📨 已带上《' + (t || '这篇发贴') + '》卡片，去选好友 / 群发送');
+    if (typeof gotoChat === 'function') gotoChat();
+    else location.href = '私聊.html';
+  }
+
+  // ---- C 系统分享：不支持时回退 A ----
+  function doSystem(id) {
+    var p = payload(id);
+    if (!navigator.share) { doCopy(id); return; }
+    try {
+      navigator.share({ title: p.title || '星途社区发贴', text: p.excerpt || p.title || '', url: p.url })
+        .catch(function (err) { if (!err || err.name !== 'AbortError') doCopy(id); });
+    } catch (e) { doCopy(id); }
+  }
+
+  // ---- 浮动小菜单（全页复用一个）----
+  var menu = null, curId = '', curBtn = null;
+  function ensureMenu() {
+    if (menu) return menu;
+    menu = document.createElement('div');
+    menu.id = 'xtShareMenu';
+    menu.className = 'xt-share-menu';
+    menu.innerHTML =
+      '<button type="button" class="xt-share-item" data-act="copy"><span class="nav-icon" data-icon="clipboard" data-icon-size="14"></span>复制链接</button>' +
+      '<button type="button" class="xt-share-item" data-act="forward"><span class="nav-icon" data-icon="users" data-icon-size="14"></span>转发给好友 / 群</button>' +
+      '<button type="button" class="xt-share-item" data-act="system"><span class="nav-icon" data-icon="smartphone" data-icon-size="14"></span>系统分享</button>';
+    document.body.appendChild(menu);
+    menu.addEventListener('click', function (e) {
+      var it = e.target.closest ? e.target.closest('.xt-share-item') : null;
+      if (!it) return;
+      var act = it.getAttribute('data-act');
+      var id = curId;
+      closeMenu();
+      if (act === 'copy') doCopy(id);
+      else if (act === 'forward') doForward(id);
+      else if (act === 'system') doSystem(id);
+    });
+    if (window.lucideAutoRender) window.lucideAutoRender(); // 动态插入的 data-icon 需补渲染
+    return menu;
+  }
+  function openMenu(id, btn) {
+    curId = id; curBtn = btn;
+    var m = ensureMenu();
+    m.classList.add('open');
+    var r = btn.getBoundingClientRect();
+    var mw = m.offsetWidth, mh = m.offsetHeight;
+    var left = Math.min(r.right - mw, window.innerWidth - mw - 8);
+    if (left < 8) left = 8;
+    var top = r.bottom + 6;
+    if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 6);
+    m.style.left = left + 'px';
+    m.style.top = top + 'px';
+  }
+  function closeMenu() { if (menu) menu.classList.remove('open'); }
+  function isOpen() { return !!(menu && menu.classList.contains('open')); }
+
+  // ---- 给每张卡片追加分享按钮 ----
+  function decorate() {
+    var grids = [document.getElementById('blogGrid'), document.getElementById('blogMineGrid')];
+    var added = false;
+    for (var gi = 0; gi < grids.length; gi++) {
+      var g = grids[gi];
+      if (!g) continue;
+      var cards = g.querySelectorAll('.note-card');
+      for (var i = 0; i < cards.length; i++) {
+        var card = cards[i];
+        if (card.querySelector('.nc-share-btn')) continue;
+        var id = cardId(card);
+        if (!id) continue;
+        var row = card.querySelector('.note-body > .nc-actions'); // 第一个即统计行（浏览/点赞/评论）
+        if (!row) continue;
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'nc-share-btn';
+        b.setAttribute('data-share-id', id);
+        b.setAttribute('title', '分享这篇发贴');
+        b.innerHTML = '<span class="nav-icon" data-icon="send" data-icon-size="12"></span> 分享';
+        // 绑在按钮自身：stopPropagation 后才不会触发卡片的 openBlogDetail
+        b.addEventListener('click', function (ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          var myId = this.getAttribute('data-share-id');
+          if (isOpen() && curId === myId) { closeMenu(); return; }
+          openMenu(myId, this);
+        });
+        row.appendChild(b);
+        added = true;
+      }
+    }
+    if (added && window.lucideAutoRender) window.lucideAutoRender();
+  }
+
+  document.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('.nc-share-btn')) return;
+    if (isOpen() && !(menu.contains(e.target))) closeMenu();
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' || e.key === 'Esc') closeMenu(); });
+  window.addEventListener('scroll', closeMenu, true);
+  window.addEventListener('resize', closeMenu);
+
+  function initShare() {
+    decorate();
+    if (typeof MutationObserver === 'function') {
+      // 在线模式 renderBlogList 是 async，innerHTML 在 await 之后才写入，
+      // 只监听 grid 的 childList（subtree:false，避免自身插入按钮造成回环）
+      var mo = new MutationObserver(function () { decorate(); });
+      var gs = [document.getElementById('blogGrid'), document.getElementById('blogMineGrid')];
+      for (var i = 0; i < gs.length; i++) { if (gs[i]) mo.observe(gs[i], { childList: true, subtree: false }); }
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initShare);
+  else initShare();
+})();
+</script>
+<script src="assets/ai-config.js?v=20260925a"></script>
+<script src="assets/ai-presets.js?v=20260916O"></script>
+<script src="assets/ai-service.js?v=20260925a"></script>
+<script src="assets/ai-cap-registry.js?v=20260918c"></script>
+<script src="assets/ai-cap-image.js?v=20260920c"></script>
+<script src="assets/ai-cap-vision.js?v=20260920c"></script>
+<script src="assets/ai-cap-audio.js?v=20260920c"></script>
+<script src="assets/ai-cap-embed.js?v=20260920c"></script>
+<script src="assets/ai-cap-translate.js?v=20260920c"></script>
+<script src="assets/ai-cap-video.js?v=20260920c"></script>
+<script src="assets/ai-cap-3d.js?v=20260922a"></script>
+<script>
+/* ===================================================================
+   R88-H / T04：社区发贴「所在位置」
+   -------------------------------------------------------------------
+   位置文字地址的唯一真源 = #blogLocChip 的 data-loc 属性（String）。
+   saveBlogNote（app.js 本地链路 / api.js 服务端链路）均从该节点读取同一值。
+   只产出/渲染文字地址，任何路径不渲染经纬度。
+   手动兜底复用 app.js 的 window.uiPrompt（禁原生 prompt）。
+   =================================================================== */
+(function () {
+  function toast(msg) { try { if (typeof showToast === 'function') showToast(msg); } catch (e) { } }
+
+  // 取当前 chip 上的文字地址（空串 = 未设位置）
+  function currentLoc() {
+    var chip = document.getElementById('blogLocChip');
+    if (!chip) return '';
+    return chip.getAttribute('data-loc') || '';
+  }
+
+  // 渲染 / 隐藏位置 chip（空值不渲染）
+  window.blogRenderLocChip = function () {
+    var chip = document.getElementById('blogLocChip');
+    if (!chip) return;
+    var txt = currentLoc();
+    var label = document.getElementById('blogLocText');
+    if (txt) {
+      chip.setAttribute('data-loc', txt);
+      if (label) label.textContent = txt;
+      chip.style.display = 'inline-flex';
+    } else {
+      chip.setAttribute('data-loc', '');
+      if (label) label.textContent = '';
+      chip.style.display = 'none';
+    }
+    if (window.lucideAutoRender) window.lucideAutoRender();
+  };
+
+  // 清除位置
+  window.blogClearLoc = function () {
+    var chip = document.getElementById('blogLocChip');
+    if (chip) chip.setAttribute('data-loc', '');
+    window.blogRenderLocChip();
+  };
+
+  // 手动输入兜底：复用 app.js 的 uiPrompt（异步，取消返回 null）
+  function manualInput(title, placeholder, cb) {
+    if (typeof window.uiPrompt !== 'function') { cb(''); return; }
+    var msg = placeholder ? (title + '（' + placeholder + '）') : title;
+    window.uiPrompt(msg, '').then(function (v) {
+      cb(v == null ? '' : String(v).trim());
+    }).catch(function () { cb(''); });
+  }
+
+  // 主入口：定位 → 逆编码 → 文字地址；失败降级手动输入
+  window.blogPickLoc = function () {
+    if (!window.XT_LOC_PICK || typeof window.XT_LOC_PICK.pick !== 'function') {
+      toast('定位失败，请手动填写');
+      manualInput('所在位置', '如：图书馆 / 自习室', function (text) {
+        var chip = document.getElementById('blogLocChip');
+        if (chip) chip.setAttribute('data-loc', text || '');
+        window.blogRenderLocChip();
+      });
+      return;
+    }
+    var btn = document.getElementById('blogLocBtn');
+    if (btn) btn.disabled = true;
+    toast('正在定位…');
+    window.XT_LOC_PICK.pick({
+      fallbackTitle: '所在位置',
+      allowManual: true,
+      onManual: manualInput
+    }, function (r) {
+      if (btn) btn.disabled = false;
+      var chip = document.getElementById('blogLocChip');
+      if (r && r.text) {
+        if (chip) chip.setAttribute('data-loc', r.text);
+        window.blogRenderLocChip();
+      } else {
+        if (chip) chip.setAttribute('data-loc', '');
+        window.blogRenderLocChip();
+      }
+    });
+  };
+
+  // 进入编辑器时按 data-loc 现有值渲染一次
+  function init() { window.blogRenderLocChip(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>

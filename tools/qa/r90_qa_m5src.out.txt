@@ -1,0 +1,216 @@
+m5ActiveFilterLabel      hits(lines): [1897, 1914]
+m5PanelHtml              hits(lines): [1553, 1560, 1566, 1568, 1906]
+function m5Bind          hits(lines): [2149]
+m5Matches                hits(lines): []
+m5Filtered               hits(lines): [1769, 1855, 1907, 2020, 2186]
+m5State                  hits(lines): []
+xtpM5Range               hits(lines): [1816, 2171]
+xtpM5ResetFilter         hits(lines): [1916, 2195]
+xtpM5Kw                  hits(lines): [1812, 2153, 2162]
+xtpM5Tag                 hits(lines): [1823, 1874, 1991, 1992, 1993, 1995, 1997, 1998, 2173, 2222]
+xtpM5Fav                 hits(lines): [1824, 1872, 2179, 2215]
+m5ClearAll               hits(lines): [1929, 2192]
+xtpM5ClearAll            hits(lines): [1850, 2191]
+
+=== 关键区域抽取 ===
+=== range / d7 / d30 出现位置 ===
+ 1736|     range: 'all',      // all | today | d7 | d30 | custom
+ 1749|     if (M5.range === 'today') {
+ 1752|     if (M5.range === 'd7') { return { from: endOfToday - 7 * 86400000, to: endOfToday }; }
+ 1753|     if (M5.range === 'd30') { return { from: endOfToday - 30 * 86400000, to: endOfToday }; }
+ 1754|     if (M5.range === 'custom') {
+ 1793|     if (M5.range === 'today') { return '今天'; }
+ 1794|     if (M5.range === 'd7') { return '近 7 天'; }
+ 1795|     if (M5.range === 'd30') { return '近 30 天'; }
+ 1796|     if (M5.range === 'custom') {
+ 1817|           '<option value="all"' + (M5.range === 'all' ? ' selected' : '') + '>全部时间</option>' +
+ 1818|           '<option value="today"' + (M5.range === 'today' ? ' selected' : '') + '>今天</option>' +
+ 1819|           '<option value="d7"' + (M5.range === 'd7' ? ' selected' : '') + '>近 7 天</option>' +
+ 1820|           '<option value="d30"' + (M5.range === 'd30' ? ' selected' : '') + '>近 30 天</option>' +
+ 1821|           '<option value="custom"' + (M5.range === 'custom' ? ' selected' : '') + '>自定义</option>' +
+ 1827|       (M5.range === 'custom'
+ 1899|     if (M5.range !== 'all') { parts.push(m5RangeLabel()); }
+ 1911|     var hasFilter = !!(M5.kw.trim() || M5.tag || M5.favOnly || M5.range !== 'all');
+ 2171|     var rangeEl = root.querySelector('#xtpM5Range');
+ 2172|     if (rangeEl) { rangeEl.addEventListener('change', function () { M5.range = rangeEl.value || 'all'; m5Reset(); m5Repaint(); }); }
+ 2197|       M5.kw = ''; M5.tag = ''; M5.favOnly = false; M5.range = 'all'; M5.from = ''; M5.to = '';
+ 2349|           '<input class="xtp-crop-zoom" id="xtpCropZoom" type="range" min="100" max="500" value="100">' +
+
+=== 白名单（#xtpM5Range 的 option）===
+ 1794|     if (M5.range === 'd7') { return '近 7 天'; }
+ 1805|     var tagOpts = '<option value="">全部标签</option>', i;
+ 1816|         '<select id="xtpM5Range" class="xtp-m5-select" title="时间范围">' +
+ 1817|           '<option value="all"' + (M5.range === 'all' ? ' selected' : '') + '>全部时间</option>' +
+ 1819|           '<option value="d7"' + (M5.range === 'd7' ? ' selected' : '') + '>近 7 天</option>' +
+ 2171|     var rangeEl = root.querySelector('#xtpM5Range');
+
+===== m5Bind 区域（含 L2127 注释）  L2110-2230 =====
+ 2110|       var msgs = isArr(c.messages) ? c.messages : [];
+ 2111|       var rec = {
+ 2112|         id: id,
+ 2113|         title: (c.title === undefined || c.title === null || c.title === '') ? '未命名对话' : String(c.title),
+ 2114|         createdAt: num(c.createdAt),
+ 2115|         updatedAt: num(c.updatedAt || c.createdAt),
+ 2116|         messages: msgs
+ 2117|       };
+ 2118|       if (has(idx, id)) { out[idx[id]] = rec; } else { idx[id] = out.length; out.push(rec); }
+ 2119|     }
+ 2120|     m5WriteSessions(out);
+ 2121|     // 合并元信息
+ 2122|     if (importMeta && typeof importMeta === 'object' && !isArr(importMeta)) {
+ 2123|       var all = chatMetaAll(), k;
+ 2124|       for (k in importMeta) {
+ 2125|         if (!has(importMeta, k)) { continue; }
+ 2126|         var e = importMeta[k] || {};
+ 2127|         var tags = isArr(e.tags) ? e.tags : [];
+ 2128|         var fav = !!e.fav;
+ 2129|         if (tags.length || fav) { all[k] = { tags: tags, fav: fav }; }
+ 2130|       }
+ 2131|       writeJSON(META_KEY, all);
+ 2132|     }
+ 2133|     // 清理孤儿元信息
+ 2134|     var ids = [], j;
+ 2135|     for (j = 0; j < out.length; j++) { ids.push(out[j].id); }
+ 2136|     chatMetaPrune(ids);
+ 2137|     return out.length;
+ 2138|   }
+ 2139|   /** 写回 ai_chat_history（仅用规范化字段，保持 ai-page.js 可读） */
+ 2140|   function m5WriteSessions(list) {
+ 2141|     writeJSON('ai_chat_history', list);
+ 2142|   }
+ 2143| 
+ 2144|   /* -------------------------------------------------- M5 重绘与事件绑定 */
+ 2145|   function m5Repaint() {
+ 2146|     var box = $('xtpChatBody');
+ 2147|     if (box) { paintChat(box); }
+ 2148|   }
+ 2149|   function m5Bind(root) {
+ 2150|     if (!root) { return; }
+ 2151|     // ⚠️ 事件处理器一律用局部 const el 捕获元素，绝不复用共享 var（否则闭包读到最后一个赋值元素）。
+ 2152|     // 搜索框（输入防抖 200ms）
+ 2153|     var kwEl = root.querySelector('#xtpM5Kw');
+ 2154|     if (kwEl) {
+ 2155|       var kwT = null;
+ 2156|       kwEl.addEventListener('input', function () {
+ 2157|         if (kwT) { clearTimeout(kwT); }
+ 2158|         kwT = setTimeout(function () {
+ 2159|           M5.kw = String(kwEl.value || '');
+ 2160|           m5Reset();
+ 2161|           m5Repaint();
+ 2162|           var nk = $('xtpM5Kw');
+ 2163|           if (nk && nk.focus && nk.setSelectionRange) {
+ 2164|             try { nk.focus(); nk.setSelectionRange(nk.value.length, nk.value.length); } catch (e) { /* 忽略 */ }
+ 2165|           }
+ 2166|         }, 200);
+ 2167|       });
+ 2168|     }
+ 2169|     var clearEl = root.querySelector('#xtpM5Clear');
+ 2170|     if (clearEl) { clearEl.addEventListener('click', function () { M5.kw = ''; m5Reset(); m5Repaint(); }); }
+ 2171|     var rangeEl = root.querySelector('#xtpM5Range');
+ 2172|     if (rangeEl) { rangeEl.addEventListener('change', function () { M5.range = rangeEl.value || 'all'; m5Reset(); m5Repaint(); }); }
+ 2173|     var tagEl = root.querySelector('#xtpM5Tag');
+ 2174|     if (tagEl) { tagEl.addEventListener('change', function () { M5.tag = tagEl.value || ''; m5Reset(); m5Repaint(); }); }
+ 2175|     var fromEl = root.querySelector('#xtpM5From');
+ 2176|     if (fromEl) { fromEl.addEventListener('change', function () { M5.from = fromEl.value || ''; m5Reset(); m5Repaint(); }); }
+ 2177|     var toEl = root.querySelector('#xtpM5To');
+ 2178|     if (toEl) { toEl.addEventListener('change', function () { M5.to = toEl.value || ''; m5Reset(); m5Repaint(); }); }
+ 2179|     var favEl = root.querySelector('#xtpM5Fav');
+ 2180|     if (favEl) { favEl.addEventListener('click', function () { M5.favOnly = !M5.favOnly; m5Reset(); m5Repaint(); }); }
+ 2181|     var selBtnEl = root.querySelector('#xtpM5SelBtn');
+ 2182|     if (selBtnEl) { selBtnEl.addEventListener('click', function () { M5.selMode = !M5.selMode; M5.sel = {}; m5Repaint(); }); }
+ 2183|     var selAllEl = root.querySelector('#xtpM5SelAll');
+ 2184|     if (selAllEl) { selAllEl.addEventListener('click', function () {
+ 2185|       if (m5AllSelected()) { M5.sel = {}; }
+ 2186|       else { var list = m5Filtered(), i; for (i = 0; i < list.length; i++) { M5.sel[list[i].id] = true; } }
+ 2187|       m5Repaint();
+ 2188|     }); }
+ 2189|     var delSelEl = root.querySelector('#xtpM5DelSel');
+ 2190|     if (delSelEl) { delSelEl.addEventListener('click', m5DelSelected); }
+ 2191|     var clearAllEl = root.querySelector('#xtpM5ClearAll');
+ 2192|     if (clearAllEl) { clearAllEl.addEventListener('click', m5ClearAll); }
+ 2193|     var goAiEl = root.querySelector('#xtpM5GoAi');
+ 2194|     if (goAiEl) { goAiEl.addEventListener('click', function () { location.href = 'AI.html'; }); }
+ 2195|     var resetFEl = root.querySelector('#xtpM5ResetFilter');
+ 2196|     if (resetFEl) { resetFEl.addEventListener('click', function () {
+ 2197|       M5.kw = ''; M5.tag = ''; M5.favOnly = false; M5.range = 'all'; M5.from = ''; M5.to = '';
+ 2198|       m5Reset(); m5Repaint();
+ 2199|     }); }
+ 2200|     var exportEl = root.querySelector('#xtpM5Export');
+ 2201|     if (exportEl) { exportEl.addEventListener('click', m5Export); }
+ 2202|     var backupEl = root.querySelector('#xtpM5Backup');
+ 2203|     if (backupEl) { backupEl.addEventListener('click', m5Backup); }
+ 2204|     var restoreEl = root.querySelector('#xtpM5Restore');
+ 2205|     if (restoreEl) { restoreEl.addEventListener('click', m5Restore); }
+ 2206|     // 列表内：多选框 / 收藏 / 标签 / 删除（用 currentTarget/闭包元素，避免共享变量）
+ 2207|     var boxes = root.querySelectorAll('.xtpM5Cb'), i;
+ 2208|     for (i = 0; i < boxes.length; i++) {
+ 2209|       boxes[i].addEventListener('change', function (ev) {
+ 2210|         var id = ev.target.getAttribute('data-id');
+ 2211|         if (ev.target.checked) { M5.sel[id] = true; } else { delete M5.sel[id]; }
+ 2212|         m5Repaint();
+ 2213|       });
+ 2214|     }
+ 2215|     var favs = root.querySelectorAll('.xtpM5Fav'), j;
+ 2216|     for (j = 0; j < favs.length; j++) {
+ 2217|       favs[j].addEventListener('click', function (ev) {
+ 2218|         ev.stopPropagation();
+ 2219|         m5ToggleFav(ev.currentTarget.getAttribute('data-id'));
+ 2220|       });
+ 2221|     }
+ 2222|     var tagbs = root.querySelectorAll('.xtpM5Tag'), m;
+ 2223|     for (m = 0; m < tagbs.length; m++) {
+ 2224|       tagbs[m].addEventListener('click', function (ev) {
+ 2225|         ev.stopPropagation();
+ 2226|         m5EditTags(ev.currentTarget.getAttribute('data-id'));
+ 2227|       });
+ 2228|     }
+ 2229|     var dels = root.querySelectorAll('.xtpM5Del'), p;
+ 2230|     for (p = 0; p < dels.length; p++) {
+
+=== m5ClearAll / confirm / toast 文案 ===
+  290|   function aiChatArr() { var a = readJSON('ai_chat_history', []); return isArr(a) ? a : []; }
+  295|    *   2) 字段错配：它把本机 localStorage.ai_chat_history 当成「扁平消息数组」逐条读
+  301|    *   主数据源 = GET /api/ai/history（服务端只返回当前登录用户自己的记录；
+  305|    *   本机 ai_chat_history（会话结构）降级为离线兜底，按会话分组渲染。
+  309|     items: [],          // 服务端原始扁平消息（时间正序）
+  311|     total: 0,           // 服务端记录条数
+  355|   /** 本机 ai_chat_history 的消息总条数（会话结构：逐会话累加 messages.length） */
+  364|   /** 把服务端扁平消息（时间正序）按自然间隔切成若干段；不编造会话 ID */
+  387|   /** 本机 ai_chat_history（会话结构）→ 段数组，仅作离线兜底 */
+  414|   /** 是否可走服务端：api.js 已加载 + 有登录态（游客态请求必然 401，故直接跳过不发请求） */
+  544|   /* 邮箱：双态。服务端已绑定（GET /api/auth/me → email 非空）→「已绑定」只读 + 跳设置页；
+  546|   var emailRemote = '';          // 服务端邮箱（'' = 未绑定 / 未拉到）
+  547|   var emailRemoteLoaded = false; // 是否已成功拉到服务端态
+  555|   /** 在线时读服务端真实绑定态（失败/离线静默保留本地态） */
+  625|   /* 入口：个人资料.html?user=<服务端数字 uid>（不带 ?user= → 本人视角，行为完全不变）。
+  626|      ⚠️ 安全红线：TA 视角**只**渲染服务端公开白名单字段
+  631|   /** 解析 URL 的 ?user=<uid>：仅接受纯数字（服务端 uid 为数字），
+  676|   var OTHER_UID = '';           // 当前查看的服务端数字 uid
+  684|       ID 显示服务端数字 uid（GET /api/users/{uid} 的 id 字段，URL 参数兜底）；
+  824|     html += '<div class="xtp-tip">资料来自服务端公开信息；性别 / 生日 / 手机号 / 邮箱等隐私字段不对外展示。</div>';
+ 1001|         // 服务端已算好 isMe（等价于用 /api/auth/me 的 id 与 viewUid() 比较）；
+ 1504|   /** 本机会话兜底区块（ai_chat_history 真实结构是会话数组，按会话展示） */
+ 1528|     s += '</div></section><div class="xtp-tip">以上为本机 localStorage.ai_chat_history 的会话记录（未上传服务端）。</div>';
+ 1531|   /** 服务端记录区块（扁平消息按自然间隔分段，最新一段排在最上） */
+ 1535|     return '<div class="xtp-m5-srvnote">服务端记录共 ' + AI_CHAT.total +
+ 1538|       '<div class="xtp-tip">共 ' + AI_CHAT.total + ' 条服务端记录，按时间自然间隔分为 ' + gs.length +
+ 1551|         '<div class="xtp-chat-state-t">未登录，无法读取服务端 AI 对话记录</div>' +
+ 1572|   /** 打开子视图后：先出 loading，再异步拉服务端并重绘 */
+ 1614|    *   ① 本机 localStorage.ai_chat_history = 会话数组
+ 1617|    *   ② 服务端 GET /api/ai/history 只返回**扁平消息**（无 id / 无标题 / 无标签），且服务端
+ 1618|    *      **只有 GET + POST(chat)，没有 DELETE/PATCH** → 前端无法删除/打标服务端记录。
+ 1619|    *      故本页「管理」作用于【本机会话】；服务端记录保持只读展示（chatServerHtml）。
+ 1621|    *      不污染 ai_chat_history 的既有结构（否则会破坏 ai-page.js 的读取）。
+ 1850|       '<button type="button" class="xtp-m5-abtn danger" id="xtpM5ClearAll"><span class="nav-icon" data-icon="trash" data-icon-size="15"></span> 清空全部</button>' +
+ 1894|       '<span class="xtp-m5-quicktip">本页管理的是本机会话，服务端记录仅供查看。</span></div>';
+ 1913|       ? '本机暂无会话记录（本页的清理、删除只作用于本机会话）。' + (srv > 0 ? '服务端还有 ' + srv + ' 条记录，在本页上方展示，暂不支持在本页删除。' : '去 AI 问答页对话后，会自动出现在这里。')
+ 1919|       '<div class="xtp-chat-sub">本机对话记录<span>可管理 · 共 ' + total + ' 条 · 当前 ' + list.length + ' 条（服务端 ' + srv + ' 条仅供查看）</span></div>' +
+ 1929|   function m5ClearAll() {
+ 1935|       '将删除本机全部 ' + n + ' 条会话（共 ' + totalMsg + ' 条消息），此操作不可恢复。\n（服务端记录不受影响，如需删除请联系管理员或等待后续版本支持）\n建议先「备份」。确定继续吗？',
+ 1937|         localStorage.removeItem('ai_chat_history');
+ 1941|         toast('已清空本机会话，服务端记录仍保留');
+ 2139|   /** 写回 ai_chat_history（仅用规范化字段，保持 ai-page.js 可读） */
+ 2141|     writeJSON('ai_chat_history', list);
+ 2191|     var clearAllEl = root.querySelector('#xtpM5ClearAll');
+ 2192|     if (clearAllEl) { clearAllEl.addEventListener('click', m5ClearAll); }
+ 2819|       // 服务端邮箱态就绪：若编辑页正打开则刷新其状态（已绑定 → 只读）

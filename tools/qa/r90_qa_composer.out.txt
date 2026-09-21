@@ -1,0 +1,55 @@
+   51|      （批次八原有的桌面 hover .im-recall-btn 入口已于批次九 N9-17 移除，撤回统一走消息菜单） */
+   52|   .im-m{position:relative}
+   53|   .im-recall-tip{align-self:center;max-width:80%;padding:4px 10px;font-size:12px;color:var(--text-secondary);background:var(--bg);border-radius:10px;text-align:center}
+   54|   .im-recall-confirm{position:fixed;z-index:10000;min-width:190px;padding:12px 14px;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.18)}
+   55|   .im-rc-txt{font-size:13px;color:var(--text);margin-bottom:10px}
+   56|   .im-rc-btns{display:flex;justify-content:flex-end;gap:8px}
+   57|   .im-rc-btns button{border:0;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;font-family:inherit}
+   58|   .im-rc-cancel{background:var(--bg);color:var(--text-secondary);border:1px solid var(--border)}
+   59|   .im-rc-ok{background:#ff5d5d;color:#fff}
+   60|   /* 2026-09-15 批次九（N9-17）：微信式消息菜单 —— 长按 / 右键唤起的非模态浮层
+   61|      ADR-3 合规：无遮罩、不锁 html/body 滚动，点外部 / Esc 关闭。 */
+   62|   .im-msg-menu{position:fixed;z-index:10001;min-width:118px;padding:4px;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18)}
+   63|   .im-msg-menu .im-menu-item{padding:9px 14px;font-size:14px;line-height:1.2;color:var(--text);border-radius:7px;cursor:pointer;user-select:none;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+   64|   .im-msg-menu .im-menu-item:active{background:var(--bg)}
+   65|   .im-msg-menu .im-menu-danger{color:var(--danger)}
+   66|   .im-empty2{text-align:center;padding:36px 16px;color:var(--text-secondary);font-size:13px}
+   67|   .im-composer{display:flex;gap:8px;align-items:flex-end;padding:10px 12px;background:var(--card);border-top:1px solid var(--border)}
+   68|   .im-composer textarea{flex:1;resize:none;height:44px;max-height:120px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;font-size:14px;outline:none;font-family:inherit;background:var(--bg);color:var(--text)}
+   69|   .im-composer textarea:focus{border-color:var(--primary)}
+   70|   .im-icon{width:44px;height:44px;border:none;border-radius:12px;background:var(--primary-light);color:var(--primary);font-size:18px;cursor:pointer;flex-shrink:0}
+   71|   .im-send{height:44px;padding:0 18px;border:none;border-radius:12px;background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff;cursor:pointer;flex-shrink:0}
+   72|   /* R90 item3：输入栏新增「定位」图标后，窄屏（≤360px）压缩图标与间距，保证整排不换行、不溢出。固定值 + @media，禁 clamp/min/max。 */
+   73|   @media (max-width:360px){
+   74|     .im-composer{gap:6px;padding:8px 8px}
+   75|     .im-composer .im-icon{width:38px;height:38px}
+   76|     .im-composer .im-send{height:38px;padding:0 12px}
+   77|     .im-composer textarea{height:38px;padding:8px 10px}
+   78|   }
+   79|   @media (max-width:760px){
+   80|     .im-side{width:100%;border-right:none}
+   81|     .im-chat{display:none}
+   82|     body.im-mobile .im-side{display:none}
+   83|     body.im-mobile .im-chat{display:flex}
+   84|   }
+   85|   /* 2026-09-15 批次八（ADR-3）：群设置 / 联系管理员 —— 遮罩弹窗改为右侧会话区「页面内视图」。
+   86|      两个节点搬进 #imChat，与 #imEmpty / #imConv 平级互斥占满右栏；无遮罩、无浮层、无 z-index。 */
+   87|   .im-gs-view,.im-ac-view{flex:1;min-width:0;min-height:0;display:none;flex-direction:column;overflow:hidden;background:var(--bg)}
+   88|   .im-gs-view .im-gs-head{background:var(--card);padding:10px 16px}
+   89|   .im-gs-view .im-gs-body{background:transparent}
+   90| 
+   91| </style>
+   92| <script src="assets/xt-polyfill.js?v=20260916O"></script>
+   93| <script>window.__XT_PROD__=true;</script>
+   94| </head>
+   95| <body class="theme-home">
+   96| 
+   97| <div class="app">
+   98| <nav class="sidebar"> <div class="logo"> <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div> <div> <div class="logo-text">星途</div> <div class="logo-sub">致追梦的人->修身</div> </div> </div> <div class="nav-list"> <div class="nav-item" data-page="home"> <span class="nav-icon" data-icon="home"></span><span>首页</span> </div> <div class="nav-section">学习模块</div> <div class="nav-item" data-page="cet"> <span class="nav-icon" data-icon="book-open"></span><span>英语</span> </div> <div class="nav-item" data-page="exam"> <span class="nav-icon" data-icon="pencil"></span><span>行测</span> </div>
+   99| <div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>面测</span> </div> <div class="nav-item" data-page="files"> <span class="nav-icon" data-icon="folder"></span><span>我的文件</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon" data-icon="globe"></span><span>社区</span> </div> <div class="nav-item" data-page="moments"> <span class="nav-icon" data-icon="rss"></span><span>动态空间</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="通讯录 · 添加好友（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>通讯录</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="book"></span><span>错题本</span> </div> <div class="nav-item" data-page="profile"> <span class="nav-icon" data-icon="user"></span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon" data-icon="settings"></span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak">🔥 连续打卡 0 天</div> </div> </div> </div> </nav>
+  100| 
+  101|   <div class="main">
+  102| <header class="topbar">
+  103|       <div class="topbar-title" id="topbarTitle">通讯录</div>
+  104|       <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
+  105|       <div class="gs-wrap" id="gsWrap">

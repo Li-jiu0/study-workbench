@@ -1,0 +1,326 @@
+===== M5 状态 + 时间范围解析 + 标签  L1725-1800 =====
+ 1725|       for (j = 0; j < meta.tags.length; j++) {
+ 1726|         if (!seen[meta.tags[j]]) { seen[meta.tags[j]] = true; out.push(meta.tags[j]); }
+ 1727|       }
+ 1728|     }
+ 1729|     return out;
+ 1730|   }
+ 1731| 
+ 1732|   /* -------------------------------------------------- M5 视图状态（不跨会话持久化） */
+ 1733|   var M5 = {
+ 1734|     kw: '',            // 关键字
+ 1735|     tag: '',           // 标签筛选（'' = 全部）
+ 1736|     range: 'all',      // all | today | d7 | d30 | custom
+ 1737|     from: '',          // 自定义起始（YYYY-MM-DD）
+ 1738|     to: '',            // 自定义结束（YYYY-MM-DD）
+ 1739|     favOnly: false,    // 只看收藏
+ 1740|     selMode: false,    // 多选模式
+ 1741|     sel: {},           // 选中集合 { id:true }
+ 1742|     panel: ''          // '' | 'filter' | 'backup'
+ 1743|   };
+ 1744|   function m5Reset() { M5.sel = {}; }
+ 1745|   /** 时间范围 → [fromTs, toTs]（toTs 含当天末刻；0/-1 表示不限） */
+ 1746|   function m5RangeBounds() {
+ 1747|     var now = new Date();
+ 1748|     var endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime(); // 明日 0 点（当天含）
+ 1749|     if (M5.range === 'today') {
+ 1750|       return { from: new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(), to: endOfToday };
+ 1751|     }
+ 1752|     if (M5.range === 'd7') { return { from: endOfToday - 7 * 86400000, to: endOfToday }; }
+ 1753|     if (M5.range === 'd30') { return { from: endOfToday - 30 * 86400000, to: endOfToday }; }
+ 1754|     if (M5.range === 'custom') {
+ 1755|       return { from: m5DayTs(M5.from, false), to: m5DayTs(M5.to, true) };
+ 1756|     }
+ 1757|     return { from: 0, to: 0 };
+ 1758|   }
+ 1759|   /** 'YYYY-MM-DD' → 时间戳；endOfDay=true 取当天 23:59:59.999；空/非法返回 0（不限） */
+ 1760|   function m5DayTs(s, endOfDay) {
+ 1761|     var m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+ 1762|     if (!m) { return 0; }
+ 1763|     var d = new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10),
+ 1764|       endOfDay ? 23 : 0, endOfDay ? 59 : 0, endOfDay ? 59 : 0, endOfDay ? 999 : 0);
+ 1765|     var t = d.getTime();
+ 1766|     return isFinite(t) ? t : 0;
+ 1767|   }
+ 1768|   /** 过滤后的会话（最新在前） */
+ 1769|   function m5Filtered() {
+ 1770|     var all = chatSessions(), kw = M5.kw.trim().toLowerCase();
+ 1771|     var b = m5RangeBounds(), out = [], i;
+ 1772|     for (i = 0; i < all.length; i++) {
+ 1773|       var s = all[i], meta = chatMetaOf(s.id);
+ 1774|       if (M5.favOnly && !meta.fav) { continue; }
+ 1775|       if (M5.tag && meta.tags.indexOf(M5.tag) < 0) { continue; }
+ 1776|       if (b.from || b.to) {
+ 1777|         var ts = sessionTs(s);
+ 1778|         if (b.from && ts < b.from) { continue; }
+ 1779|         if (b.to && ts >= b.to) { continue; }
+ 1780|       }
+ 1781|       if (kw) {
+ 1782|         var hay = (sessionText(s) + ' ' + meta.tags.join(' ')).toLowerCase();
+ 1783|         if (hay.indexOf(kw) < 0) { continue; }
+ 1784|       }
+ 1785|       out.push(s);
+ 1786|     }
+ 1787|     out.sort(function (a, c) { return sessionTs(c) - sessionTs(a); });
+ 1788|     return out;
+ 1789|   }
+ 1790| 
+ 1791|   /* -------------------------------------------------- M5 渲染 */
+ 1792|   function m5RangeLabel() {
+ 1793|     if (M5.range === 'today') { return '今天'; }
+ 1794|     if (M5.range === 'd7') { return '近 7 天'; }
+ 1795|     if (M5.range === 'd30') { return '近 30 天'; }
+ 1796|     if (M5.range === 'custom') {
+ 1797|       if (M5.from || M5.to) { return (M5.from || '…') + '~' + (M5.to || '…'); }
+ 1798|       return '自定义';
+ 1799|     }
+ 1800|     return '全部时间';
+
+===== 工具栏 HTML 生成  L1804-1870 =====
+ 1804|     var tags = chatAllTags(chatSessions());
+ 1805|     var tagOpts = '<option value="">全部标签</option>', i;
+ 1806|     for (i = 0; i < tags.length; i++) {
+ 1807|       tagOpts += '<option value="' + esc(tags[i]) + '"' + (M5.tag === tags[i] ? ' selected' : '') + '>' + esc(tags[i]) + '</option>';
+ 1808|     }
+ 1809|     var s = '<div class="xtp-m5-tools">' +
+ 1810|       '<div class="xtp-m5-search">' +
+ 1811|         '<span class="nav-icon" data-icon="search" data-icon-size="16"></span>' +
+ 1812|         '<input type="text" id="xtpM5Kw" placeholder="搜索标题 / 内容 / 标签" value="' + esc(M5.kw) + '">' +
+ 1813|         (M5.kw ? '<button type="button" class="xtp-m5-sclear" id="xtpM5Clear" title="清空">&times;</button>' : '') +
+ 1814|       '</div>' +
+ 1815|       '<div class="xtp-m5-filters">' +
+ 1816|         '<select id="xtpM5Range" class="xtp-m5-select" title="时间范围">' +
+ 1817|           '<option value="all"' + (M5.range === 'all' ? ' selected' : '') + '>全部时间</option>' +
+ 1818|           '<option value="today"' + (M5.range === 'today' ? ' selected' : '') + '>今天</option>' +
+ 1819|           '<option value="d7"' + (M5.range === 'd7' ? ' selected' : '') + '>近 7 天</option>' +
+ 1820|           '<option value="d30"' + (M5.range === 'd30' ? ' selected' : '') + '>近 30 天</option>' +
+ 1821|           '<option value="custom"' + (M5.range === 'custom' ? ' selected' : '') + '>自定义</option>' +
+ 1822|         '</select>' +
+ 1823|         '<select id="xtpM5Tag" class="xtp-m5-select" title="标签筛选">' + tagOpts + '</select>' +
+ 1824|         '<button type="button" class="xtp-m5-toggle' + (M5.favOnly ? ' on' : '') + '" id="xtpM5Fav"><span class="nav-icon" data-icon="star" data-icon-size="14"></span> 收藏</button>' +
+ 1825|         '<button type="button" class="xtp-m5-toggle' + (M5.selMode ? ' on' : '') + '" id="xtpM5SelBtn">' + (M5.selMode ? '取消多选' : '多选') + '</button>' +
+ 1826|       '</div>' +
+ 1827|       (M5.range === 'custom'
+ 1828|         ? '<div class="xtp-m5-custom">' +
+ 1829|             '<label>从 <input type="date" id="xtpM5From" value="' + esc(M5.from) + '"></label>' +
+ 1830|             '<label>到 <input type="date" id="xtpM5To" value="' + esc(M5.to) + '"></label>' +
+ 1831|           '</div>'
+ 1832|         : '') +
+ 1833|       '</div>';
+ 1834|     return s;
+ 1835|   }
+ 1836|   /** 底部动作条：清空全部 / 导出 / 备份 / 恢复（多选模式下换成批量操作条） */
+ 1837|   function m5ActionsHtml() {
+ 1838|     if (M5.selMode) {
+ 1839|       var cnt = m5SelCount();
+ 1840|       return '<div class="xtp-m5-batch">' +
+ 1841|         '<button type="button" class="xtp-m5-abtn" id="xtpM5SelAll">' + (m5AllSelected() ? '取消全选' : '全选') + '</button>' +
+ 1842|         '<span class="xtp-m5-selcnt">已选 ' + cnt + ' 条</span>' +
+ 1843|         '<button type="button" class="xtp-m5-abtn danger" id="xtpM5DelSel"' + (cnt ? '' : ' disabled') + '>删除所选</button>' +
+ 1844|         '</div>';
+ 1845|     }
+ 1846|     return '<div class="xtp-m5-actions">' +
+ 1847|       '<button type="button" class="xtp-m5-abtn" id="xtpM5Export"><span class="nav-icon" data-icon="download" data-icon-size="15"></span> 导出</button>' +
+ 1848|       '<button type="button" class="xtp-m5-abtn" id="xtpM5Backup"><span class="nav-icon" data-icon="save" data-icon-size="15"></span> 备份</button>' +
+ 1849|       '<button type="button" class="xtp-m5-abtn" id="xtpM5Restore"><span class="nav-icon" data-icon="upload" data-icon-size="15"></span> 恢复</button>' +
+ 1850|       '<button type="button" class="xtp-m5-abtn danger" id="xtpM5ClearAll"><span class="nav-icon" data-icon="trash" data-icon-size="15"></span> 清空全部</button>' +
+ 1851|       '</div>';
+ 1852|   }
+ 1853|   function m5SelCount() { var k, n = 0; for (k in M5.sel) { if (has(M5.sel, k) && M5.sel[k]) { n++; } } return n; }
+ 1854|   function m5AllSelected() {
+ 1855|     var list = m5Filtered(), i;
+ 1856|     if (!list.length) { return false; }
+ 1857|     for (i = 0; i < list.length; i++) { if (!M5.sel[list[i].id]) { return false; } }
+ 1858|     return true;
+ 1859|   }
+ 1860|   /** 单条会话卡 */
+ 1861|   function m5CardHtml(s) {
+ 1862|     var meta = chatMetaOf(s.id);
+ 1863|     var tagsHtml = '', i;
+ 1864|     for (i = 0; i < meta.tags.length; i++) {
+ 1865|       tagsHtml += '<span class="xtp-m5-tag">' + esc(meta.tags[i]) + '</span>';
+ 1866|     }
+ 1867|     var checked = M5.sel[s.id] ? ' checked' : '';
+ 1868|     var selBox = M5.selMode
+ 1869|       ? '<label class="xtp-m5-check"><input type="checkbox" class="xtpM5Cb" data-id="' + esc(s.id) + '"' + checked + '></label>'
+ 1870|       : '';
+
+===== m5ActiveFilterLabel + m5PanelHtml + m5ClearAll  L1880-1960 =====
+ 1880|         '<div class="xtp-li-title">' + esc(s.title) +
+ 1881|           '<span class="xtp-m5-cnt">' + esc(String((s.messages || []).length)) + ' 条</span></div>' +
+ 1882|         '<div class="xtp-li-meta">' + esc(fmtTime(tsText(sessionTs(s)))) + (tagsHtml ? '' : '') + '</div>' +
+ 1883|         '<div class="xtp-li-body">' + esc(sessionPreview(s)) + '</div>' +
+ 1884|         (tagsHtml ? '<div class="xtp-m5-tags">' + tagsHtml + '</div>' : '') +
+ 1885|       '</div>' +
+ 1886|       '<div class="xtp-m5-ops">' + star + tagBtn + delBtn + '</div>' +
+ 1887|       '</div>';
+ 1888|   }
+ 1889|   /** 快捷入口：跳转 AI 问答页（本页不会发起对话，推荐到 AI 页） */
+ 1890|   function m5QuickHtml() {
+ 1891|     return '<div class="xtp-m5-quick">' +
+ 1892|       '<button type="button" class="xtp-m5-abtn" id="xtpM5GoAi">'
+ 1893|         + '<span class="nav-icon" data-icon="message-circle" data-icon-size="15"></span> 去 AI 问答页对话</button>' +
+ 1894|       '<span class="xtp-m5-quicktip">本页管理的是本机会话，服务端记录仅供查看。</span></div>';
+ 1895|   }
+ 1896|   /** 当前生效的筛选条件摘要（用于空态文案，消除「清不掉」的困惑） */
+ 1897|   function m5ActiveFilterLabel() {
+ 1898|     var parts = [];
+ 1899|     if (M5.range !== 'all') { parts.push(m5RangeLabel()); }
+ 1900|     if (M5.tag) { parts.push('标签' + M5.tag); }
+ 1901|     if (M5.favOnly) { parts.push('仅收藏'); }
+ 1902|     if (M5.kw.trim()) { parts.push('关键词「' + M5.kw.trim() + '」'); }
+ 1903|     return parts.length ? parts.join(' + ') : '无';
+ 1904|   }
+ 1905|   /** M5 管理列表（含工具条 + 列表 + 动作条） */
+ 1906|   function m5PanelHtml() {
+ 1907|     var list = m5Filtered(), i, s = '';
+ 1908|     for (i = 0; i < list.length; i++) { s += m5CardHtml(list[i]); }
+ 1909|     var total = chatSessions().length;
+ 1910|     var srv = num(AI_CHAT.total);
+ 1911|     var hasFilter = !!(M5.kw.trim() || M5.tag || M5.favOnly || M5.range !== 'all');
+ 1912|     var emptyTip = (total === 0)
+ 1913|       ? '本机暂无会话记录（本页的清理、删除只作用于本机会话）。' + (srv > 0 ? '服务端还有 ' + srv + ' 条记录，在本页上方展示，暂不支持在本页删除。' : '去 AI 问答页对话后，会自动出现在这里。')
+ 1914|       : '没有符合条件的对话（当前筛选：' + esc(m5ActiveFilterLabel()) + '，本机共 ' + total + ' 条）。';
+ 1915|     var emptyExtra = (!list.length && total > 0 && hasFilter)
+ 1916|       ? '<div class="xtp-m5-emptyact"><button type="button" class="xtp-m5-abtn" id="xtpM5ResetFilter">查看全部本机记录（重置筛选）</button></div>'
+ 1917|       : '';
+ 1918|     return m5ToolbarHtml() +
+ 1919|       '<div class="xtp-chat-sub">本机对话记录<span>可管理 · 共 ' + total + ' 条 · 当前 ' + list.length + ' 条（服务端 ' + srv + ' 条仅供查看）</span></div>' +
+ 1920|       m5QuickHtml() +
+ 1921|       (list.length
+ 1922|         ? '<section class="xtp-sec"><div class="xtp-list">' + s + '</div></section>'
+ 1923|         : '<div class="xtp-empty">' + esc(emptyTip) + '</div>' + emptyExtra) +
+ 1924|       m5ActionsHtml();
+ 1925|   }
+ 1926| 
+ 1927|   /* -------------------------------------------------- M5 动作 */
+ 1928|   /** 清空全部（二次确认，说明后果：不可恢复、条数） */
+ 1929|   function m5ClearAll() {
+ 1930|     var n = chatSessions().length;
+ 1931|     if (!n) { toast('本已无对话记录'); return; }
+ 1932|     var totalMsg = 0, arr = chatSessions(), i;
+ 1933|     for (i = 0; i < arr.length; i++) { totalMsg += (arr[i].messages || []).length; }
+ 1934|     confirmBox('清空全部对话记录',
+ 1935|       '将删除本机全部 ' + n + ' 条会话（共 ' + totalMsg + ' 条消息），此操作不可恢复。\n（服务端记录不受影响，如需删除请联系管理员或等待后续版本支持）\n建议先「备份」。确定继续吗？',
+ 1936|       '清空', true, function () {
+ 1937|         localStorage.removeItem('ai_chat_history');
+ 1938|         writeJSON(META_KEY, {});
+ 1939|         m5Reset();
+ 1940|         m5Repaint();
+ 1941|         toast('已清空本机会话，服务端记录仍保留');
+ 1942|       });
+ 1943|   }
+ 1944|   /** 单条删除（二次确认） */
+ 1945|   function m5DelOne(id) {
+ 1946|     var s = null, arr = chatSessions(), i;
+ 1947|     for (i = 0; i < arr.length; i++) { if (arr[i].id === String(id)) { s = arr[i]; break; } }
+ 1948|     if (!s) { return; }
+ 1949|     confirmBox('删除这条对话',
+ 1950|       '将删除「' + s.title + '」（' + (s.messages || []).length + ' 条消息），不可恢复。确定删除吗？',
+ 1951|       '删除', true, function () {
+ 1952|         var list = chatSessions(), out = [], j;
+ 1953|         for (j = 0; j < list.length; j++) { if (list[j].id !== String(id)) { out.push(list[j]); } }
+ 1954|         m5WriteSessions(out);
+ 1955|         var meta = chatMetaAll(); if (has(meta, String(id))) { delete meta[String(id)]; writeJSON(META_KEY, meta); }
+ 1956|         delete M5.sel[String(id)];
+ 1957|         m5Repaint();
+ 1958|         toast('已删除');
+ 1959|       });
+ 1960|   }
+
+===== 过滤主逻辑 m5Filtered  L1985-2035 =====
+ 1985|     if (!s) { return; }
+ 1986|     var meta = chatMetaOf(s.id);
+ 1987|     var cur = meta.tags.join(', ');
+ 1988|     var mask = openModal(
+ 1989|       '<div class="xtp-modal-title">编辑标签</div>' +
+ 1990|       '<div class="xtp-modal-tip">为「' + esc(s.title) + '」设置标签，多个标签用逗号分隔（最多 8 个，每个 ≤12 字）。</div>' +
+ 1991|       '<input type="text" class="xtp-modal-input" id="xtpM5TagInput" style="margin-top:12px" value="' + esc(cur) + '" placeholder="如：学习 / 重要 / 待整理">' +
+ 1992|       '<div class="xtp-modal-actions"><button type="button" id="xtpM5TagCancel">取消</button>' +
+ 1993|       '<button type="button" class="primary" id="xtpM5TagOk">保存</button></div>'
+ 1994|     );
+ 1995|     var inp = mask.querySelector('#xtpM5TagInput');
+ 1996|     if (inp && inp.focus) { inp.focus(); }
+ 1997|     mask.querySelector('#xtpM5TagCancel').addEventListener('click', closeModal);
+ 1998|     mask.querySelector('#xtpM5TagOk').addEventListener('click', function () {
+ 1999|       var parts = String((inp && inp.value) || '').split(/[,，]/);
+ 2000|       chatMetaSet(s.id, { tags: parts });
+ 2001|       closeModal();
+ 2002|       m5Repaint();
+ 2003|       toast('标签已更新');
+ 2004|     });
+ 2005|   }
+ 2006|   /** 切换收藏 */
+ 2007|   function m5ToggleFav(id) {
+ 2008|     var meta = chatMetaOf(id);
+ 2009|     chatMetaSet(id, { fav: !meta.fav });
+ 2010|     m5Repaint();
+ 2011|   }
+ 2012| 
+ 2013|   /* -------------------------------------------------- 导出 / 备份 / 恢复 */
+ 2014|   function m5Stamp() {
+ 2015|     var d = new Date();
+ 2016|     return d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + '_' + pad2(d.getHours()) + pad2(d.getMinutes());
+ 2017|   }
+ 2018|   /** 组装导出/备份包（exports：'full'=全部本机会话+元信息；'filtered'=当前筛选结果） */
+ 2019|   function m5Pack(scope) {
+ 2020|     var sessions = (scope === 'filtered') ? m5Filtered() : chatSessions();
+ 2021|     var meta = chatMetaAll(), metaOut = {}, i;
+ 2022|     for (i = 0; i < sessions.length; i++) {
+ 2023|       var id = sessions[i].id;
+ 2024|       if (has(meta, id)) { metaOut[id] = meta[id]; }
+ 2025|     }
+ 2026|     return {
+ 2027|       type: 'xt-ai-chat-backup',
+ 2028|       version: 1,
+ 2029|       exportedAt: new Date().toISOString(),
+ 2030|       count: sessions.length,
+ 2031|       sessions: sessions,
+ 2032|       meta: metaOut
+ 2033|     };
+ 2034|   }
+ 2035|   /** 触发浏览器下载（file:// 下 a[download] 亦可用；失败回退复制） */
+
+===== m5Bind 尾部  L2230-2270 =====
+ 2230|     for (p = 0; p < dels.length; p++) {
+ 2231|       dels[p].addEventListener('click', function (ev) {
+ 2232|         ev.stopPropagation();
+ 2233|         m5DelOne(ev.currentTarget.getAttribute('data-id'));
+ 2234|       });
+ 2235|     }
+ 2236|   }
+ 2237| 
+ 2238|   /* ================================================== 数字 0 → 真实值 动画 */
+ 2239|   function animateNumbers(scope) {
+ 2240|     var root = scope || document;
+ 2241|     var els = root.querySelectorAll('[data-anim]'), i;
+ 2242|     for (i = 0; i < els.length; i++) { runCount(els[i]); }
+ 2243|   }
+ 2244|   function runCount(el) {
+ 2245|     var raw = el.getAttribute('data-raw') || '';
+ 2246|     if (!raw) { raw = String(el.textContent || '').replace(/[^0-9.\-]/g, ''); el.setAttribute('data-raw', raw); }
+ 2247|     var target = parseFloat(raw);
+ 2248|     if (!isFinite(target)) { target = 0; }
+ 2249|     var dot = raw.indexOf('.');
+ 2250|     var dec = dot >= 0 ? (raw.length - dot - 1) : 0;
+ 2251|     if (!window.requestAnimationFrame) { return; }   // 老内核无 rAF：直接保留真值
+ 2252|     var dur = 700, t0 = null;
+ 2253|     function frame(ts) {
+ 2254|       if (t0 === null) { t0 = ts; }
+ 2255|       var p = clamp((ts - t0) / dur, 0, 1);
+ 2256|       var e = 1 - Math.pow(1 - p, 3);
+ 2257|       var v = target * e;
+ 2258|       el.textContent = dec > 0 ? v.toFixed(dec) : String(Math.round(v));
+ 2259|       if (p < 1) { window.requestAnimationFrame(frame); }
+ 2260|       else { el.textContent = dec > 0 ? target.toFixed(dec) : String(Math.round(target)); }
+ 2261|     }
+ 2262|     el.textContent = dec > 0 ? (0).toFixed(dec) : '0';
+ 2263|     window.requestAnimationFrame(frame);
+ 2264|   }
+ 2265| 
+ 2266|   /* ============================================================== 通用弹层 */
+ 2267|   function openModal(innerHtml) {
+ 2268|     closeModal();
+ 2269|     var host = $('xtpModalHost') || document.body;
+ 2270|     var mask = document.createElement('div');
+

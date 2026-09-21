@@ -1,0 +1,142 @@
+=== 变体计数（全站） ===
+  商务礼仪及面试 : 3
+  商务礼仪面试 : 48
+  商务礼仪 : 77
+  央国企笔试备考 : 4
+  央国企笔试 : 61
+  高情商表达 : 56
+  PPT 训练 : 3
+  PPT训练 : 51
+  四级备考 : 70
+  表达 : 664
+
+=== 文件名引用计数 ===
+  学习博客.html : 23
+  四级备考.html : 15
+  央国企笔试.html : 12
+  高情商表达.html : 4
+  商务礼仪面试.html : 7
+  PPT训练.html : 9
+  行测刷题.html : 14
+  商务礼仪.html : 2
+  行测.html : 0
+  英语.html : 0
+  社区.html : 0
+  表达.html : 4
+  演示.html : 0
+  面测.html : 0
+
+=== mock_exam.html 含旧名的行 ===
+  138: 参照 商务礼仪面试.html #page-iv-group 合并页范式：
+  222: 切换逻辑 switchMockTab() 与选中态 .on 同步，参照商务礼仪面试.html 合并页范式。 -->
+  372: // —— 【批次 20260913m】双 tab 切换（选中态 .on 同步，参照商务礼仪面试.html 合并页范式）——
+  516: cat=cet-mock  → 四级备考.html
+  517: cat=exam-mock → 央国企笔试.html
+  518: 无 cat / 未知  → 兜底 四级备考.html（四级为默认模考入口）
+  519: 注意：本页可被「四级备考.html」或「央国企笔试.html」进入（带 ?cat=），也可被成绩页返回。 */
+  523: var target = cat === 'exam-mock' ? '央国企笔试.html' : '四级备考.html';
+
+=== app.js 6715-6800 ===
+  6715: applyTheme();          // 应用上次保存的主题（深色/浅色）——全页面通用
+  6716: 
+  6717: /* ========== 首页：功能中心快捷入口（可自选） + 最近打开 + 问候 ========== */
+  6718: // J 批次：dc = lucide data-icon 名（hq-ic 渲染用）；ic 保留 emoji（编辑面板 chip 文案用）
+  6719: var HOME_DEF = [
+  6720:   { k: 'plaza', ic: '🌍', dc: 'globe', t: '广场', d: '看大家的', url: '学习博客.html' },
+  6721:   { k: 'cet', ic: '📖', dc: 'book-open', t: '四级备考', d: '词汇听力阅读', url: '四级备考.html' },
+  6722:   { k: 'exam', ic: '📝', dc: 'pencil', t: '央国企笔试', d: '行测刷题', url: '央国企笔试.html' },
+  6723:   { k: 'comm', ic: '💬', dc: 'message-square', t: '高情商表达', d: '场景话术', url: '高情商表达.html' },
+  6724:   { k: 'interview', ic: '🤝', dc: 'handshake', t: '商务礼仪面试', d: '面试题库', url: '商务礼仪面试.html' },
+  6725:   { k: 'ppt', ic: '🎨', dc: 'palette', t: 'PPT训练', d: '版式案例', url: 'PPT训练.html' }
+  6726: ];
+  6727: var HOME_SHOW_KEY = lsKey('study_workbench_home_show');
+  6728: function homePrefs() { try { return JSON.parse(localStorage.getItem(HOME_SHOW_KEY)) || {}; } catch (e) { return {}; } }
+  6729: function homeShow(k) { return homePrefs()[k] !== false; }
+  6730: function storeHome(k, v) { var p = homePrefs(); p[k] = v; try { localStorage.setItem(HOME_SHOW_KEY, JSON.stringify(p)); } catch (e) { } }
+  6731: function recordModuleVisit(k, t) {
+  6732:   try {
+  6733:     var arr = JSON.parse(localStorage.getItem(lsKey('study_workbench_recent')) || '[]');
+  6734:     arr = arr.filter(function (x) { return x.k !== k; });
+  6735:     arr.unshift({ k: k, t: t, at: new Date().toISOString() });
+  6736:     localStorage.setItem(lsKey('study_workbench_recent'), JSON.stringify(arr.slice(0, 6)));
+  6737:   } catch (e) { }
+  6738: }
+  6739: function renderHomeQuick() {
+  6740:   var nav = document.getElementById('homeQuickNav');
+  6741:   if (!nav) return;
+  6742:   var show = HOME_DEF.filter(function (x) { return homeShow(x.k); });
+  6743:   var grid = (show.length ? show : HOME_DEF).map(function (x) {
+  6744:     return '<a class="hq-it" href="' + x.url + '"><span class="hq-ic"><span class="nav-icon" data-icon="' + x.dc + '" data-icon-size="20"></span></span><span class="hq-tx"><b>' + x.t + '</b><i>' + x.d + '</i></span></a>';
+  6745:   }).join('');
+  6746:   var recent = [];
+  6747:   try { recent = JSON.parse(localStorage.getItem(lsKey('study_workbench_recent')) || '[]'); } catch (e) { recent = []; }
+  6748:   var recentRow = recent.length
+  6749:     ? '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px"><span style="font-size:12px;color:var(--text-secondary);flex-shrink:0">🕘 最近打开</span>' +
+  6750:       recent.map(function (r) { return '<a class="chip" href="' + (HOME_DEF.find(function (d) { return d.k === r.k; }) || {}).url + '" style="text-decoration:none">' + r.t + '</a>'; }).join('') + '</div>'
+  6751:     : '';
+  6752:   nav.innerHTML =
+  6753:     '<div class="card-header"><div class="card-title"><span class="title-icon" data-icon="map"></span>功能中心</div>' +
+  6754:     '<div class="card-action" style="font-size:12px" onclick="toggleHomeEdit()">' + (window.__homeEdit ? '✓ 完成' : '✎ 自选/排序') + '</div></div>' +
+  6755:     '<div class="hq-grid">' + grid + '</div>' + recentRow +
+  6756:     (window.__homeEdit
+  6757:       ? '<div style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--border)"><div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px">点击可显示 / 隐藏：</div><div style="display:flex;flex-wrap:wrap;gap:8px">' +
+  6758:         HOME_DEF.map(function (x) { return '<button class="chip' + (homeShow(x.k) ? ' active' : '') + '" onclick="toggleHomeItem(\'' + x.k + '\')">' + x.ic + ' ' + x.t + '</button>'; }).join('') +
+  6759:         '</div><div style="font-size:11px;color:var(--text-muted);margin-top:8px">隐藏后点上方“✎ 自选/排序”可再显示，点右上“✓ 完成”收起。</div></div>'
+  6760:       : '');
+  6761:   if (window.lucideAutoRender) window.lucideAutoRender(); // 动态插入的 data-icon span 重渲染
+  6762: }
+  6763: function toggleHomeEdit() { window.__homeEdit = !window.__homeEdit; renderHomeQuick(); }
+  6764: function toggleHomeItem(k) { storeHome(k, !homeShow(k)); renderHomeQuick(); }
+  6765: function decorateHome() {
+  6766:   const ph = document.getElementById('page-home');
+  6767:   if (!ph || document.getElementById('homeQuickNav')) return;
+  6768:   const card = document.createElement('div');
+  6769:   card.id = 'homeQuickNav'; card.className = 'card home-quick';
+  6770:   const host = document.getElementById('homeOnlineNav') || ph.firstChild;
+  6771:   if (host && host.parentNode) host.parentNode.insertBefore(card, host.nextSibling);
+  6772:   else ph.appendChild(card);
+  6773:   renderHomeQuick();
+  6774: }
+  6775: (function () {
+  6776:   var recentMap = {
+  6777:     '学习博客.html': 'blog', '私聊.html': 'chat', '行测刷题.html': 'exam', '面试题库.html': 'iv',
+  6778:     '四级词汇.html': 'cet', '四级备考.html': 'listen', '设置.html': 'settings', '个人中心.html': 'settings'
+  6779:   };
+  6780:   var name = decodeURIComponent(location.pathname.split('/').pop());
+  6781:   if (recentMap[name]) {
+  6782:     var def = HOME_DEF.find(function (d) { return d.k === recentMap[name]; });
+  6783:     if (def) recordModuleVisit(def.k, def.t);
+  6784:   }
+  6785: })();
+  6786: // 首页"功能中心/更多功能"卡片：任何一步出错都必须渲染出可见兜底，不能留白。
+  6787: try {
+  6788:   if (document.getElementById('page-home')) decorateHome();
+  6789: } catch (e) {
+  6790:   try {
+  6791:     var qn = document.getElementById('homeQuickNav');
+  6792:     if (qn) {
+  6793:       qn.innerHTML = '<div class="card-header"><div class="card-title"><span class="title-icon" data-icon="map"></span>功能中心</div></div>'
+  6794:         + '<div style="padding:14px;font-size:13px;color:var(--text-secondary)">功能入口加载失败，可直接用下方入口进入各模块。</div>';
+  6795:     }
+  6796:   } catch (e2) { /* 忽略 */ }
+  6797: }
+  6798: try { loadData(); } catch (e) { /* 读取本地数据失败不阻断后续渲染 */ }
+  6799: try { updateDate(); } catch (e) { /* 顶栏日期缺失不影响页面 */ }
+  6800: function __tryInit(name, fn) { try { fn(); } catch (e) { /* 本页无该模块 DOM，正常跳过 */ } }
+
+=== app.js 1448-1456 ===
+  1448:   home: '首页', cet: '四级备考', exam: '央国企笔试备考',
+  1449:   comm: '高情商表达', interview: '商务礼仪及面试', ppt: 'PPT训练',
+  1450:   'speaking-demo': '情景式口语', 'exam-demo': '行测刷题',
+  1451:   'roleplay-demo': '角色扮演', 'interview-demo': '模拟面试',
+  1452:   'exam-center': '行测刷题中心', shenlun: '申论刷题', 'wrong-book': '错题本', 'cet-vocab': '四级词汇', 'etiquette': '商务礼仪', 'iv-questions': '面试题库', 'ppt-layouts': 'PPT版式库', 'ppt-cases': 'PPT案例拆解', 'comm-scenes': '场景话术库', 'comm-quotes': '万能金句库', 'settings': '设置', 'blog': '广场', 'profile': '个人中心'
+  1453: };
+  1454: 
+  1455: // ========== 多页面版：各模块独立网页的文件映射 ==========
+  1456: // 本页没有某模块的 DOM 时，navigateTo() 会据此跳转到对应模块网页
+
+=== 根目录 html ===
+  AI.html | AI模拟面试.html | PPT案例拆解.html | PPT版式库.html | PPT素材库.html | PPT训练.html | blog_wechat.html | mock_exam.html | mock_exam_result.html | mock_exam_run.html | 万能金句库.html | 个人中心.html | 企业定向库.html | 动态.html | 商务礼仪.html | 商务礼仪面试.html | 四级备考.html | 四级经验分享.html | 四级词汇.html | 场景话术库.html | 央国企笔试.html | 好友申请.html | 学习博客.html | 学习工作台.html | 学途.html | 工具.html | 时政热点.html | 更多.html | 申论刷题.html | 登录.html | 私聊.html | 管理员.html | 行测刷题.html | 设置.html | 错题本.html | 面试题库.html | 高情商表达.html
+
+=== assets js ===
+  admin-contact.js | admin.js | ai-config.js | ai-page.js | ai-presets.js | ai-service.js | api.js | app.js | cet-read.js | cet-translate.js | chat-local.js | comm-cases.js | company-lib.js | config.js | data-cet-read.js | data-cet-translate.js | data-comm-cases.js | data-exam-company.js | data-iv-after.js | data-iv-prep.js | data-ppt-class.js | data-ppt-templates.js | data-ppt-tips.js | design-class.js | error-boundary.js | group-discussion.js | hotnews.js | i-partner.js | icon-map.js | importer.js | iv-after.js | iv-prep.js | mini-cet.js | mini-comm.js | mini-exam.js | mini-interview.js | mini-ppt.js | mini.js | mock-engine.js | mock-result.js | net-compat.js | ppt-tips.js | ppt-works.js | qbank.js | quest.js | roleplay.js | study-stats.js | subpage-router.js | topic-express.js | tpl-preview.js | voiceplayer.js | xt-content.js | xt-polyfill.js | xt-settings.js | xt-toast.js

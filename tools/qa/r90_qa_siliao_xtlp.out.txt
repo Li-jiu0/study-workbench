@@ -1,0 +1,10 @@
+包含 xiaoping / 小屏 / 极矮 / 320 / 400 的地方:
+   23|      5 个 tab 五等分后每格仅几十 px（320px 屏约 60px），"💬 会话" 这类 emoji+空格+双字中文被整体截成空白。
+   68|   .im-composer textarea{flex:1;resize:none;height:44px;max-height:120px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;font-size:14px;outline:none;font-family:inherit;background:var(--bg);color:var(--text)}
+  414|   .im-panel-host .im-modal{width:100%;max-width:none;max-height:none;margin:auto;box-shadow:none;border:1px solid var(--border)}
+  449|   .ac-composer textarea{flex:1;resize:none;height:44px;max-height:120px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;font-size:14px;outline:none;font-family:inherit;background:var(--bg);color:var(--text)}
+  462|      【根因】原第④条把 5 个 tab 五等分（每格约 60px@320px）后又加 white-space:nowrap +
+  472|   /* 窄屏（安卓老机 320px 常见）：tab 栏横向滚动，每个 tab 保底可读宽度，文字完整不截断 */
+ 1041|       '.im-plus-menu{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:16px 16px 0 0;padding:10px 0 16px;box-shadow:0 -6px 24px rgba(0,0,0,.12);transform:translateY(110%);transition:transform .24s ease;z-index:61;max-widt
+ 1057|       '@media (max-height:520px){.im-plus-item{padding:8px 20px}.im-plus-ico{width:36px;height:36px;border-radius:9px}.im-plus-menu{padding:6px 0 10px;max-height:88vh}}' +
+ 1061|       '.im-loc-sheet-body{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:86%;max-width:360px;background:#fff;border-radius:14px;padding:18px 18px 14px;box-shadow:0 8px 30px rgba(0,0,0,.2);max-height:80vh;overflow-y:

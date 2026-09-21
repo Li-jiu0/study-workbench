@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#5B8DEF">
+<title>场景话术库 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260923c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<link rel="stylesheet" href="assets/polish.css?v=20260916O">
+<style>
+/* ============================================================
+   场景话术库 · 布局重排（只动布局与样式，不动任何 id / onclick / 渲染逻辑）
+   间距体系：8 / 12 / 16（--xt-space-2 / 3 / 4）
+   ============================================================ */
+
+/* —— 页面容器：与 .content 同级页保持一致的留白 —— */
+#page-comm-scenes { padding: 24px; }
+#page-comm-scenes > .card { padding: 16px; margin-bottom: 0; }
+
+/* —— 页头：标题 + 数量标签，换行时仍保持 8/16 节奏 —— */
+#page-comm-scenes .card-header { margin-bottom: 16px; gap: 8px; flex-wrap: wrap; }
+#page-comm-scenes .card-header .card-title { font-size: 16px; gap: 8px; min-width: 0; }
+#page-comm-scenes .card-header .card-title .title-icon { display: inline-flex; align-items: center; }
+#page-comm-scenes .card-header .tag { flex-shrink: 0; }
+
+/* —— 分类 tab 行：与卡片网格左对齐，间距 8 —— */
+#commFilter { gap: 8px !important; margin-bottom: 16px !important; }
+#commFilter .type-filter { line-height: 1.4; }
+
+/* —— 内容区：卡片网格，同行等高 —— */
+#commSceneList {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(520px, 1fr));
+  gap: 16px !important;
+  align-items: stretch;
+}
+/* 统计条 / 分类小标题 / 空态：独占整行 */
+#commSceneList > .cs-stats,
+#commSceneList > .cs-section,
+#commSceneList > .cs-empty { grid-column: 1 / -1; }
+
+#commSceneList > .cs-stats { padding: 12px 16px !important; margin-bottom: 0 !important; gap: 12px !important; border-radius: 12px !important; }
+/* 13px = 3px 竖线 + 与卡片内边距 16px 对齐 */
+#commSceneList > .cs-section { margin: 4px 0 0 !important; padding-left: 13px !important; }
+#commSceneList > .cs-empty { padding: 32px 16px !important; margin-bottom: 0 !important; border-radius: 12px !important; }
+
+/* —— 场景卡：图标 + 标题 + 描述层次统一，hover 与全站 .card 一致 —— */
+#commSceneList > .cs-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 16px !important;
+  margin-bottom: 0 !important;
+  border-radius: 12px !important;
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+#commSceneList > .cs-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+/* 1 图标+标题行 / 2 场景 / 3 低·高情商对比 / 4 沟通要点 */
+#commSceneList > .cs-card > div:nth-child(1) { gap: 8px !important; margin-bottom: 12px !important; flex-wrap: wrap; }
+#commSceneList > .cs-card > div:nth-child(1) > span:first-child { display: inline-flex; align-items: center; line-height: 1; }
+#commSceneList > .cs-card > div:nth-child(1) > .btn:first-of-type { margin-left: auto; }
+#commSceneList > .cs-card > div:nth-child(2) { padding: 12px !important; margin-bottom: 12px !important; border-radius: 12px !important; }
+#commSceneList > .cs-card > div:nth-child(3) { gap: 12px !important; margin-bottom: 12px !important; }
+#commSceneList > .cs-card > div:nth-child(3) > div { padding: 12px !important; border-radius: 12px !important; }
+#commSceneList > .cs-card > div:nth-child(4) { margin-top: auto; }
+
+/* —— 窄屏/中屏：单列（低于 2 列所需宽度 520*2+16+侧栏 220+留白 48） —— */
+@media (max-width: 1323px) {
+  #commSceneList { grid-template-columns: 1fr; }
+}
+/* —— 手机：留白收紧 + 对比块纵向排列 —— */
+@media (max-width: 768px) {
+  #page-comm-scenes { padding: 16px; padding-bottom: calc(var(--bottom-nav-height) + 20px); }
+  #commSceneList { grid-template-columns: 1fr; }
+  #commSceneList > .cs-card > div:nth-child(3) { grid-template-columns: 1fr !important; }
+}
+/* ===== R73 需求20-B 移动端适配（≤768px）=====
+   仅作用于窄屏；桌面端(>768px)渲染零影响（本块整体位于媒体查询内）。
+   1) 内嵌媒体兜底 max-width，防 JS 注入内容/未来素材撑破窄屏；
+   2) 宽表格窄屏内横向滚动，避免整页横向溢出（需求20-B #2）；
+   3) 字号下限兜底：common.css 的 .bn-label(10px)/.ai-mode-badge(9px)/
+      .study-stats-bar b(9px) 低于 A7 辅助≥11px，页内窄屏提升到 11px（不改共享 common.css）。 */
+@media (max-width: 768px) {
+  img, video, canvas, iframe { max-width: 100%; height: auto; }
+  table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bottom-nav-item .bn-label, .ai-mode-badge, .study-stats-bar b { font-size: 11px; }
+}
+</style>
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
+</head>
+<body class="theme-home">
+
+<div class="app">
+<nav class="sidebar">
+    <div class="logo">
+      <div class="logo-icon" data-icon="book-open"></div>
+      <div>
+        <div class="logo-text">星途</div>
+        <div class="logo-sub">致追梦的人->修身</div>
+      </div>
+    </div>
+    <div class="nav-list">
+      <div class="nav-item" data-page="home">
+        <span class="nav-icon" data-icon="home"></span><span>首页</span>
+      </div>
+      <div class="nav-item" onclick="location.href='AI.html'">
+        <span class="nav-icon" data-icon="sparkles"></span><span>AI</span>
+      </div>
+      <div class="nav-section">学习模块</div>
+      <div class="nav-item" data-page="cet">
+        <span class="nav-icon" data-icon="book-open"></span><span>英语</span>
+      </div>
+      <div class="nav-item" data-page="exam">
+        <span class="nav-icon" data-icon="pencil"></span><span>行测</span>
+      </div>
+      <div class="nav-item" data-page="comm">
+        <span class="nav-icon" data-icon="message-square"></span><span>表达</span>
+      </div>
+      <div class="nav-item" data-page="interview">
+        <span class="nav-icon" data-icon="handshake"></span><span>面测</span>
+      </div>
+      <div class="nav-item" data-page="files">
+        <span class="nav-icon" data-icon="folder"></span><span>我的文件</span>
+      </div>
+      <div class="nav-section">创作</div>
+      <div class="nav-item" data-page="blog">
+        <span class="nav-icon" data-icon="globe"></span><span>社区</span>
+      </div>
+      <div class="nav-item" data-page="moments">
+        <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
+      </div>
+      <div class="nav-section">互动</div>
+      <div class="nav-item" data-external="1" onclick="gotoChat()" title="通讯录 · 添加好友（需在线模式）">
+        <span class="nav-icon" data-icon="users"></span><span>通讯录</span>
+      </div>
+      <div class="nav-section">中心</div>
+      <div class="nav-item" data-page="wrong-book">
+        <span class="nav-icon" data-icon="book"></span><span>错题本</span>
+      </div>
+            <div class="nav-item" data-page="profile">
+        <span class="nav-icon" data-icon="user"></span><span>个人中心</span>
+      </div>
+<div class="nav-section">系统</div>
+      <div class="nav-item" data-page="settings">
+        <span class="nav-icon" data-icon="settings"></span><span>设置</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心">
+        <div class="user-avatar">学</div>
+        <div class="user-info">
+          <div class="user-name">同学</div>
+          <div class="user-streak"><span data-icon="fire" data-icon-size="14" style="vertical-align:-2px"></span> 连续打卡 0 天</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+<header class="topbar">
+      <div class="topbar-title" id="topbarTitle">场景话术库</div>
+      <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
+      <div class="gs-wrap" id="gsWrap">
+        <input type="text" class="gs-input" id="gsInput" placeholder="搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <div class="gs-dropdown" id="gsDropdown"></div>
+      </div>
+      <div class="topbar-stats">
+        <div class="stat-item"><span class="stat-icon" data-icon="fire"></span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="clock"></span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="check"></span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
+      </div>
+      <div class="topbar-date" id="topbarDate"></div>
+      <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式"><span class="nav-icon" data-icon="moon" data-icon-size="16"></span></div>
+    </header>
+<div class="page active" id="page-comm-scenes">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="pen" data-icon-size="20"></span></span>高情商场景话术库</div>
+          <span class="tag tag-primary">12个高频场景</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px" id="commFilter">
+          <span class="type-filter active" data-cat="全部" onclick="filterCommScenes('全部')">全部</span>
+          <span class="type-filter" data-cat="拒绝" onclick="filterCommScenes('拒绝')">拒绝</span>
+          <span class="type-filter" data-cat="向上沟通" onclick="filterCommScenes('向上沟通')">向上沟通</span>
+          <span class="type-filter" data-cat="反馈" onclick="filterCommScenes('反馈')">反馈</span>
+          <span class="type-filter" data-cat="冲突处理" onclick="filterCommScenes('冲突处理')">冲突处理</span>
+          <span class="type-filter" data-cat="i人专属" onclick="filterCommScenes('i人专属')">i人专属</span>
+        </div>
+        <div id="commSceneList" style="display:flex;flex-direction:column;gap:16px"></div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- 底部导航（手机端） -->
+    <nav class="bottom-nav">
+    <div class="bottom-nav-list">
+      <div class="bottom-nav-item" data-page="home">
+        <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
+      </div>
+      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
+            <div class="bottom-nav-item" onclick="location.href='AI.html'"><div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div></div>
+            <div class="bottom-nav-item" onclick="location.href='更多.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 更多面板遮罩 -->
+    <div class="more-overlay" onclick="toggleMorePanel()"></div>
+
+  <!-- 更多面板 -->
+  <div class="bottom-more-panel" id="morePanel">
+    <div class="bottom-more-title">更多功能</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="navigateTo('moments');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="rss" data-icon-size="20"></span></div><div class="bm-label">动态空间</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogStats()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
+      </div>
+      <div class="bottom-more-item" onclick="if(window.gotoBlogMine){gotoBlogMine()}else{location.href='社区.html#mine'}">
+        <div class="bm-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div><div class="bm-label">互动广场</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div><div class="bm-label">错题本</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div><div class="bm-label">设置</div>
+      </div>
+      <div class="bottom-more-item" onclick="showAbout()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div><div class="bm-label">关于</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加倒计时弹窗 -->
+  <div class="modal-overlay" id="countdownModal">    <div class="modal">
+      <div class="modal-title" id="countdownModalTitle">添加倒计时</div>
+      <div class="form-group">
+        <div class="form-label">名称</div>
+        <input type="text" class="form-input" id="cdName" placeholder="如：四级考试、秋招截止">
+      </div>
+      <div class="form-group">
+        <div class="form-label">日期</div>
+        <input type="date" class="form-input" id="cdDate">
+      </div>
+      <div class="form-group">
+        <div class="form-label">颜色</div>
+        <div class="color-picker" id="cdColorPicker">
+          <div class="color-dot active" style="background:#5B8DEF" data-color="#5B8DEF"></div>
+          <div class="color-dot" style="background:#E05040" data-color="#E05040"></div>
+          <div class="color-dot" style="background:#9B6BD9" data-color="#9B6BD9"></div>
+          <div class="color-dot" style="background:#D4A056" data-color="#D4A056"></div>
+          <div class="color-dot" style="background:#36CFC9" data-color="#36CFC9"></div>
+          <div class="color-dot" style="background:#FF9F68" data-color="#FF9F68"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--xt-font-base);color:var(--text-secondary)">
+          <input type="checkbox" id="cdPinned"> 置顶显示
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeCountdownModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveCountdown()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast提示 -->
+  <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center"></div>
+
+  <!-- ==================== AI学习助手（悬浮聊天窗口） ====================
+       说明：
+       1. 默认“本地演示模式”：不联网、不调API、无密钥，由内置规则引擎回复；
+       2. 【后续扩展点】启动 ai-server 后端后，把下方 JS 里的 AI_CONFIG.apiUrl
+          填上后端地址（如 http://localhost:3000/api/chat），即可切换为真实AI流式对话；
+       3. 安全约束：大模型密钥只放在后端 .env 里，前端代码永远不出现密钥。 -->
+  <!-- 悬浮头像：可按住拖拽到任意位置（见下方 JS.initAiFabDrag），点击打开/收起面板，双击复位 -->
+  <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">
+    <span class="nav-icon" data-icon="bot" data-icon-size="22"></span><span class="ai-mode-badge" id="aiModeBadge">演示</span>
+  </div>
+  <div class="ai-panel" id="aiPanel">
+    <div class="ai-panel-header">
+      <div class="ai-avatar"><span class="nav-icon" data-icon="bot" data-icon-size="20"></span></div>
+      <div style="flex:1">
+        <div class="ai-title">AI学习助手</div>
+        <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
+      </div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录"><span class="nav-icon" data-icon="delete" data-icon-size="16"></span></div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板"><span class="nav-icon" data-icon="close" data-icon-size="16"></span></div>
+    </div>
+    <div class="ai-messages" id="aiMessages"></div>
+    <div class="ai-input-row">
+      <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()"><span data-icon="arrow-right" data-icon-size="18"></span></div>
+    </div>
+  </div>
+
+
+
+</div>
+
+<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/xt-toast.js?v=20260923a" defer></script>
+<script src="assets/error-boundary.js?v=20260924a" defer></script>
+<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260924a" defer></script>
+
+<script src="assets/qbank.js?v=20260916O" defer></script>
+<script>
+/* 场景话术库：为动态渲染的子节点补样式钩子（只加 class，不改数据与交互） */
+(function () {
+  function tagCommScenes() {
+    var list = document.getElementById('commSceneList');
+    if (!list) return;
+    var kids = list.children;
+    for (var i = 0; i < kids.length; i++) {
+      var el = kids[i];
+      if (el.style.borderRadius === '14px') el.className = 'cs-card';
+      else if (el.style.borderLeftWidth === '3px') el.className = 'cs-section';
+      else if (el.style.textAlign === 'center') el.className = 'cs-empty';
+      else el.className = 'cs-stats';
+    }
+  }
+  tagCommScenes();
+  document.addEventListener('DOMContentLoaded', tagCommScenes);
+  var list = document.getElementById('commSceneList');
+  if (window.MutationObserver && list) {
+    new MutationObserver(tagCommScenes).observe(list, { childList: true });
+  }
+})();
+</script>
+<script src="assets/ai-config.js?v=20260925a"></script>
+<script src="assets/ai-presets.js?v=20260916O"></script>
+<script src="assets/ai-service.js?v=20260925a"></script>
+<script src="assets/ai-cap-registry.js?v=20260918c"></script>
+<script src="assets/ai-cap-image.js?v=20260920c"></script>
+<script src="assets/ai-cap-vision.js?v=20260920c"></script>
+<script src="assets/ai-cap-audio.js?v=20260920c"></script>
+<script src="assets/ai-cap-embed.js?v=20260920c"></script>
+<script src="assets/ai-cap-translate.js?v=20260920c"></script>
+<script src="assets/ai-cap-video.js?v=20260920c"></script>
+<script src="assets/ai-cap-3d.js?v=20260922a"></script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+probe 本地 py_compile OK
+探针覆盖：friend_remarks 表存在 / Bug1 已读后会话仍在(unread=0) / Bug3 备注 写·读·清 / Bug2 管理员 role=admin-view / 回归 friends·groups·unread==200 / 清场 users 回锚点
+
+[up] probe rc=0 
+
+[probe] rc=0
+RESULTS
+  OK   anchor users(before) 记录  16
+  OK   friend_remarks 表存在(=1)  1
+  OK   register A 200  200
+  OK   register B 200  200
+  OK   register C 200  200
+  OK   A/B/C 取到 id  18/19/20
+  OK   admin login 200  200
+  OK   admin id>0  10
+  OK   A-B become friends
+  OK   A-C become friends
+  OK   A→admin 发信 200  200
+  OK   管理员会话含 A（回复前）
+  OK   admin→A 回复 200  200
+  OK   admin 拉会话并置已读 200  200
+  OK   ★ Bug1: 已读后 A 仍在会话列表
+  OK   ★ Bug1: 该会话 unreadCount=0  0
+  OK   ★ Bug1: lastMessage=管理员回复
+  OK   写备注 200 且回显  {'ok': True, 'peerId': 19, 'peerRemark': '探针备注634378'}
+  OK   好友列表带 peerRemark  {'id': 19, 'nickname': '探针乙634378', 'avatarUrl': None, 'motto': '', 'since': '2026-09-17 16:39:38', 'peerRemark': '探针备注634378'}
+  OK   清备注后为空  {'id': 19, 'nickname': '探针乙634378', 'avatarUrl': None, 'motto': '', 'since': '2026-09-17 16:39:38', 'peerRemark': ''}
+  OK   A 建群 200  200
+  OK   ★ Bug2: 管理员看到该群
+  OK   ★ Bug2: role=admin-view & unreadCount=0  {'id': 2, 'name': '探针群634378', 'ownerId': 18, 'avatar': None, 'memberCount': 3, 'lastMessage': None, 'unreadCount': 0, 'role': 'admin-view'}
+  OK   regression /api/friends ==200  200
+  OK   regression /api/groups ==200  200
+  OK   regression /api/chat/unread ==200  200
+  OK   ★ 清场: 临时账号已删  0
+  OK   ★ 清场: users 回到锚点  before=16 after=16
+SUMMARY pass=28 fail=0
+

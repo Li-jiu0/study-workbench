@@ -1,0 +1,98 @@
+REMOTE_PATH_COUNT=71
+
+--- 远端全部路径 ---
+/api/ai/chat
+/api/ai/history
+/api/ai/models
+/api/ai/usage
+/api/auth/change-password
+/api/auth/login
+/api/auth/me
+/api/auth/refresh
+/api/auth/register
+/api/board
+/api/board/replies/{reply_id}
+/api/board/{msg_id}
+/api/board/{msg_id}/like
+/api/board/{msg_id}/replies
+/api/chat/unread
+/api/chat/{peer_id}/messages
+/api/chat/{peer_id}/read
+/api/comments/{comment_id}
+/api/feedback
+/api/feedbacks
+/api/feedbacks/mine
+/api/friends
+/api/friends/block
+/api/friends/block/{blocked_id}
+/api/friends/blocked
+/api/friends/requests
+/api/friends/requests/seen
+/api/friends/requests/{rid}
+/api/friends/requests/{rid}/accept
+/api/friends/requests/{rid}/decline
+/api/friends/search
+/api/friends/{peer_id}
+/api/groups
+/api/groups/{gid}
+/api/groups/{gid}/me
+/api/groups/{gid}/members/{uid}
+/api/groups/{gid}/messages
+/api/groups/{gid}/quit
+/api/groups/{gid}/read
+/api/health
+/api/migrate/notes
+/api/moments
+/api/moments/comments/{cid}
+/api/moments/feed
+/api/moments/user/{uid}
+/api/moments/{mid}
+/api/moments/{mid}/comments
+/api/moments/{mid}/like
+/api/news/daily
+/api/notes
+/api/notes/mine/stats
+/api/notes/search
+/api/notes/trash
+/api/notes/trash/{note_id}
+/api/notes/{note_id}
+/api/notes/{note_id}/comments
+/api/notes/{note_id}/favorite
+/api/notes/{note_id}/like
+/api/notes/{note_id}/restore
+/api/notifications
+/api/notifications/read-all
+/api/study/logs
+/api/study/summary
+/api/tts
+/api/uploads
+/api/uploads/voice
+/api/users/me
+/api/users/me/avatar
+/api/users/me/privacy
+/api/users/presence
+/api/users/{user_id}
+
+--- 前端引用但远端不存在的路径（按规范化模板比对）---
+MISSING /api/admin/contact  <- admin-contact.js,chat-local.js
+MISSING /api/admin/feedback  <- admin.js
+MISSING /api/admin/feedback/  <- admin.js
+MISSING /api/admin/online  <- admin.js
+MISSING /api/admin/overview  <- admin.js
+MISSING /api/admin/users  <- admin.js,chat-local.js
+MISSING /api/admin/users/  <- admin.js,chat-local.js
+MISSING /api/board/  <- app.js
+MISSING /api/board/replies/  <- app.js
+MISSING /api/chat/  <- admin-contact.js,chat-local.js,私聊.html
+MISSING /api/comments/  <- api.js
+MISSING /api/feedback/mine  <- 设置.html
+MISSING /api/friends/  <- api.js,chat-local.js,好友申请.html
+MISSING /api/friends/block/  <- 设置.html
+MISSING /api/friends/requests/  <- chat-local.js,好友申请.html
+MISSING /api/groups/  <- chat-local.js
+MISSING /api/moments/  <- 个人中心.html,动态.html
+MISSING /api/moments/comments/  <- 动态.html
+MISSING /api/moments/user/  <- 个人中心.html
+MISSING /api/notes/  <- api.js
+MISSING /api/notes/trash/  <- api.js
+MISSING /api/users/  <- api.js

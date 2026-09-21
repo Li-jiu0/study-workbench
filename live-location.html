@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#5B8DEF">
+<title>实时位置 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260923c">
+<link rel="stylesheet" href="assets/leaflet/leaflet.css">
+<style>
+  /* common.css 会锁 html/body 高度并隐藏滚动，本页为独立交互地图页，恢复滚动/占满视口 */
+  html, body { height: 100%; }
+  body { margin: 0; background: #e9edf3; font-family: inherit; overflow: hidden; }
+  /* 微信同款：全屏沉浸地图，控件全部悬浮叠加，无常文档流标题栏/状态条 */
+  .ll-map { position: fixed; inset: 0; background: #e9edf3; }
+  #llMap { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+  /* 左上角返回：半透明圆形黑底 + 白色箭头，避开状态栏 */
+  .ll-back { position: fixed; z-index: 1100; left: 12px; top: calc(10px + env(safe-area-inset-top, 0px)); width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(0,0,0,.45); color: #fff; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,.25); padding: 0; }
+  .ll-back:active { background: rgba(0,0,0,.62); }
+  /* 返回键右侧：对方昵称半透明胶囊 */
+  .ll-name { position: fixed; z-index: 1100; left: 62px; top: calc(10px + env(safe-area-inset-top, 0px)); height: 40px; display: flex; align-items: center; padding: 0 16px; border-radius: 20px; background: rgba(0,0,0,.45); color: #fff; font-size: 14px; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,.25); white-space: nowrap; }
+  /* 头像气泡 marker（L.divIcon 自绘）：圆角方形头像白描边 + 底部白三角指向精确坐标 */
+  .ll-ava { position: relative; width: 44px; height: 44px; border-radius: 9px; border: 2.5px solid #fff; background: #5B8DEF; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
+  .ll-ava-txt { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; font-weight: 700; }
+  .ll-ava img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; }
+  .ll-marker-tip { width: 0; height: 0; margin: -1px auto 0; border: 6px solid transparent; border-top-color: #fff; }
+  /* 底部状态胶囊：底部居中悬浮，半透明深底白字 */
+  .ll-bar { position: fixed; z-index: 1100; left: 50%; transform: translateX(-50%); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; background: rgba(0,0,0,.55); color: #fff; font-size: 13px; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+  .ll-bar.stale { background: rgba(120,72,0,.72); }
+  .ll-bdot { width: 8px; height: 8px; border-radius: 50%; background: #4cd964; flex: 0 0 auto; }
+  .ll-bar.stale .ll-bdot { background: #ffb340; }
+  .ll-bspin { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: llspin 0.9s linear infinite; flex: 0 0 auto; }
+  @keyframes llspin { to { transform: rotate(360deg); } }
+  /* 占位层：坐标尚未就绪时覆盖在地图之上，绝不能留白（修「地图加载不出来」的关键） */
+  .ll-loading { position: fixed; inset: 0; z-index: 900; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: #e9edf3; color: #6b7280; }
+  .ll-spinner { width: 34px; height: 34px; border: 3px solid #cfd6e4; border-top-color: #5B8DEF; border-radius: 50%; animation: llspin 0.9s linear infinite; }
+  .ll-loading-txt { font-size: 14px; }
+  .ll-loading-sub { font-size: 12px; color: #9aa3b2; }
+  .ll-ended { position: fixed; inset: 0; z-index: 900; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: rgba(233,237,243,.92); color: #6b7280; text-align: center; padding: 0 24px; }
+  .ll-ended b { font-size: 16px; color: #1f2937; }
+  .ll-toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px; z-index: 9999; transition: opacity .25s; opacity: 0; max-width: 86%; text-align: center; }
+  /* Leaflet 默认版权/attribution 在小屏占位，隐藏避免突兀（瓦片已带腾讯来源） */
+  .leaflet-control-attribution { display: none; }
+</style>
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__ = true;</script>
+<script src="assets/leaflet/leaflet.js"></script>
+</head>
+<body>
+<div id="llMap" class="ll-map"></div>
+<!-- 智能返回：有历史回上一页，无历史兜底回私聊（本页唯一入口惯例，照抄好友申请.html） -->
+<button class="ll-back" onclick="if(history.length>1){history.back()}else{location.href='私聊.html'}" title="返回" aria-label="返回"><span data-icon="arrow-left" data-icon-size="18" style="line-height:1">&#8592;</span></button>
+<!-- 对方昵称胶囊（chat-local.js 跳转携带 name 参数，缺省显示「对方」） -->
+<div class="ll-name" id="llName">对方</div>
+<div class="ll-loading" id="llLoading">
+  <div class="ll-spinner"></div>
+  <div class="ll-loading-txt" id="llLoadingTxt">正在获取位置…</div>
+  <div class="ll-loading-sub">共享发起后请稍候，地图加载完成前不会留白</div>
+</div>
+<div class="ll-ended" id="llEnded" style="display:none">
+  <b>实时位置共享已结束</b>
+  <div>对方已停止共享，没有可显示的坐标。</div>
+</div>
+<div class="ll-bar" id="llBar"><span class="ll-bspin"></span><span>连接中…</span></div>
+<div class="ll-toast" id="llToast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* —— 与 assets/chat-local.js 同义的鉴权/接口封装（复用其请求头写法）—— */
+  function apiBase() {
+    return (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000'));
+  }
+  function tok() { return localStorage.getItem('study_workbench_token') || ''; }
+
+  /* 腾讯栅格瓦片 key：与 assets/xt-region.js 的 GEO.tencentKey 同源（R130 已定版，勿换）。 */
+  var TENCENT_KEY = 'RRTBZ-GNGKQ-3KD5W-2SS5K-YIHG5-S4BAP';
+
+  function toast(msg) {
+    var el = document.getElementById('llToast');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.opacity = '1';
+    clearTimeout(el._t);
+    el._t = setTimeout(function () { el.style.opacity = '0'; }, 2200);
+  }
+
+  /* —— 从 URL query 取 shareId（优先，仅作展示参考）/ peerId / groupId ——
+     注意：服务端 /api/live/state 仅接受 peerId|groupId（二选一，见 server/routers/liveloc.py），
+     shareId 不在该接口参数之列，故轮询一律用 peerId/groupId；shareId 仅携带展示。 */
+  var params = (function () {
+    var u = location.search || '';
+    var m = {};
+    var arr = u.replace(/^\?/, '').split('&');
+    for (var i = 0; i < arr.length; i++) {
+      if (!arr[i]) continue;
+      var kv = arr[i].split('=');
+      m[decodeURIComponent(kv[0])] = decodeURIComponent(kv.slice(1).join('=') || '');
+    }
+    return m;
+  })();
+  var qShare = params['shareId'] || '';
+  var qPeer = params['peerId'] || '';
+  var qGroup = params['groupId'] || '';
+  /* R3·L2：join=1（默认，微信式「点进即加入」）→ 进页自动 POST /api/live/start 并上报自己的坐标；
+     join=0（「仅查看」）→ 只围观对方，不上报自己。缺省按「加入」处理，保证双方都上屏。 */
+  var qJoin = (params['join'] === '0') ? false : true;
+  /* 身份展示参数（chat-local.js imLiveViewUrl 附带，仅展示用，不参与接口鉴权） */
+  var qName = params['name'] || '';
+  var qAvatar = params['avatar'] || '';
+
+  var apiQuery = '';
+  if (qPeer) apiQuery = 'peerId=' + encodeURIComponent(qPeer);
+  else if (qGroup) apiQuery = 'groupId=' + encodeURIComponent(qGroup);
+
+  var POLL_MS = 4000;            // 轮询间隔（任务要求 3-5s）
+  /* 双向共享：markers 按 sharerId 字典管理（key = String(sharerId)），支持多 marker 与移除消失者 */
+  var map = null, markers = {};
+  var revealed = false;          // 是否已拿到任一有效坐标并打点（首次 reveal 后不再强制居中）
+  var ended = false;             // 共享已结束（停止轮询）
+  var stale = false;             // 全部已 fix 会话均超时未心跳
+  /* 当前登录用户（GET /api/auth/me 平铺返回：id / nickname / avatarUrl，见 server/routers/auth.py）。
+     localStorage 侧 study_workbench_uid 仅作 id 兜底，昵称/头像一律以 me 接口为准。 */
+  var myId = Number(localStorage.getItem('study_workbench_uid')) || 0;
+  var myName = '', myAvatar = '';
+  /* 网页端 tick 兜底状态机（详见下方 §2.4 段） */
+  var nativePushAt = 0;          // 原生心跳最近一次时间戳（MainActivity.pushLocationUpdate → __onLocationUpdate）
+  var ownTick = { watchId: null, shareId: '', ended: false, lastLat: null, lastLng: null, lastTs: 0, denied: false };
+  var NATIVE_HEARTBEAT_MS = 30000;  // 原生心跳 30s 内视为「原生服务存活」，web 侧不兜底
+  var TICK_MIN_GAP_MS = 15000;      // 距上次上报 ≥15s 才再报（镜像原生节流）
+  var TICK_MIN_DIST_M = 30;         // 位移 >30m 才再报
+
+  /* ===== R3·L2：进页自动「加入共享」（微信式点进即加入）=====
+     根因：旧版 live-location.html 从不调 /api/live/start，接收方只围观、不上报自己 → 双方各看各的。
+     修法：进页时若 join=1 且本人对该 peer/group 尚无 active 会话 → 自动 start 一次并开始上报；
+           离页/结束时 stop。复用下方 §2.4 三态上报（原生桥优先，JS watchPosition 兜底），不新写定位。
+     幂等：重复 start 由后端 _end_existing 先结束本人同目标旧会话；本页 sideStart 单飞防重入。 */
+  var joined = false;            // 本页是否已进入「我在共享」状态
+  var joinStarting = false;      // start 请求单飞（防重入）
+  var sideStart = '';            // 本页自动加入得到的 shareId（离页时 stop 用；仅自己拥有）
+  var autoJoinArmed = false;     // 自动加入仅尝试一次，避免轮询反复触发
+
+  /* 进页自动加入：join=1 + 未加入 + 有会话参数 + 有 token。 */
+  function autoJoinOnce() {
+    if (!qJoin || autoJoinArmed || ended) return;
+    if (!apiQuery) return;                 // 私聊需 peerId / 群聊需 groupId
+    if (!tok()) return;                    // 未登录：poll 已给提示
+    autoJoinArmed = true;
+    tryJoinShare();
+  }
+
+  /* 真正发 start（幂等）：POST /api/live/start {peerId|groupId, silent:true}，成功后置 joined + 三态上报。
+     先查一次 state：若本人对该目标已有 active 会话 → 直接复用（不再 start，避免反复进出产生重复会话/卡片）。 */
+  function tryJoinShare() {
+    if (joinStarting || joined || ended) return;
+    joinStarting = true;
+    fetch(apiBase() + '/api/live/state?' + apiQuery, {
+      headers: { 'Authorization': 'Bearer ' + tok() }
+    })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (st) {
+        /* 已在共享（本人会话存在）→ 复用旧 shareId，只补起上报，不再 start */
+        var mine = null;
+        if (st && Array.isArray(st.sessions) && myId > 0) {
+          for (var i = 0; i < st.sessions.length; i++) {
+            if (st.sessions[i] && String(st.sessions[i].sharerId) === String(myId)) { mine = st.sessions[i]; break; }
+          }
+        }
+        if (mine && mine.shareId) {
+          joinStarting = false;
+          sideStart = String(mine.shareId);
+          joined = true;
+          armUpload();
+          return;
+        }
+        doStart();
+      })
+      .catch(function () { doStart(); });   // state 失败也尝试 start（幂等由后端 _end_existing 保证）
+  }
+
+  /* 发 start（silent:true：隐式加入不落「开始共享」卡片，避免聊天流刷屏）。 */
+  function doStart() {
+    var body = qPeer ? { peerId: Number(qPeer), silent: true } : { groupId: Number(qGroup), silent: true };
+    fetch(apiBase() + '/api/live/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() },
+      body: JSON.stringify(body)
+    })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        joinStarting = false;
+        if (!d || !d.ok || !d.shareId) return;   // 失败静默：仍可围观对方（poll 继续）
+        sideStart = String(d.shareId);
+        joined = true;
+        armUpload();                             // 三态：原生桥优先 → watchPosition 兜底
+      })
+      .catch(function () { joinStarting = false; });
+  }
+
+  /* 三态上报（镜像 chat-local.js imLiveArmUpload）：
+     ① 桥在且 startLocationShare 返回 true → 原生负责上报，绝不起 watchPosition（防双边重复上报）；
+     ② 桥不存在 / 返回 false → JS watchPosition 兜底（§2.4，节流复用 ownTick 状态机）。 */
+  function armUpload() {
+    var br = bridge();
+    if (br) {
+      var okb = false;
+      try { okb = br.startLocationShare(String(sideStart)) === true; } catch (e) { okb = false; }
+      if (okb) return;
+    }
+    startOwnTickForce();
+  }
+
+  /* 原生桥探测（与 chat-local.js 同契约：XTAppBridge 为主，StudyAndroid 别名兜底） */
+  function bridge() {
+    var b = window.XTAppBridge || window.StudyAndroid || null;
+    return (b && typeof b.startLocationShare === 'function') ? b : null;
+  }
+
+  /* 强制启动 watchPosition 上报（绕过 syncOwnTick 的「原生存活」判断：
+     自动加入时需立即上报，若原生已存活则 startOwnTick 内部会自行停掉，不双跑）。 */
+  function startOwnTickForce() {
+    if (!sideStart) return;
+    ownTick.shareId = sideStart;
+    ownTick.ended = false;
+    if (ownTick.watchId === null && !nativeAlive()) startOwnTick();
+  }
+
+  /* 离页/结束：stop 我的自动加入会话（仅当本页 start 出来的 shareId），并停上报。
+     用 keepalive 提升离页时请求的送达率；重复调用幂等（sideStart 置空）。 */
+  function leaveAndStop() {
+    stopOwnTick();
+    var sid = sideStart;
+    sideStart = '';
+    joined = false;
+    var br = bridge();
+    if (br && typeof br.stopLocationShare === 'function') { try { br.stopLocationShare(); } catch (e) { } }
+    if (!sid || !tok()) return;
+    try {
+      fetch(apiBase() + '/api/live/stop', {
+        method: 'POST',
+        keepalive: true,
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() },
+        body: JSON.stringify({ shareId: sid })
+      }).catch(function () { });
+    } catch (e) { /* 离页竞态：静默 */ }
+  }
+
+  function $(id) { return document.getElementById(id); }
+
+  /* 修 (0,0) 漂移根因：Number(null)===0 会通过 isFinite，必须先显式判空再 Number */
+  function num(v) { return (v === null || v === undefined || v === '') ? NaN : Number(v); }
+
+  function showLoading(txt) {
+    var l = $('llLoading'); if (l) l.style.display = 'flex';
+    if (txt) { var t = $('llLoadingTxt'); if (t) t.textContent = txt; }
+    setBar('<span class="ll-bspin"></span><span>正在获取位置…</span>');
+  }
+  function hideLoading() { var l = $('llLoading'); if (l) l.style.display = 'none'; }
+  function showEnded() {
+    ended = true;
+    stopOwnTick();
+    clearAllMarkers();
+    var e = $('llEnded'); if (e) e.style.display = 'flex';
+    hideLoading();
+    setBar('<span class="ll-bdot"></span><span>对方已结束共享</span>', true);
+    toast('实时位置共享已结束');
+  }
+
+  function clearAllMarkers() {
+    for (var k in markers) {
+      try { map.removeLayer(markers[k]); } catch (e) { /* 地图可能未初始化 */ }
+      delete markers[k];
+    }
+  }
+
+  /* 底部状态胶囊（微信同款三态）：正在获取位置… → 实时共享中 → 对方已结束共享/位置已失效 */
+  function setBar(html, staleCls) {
+    var bar = $('llBar');
+    if (!bar) return;
+    bar.className = 'll-bar' + (staleCls ? ' stale' : '');
+    bar.innerHTML = html;
+  }
+
+  function updateBar() {
+    /* 权限拒绝提示持续追加（不影响继续轮询观看对方坐标） */
+    var hint = ownTick.denied ? '（未授权，对方看不到你的位置）' : '';
+    if (stale) setBar('<span class="ll-bdot"></span><span>位置已失效</span>' + hint, true);
+    else setBar('<span class="ll-bdot"></span><span>实时共享中</span>' + hint);
+  }
+
+  /* 腾讯栅格瓦片图层（覆写 getTileUrl 翻转 y，子域 rt0/1/2，照抄 xt-region.js _makeTencentTileLayer） */
+  function makeTencentTileLayer() {
+    var Cls = L.TileLayer.extend({
+      getTileUrl: function (coords) {
+        var z = (typeof this._getZoomForUrl === 'function') ? this._getZoomForUrl() : coords.z;
+        var s = (typeof this._getSubdomain === 'function') ? this._getSubdomain(coords) : '0';
+        var y = Math.pow(2, z) - 1 - coords.y;
+        return 'https://rt' + s + '.map.gtimg.com/realtimerender?z=' + z +
+          '&x=' + coords.x + '&y=' + y +
+          '&type=vector&style=0&key=' + encodeURIComponent(TENCENT_KEY);
+      }
+    });
+    return new Cls('', { subdomains: '012', minZoom: 3, maxZoom: 18, maxNativeZoom: 18 });
+  }
+
+  function initMap() {
+    map = L.map('llMap', { zoomControl: true, attributionControl: false }).setView([39.9042, 116.4074], 16);
+    makeTencentTileLayer().addTo(map);
+  }
+
+  /* 微信同款头像气泡 marker：圆角方形头像（白描边）+ 底部白三角指向精确坐标。
+     带参版本 llAvatarIcon(name, avatar)：
+     - 自己：me 接口的 nickname/avatarUrl；me 失败 → 首字占位 + 蓝底（传空串自然兜底）
+     - 对方（私聊）：URL ?name/?avatar=（chat-local.js imLiveViewUrl 附带）
+     - 群聊其他成员：服务端 sharerName 首字占位
+     头像取值仅认 http(s)/uploads/data: 前缀，失败 onerror 隐藏图 → 露出首字占位。 */
+  function llAvatarIcon(name, avatar) {
+    var nm = name || '对方';
+    var av = avatar || '';
+    var img = '';
+    if (/^(https?:|\/uploads\/|data:)/.test(av)) {
+      var url = av.indexOf('http') === 0 ? av : apiBase() + av;
+      img = '<img src="' + url + '" alt="" onerror="this.style.display=\'none\'">';
+    }
+    return L.divIcon({
+      className: 'll-marker',
+      html: '<div class="ll-ava"><span class="ll-ava-txt">' + nm.slice(0, 1) + '</span>' + img + '</div><div class="ll-marker-tip"></div>',
+      iconSize: [44, 54],
+      iconAnchor: [22, 54]   /* 锚在三角尖 */
+    });
+  }
+
+  /* 进页调一次 /api/auth/me：拿自己的 id/nickname/avatarUrl（平铺结构，字段名已核对 auth.py） */
+  function loadMe() {
+    if (!tok()) return;
+    fetch(apiBase() + '/api/auth/me', { headers: { 'Authorization': 'Bearer ' + tok() } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d) return;
+        myId = Number(d.id) || myId;
+        myName = String(d.nickname || '');
+        myAvatar = String(d.avatarUrl || '');   // 注意字段名是 avatarUrl（auth.py 平铺返回）
+        /* me 迟到时自己的 marker 已用占位图渲染 → 就地刷新图标 */
+        var mk = markers[String(myId)];
+        if (mk && mk.setIcon) mk.setIcon(llAvatarIcon(myName, myAvatar));
+      })
+      .catch(function () { /* 失败静默：自己 marker 用首字占位 + 蓝底 */ });
+  }
+
+  function onState(d) {
+    var list = (d && Array.isArray(d.sessions)) ? d.sessions : null;
+    /* 无活动共享（含 sessions 空数组）且已打过点 → 判定结束；还没打点 → 继续等待。
+       R3·L2：本页若已自动加入（joined），且本人会话仍在 sessions 里 → 不判结束（自己还在共享，
+       只是对方停了），改为「对方已停止共享」的非破坏提示，自己的 marker 仍保留。 */
+    var selfStillSharing = false;
+    if (joined && sideStart && list !== null) {
+      for (var z = 0; z < list.length; z++) {
+        if (list[z] && String(list[z].shareId) === String(sideStart)) { selfStillSharing = true; break; }
+      }
+    }
+    if (!d || d.active !== true || (list !== null && list.length === 0)) {
+      if (selfStillSharing && revealed) { showPeerEnded(); return; }
+      if (revealed) showEnded();
+      else showLoading('正在获取位置…');
+      return;
+    }
+    var otherActive = false;   // 除本人外是否还有对方/其他成员在共享（用于「仅我一人」提示）
+    var items = [];
+    var i, s;
+    if (list !== null) {
+      for (i = 0; i < list.length; i++) items.push(list[i]);
+    } else {
+      /* 兼容旧后端/回滚：sessions 非数组 → 回退读顶层单会话（同样过 num() 判空） */
+      items.push({
+        sharerId: d.sharerId,
+        lat: d.lat, lng: d.lng,
+        hasFix: !(d.lat === null || d.lat === undefined || d.lng === null || d.lng === undefined),
+        stale: !!d.stale,
+        updatedAt: d.updatedAt
+      });
+    }
+    /* 双（多）marker 渲染：hasFix:true 且坐标有限才画，未就绪的会话跳过——绝不出现 (0,0) */
+    var seen = {};
+    var anyFix = false, anyUnstale = false;
+    var bounds = null;
+    for (i = 0; i < items.length; i++) {
+      s = items[i] || {};
+      var lat = num(s.lat), lng = num(s.lng);
+      if (!(s.hasFix === true && isFinite(lat) && isFinite(lng))) continue;
+      var sid = String(s.sharerId != null ? s.sharerId : '');
+      seen[sid] = true;
+      anyFix = true;
+      if (!s.stale) anyUnstale = true;
+      var isSelf = (myId > 0 && sid === String(myId));
+      if (!isSelf) otherActive = true;   // 有非本人的共享方上屏（对方/群成员）
+      var nm, av;
+      if (isSelf) { nm = myName || '我'; av = myAvatar; }
+      else if (qPeer) { nm = qName || '对方'; av = qAvatar; }   // 私聊对方：沿用 URL 参数
+      else { nm = s.sharerName || '星'; av = ''; }               // 群聊其他成员：sharerName 首字占位
+      var ll = [lat, lng];
+      var mk = markers[sid];
+      if (!mk) { mk = L.marker(ll, { icon: llAvatarIcon(nm, av) }).addTo(map); markers[sid] = mk; }
+      else mk.setLatLng(ll);
+      if (!bounds) bounds = L.latLngBounds(ll, ll);
+      else bounds.extend(ll);
+    }
+    /* 移除消失者：上一轮在、本轮没有（或 hasFix 变 false）→ 摘 marker（覆盖单方停止的半结束态） */
+    for (var k in markers) {
+      if (!seen[k]) {
+        try { map.removeLayer(markers[k]); } catch (e) { /* noop */ }
+        delete markers[k];
+      }
+    }
+    if (!anyFix) {
+      /* 有会话但无一就绪：保持「正在获取位置…」占位（原生首报 / web 兜底首报前） */
+      if (!revealed) showLoading('正在获取位置…');
+      return;
+    }
+    /* 底部条三态聚合：任一会话非 stale → 实时共享中；全部已 fix 会话均 stale → 位置已失效 */
+    stale = !anyUnstale;
+    /* R3·L2：对方已停、只剩我自己 → 隐藏「等待对方」提示并恢复正常底栏（自己仍在共享） */
+    var pe = $('llEnded');
+    if (pe && pe.style.display !== 'none' && (otherActive || !joined)) pe.style.display = 'none';
+    if (!revealed) {
+      revealed = true;
+      hideLoading();
+      /* 首次 reveal 视角：≥2 个 marker 用 fitBounds，单个 setView；此后不再每次轮询强制居中 */
+      if (Object.keys(markers).length >= 2) {
+        map.fitBounds(bounds, { maxZoom: 16, padding: [40, 40] });
+      } else {
+        map.setView(bounds.getCenter(), map.getZoom());
+      }
+    }
+    if (joined && !otherActive) {
+      /* 只我一人上屏（对方结束 / 尚未就绪）：底栏提示等待对方，不判「共享已结束」卡死自己 */
+      setBar('<span class="ll-bspin"></span><span>你已加入共享，等待对方…</span>');
+      return;
+    }
+    updateBar();
+  }
+
+  /* R3·L2：对方已停止共享，但本页自己仍在共享（joined）→ 只做轻提示，不停自己、不盖 ended 全屏层。 */
+  function showPeerEnded() {
+    setBar('<span class="ll-bdot"></span><span>对方已停止共享</span>', true);
+  }
+
+  function poll() {
+    if (ended) return;
+    if (!tok()) { showLoading('请先登录后再查看实时位置'); return; }
+    if (!apiQuery) { showLoading('缺少会话参数，无法定位'); return; }
+    fetch(apiBase() + '/api/live/state?' + apiQuery, {
+      headers: { 'Authorization': 'Bearer ' + tok() }
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        onState(d);
+        /* tick 兜底状态机：有自己会话 → 确保兜底运行；无 → 停（仅在原生通道不可见时真正生效） */
+        syncOwnTick(d && d.sessions);
+      })
+      /* 失败静默容忍：保留现有占位，不刷屏 toast、不 alert */
+      .catch(function () { if (!revealed && !ended) showLoading('正在获取位置…'); });
+  }
+
+  /* ===================== §2.4 网页端 tick 兜底（修缺陷 3，最简版） =====================
+
+     触发条件（全部满足才启用）：
+     1. 本页存在自己的会话（sessions 中 sharerId === myId，拿到自己的 shareId）；
+     2. 原生通道不可见：页面加载即声明 window.__onLocationUpdate（MainActivity.pushLocationUpdate
+        会向当前 WebView evaluateJavascript 该函数，壳零改动即可作为「原生服务存活心跳」）；
+        Date.now() - nativePushAt < 30s 视为原生存活 → 不启用/停掉 web watchPosition；
+     3. document.hidden === false（后台 JS 本就被冻结，显式判断避免语义歧义）。
+
+     上报节流（镜像原生参数，防刷）：首次 fix 立即上报一次；此后位移 >30m 或距上次 ≥15s 才 POST /api/live/tick。
+     tick 403（会话已结束/过期）→ 停兜底；网络失败静默；自己的会话从 sessions 消失 → 停兜底。
+     查看别人共享 / 群聊未发起者 / 原生壳内 → 不启用。 */
+  window.__onLocationUpdate = function (json) {
+    try {
+      nativePushAt = Date.now();
+      /* 原生已接管 → 立即停掉 web 兜底（APK 内不双跑） */
+      stopOwnTick();
+    } catch (e) { /* 原生侧注入失败不致崩 */ }
+  };
+
+  function nativeAlive() { return (Date.now() - nativePushAt) < NATIVE_HEARTBEAT_MS; }
+
+  function haversineM(la1, lo1, la2, lo2) {
+    var rad = Math.PI / 180;
+    var dLa = (la2 - la1) * rad, dLo = (lo2 - lo1) * rad;
+    var a = Math.sin(dLa / 2) * Math.sin(dLa / 2) +
+            Math.cos(la1 * rad) * Math.cos(la2 * rad) * Math.sin(dLo / 2) * Math.sin(dLo / 2);
+    return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  function syncOwnTick(list) {
+    if (ended || !Array.isArray(list) || !(myId > 0)) { stopOwnTick(); return; }
+    var own = null;
+    for (var i = 0; i < list.length; i++) {
+      var s = list[i] || {};
+      if (s.shareId && String(s.sharerId) === String(myId)) { own = s; break; }
+    }
+    if (!own) { stopOwnTick(); return; }        // 自己的会话已 stop/过期 → 停兜底
+    if (ownTick.shareId !== own.shareId) {
+      stopOwnTick();
+      ownTick.shareId = own.shareId;
+    }
+    if (ownTick.watchId === null && !nativeAlive() && !ownTick.ended && !ownTick.denied) {
+      startOwnTick();
+    }
+  }
+
+  function startOwnTick() {
+    if (!navigator.geolocation || !navigator.geolocation.watchPosition) return;
+    ownTick.watchId = navigator.geolocation.watchPosition(function (pos) {
+      if (nativeAlive()) { stopOwnTick(); return; }   // 原生接管 → 立即停，不双跑
+      if (document.hidden) return;
+      if (!pos || !pos.coords) return;
+      var lat = pos.coords.latitude, lng = pos.coords.longitude;
+      if (typeof lat !== 'number' || typeof lng !== 'number' || !isFinite(lat) || !isFinite(lng)) return;
+      var now = Date.now();
+      var first = (ownTick.lastTs === 0);             // 首次 fix 立即上报一次
+      var moved = (ownTick.lastLat !== null &&
+                   haversineM(ownTick.lastLat, ownTick.lastLng, lat, lng) > TICK_MIN_DIST_M);
+      var gap = (now - ownTick.lastTs) >= TICK_MIN_GAP_MS;
+      if (!first && !moved && !gap) return;
+      ownTick.lastLat = lat; ownTick.lastLng = lng; ownTick.lastTs = now;
+      fetch(apiBase() + '/api/live/tick', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + tok(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shareId: ownTick.shareId, lat: lat, lng: lng })
+      }).then(function (r) {
+        if (r.status === 403) {                       // 会话已结束/过期 → 停兜底，不再重试
+          ownTick.ended = true;
+          stopOwnTick();
+        }
+      }).catch(function () { /* 网络失败静默，下个节流窗口自然重试 */ });
+    }, function (err) {
+      if (err && err.code === 1) {                    // PERMISSION_DENIED
+        ownTick.denied = true;
+        stopOwnTick();
+        toast('未授权定位，网页端无法上报你的位置');
+        if (revealed) updateBar();                    // 底部条追加「对方看不到你的位置」，观看不受影响
+      }
+      /* 其他错误（POSITION_UNAVAILABLE / 超时）静默：watchPosition 会继续回调 */
+    }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
+  }
+
+  function stopOwnTick() {
+    if (ownTick.watchId !== null && navigator.geolocation && navigator.geolocation.clearWatch) {
+      navigator.geolocation.clearWatch(ownTick.watchId);
+    }
+    ownTick.watchId = null;
+    ownTick.lastLat = null; ownTick.lastLng = null; ownTick.lastTs = 0;
+    /* shareId / ended / denied 保留：syncOwnTick 依 shareId 判断续跑，403 与权限拒绝后不再重启 */
+  }
+
+  function start() {
+    /* 顶部昵称胶囊：chat-local.js 跳转带 name，缺省兜底「对方」 */
+    var nm = $('llName');
+    if (nm) nm.textContent = qName || '对方';
+    if (typeof window.L === 'undefined' || !L.map) {
+      toast('地图组件加载失败');
+      showLoading('地图组件加载失败，请重试');
+      return;
+    }
+    try { initMap(); }
+    catch (e) { toast('地图初始化失败'); showLoading('地图初始化失败，请重试'); return; }
+    if (!tok()) { showLoading('请先登录后再查看实时位置'); return; }
+    if (!apiQuery) { showLoading('缺少会话参数，无法定位'); return; }
+    loadMe();                                // 自己的昵称/头像来源（一次，失败走占位）
+    autoJoinOnce();                          // R3·L2：join=1 时进页自动加入共享（微信式点进即加入）
+    poll();                                  // 进页立即拉一次
+    setInterval(poll, POLL_MS);              // 持续轮询更新（实时移动）
+  }
+
+  /* 离页清理：停止上报 + stop 本页自动加入的会话（防止「幽灵会话」占着 pair/群索引）。
+     pagehide + beforeunload 双挂（部分 WebView 只触发其一）；visibilitychange→hidden 兜底手机切后台。 */
+  window.addEventListener('pagehide', leaveAndStop);
+  window.addEventListener('beforeunload', leaveAndStop);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden' && joined) leaveAndStop();
+  });
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+})();
+</script>
+</body>
+</html>

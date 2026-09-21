@@ -1,0 +1,19 @@
+--- 剩余 listen 出现处 ---
+  498:   // 结构：[{ t:<epoch ms>, type:'vocab'|'exam'|'fav'|'listen', ref:<题id/单词/场景key>, module:'cet'|'exam'|... }]
+  878: //       showToast 提示回退内置 466 词。范围控制：本批只动词库链，exam/listening 链不改。
+  1955:   if (type === 'vocab' || type === 'listen') return ['cet'];
+  2175: // type: 'vocab' | 'exam' | 'fav' | 'listen'；ref: 单词 / 题 id / 场景 key；module: 'cet' | 'exam' | ...
+  2254:     if (type === 'listen') {
+  3403:   { id: 'cet_listen', pri: 3, kw: ['听力', '听不懂', '精听', '泛听', '连读', '跟不上', '听不清', '听写'], replies: [
+
+--- recentMap 现状 ---
+  6776:   var recentMap = {
+  6777:     '社区.html': 'blog', '私聊.html': 'chat', '行测刷题.html': 'exam', '面试题库.html': 'iv',
+  6778:     '四级词汇.html': 'cet', '英语.html': 'cet', '设置.html': 'settings', '个人中心.html': 'settings'
+  6779:   };
+  6780:   var name = decodeURIComponent(location.pathname.split('/').pop());
+
+node --check exit = 0
+stdout+stderr: 
+escheck exit = 0 | DONE 3
+app.js 行数(\n) = 9070 | CRLF=9070 纯LF=0

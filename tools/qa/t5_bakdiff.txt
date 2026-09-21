@@ -1,0 +1,80 @@
+=========== 更多.html
+  当前 <!--=30 -->=31 | 备份 <!--=30 -->=31
+  行数 备份=573 当前=573
+   L52 - <span class="nav-icon" data-icon="book-open"></span><span>四级备考</span>
+   L52 + <span class="nav-icon" data-icon="book-open"></span><span>英语</span>
+   L55 - <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span>
+   L55 + <span class="nav-icon" data-icon="pencil"></span><span>行测</span>
+   L58 - <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span>
+   L58 + <span class="nav-icon" data-icon="message-square"></span><span>表达</span>
+   L61 - <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span>
+   L61 + <span class="nav-icon" data-icon="handshake"></span><span>面测</span>
+   L64 - <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span>
+   L64 + <span class="nav-icon" data-icon="palette"></span><span>演示</span>
+   L68 - <span class="nav-icon" data-icon="globe"></span><span>广场</span>
+   L68 + <span class="nav-icon" data-icon="globe"></span><span>社区</span>
+   L221 - <span class="nav-icon" data-icon="book-open"></span><span>四级备考</span>
+   L221 + <span class="nav-icon" data-icon="book-open"></span><span>英语</span>
+   L224 - <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span>
+   L224 + <span class="nav-icon" data-icon="pencil"></span><span>行测</span>
+   L227 - <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span>
+   L227 + <span class="nav-icon" data-icon="message-square"></span><span>表达</span>
+   L230 - <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span>
+   L230 + <span class="nav-icon" data-icon="handshake"></span><span>面测</span>
+   L233 - <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span>
+   L233 + <span class="nav-icon" data-icon="palette"></span><span>演示</span>
+   L237 - <span class="nav-icon" data-icon="globe"></span><span>广场</span>
+   L237 + <span class="nav-icon" data-icon="globe"></span><span>社区</span>
+   L300 - <!-- 功能删减 B4（2026-09-13）：「万能金句」「场景话术」两个重复入口已删除——同名功能在高情商表达页（万能金句库.html / 场景话术库.html）保留，此处入口与其重复 -->
+   L300 + <!-- 功能删减 B4（2026-09-13）：「万能金句」「场景话术」两个重复入口已删除——同名功能在表达页（万能金句库.html / 场景话术库.html）保留，此处入口与其重复 -->
+  变化行数 = 13
+
+=========== 设置.html
+  当前 <!--=38 -->=38 | 备份 <!--=38 -->=38
+  行数 备份=2017 当前=2017
+   L36 - <span class="nav-icon" data-page-node-id="BHmKEzL3bp3sAD3CcGQyoD" data-icon="book-open"></span><span data-page-node-id="q9gZWnL1OGLzbJ1rHBYpbg">四级备考</span>
+   L36 + <span class="nav-icon" data-page-node-id="BHmKEzL3bp3sAD3CcGQyoD" data-icon="book-open"></span><span data-page-node-id="q9gZWnL1OGLzbJ1rHBYpbg">英语</span>
+   L39 - <span class="nav-icon" data-page-node-id="l21Y8gwnTQ3DloGLBCxsha" data-icon="pencil"></span><span data-page-node-id="AsoEegm27jKDAMOsMoA1jY">央国企笔试</span>
+   L39 + <span class="nav-icon" data-page-node-id="l21Y8gwnTQ3DloGLBCxsha" data-icon="pencil"></span><span data-page-node-id="AsoEegm27jKDAMOsMoA1jY">行测</span>
+   L46 - <span class="nav-icon" data-page-node-id="PdaI8EaPDGDmFxyfbpCNRU" data-icon="message-square"></span><span data-page-node-id="3ViTi1o59ozHrPYr8eGjol">高情商表达</span>
+   L46 + <span class="nav-icon" data-page-node-id="PdaI8EaPDGDmFxyfbpCNRU" data-icon="message-square"></span><span data-page-node-id="3ViTi1o59ozHrPYr8eGjol">表达</span>
+   L49 - <span class="nav-icon" data-page-node-id="lpyATX0Q8LhFN2SYhOxQLN" data-icon="handshake"></span><span data-page-node-id="yNYjQCsNUFjHQ9504rP4oy">商务礼仪面试</span>
+   L49 + <span class="nav-icon" data-page-node-id="lpyATX0Q8LhFN2SYhOxQLN" data-icon="handshake"></span><span data-page-node-id="yNYjQCsNUFjHQ9504rP4oy">面测</span>
+   L52 - <span class="nav-icon" data-page-node-id="9fBdF1DwtuEjxvbJFapEXD" data-icon="palette"></span><span data-page-node-id="gfATT8eA6DZxvyBLYOyXOz">PPT训练</span>
+   L52 + <span class="nav-icon" data-page-node-id="9fBdF1DwtuEjxvbJFapEXD" data-icon="palette"></span><span data-page-node-id="gfATT8eA6DZxvyBLYOyXOz">演示</span>
+   L56 - <span class="nav-icon" data-page-node-id="S7J9mnuXIauEdFtXjfGLqP" data-icon="globe"></span><span data-page-node-id="gAx8X58sva5egzFjqHvc7l">广场</span>
+   L56 + <span class="nav-icon" data-page-node-id="S7J9mnuXIauEdFtXjfGLqP" data-icon="globe"></span><span data-page-node-id="gAx8X58sva5egzFjqHvc7l">社区</span>
+   L211 - <div class="setting-name" data-page-node-id="WpWcgWwMajXt8tcrzELQ6B">广场编辑 / 阅读区字号</div>
+   L211 + <div class="setting-name" data-page-node-id="WpWcgWwMajXt8tcrzELQ6B">社区编辑 / 阅读区字号</div>
+   L212 - <div class="setting-desc" data-page-node-id="cCAWsqK883KGiSTI0gZeC6">只影响「广场」的编辑器输入区与实时预览区</div>
+   L212 + <div class="setting-desc" data-page-node-id="cCAWsqK883KGiSTI0gZeC6">只影响「社区」的编辑器输入区与实时预览区</div>
+   L250 - <div class="card-action" data-page-node-id="SQ0sBVQW9y1NenfDNWLbN5">广场编辑器自动套用</div>
+   L250 + <div class="card-action" data-page-node-id="SQ0sBVQW9y1NenfDNWLbN5">社区编辑器自动套用</div>
+   L857 - <div data-page-node-id="mi6yoar3f5KakALoBUL75p">首页学习台(每日任务/专注计时/学习提醒) · 四级词汇(间隔重复) · 听说训练(情景口语/听力精听) · 四级备考(听力/口语/阅读/翻译) · 行测刷题 · 错题本 · 央国企笔试(行测/企业定向库/时政热点/真题模考/话题表达训练) · 面试题库 · 高情
+   L857 + <div data-page-node-id="mi6yoar3f5KakALoBUL75p">首页学习台(每日任务/专注计时/学习提醒) · 四级词汇(间隔重复) · 听说训练(情景口语/听力精听) · 英语(听力/口语/阅读/翻译) · 行测刷题 · 错题本 · 行测(企业定向库/时政热点/真题模考/话题表达训练) · 面试题库 · 表达 · 面测 · 
+   L860 - <div style="margin-top:10px;border-top:1px dashed var(--border);padding-top:8px;color:var(--text-muted);font-size:var(--xt-font-sm)" data-page-node-id="sA7LgG0fY7DvUL0lu3V6vv">版本 2
+   L860 + <div style="margin-top:10px;border-top:1px dashed var(--border);padding-top:8px;color:var(--text-muted);font-size:var(--xt-font-sm)" data-page-node-id="sA7LgG0fY7DvUL0lu3V6vv">版本 2
+   L1158 - { id: 'cet', name: '四级备考' }, { id: 'exam', name: '央国企笔试' },
+   L1158 + { id: 'cet', name: '英语' }, { id: 'exam', name: '行测' },
+   L1159 - { id: 'comm', name: '高情商表达' }, { id: 'interview', name: '商务礼仪面试' },
+   L1159 + { id: 'comm', name: '表达' }, { id: 'interview', name: '面测' },
+   L1160 - { id: 'ppt', name: 'PPT训练' }, { id: 'other', name: '其他' }
+   L1160 + { id: 'ppt', name: '演示' }, { id: 'other', name: '其他' }
+  变化行数 = 14
+
+=========== 学习工作台.html
+  当前 <!--=18 -->=18 | 备份 <!--=18 -->=18
+  行数 备份=875 当前=875
+   L35 - <span class="nav-icon" data-page-node-id="c1T15zKuS4gnBNWUEmlS5U" data-icon="book-open"></span><span data-page-node-id="NUtaFvNSurxNDz0fQVe26c">四级备考</span>
+   L35 + <span class="nav-icon" data-page-node-id="c1T15zKuS4gnBNWUEmlS5U" data-icon="book-open"></span><span data-page-node-id="NUtaFvNSurxNDz0fQVe26c">英语</span>
+   L38 - <span class="nav-icon" data-page-node-id="goJZJ8B8TLaKBwGmMpdFUe" data-icon="pencil"></span><span data-page-node-id="KwpLQldrcYAAczTHTBV5Bp">央国企笔试</span>
+   L38 + <span class="nav-icon" data-page-node-id="goJZJ8B8TLaKBwGmMpdFUe" data-icon="pencil"></span><span data-page-node-id="KwpLQldrcYAAczTHTBV5Bp">行测</span>
+   L41 - <span class="nav-icon" data-page-node-id="6Bd1IksreFmwaSoM8P2N88" data-icon="message-square"></span><span data-page-node-id="8XUk4QeHBuPNvrW4gSMkP6">高情商表达</span>
+   L41 + <span class="nav-icon" data-page-node-id="6Bd1IksreFmwaSoM8P2N88" data-icon="message-square"></span><span data-page-node-id="8XUk4QeHBuPNvrW4gSMkP6">表达</span>
+   L44 - <span class="nav-icon" data-page-node-id="BQRva4k8nb6EoqjrsS0wNo" data-icon="handshake"></span><span data-page-node-id="DCZ7oOR5Jjaa0jwJyJgABd">商务礼仪面试</span>
+   L44 + <span class="nav-icon" data-page-node-id="BQRva4k8nb6EoqjrsS0wNo" data-icon="handshake"></span><span data-page-node-id="DCZ7oOR5Jjaa0jwJyJgABd">面测</span>
+   L47 - <span class="nav-icon" data-page-node-id="qCBPUAWjqPjtdqZAm2cyvA" data-icon="palette"></span><span data-page-node-id="OAXdAsu7yU2m8xzENlxaBm">PPT训练</span>
+   L47 + <span class="nav-icon" data-page-node-id="qCBPUAWjqPjtdqZAm2cyvA" data-icon="palette"></span><span data-page-node-id="OAXdAsu7yU2m8xzENlxaBm">演示</span>
+   L51 - <span class="nav-icon" data-page-node-id="3CmxJCNr3G8EkqNzNhAGkt" data-icon="globe"></span><span data-page-node-id="wQEBNlEU9Um1jcZBOoPglO">广场</span>
+   L51 + <span class="nav-icon" data-page-node-id="3CmxJCNr3G8EkqNzNhAGkt" data-icon="globe"></span><span data-page-node-id="wQEBNlEU9Um1jcZBOoPglO">社区</span>
+  变化行数 = 6

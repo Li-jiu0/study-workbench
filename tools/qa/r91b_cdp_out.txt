@@ -1,0 +1,43 @@
+=== R91-B CDP stacking verification (私聊.html vs .bottom-nav z=200) ===
+--- viewport 375x667 ---
+  PASS  V1 nav visible + z=200  :: display=block z=200
+  PASS  V2a mask z=210  :: maskZ=210
+  PASS  V2b menu z=211 > nav  :: menuZ=211
+  PASS  V2c menuOpen  :: open=true
+  PASS  V2d maskZ > navZ  :: mask=210 nav=200
+  PASS  V3 item4(定位) fully in viewport  :: text=定位 rect={"t":583,"b":651,"l":0,"r":375,"w":375,"h":68}
+  PASS  V4 item4 hit-test inside menu (not covered by tabbar)  :: hit=SPAN.im-plus-txt
+  PASS  V5 item4 extends over tabbar zone (z-covered, visible)  :: item4.b=651 nav.t=607
+  PASS  V6 .im-loc-sheet z=215  :: locSheetZ=215
+--- viewport 375x480 ---
+  PASS  V1 nav visible + z=200  :: display=block z=200
+  PASS  V2a mask z=210  :: maskZ=210
+  PASS  V2b menu z=211 > nav  :: menuZ=211
+  PASS  V2c menuOpen  :: open=true
+  PASS  V2d maskZ > navZ  :: mask=210 nav=200
+  PASS  V3 item4(定位) fully in viewport  :: text=定位 rect={"t":418,"b":470,"l":0,"r":375,"w":375,"h":52}
+  PASS  V4 item4 hit-test inside menu (not covered by tabbar)  :: hit=SPAN.im-plus-txt
+  PASS  V5 item4 extends over tabbar zone (z-covered, visible)  :: item4.b=470 nav.t=420
+  PASS  V6 .im-loc-sheet z=215  :: locSheetZ=215
+--- viewport 320x480 ---
+  PASS  V1 nav visible + z=200  :: display=block z=200
+  PASS  V2a mask z=210  :: maskZ=210
+  PASS  V2b menu z=211 > nav  :: menuZ=211
+  PASS  V2c menuOpen  :: open=true
+  PASS  V2d maskZ > navZ  :: mask=210 nav=200
+  PASS  V3 item4(定位) fully in viewport  :: text=定位 rect={"t":418,"b":470,"l":0,"r":320,"w":320,"h":52}
+  PASS  V4 item4 hit-test inside menu (not covered by tabbar)  :: hit=SPAN.im-plus-txt
+  PASS  V5 item4 extends over tabbar zone (z-covered, visible)  :: item4.b=470 nav.t=420
+  PASS  V6 .im-loc-sheet z=215  :: locSheetZ=215
+--- viewport 320x400 ---
+  PASS  V1 nav visible + z=200  :: display=block z=200
+  PASS  V2a mask z=210  :: maskZ=210
+  PASS  V2b menu z=211 > nav  :: menuZ=211
+  PASS  V2c menuOpen  :: open=true
+  PASS  V2d maskZ > navZ  :: mask=210 nav=200
+  PASS  V3 item4(定位) fully in viewport  :: text=定位 rect={"t":338,"b":390,"l":0,"r":320,"w":320,"h":52}
+  PASS  V4 item4 hit-test inside menu (not covered by tabbar)  :: hit=SPAN.im-plus-txt
+  PASS  V5 item4 extends over tabbar zone (z-covered, visible)  :: item4.b=390 nav.t=340
+  PASS  V6 .im-loc-sheet z=215  :: locSheetZ=215
+SUMMARY pass=36 fail=0
+R91B_CDP_PASS

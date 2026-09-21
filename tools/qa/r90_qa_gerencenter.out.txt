@@ -1,0 +1,24 @@
+=== 个人中心.html 逐一列出 style/head 标签位置 ===
+  <style...> L12     <style>
+/* ==================== 个人中心页内补充样式（K14 / K15，批次 20260913K） =============
+  <style...> L529    <style>）。
+   改动即存 + toast「已保存」；「去调整」链接（card-action）保留在卡片头。 */
+function pfPrefOpt
+  <style...> L861    <style> 据此只保留「发贴统计」卡
+         #ppStatsCard，隐藏其余 .pp-card）；离开 posts（含 profile / m
+  </style>    L132   
+  <head> 出现: ['<head data-page-node-id="jxesVYkm0UckrxDhrOosue">']
+  </head> 出现: []
+  head 相关(大小写不敏感): ['<head data-page-node-id="jxesVYkm0UckrxDhrOosue">', '<header class="topbar" data-page-node-id="qJPc52dgEhqzp4JZlJYJfQ">', '</header>']
+
+=== style 标签交错序列 ===
+  L12     OPEN  depth=1  <style>
+/* ==================== 个人中心页内补充样式（K14 / K15，批次 2026
+  L529    OPEN  depth=2  <style>）。
+   改动即存 + toast「已保存」；「去调整」链接（card-action）保留在卡片头。 *
+  L861    OPEN  depth=3  <style> 据此只保留「发贴统计」卡
+         #ppStatsCard，隐藏其余 .pp-card）；离开
+  final depth = 3  (0 = 配对)
+
+=== 宽松搜索 </style 任何形式 ===
+  L132    '</style>'

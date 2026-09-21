@@ -1,0 +1,1246 @@
+/* =====================================================================
+   xt-profile.css —— R73 v2 个人资料页（微信 / QQ 风格移动端设置页）
+   ---------------------------------------------------------------------
+   规格来源：用户 round-2 规格。浅色数值逐字对齐：
+     页面底 #f2f2f2 / 卡片白 / 圆角 8px / 卡片左右边距 12px /
+     图标底 #efefef / 分割线 #e5e5e5 左侧缩进 56px / 行高 50px /
+     图标 28x28 圆角方形 / 组间空隙 10px / 点击态 #e5e5e5 + 0.1s 过渡 /
+     页面可滚动且底部留安全距离。
+   R73 任务20 事2（视觉升级，仅视觉层，不改信息架构）：
+     渐变品牌头部遮罩 + 悬浮 hero 卡（14px 圆角 + 柔和阴影）/ 组标题 12px #8a9099 letter-spacing .4px /
+     品牌色 8% 图标磁贴 + #5b8def 图标 / 分割线 #ececec / 等级渐变胶囊 / 徽章 6px 圆角 /
+     列表行高 52px、内边距 14px、分割线左缩进 56px / 点击态 #ececec + scale(.995) 0.12s /
+     深色 token 对齐（bg #16181d / card #1f2228 / border #2c3038 / text #e8eaed）/
+     320/360/390/412 无横向溢出。全部用固定值 + @media，禁用 min()/max()。
+   ---------------------------------------------------------------------
+   工程约束（老 WebView ≈ Chrome 58）：
+     1. 本文件 CSS **禁用 min() / max()**，一律用固定值 + @media 分级；
+     2. 不做需要现代选择器的写法（:is/:where 等）；
+     3. 文字显示专项（需求20-B A9–A13）：
+        - 动画数字用等宽数字 font-variant-numeric:tabular-nums（防跳行）；
+        - flex 文本侧一律 min-width:0（防逐字断行）；
+        - 长串（昵称/ID/签名）可用省略号或断词，不撑破卡片；
+        - 正文 ≥12px、辅助 ≥11px；行高用无单位数值，1.3× 放大不截断。
+   ===================================================================== */
+
+/* R73 任务20 滚动修复（用户报障：本页不能滑动）：
+   assets/common.css:68 把 html, body 锁成 height:100% + overflow:hidden，
+   本页为独立全页，恢复自然滚动。子视图 .xtp-view 为 position:fixed 全屏推入层，
+   不受此覆盖影响。范例同 ai-settings.html:52-59；严禁改 assets/common.css。
+   阻断bug修复：不在 html/body 上使用 -webkit-overflow-scrolling（该属性置于根元素时，
+   部分移动端 WebView 会干扰触摸/点击命中）；滚动惯性只在真正的滚动容器 .xtp-view-body 上启用。 */
+html, body{
+  height:auto !important;
+  min-height:100%;
+  overflow:visible !important;
+}
+
+/* 阻断bug修复：空载全屏宿主防拦截——无内容时不占位、不参与命中；
+   一旦有内容（推入层 / 弹层遮罩）挂入，:empty 失配即自动恢复显示。 */
+#xtpViews:empty,
+#xtpModalHost:empty { display: none; }
+
+/* ------------------------------------------------------------ 1. 变量 */
+.xtp-wrap,
+.xtp-view,
+.xtp-mask {
+  --xtp-bg: #f2f2f2;
+  --xtp-card: #ffffff;
+  --xtp-text: #1f2329;          /* 主文字（事2：列表标题口径） */
+  --xtp-sub: #8a9099;           /* 组标题 / 次级文字 */
+  --xtp-aux: #9aa0a8;           /* 右侧小字 / 辅助说明 */
+  --xtp-line: #ececec;          /* 分割线（事2 规格） */
+  /* 事2：品牌色体系（图标磁贴 8% 底 / 品牌色前景 / 等级渐变胶囊 / 头部渐变遮罩） */
+  --xtp-brand: #5b8def;
+  --xtp-brand-ink: #3f6fd8;     /* 浅底上的品牌深色（用于等级胶囊文字） */
+  --xtp-brand-8: rgba(91, 141, 239, 0.08);
+  /* 事2：头部渐变遮罩（顶部品牌浅调 → 页面底，约 184px 内收束；固定像素停点，禁用 min/max） */
+  --xtp-head-a: #e6eefb;
+  --xtp-head-b: #f2f2f2;
+  --xtp-head-h: 184px;
+  /* 事2：卡片柔和阴影（组卡常规 / 悬浮名片更强） */
+  --xtp-shadow: 0 6px 20px rgba(31, 35, 41, 0.07), 0 2px 6px rgba(31, 35, 41, 0.05);
+  --xtp-shadow-hero: 0 10px 28px rgba(63, 111, 216, 0.12), 0 3px 10px rgba(31, 35, 41, 0.06);
+  /* 列表图标方块底 / 前景 —— 事2：品牌色 8% 底 + 品牌色图标 */
+  --xtp-ico-tile: var(--xtp-brand-8);
+  --xtp-ico-fg: var(--xtp-brand);
+  /* 通用中性底 / 前景（头像占位、分段控件、进度条轨道等） */
+  --xtp-ic-bg: #efefef;
+  --xtp-ic-fg: #8b939c;
+  --xtp-press: #ececec;         /* 点击态（事2 规格） */
+  --xtp-danger: #ff4d4f;
+  --xtp-primary: #5b8def;
+  --xtp-chip: #eceff3;
+}
+
+/* -------------------------------------------------- 2. 页面容器 & 顶栏 */
+.xtp-wrap {
+  min-height: 100vh;
+  background-color: var(--xtp-bg);
+  /* 事2：顶部品牌渐变遮罩（固定像素停点；随页面自然滚动；纯背景，不参与命中） */
+  background-image: linear-gradient(180deg, var(--xtp-head-a) 0, var(--xtp-head-b) var(--xtp-head-h));
+  background-repeat: no-repeat;
+  padding-bottom: 32px;
+  padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+  overflow-x: hidden;
+}
+.xtp-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  /* 事2：半透明磨砂顶栏，浮于渐变之上；老 WebView 无 backdrop-filter 时退化为半透明白，仍可读 */
+  background: rgba(255, 255, 255, 0.82);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+.xtp-back,
+.xtp-theme {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--xtp-text);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.xtp-back:active,
+.xtp-theme:active { background: var(--xtp-press); }
+.xtp-topbar-title {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--xtp-text);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.xtp-root { display: block; }
+
+/* ------------------------------------------------ 3. 顶部个人信息栏 hero */
+.xtp-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 6px 12px 12px;
+  padding: 16px 14px;
+  background: var(--xtp-card);
+  border-radius: 14px;              /* 事2：悬浮名片 14px 圆角 */
+  box-shadow: var(--xtp-shadow-hero); /* 事2：柔和阴影，浮于渐变之上 */
+  cursor: pointer;
+  transition: background-color 0.12s ease, transform 0.12s ease, box-shadow 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.xtp-hero:active { background: var(--xtp-press); transform: scale(0.995); }
+.xtp-hero-avatar {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--xtp-ic-bg);
+  color: var(--xtp-ic-fg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  position: relative;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 2px 8px rgba(31, 35, 41, 0.10);
+}
+.xtp-hero-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.xtp-hero-avatar:active { opacity: 0.85; }
+.xtp-hero-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.xtp-hero-name-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.xtp-hero-name {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.2px;           /* 事2 规格 */
+  color: var(--xtp-text);
+  line-height: 1.3;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.xtp-hero-lv {
+  flex: none;
+  font-size: 11px;
+  line-height: 1;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #eaf1fe 0%, #d7e4fc 100%); /* 事2：等级渐变胶囊 */
+  color: var(--xtp-brand-ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.xtp-hero-id {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--xtp-sub);
+  letter-spacing: 0.2px;            /* 事2 规格 */
+  line-height: 1.4;
+}
+.xtp-hero-id b {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.xtp-hero-qr { flex: none; display: inline-flex; width: 15px; height: 15px; opacity: 0.7; }
+.xtp-hero-qr svg { width: 15px; height: 15px; display: block; }
+.xtp-hero-motto {
+  font-size: 12px;
+  color: var(--xtp-aux);
+  line-height: 1.4;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.xtp-hero-arrow { flex: none; color: var(--xtp-aux); display: inline-flex; }
+
+/* ------------------------------------------------------------ 4. 分组列表 */
+/* 事2：组标题（12px 灰 #8a9099 / letter-spacing .4px） */
+.xtp-group-title {
+  margin: 0 12px 6px;
+  padding: 0 2px;
+  font-size: 12px;
+  color: var(--xtp-sub);
+  letter-spacing: 0.4px;
+  line-height: 1.4;
+}
+.xtp-group {
+  margin: 0 12px 12px;              /* 事2：组间距 12px */
+  background: var(--xtp-card);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--xtp-shadow);    /* 事2：组卡柔和阴影 */
+}
+.xtp-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 52px;                 /* 事2：行高 52px */
+  padding: 0 14px;                  /* 事2：内边距 14px（水平） */
+  background: var(--xtp-card);
+  color: var(--xtp-text);
+  cursor: pointer;
+  transition: background-color 0.12s ease, transform 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+  text-decoration: none;
+}
+.xtp-cell + .xtp-cell::before {
+  content: "";
+  position: absolute;
+  left: 56px;                       /* 事2：分割线左缩进 56px（=14+28+14） */
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: var(--xtp-line);
+}
+.xtp-cell:active { background: var(--xtp-press); transform: scale(0.995); } /* 事2：点击态 */
+.xtp-cell-ic {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--xtp-ico-tile);  /* 事2：品牌色 8% 磁贴 */
+  color: var(--xtp-ico-fg);         /* 事2：#5b8def 图标 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.xtp-cell-ic svg { width: 16px; height: 16px; display: block; }
+.xtp-cell-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;                  /* 事2：列表标题 15px/500 #1f2329 */
+  font-weight: 500;
+  color: var(--xtp-text);
+  line-height: 1.4;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.xtp-cell-right { flex: none; display: flex; align-items: center; gap: 6px; }
+.xtp-cell-val {
+  font-size: 13px;                  /* 事2：右侧小字 13px #9aa0a8 */
+  color: var(--xtp-aux);
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.xtp-cell-arrow { color: var(--xtp-aux); display: inline-flex; }
+.xtp-cell-arrow svg { width: 18px; height: 18px; display: block; }
+
+/* --------------------------------------------------- 5. 角标 / 红点 */
+.xtp-badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 6px;               /* 事2：徽章 6px 圆角 */
+  background: var(--xtp-danger);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  box-sizing: border-box;
+}
+.xtp-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--xtp-danger);
+}
+
+/* -------------------------------------------------- 6. 子视图推入层 */
+.xtp-view {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background: var(--xtp-bg);
+  transform: translateX(100%);
+  transition: transform 0.24s ease, visibility 0.24s;
+  visibility: hidden;
+  overflow: hidden;
+}
+.xtp-view.on { transform: translateX(0); visibility: visible; }
+.xtp-view-bar {
+  flex: none;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: var(--xtp-bg);
+}
+.xtp-view-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--xtp-text);
+  font-size: 15px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.xtp-view-back:active { background: var(--xtp-press); }
+.xtp-view-title {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--xtp-text);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.xtp-view-gap { width: 60px; flex: none; }
+.xtp-view-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 28px;
+  padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+}
+
+/* ------------------------------------------------- 7. 子视图内容块 */
+.xtp-sec {
+  margin: 4px 12px 10px;
+  background: var(--xtp-card);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.xtp-sec-title {
+  padding: 14px 12px 6px;
+  font-size: 12px;
+  color: var(--xtp-sub);
+  letter-spacing: 0.4px;
+  line-height: 1.4;
+}
+.xtp-tip {
+  margin: 8px 12px 0;
+  font-size: 11px;
+  color: var(--xtp-aux);
+  line-height: 1.7;
+}
+
+/* 编辑页里的“列表式”字段行：label 左（16px，与列表项同口径）、值右灰、行尾箭头、行高 50px */
+.xtp-frow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 50px;
+  padding: 6px 12px;
+  background: var(--xtp-card);
+  cursor: pointer;
+  transition: background-color 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.xtp-frow + .xtp-frow::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: var(--xtp-line);
+}
+.xtp-frow:active { background: var(--xtp-press); }
+.xtp-frow-label {
+  flex: none;
+  width: 76px;
+  font-size: 16px;
+  color: var(--xtp-text);
+  line-height: 1.4;
+}
+.xtp-frow-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.xtp-frow-val {
+  max-width: 100%;
+  font-size: 14px;
+  color: var(--xtp-sub);
+  line-height: 1.4;
+  text-align: right;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.xtp-frow-val.none { color: var(--xtp-aux); }
+.xtp-frow-note {
+  font-size: 11px;
+  color: var(--xtp-aux);
+  line-height: 1.4;
+  text-align: right;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.xtp-frow-arrow { flex: none; color: var(--xtp-aux); display: inline-flex; }
+.xtp-frow-arrow svg { width: 18px; height: 18px; display: block; }
+
+/* 编辑页输入行 */
+.xtp-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 50px;
+  padding: 9px 12px;
+}
+.xtp-field + .xtp-field::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: var(--xtp-line);
+}
+.xtp-field-label {
+  flex: none;
+  width: 76px;
+  font-size: 15px;
+  color: var(--xtp-text);
+  line-height: 1.4;
+}
+.xtp-field-body { flex: 1; min-width: 0; }
+.xtp-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 0;
+  background: transparent;
+  color: var(--xtp-text);
+  font-size: 15px;
+  line-height: 1.5;
+  padding: 6px 0;
+  outline: none;
+}
+.xtp-input::placeholder { color: var(--xtp-aux); }
+.xtp-readval {
+  font-size: 15px;
+  color: var(--xtp-sub);
+  line-height: 1.4;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.xtp-seg { display: inline-flex; background: var(--xtp-ic-bg); border-radius: 8px; padding: 2px; }
+.xtp-seg button {
+  border: 0;
+  background: transparent;
+  color: var(--xtp-sub);
+  font-size: 13px;
+  line-height: 1;
+  padding: 7px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.xtp-seg button.on { background: var(--xtp-card); color: var(--xtp-primary); font-weight: 600; }
+.xtp-mini-btn {
+  flex: none;
+  border: 1px solid var(--xtp-line);
+  background: transparent;
+  color: var(--xtp-sub);
+  font-size: 12px;
+  line-height: 1;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.xtp-mini-btn:active { background: var(--xtp-press); }
+.xtp-link-btn {
+  border: 0;
+  background: transparent;
+  color: var(--xtp-primary);
+  font-size: 13px;
+  padding: 6px 4px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.xtp-link-btn.danger { color: var(--xtp-danger); }
+
+/* 头像编辑行 */
+.xtp-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 50px;
+  padding: 12px;
+}
+.xtp-avatar-row .xtp-avatar-sm {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex: none;
+  background: var(--xtp-ic-bg);
+  color: var(--xtp-ic-fg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 600;
+}
+.xtp-avatar-sm img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.xtp-avatar-row-main { flex: 1; min-width: 0; }
+
+/* 等级进度 */
+.xtp-lv-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.xtp-lv-chip {
+  flex: none;
+  font-size: 12px;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--xtp-chip);
+  color: var(--xtp-sub);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.xtp-lv-gap {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--xtp-sub);
+  line-height: 1.5;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.xtp-bar {
+  margin-top: 8px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--xtp-ic-bg);
+  overflow: hidden;
+}
+.xtp-bar > i { display: block; height: 100%; background: var(--xtp-primary); border-radius: 999px; }
+
+/* 数据卡（学习数据子视图） */
+.xtp-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--xtp-line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.xtp-stat {
+  background: var(--xtp-card);
+  padding: 14px 8px;
+  text-align: center;
+  min-width: 0;
+}
+.xtp-stat-num {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--xtp-text);
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+  min-width: 52px;
+}
+.xtp-stat-unit { font-size: 12px; font-weight: 500; color: var(--xtp-sub); margin-left: 1px; }
+.xtp-stat-label {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--xtp-sub);
+  line-height: 1.5;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 子视图里的小卡列表（笔记 / 收藏 / AI 记录） */
+.xtp-list { display: flex; flex-direction: column; }
+.xtp-li {
+  position: relative;
+  padding: 12px;
+  min-width: 0;
+}
+.xtp-li + .xtp-li::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: var(--xtp-line);
+}
+.xtp-li-title {
+  font-size: 15px;
+  color: var(--xtp-text);
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.xtp-li-meta {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--xtp-sub);
+  line-height: 1.5;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.xtp-li-body {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--xtp-sub);
+  line-height: 1.6;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.xtp-li-mono { font-variant-numeric: tabular-nums; word-break: break-all; }
+/* AI 对话记录（R86-C）：服务端 /api/ai/history 扁平消息 → 按自然间隔分段渲染 */
+.xtp-chat-list {
+  display: flex;
+  flex-direction: column;
+  margin: 4px 12px 10px;
+  background: var(--xtp-card);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.xtp-chat-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 14px 6px;
+  font-size: 12px;
+  color: var(--xtp-sub);
+  letter-spacing: 0.4px;
+  line-height: 1.4;
+}
+.xtp-chat-cnt {
+  flex: none;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--xtp-aux);
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--xtp-chip);
+}
+.xtp-chat-row { padding: 10px 14px; }
+.xtp-chat-row + .xtp-chat-row { border-top: 1px solid var(--xtp-line); }
+.xtp-chat-head { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.xtp-chat-who {
+  flex: none;
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--xtp-chip);
+  color: var(--xtp-sub);
+}
+.xtp-chat-who.me { background: var(--xtp-brand-8); color: var(--xtp-brand-ink); }
+.xtp-chat-prov {
+  flex: none;
+  max-width: 42%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--xtp-aux);
+}
+.xtp-chat-time {
+  flex: none;
+  margin-left: auto;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--xtp-aux);
+  font-variant-numeric: tabular-nums;
+}
+.xtp-chat-text {
+  margin-top: 5px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--xtp-text);
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+/* 加载中 / 错误 / 空 三态 */
+.xtp-chat-state {
+  padding: 34px 16px;
+  text-align: center;
+  color: var(--xtp-aux);
+}
+.xtp-chat-state-t { font-size: 14px; line-height: 1.6; color: var(--xtp-sub); overflow-wrap: break-word; }
+.xtp-chat-state-d {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--xtp-aux);
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.xtp-chat-state.err .xtp-chat-state-t { color: var(--xtp-danger); }
+.xtp-retry-btn {
+  margin-top: 14px;
+  min-height: 34px;
+  padding: 0 18px;
+  border: 1px solid var(--xtp-line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--xtp-brand-ink);
+  font-size: 14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.xtp-retry-btn:active { background: var(--xtp-press); }
+.xtp-spinner {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  margin-bottom: 10px;
+  border: 2px solid var(--xtp-line);
+  border-top-color: var(--xtp-brand);
+  border-radius: 50%;
+  animation: xtp-spin 0.8s linear infinite;
+}
+@keyframes xtp-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+/* 本机兜底区块小标题 */
+.xtp-chat-sub {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 16px 14px 6px;
+  font-size: 12px;
+  color: var(--xtp-sub);
+  letter-spacing: 0.4px;
+}
+.xtp-chat-sub span { font-size: 11px; color: var(--xtp-aux); }
+.xtp-empty {
+  padding: 34px 12px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--xtp-aux);
+  line-height: 1.7;
+}
+
+/* ------------------------------------------------- 8. 弹层 & Toast */
+#xtpModalHost { position: relative; z-index: 80; }
+.xtp-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 80;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+.xtp-modal {
+  width: 100%;
+  max-width: 340px;
+  max-height: 84vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  background: var(--xtp-card, #fff);
+  color: var(--xtp-text, #111);
+  border-radius: 12px;
+  padding: 18px;
+}
+/* R86-C：头像裁剪已改为全屏 .xtp-cropper（微信风格裁剪台），不再复用 .xtp-modal 容器 */
+.xtp-modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--xtp-text, #111);
+  line-height: 1.4;
+  margin-bottom: 12px;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.xtp-modal-tip { font-size: 12px; color: var(--xtp-sub, #8a9099); line-height: 1.7; margin-top: 8px; overflow-wrap: break-word; }
+/* 弹层内输入框（覆盖 .xtp-input 的无边框样式）与行内校验提示 */
+.xtp-modal-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--xtp-line, #e5e5e5);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 15px;
+  line-height: 1.5;
+  background: transparent;
+  color: var(--xtp-text, #111);
+}
+.xtp-modal-err { margin-top: 8px; font-size: 12px; color: var(--xtp-danger, #ff4d4f); line-height: 1.5; overflow-wrap: break-word; }
+.xtp-modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+.xtp-modal-actions button {
+  flex: 1;
+  min-height: 40px;
+  border: 1px solid var(--xtp-line, #e5e5e5);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--xtp-text, #111);
+  font-size: 15px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.xtp-modal-actions button.primary { background: var(--xtp-primary, #5b8def); border-color: var(--xtp-primary, #5b8def); color: #fff; }
+.xtp-modal-actions button.danger { background: var(--xtp-danger, #ff4d4f); border-color: var(--xtp-danger, #ff4d4f); color: #fff; }
+
+/* 头像裁剪（R97 微信头像设置页对标：全屏暗色裁剪台）
+   结构：.xtp-cropper（全屏 flex 列）= 顶栏（左「取消」+ 右「完成」，中间留空）+ 裁剪区（占满剩余空间）。
+   裁剪区不再有固定 340/400px 限制，四周留白压到最小；底栏缩放滑杆与全部说明文案已移除，
+   控件只剩拖动 / 双指捏合（桌面端滚轮），裁剪框内叠加 3x3 淡灰九宫格参考线。 */
+/* R88-M6（2026-09-18）：进入裁剪台的过渡 —— 由透明 + 轻微缩放淡入，避免「啪一下全屏」的突兀感。 */
+.xtp-crop-mask {
+  padding: 0;
+  background: #000;
+  align-items: stretch;
+  justify-content: flex-start;
+  animation: xtpCropMaskIn 0.22s ease-out both;
+}
+@keyframes xtpCropMaskIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.xtp-cropper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  /* R88-M6：进入时的轻微放大过渡（0.96 → 1），配合 mask 淡入，观感更柔和。 */
+  animation: xtpCropperIn 0.22s ease-out both;
+  /* R88-M6：安全边距 —— 适配刘海屏 / 底部手势条。 */
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
+}
+@keyframes xtpCropperIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .xtp-crop-mask, .xtp-cropper { animation: none; }
+}
+.xtp-crop-topbar {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 0 10px;
+  padding-top: env(safe-area-inset-top, 0px);
+  box-sizing: border-box;
+  background: #000;
+}
+.xtp-crop-btn {
+  min-width: 58px;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #fff;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.xtp-crop-btn:active { background: rgba(255, 255, 255, 0.14); }
+.xtp-crop-btn.primary { color: #07c160; font-weight: 600; }
+.xtp-crop-btn.primary:active { background: rgba(7, 193, 96, 0.16); }
+.xtp-crop-stage {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
+  background: #000;
+  touch-action: none;
+  cursor: move;
+}
+.xtp-crop-stage img { position: absolute; left: 0; top: 0; user-select: none; -webkit-user-drag: none; }
+/* 圆形头像遮罩：圆外 62% 暗色蒙层 + 内描边白圈（最终头像范围） */
+.xtp-crop-hole {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 50%;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.62), inset 0 0 0 1px rgba(255, 255, 255, 0.9);
+  pointer-events: none;
+}
+/* 正方形裁剪区（输出的方形范围）+ 3x3 淡灰九宫格参考线（纯 CSS 渐变绘制，便于对齐人脸）。
+   九宫格线用两条竖线 + 两条横线（各 1px，rgba(255,255,255,.28) 在暗底上呈淡灰）；
+   超出圆形遮罩范围的部分由叠加其上的 .xtp-crop-hole 暗色蒙层自然盖住，符合微信观感。 */
+.xtp-crop-frame {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  box-sizing: border-box;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, transparent calc(33.333% - 0.5px), rgba(255, 255, 255, 0.28) calc(33.333% - 0.5px), rgba(255, 255, 255, 0.28) calc(33.333% + 0.5px), transparent calc(33.333% + 0.5px)),
+    linear-gradient(to right, transparent calc(66.666% - 0.5px), rgba(255, 255, 255, 0.28) calc(66.666% - 0.5px), rgba(255, 255, 255, 0.28) calc(66.666% + 0.5px), transparent calc(66.666% + 0.5px)),
+    linear-gradient(to bottom, transparent calc(33.333% - 0.5px), rgba(255, 255, 255, 0.28) calc(33.333% - 0.5px), rgba(255, 255, 255, 0.28) calc(33.333% + 0.5px), transparent calc(33.333% + 0.5px)),
+    linear-gradient(to bottom, transparent calc(66.666% - 0.5px), rgba(255, 255, 255, 0.28) calc(66.666% - 0.5px), rgba(255, 255, 255, 0.28) calc(66.666% + 0.5px), transparent calc(66.666% + 0.5px));
+}
+/* 底部选择弹窗（ActionSheet）：对标微信「编辑头像」来源选择。白底圆角顶部、三项纵向排列、
+   「取消」与上面两项之间留灰色间隙独立成块，底部适配 env(safe-area-inset-bottom)。 */
+.xtp-sheet-mask {
+  padding: 0;
+  background: rgba(0, 0, 0, 0.4);
+  align-items: flex-end;
+  justify-content: center;
+  animation: xtpSheetMaskIn 0.18s ease-out both;
+}
+@keyframes xtpSheetMaskIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.xtp-sheet {
+  width: 100%;
+  background: var(--xtp-card, #ffffff);
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+  overflow: hidden;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  animation: xtpSheetIn 0.22s ease-out both;
+  box-sizing: border-box;
+}
+@keyframes xtpSheetIn {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.xtp-sheet-list {
+  display: flex;
+  flex-direction: column;
+}
+.xtp-sheet-item {
+  display: block;
+  width: 100%;
+  min-height: 52px;
+  padding: 14px 16px;
+  border: 0;
+  border-top: 1px solid var(--xtp-line, #ececec);
+  background: transparent;
+  color: var(--xtp-text, #1f2329);
+  font-size: 16px;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+.xtp-sheet-list .xtp-sheet-item:first-child,
+.xtp-sheet-cancel { border-top: 0; }
+.xtp-sheet-item:active { background: var(--xtp-press, #ececec); }
+.xtp-sheet-cancel { color: var(--xtp-sub, #8a9099); }
+.xtp-sheet-gap {
+  height: 8px;
+  background: var(--xtp-bg, #f2f2f2);
+  border-top: 1px solid var(--xtp-line, #ececec);
+}
+.xtp-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 64px;
+  z-index: 90;
+  transform: translateX(-50%) translateY(12px);
+  max-width: 80vw;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: rgba(17, 17, 17, 0.9);
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.xtp-toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+.xtp-toast.err { background: rgba(214, 48, 49, 0.94); }
+
+/* ------------------------------------------------------- 9. 深色主题 */
+body.dark .xtp-wrap,
+body.dark .xtp-view,
+body.dark .xtp-mask {
+  --xtp-bg: #16181d;                /* 事2 规格 */
+  --xtp-card: #1f2228;              /* 事2 规格 */
+  --xtp-text: #e8eaed;              /* 事2 规格 */
+  --xtp-sub: #9aa3ad;
+  --xtp-aux: #8b939c;
+  --xtp-line: #2c3038;              /* 事2 规格（border） */
+  --xtp-brand: #6f9cf2;             /* 事2：深色下品牌色提亮 */
+  --xtp-brand-ink: #9dc0ff;
+  --xtp-brand-8: rgba(111, 156, 242, 0.14);
+  --xtp-head-a: #202836;            /* 事2：深色头部渐变遮罩 */
+  --xtp-head-b: #16181d;
+  --xtp-shadow: 0 6px 20px rgba(0, 0, 0, 0.32), 0 2px 6px rgba(0, 0, 0, 0.24);
+  --xtp-shadow-hero: 0 10px 28px rgba(0, 0, 0, 0.42), 0 3px 10px rgba(0, 0, 0, 0.28);
+  --xtp-ico-tile: rgba(111, 156, 242, 0.14);
+  --xtp-ico-fg: #6f9cf2;
+  --xtp-ic-bg: #2a2f36;
+  --xtp-ic-fg: #c8ced6;
+  --xtp-press: #262b31;
+  --xtp-primary: #6f9cf2;           /* 事2：深色下品牌主色也提亮，与 --xtp-brand 同步 */
+  --xtp-chip: #2a2f36;
+}
+body.dark .xtp-topbar { background: rgba(22, 24, 29, 0.82); }
+body.dark .xtp-hero-avatar,
+body.dark .xtp-avatar-sm { background: #2a2f36; color: #c8ced6; }
+body.dark .xtp-hero-avatar { box-shadow: 0 0 0 2px rgba(31, 34, 40, 0.9), 0 2px 8px rgba(0, 0, 0, 0.35); }
+body.dark .xtp-hero-lv { background: linear-gradient(135deg, #26324a 0%, #1f2b40 100%); color: #9dc0ff; }
+body.dark .xtp-toast { background: #3a4048; color: #e8eaed; }
+body.dark .xtp-modal { background: #1f2228; color: #e8eaed; }
+body.dark .xtp-modal-actions button { border-color: #2c3038; color: #e8eaed; }
+
+/* --------------------------------------------------- 10. 移动端适配 */
+/* 中屏及以下：数据卡两列 */
+@media (max-width: 560px) {
+  .xtp-stats { grid-template-columns: repeat(2, 1fr); }
+}
+/* 小屏（<=400px）：图标网格每行 3 个（需求15 明列）+ 收紧外边距（头像仍 64px） */
+@media (max-width: 400px) {
+  .xtp-wrap { padding-bottom: 24px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+  .xtp-hero { margin-left: 10px; margin-right: 10px; gap: 12px; padding: 14px 12px; }
+  .xtp-group { margin-left: 10px; margin-right: 10px; }
+  .xtp-group-title { margin-left: 10px; margin-right: 10px; }
+  .xtp-sec { margin-left: 10px; margin-right: 10px; }
+}
+/* 极小屏（<=340px）：仅压缩复选标签宽度，行高 / 图标 / 分割线缩进保持不变 */
+@media (max-width: 340px) {
+  .xtp-field-label { width: 64px; font-size: 14px; }
+  .xtp-frow-label { width: 64px; font-size: 15px; }
+}
+
+/* ------------------------------------- 11. TA 视角（R74-B）hero 操作区 & 动态列表 */
+/* hero 右侧操作按钮：好友 = 发消息 + 删除好友；非好友 = 加好友（见 otherHeroActsHtml） */
+.xtp-hero-acts {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.xtp-hero-act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid var(--xtp-line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--xtp-text);
+  font-size: 12px;
+  line-height: 1;
+  padding: 8px 10px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+.xtp-hero-act:active { background: var(--xtp-press); }
+.xtp-hero-act.primary { background: var(--xtp-primary); border-color: var(--xtp-primary); color: #fff; }
+.xtp-hero-act.danger { color: var(--xtp-danger); border-color: var(--xtp-danger); }
+/* 昵称旁的好友备注名胶囊 */
+.xtp-hero-remark {
+  flex: none;
+  max-width: 40%;
+  font-size: 11px;
+  line-height: 1;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--xtp-chip);
+  color: var(--xtp-sub);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* TA 动态列表行可点击（跳 动态空间.html） */
+.xtp-li-tap { cursor: pointer; }
+.xtp-li-tap:active { background: var(--xtp-press); }
+/* 小屏：hero 换行，操作按钮整行右对齐排布（固定值 + @media，禁用 min/max） */
+@media (max-width: 400px) {
+  .xtp-hero.xtp-hero-other { flex-wrap: wrap; }
+  .xtp-hero-acts { flex-direction: row; width: 100%; justify-content: flex-end; }
+}
+
+/* ============================================================ R88-M5
+   个人资料页「AI 对话记录管理」：工具条 / 列表卡 / 多选 / 标签 / 动作条。
+   仅本页；固定值，禁用 clamp/min/max。 */
+.xtp-m5-tools { padding: 10px 12px 2px; }
+.xtp-m5-search {
+  display: flex; align-items: center; gap: 6px;
+  border: 1px solid var(--xtp-line); border-radius: 8px;
+  padding: 8px 10px; background: var(--xtp-card);
+}
+.xtp-m5-search > input {
+  flex: 1; min-width: 0; border: none; outline: none; background: transparent;
+  color: var(--xtp-text); font-size: 14px; line-height: 1.4;
+}
+.xtp-m5-sclear {
+  flex: none; width: 20px; height: 20px; line-height: 18px; text-align: center;
+  border: none; border-radius: 50%; background: var(--xtp-chip); color: var(--xtp-sub);
+  font-size: 14px; cursor: pointer; padding: 0;
+}
+.xtp-m5-filters { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.xtp-m5-select {
+  border: 1px solid var(--xtp-line); border-radius: 8px; background: var(--xtp-card);
+  color: var(--xtp-text); font-size: 12px; line-height: 1.2; padding: 7px 8px; max-width: 48%;
+}
+.xtp-m5-toggle {
+  display: inline-flex; align-items: center; gap: 4px;
+  border: 1px solid var(--xtp-line); border-radius: 8px; background: transparent;
+  color: var(--xtp-sub); font-size: 12px; line-height: 1; padding: 8px 10px;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.xtp-m5-toggle.on { background: var(--xtp-brand-8); border-color: var(--xtp-brand); color: var(--xtp-brand-ink); }
+.xtp-m5-custom { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.xtp-m5-custom label { font-size: 12px; color: var(--xtp-sub); display: inline-flex; align-items: center; gap: 4px; }
+.xtp-m5-custom input[type="date"] {
+  border: 1px solid var(--xtp-line); border-radius: 8px; background: var(--xtp-card);
+  color: var(--xtp-text); font-size: 12px; padding: 6px 8px;
+}
+.xtp-m5-actions, .xtp-m5-batch {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 14px 12px 18px;
+}
+.xtp-m5-batch { justify-content: space-between; }
+.xtp-m5-abtn {
+  display: inline-flex; align-items: center; gap: 4px;
+  flex: 1; justify-content: center; min-height: 38px; padding: 0 12px;
+  border: 1px solid var(--xtp-line); border-radius: 8px; background: transparent;
+  color: var(--xtp-text); font-size: 13px; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; white-space: nowrap;
+}
+.xtp-m5-abtn:active { background: var(--xtp-press); }
+.xtp-m5-abtn.danger { color: var(--xtp-danger); border-color: var(--xtp-danger); }
+.xtp-m5-abtn[disabled] { opacity: .45; pointer-events: none; }
+.xtp-m5-selcnt { font-size: 13px; color: var(--xtp-sub); white-space: nowrap; }
+.xtp-m5-batch .xtp-m5-abtn { flex: none; }
+.xtp-m5-srvnote {
+  margin: 0 12px 8px; padding: 8px 10px; border-radius: 8px;
+  background: var(--xtp-chip); color: var(--xtp-aux); font-size: 12px; line-height: 1.5;
+}
+.xtp-m5-quick {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 6px 12px 2px;
+}
+.xtp-m5-quick .xtp-m5-abtn { flex: none; }
+.xtp-m5-quicktip { font-size: 11px; color: var(--xtp-aux); line-height: 1.4; }
+.xtp-m5-emptyact { display: flex; justify-content: center; padding: 4px 12px 16px; }
+.xtp-m5-emptyact .xtp-m5-abtn { flex: none; }
+
+.xtp-m5-card { display: flex; align-items: flex-start; gap: 8px; }
+.xtp-m5-body { flex: 1; min-width: 0; }
+.xtp-m5-check { flex: none; display: inline-flex; align-items: center; padding-top: 2px; }
+.xtp-m5-check input { width: 18px; height: 18px; }
+.xtp-m5-cnt {
+  margin-left: 8px; font-size: 11px; line-height: 1.4; color: var(--xtp-aux);
+  padding: 1px 6px; border-radius: 999px; background: var(--xtp-chip);
+}
+.xtp-m5-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.xtp-m5-tag {
+  font-size: 11px; line-height: 1.3; padding: 2px 8px; border-radius: 999px;
+  background: var(--xtp-brand-8); color: var(--xtp-brand-ink);
+}
+.xtp-m5-ops { flex: none; display: flex; flex-direction: column; gap: 4px; }
+.xtp-m5-icon {
+  width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
+  border: none; border-radius: 8px; background: transparent; color: var(--xtp-sub);
+  cursor: pointer; -webkit-tap-highlight-color: transparent; padding: 0;
+}
+.xtp-m5-icon:active { background: var(--xtp-press); }
+.xtp-m5-icon.on { color: #E8A33D; }
+.xtp-m5-icon.danger { color: var(--xtp-danger); }

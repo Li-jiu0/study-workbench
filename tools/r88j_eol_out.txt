@@ -1,0 +1,8 @@
+file                         before      after    delta   CRLF  loneLF  loneCR  EOL
+assets\xt-profile.js         138548     140721    +2173   2798       0       0  CRLF OK
+assets\xt-region.js           31620      44387   +12767      0     886       0  LF !!BAD!!
+地区选择.html                     15925      18313    +2388    403       0       0  CRLF OK
+私聊.html                       71537      76885    +5348   1167       0       0  CRLF OK
+朋友圈发布.html                    12521      12612      +91    170       0       0  CRLF OK
+assets\xt-moments.js          54595      55240     +645   1121       0       0  CRLF OK
+EXIT=0

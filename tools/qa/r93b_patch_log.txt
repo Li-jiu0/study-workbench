@@ -1,0 +1,6 @@
+R93-B patch log for 更新.html
+before: size=23107 CRLF=386 LF=386 pureLF=0
+old hit=1 (expect 1)  new-already hit=0
+after: size=23107 CRLF=386 LF=386 pureLF=0
+[VERIFY] new hit=1 (expect 1)  old hit=0 (expect 0)
+RESULT=PASS

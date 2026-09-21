@@ -1,0 +1,29 @@
+xt-profile.js BEFORE: size=143050 crlf=2829 loneLF=0 loneCR=0
+[OK] R1 chatBadge (old 184 B -> new 219 B)
+[OK] R2 chatServerHtml remove (old 690 B -> new 289 B)
+[OK] R3 chatBodyHtml (old 1353 B -> new 257 B)
+[OK] R4 bindChatView/paintChat (old 965 B -> new 372 B)
+[OK] R5 prefetchAiChat remove (old 421 B -> new 111 B)
+[OK] R6 boot call (old 21 B -> new 105 B)
+[OK] R7 m5Panel emptyTip (old 584 B -> new 379 B)
+[OK] R8 m5Panel sub header (old 184 B -> new 141 B)
+[OK] R9 quicktip (old 115 B -> new 158 B)
+[OK] R10 m5ClearAll (old 880 B -> new 1908 B)
+[OK] R11 M5 header comment (old 226 B -> new 318 B)
+xt-profile.js AFTER: size=141684 crlf=2788 loneLF=0 loneCR=0 (delta=-1366 B)
+[OK] xt-profile.js 写后回读一致，纯 CRLF
+ai.py BEFORE: size=17773 crlf=336 loneLF=0 loneCR=0
+[OK] P1 DELETE /history (old 33 B -> new 1229 B)
+ai.py AFTER: size=18969 crlf=361 loneLF=0 loneCR=0 (delta=+1196 B)
+[OK] ai.py 写后回读一致，纯 CRLF
+[PASS] xt: 「暂不支持删除」=0
+[PASS] xt: chatServerHtml( =0
+[PASS] xt: quicktip 旧文案=0
+[PASS] xt: 「服务端记录仍保留」=0
+[PASS] xt: DELETE 调用>=1
+[PASS] xt: 「已清空本机与服务端对话记录」>=1
+[PASS] xt: fetchAiChat 调用点=0（仅保留定义）
+[PASS] xt: prefetchAiChat 残留引用=0
+[FAIL] xt: AI_CHAT.total 展示引用=0
+[PASS] py: @router.delete 存在
+ALL=FAIL

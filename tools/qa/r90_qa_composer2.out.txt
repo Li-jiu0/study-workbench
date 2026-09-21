@@ -1,0 +1,35 @@
+  166|           <div class="im-composer">
+  167|             <textarea id="imInput" placeholder="输入消息…"></textarea>
+  168|             <!-- 【后续扩展点】表情面板（T4 增量）：[emoji:xx] 文本语法，Unicode 渲染，离线可用 -->
+  169|             <button class="im-icon" title="表情" onclick="imToggleEmoji()"><span class="nav-icon" data-icon="smile" data-icon-size="20"></span></button>
+  170|             <div class="im-emoji-panel" id="imEmojiPanel" style="display:none"></div>
+  171|             <!-- R51（2026-09-14）：发图按钮 + 隐藏 file input 恢复（图片消息正式支持）。
+  172|                  点击 → imPickImage() → 触发 #imImgInput → change → imSendImage(this)
+  173|                  → chat-local.js：在线 POST /api/uploads/image + 发 kind='image' 消息；离线回落 dataURL。 -->
+  174|             <!-- R88-I（2026-09-18）：发图按钮改「+」浮层菜单入口（相册发图 / 拍摄 / 位置定位）。
+  175|                  原 #imImgInput 与 onchange="imSendImage(this)" 原样保留，菜单「相册发图」仍走同一条链路。 -->
+  176|             <button class="im-icon" id="imPlusBtn" title="更多" onclick="imTogglePlusMenu()"><span class="nav-icon" data-icon="plus" data-icon-size="20"></span></button>
+  177|             <!-- R90 item3：把「定位」从加号菜单移到这里（输入栏图标排），紧邻「所在位置」语义入口。
+  178|                  复用既有 .im-icon 类（不新造样式）；点击仍走 imPlusPickLocation()（XT_LOC_PICK.openPicker）。 -->
+  179|             <button class="im-icon" id="imLocBtn" title="定位" onclick="imPlusPickLocation()"><span class="nav-icon" data-icon="map-pin" data-icon-size="20"></span></button>
+  180|             <input type="file" id="imImgInput" accept="image/*" style="display:none" onchange="imSendImage(this)">
+  181|             <!-- R88-I：拍摄入口（capture 移动端直调相机；桌面退化为文件选择，同走 imSendImage 链路；不用 getUserMedia） -->
+  182|             <input type="file" id="imCameraInput" accept="image/*" capture="environment" style="display:none" onchange="imSendImage(this)">
+  183|             <!-- R88-I 增量：发送文件入口（不限 accept，允许常见文档/压缩包；change→imSendFile(this)） -->
+  184|             <input type="file" id="imFileInput" style="display:none" onchange="imSendFile(this)">
+  185|             <!-- R88-I：底部滑出的加号浮层菜单（遮罩点击 / 再点「+」/ ESC 关闭）；各项均真可用，无假占位 -->
+  186|             <!-- R90 item3：原第 4 项「定位」按用户诉求移出加号菜单，改为输入栏独立图标按钮（见 #imLocBtn，仍走 imPlusPickLocation）。加号菜单现为 3 项。 -->
+  187|             <div class="im-plus-mask" id="imPlusMask" onclick="imClosePlusMenu()"></div>
+  188|             <!-- R88-M6 方案B（2026-09-18）：每项 = 彩色圆角方底色块(.im-plus-ico) + 白色图标 + 文字。
+  189|                  配色由 #imPlusCss 的 .im-plus-ico--i1..--i3 统一管理（成体系，非各写各的）。
+  190|                  R90 item3：--i4 随「定位」项一同停用（DOM 已移除，样式规则保留待复用，见 injectCss 注释）。 -->
+  191|             <div class="im-plus-menu" id="imPlusMenu">
+  192|               <div class="im-plus-item" onclick="imPlusPickImage()"><span class="im-plus-ico im-plus-ico--i1"><span class="nav-icon" data-icon="image" data-icon-size="22"></span></span><span class="im-plus-txt">相册发图</span></div>
+  193|               <div class="im-plus-item" onclick="imPlusPickCamera()"><span class="im-plus-ico im-plus-ico--i2"><span class="nav-icon" data-icon="camera" data-icon-size="22"></span></span><span class="im-plus-txt">拍摄</span></div>
+  194|               <div class="im-plus-item" onclick="imPlusPickFile()"><span class="im-plus-ico im-plus-ico--i3"><span class="nav-icon" data-icon="file" data-icon-size="22"></span></span><span class="im-plus-txt">发送文件</span></div>
+  195|             </div>
+  196|             <button class="im-send" onclick="imSendText()">发送</button>
+  197|           </div>
+  198|         </div>
+  199| 
+  200|         <!-- ==================== 群设置（页面内视图 · ADR-3 2026-09-15 批次八） ====================

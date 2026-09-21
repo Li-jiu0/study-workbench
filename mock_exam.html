@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#5B8DEF">
+<title>真题模考 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260923c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
+<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/xt-toast.js?v=20260923a" defer></script>
+<script src="assets/error-boundary.js?v=20260924a" defer></script>
+<script src="assets/app.js?v=20260925a" defer></script>
+<script src="data/mock-papers.js?v=20260916O" defer></script>
+<script src="assets/mock-engine.js?v=20260916O" defer></script>
+<!-- 【批次 20260913m】考试指南并入本页：guide 数据沿用 MINI_BANK（mini-cet.js 的 cet-guide / mini-exam.js 的 exam-guide） -->
+<script src="assets/mini-cet.js?v=20260916O" defer></script>
+<script src="assets/mini-exam.js?v=20260916O" defer></script>
+<style>
+/* mock_exam.html 页面专属样式（不走弹窗/不弹窗 mask） */
+body { background: var(--xt-bg); margin: 0; color: var(--xt-text); }
+
+/* 修复：common.css 第 68 行全局 `html, body { height: 100%; overflow: hidden; }` 会把本独立页锁死无法滚动。
+   本页内容（套卷列表/指南）直接挂在 <body> 下，不在 .app>.main>.page 滚动容器内，
+   故在此用更具体选择器放开 body 自身滚动（不动 common.css）。 */
+html { height: auto; overflow: auto; }
+body { height: auto; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+/* 顶部安全区：透明状态栏下 .xt-page-head（page-head.css，文档流内）整体下移补偿 */
+.xt-page-head { padding-top: calc(var(--xt-space-4) + env(safe-area-inset-top, 0px)); }
+.mock-shell { max-width: 880px; margin: 0 auto; padding: 0 var(--xt-space-4) var(--xt-space-8); }
+.mock-cd-row {
+  background: var(--xt-bg-card);
+  border: 1px solid var(--xt-border);
+  border-radius: var(--xt-radius-md);
+  padding: var(--xt-space-3) var(--xt-space-4);
+  margin-top: var(--xt-space-3);
+  display: flex;
+  align-items: center;
+  gap: var(--xt-space-3);
+  font-size: var(--xt-font-sm);
+  color: var(--xt-text-dim);
+}
+.mock-cd-row b { color: var(--xt-primary); font-size: var(--xt-font-md); }
+.mock-cd-row.is-hidden { display: none; }
+.mock-paper-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--xt-space-3);
+  margin-top: var(--xt-space-4);
+}
+@media (min-width: 720px) {
+  .mock-paper-grid { grid-template-columns: 1fr 1fr; }
+}
+.mock-paper-card {
+  background: var(--xt-bg-card);
+  border: 1px solid var(--xt-border);
+  border-radius: var(--xt-radius-lg);
+  padding: var(--xt-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--xt-space-2);
+  min-height: 140px;
+  box-shadow: var(--xt-shadow-sm);
+  transition: all var(--xt-transition);
+}
+.mock-paper-card:hover {
+  border-color: var(--xt-primary);
+  box-shadow: var(--xt-shadow-md);
+}
+.mock-paper-card .mpc-title {
+  font-size: var(--xt-font-md);
+  font-weight: 500;
+  color: var(--xt-text);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--xt-space-2);
+}
+.mock-paper-card .mpc-meta {
+  font-size: var(--xt-font-sm);
+  color: var(--xt-text-dim);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--xt-space-3);
+  margin-top: var(--xt-space-1);
+}
+.mock-paper-card .mpc-meta b { color: var(--xt-text); }
+.mock-paper-card .mpc-best {
+  font-size: var(--xt-font-sm);
+  color: var(--xt-success);
+  margin-top: var(--xt-space-1);
+}
+.mock-paper-card .mpc-status {
+  display: flex;
+  gap: var(--xt-space-2);
+  margin-top: var(--xt-space-3);
+  flex-wrap: wrap;
+}
+.mock-paper-card .mpc-tag {
+  display: inline-block;
+  font-size: var(--xt-font-xs);
+  padding: 2px 8px;
+  border-radius: var(--xt-radius-sm);
+  background: var(--xt-bg-muted);
+  color: var(--xt-text-dim);
+}
+.mock-paper-card .mpc-tag.is-running { background: rgba(245, 158, 11, 0.15); color: var(--xt-warning); }
+.mock-paper-card .mpc-tag.is-done { background: rgba(34, 197, 94, 0.15); color: var(--xt-success); }
+.mock-paper-card .mpc-actions {
+  display: flex;
+  gap: var(--xt-space-2);
+  margin-top: auto;
+  padding-top: var(--xt-space-3);
+}
+.mock-paper-card .mpc-actions .xt-btn {
+  flex: 1;
+  min-height: 36px;
+}
+.mock-guide-row {
+  margin-top: var(--xt-space-6);
+  text-align: center;
+  font-size: var(--xt-font-sm);
+  color: var(--xt-text-dim);
+}
+.mock-guide-row a {
+  color: var(--xt-primary);
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: var(--xt-radius-sm);
+}
+.mock-guide-row a:hover { background: var(--xt-primary-soft); }
+.mock-guide-row a:focus-visible {
+  outline: 2px solid var(--xt-primary);
+  outline-offset: 2px;
+}
+/* ==================== 【批次 20260913m】双 tab 合并页样式 ====================
+   参照 面测.html #page-iv-group 合并页范式：
+   tab 选中态 .on 同步 + 面板 display 切换，由 switchMockTab() 承担。 */
+.mock-merge-tabs {
+  display: flex;
+  gap: 6px;
+  background: var(--xt-bg-card);
+  border: 1px solid var(--xt-border);
+  border-radius: 12px;
+  padding: 4px;
+  margin-top: var(--xt-space-4);
+  width: fit-content;
+  max-width: 100%;
+}
+.mock-merge-tab {
+  border: none;
+  background: transparent;
+  padding: 8px 14px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--xt-text-dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.4;
+}
+.mock-merge-tab.on { background: var(--xt-primary); color: #fff; }
+.mock-merge-tab:focus-visible {
+  outline: 2px solid var(--xt-primary);
+  outline-offset: 2px;
+}
+.mock-merge-panel { display: none; }
+.mock-merge-panel.open { display: block; }
+.mock-guide-title {
+  margin: var(--xt-space-4) 0 0;
+  font-size: var(--xt-font-lg);
+  color: var(--xt-text);
+}
+.mock-guide-sub {
+  margin: var(--xt-space-2) 0 0;
+  font-size: var(--xt-font-sm);
+  color: var(--xt-text-dim);
+}
+.mock-guide-item {
+  background: var(--xt-bg-card);
+  border: 1px solid var(--xt-border);
+  border-radius: var(--xt-radius-md);
+  padding: var(--xt-space-3) var(--xt-space-4);
+  margin-top: var(--xt-space-3);
+}
+.mock-guide-item h4 {
+  margin: 0;
+  font-size: var(--xt-font-md);
+  font-weight: 500;
+  color: var(--xt-text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mock-guide-item p {
+  margin: 6px 0 0;
+  font-size: var(--xt-font-sm);
+  color: var(--xt-text-dim);
+  line-height: 1.7;
+}
+/* ===== R73 需求20-B 移动端适配（≤768px）=====
+   仅作用于窄屏；桌面端(>768px)渲染零影响（本块整体位于媒体查询内）。
+   1) 内嵌媒体兜底 max-width，防 JS 注入内容/未来素材撑破窄屏；
+   2) 宽表格窄屏内横向滚动，避免整页横向溢出（需求20-B #2）；
+   3) 字号下限兜底：common.css 的 .bn-label(10px)/.ai-mode-badge(9px)/
+      .study-stats-bar b(9px) 低于 A7 辅助≥11px，页内窄屏提升到 11px（不改共享 common.css）。 */
+@media (max-width: 768px) {
+  img, video, canvas, iframe { max-width: 100%; height: auto; }
+  table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bottom-nav-item .bn-label, .ai-mode-badge, .study-stats-bar b { font-size: 11px; }
+}
+</style>
+</head>
+<body>
+
+<header class="xt-page-head">
+  <a href="javascript:void(0)" onclick="goBack();return false" class="xt-page-back" aria-label="返回">
+    <span class="nav-icon" data-icon="chevron-left" data-icon-size="20"></span>
+  </a>
+  <div style="flex:1;min-width:0">
+    <h1 class="xt-page-title">真题模考</h1>
+    <p class="xt-page-subtitle">按真实考试时间计时 · 自动判分 · 成绩归档</p>
+  </div>
+</header>
+
+<div class="mock-shell">
+  <!-- 【批次 20260913m】考试指南并入真题模考页（用户拍板）：双 tab 结构
+       tab1 = 真题模拟：原套卷列表/倒计时/状态区整体搬入本面板；
+       tab2 = 考试指南：渲染 MINI_BANK 的 cet-guide / exam-guide info 卡内容（内容零删减搬家）。
+       切换逻辑 switchMockTab() 与选中态 .on 同步，参照面测.html 合并页范式。 -->
+  <div class="mock-merge-tabs" role="tablist" aria-label="真题模考分区">
+    <button type="button" class="mock-merge-tab on" id="mockTabBtnMock" role="tab" aria-selected="true" aria-controls="mockTabMock" onclick="switchMockTab('mock')">
+      <span class="nav-icon" data-icon="clipboard" data-icon-size="16"></span>真题模拟
+    </button>
+    <button type="button" class="mock-merge-tab" id="mockTabBtnGuide" role="tab" aria-selected="false" aria-controls="mockTabGuide" onclick="switchMockTab('guide')">
+      <span class="nav-icon" data-icon="book-open" data-icon-size="16"></span>考试指南
+    </button>
+  </div>
+
+  <!-- tab1：真题模拟（原内容整体收纳） -->
+  <div id="mockTabMock" class="mock-merge-panel open" role="tabpanel">
+  <!-- 倒计时条（仅四级显示；空值显示 --；央国企整行隐藏） -->
+  <div class="mock-cd-row" id="cdRow" role="status" aria-label="="距目标考试天数">
+    <span class="nav-icon" data-icon="clock" data-icon-size="18"></span>
+    <span>距目标考试还剩 <b id="cdDays">--</b> 天</span>
+    <span style="margin-left:auto;font-size:var(--xt-font-xs);color:var(--xt-text-hint)" id="cdHint"></span>
+  </div>
+
+  <!-- 卷子列表区 -->
+  <div id="paperGrid" class="mock-paper-grid" aria-label="套卷列表"></div>
+
+  <!-- 状态：空 / 错误 -->
+  <div id="emptyState" class="xt-empty" style="display:none">
+    <div class="xt-empty-icon" data-icon="inbox"></div>
+    <div class="xt-empty-title">暂无套卷</div>
+    <div class="xt-empty-desc">题库加载中或数据未就绪，请稍后再试。</div>
+    <button type="button" class="xt-btn xt-btn-secondary" onclick="window.location.reload()">重新加载</button>
+  </div>
+  <div id="errorState" class="xt-error" style="display:none;margin-top:var(--xt-space-4)">
+    <div class="xt-error-msg" id="errorMsg">题库加载失败，请检查网络后重试。</div>
+    <button type="button" class="xt-error-retry" onclick="window.location.reload()">重试</button>
+  </div>
+
+  <!-- 加载骨架 -->
+  <div id="skeleton" class="mock-paper-grid" aria-hidden="true">
+    <div class="xt-skeleton xl" style="grid-column:1/-1"></div>
+    <div class="xt-skeleton xl" style="grid-column:1/-1"></div>
+    <div class="xt-skeleton xl" style="grid-column:1/-1"></div>
+  </div>
+
+  <!-- 考试指南（【批次 20260913m】改为页内 tab 切换入口，替代原 openMiniQuiz 弹窗死链） -->
+  <div class="mock-guide-row" id="guideRow">
+    <a href="javascript:void(0)" id="guideLink">考试结构与时间分配 → 打开指南</a>
+  </div>
+  </div>
+
+  <!-- tab2：考试指南（MINI_BANK info 卡内容，renderGuideTab() 渲染） -->
+  <div id="mockTabGuide" class="mock-merge-panel" role="tabpanel">
+    <div id="mockGuideBody" aria-live="polite"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  function $(id) { return document.getElementById(id); }
+  function lsKey(name) { return (typeof window.lsKey === 'function') ? window.lsKey(name) : name; }
+  function escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  // —— 工具：根据 URL cat 找数据 key ——
+  function getCategoryKey() {
+    var cat = (new URLSearchParams(window.location.search)).get('cat') || 'cet-mock';
+    var alias = window.MOCK_CAT_ALIAS || {};
+    var key = alias[cat] || (cat === 'cet-mock' ? 'cet4' : (cat === 'exam-mock' ? 'exam' : null));
+    return { cat: cat, key: key };
+  }
+
+  // —— 工具：渲染单张卡片 ——
+  function renderPaperCard(paper, runs, currentState) {
+    var totalQuestions = (paper.questions || []).length;
+    var scoredQuestions = (paper.questions || []).filter(function (q) { return q.scored !== false; }).length;
+    var inProgress = currentState && currentState.paperId === paper.id && currentState.status === 'running';
+    var bestRun = null;
+    runs.forEach(function (r) {
+      if (r.paperId !== paper.id) return;
+      if (!bestRun || (Number(r.score) || 0) > (Number(bestRun.score) || 0)) bestRun = r;
+    });
+    var stageSet = {};
+    (paper.questions || []).forEach(function (q) { if (q.stage) stageSet[q.stage] = true; });
+    var stageLabels = { writing: '写', listening: '听', reading: '读', translation: '译' };
+    var stageNames = { writing: '写作', listening: '听力', reading: '阅读', translation: '翻译' };
+    var stageTags = Object.keys(stageSet).map(function (k) { return '<span class="mpc-tag">' + escHtml(stageNames[k] || k) + '</span>'; }).join('');
+
+    var statusHtml = '';
+    var actionHtml = '';
+    if (inProgress) {
+      var rem = (typeof window.MockEngine !== 'undefined' && typeof window.MockEngine.remaining === 'function') ? window.MockEngine.remaining() : 0;
+      var answered = Object.keys(currentState.answers || {}).length;
+      var mm = window.MockEngine ? window.MockEngine.fmtMMSS(rem) : '--:--';
+      statusHtml = '<div class="mpc-tag is-running">进行中 · 已答 ' + answered + '/' + totalQuestions + ' · 剩余 ' + mm + '</div>';
+      actionHtml = '<a class="xt-btn xt-btn-primary" href="mock_exam_run.html?paper=' + encodeURIComponent(paper.id) + '">继续考试</a>';
+    } else if (bestRun) {
+      statusHtml = '<div class="mpc-tag is-done">已完成 · 最佳 ' + bestRun.score + ' 分</div>';
+      actionHtml = '<a class="xt-btn xt-btn-secondary" href="mock_exam_result.html?paper=' + encodeURIComponent(paper.id) + '&run=' + encodeURIComponent(bestRun.runId) + '">查看成绩</a>' +
+        '<a class="xt-btn xt-btn-primary" href="mock_exam_run.html?paper=' + encodeURIComponent(paper.id) + '">再次挑战</a>';
+    } else {
+      statusHtml = '<div class="mpc-tag">未开始</div>';
+      actionHtml = '<a class="xt-btn xt-btn-primary" href="mock_exam_run.html?paper=' + encodeURIComponent(paper.id) + '">开始考试</a>';
+    }
+
+    var difficultyTag = paper.difficulty ? '<span class="mpc-tag">难度 ' + escHtml(paper.difficulty) + '</span>' : '';
+    var sourceTag = paper.source ? '<span class="mpc-tag">' + escHtml(paper.source) + '</span>' : '';
+    var yearTag = paper.year ? '<span class="mpc-tag">' + paper.year + '</span>' : (paper.year === null ? '<span class="mpc-tag">年份待核</span>' : '');
+
+    return '' +
+      '<article class="mock-paper-card" data-paper="' + escHtml(paper.id) + '">' +
+        '<h3 class="mpc-title">' +
+          '<span class="nav-icon" data-icon="book-open" data-icon-size="18"></span>' +
+          escHtml(paper.title || paper.id) +
+        '</h3>' +
+        '<div class="mpc-meta">' +
+          '<span>题数 <b>' + scoredQuestions + '</b></span>' +
+          '<span>时长 <b>' + (paper.minutes || 15) + '</b> 分钟</span>' +
+        '</div>' +
+        '<div class="mpc-meta">' + stageTags + difficultyTag + sourceTag + yearTag + '</div>' +
+        (bestRun ? '<div class="mpc-best">历史最佳 ' + bestRun.score + ' 分 · 答对 ' + bestRun.correct + '/' + bestRun.total + '</div>' : '') +
+        '<div class="mpc-status">' + statusHtml + '</div>' +
+        '<div class="mpc-actions">' + actionHtml + '</div>' +
+      '</article>';
+  }
+
+  // —— 工具：渲染倒计时（仅四级 cat）——
+  function renderCountdown(cat) {
+    var row = $('cdRow');
+    if (cat !== 'cet-mock') {
+      row.classList.add('is-hidden');
+      return;
+    }
+    var raw = '';
+    try { raw = localStorage.getItem(lsKey('study_workbench_cet4_goal_date')) || ''; } catch (e) { raw = ''; }
+    var dateStr = (raw || '').toString().trim();
+    var daysEl = $('cdDays');
+    var hintEl = $('cdHint');
+    if (!dateStr) {
+      daysEl.textContent = '--';
+      hintEl.textContent = '请到「学习工作台 · 我的目标」设置四级考试日期';
+      return;
+    }
+    var days = (typeof window.countdownDays === 'function') ? window.countdownDays(dateStr) : null;
+    if (days == null || isNaN(days)) {
+      daysEl.textContent = '--';
+      hintEl.textContent = '日期格式无效（应为 YYYY-MM-DD）';
+      return;
+    }
+    daysEl.textContent = String(days);
+    hintEl.textContent = days >= 0 ? '加油 💪' : ('已过 ' + Math.abs(days) + ' 天');
+  }
+
+  // —— 【批次 20260913m】双 tab 切换（选中态 .on 同步，参照面测.html 合并页范式）——
+  window.switchMockTab = function (t) {
+    var isGuide = (t === 'guide');
+    var bM = $('mockTabBtnMock'), bG = $('mockTabBtnGuide');
+    var pM = $('mockTabMock'), pG = $('mockTabGuide');
+    if (!bM || !bG || !pM || !pG) return;
+    bM.classList[isGuide ? 'remove' : 'add']('on');
+    bG.classList[isGuide ? 'add' : 'remove']('on');
+    bM.setAttribute('aria-selected', isGuide ? 'false' : 'true');
+    bG.setAttribute('aria-selected', isGuide ? 'true' : 'false');
+    pM.classList[isGuide ? 'remove' : 'add']('open');
+    pG.classList[isGuide ? 'add' : 'remove']('open');
+  };
+
+  // —— 工具：考试指南链接（原 openMiniQuiz 弹窗入口已并入本页 tab，改为 tab 切换；
+  //        同时修复原链接在本页未加载 mini.js 的死链问题）——
+  function bindGuide() {
+    var link = $('guideLink');
+    if (link) link.setAttribute('onclick', "switchMockTab('guide')");
+  }
+
+  // —— 工具：渲染「考试指南」tab 内容（MINI_BANK info 卡，cet-guide / exam-guide，内容零删减搬家）——
+  function renderGuideTab(cat) {
+    var body = $('mockGuideBody');
+    if (!body) return;
+    var guideId = (cat === 'exam-mock') ? 'exam-guide' : 'cet-guide';
+    var bank = window.MINI_BANK || {};
+    var g = bank[guideId];
+    if (!g || g.mode !== 'info' || !g.items || !g.items.length) {
+      body.innerHTML = '<div class="xt-empty" style="display:block"><div class="xt-empty-title">指南内容加载中</div>' +
+        '<div class="xt-empty-desc">题库数据未就绪，请稍后刷新重试。</div></div>';
+      return;
+    }
+    body.innerHTML =
+      '<h3 class="mock-guide-title">' + escHtml(g.t) + '</h3>' +
+      '<p class="mock-guide-sub">考试要点与临场注意事项，考前过一遍心里更有底。</p>' +
+      g.items.map(function (it) {
+        return '<div class="mock-guide-item">' +
+          '<h4><span>' + escHtml(it.icon || '📌') + '</span>' + escHtml(it.title) + '</h4>' +
+          '<p>' + escHtml(it.body) + '</p>' +
+        '</div>';
+      }).join('');
+  }
+
+  // —— 主渲染 ——
+  function render() {
+    var grid = $('paperGrid');
+    var skeleton = $('skeleton');
+    var empty = $('emptyState');
+    var err = $('errorState');
+    if (skeleton) skeleton.style.display = 'none';
+
+    var catInfo = getCategoryKey();
+    bindGuide();
+    renderGuideTab(catInfo.cat); // 【批次 20260913m】指南 tab 渲染不依赖卷库数据，题库异常时仍可用
+
+    var data = window.MOCK_PAPERS_DATA;
+    if (!data) {
+      grid.style.display = 'none';
+      err.style.display = 'block';
+      $('errorMsg').textContent = '题库加载失败：data/mock-papers.js 未注入';
+      return;
+    }
+    var cat = data[catInfo.key];
+    if (!cat || !cat.papers || !cat.papers.length) {
+      grid.style.display = 'none';
+      empty.style.display = 'block';
+      return;
+    }
+    renderCountdown(catInfo.cat);
+
+    var currentState = null;
+    try {
+      // 检查每张卷是否有 inProgress state（逐 paperId 查）
+      // 此处只查"当前列表第一张"的 paperId 是否运行中；其他卷在卡片渲染时按 paperId 判
+      var firstPaper = cat.papers[0];
+      var raw = localStorage.getItem(lsKey('study_workbench_mockexam_' + firstPaper.id + '_state'));
+      if (raw) {
+        var obj = JSON.parse(raw);
+        if (obj && obj.status === 'running') currentState = obj;
+      }
+    } catch (e) { /* 静默 */ }
+
+    var runs = [];
+    cat.papers.forEach(function (p) {
+      if (window.MockEngine && typeof window.MockEngine.getRuns === 'function') {
+        runs = runs.concat(window.MockEngine.getRuns(p.id));
+      }
+    });
+
+    grid.innerHTML = cat.papers.map(function (paper) {
+      return renderPaperCard(paper, runs, currentState);
+    }).join('');
+
+    // 各卡片自己按 paperId 检查状态
+    cat.papers.forEach(function (paper) {
+      try {
+        var raw = localStorage.getItem(lsKey('study_workbench_mockexam_' + paper.id + '_state'));
+        if (!raw) return;
+        var obj = JSON.parse(raw);
+        if (!obj || obj.status !== 'running') return;
+        // 找到该 card 重渲染（覆盖默认 HTML）
+        var card = grid.querySelector('[data-paper="' + paper.id + '"]');
+        if (card) {
+          var tmp = document.createElement('div');
+          tmp.innerHTML = renderPaperCard(paper, runs, obj);
+          // 替换原 card
+          card.parentNode.replaceChild(tmp.firstChild, card);
+        }
+      } catch (e) { /* 静默 */ }
+    });
+
+    // 触发图标自动渲染（icon-map 自动扫描含 data-icon 元素）
+    if (typeof window.lucideAutoRender === 'function') window.lucideAutoRender();
+  }
+
+  // —— 入口 ——
+  function boot() {
+    if (!window.MOCK_PAPERS_DATA || !window.MockEngine || !window.MINI_BANK) {
+      // 资源还没加载完，等一会（MINI_BANK 由 mini-cet.js / mini-exam.js 注入，供指南 tab 使用）
+      setTimeout(boot, 80);
+      return;
+    }
+    try { render(); }
+    catch (e) {
+      console.error('mock_exam render failed', e);
+      var err = $('errorState');
+      if (err) { err.style.display = 'block'; $('errorMsg').textContent = '页面渲染失败：' + (e && e.message ? e.message : '未知错误'); }
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})();
+</script>
+
+<script>
+/* ==================== 返回按钮 · 显式上级页跳转（T06 修复 2026-09-12 寇豆码） ====================
+   问题：返回按钮原为 href="javascript:history.back()"，语义是「回上一步」而非「回上一级」。
+         用户在 exam↔run 间来回跳后历史栈变成 …→exam→run→exam→run，返回只在这两页乒乓球，
+         永远回不到来源备考页。
+   方案：不再依赖历史栈，改为按 URL 的 cat 参数显式跳转到来源备考页：
+         cat=cet-mock  → 英语.html
+         cat=exam-mock → 行测.html
+         无 cat / 未知  → 兜底 英语.html（四级为默认模考入口）
+   注意：本页可被「英语.html」或「行测.html」进入（带 ?cat=），也可被成绩页返回。 */
+function goBack() {
+  var cat = '';
+  try { cat = (new URLSearchParams(window.location.search)).get('cat') || ''; } catch (e) { cat = ''; }
+  var target = cat === 'exam-mock' ? '行测.html' : '英语.html';
+  window.location.href = target;
+}
+</script>
+
+</body>
+</html>

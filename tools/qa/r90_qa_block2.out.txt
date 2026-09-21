@@ -1,0 +1,136 @@
+==============================================================================
+VIEWPORT 375x667   ok=True
+  [输入栏 .im-composer] rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+    scrollWidth=0 clientWidth=0 overflowX=0 display=flex flexWrap=nowrap gap=8px
+    childCount=11  越界子元素=[]  重叠=[]
+      [0] TEXTAREA#imInput . rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [1] BUTTON# .im-icon rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [2] DIV#imEmojiPanel .im-emoji-panel rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [3] BUTTON#imPlusBtn .im-icon rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [4] BUTTON#imLocBtn .im-icon rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [5] INPUT#imImgInput . rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [6] INPUT#imCameraInput . rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [7] INPUT#imFileInput . rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [8] DIV#imPlusMask .im-plus-mask rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [9] DIV#imPlusMenu .im-plus-menu rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [10] BUTTON# .im-send rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+  [imLocBtn] {"exists": true, "rect": {"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}, "title": "定位", "onclick": "imPlusPickLocation()", "visible": false, "parentId": "", "parentCls": "im-composer"}
+  [图标顺序] [{"id": "", "title": "表情", "x": 0}, {"id": "imPlusBtn", "title": "更多", "x": 0}, {"id": "imLocBtn", "title": "定位", "x": 0}, {"id": "", "title": "", "x": 0}]
+  [XT_LOC_PICK] {"XTRegion": "undefined", "keys": null, "XT_LOC_PICK": "object", "locPickKeys": ["pick", "last", "isCoordinateText", "LAST_KEY", "RECENT_KEY", "openPicker", "recent"], "openPicker": "undefined"}
+  [openAttempt] {"opened": true, "err": ""}
+  [.xtlp] {"rect": {"x": 0, "y": 0, "w": 375, "h": 667, "top": 0, "bottom": 667, "left": 0, "right": 375}, "position": "fixed", "inset": "0px", "top": "0px", "left": "0px", "right": "0px", "bottom": "0px", "display": "block", "flexDirection": "row", "zIndex": "1200", "overflow": "hidden"}
+  [.xtlp-body] {"rect": {"x": 0, "y": 0, "w": 375, "h": 667, "top": 0, "bottom": 667, "left": 0, "right": 375}, "display": "flex", "flexDirection": "column", "overflowY": "visible", "minHeight": "0px", "height": "667px", "scrollHeight": 667, "clientHeight": 667, "overflowYpx": 0}
+    head    rect={"x": 0, "y": 0, "w": 375, "h": 56, "top": 0, "bottom": 56, "left": 0, "right": 375} height=56px minH=auto maxH=none oy=visible scrollH=55 clientH=55
+    search  rect={"x": 12, "y": 66, "w": 351, "h": 39, "top": 66, "bottom": 105, "left": 12, "right": 363} height=39px minH=auto maxH=none oy=visible scrollH=37 clientH=37
+    map     rect={"x": 12, "y": 115, "w": 351, "h": 107, "top": 115, "bottom": 222, "left": 12, "right": 363} height=107px minH=auto maxH=none oy=hidden scrollH=115 clientH=105
+    list    rect={"x": 12, "y": 232, "w": 351, "h": 367, "top": 232, "bottom": 599, "left": 12, "right": 363} height=367px minH=180px maxH=367px oy=auto scrollH=602 clientH=365
+    foot    rect={"x": 0, "y": 599, "w": 375, "h": 68, "top": 599, "bottom": 667, "left": 0, "right": 375} height=68px minH=auto maxH=none oy=visible scrollH=67 clientH=67
+  [overheadAbove] {"sumBlocks": 202, "gaps": [10, 10], "fromLayerTopToListTop": 232}
+  ★CORE innerHeight=667 footBottom=667 footOverflowPx=0 footVisible=True
+  ★CORE listClientHeight=365 listMinOK(>=180)=True listScrollable=True scrollTop 0->237 works=True
+  [因果-修复态] {"footBottom": 667, "footOverflowing": false, "mapHeight": 107, "headHeight": 56, "footHeight": 68, "listClientHeight": 365}
+  [因果-已禁用断点] []
+  [因果-禁用后] {"footBottom": 667, "footOverflowPx": 0, "footOverflowing": false, "listClientHeight": 365, "mapHeight": 107, "headHeight": 56, "footHeight": 68}
+  [含 .xtlp 的 media 断点] [{"cond": "(max-height: 560px)", "sel": 560, "rules": [".xtlp-head { padding: 7px 10px; }", ".xtlp-search { margin: 7px 12px; padding: 6px 10px; }", ".xtlp-map { height: 110px; }", ".xtlp-list { margin: 7px 12px 0px; }", ".xtlp-foot { padding: 8px 12px 10px; }"]}]
+==============================================================================
+VIEWPORT 375x480   ok=True
+  [输入栏 .im-composer] rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+    scrollWidth=0 clientWidth=0 overflowX=0 display=flex flexWrap=nowrap gap=8px
+    childCount=11  越界子元素=[]  重叠=[]
+      [0] TEXTAREA#imInput . rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [1] BUTTON# .im-icon rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [2] DIV#imEmojiPanel .im-emoji-panel rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [3] BUTTON#imPlusBtn .im-icon rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [4] BUTTON#imLocBtn .im-icon rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [5] INPUT#imImgInput . rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [6] INPUT#imCameraInput . rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [7] INPUT#imFileInput . rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [8] DIV#imPlusMask .im-plus-mask rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [9] DIV#imPlusMenu .im-plus-menu rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [10] BUTTON# .im-send rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+  [imLocBtn] {"exists": true, "rect": {"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}, "title": "定位", "onclick": "imPlusPickLocation()", "visible": false, "parentId": "", "parentCls": "im-composer"}
+  [图标顺序] [{"id": "", "title": "表情", "x": 0}, {"id": "imPlusBtn", "title": "更多", "x": 0}, {"id": "imLocBtn", "title": "定位", "x": 0}, {"id": "", "title": "", "x": 0}]
+  [XT_LOC_PICK] {"XTRegion": "undefined", "keys": null, "XT_LOC_PICK": "object", "locPickKeys": ["pick", "last", "isCoordinateText", "LAST_KEY", "RECENT_KEY", "openPicker", "recent"], "openPicker": "undefined"}
+  [openAttempt] {"opened": true, "err": ""}
+  [.xtlp] {"rect": {"x": 0, "y": 0, "w": 375, "h": 480, "top": 0, "bottom": 480, "left": 0, "right": 375}, "position": "fixed", "inset": "0px", "top": "0px", "left": "0px", "right": "0px", "bottom": "0px", "display": "block", "flexDirection": "row", "zIndex": "1200", "overflow": "hidden"}
+  [.xtlp-body] {"rect": {"x": 0, "y": 0, "w": 375, "h": 480, "top": 0, "bottom": 480, "left": 0, "right": 375}, "display": "flex", "flexDirection": "column", "overflowY": "visible", "minHeight": "0px", "height": "480px", "scrollHeight": 480, "clientHeight": 480, "overflowYpx": 0}
+    head    rect={"x": 0, "y": 0, "w": 375, "h": 50, "top": 0, "bottom": 50, "left": 0, "right": 375} height=50px minH=auto maxH=none oy=visible scrollH=49 clientH=49
+    search  rect={"x": 12, "y": 57, "w": 351, "h": 33, "top": 57, "bottom": 90, "left": 12, "right": 363} height=33px minH=auto maxH=none oy=visible scrollH=31 clientH=31
+    map     rect={"x": 12, "y": 97, "w": 351, "h": 110, "top": 97, "bottom": 207, "left": 12, "right": 363} height=110px minH=auto maxH=none oy=hidden scrollH=118 clientH=108
+    list    rect={"x": 12, "y": 214, "w": 351, "h": 180, "top": 214, "bottom": 394, "left": 12, "right": 363} height=180px minH=180px maxH=180px oy=auto scrollH=602 clientH=178
+    foot    rect={"x": 0, "y": 394, "w": 375, "h": 60, "top": 394, "bottom": 454, "left": 0, "right": 375} height=60px minH=auto maxH=none oy=visible scrollH=59 clientH=59
+  [overheadAbove] {"sumBlocks": 193, "gaps": [7, 7], "fromLayerTopToListTop": 214}
+  ★CORE innerHeight=480 footBottom=454 footOverflowPx=-26 footVisible=True
+  ★CORE listClientHeight=178 listMinOK(>=180)=False listScrollable=True scrollTop 0->424 works=True
+  [因果-修复态] {"footBottom": 454, "footOverflowing": false, "mapHeight": 110, "headHeight": 50, "footHeight": 60, "listClientHeight": 178}
+  [因果-已禁用断点] ["(max-height: 560px)"]
+  [因果-禁用后] {"footBottom": 480, "footOverflowPx": 0, "footOverflowing": false, "listClientHeight": 178, "mapHeight": 107, "headHeight": 56, "footHeight": 68}
+  [含 .xtlp 的 media 断点] [{"cond": "(max-height: 560px)", "sel": 560, "rules": [".xtlp-head { padding: 7px 10px; }", ".xtlp-search { margin: 7px 12px; padding: 6px 10px; }", ".xtlp-map { height: 110px; }", ".xtlp-list { margin: 7px 12px 0px; }", ".xtlp-foot { padding: 8px 12px 10px; }"]}]
+==============================================================================
+VIEWPORT 320x480   ok=True
+  [输入栏 .im-composer] rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+    scrollWidth=0 clientWidth=0 overflowX=0 display=flex flexWrap=nowrap gap=6px
+    childCount=11  越界子元素=[]  重叠=[]
+      [0] TEXTAREA#imInput . rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [1] BUTTON# .im-icon rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [2] DIV#imEmojiPanel .im-emoji-panel rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [3] BUTTON#imPlusBtn .im-icon rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [4] BUTTON#imLocBtn .im-icon rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [5] INPUT#imImgInput . rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [6] INPUT#imCameraInput . rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [7] INPUT#imFileInput . rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [8] DIV#imPlusMask .im-plus-mask rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [9] DIV#imPlusMenu .im-plus-menu rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [10] BUTTON# .im-send rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+  [imLocBtn] {"exists": true, "rect": {"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}, "title": "定位", "onclick": "imPlusPickLocation()", "visible": false, "parentId": "", "parentCls": "im-composer"}
+  [图标顺序] [{"id": "", "title": "表情", "x": 0}, {"id": "imPlusBtn", "title": "更多", "x": 0}, {"id": "imLocBtn", "title": "定位", "x": 0}, {"id": "", "title": "", "x": 0}]
+  [XT_LOC_PICK] {"XTRegion": "undefined", "keys": null, "XT_LOC_PICK": "object", "locPickKeys": ["pick", "last", "isCoordinateText", "LAST_KEY", "RECENT_KEY", "openPicker", "recent"], "openPicker": "undefined"}
+  [openAttempt] {"opened": true, "err": ""}
+  [.xtlp] {"rect": {"x": 0, "y": 0, "w": 320, "h": 480, "top": 0, "bottom": 480, "left": 0, "right": 320}, "position": "fixed", "inset": "0px", "top": "0px", "left": "0px", "right": "0px", "bottom": "0px", "display": "block", "flexDirection": "row", "zIndex": "1200", "overflow": "hidden"}
+  [.xtlp-body] {"rect": {"x": 0, "y": 0, "w": 320, "h": 480, "top": 0, "bottom": 480, "left": 0, "right": 320}, "display": "flex", "flexDirection": "column", "overflowY": "visible", "minHeight": "0px", "height": "480px", "scrollHeight": 480, "clientHeight": 480, "overflowYpx": 0}
+    head    rect={"x": 0, "y": 0, "w": 320, "h": 50, "top": 0, "bottom": 50, "left": 0, "right": 320} height=50px minH=auto maxH=none oy=visible scrollH=49 clientH=49
+    search  rect={"x": 12, "y": 57, "w": 296, "h": 33, "top": 57, "bottom": 90, "left": 12, "right": 308} height=33px minH=auto maxH=none oy=visible scrollH=31 clientH=31
+    map     rect={"x": 12, "y": 97, "w": 296, "h": 110, "top": 97, "bottom": 207, "left": 12, "right": 308} height=110px minH=auto maxH=none oy=hidden scrollH=118 clientH=108
+    list    rect={"x": 12, "y": 214, "w": 296, "h": 180, "top": 214, "bottom": 394, "left": 12, "right": 308} height=180px minH=180px maxH=180px oy=auto scrollH=602 clientH=178
+    foot    rect={"x": 0, "y": 394, "w": 320, "h": 60, "top": 394, "bottom": 454, "left": 0, "right": 320} height=60px minH=auto maxH=none oy=visible scrollH=59 clientH=59
+  [overheadAbove] {"sumBlocks": 193, "gaps": [7, 7], "fromLayerTopToListTop": 214}
+  ★CORE innerHeight=480 footBottom=454 footOverflowPx=-26 footVisible=True
+  ★CORE listClientHeight=178 listMinOK(>=180)=False listScrollable=True scrollTop 0->424 works=True
+  [因果-修复态] {"footBottom": 454, "footOverflowing": false, "mapHeight": 110, "headHeight": 50, "footHeight": 60, "listClientHeight": 178}
+  [因果-已禁用断点] ["(max-height: 560px)"]
+  [因果-禁用后] {"footBottom": 480, "footOverflowPx": 0, "footOverflowing": false, "listClientHeight": 178, "mapHeight": 107, "headHeight": 56, "footHeight": 68}
+  [含 .xtlp 的 media 断点] [{"cond": "(max-height: 560px)", "sel": 560, "rules": [".xtlp-head { padding: 7px 10px; }", ".xtlp-search { margin: 7px 12px; padding: 6px 10px; }", ".xtlp-map { height: 110px; }", ".xtlp-list { margin: 7px 12px 0px; }", ".xtlp-foot { padding: 8px 12px 10px; }"]}]
+==============================================================================
+VIEWPORT 320x400   ok=True
+  [输入栏 .im-composer] rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+    scrollWidth=0 clientWidth=0 overflowX=0 display=flex flexWrap=nowrap gap=6px
+    childCount=11  越界子元素=[]  重叠=[]
+      [0] TEXTAREA#imInput . rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [1] BUTTON# .im-icon rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [2] DIV#imEmojiPanel .im-emoji-panel rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [3] BUTTON#imPlusBtn .im-icon rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [4] BUTTON#imLocBtn .im-icon rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [5] INPUT#imImgInput . rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [6] INPUT#imCameraInput . rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [7] INPUT#imFileInput . rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [8] DIV#imPlusMask .im-plus-mask rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [9] DIV#imPlusMenu .im-plus-menu rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+      [10] BUTTON# .im-send rect={"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}
+  [imLocBtn] {"exists": true, "rect": {"x": 0, "y": 0, "w": 0, "h": 0, "top": 0, "bottom": 0, "left": 0, "right": 0}, "title": "定位", "onclick": "imPlusPickLocation()", "visible": false, "parentId": "", "parentCls": "im-composer"}
+  [图标顺序] [{"id": "", "title": "表情", "x": 0}, {"id": "imPlusBtn", "title": "更多", "x": 0}, {"id": "imLocBtn", "title": "定位", "x": 0}, {"id": "", "title": "", "x": 0}]
+  [XT_LOC_PICK] {"XTRegion": "undefined", "keys": null, "XT_LOC_PICK": "object", "locPickKeys": ["pick", "last", "isCoordinateText", "LAST_KEY", "RECENT_KEY", "openPicker", "recent"], "openPicker": "undefined"}
+  [openAttempt] {"opened": true, "err": ""}
+  [.xtlp] {"rect": {"x": 0, "y": 0, "w": 320, "h": 400, "top": 0, "bottom": 400, "left": 0, "right": 320}, "position": "fixed", "inset": "0px", "top": "0px", "left": "0px", "right": "0px", "bottom": "0px", "display": "block", "flexDirection": "row", "zIndex": "1200", "overflow": "hidden"}
+  [.xtlp-body] {"rect": {"x": 0, "y": 0, "w": 320, "h": 400, "top": 0, "bottom": 400, "left": 0, "right": 320}, "display": "flex", "flexDirection": "column", "overflowY": "visible", "minHeight": "0px", "height": "400px", "scrollHeight": 400, "clientHeight": 400, "overflowYpx": 0}
+    head    rect={"x": 0, "y": 0, "w": 320, "h": 50, "top": 0, "bottom": 50, "left": 0, "right": 320} height=50px minH=auto maxH=none oy=visible scrollH=49 clientH=49
+    search  rect={"x": 12, "y": 57, "w": 296, "h": 33, "top": 57, "bottom": 90, "left": 12, "right": 308} height=33px minH=auto maxH=none oy=visible scrollH=31 clientH=31
+    map     rect={"x": 12, "y": 97, "w": 296, "h": 56, "top": 97, "bottom": 153, "left": 12, "right": 308} height=56px minH=auto maxH=none oy=hidden scrollH=60 clientH=54
+    list    rect={"x": 12, "y": 160, "w": 296, "h": 180, "top": 160, "bottom": 340, "left": 12, "right": 308} height=180px minH=180px maxH=120px oy=auto scrollH=602 clientH=178
+    foot    rect={"x": 0, "y": 340, "w": 320, "h": 60, "top": 340, "bottom": 400, "left": 0, "right": 320} height=60px minH=auto maxH=none oy=visible scrollH=59 clientH=59
+  [overheadAbove] {"sumBlocks": 139, "gaps": [7, 7], "fromLayerTopToListTop": 160}
+  ★CORE innerHeight=400 footBottom=400 footOverflowPx=0 footVisible=True
+  ★CORE listClientHeight=178 listMinOK(>=180)=False listScrollable=True scrollTop 0->424 works=True
+  [因果-修复态] {"footBottom": 400, "footOverflowing": false, "mapHeight": 56, "headHeight": 50, "footHeight": 60, "listClientHeight": 178}
+  [因果-已禁用断点] ["(max-height: 560px)"]
+  [因果-禁用后] {"footBottom": 400, "footOverflowPx": 0, "footOverflowing": false, "listClientHeight": 178, "mapHeight": 27, "headHeight": 56, "footHeight": 68}
+  [含 .xtlp 的 media 断点] [{"cond": "(max-height: 560px)", "sel": 560, "rules": [".xtlp-head { padding: 7px 10px; }", ".xtlp-search { margin: 7px 12px; padding: 6px 10px; }", ".xtlp-map { height: 110px; }", ".xtlp-list { margin: 7px 12px 0px; }", ".xtlp-foot { padding: 8px 12px 10px; }"]}]

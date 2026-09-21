@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 星途 · 启动闪屏中央 Logo（白色五角星矢量，尺寸 96dp，居中显示）。
+     与 ic_launcher_foreground 同一几何，仅改尺寸便于闪屏观感（不过小/不过大）。 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M 54.000,21.000 L 62.147,42.787 L 85.385,43.802 L 67.182,58.283 L 73.397,80.698 L 54.000,67.860 L 34.603,80.698 L 40.818,58.283 L 22.615,43.802 L 45.853,42.787 Z" />
+</vector>

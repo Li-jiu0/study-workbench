@@ -1,0 +1,26 @@
+############################################################
+# 跨线文件冲突检测  crossline_conflict_20260916m.py
+# 参与线数: 13
+############################################################
+
+== 各线独占清单 ==
+  任务一      : assets/app.js
+  任务二      : assets/ai-service.js
+  任务三      : AI.html, assets/ai-page.js
+  任务四      : 工具.html, assets/common.css
+  任务五      : assets/cet-read.js
+  任务六      : assets/voiceplayer.js, 英语.html
+  任务七      : AI模拟面试.html, assets/iv-prep.js
+  任务八      : 演示.html, assets/ppt-tips.js, assets/data-ppt-tips.js
+  任务九      : PPT版式库.html, assets/data-ppt-templates.js, assets/tpl-preview.js
+  任务十      : 申论刷题.html
+  任务十一     : 错题本.html
+  任务十二     : 个人中心.html
+  任务十三     : 学习概括.html, assets/notify.js
+
+== 两两交集 ==
+  (无冲突, 所有线的独占文件两两不相交)
+
+============================================================
+===== 总结: ALL DISJOINT (无冲突) =====
+============================================================

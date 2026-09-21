@@ -1,0 +1,9 @@
+RC=0
+--- STDOUT ---
+ISACTIVE=active
+NRESTARTS=0
+TRACEBACK=0
+LSTAMP=Sep 17 16:38:22 VM-0-10-ubuntu systemd[1]: Started study-workbench.service - Study Workbench FastAPI Backend. Sep 17 16:38:23 VM-0-10-ubuntu uvicorn[2328058]: INFO: Started server process [2328058] Sep 17 16:38:23 VM-0-10-ubuntu uvicorn[2328058]: INFO: Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+
+--- STDERR ---
+

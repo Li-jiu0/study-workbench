@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "D:\下载的文件\学习工作台\server\scripts\smoke_r72_chat.py", line 25, in <module>
+    from fastapi.testclient import TestClient  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\下载的文件\学习工作台\server\.venv\Lib\site-packages\fastapi\__init__.py", line 5, in <module>
+    from starlette import status as status
+ModuleNotFoundError: No module named 'starlette'

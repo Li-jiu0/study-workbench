@@ -1,0 +1,120 @@
+
+=== blog_wechat.html ===
+  替换 12 处: bn-icon[🏠→home], bn-icon[💬→message-circle], bn-icon[👤→user], bn-icon[🧰→wrench], bn-icon[☰→menu], bm-icon[📊→chart-bar], bm-icon[📒→book], bm-icon[⚙️→settings], bm-icon[ℹ️→info], bm-icon[🎙️→mic], bm-icon[📊→chart-bar], bm-icon[📖→book-open]
+  跳过 2 处(无合适图标): bm-icon[🗂️], bm-icon[⚡]
+  bump: no-g-found
+  ✓ 已写入
+
+=== PPT案例拆解.html ===
+  替换 9 处: bn-icon[🏠→home], bn-icon[💬→message-circle], bn-icon[👤→user], bn-icon[🧰→wrench], bn-icon[☰→menu], bm-icon[📊→chart-bar], bm-icon[📒→book], bm-icon[⚙️→settings], bm-icon[ℹ️→info]
+  跳过 1 处(无合适图标): bm-icon[📁]
+  bump: no-g-found
+  ✓ 已写入
+
+=== PPT版式库.html ===
+  替换 9 处: bn-icon[🏠→home], bn-icon[💬→message-circle], bn-icon[👤→user], bn-icon[🧰→wrench], bn-icon[☰→menu], bm-icon[📊→chart-bar], bm-icon[📒→book], bm-icon[⚙️→settings], bm-icon[ℹ️→info]
+  跳过 2 处(无合适图标): bm-icon[📁], title-icon[📐]
+  bump: no-g-found
+  ✓ 已写入
+
+=== PPT训练.html ===
+  替换 9 处: bn-icon[🏠→home], bn-icon[💬→message-circle], bn-icon[👤→user], bn-icon[🧰→wrench], bn-icon[☰→menu], bm-icon[📊→chart-bar], bm-icon[📒→book], bm-icon[⚙️→settings], bm-icon[ℹ️→info]
+  跳过 1 处(无合适图标): bm-icon[📁]
+  bump: no-g-found
+  ✓ 已写入
+
+=== 万能金句库.html ===
+  替换 9 处: bn-icon[🏠→home], bn-icon[💬→message-circle], bn-icon[👤→user], bn-icon[🧰→wrench], bn-icon[☰→menu], bm-icon[📊→chart-bar], bm-icon[📒→book], bm-icon[⚙️→settings], bm-icon[ℹ️→info]
+  跳过 2 处(无合适图标): bm-icon[📁], title-icon[✨]
+  bump: no-g-found
+  ✓ 已写入
+
+=== 动态.html ===
+  替换 9 处: bn-icon[🏠→home], bn-icon[💬→message-circle], bn-icon[👤→user], bn-icon[🧰→wrench], bn-icon[☰→menu], bm-icon[🌏→globe], bm-icon[📊→chart-bar], bm-icon[⚙️→settings], bm-icon[ℹ️→info]
+  跳过 1 处(无合适图标): bm-icon[📁]
+  bump: no-g-found
+  ✓ 已写入
+
+=== 商务礼仪.html ===
+  替换 9 处: bn-icon[🏠→home], bn-icon[💬→message-circle], bn-icon[👤→user], bn-icon[🧰→wrench], bn-icon[☰→menu], bm-icon[📊→chart-bar], bm-icon[📒→book], bm-icon[⚙️→settings], bm-icon[ℹ️→info]
+  跳过 2 处(无合适图标): bm-icon[📁], title-icon[👔]
+  bump: no-g-found
+  ✓ 已写入
+
+=== 商务礼仪面试.html ===
+  替换 9 处: bn-icon[🏠→home], bn-icon[💬→message-circle], bn-icon[👤→user], bn-icon[🧰→wrench], bn-icon[☰→menu], bm-icon[📊→chart-bar], bm-icon[📒→book], bm-icon[⚙️→settings], bm-icon[ℹ️→info]
+  跳过 1 处(无合适图标): bm-icon[📁]
+  bump: no-g-found
+  ✓ 已写入
+
+=== 四级词汇.html ===
+  替换 9 处: bn-icon[🏠→home], bn-icon[💬→message-circle], bn-icon[👤→user], bn-icon[🧰→wrench], bn-icon[☰→menu], bm-icon[📊→chart-bar], bm-icon[📒→book], bm-icon[⚙️→settings], bm-icon[ℹ️→info]
+  跳过 1 处(无合适图标): bm-icon[📁]
+  bump: no-g-found
+  ✓ 已写入
+
+=== 场景话术库.html ===
+  替换 9 处: bn-icon[🏠→home], bn-icon[💬→message-circle], bn-icon[👤→user], bn-icon[🧰→wrench], bn-icon[☰→menu], bm-icon[📊→chart-bar], bm-icon[📒→book], bm-icon[⚙️→settings], bm-icon[ℹ️→info]
+  跳过 1 处(无合适图标): bm-icon[📁]
+  bump: no-g-found
+  ✓ 已写入
+
+=== 学习工作台.html ===
+  替换 0 处: 
+  bump: 12→bumped, residual-g=0
+
+=== 更多.html ===
+  替换 16 处: mpc-icon[📊→chart-bar], mpc-icon[📒→book], mpc-icon[⚙️→settings], mpc-icon[ℹ️→info], bn-icon[🏠→home], bn-icon[💬→message-circle], bn-icon[👤→user], bn-icon[🧰→wrench], bn-icon[☰→menu], bm-icon[📊→chart-bar], bm-icon[📒→book], bm-icon[⚙️→settings], bm-icon[ℹ️→info], bm-icon[🎙️→mic], bm-icon[📊→chart-bar], bm-icon[📖→book-open]
+  跳过 3 处(无合适图标): mpc-icon[📁], bm-icon[📁], bm-icon[⚡]
+  bump: no-g-found
+  ✓ 已写入
+
+=== 私聊.html ===
+  替换 9 处: bn-icon[🏠→home], bn-icon[💬→message-circle], bn-icon[👤→user], bn-icon[🧰→wrench], bn-icon[☰→menu], bm-icon[📊→chart-bar], bm-icon[📒→book], bm-icon[⚙️→settings], bm-icon[ℹ️→info]
+  跳过 1 处(无合适图标): bm-icon[📁]
+  bump: no-g-found
+  ✓ 已写入
+
+=== 面试题库.html ===
+  替换 9 处: bn-icon[🏠→home], bn-icon[💬→message-circle], bn-icon[👤→user], bn-icon[🧰→wrench], bn-icon[☰→menu], bm-icon[📊→chart-bar], bm-icon[📒→book], bm-icon[⚙️→settings], bm-icon[ℹ️→info]
+  跳过 2 处(无合适图标): bm-icon[📁], title-icon[❓]
+  bump: no-g-found
+  ✓ 已写入
+
+=== 错题本.html ===
+  替换 9 处: bn-icon[🏠→home], bn-icon[💬→message-circle], bn-icon[👤→user], bn-icon[🧰→wrench], bn-icon[☰→menu], bm-icon[📊→chart-bar], bm-icon[📒→book], bm-icon[⚙️→settings], bm-icon[ℹ️→info]
+  跳过 1 处(无合适图标): bm-icon[📁]
+  bump: no-g-found
+  ✓ 已写入
+
+=== 行测刷题.html ===
+  替换 9 处: bn-icon[🏠→home], bn-icon[💬→message-circle], bn-icon[👤→user], bn-icon[🧰→wrench], bn-icon[☰→menu], bm-icon[📊→chart-bar], bm-icon[📒→book], bm-icon[⚙️→settings], bm-icon[ℹ️→info]
+  跳过 2 处(无合适图标): bm-icon[📁], title-icon[🧩]
+  bump: no-g-found
+  ✓ 已写入
+
+========== 汇总: 替换 145 处 / 跳过 23 处 ==========
+跳过清单:
+  blog_wechat.html:bm-icon:🗂️
+  blog_wechat.html:bm-icon:⚡
+  PPT案例拆解.html:bm-icon:📁
+  PPT版式库.html:bm-icon:📁
+  PPT版式库.html:title-icon:📐
+  PPT训练.html:bm-icon:📁
+  万能金句库.html:bm-icon:📁
+  万能金句库.html:title-icon:✨
+  动态.html:bm-icon:📁
+  商务礼仪.html:bm-icon:📁
+  商务礼仪.html:title-icon:👔
+  商务礼仪面试.html:bm-icon:📁
+  四级词汇.html:bm-icon:📁
+  场景话术库.html:bm-icon:📁
+  更多.html:mpc-icon:📁
+  更多.html:bm-icon:📁
+  更多.html:bm-icon:⚡
+  私聊.html:bm-icon:📁
+  面试题库.html:bm-icon:📁
+  面试题库.html:title-icon:❓
+  错题本.html:bm-icon:📁
+  行测刷题.html:bm-icon:📁
+  行测刷题.html:title-icon:🧩

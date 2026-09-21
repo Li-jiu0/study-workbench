@@ -1,0 +1,24 @@
+PASS | 我的文件.html：列表条数 = 2作品 + 1题库 = 3 | got=3
+PASS | 我的文件.html：统计条渲染
+PASS | 我的文件.html：模块下拉含 all/题库/PPT作品 | all,题库,PPT作品
+PASS | 我的文件.html：筛选「题库」后 1 条 | got=1
+PASS | 我的文件.html：xtFilesDel 删除题库生效 | 3->2
+PASS | 我的文件.html：xtFilesAdd/Filter/Open/Del/Render/Register/Remove 均存在
+PASS | 导入题库.html：引用 qbank.js
+PASS | 导入题库.html：引用 importer.js
+PASS | 导入题库.html：window.openImporter 存在
+PASS | 导入题库.html：window.__impBanks 存在
+PASS | 导入题库.html：存在 #impBody 与 #importerView
+PASS | 更多.html：无「穿越英语」
+PASS | 更多.html：导入题库卡指向 导入题库.html
+PASS | 更多.html：已移除 importer-view DOM
+PASS | 更多.html：已移除 openImporterView 逻辑
+PASS | 个人中心.html：xtFolio* 0 命中
+PASS | 个人中心.html：新入口卡 onclick -> 我的文件.html
+PASS | 个人中心.html：入口卡文案「我的文件」
+PASS | 演示.html：功能块清空（无 pptStatsCard）
+PASS | 演示.html：功能块清空（无 pptWorkList）
+PASS | 演示.html：功能块清空（无 pptHub/pptPanel）
+PASS | 演示.html：存在跳转按钮
+PASS | 演示.html：存在自动跳转提示
+PASS | 演示.html：内联脚本无报错执行（#page-ppt 存在）

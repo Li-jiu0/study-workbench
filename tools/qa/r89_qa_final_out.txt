@@ -1,0 +1,203 @@
+======================================================================
+R89 收尾静态核查
+======================================================================
+
+### 1. 占位符 / TODO / 未完成标记扫描
+  私聊.html                    命中=3
+      L175   [占位] <!-- R88-I：底部滑出的加号浮层菜单（遮罩点击 / 再点「+」/ ESC 关闭）；四项均真可用，无假占位 -->
+      L664   [占位] real(tab);        // 复用原逻辑：tab 高亮切换 + 列表占位渲染（渲染结果被面板覆盖）
+      L855   [占位] /* 在视图里点左侧会话 → 先收起视图，避免两个视图同时占位 */
+  assets/xt-profile.js       命中=1
+      L1013  [占位] // 最近动态列表（非好友 403 → 「仅好友可见」占位）
+  assets/xt-profile.css      命中=2
+      L38    [占位] /* 阻断bug修复：空载全屏宿主防拦截——无内容时不占位、不参与命中；
+      L67    [占位] /* 通用中性底 / 前景（头像占位、分段控件、进度条轨道等） */
+  地区选择.html                  命中=0
+  assets/xt-region.js        命中=0
+  assets/xt-moments.js       命中=0
+  更新.html                    命中=0
+  更多.html                    命中=0
+  朋友圈发布.html                 命中=0
+  assets/common.css          命中=1
+      L1057  [占位] /* 占位提示 */
+
+### 2. 与最近备份比对（改动文件）
+  私聊.html                    当前=77268   备份=['私聊.html.bak-pre-stamp-20260917b(58637)', '私聊.html.bak-pre-stamp-20260918a(58637)', '私聊.html.bak-r33(32012)']
+      与 私聊.html.bak-r33 逐字节相同: False
+      差异行数 = 1170（期望 >0，证明确有改动）
+  assets/xt-profile.js       当前=141938  备份=['xt-profile.js.bak-pre-r73-profile-v2-20260917(40616)', 'xt-profile.js.bak-pre-r73-profile-v3-20260917(66907)', 'xt-profile.js.bak-pre-r74-20260917(81382)']
+      与 xt-profile.js.bak-pre-r74-20260917 逐字节相同: False
+      差异行数 = 2509（期望 >0，证明确有改动）
+  assets/xt-profile.css      当前=39465   备份=['xt-profile.css.bak-pre-r73-profile-v2-20260917(14232)', 'xt-profile.css.bak-pre-r73-profile-v3-20260917(22450)', 'xt-profile.css.bak-pre-r74-20260917(26371)']
+      与 xt-profile.css.bak-pre-r74-20260917 逐字节相同: False
+      差异行数 = 550（期望 >0，证明确有改动）
+  地区选择.html                  当前=19110   备份=NONE
+  assets/xt-region.js        当前=46800   备份=NONE
+  assets/xt-moments.js       当前=58723   备份=['xt-moments.js.bak-pre-r78-20260917(45628)', 'xt-moments.js.bak-pre-r82-20260917(48355)', 'xt-moments.js.bak-pre-r84-20260917(49320)']
+      与 xt-moments.js.bak-pre-r84-20260917 逐字节相同: False
+      差异行数 = 530（期望 >0，证明确有改动）
+  更新.html                    当前=23107   备份=['更新.html.bak-pre-r87-20260918(21427)']
+      与 更新.html.bak-pre-r87-20260918 逐字节相同: False
+      差异行数 = 284（期望 >0，证明确有改动）
+
+### 3. 未授权改动：全库近期（9/18 之后）被改的文件
+  近期改动文件数 = 139
+      .gitignore                                 09-18 15:18  5507
+      AI.html                                    09-18 19:06  56608
+      AI402问题根因分析与服务器配置清单.md                     09-18 01:55  5726
+      AI模型对接文档.md                                09-18 15:34  15347
+      AI模拟面试.html                                09-18 19:06  88574
+      Gemini连接问题排查与处理方案.md                       09-18 00:11  3474
+      PPT案例拆解.html                               09-18 19:06  14516
+      PPT版式库.html                                09-18 19:06  17440
+      _r86a_inline.js                            09-18 12:39  5864
+      _r86a_mutate.js                            09-18 12:38  16527
+      _r86a_verify.js                            09-18 12:42  10782
+      _r89_probe.py                              09-18 19:27  2009
+      _r89_probe2.py                             09-18 19:27  1766
+      _r89_probe2_out.txt                        09-18 19:27  6189
+      _r89_probe3.py                             09-18 19:27  751
+      _r89_probe3_out.txt                        09-18 19:27  15244
+      _r89_probe4.py                             09-18 19:27  682
+      _r89_probe4_out.txt                        09-18 19:27  11256
+      _r89_probe5.py                             09-18 19:28  1165
+      _r89_probe5_out.txt                        09-18 19:28  2459
+      _r89_probe6.py                             09-18 19:28  1415
+      _r89_probe6_out.txt                        09-18 19:28  2419
+      _r89_probe7.py                             09-18 19:28  862
+      _r89_probe7_out.txt                        09-18 19:28  15304
+      _r89_probe8.py                             09-18 19:28  1445
+      _r89_probe8_out.txt                        09-18 19:28  17446
+      _r89_probe_out.txt                         09-18 19:27  2305
+      ai-settings.html                           09-18 19:06  44729
+      android\AndroidManifest.xml                09-18 12:02  3307
+      android\build_apk.py                       09-18 01:11  11706
+      assets\ai-cap-3d.js                        09-18 16:30  15769
+      assets\ai-cap-audio.js                     09-18 16:27  13050
+      assets\ai-cap-embed.js                     09-18 16:27  9513
+      assets\ai-cap-image.js                     09-18 16:27  3822
+      assets\ai-cap-registry.js                  09-18 14:23  4343
+      assets\ai-cap-translate.js                 09-18 16:27  11357
+      assets\ai-cap-video.js                     09-18 16:30  14861
+      assets\ai-cap-vision.js                    09-18 16:30  8510
+      assets\ai-config.js                        09-18 16:27  46895
+      assets\ai-page.js                          09-18 18:56  133571
+      assets\ai-service.js                       09-18 18:54  148942
+      assets\ai-settings.js                      09-18 18:55  134478
+      assets\api.js                              09-18 18:13  116089
+      assets\app.js                              09-18 18:13  7088848
+      assets\chat-local.js                       09-18 18:19  240000
+      assets\common.css                          09-18 18:51  127605
+      assets\icon-map.js                         09-18 18:18  39868
+      assets\xt-aiusage.js                       09-18 18:17  74121
+      assets\xt-moments.js                       09-18 19:33  58723
+      assets\xt-profile.css                      09-18 19:31  39465
+      assets\xt-profile.js                       09-18 19:31  141938
+      assets\xt-region.js                        09-18 19:30  46800
+      assets\xt-settings.js                      09-18 12:47  6138
+      assets\xt-update.js                        09-18 18:52  38340
+      assets\赞助收款码2.jpg                          09-18 11:58  146232
+      blog_wechat.html                           09-18 19:06  25426
+      deliverables\software-company\ai-models-incremental-PRD-20260918.md 09-18 16:07  49181
+      deliverables\software-company\ai-models-incremental-design-20260918.md 09-18 16:30  51157
+      deliverables\software-company\class-diagram.mermaid 09-18 16:14  2912
+      deliverables\software-company\sequence-diagram.mermaid 09-18 16:14  4085
+      docs\audit-r88b-展示即真可用.md                  09-18 18:16  24010
+      docs\class-diagram-r88b-media.mermaid      09-18 18:20  6723
+      docs\class-diagram.mermaid                 09-18 18:05  2446
+      docs\design-r88-hi-位置定位与私聊加号菜单.md          09-18 18:07  37212
+      docs\design-r88b-服务端中转端点与真可用修复.md          09-18 18:26  80590
+      docs\prd-r88-hi-位置定位与私聊加号菜单.md             09-18 18:03  16878
+      docs\qa-report-r88-hi.md                   09-18 18:22  30820
+      docs\review-r88f-服务端用量审查与修复.md             09-18 18:21  22853
+      docs\sequence-diagram-r88b-media.mermaid   09-18 18:20  5751
+      docs\sequence-diagram.mermaid              09-18 18:05  3042
+      error_screenshot.png                       09-18 01:40  95632
+      mock_exam.html                             09-18 19:06  23402
+      mock_exam_result.html                      09-18 19:06  12888
+      mock_exam_run.html                         09-18 19:06  32697
+      server\.env                                09-18 15:18  2291
+      server\config.py                           09-18 19:05  6132
+      server\data.db                             09-18 15:05  184320
+      server\data\model_quota.json               09-18 15:26  3811
+      server\data\model_registry.json            09-18 15:25  4510
+      server\data\model_usage.json               09-18 18:33  56
+      server\filecheck.py                        09-18 19:06  8286
+      server\main.py                             09-18 19:05  3652
+      server\quota_ledger.py                     09-18 18:53  16275
+      server\rate_limit.py                       09-18 18:17  4688
+      server\routers\ai.py                       09-18 18:54  17773
+      server\routers\update.py                   09-18 14:00  9097
+      server\routers\uploads.py                  09-18 19:05  6131
+      server\routers\users.py                    09-18 12:48  16867
+      server\routers\version.json                09-18 15:33  4373
+      server\schemas.py                          09-18 15:03  13401
+      web\static\apk\.gitkeep                    09-18 16:31  0
+      web\static\apk\README.md                   09-18 16:31  1266
+      万能金句库.html                                 09-18 19:06  15810
+      个人中心.html                                  09-18 19:06  95502
+      个人资料.html                                  09-18 19:06  2959
+      交接文档-20260918h-第六批执行现状与对接.md               09-18 16:55  31856
+      企业定向库.html                                 09-18 19:06  24760
+      关于.html                                    09-18 19:06  26983
+      动态空间.html                                  09-18 19:06  14657
+      商务礼仪.html                                  09-18 19:06  15711
+      四级词汇.html                                  09-18 19:06  20923
+      地区选择.html                                  09-18 19:30  19110
+      场景话术库.html                                 09-18 19:06  19943
+      备份\登录.html.backup-20260918-motto           09-18 00:57  37639
+      备份\登录.html.backup-20260918-online-label    09-18 00:49  37600
+      备份\登录.html.backup-20260918-opensource      09-18 00:54  37565
+      备份\设置.html.backup-20260918-bind-trim       09-18 00:45  163569
+      好友申请.html                                  09-18 19:06  13021
+      学习工作台-安卓App.apk                            09-18 01:04  86532523
+      学习工作台.html                                 09-18 19:06  53267
+      学习概括.html                                  09-18 19:06  46835
+      学途.html                                    09-18 19:06  42906
+      导入题库.html                                  09-18 19:06  23347
+      工具.html                                    09-18 19:06  29944
+      我的动态.html                                  09-18 19:06  12022
+      我的文件.html                                  09-18 19:06  54429
+      时政热点.html                                  09-18 19:06  25551
+      星途-安卓App.apk                               09-18 02:17  86532523
+      更多.html                                    09-18 19:06  18875
+      更新.html                                    09-18 19:30  23107
+      更新日志-20260918-第六批-R87.md                   09-18 16:55  20573
+      朋友圈发布.html                                 09-18 19:06  12612
+      演示.html                                    09-18 19:06  16920
+      申论刷题.html                                  09-18 19:06  95231
+      登录.html                                    09-18 19:06  37590
+      社区.html                                    09-18 19:06  48737
+      私聊.html                                    09-18 19:33  77268
+      管理员.html                                   09-18 19:06  18169
+      给接手AI的开场指令-20260918h.txt                   09-18 16:56  19088
+      英语.html                                    09-18 19:06  46634
+      行测.html                                    09-18 19:06  26432
+      行测刷题.html                                  09-18 19:06  19277
+      表达.html                                    09-18 19:06  33129
+      设置.html                                    09-18 19:06  164991
+      赞助.html                                    09-18 19:06  26574
+      错题本.html                                   09-18 19:06  37567
+      需求文档-各平台模型状态更新.md                          09-18 00:14  7638
+      面测.html                                    09-18 19:06  60203
+      面试题库.html                                  09-18 19:06  14465
+
+### 4. common.css 最终复核
+  字节 = 127605 (期望 127605) OK
+  L68 = 'html, body { height: 100%; overflow: hidden; }'
+  L68 与期望一致: True
+
+### 5. 版本号一致性（query string）
+  私聊.html              v=['20260916O', '20260917b', '20260918a', '20260918c', '20260918d']
+  地区选择.html            v=['20260916O', '20260918a', '20260918d']
+  更新.html              v=['20260916O', '20260917b', '20260918d']
+  个人资料.html            v=['20260917', '20260917b', '20260918d']
+  朋友圈发布.html           v=['20260916O', '20260917b', '20260918a', '20260918c', '20260918d']
+
+### 6. 改动文件是否仍引用 common.css（未被误删）
+  私聊.html              common.css 引用=2
+  地区选择.html            common.css 引用=2
+  更新.html              common.css 引用=1
+
+### 7. 关键字残留：旧误导文案（全批）
+  （无输出 = 全批已无旧误导原文）

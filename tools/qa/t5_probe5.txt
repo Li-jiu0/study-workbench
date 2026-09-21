@@ -1,0 +1,84 @@
+====== 英语四级备考（博/帖标题）
+  四级经验分享.html |     title: '英语四级备考全攻略！零基础也能搞定的实用
+  四级经验分享.html |     title: '英语四级备考小技巧：单词是基础，方法是关
+
+====== 行测…央国企笔试（会重复）
+  assets\chat-local.js | 满正能量。你和用户一起备考四级、行测、央国企笔试等。语气热情鼓励，会主动关心用户
+  assets\chat-local.js | 、乐于助人。你擅长回答四级备考、行测技巧、央国企笔试、面试准备、PPT制作、学习方法
+
+====== 央国企笔试…行测（会重复）
+  设置.html |  · 行测刷题 · 错题本 · 央国企笔试(行测/企业定向库/时政热点/真题模考
+
+====== 英语…四级备考（会重复）
+  四级经验分享.html |     title: '英语四级备考全攻略！零基础也能搞定的实用干货
+  四级经验分享.html |     title: '英语四级备考小技巧：单词是基础，方法是关键'
+  assets\ai-page.js | ', applicable: '英语翻译、四级备考、多语言问答' }
+  assets\app.js | 比较熟，给你指个路：\n\n· 英语：四级备考（任务清单与目标日）、四级词汇（
+
+====== 表达…高情商表达
+
+====== 演示…PPT训练
+
+====== 全部 四级备考 上下文
+  AI.html | pen"></span><span>四级备考</span>
+  PPT案例拆解.html | pen"></span><span>四级备考</span>
+  PPT版式库.html | pen"></span><span>四级备考</span>
+  PPT训练.html | pen"></span><span>四级备考</span> </div> <di
+  blog_wechat.html | pen"></span><span>四级备考</span></div>
+  blog_wechat.html | pen"></span><span>四级备考</span></div>
+  mock_exam.html |   cat=cet-mock  → 四级备考.html
+  mock_exam.html |  无 cat / 未知  → 兜底 四级备考.html（四级为默认模考入口）
+  mock_exam.html |    注意：本页可被「四级备考.html」或「央国企笔试.html
+  mock_exam.html | ? '央国企笔试.html' : '四级备考.html';
+  万能金句库.html | pen"></span><span>四级备考</span>
+  个人中心.html | pen"></span><span>四级备考</span> </div> <di
+  企业定向库.html | pen"></span><span>四级备考</span>
+  动态.html | pen"></span><span>四级备考</span> </div> <di
+  商务礼仪.html | pen"></span><span>四级备考</span>
+  商务礼仪面试.html | pen"></span><span>四级备考</span>
+  四级备考.html | <title>四级备考 · 星途</title>
+  四级备考.html | pen"></span><span>四级备考</span>
+  四级备考.html |  id="topbarTitle">四级备考</div>
+  四级经验分享.html |     title: '英语四级备考全攻略！零基础也能搞定的实用干货',
+  四级经验分享.html |     title: '英语四级备考小技巧：单词是基础，方法是关键',
+  四级词汇.html | pen"></span><span>四级备考</span>
+  场景话术库.html | pen"></span><span>四级备考</span>
+  央国企笔试.html | pen"></span><span>四级备考</span>
+  学习博客.html | pen"></span><span>四级备考</span>
+  学习工作台.html | NSurxNDz0fQVe26c">四级备考</span>
+  学途.html |     reading: '四级备考.html',
+  学途.html |     writing: '四级备考.html',
+  学途.html |     translate: '四级备考.html',
+  工具.html | pen"></span><span>四级备考</span>
+  时政热点.html | pen"></span><span>四级备考</span>
+  更多.html | pen"></span><span>四级备考</span>
+  更多.html | pen"></span><span>四级备考</span>
+  申论刷题.html | pen"></span><span>四级备考</span>
+  私聊.html | pen"></span><span>四级备考</span> </div> <di
+  管理员.html | pen"></span><span>四级备考</span>
+  行测刷题.html | pen"></span><span>四级备考</span>
+  设置.html | L1OGLzbJ1rHBYpbg">四级备考</span>
+  设置.html | 听说训练(情景口语/听力精听) · 四级备考(听力/口语/阅读/翻译) · 行测
+  设置.html | · 更新日期 2026-09-13：四级备考「听力训练」升级为页内面板（听力精听
+  设置.html | id: 'cet', name: '四级备考' }, { id: 'exam',
+  错题本.html | pen"></span><span>四级备考</span>
+  面试题库.html | pen"></span><span>四级备考</span>
+  高情商表达.html | pen"></span><span>四级备考</span>
+  assets\ai-page.js | applicable: '英语翻译、四级备考、多语言问答' }
+  assets\ai-presets.js | : ["四级", "英语四级", "四级备考", "怎么备考"],
+  assets\ai-presets.js |         "四级备考四步法：\n" +
+  assets\app.js | home: '首页', cet: '四级备考', exam: '央国企笔试备考'
+  assets\app.js |   cet: '四级备考.html', 'speaking-
+  assets\app.js | demo': '四级备考.html',
+  assets\app.js | t names = { cet: '四级备考', exam: '央国企笔试', 
+  assets\app.js | //  · 四级备考.html 只有任务清单与目标日，没
+  assets\app.js | ef || ''), meta: '四级备考 · ' + rel, module
+  assets\app.js | ef || ''), meta: '四级备考 · ' + rel, module
+  assets\app.js | 最后 2 周突击，见效快。\n\n「四级备考」页按词汇 / 听力 / 阅读 / 
+  assets\app.js | 较熟，给你指个路：\n\n· 英语：四级备考（任务清单与目标日）、四级词汇（间隔
+  assets\app.js | 来调整计划强度。\n\n目标日可以在四级备考页或设置里调整。',
+  assets\app.js |  'book-open', t: '四级备考', d: '词汇听力阅读', ur
+  assets\app.js | l: '四级备考.html' },
+  assets\app.js | 词汇.html': 'cet', '四级备考.html': 'listen', 
+  assets\app.js | id: 'cet', name: '四级备考', icon: '📖', dc: 
+  ...(截断)

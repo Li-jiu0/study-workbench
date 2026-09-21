@@ -1,0 +1,66 @@
+{
+  "url": "file:///D:/下载的文件/学习工作台/私聊.html",
+  "viewport": {
+    "width": 320,
+    "height": 480
+  },
+  "ok": true,
+  "result": {
+    "vp": "320x480",
+    "rootRect": {
+      "top": 0,
+      "bottom": 480,
+      "h": 480
+    },
+    "bodyRect": {
+      "top": 0,
+      "bottom": 480,
+      "h": 480
+    },
+    "headRect": {
+      "top": 0,
+      "bottom": 56,
+      "h": 56
+    },
+    "searchRect": {
+      "top": 66,
+      "bottom": 105,
+      "h": 39
+    },
+    "mapRect": {
+      "top": 115,
+      "bottom": 283,
+      "h": 168
+    },
+    "curlineRect": {
+      "top": 237,
+      "bottom": 272,
+      "h": 35
+    },
+    "listRect": {
+      "top": 293,
+      "bottom": 412,
+      "h": 119
+    },
+    "footRect": {
+      "top": 412,
+      "bottom": 480,
+      "h": 68
+    },
+    "listTop": 293,
+    "footTop": 412,
+    "listHeight": 119,
+    "footHeight": 68,
+    "overheadAll": 361,
+    "overheadAbove": 293,
+    "overheadBelow": 68,
+    "configuredMaxH": "180px",
+    "cssMaxHCap": "180px",
+    "scrollH": 602,
+    "clientH": 117,
+    "isActuallyCappedByStyle": false,
+    "gapHeadSearch": 10,
+    "gapMapList": 10,
+    "gapSearchMap": 10
+  }
+}

@@ -1,0 +1,18 @@
+部署 HTML = 47 个（根 HTML 排除 blog_wechat.html）
+部署 assets = 13 个: ai-config.js, ai-service.js, ai-settings.js, ai-page.js, ai-cap-audio.js, ai-cap-embed.js, ai-cap-image.js, ai-cap-vision.js, ai-cap-translate.js, ai-cap-video.js, ai-cap-3d.js, xt-aiusage.js, xt-update.js
+部署 version.json + apk 目录
+
+[闸1 行尾] 47 个 HTML，违规 0 
+
+打包 62 个成员, 573018 bytes -> frontend_r87_20260918.tar.gz
+
+[闸2 新增符号] 9 项，缺失 0 []
+    一致性命中: tools/qa/check_version_consistency.py 存在 = True
+
+[闸3 已删符号] 1 项，残留 0 []
+
+三道闸全部通过 ✅
+本地 MD5 manifest：62 个文件
+目标 root@110.42.134.62（凭据长度 9，不打印）
+
+[DRY-RUN] 本地闸 + 打包完成；跳过上传与远端解包（未触碰生产）。

@@ -1,0 +1,1113 @@
+{
+  "rows": [
+    {
+      "page": "AI.html",
+      "bytes_before": 56608,
+      "bytes_after": 56608,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        },
+        {
+          "asset": "ai-page.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 3
+    },
+    {
+      "page": "AI模拟面试.html",
+      "bytes_before": 88574,
+      "bytes_after": 88574,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "PPT案例拆解.html",
+      "bytes_before": 14516,
+      "bytes_after": 14516,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "PPT版式库.html",
+      "bytes_before": 17440,
+      "bytes_after": 17440,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "ai-settings.html",
+      "bytes_before": 44729,
+      "bytes_after": 44729,
+      "kind": "LF",
+      "loneLF_before": 839,
+      "loneLF_after": 839,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        },
+        {
+          "asset": "ai-settings.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 3
+    },
+    {
+      "page": "blog_wechat.html",
+      "bytes_before": 25330,
+      "bytes_after": 25426,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-config.js",
+          "old": "20260918b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918b",
+          "count": 1
+        },
+        {
+          "asset": "ai-cap-registry.js",
+          "old": null,
+          "count": 1
+        },
+        {
+          "asset": "ai-cap-image.js",
+          "old": null,
+          "count": 1
+        },
+        {
+          "asset": "ai-cap-vision.js",
+          "old": null,
+          "count": 1
+        },
+        {
+          "asset": "ai-cap-audio.js",
+          "old": null,
+          "count": 1
+        },
+        {
+          "asset": "ai-cap-embed.js",
+          "old": null,
+          "count": 1
+        },
+        {
+          "asset": "ai-cap-translate.js",
+          "old": null,
+          "count": 1
+        },
+        {
+          "asset": "ai-cap-video.js",
+          "old": null,
+          "count": 1
+        },
+        {
+          "asset": "ai-cap-3d.js",
+          "old": null,
+          "count": 1
+        }
+      ],
+      "ops_count": 11
+    },
+    {
+      "page": "mock_exam.html",
+      "bytes_before": 23402,
+      "bytes_after": 23402,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        }
+      ],
+      "ops_count": 1
+    },
+    {
+      "page": "mock_exam_result.html",
+      "bytes_before": 12888,
+      "bytes_after": 12888,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        }
+      ],
+      "ops_count": 1
+    },
+    {
+      "page": "mock_exam_run.html",
+      "bytes_before": 32697,
+      "bytes_after": 32697,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        }
+      ],
+      "ops_count": 1
+    },
+    {
+      "page": "万能金句库.html",
+      "bytes_before": 15810,
+      "bytes_after": 15810,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "个人中心.html",
+      "bytes_before": 95502,
+      "bytes_after": 95502,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "个人资料.html",
+      "bytes_before": 2959,
+      "bytes_after": 2959,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "xt-profile.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "xt-profile.js",
+          "old": "20260917b",
+          "count": 1
+        }
+      ],
+      "ops_count": 3
+    },
+    {
+      "page": "企业定向库.html",
+      "bytes_before": 24760,
+      "bytes_after": 24760,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "关于.html",
+      "bytes_before": 26983,
+      "bytes_after": 26983,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "动态空间.html",
+      "bytes_before": 14657,
+      "bytes_after": 14657,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "xt-moments.js",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 3
+    },
+    {
+      "page": "商务礼仪.html",
+      "bytes_before": 15711,
+      "bytes_after": 15711,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "四级词汇.html",
+      "bytes_before": 20923,
+      "bytes_after": 20923,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "地区选择.html",
+      "bytes_before": 15925,
+      "bytes_after": 15925,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        }
+      ],
+      "ops_count": 1
+    },
+    {
+      "page": "场景话术库.html",
+      "bytes_before": 19943,
+      "bytes_after": 19943,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "好友申请.html",
+      "bytes_before": 13021,
+      "bytes_after": 13021,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        }
+      ],
+      "ops_count": 1
+    },
+    {
+      "page": "学习工作台.html",
+      "bytes_before": 53267,
+      "bytes_after": 53267,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "学习概括.html",
+      "bytes_before": 46835,
+      "bytes_after": 46835,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "学途.html",
+      "bytes_before": 42906,
+      "bytes_after": 42906,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        }
+      ],
+      "ops_count": 1
+    },
+    {
+      "page": "导入题库.html",
+      "bytes_before": 23347,
+      "bytes_after": 23347,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "工具.html",
+      "bytes_before": 29944,
+      "bytes_after": 29944,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "我的动态.html",
+      "bytes_before": 12022,
+      "bytes_after": 12022,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "xt-moments.js",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 3
+    },
+    {
+      "page": "我的文件.html",
+      "bytes_before": 54429,
+      "bytes_after": 54429,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "时政热点.html",
+      "bytes_before": 25551,
+      "bytes_after": 25551,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "更多.html",
+      "bytes_before": 18875,
+      "bytes_after": 18875,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "xt-update.js",
+          "old": "20260918c",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 3
+    },
+    {
+      "page": "更新.html",
+      "bytes_before": 21439,
+      "bytes_after": 21439,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "xt-update.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "朋友圈发布.html",
+      "bytes_before": 12612,
+      "bytes_after": 12612,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "xt-moments.js",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 3
+    },
+    {
+      "page": "演示.html",
+      "bytes_before": 16920,
+      "bytes_after": 16920,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "申论刷题.html",
+      "bytes_before": 95231,
+      "bytes_after": 95231,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "登录.html",
+      "bytes_before": 37590,
+      "bytes_after": 37590,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        }
+      ],
+      "ops_count": 1
+    },
+    {
+      "page": "社区.html",
+      "bytes_before": 48737,
+      "bytes_after": 48737,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "私聊.html",
+      "bytes_before": 71537,
+      "bytes_after": 71537,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "管理员.html",
+      "bytes_before": 18169,
+      "bytes_after": 18169,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "英语.html",
+      "bytes_before": 46634,
+      "bytes_after": 46634,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "行测.html",
+      "bytes_before": 26432,
+      "bytes_after": 26432,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "行测刷题.html",
+      "bytes_before": 19277,
+      "bytes_after": 19277,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "表达.html",
+      "bytes_before": 33129,
+      "bytes_after": 33129,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "设置.html",
+      "bytes_before": 164991,
+      "bytes_after": 164991,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "xt-update.js",
+          "old": "20260918c",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 3
+    },
+    {
+      "page": "赞助.html",
+      "bytes_before": 26574,
+      "bytes_after": 26574,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "错题本.html",
+      "bytes_before": 37567,
+      "bytes_after": 37567,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "面测.html",
+      "bytes_before": 60203,
+      "bytes_after": 60203,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    },
+    {
+      "page": "面试题库.html",
+      "bytes_before": 14465,
+      "bytes_after": 14465,
+      "kind": "CRLF",
+      "loneLF_before": 0,
+      "loneLF_after": 0,
+      "loneCR_before": 0,
+      "loneCR_after": 0,
+      "ops": [
+        {
+          "asset": "common.css",
+          "old": "20260917b",
+          "count": 1
+        },
+        {
+          "asset": "ai-service.js",
+          "old": "20260918c",
+          "count": 1
+        }
+      ],
+      "ops_count": 2
+    }
+  ],
+  "errors": []
+}

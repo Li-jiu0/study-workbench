@@ -1,0 +1,3 @@
+[init] {"selExists":true,"isSelect":true,"inSelectrow":true,"optCount":5,"firstOptText":"剩余可用量（少 → 多）","nameOptText":"模型名称","backfillValue":"remaining","noSelectedAttr":true,"oldToggleGone":true,"filterFoldStillThere":true,"sortSelStillThere":true}
+[change] valueAppliedNoError=true consoleErrors=[]
+JSDOM_ALL => PASS

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#5B8DEF">
+<title>企业定向库 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260923c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<link rel="stylesheet" href="assets/polish.css?v=20260916O">
+<style>
+/* ===== 企业定向库页专属样式（T10 / A6，类名统一 cl- 前缀） ===== */
+[hidden] { display: none !important; }
+body { background: var(--xt-bg); }
+.cl-shell { max-width: 980px; margin: 0 auto; padding: var(--xt-space-4) var(--xt-space-4) var(--xt-space-8); }
+.cl-shell .card { background: var(--xt-bg-card); border: 1px solid var(--xt-border); border-radius: var(--xt-radius-lg); padding: var(--xt-space-4); margin-bottom: var(--xt-space-4); box-shadow: var(--xt-shadow-sm); }
+
+/* hero */
+.cl-hero { display: flex; align-items: flex-start; gap: var(--xt-space-3); flex-wrap: wrap; }
+.cl-hero-icon { width: 46px; height: 46px; border-radius: var(--xt-radius-md); background: var(--xt-primary-soft); color: var(--xt-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.cl-hero-main { flex: 1; min-width: 220px; }
+.cl-hero-title { font-size: var(--xt-font-xl); font-weight: 600; color: var(--xt-text); line-height: 1.3; }
+.cl-hero-sub { font-size: var(--xt-font-sm); color: var(--xt-text-dim); margin-top: 4px; }
+.cl-credit { margin-top: var(--xt-space-3); font-size: var(--xt-font-xs); color: var(--xt-text-hint); line-height: 1.6; }
+
+/* 进度条 */
+.cl-prog-head { display: flex; align-items: center; justify-content: space-between; gap: var(--xt-space-3); flex-wrap: wrap; }
+.cl-prog-label { font-size: var(--xt-font-md); font-weight: 600; color: var(--xt-text); display: flex; align-items: center; gap: 6px; }
+.cl-prog-num { font-size: var(--xt-font-sm); color: var(--xt-text-dim); }
+.cl-prog-num b { color: var(--xt-primary); font-size: var(--xt-font-md); }
+.cl-prog-bar { margin-top: var(--xt-space-3); height: 10px; border-radius: 999px; background: var(--xt-bg-muted); overflow: hidden; }
+.cl-prog-bar i { display: block; height: 100%; background: var(--xt-primary); border-radius: 999px; transition: width var(--xt-transition-slow); }
+.cl-prog-hint { margin-top: var(--xt-space-2); font-size: var(--xt-font-xs); color: var(--xt-text-hint); }
+
+#clSearch { margin-top: var(--xt-space-3); }
+.cl-cat-sel { margin-top: var(--xt-space-2); cursor: pointer; }
+
+/* 列表 */
+.cl-grid { display: grid; grid-template-columns: 1fr; gap: var(--xt-space-3); margin-top: var(--xt-space-3); }
+@media (min-width: 760px) { .cl-grid { grid-template-columns: 1fr 1fr; } }
+.cl-card { border: 1px solid var(--xt-border); border-radius: var(--xt-radius-md); padding: var(--xt-space-3); background: var(--xt-bg-card); transition: all var(--xt-transition); }
+.cl-card:hover { border-color: var(--xt-primary); box-shadow: var(--xt-shadow-md); }
+.cl-card.is-learned { border-left: 3px solid var(--xt-success); }
+.cl-card-top { display: flex; gap: var(--xt-space-3); align-items: flex-start; cursor: pointer; }
+.cl-card-icon { width: 38px; height: 38px; border-radius: var(--xt-radius-sm); background: var(--xt-bg-muted); color: var(--xt-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.cl-card-head { min-width: 0; }
+.cl-card-name { font-size: var(--xt-font-md); font-weight: 600; color: var(--xt-text); line-height: 1.4; }
+.cl-card-tagline { font-size: var(--xt-font-xs); color: var(--xt-text-dim); margin-top: 2px; }
+.cl-card-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--xt-space-3); }
+.cl-chip { font-size: var(--xt-font-xs); color: var(--xt-text-dim); background: var(--xt-bg-muted); border-radius: var(--xt-radius-sm); padding: 2px 8px; display: inline-flex; align-items: center; gap: 4px; }
+.cl-chip.is-ok { color: var(--xt-primary); background: var(--xt-primary-soft); }
+.cl-chip.is-learned { color: var(--xt-success); }
+.cl-chip.is-fav { color: var(--xt-warning); }
+.cl-card-ops { display: flex; flex-wrap: wrap; gap: 8px; margin-top: var(--xt-space-3); }
+
+/* 按钮 */
+.cl-btn { border: 1px solid var(--xt-border); background: var(--xt-bg-card); color: var(--xt-text-dim); border-radius: var(--xt-radius-sm); padding: 6px 12px; font-size: var(--xt-font-sm); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all var(--xt-transition); }
+.cl-btn:hover { border-color: var(--xt-primary); color: var(--xt-primary); }
+.cl-btn.is-on { color: var(--xt-success); border-color: var(--xt-success); }
+.cl-btn-primary { background: var(--xt-primary); border-color: var(--xt-primary); color: var(--xt-text-on-primary); }
+.cl-btn-primary:hover { background: var(--xt-primary); color: var(--xt-text-on-primary); opacity: .9; }
+.cl-btn-ghost { background: var(--xt-primary-soft); border-color: transparent; color: var(--xt-primary); }
+
+/* 详情 */
+.cl-head { display: flex; gap: var(--xt-space-3); align-items: flex-start; flex-wrap: wrap; border-bottom: 1px solid var(--xt-divider); padding-bottom: var(--xt-space-3); }
+.cl-head-icon { width: 42px; height: 42px; border-radius: var(--xt-radius-md); background: var(--xt-primary-soft); color: var(--xt-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.cl-head-main { flex: 1; min-width: 200px; }
+.cl-head-name { font-size: var(--xt-font-lg); font-weight: 600; color: var(--xt-text); line-height: 1.35; }
+.cl-head-sub { font-size: var(--xt-font-sm); color: var(--xt-text-dim); margin-top: 3px; }
+.cl-head-ops { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.cl-sec { padding: var(--xt-space-3) 0; border-bottom: 1px dashed var(--xt-divider); }
+.cl-sec:last-of-type { border-bottom: none; }
+.cl-sec-h { font-size: var(--xt-font-md); font-weight: 600; color: var(--xt-text); margin: 0 0 var(--xt-space-3); display: flex; align-items: center; gap: 6px; }
+.cl-row { display: flex; gap: var(--xt-space-3); margin-bottom: var(--xt-space-2); font-size: var(--xt-font-sm); line-height: 1.75; }
+.cl-k { flex: 0 0 88px; color: var(--xt-text-dim); font-weight: 500; }
+.cl-v { flex: 1; min-width: 0; color: var(--xt-text); }
+.cl-ul { margin: 0; padding-left: 18px; }
+.cl-ul li { margin-bottom: 3px; }
+.cl-note { margin-top: 6px; font-size: var(--xt-font-xs); color: var(--xt-text-hint); }
+.cl-table { width: 100%; border-collapse: collapse; font-size: var(--xt-font-xs); margin-bottom: 4px; }
+.cl-table th, .cl-table td { border: 1px solid var(--xt-border); padding: 6px 8px; text-align: left; vertical-align: top; }
+.cl-table th { background: var(--xt-bg-muted); color: var(--xt-text-dim); font-weight: 600; white-space: nowrap; }
+.cl-table td.cl-ratio { white-space: nowrap; color: var(--xt-primary); }
+.cl-block { margin-bottom: var(--xt-space-3); }
+.cl-block-h { font-size: var(--xt-font-sm); font-weight: 600; color: var(--xt-text); margin-bottom: 4px; }
+.cl-block-b { font-size: var(--xt-font-sm); color: var(--xt-text); line-height: 1.8; }
+.cl-links { display: flex; flex-wrap: wrap; gap: 8px; padding-top: var(--xt-space-3); }
+
+/* 自测 */
+.cl-q { margin-bottom: var(--xt-space-4); }
+.cl-q-stem { font-size: var(--xt-font-sm); font-weight: 600; color: var(--xt-text); line-height: 1.7; margin-bottom: 8px; }
+.cl-q-opts { display: grid; grid-template-columns: 1fr; gap: 6px; }
+.cl-opt { display: flex; align-items: flex-start; gap: 8px; text-align: left; border: 1px solid var(--xt-border); background: var(--xt-bg-card); border-radius: var(--xt-radius-sm); padding: 8px 10px; font-size: var(--xt-font-sm); color: var(--xt-text); cursor: pointer; transition: all var(--xt-transition); }
+.cl-opt:hover { border-color: var(--xt-primary); }
+.cl-opt-l { flex: 0 0 18px; font-weight: 700; color: var(--xt-text-dim); }
+.cl-opt-t { flex: 1; line-height: 1.6; }
+.cl-opt.is-right { border-color: var(--xt-success); background: var(--xt-success); color: #fff; }
+.cl-opt.is-right .cl-opt-l { color: #fff; }
+.cl-opt.is-wrong { border-color: var(--xt-error); background: var(--xt-error); color: #fff; }
+.cl-opt.is-wrong .cl-opt-l { color: #fff; }
+.cl-opt.is-locked { cursor: default; opacity: .95; }
+.cl-x { margin-top: 8px; font-size: var(--xt-font-xs); line-height: 1.75; padding: 8px 10px; border-radius: var(--xt-radius-sm); background: var(--xt-bg-muted); color: var(--xt-text-dim); }
+.cl-x.is-ok { border-left: 3px solid var(--xt-success); }
+.cl-x.is-no { border-left: 3px solid var(--xt-error); }
+.cl-q-result { font-size: var(--xt-font-sm); color: var(--xt-text-dim); padding: 10px 0 2px; }
+.cl-q-result b { color: var(--xt-primary); }
+.cl-empty { text-align: center; color: var(--xt-text-hint); padding: var(--xt-space-6) 0; font-size: var(--xt-font-sm); }
+/* ===== R73 需求20-B 移动端适配（≤768px）=====
+   仅作用于窄屏；桌面端(>768px)渲染零影响（本块整体位于媒体查询内）。
+   1) 内嵌媒体兜底 max-width，防 JS 注入内容/未来素材撑破窄屏；
+   2) 宽表格窄屏内横向滚动，避免整页横向溢出（需求20-B #2）；
+   3) 字号下限兜底：common.css 的 .bn-label(10px)/.ai-mode-badge(9px)/
+      .study-stats-bar b(9px) 低于 A7 辅助≥11px，页内窄屏提升到 11px（不改共享 common.css）。 */
+@media (max-width: 768px) {
+  img, video, canvas, iframe { max-width: 100%; height: auto; }
+  table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bottom-nav-item .bn-label, .ai-mode-badge, .study-stats-bar b { font-size: 11px; }
+  /* 详情表格：实测 320px 下 .cl-table right=341>320 真实横向溢出，
+     窄屏改块级 + 横向滚动容器；表头解除 nowrap 允许换行（#1/#2/#4） */
+  .cl-table { display: block; width: 100%; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .cl-table th { white-space: normal; }
+}
+</style>
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
+</head>
+<body class="theme-exam">
+
+<div class="app">
+<nav class="sidebar">
+    <div class="logo">
+      <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div>
+      <div>
+        <div class="logo-text">星途</div>
+        <div class="logo-sub">致追梦的人->修身</div>
+      </div>
+    </div>
+    <div class="nav-list">
+      <div class="nav-item" data-page="home">
+        <span class="nav-icon" data-icon="home"></span><span>首页</span>
+      </div>
+      <div class="nav-item" onclick="location.href='AI.html'">
+        <span class="nav-icon" data-icon="sparkles"></span><span>AI</span>
+      </div>
+      <div class="nav-section">学习模块</div>
+      <div class="nav-item" data-page="cet">
+        <span class="nav-icon" data-icon="book-open"></span><span>英语</span>
+      </div>
+      <div class="nav-item active" data-page="exam">
+        <span class="nav-icon" data-icon="pencil"></span><span>行测</span>
+      </div>
+      <div class="nav-item" data-page="comm">
+        <span class="nav-icon" data-icon="message-square"></span><span>表达</span>
+      </div>
+      <div class="nav-item" data-page="interview">
+        <span class="nav-icon" data-icon="handshake"></span><span>面测</span>
+      </div>
+      <div class="nav-item" data-page="files">
+        <span class="nav-icon" data-icon="folder"></span><span>我的文件</span>
+      </div>
+      <div class="nav-section">创作</div>
+      <div class="nav-item" data-page="blog">
+        <span class="nav-icon" data-icon="globe"></span><span>社区</span>
+      </div>
+      <div class="nav-item" data-page="moments">
+        <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
+      </div>
+      <div class="nav-section">互动</div>
+      <div class="nav-item" data-external="1" onclick="gotoChat()" title="通讯录 · 添加好友（需在线模式）">
+        <span class="nav-icon" data-icon="users"></span><span>通讯录</span>
+      </div>
+      <div class="nav-section">中心</div>
+      <div class="nav-item" data-page="wrong-book">
+        <span class="nav-icon" data-icon="book"></span><span>错题本</span>
+      </div>
+      <div class="nav-item" data-page="profile">
+        <span class="nav-icon" data-icon="user"></span><span>个人中心</span>
+      </div>
+      <div class="nav-section">系统</div>
+      <div class="nav-item" data-page="settings">
+        <span class="nav-icon" data-icon="settings"></span><span>设置</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心">
+        <div class="user-avatar">学</div>
+        <div class="user-info">
+          <div class="user-name">同学</div>
+          <div class="user-streak"><span data-icon="fire" data-icon-size="14" style="vertical-align:-2px"></span> 连续打卡 0 天</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+<header class="topbar">
+      <div class="topbar-title" id="topbarTitle">企业定向库</div>
+      <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
+      <div class="gs-wrap" id="gsWrap">
+        <input type="text" class="gs-input" id="gsInput" placeholder="搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <div class="gs-dropdown" id="gsDropdown"></div>
+      </div>
+      <div class="topbar-stats">
+        <div class="stat-item"><span class="stat-icon"><span class="nav-icon" data-icon="fire" data-icon-size="14"></span></span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon"><span class="nav-icon" data-icon="clock" data-icon-size="14"></span></span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+        <div class="stat-item"><span class="stat-icon"><span class="nav-icon" data-icon="check" data-icon-size="14"></span></span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
+      </div>
+      <div class="topbar-date" id="topbarDate"></div>
+      <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="16"></span></div>
+    </header>
+    <div class="content">
+      <div class="page active" id="page-company-lib">
+        <!-- 全站统一页头：返回走 location.href，禁用 history.back() -->
+        <header class="xt-page-head">
+          <a href="javascript:void(0)" onclick="location.href='行测.html';return false" class="xt-page-back" aria-label="返回">
+            <span class="nav-icon" data-icon="chevron-left" data-icon-size="20"></span>
+          </a>
+          <div style="flex:1;min-width:0">
+            <h1 class="xt-page-title">企业定向库</h1>
+            <p class="xt-page-subtitle">8 类定向内容 · 企业名片 / 笔试考情 / 考点自测 / 答题注意</p>
+          </div>
+          <div class="xt-page-actions">
+            <button type="button" class="cl-btn cl-btn-ghost" onclick="CompanyLib.goXingce()">
+              <span class="nav-icon" data-icon="pencil" data-icon-size="15"></span>行测刷题 · 企业定向
+            </button>
+          </div>
+        </header>
+
+        <div class="cl-shell">
+          <div class="card" id="clHero"></div>
+          <div class="card" id="clProgress"></div>
+          <div class="card" id="clListCard">
+            <input type="text" id="clSearch" class="form-input" placeholder="搜索企业 / 考点 / 关键词…" autocomplete="off">
+            <select id="clCatSel" class="form-input cl-cat-sel" aria-label="按分类筛选"></select>
+            <div id="clList"></div>
+          </div>
+          <div class="card" id="clDetail" hidden></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部导航（手机端） -->
+    <nav class="bottom-nav">
+    <div class="bottom-nav-list">
+      <div class="bottom-nav-item" data-page="home">
+        <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
+      </div>
+      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-square" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
+            <div class="bottom-nav-item" onclick="location.href='AI.html'"><div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div></div>
+            <div class="bottom-nav-item" onclick="location.href='更多.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 更多面板遮罩 -->
+    <div class="more-overlay" onclick="toggleMorePanel()"></div>
+
+  <!-- 更多面板 -->
+  <div class="bottom-more-panel" id="morePanel">
+    <div class="bottom-more-title">更多功能</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="navigateTo('moments');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="rss" data-icon-size="20"></span></div><div class="bm-label">动态空间</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogStats()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
+      </div>
+      <div class="bottom-more-item" onclick="if(window.gotoBlogMine){gotoBlogMine()}else{location.href='社区.html#mine'}">
+        <div class="bm-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div><div class="bm-label">互动广场</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div><div class="bm-label">错题本</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div><div class="bm-label">设置</div>
+      </div>
+      <div class="bottom-more-item" onclick="showAbout()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div><div class="bm-label">关于</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加倒计时弹窗（app.js 共用 DOM，缺一会打断整页初始化，必须整段保留） -->
+  <div class="modal-overlay" id="countdownModal">    <div class="modal">
+      <div class="modal-title" id="countdownModalTitle">添加倒计时</div>
+      <div class="form-group">
+        <div class="form-label">名称</div>
+        <input type="text" class="form-input" id="cdName" placeholder="如：四级考试、秋招截止">
+      </div>
+      <div class="form-group">
+        <div class="form-label">日期</div>
+        <input type="date" class="form-input" id="cdDate">
+      </div>
+      <div class="form-group">
+        <div class="form-label">颜色</div>
+        <div class="color-picker" id="cdColorPicker">
+          <div class="color-dot active" style="background:#5B8DEF" data-color="#5B8DEF"></div>
+          <div class="color-dot" style="background:#E05040" data-color="#E05040"></div>
+          <div class="color-dot" style="background:#9B6BD9" data-color="#9B6BD9"></div>
+          <div class="color-dot" style="background:#D4A056" data-color="#D4A056"></div>
+          <div class="color-dot" style="background:#36CFC9" data-color="#36CFC9"></div>
+          <div class="color-dot" style="background:#FF9F68" data-color="#FF9F68"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--xt-font-base);color:var(--text-secondary)">
+          <input type="checkbox" id="cdPinned"> 置顶显示
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeCountdownModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveCountdown()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast提示 -->
+  <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center"></div>
+
+  <!-- ==================== AI学习助手（悬浮聊天窗口） ==================== -->
+  <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">
+    <span class="nav-icon" data-icon="bot" data-icon-size="22"></span><span class="ai-mode-badge" id="aiModeBadge">演示</span>
+  </div>
+  <div class="ai-panel" id="aiPanel">
+    <div class="ai-panel-header">
+      <div class="ai-avatar"><span class="nav-icon" data-icon="bot" data-icon-size="20"></span></div>
+      <div style="flex:1">
+        <div class="ai-title">AI学习助手</div>
+        <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
+      </div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录"><span class="nav-icon" data-icon="delete" data-icon-size="16"></span></div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板"><span class="nav-icon" data-icon="close" data-icon-size="16"></span></div>
+    </div>
+    <div class="ai-messages" id="aiMessages"></div>
+    <div class="ai-input-row">
+      <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()"><span data-icon="arrow-right" data-icon-size="18"></span></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/xt-toast.js?v=20260923a" defer></script>
+<script src="assets/error-boundary.js?v=20260924a" defer></script>
+<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260924a" defer></script>
+<script src="assets/mini-exam.js?v=20260916O" defer></script>
+<!-- 【T10 A6】后置覆盖 EXAM['exam-company']：旧 8 条 info 数据一行不删，回滚只需删掉下一行 -->
+<script src="assets/data-exam-company.js?v=20260916O" defer></script>
+<script src="assets/company-lib.js?v=20260916O" defer></script>
+<script>
+/* T10 A6：企业定向库独立页初始化 */
+(function () {
+  'use strict';
+  function boot() {
+    if (window.CompanyLib) {
+      try { CompanyLib.init(); } catch (e) { if (window.console) console.error('[company-lib]', e); }
+    }
+  }
+  if (document.readyState !== 'loading') boot();
+  else document.addEventListener('DOMContentLoaded', boot);
+})();
+</script>
+<script src="assets/ai-config.js?v=20260925a"></script>
+<script src="assets/ai-presets.js?v=20260916O"></script>
+<script src="assets/ai-service.js?v=20260925a"></script>
+<script src="assets/ai-cap-registry.js?v=20260918c"></script>
+<script src="assets/ai-cap-image.js?v=20260920c"></script>
+<script src="assets/ai-cap-vision.js?v=20260920c"></script>
+<script src="assets/ai-cap-audio.js?v=20260920c"></script>
+<script src="assets/ai-cap-embed.js?v=20260920c"></script>
+<script src="assets/ai-cap-translate.js?v=20260920c"></script>
+<script src="assets/ai-cap-video.js?v=20260920c"></script>
+<script src="assets/ai-cap-3d.js?v=20260922a"></script>
+</body>
+</html>

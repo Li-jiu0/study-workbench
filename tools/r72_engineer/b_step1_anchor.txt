@@ -1,0 +1,8 @@
+RC=0
+--- STDOUT ---
+USERS 16
+NRESTARTS=2
+ISACTIVE=active
+
+--- STDERR ---
+

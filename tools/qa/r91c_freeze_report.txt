@@ -1,0 +1,87 @@
+================================================================================
+R91-C 报告 —— file:// 双击打开页面「浏览器卡死、无法点击」复现定位与修复
+执行人：software-engineer-任务一｜代码树：D:\下载的文件\学习工作台
+工具：tools/qa/r91c_cdp_freeze.js（真实 Chrome headless CDP + 采样 Profiler + Debugger.pause 抓栈）
+================================================================================
+
+一、复现步骤（真实 Chrome CDP）
+--------------------------------------------------------------------------------
+1. spawn headless Chrome（--remote-debugging-port=9333 --headless=new --user-data-dir=临时目录）。
+2. 每个页面新建 target，Page.addScriptToEvaluateOnNewDocument 预置登录态：
+   study_workbench_token / study_workbench_refresh / study_workbench_auth=1，
+   并预置 50 个本机会话（模拟用户 ai_chat_history 数据量级）。
+3. Page.navigate → 等待 9~10s → Runtime.evaluate '1+1'（2.5s 超时）探测主线程；
+   超时即判定阻塞 → Debugger.pause 抓取阻塞时调用栈；存活则 Profiler 采样看热点。
+4. 测过的页面：
+   - 个人中心.html（带登录态）：第一次运行【复现卡死】（见下）；无登录态（首版脚本）
+     时页面被重定向到 登录.html，不复现——这解释了为什么必须带 token 才测得出。
+   - 个人资料.html：加载主线程存活（带假 token 会 401→被 api.js 登出跳 登录.html，
+     故未能在 CDP 里进入 chat 视图；R91-A 的 chat 视图行为已由 R91-A 的 jsdom
+     HOME/CHAT PASS 覆盖，未回退）。
+   - 私聊.html：主线程存活。
+
+二、卡死时调用栈（关键证据，Debugger.paused 捕获）
+--------------------------------------------------------------------------------
+  #0 xtAccountText      @ 个人中心.html 内联脚本 :1260
+  #1 xtInjectAccountRow @ :1269
+  #2 xtRenderAccount    @ :1292
+  #3 (anon)             @ :1485   ← xtAcctObs = new MutationObserver(function(){ xtRenderAccount(); })
+同时段 probe：mainThreadAlive=false（'1+1' 2.5s 超时），Console 与用户一致出现
+「[exam] 题库分片索引加载失败，回退内置 + 覆盖层」等 CORS 告警（这些只是噪音，
+不是卡死原因）。
+
+三、根因
+--------------------------------------------------------------------------------
+个人中心.html 内联脚本（xtWatchAccount，原 L1481-1487）用 MutationObserver 监听
+#profileBox {childList+subtree}，回调执行 xtRenderAccount()：
+  xtRenderAccount → el.textContent = ...（原 L1289）
+  xtInjectAccountRow → row.textContent = '账号：'+...（原 L1281）
+textContent setter 即使写入相同值也会**重建文本节点** → 每次回调都产生新的
+childList 突变 → observer 再次入队回调 → 「观察→渲染→再观察」无限微任务循环，
+渲染与输入事件完全饿死 → 页面永久卡死。
+触发条件：页面驻留（带登录 token，不会被登出重定向）即触发，与 file:// 无关，
+file:// 双击打开是用户的主路径所以暴露。该 Bug 与 R91-A 改动无关
+（个人中心.html 不加载 xt-profile.js）。
+
+四、修复（最小改动，个人中心.html，二进制编辑+行尾回读）
+--------------------------------------------------------------------------------
+FIX1  原 L1281（现 L1281-1285）：xtInjectAccountRow 行文本写入加守卫
+      var acctText = '账号：' + (a || ACC_EMPTY);
+      if (row.textContent !== acctText) { row.textContent = acctText; }
+      + R91-C 注释说明根因。
+FIX2  原 L1288-1291（现 L1292-1297）：xtRenderAccount 的 peAccount 写入加守卫
+      var accVal = a || ACC_EMPTY;
+      if (el.textContent !== accVal) { el.textContent = accVal; }
+      className 赋值保留（attribute 突变不在监听范围内，不会自触发）。
+策略：幂等守卫让突变序列「 settles」——首轮回调后再无新突变，循环自然终止；
+不改动 observer 结构与任何既有行为。
+（同文件 L1004 另一个 observer 回调带 parentNode/host 幂等早退，会收敛，未动。）
+
+五、字节/行尾
+--------------------------------------------------------------------------------
+个人中心.html BEFORE: 95502 B, crlf=1524, loneLF=0, loneCR=0（纯 CRLF）
+个人中心.html AFTER : 95991 B, crlf=1530, loneLF=0, loneCR=0（纯 CRLF，回读一致，+489 B）
+新增脚本：tools/qa/r91c_cdp_freeze.js、r91c_edit.py、r91c_edit_result.txt、
+r91c_cdp_report.txt、r91c_escheck.txt、本报告。
+
+六、验证结果
+--------------------------------------------------------------------------------
+1. escheck_es2017.js → DONE 0（PASS）。
+2. CDP 复测（同脚本、同预置登录态，各页跑一次即判定）：
+   - 个人中心.html：mainThreadAlive=true（修复前 9s 即冻结）；
+     Profiler 热点为 idle/program，无任何业务函数热点；无卡死栈。PASS
+     （复测后段页面因假 token 401 被 api.js 登出跳转 登录.html——属假 token 的预期
+     行为，与卡死无关；关键 10s 驻留窗口主线程全程存活。）
+   - 个人资料.html：加载存活 PASS；chat 视图因假 token 401 重定向未能在 CDP 进入
+     （如实标注），R91-A 行为以 R91-A 阶段 jsdom HOME/CHAT PASS 为准，未回退。
+   - 私聊.html：加载存活 PASS。
+3. 行尾核验：纯 CRLF 回读一致；旧串清零、新串唯一命中（r91c_edit_result.txt）。
+
+七、遗留与说明
+--------------------------------------------------------------------------------
+- Console 里的题库/词库 CORS 报错是 file:// 下 fetch 被 CORS 拦截后的既定回退路径
+  （fetchJSONAnywhere → XHR 亦被拦 → 回退内置题库），异步且自愈，不是卡死原因，未改。
+- 假 token 下 401→登出跳转是既有安全行为，未评估、未改动。
+- 修复为幂等守卫方案；若后续有人在 xtRenderAccount 链上再加「无条件 DOM 写入」
+  会复发，已用注释在两处写明原因。
+================================================================================

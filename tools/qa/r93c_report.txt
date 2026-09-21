@@ -1,0 +1,70 @@
+================================================================================
+R93-3 修复报告：更新页状态卡圆圈图标换成 APP 软件图标（book-open）
+工程师：software-engineer-任务二
+日期：2026-09-19（R93）
+================================================================================
+
+一、逐分支图标取舍清单（改动前列出，paintIcons 10 处锚点逐一核对）
+
+  状态卡大圆圈（语义=展示 App/版本状态）——仅 2 处：
+  1. renderError  L757-758  .xt-up-icon-bad  alert-triangle（警告三角）
+     → 本次改动：换为 book-open（APP 品牌同款，与顶部品牌块一致）✅ 用户点名处
+  2. renderLatest L715-716  .xt-up-icon-ok   check-circle（成功对勾）
+     → 保留：成功语义（「已是最新版本」配对勾）合理，非 alert 类符号，
+       不属于用户要求「统一为 App 图标」的范围 ✅ 不动
+  其余 8 处 paintIcons 锚点（无大圆圈结构，均为操作提示小图标）——全部不动：
+  - renderNew L707（动作按钮 download/rotate 小图标；new 态无圆圈）
+  - renderStarting L749（spin 加载圈 + 按钮小图标）
+  - applySettingsState ×4 L510/521/530/540（设置页按钮 download 小图标）
+  - startDownload L917、restoreBtn L1026（下载按钮小图标）
+
+二、改动点（2 处）
+
+  工具：tools/qa/_r93c_patch.py（字节级替换，行尾自适应）。
+  1. assets/xt-update.js（纯 LF）L758：
+     data-icon="alert-triangle" → data-icon="book-open"（data-icon-size=26 不变，
+     配色沿用 .xt-up-icon 圆形容器既有体系：-bad 态红色系底 + currentColor 描边，
+     与品牌块同为 data-icon 管线，视觉同款图标）
+  2. 更新.html（纯 CRLF）L384：xt-update.js?v=20260918e → v=20260918f
+     （版本号随码变更，吸取 R91-F 漏升版本号的教训）
+
+三、前后字节/行尾
+
+  assets/xt-update.js：39089 → 39084 字节（-5，alert-triangle→book-open 同行替换）；
+    CRLF=0 / LF=1114 / pureLF=1114（纯 LF 保持）
+  更新.html：23107 → 23107 字节（等长 d→e→f 替换）；
+    CRLF=386 / pureLF=0（纯 CRLF 保持）
+
+四、命中核验（改后回读）
+
+  [js]   book-open（renderError span 串）命中 1 ✅；alert-triangle 全文命中 0 ✅；
+         check-circle 保留命中 1（renderLatest 未动）✅
+  [html] v=20260918f 命中 1 ✅；v=20260918e 命中 0 ✅
+
+五、验证结果
+
+  1. ES2017：node tools/qa/escheck_es2017.js → tools/qa/r93c_escheck.txt = DONE 0 ✅
+  2. 真实 Chrome CDP 实测（tools/qa/_r93c_cdp.js，输出 r93c_cdp_out.txt）：
+     Phase 1 失败态（无后端自然 404）：
+       C1 标题=「检测失败」✅
+       C2 .xt-up-icon-bad 内 svg 存在、width=26 ✅
+       C3 圆圈 svg innerHTML === LUCIDE_ICONS['book-open'] 渲染产物（DOM 序列化
+          规范化后逐字符相等）→ 圆圈内确为 APP 软件图标 ✅（KEY 断言）
+       C3b 圆圈 svg ≠ alert-triangle 模板 ✅
+       C4 品牌块 .xt-up-brand-icon svg 完好（width=28）✅
+     Phase 2 成功态（stub fetch v1.24 → recheck）：
+       C5b .xt-up-icon-ok svg === check-circle 模板（确认成功态未被误伤）✅
+       C5c 品牌块完好 ✅
+     汇总 pass=8 fail=0 → R93C_CDP_PASS。
+     备注：首轮 C3/C5b 字符串比较失败为脚本比较方式问题（模板自闭合 `/>` 与
+     innerHTML 序列化 `></path>` 不等），修正为 DOM 规范化比较后全过；
+     图标本体自首轮即已正确渲染（inner 开头 M12 7v14 即 book-open 书脊路径）。
+  验证级别：真实 Chrome CDP 布局/内容实测。
+
+六、合规确认
+
+  - 仅动 xt-update.js 与 更新.html 两个文件；其他任何文件未动
+  - 无 prompt/alert/confirm；纯 data-icon 名替换无新增语法，escheck DONE 0
+  - CRLF/LF 各自实测 + 二进制读写 + 回读校验；无并行 Edit
+================================================================================
+报告完

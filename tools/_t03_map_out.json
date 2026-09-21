@@ -1,0 +1,16 @@
+{
+ "errs": [],
+ "ov_glm_name": "oldname",
+ "ov_glm_apikey": "KEEP",
+ "ov_glm_apiurl": "u1",
+ "ov_arkx_exists": true,
+ "ov_arkx_name": "oldnamex",
+ "ov_arkx_apikey": "KEEP2",
+ "disabled_arkx_still": true,
+ "disabled_glm_absent": true,
+ "order0": "glm-4.7",
+ "order_has_both": true,
+ "usable": [
+  "glm-4.7"
+ ]
+}

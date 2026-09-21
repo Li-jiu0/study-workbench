@@ -1,0 +1,36 @@
+Collecting fastapi<1.0,>=0.110
+  Using cached fastapi-0.141.1-py3-none-any.whl.metadata (27 kB)
+Requirement already satisfied: uvicorn<1.0,>=0.29 in D:\下载的文件\学习工作台\server\.venv\Lib\site-packages (from uvicorn[standard]<1.0,>=0.29) (0.52.4)
+Collecting SQLAlchemy<3.0,>=2.0
+  Downloading sqlalchemy-2.0.54-cp313-cp313-win_amd64.whl.metadata (9.9 kB)
+Collecting PyJWT<3.0,>=2.8
+  Using cached pyjwt-2.14.0-py3-none-any.whl.metadata (3.4 kB)
+Collecting python-multipart>=0.0.9
+  Using cached python_multipart-0.0.32-py3-none-any.whl.metadata (2.1 kB)
+Collecting python-dotenv>=1.0
+  Using cached python_dotenv-1.2.3-py3-none-any.whl.metadata (29 kB)
+Requirement already satisfied: httpx>=0.27 in D:\下载的文件\学习工作台\server\.venv\Lib\site-packages (0.28.1)
+Requirement already satisfied: starlette>=0.46.0 in D:\下载的文件\学习工作台\server\.venv\Lib\site-packages (from fastapi<1.0,>=0.110) (1.6.0)
+Collecting pydantic>=2.9.0 (from fastapi<1.0,>=0.110)
+  Using cached pydantic-2.13.5-py3-none-any.whl.metadata (110 kB)
+Requirement already satisfied: typing-extensions>=4.8.0 in D:\下载的文件\学习工作台\server\.venv\Lib\site-packages (from fastapi<1.0,>=0.110) (4.16.0)
+Collecting typing-inspection>=0.4.2 (from fastapi<1.0,>=0.110)
+  Using cached typing_inspection-0.4.4-py3-none-any.whl.metadata (2.6 kB)
+Requirement already satisfied: annotated-doc>=0.0.2 in D:\下载的文件\学习工作台\server\.venv\Lib\site-packages (from fastapi<1.0,>=0.110) (0.0.5)
+Collecting greenlet>=1 (from SQLAlchemy<3.0,>=2.0)
+  Downloading greenlet-3.5.6-cp313-cp313-win_amd64.whl.metadata (3.9 kB)
+WARNING: uvicorn 0.52.4 does not provide the extra 'standard'
+Requirement already satisfied: annotated-types>=0.6.0 in D:\下载的文件\学习工作台\server\.venv\Lib\site-packages (from pydantic>=2.9.0->fastapi<1.0,>=0.110) (0.8.0)
+Requirement already satisfied: pydantic-core==2.46.5 in D:\下载的文件\学习工作台\server\.venv\Lib\site-packages (from pydantic>=2.9.0->fastapi<1.0,>=0.110) (2.46.5)
+Using cached fastapi-0.141.1-py3-none-any.whl (131 kB)
+Downloading sqlalchemy-2.0.54-cp313-cp313-win_amd64.whl (2.2 MB)
+   ---------------------------------------- 2.2/2.2 MB 31.9 kB/s  0:01:11
+Using cached pyjwt-2.14.0-py3-none-any.whl (32 kB)
+Using cached python_multipart-0.0.32-py3-none-any.whl (30 kB)
+Using cached python_dotenv-1.2.3-py3-none-any.whl (22 kB)
+Downloading greenlet-3.5.6-cp313-cp313-win_amd64.whl (324 kB)
+Using cached pydantic-2.13.5-py3-none-any.whl (472 kB)
+Using cached typing_inspection-0.4.4-py3-none-any.whl (14 kB)
+Installing collected packages: typing-inspection, python-multipart, python-dotenv, PyJWT, greenlet, SQLAlchemy, pydantic, fastapi
+
+Successfully installed PyJWT-2.14.0 SQLAlchemy-2.0.54 fastapi-0.141.1 greenlet-3.5.6 pydantic-2.13.5 python-dotenv-1.2.3 python-multipart-0.0.32 typing-inspection-0.4.4
