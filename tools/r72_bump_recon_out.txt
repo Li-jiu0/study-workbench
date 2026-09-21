@@ -1,0 +1,27 @@
+root html count = 42
+stamp dist: {'20260916O': 536, '20260916R': 70, '，主理人波末统一打戳）': 1}
+total ?v= refs = 607
+
+-- per-asset anchored refs (src/href="assets/<a>?v=<stamp>") --
+app.js           refs={'20260916O': 37} files=37
+api.js           refs={'20260916O': 33} files=33
+chat-local.js    refs={'20260916O': 1} files=1
+importer.js      refs={'20260916O': 3} files=3
+notify.js        refs={} files=0
+ai-service.js    refs={'20260916R': 34} files=34
+ai-settings.js   refs={'20260916R': 1} files=1
+
+-- per-asset LOOSE refs (any ?v= token containing the asset name) --
+app.js           {'20260916O': 37}
+api.js           {'20260916O': 33}
+chat-local.js    {'20260916O': 1}
+importer.js      {'20260916O': 3}
+notify.js        {}
+ai-service.js    {'20260916R': 34}
+ai-settings.js   {'20260916R': 1}
+
+-- accidental .js.js?v= / .css.css?v= --
+accidental count = 0
+
+-- bare asset refs (no ?v=) --
+bare count = 0

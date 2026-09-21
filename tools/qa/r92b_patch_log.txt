@@ -1,0 +1,18 @@
+R92-B patch log
+ai-config.js before: size=46895 CRLF=1101 LF=1101 pureLF=0 NL=b'\r\n'
+entry-block occurrence=1 (expect 1)
+model-info occurrence=1 (expect 1)
+doc before: size=15347 CRLF=0 LF=298 pureLF=298 NL=b'\n'
+doc: count 5 -> 2 occurrence=1 (expect 1)
+doc: drop 3 retiring rows + add removal note occurrence=1 (expect 1)
+[VERIFY js] ark-seedance-1-5-pro hit=0 (expect 0)
+[VERIFY js] ark-seedance-1-0-lite-t2v hit=0 (expect 0)
+[VERIFY js] ark-seedance-1-0-lite-i2v hit=0 (expect 0)
+[VERIFY js] kept ark-seedance-1-0-pro hit=8 (expect >0)
+[VERIFY js] kept ark-seedance-1-0-pro-fast hit=4 (expect >0)
+ai-config.js after: size=44754 CRLF=1064 LF=1064 pureLF=0
+[VERIFY doc] ark-seedance-1-5-pro hit=1 (expect 0 in rows; note line keeps mention? -> 见下)
+[VERIFY doc] ark-seedance-1-0-lite-t2v hit=1 (expect 0 in rows; note line keeps mention? -> 见下)
+[VERIFY doc] ark-seedance-1-0-lite-i2v hit=1 (expect 0 in rows; note line keeps mention? -> 见下)
+doc after: size=15351 CRLF=0 LF=298 pureLF=298
+RESULT=PASS

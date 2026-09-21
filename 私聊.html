@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#5B8DEF">
+<title>私信 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260923c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<link rel="stylesheet" href="assets/polish.css?v=20260916O">
+<style>
+
+  /* ===== 私信页（嵌在应用外壳内）===== */
+  .im-side{width:300px;min-width:240px;border-right:1px solid var(--border);background:var(--card);display:flex;flex-direction:column}
+  .im-head{padding:14px 14px 8px;border-bottom:1px solid var(--border)}
+  .im-title{font-size:16px;font-weight:700;margin:0 0 8px}
+  .im-search{display:flex;gap:6px;margin-bottom:8px}
+  .im-search input{flex:1;min-width:0}
+  .im-tabs{display:flex;gap:6px}
+  /* 【本轮修复·收敛定义】.im-tab 原本散落 4 处（本行 + 第25行 + 第355行 + 第371行），层叠混乱，
+     最终生效的是第371行 R33 规则：flex:1 1 0 + white-space:nowrap + overflow:hidden + text-overflow:ellipsis。
+     5 个 tab 五等分后每格仅几十 px（320px 屏约 60px），"💬 会话" 这类 emoji+空格+双字中文被整体截成空白。
+     现收敛为本文件末尾「IM-TAB 唯一权威定义区」的一份基础规则 + 一份窄屏媒体查询，本处只留结构标记注释。 */
+  /* .im-tab 见文件末尾唯一权威定义（本轮收敛） */
+  /* W1-T3（2026-09-15 批次九）：联系管理员入口 #acEntry 收窄为仅在「好友」tab 可见，
+     未读角标同步镜像到「好友」tab 标签上的 #acTabBadge（避免入口收起后未读提醒一起消失）。 */
+  /* .im-tab 定义已收敛到文件末尾唯一权威定义区，position:relative（未读角标锚点）也在那里统一声明 */
+  .im-tab-badge{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;line-height:16px;padding:0 4px;background:#ff5d5d;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.25);box-sizing:border-box;z-index:2;pointer-events:none}
+  .im-list{flex:1;overflow-y:auto}
+  .im-sess{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer}
+  .im-sess.on{background:var(--primary-light)}
+  .im-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--primary-light),#e9ecff);display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--primary);overflow:hidden;flex-shrink:0}
+  .im-av img{width:100%;height:100%;object-fit:cover}
+  .im-si{flex:1;min-width:0}
+  .im-n{font-size:14px;font-weight:600}
+  .im-sub{font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .im-badge{background:#ff5d5d;color:#fff;border-radius:10px;font-size:11px;min-width:18px;height:18px;line-height:18px;text-align:center;padding:0 5px;flex-shrink:0}
+  .im-del{color:var(--danger);font-size:12px;cursor:pointer}
+  .im-chat{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
+  .im-empty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:14px}
+  .im-conv{flex:1;display:flex;flex-direction:column;min-height:0}
+  .im-chat-head{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--card)}
+  .im-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+  .im-m{max-width:72%;padding:8px 12px;border-radius:12px;font-size:14px;line-height:1.5;word-break:break-word;white-space:pre-wrap}
+  /* R105 气泡线（2026-09-19）：对标微信 —— 发送方改单色浅底+深色文字（固定值 #95ec69/#111，
+     不用主题变量 → body.dark / 换肤均不再翻转气泡颜色，深色模式根除破版）。 */
+  .im-m.me{align-self:flex-end;background:#95ec69;color:#111;border-bottom-right-radius:4px}
+  .im-m.ot{align-self:flex-start;background:var(--card);border:1px solid var(--border);border-bottom-left-radius:4px}
+  /* R105：时间戳/已读移出气泡外下方（微信式灰色小字）。.im-mt 与 .im-read 绝对定位到气泡底边之下，
+     不再出现在彩色/白卡内部；灰色用 var(--text-muted)（深色模式自动适配）。
+     气泡下留白 = .im-msgs gap(10px) + margin-bottom(10px)，容纳 10px 小字不与下一条重叠。 */
+  .im-m{position:relative;margin-bottom:10px}
+  .im-mt{position:absolute;top:100%;right:0;margin-top:3px;font-size:12px;opacity:1;text-align:right;color:var(--text-muted);white-space:nowrap}
+  .im-m .im-read{position:absolute;top:100%;right:32px;margin-top:3px;opacity:1;color:var(--text-muted);white-space:nowrap}
+  .im-m .im-read.ok{color:var(--text-muted)}
+  /* R105：媒体卡脱气泡（位置/文件/图片/语音）—— 卡片自带 var(--card) 白底+描边，永远独立呈现，
+     与发送方气泡色无关（微信同款规则）。容器 class「im-m media」由 chat-local.js 渲染端追加
+     （已报 lead 转卡片侧同事）；本页先行落 CSS，类名就位即生效。
+     宽度收敛：容器随卡内容自适应（位置卡 180px / 文件卡 ≤240px / 图片 ≤200px），不再撑到 72%。 */
+  .im-m.media{background:transparent!important;padding:0;border:none;box-shadow:none;color:var(--text);max-width:240px}
+  .im-m.media .im-mt{position:static;margin-top:4px}
+  .im-m.media .im-read{position:static;margin-top:2px}
+  /* R105：深色模式显式固定（双保险，根除翻转）。 */
+  body.dark .im-m.me{background:#95ec69;color:#111}
+  /* 2026-09-15 批次八：消息撤回 —— 轻量确认气泡 / 已撤回系统提示
+     （批次八原有的桌面 hover .im-recall-btn 入口已于批次九 N9-17 移除，撤回统一走消息菜单） */
+  .im-m{position:relative}
+  .im-recall-tip{align-self:center;max-width:80%;padding:4px 10px;font-size:12px;color:var(--text-secondary);background:var(--bg);border-radius:10px;text-align:center}
+  .im-recall-confirm{position:fixed;z-index:10000;min-width:190px;padding:12px 14px;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.18)}
+  .im-rc-txt{font-size:13px;color:var(--text);margin-bottom:10px}
+  .im-rc-btns{display:flex;justify-content:flex-end;gap:8px}
+  .im-rc-btns button{border:0;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;font-family:inherit}
+  .im-rc-cancel{background:var(--bg);color:var(--text-secondary);border:1px solid var(--border)}
+  .im-rc-ok{background:#ff5d5d;color:#fff}
+  /* 2026-09-15 批次九（N9-17）：微信式消息菜单 —— 长按 / 右键唤起的非模态浮层
+     ADR-3 合规：无遮罩、不锁 html/body 滚动，点外部 / Esc 关闭。 */
+  .im-msg-menu{position:fixed;z-index:10001;min-width:118px;padding:4px;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18)}
+  .im-msg-menu .im-menu-item{padding:9px 14px;font-size:14px;line-height:1.2;color:var(--text);border-radius:7px;cursor:pointer;user-select:none;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+  .im-msg-menu .im-menu-item:active{background:var(--bg)}
+  .im-msg-menu .im-menu-danger{color:var(--danger)}
+  .im-empty2{text-align:center;padding:36px 16px;color:var(--text-secondary);font-size:13px}
+  .im-composer{display:flex;gap:8px;align-items:flex-end;padding:10px 12px;background:var(--card);border-top:1px solid var(--border)}
+  .im-composer textarea{flex:1;resize:none;height:44px;max-height:120px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;font-size:14px;outline:none;font-family:inherit;background:var(--bg);color:var(--text)}
+  .im-composer textarea:focus{border-color:var(--primary)}
+  /* R105b（2026-09-19）：输入框微信式双状态。空态=表情+➕+框内麦克风装饰；
+     输入态(.is-typing)=➕隐 / 发送显 / 麦克风隐。发送按钮颜色走 --primary 令牌（勿写死色值，
+     暗色模式自适应）；全固定 px，禁 clamp/min/max 函数与 :has 等新选择器。 */
+  .im-input-wrap{position:relative;flex:1;min-width:0;display:flex}
+  .im-input-wrap textarea{width:100%;padding-right:34px}
+  .im-mic{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);opacity:.55;display:flex;cursor:pointer;background:none;border:none;padding:0}
+  .im-mic svg{display:block}
+  .im-mic:active{opacity:.85}
+  /* R106（2026-09-19）：麦克风改为可点录音键后新增录音态（红 + 呼吸动画；keyframes 允许，禁 clamp/min/max 函数）。 */
+  .im-composer.rec-on .im-mic{color:#e5484d;opacity:1;animation:imMicPulse 1s ease-in-out infinite}
+  @keyframes imMicPulse{0%,100%{opacity:1}50%{opacity:.3}}
+  /* R106b：按住说话——禁长按菜单/选中/触摸滚动（保证按下即录音、上滑不滚页）。 */
+  #imMicBtn{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:none}
+  /* R106b：录音遮罩（页面中央浮层，半透明深底；.cancel 态变色）。 */
+  .im-rec-overlay{position:fixed;left:0;right:0;top:0;bottom:0;z-index:220;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.42)}
+  .im-rec-ov-body{min-width:190px;padding:22px 26px;border-radius:16px;background:rgba(30,30,32,.92);color:#fff;display:flex;flex-direction:column;align-items:center;gap:10px;box-shadow:0 10px 34px rgba(0,0,0,.3)}
+  .im-rec-ov-mic{display:flex;align-items:center;justify-content:center;color:#95ec69}
+  .im-rec-ov-time{font-size:22px;font-weight:600;letter-spacing:1px}
+  .im-rec-ov-text{font-size:13px;opacity:.85;white-space:nowrap}
+  .im-rec-overlay.cancel .im-rec-ov-body{background:rgba(120,24,24,.94)}
+  .im-rec-overlay.cancel .im-rec-ov-mic{color:#ff8a8a}
+  .im-rec-overlay.cancel .im-rec-ov-text{opacity:1;font-weight:600;color:#ffd0d0}
+  .im-btn-send{display:none}
+  .im-composer.is-typing .im-btn-plus{display:none}
+  .im-composer.is-typing .im-btn-send{display:flex;align-items:center;justify-content:center}
+  .im-composer.is-typing .im-mic{display:none}
+  .im-icon{width:44px;height:44px;border:none;border-radius:12px;background:var(--primary-light);color:var(--primary);font-size:18px;cursor:pointer;flex-shrink:0}
+  .im-send{height:44px;padding:0 18px;border:none;border-radius:12px;background:var(--primary);color:#fff;cursor:pointer;flex-shrink:0}
+  /* R90 item3：输入栏新增「定位」图标后，窄屏（≤360px）压缩图标与间距，保证整排不换行、不溢出。固定值 + @media，禁 clamp/min/max。 */
+  @media (max-width:360px){
+    .im-composer{gap:6px;padding:8px 8px}
+    .im-composer .im-icon{width:38px;height:38px}
+    .im-composer .im-send{height:38px;padding:0 12px}
+    .im-composer textarea{height:38px;padding:8px 10px}
+  }
+  @media (max-width:760px){
+    .im-side{width:100%;border-right:none}
+    .im-chat{display:none}
+    body.im-mobile .im-side{display:none}
+    body.im-mobile .im-chat{display:flex}
+    /* R3-L1 问题三：手机端进入聊天（body.im-mobile）——全屏沉浸，只留聊天对象头部。
+       1) 隐藏全局底部导航：fixed 条在 adjustResize/edge-to-edge 下会被顶到键盘上沿，夹在输入框与键盘之间；
+       2) 隐藏通讯录外壳顶栏（「通讯录/搜索聊天记录/铃铛/对话框/月亮」），根除「外壳头 + 聊天头」双层头；
+       3) 聊天态清零 .page 底部 64px(导航)+20px 占位，仅保留安全区，输入框不再悬空一条。 */
+    body.im-mobile .bottom-nav{display:none!important}
+    body.im-mobile .topbar{display:none!important}
+    /* 2026-09-21 状态栏重叠修复：im-mobile 下全局 .topbar 被隐藏，页面首个元素变为私有顶栏，
+       但二者硬编码 padding、未接状态栏安全区变量（--xt-satop 由安卓壳实时注入，
+       浏览器无该变量时 env()/0 兜底）→ App 沉浸式下顶栏内容顶进状态栏与 12:35/电量图标重叠。
+       与 common.css .topbar 同口径垫高（参照 R-黑边批次机制）。 */
+    body.im-mobile .im-head{padding:calc(12px + var(--xt-satop, env(safe-area-inset-top, 0px))) 12px 12px}
+    body.im-mobile .im-chat-head{padding:calc(10px + var(--xt-satop, env(safe-area-inset-top, 0px))) 16px 10px}
+    body.im-mobile .page{padding-bottom:env(safe-area-inset-bottom,0px)!important}
+  }
+  /* 2026-09-15 批次八（ADR-3）：群设置 / 联系管理员 —— 遮罩弹窗改为右侧会话区「页面内视图」。
+     两个节点搬进 #imChat，与 #imEmpty / #imConv 平级互斥占满右栏；无遮罩、无浮层、无 z-index。 */
+  .im-gs-view,.im-ac-view{flex:1;min-width:0;min-height:0;display:none;flex-direction:column;overflow:hidden;background:var(--bg)}
+  .im-gs-view .im-gs-head{background:var(--card);padding:10px 16px}
+  .im-gs-view .im-gs-body{background:transparent}
+
+</style>
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
+</head>
+<body class="theme-home">
+
+<div class="app">
+<nav class="sidebar"> <div class="logo"> <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div> <div> <div class="logo-text">星途</div> <div class="logo-sub">致追梦的人->修身</div> </div> </div> <div class="nav-list"> <div class="nav-item" data-page="home"> <span class="nav-icon" data-icon="home"></span><span>首页</span> </div> <div class="nav-section">学习模块</div> <div class="nav-item" data-page="cet"> <span class="nav-icon" data-icon="book-open"></span><span>英语</span> </div> <div class="nav-item" data-page="exam"> <span class="nav-icon" data-icon="pencil"></span><span>行测</span> </div>
+<div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>面测</span> </div> <div class="nav-item" data-page="files"> <span class="nav-icon" data-icon="folder"></span><span>我的文件</span> </div> <div class="nav-section">创作</div> <div class="nav-item" data-page="blog"> <span class="nav-icon" data-icon="globe"></span><span>社区</span> </div> <div class="nav-item" data-page="moments"> <span class="nav-icon" data-icon="rss"></span><span>动态空间</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="通讯录 · 添加好友（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>通讯录</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="book"></span><span>错题本</span> </div> <div class="nav-item" data-page="profile"> <span class="nav-icon" data-icon="user"></span><span>个人中心</span> </div> <div class="nav-section">系统</div> <div class="nav-item" data-page="settings"> <span class="nav-icon" data-icon="settings"></span><span>设置</span> </div> </div> <div class="sidebar-footer"> <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心"> <div class="user-avatar">学</div> <div class="user-info"> <div class="user-name">同学</div> <div class="user-streak">🔥 连续打卡 0 天</div> </div> </div> </div> </nav>
+
+  <div class="main">
+<header class="topbar">
+      <div class="topbar-title" id="topbarTitle">通讯录</div>
+      <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
+      <div class="gs-wrap" id="gsWrap">
+        <input type="text" class="gs-input" id="gsInput" placeholder="搜索聊天记录…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <div class="gs-dropdown" id="gsDropdown"></div>
+      </div>
+      <div class="topbar-stats">
+        <div class="stat-item"><span class="stat-icon" data-icon="fire" data-icon-size="16"></span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="clock" data-icon-size="16"></span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="check" data-icon-size="16"></span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
+      </div>
+      <div class="topbar-date" id="topbarDate"></div>
+      <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0">🌙</div>
+    </header>
+<div class="page active" id="page-im" style="display:flex;overflow:hidden">
+      <aside class="im-side">
+        <div class="im-head">
+          <div class="im-head-row">
+            <div class="im-title">私聊</div>
+            <div class="im-search">
+              <input id="imSearch" class="form-input" placeholder="搜用户名/昵称找人…">
+              <button class="btn btn-outline" onclick="imDoSearch()" style="white-space:nowrap"><span class="nav-icon" data-icon="search" data-icon-size="16"></span></button>
+            </div>
+          </div>
+          <div class="im-tabs">
+            <!-- C1 20260913k：五 tab 顺序不变（会话→好友→群聊→申请→添加好友）；「群聊」「添加好友」由弹窗改为 tab 页面视图（onclick 改 imSwitchTab，原弹窗函数保留供面板复用） -->
+            <button class="im-tab active" data-tab="chats" onclick="imSwitchTab('chats')">会话</button>
+            <button class="im-tab" data-tab="friends" onclick="imSwitchTab('friends')">通讯录</button>
+            <button class="im-tab" data-tab="groups" onclick="imSwitchTab('groups')" title="我的群聊 · 发起新群聊">群聊</button>
+            <!-- 【后续扩展点】发起群聊（T4 增量）：多选好友建群，本地模式提示「群聊需要联网」 -->
+            <button class="im-tab" data-tab="requests" onclick="imSwitchTab('requests')">申请</button>
+            <button class="im-tab im-tab-add" data-tab="addfriend" onclick="imSwitchTab('addfriend')" title="搜索用户名/昵称添加好友">添加好友</button>
+          </div>
+        </div>
+        <!-- 需求01：联系管理员固定入口（管理员对普通用户完全隐形，这是唯一联系途径）。
+             点击后由 assets/admin-contact.js 直接走 /api/chat/* 开会话，绕开好友前置。
+             R45（20260914e）：视觉改为与好友会话行（.im-sess）同款 —— 圆形盾牌头像 + 昵称 + 最近一条消息/时间，
+             固定为会话列表首行。节点刻意留在 #imList 之外独立渲染：admin-contact.js 只改写文本节点与角标，
+             不参与 chat-local.js renderChats() 的整表 innerHTML 重建，因此不会随 5s 未读轮询闪烁。 -->
+        <div class="ac-entry im-sess" id="acEntry" onclick="xtOpenAdminChat()" title="联系管理员（管理员不参与好友列表）">
+          <div class="im-av ac-av"><span class="nav-icon" data-icon="shield" data-icon-size="18"></span></div>
+          <div class="im-si"><div class="im-n">管理员</div><div class="im-sub" id="acEntrySub">管理员在线时会回复你</div></div>
+          <span class="ac-badge" id="acEntryBadge" style="display:none"></span>
+        </div>
+        <!-- C1 20260913k：「群聊」「添加好友」tab 面板宿主（原弹窗节点由页尾脚本整体搬入，id 不变，chat-local.js 弹窗函数照常按 id 命中） -->
+        <div class="im-panel-host" id="imPanelGroups"></div>
+        <div class="im-panel-host" id="imPanelAddFriend"></div>
+        <div class="im-list" id="imList"></div>
+      </aside>
+      <section class="im-chat" id="imChat">
+        <div class="im-empty" id="imEmpty">👈 选择左侧好友开始私聊</div>
+        <div class="im-conv" id="imConv" style="display:none">
+          <div class="im-chat-head">
+            <button class="im-icon" id="imBack" onclick="imBackList()" style="display:none" title="返回会话列表">←</button>
+            <div class="im-av" id="imCAv"></div>
+            <div style="flex:1;font-weight:700" id="imCName"></div>
+            <!-- T02 增量 2026-09-11：群会话「⋯」群设置入口（仅群会话由 renderChatHeader() 显示，私聊会话用 display 隐藏而非删 DOM） -->
+            <button class="im-icon" id="imGSBtn" onclick="imOpenGroupSettings()" title="群设置" style="display:none">⋯</button>
+          </div>
+          <!-- R104e 批5（2026-09-19）：实时位置共享常驻横幅（默认隐藏；chat-local.js 由 /api/live/state 驱动显隐）。
+               对方共享 → 「查看」开地图浮层；我在共享 → 「结束共享」。不含地名（后端 0 次 geocoder）。 -->
+          <div class="im-live-banner" id="imLiveBanner" style="display:none"></div>
+          <div class="im-msgs" id="imMsgs"></div>
+          <!-- R55（2026-09-14）：帖子分享接收侧转发卡片预览容器（默认隐藏，由页尾脚本按 localStorage 渲染） -->
+          <div id="imForwardCard" class="im-forward-card" style="display:none"></div>
+          <div class="im-composer">
+            <!-- R3b-C U9（长按引用）：输入框正上方的引用预览条（默认隐藏；chat-local.js 选中「引用」后显隐/填充）。
+                 结构：昵称 + 内容摘要 + 「×」取消；点 × 或发送完成后由 imClearReplyDraft 清空。 -->
+            <div class="im-quotebar" id="imQuoteBar">
+              <div class="im-qb-body">
+                <div class="im-qb-nm" id="imQuoteName"></div>
+                <div class="im-qb-tx" id="imQuoteText"></div>
+              </div>
+              <button type="button" class="im-qb-x" onclick="imClearReplyDraft()" title="取消引用" aria-label="取消引用">×</button>
+            </div>
+            <!-- R105b：输入框包一层 .im-input-wrap 以承载框内右侧装饰麦克风（textarea 不能含子节点）。 -->
+            <div class="im-input-wrap">
+              <textarea id="imInput" placeholder="输入消息…"></textarea>
+              <!-- R106b：麦克风改为「按住说话」键（不再有 onclick；touch/mouse 事件由 chat-local.js 绑定）。
+                   按下 → 录音 + 中央遮罩；上滑超 60px 取消；松手发送/丢弃；L3 系统录音机自动降级为点击式。 -->
+              <button type="button" class="im-mic" id="imMicBtn" title="按住说话" aria-label="按住说话"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg></button>
+            </div>
+            <!-- R5（2026-09-20）：表情按钮。点开 = 微信式全宽底部弹出面板（node 已挪到下方与 .im-plus-menu 同级，
+                 保持同类浮层集中；面板 position:fixed 贴底，输入栏仍在面板上方可见可用）。 -->
+            <button class="im-icon" title="表情" onclick="imToggleEmoji()"><span class="nav-icon" data-icon="smile" data-icon-size="20"></span></button>
+            <!-- R51（2026-09-14）：发图按钮 + 隐藏 file input 恢复（图片消息正式支持）。
+                 点击 → imPickImage() → 触发 #imImgInput → change → imSendImage(this)
+                 → chat-local.js：在线 POST /api/uploads/image + 发 kind='image' 消息；离线回落 dataURL。 -->
+            <!-- R88-I（2026-09-18）：发图按钮改「+」浮层菜单入口（相册发图 / 拍摄 / 位置定位）。
+                 原 #imImgInput 与 onchange="imSendImage(this)" 原样保留，菜单「相册发图」仍走同一条链路。 -->
+            <!-- R105b：➕ 即既有 #imPlusBtn（复用现有加号菜单功能，不删不改原逻辑）；im-btn-plus 供双状态 CSS 切换。
+                 【后续扩展点】如需独立「更多」面板，仅替换本按钮 onclick 即可，双状态不受影响。 -->
+            <button class="im-icon im-btn-plus" id="imPlusBtn" title="更多" onclick="imTogglePlusMenu()"><span class="nav-icon" data-icon="plus" data-icon-size="20"></span></button>
+            <input type="file" id="imImgInput" accept="image/*" style="display:none" onchange="imSendImage(this)">
+            <!-- R88-I：拍摄入口（capture 移动端直调相机；桌面退化为文件选择，同走 imSendImage 链路；不用 getUserMedia） -->
+            <input type="file" id="imCameraInput" accept="image/*" capture="environment" style="display:none" onchange="imSendImage(this)">
+            <!-- R88-I 增量：发送文件入口（不限 accept，允许常见文档/压缩包；change→imSendFile(this)） -->
+            <input type="file" id="imFileInput" style="display:none" onchange="imSendFile(this)">
+            <!-- R106 T2g：L3 降级「系统录音机」入口 —— accept=audio/* + 裸 capture（不写 capture="microphone"）；
+                 change → imSendVoiceFile(this) → imSendVoiceBlob（魔数嗅探后按扩展名上传）。 -->
+            <input type="file" id="imVoiceInput" accept="audio/*" capture style="display:none" onchange="imSendVoiceFile(this)">
+            <!-- R5（2026-09-20）：自定义表情选图入口（accept=image/*；change → imAddSticker(this) →
+                 canvas 压缩（最长边 240px / ≤80KB）→ 存 localStorage（study_workbench_emoji_custom，最多 24 张））。
+                 点「自定义」tab 的「+」格调起（imStickerPick）。 -->
+            <input type="file" id="imStickerInput" accept="image/*" style="display:none" onchange="imAddSticker(this)">
+            <!-- R88-I：底部滑出的加号浮层菜单（遮罩点击 / 再点「+」/ ESC 关闭）；各项均真可用，无假占位 -->
+            <!-- R90 item3 修订（用户明确要求）：定位保留在加号菜单内，不挪出。
+                 R106：新增第 5 项「录音」；R104e 批5 新增第 6 项「实时位置」（相册发图/拍摄/发送文件/定位/录音/实时位置）。 -->
+            <div class="im-plus-mask" id="imPlusMask" onclick="imClosePlusMenu()"></div>
+            <!-- R88-M6 方案B（2026-09-18）：每项 = 彩色圆角方底色块(.im-plus-ico) + 白色图标 + 文字。
+                 配色由 #imPlusCss 的 .im-plus-ico--i1..--i5 统一管理（成体系，非各写各的）。
+                 R90 item3 修订：--i4 恢复启用（定位项已回到加号菜单内）；R106 新增 --i5（录音项）；R104e 批5 新增 --i6（实时位置项）。 -->
+            <div class="im-plus-menu" id="imPlusMenu">
+              <div class="im-plus-item" onclick="imPlusPickImage()"><span class="im-plus-ico im-plus-ico--i1"><span class="nav-icon" data-icon="image" data-icon-size="22"></span></span><span class="im-plus-txt">相册发图</span></div>
+              <div class="im-plus-item" onclick="imPlusPickCamera()"><span class="im-plus-ico im-plus-ico--i2"><span class="nav-icon" data-icon="camera" data-icon-size="22"></span></span><span class="im-plus-txt">拍摄</span></div>
+              <div class="im-plus-item" onclick="imPlusPickFile()"><span class="im-plus-ico im-plus-ico--i3"><span class="nav-icon" data-icon="file" data-icon-size="22"></span></span><span class="im-plus-txt">发送文件</span></div>
+              <div class="im-plus-item" onclick="imPlusPickLocation()"><span class="im-plus-ico im-plus-ico--i4"><span class="nav-icon" data-icon="map-pin" data-icon-size="22"></span></span><span class="im-plus-txt">定位</span></div>
+              <!-- R106 T2a：第 5 项「录音」（与输入栏麦克风同一条链路 imMicClick）。 -->
+              <div class="im-plus-item" onclick="imPlusPickVoice()"><span class="im-plus-ico im-plus-ico--i5"><span class="nav-icon" data-icon="mic" data-icon-size="22"></span></span><span class="im-plus-txt">录音</span></div>
+              <!-- R104e 批5（2026-09-19）：第 6 项「实时位置」→ imPlusPickLiveLoc → chat-local.js imLiveStart。
+                   Web（isSecureContext=false）明确降级文案、零请求；App 内走原生桥 / JS watchPosition。 -->
+              <div class="im-plus-item" onclick="imPlusPickLiveLoc()"><span class="im-plus-ico im-plus-ico--i6"><span class="nav-icon" data-icon="navigation" data-icon-size="22"></span></span><span class="im-plus-txt">实时位置</span></div>
+            </div>
+            <!-- R5（2026-09-20）：表情面板改微信式全宽底部弹出（结构照 .im-plus-mask/.im-plus-menu 范式）。
+                 遮罩点击 / 再点表情按钮 / 面板内「收起」/ 安卓返回键（layer-stack）均可关闭；
+                 内容由 chat-local.js renderEmojiPanel() 渲染（最近/全部/收藏/自定义）。 -->
+            <div class="im-emoji-mask" id="imEmojiMask" onclick="imCloseEmojiPanel()"></div>
+            <div class="im-emoji-panel" id="imEmojiPanel"></div>
+            <button class="im-send im-btn-send" onclick="imSendText()">发送</button>
+            <!-- R106b：按住说话录音遮罩（默认隐藏；chat-local.js 控制显隐/计时/取消态文案与变色）。 -->
+            <div class="im-rec-overlay" id="imRecOverlay" style="display:none">
+              <div class="im-rec-ov-body">
+                <span class="im-rec-ov-mic"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg></span>
+                <div class="im-rec-ov-time">0:00</div>
+                <div class="im-rec-ov-text">松开发送 · 上滑取消</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== 群设置（页面内视图 · ADR-3 2026-09-15 批次八） ====================
+             原 .im-overlay / .im-modal 遮罩外壳已移除，本节点作为右侧会话区的一个「视图」与
+             #imEmpty / #imConv 平级互斥显示：点会话头「⋯」切进来，返回箭头 / ✕ / Esc 切回会话。
+             id（#imGroupSettingsModal、#imGsBody）与内部控件 id 全部保留，
+             内容仍由 chat-local.js 的 imRenderGroupSettings() 渲染到 #imGsBody，成员管理 / 踢人 /
+             免打扰 / 群内昵称 / 退群解散 / 改群名公告 一个不删。 -->
+        <div class="im-gs-view" id="imGroupSettingsModal" style="display:none">
+          <div class="im-modal-head im-gs-head">
+            <button class="im-icon" onclick="imCloseGroupSettings()" title="返回会话">←</button>
+            <div style="flex:1;font-size:var(--xt-font-md);font-weight:700">群设置</div>
+            <div style="cursor:pointer;color:#999;font-size:var(--xt-font-2xl)" onclick="imCloseGroupSettings()" title="返回会话">✕</div>
+          </div>
+          <div class="im-gs-body" id="imGsBody">
+            <div class="im-empty2" style="padding:20px 0;text-align:center;color:#999;font-size:var(--xt-font-base)">加载中…</div>
+          </div>
+        </div>
+
+        <!-- 需求01：联系管理员会话（页面内视图 · ADR-3 2026-09-15 批次八）
+             原 .ac-overlay 遮罩与 .ac-panel 浮层外壳已移除，消息列表 #acMsgs + 输入框 #acInput 完整保留，
+             显隐仍由 admin-contact.js 的 xtOpenAdminChat() / acClose() 按 #acPanel 的 display 控制。 -->
+        <div class="im-ac-view" id="acPanel" style="display:none">
+          <div class="ac-head">
+            <div class="ac-avatar">🛡️</div>
+            <div style="flex:1;min-width:0">
+              <div class="ac-title">联系管理员</div>
+              <div class="ac-hint">管理员在线时会回复你</div>
+            </div>
+            <button class="ac-close" onclick="acClose()" title="返回" aria-label="返回">✕</button>
+          </div>
+          <div class="ac-msgs" id="acMsgs"></div>
+          <div class="ac-composer">
+            <textarea id="acInput" rows="1" placeholder="输入消息…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();acSend()}"></textarea>
+            <button class="ac-send" onclick="acSend()">发送</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+
+
+  <!-- 底部导航（手机端） -->
+    <nav class="bottom-nav">
+    <div class="bottom-nav-list">
+      <div class="bottom-nav-item" data-page="home">
+        <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
+      </div>
+      <div class="bottom-nav-item active" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
+            <div class="bottom-nav-item" onclick="location.href='AI.html'"><div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div></div>
+            <div class="bottom-nav-item" onclick="location.href='更多.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 更多面板遮罩 -->
+    <div class="more-overlay" onclick="toggleMorePanel()"></div>
+
+  <!-- 更多面板 -->
+  <div class="bottom-more-panel" id="morePanel">
+    <div class="bottom-more-title">更多功能</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="navigateTo('moments');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="rss" data-icon-size="20"></span></div><div class="bm-label">动态空间</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogStats()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
+      </div>
+      <div class="bottom-more-item" onclick="if(window.gotoBlogMine){gotoBlogMine()}else{location.href='社区.html#mine'}">
+        <div class="bm-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div><div class="bm-label">互动广场</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div><div class="bm-label">错题本</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div><div class="bm-label">设置</div>
+      </div>
+      <div class="bottom-more-item" onclick="showAbout()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div><div class="bm-label">关于</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加倒计时弹窗 -->
+  <div class="modal-overlay" id="countdownModal">    <div class="modal">
+      <div class="modal-title" id="countdownModalTitle">添加倒计时</div>
+      <div class="form-group">
+        <div class="form-label">名称</div>
+        <input type="text" class="form-input" id="cdName" placeholder="如：四级考试、秋招截止">
+      </div>
+      <div class="form-group">
+        <div class="form-label">日期</div>
+        <input type="date" class="form-input" id="cdDate">
+      </div>
+      <div class="form-group">
+        <div class="form-label">颜色</div>
+        <div class="color-picker" id="cdColorPicker">
+          <div class="color-dot active" style="background:#5B8DEF" data-color="#5B8DEF"></div>
+          <div class="color-dot" style="background:#E05040" data-color="#E05040"></div>
+          <div class="color-dot" style="background:#9B6BD9" data-color="#9B6BD9"></div>
+          <div class="color-dot" style="background:#D4A056" data-color="#D4A056"></div>
+          <div class="color-dot" style="background:#36CFC9" data-color="#36CFC9"></div>
+          <div class="color-dot" style="background:#FF9F68" data-color="#FF9F68"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--xt-font-base);color:var(--text-secondary)">
+          <input type="checkbox" id="cdPinned"> 置顶显示
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeCountdownModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveCountdown()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 【后续扩展点】发起群聊弹层（T4 增量 2026-09-11） ====================
+       步骤：好友多选（≥2 人）→ 命名（≤20 字）→ 创建并进入群会话。
+       内容由 chat-local.js 的 imOpenGroupCreator() 动态填充。 -->
+  <div class="im-overlay" id="imGroupModal" style="display:none" onclick="if(event.target===this)imCloseGroupCreator()">
+    <div class="im-modal">
+      <div class="im-modal-head"><div style="font-size:var(--xt-font-md);font-weight:700">发起群聊</div><div style="cursor:pointer;color:#999;font-size:var(--xt-font-2xl)" onclick="imCloseGroupCreator()">✕</div></div>
+      <div class="im-group-body"></div>
+      <div class="im-group-foot"></div>
+    </div>
+  </div>
+
+  <!-- 群设置：已按 ADR-3 改为右侧会话区「页面内视图」，节点现位于 #imChat 内（#imGroupSettingsModal） -->
+
+  <!-- ==================== 添加好友模态（A3，2026-09-11；批次二 2026-09-11h 移除弹窗内「旧页回退」入口） ====================
+       搜索（300ms 防抖）→ imRenderFriendRows 统一渲染。
+       注：好友申请.html 文件本身保留（直连 URL 仍可访问作为后门），但弹窗内不再提供跳转入口。 -->
+  <!-- 2026-09-15 批次八：拆掉 .im-overlay/.im-modal 外壳与标题栏/✕，改为真正的页面内区块（ADR-3：核心功能不走弹窗）
+       id 与 #imAfInput / #imAfResults 全部保留，chat-local.js 的 imOpenAddFriendModal / imAfSearch / imRenderFriendRows 按 id 照常命中，未改 JS -->
+  <div class="im-af-sec" id="imAddFriendModal" style="display:none">
+    <div class="im-af-search">
+      <input id="imAfInput" placeholder="输入昵称或 @账号" maxlength="30" oninput="imAfSearch(this.value)" onkeydown="if(event.key==='Enter')imAfSearch(this.value)">
+    </div>
+    <div class="im-af-list" id="imAfResults"><div class="im-empty2">输入昵称或 @账号开始搜索</div></div>
+  </div>
+
+  <!-- Toast提示 -->
+  <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center"></div>
+
+  <!-- ==================== AI学习助手（悬浮聊天窗口） ====================
+       说明：
+       1. 默认“本地演示模式”：不联网、不调API、无密钥，由内置规则引擎回复；
+       2. 【后续扩展点】启动 ai-server 后端后，把下方 JS 里的 AI_CONFIG.apiUrl
+          填上后端地址（如 http://localhost:3000/api/chat），即可切换为真实AI流式对话；
+       3. 安全约束：大模型密钥只放在后端 .env 里，前端代码永远不出现密钥。 -->
+  <!-- 悬浮头像：可按住拖拽到任意位置（见下方 JS.initAiFabDrag），点击打开/收起面板，双击复位 -->
+  <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">
+    🤖<span class="ai-mode-badge" id="aiModeBadge">演示</span>
+  </div>
+  <div class="ai-panel" id="aiPanel">
+    <div class="ai-panel-header">
+      <div class="ai-avatar">🤖</div>
+      <div style="flex:1">
+        <div class="ai-title">AI学习助手</div>
+        <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
+      </div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录">🧹</div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板">✕</div>
+    </div>
+    <div class="ai-messages" id="aiMessages"></div>
+    <div class="ai-input-row">
+      <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()">➤</div>
+    </div>
+  </div>
+
+  <!-- 联系管理员：已按 ADR-3 改为右侧会话区「页面内视图」，节点现位于 #imChat 内（#acPanel） -->
+
+</div>
+
+<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/xt-toast.js?v=20260923a" defer></script>
+<script src="assets/error-boundary.js?v=20260924a" defer></script>
+<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/config.js?v=20260916O" defer></script>
+<!-- R88-H（2026-09-18）：位置能力底座 XT_LOC_PICK（跟 config.js，先于 chat-local.js，确保调用前就绪） -->
+<script src="assets/xt-region.js?v=20260919j" defer></script>
+<script src="assets/emoji/manifest.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260924a" defer></script>
+<script src="assets/img-viewer.js?v=20260922c" defer></script>
+<script src="assets/layer-stack.js?v=20260923a" defer></script>
+<script src="assets/layer-stack.js?v=20260923a" defer></script>
+<script src="assets/chat-local.js?v=20260926b" defer></script>
+<script src="assets/admin-contact.js?v=20260917b" defer></script>
+<style>
+  /* R33（20260913r）：tab 视觉统一——去掉 .im-tab-add 的特殊填充/加粗与专属 hover，添加好友与其余 4 个 tab 同享 .im-tab/.im-tab.active；“im-tab-add” 类保留在 DOM 仅作语义标记，无样式副作用 */
+  .im-tab:not(.active):hover{border-color:var(--primary);color:var(--primary)}
+  /* tab 按钮 + 头像的未读角标 */
+  /* .im-tab{position:relative} 已并入文件末尾唯一权威定义区（未读角标锚点，必须保留，见 .tab-badge/.im-tab-badge） */
+  .tab-badge{position:absolute;top:-7px;right:-4px;min-width:17px;height:17px;line-height:17px;padding:0 4px;background:#ff5d5d;color:#fff;border-radius:9px;font-size:12px;font-weight:700;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.25);z-index:2}
+  .im-av-badge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;line-height:16px;padding:0 4px;background:#ff5d5d;color:#fff;border-radius:9px;font-size:11px;font-weight:700;text-align:center;border:2px solid #fff;box-sizing:border-box;z-index:2}
+  /* 2026-09-16 头部重排（本页私有，不改 common.css）：
+     ① 侧栏顶部：标题左 + 搜索框 flex:1 合成一条工具行，控件统一 36px 高；
+     ② tab 五等分、等高 36px、间距 8，激活态沿用全站主色 .im-tab.active；
+     ③ 顶栏：标题收为自适应宽、全局搜索框 flex:1，两者同高对齐；间距统一 8/12/16。 */
+  .im-head{padding:12px}
+  .im-head-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .im-title{flex:0 0 auto;margin:0;font-size:16px;font-weight:700;line-height:36px;white-space:nowrap}
+  .im-search{flex:1 1 auto;display:flex;gap:8px;margin-bottom:0}
+  .im-search input{flex:1 1 auto;min-width:0;height:36px;box-sizing:border-box}
+  .im-search .btn{height:36px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .im-tabs{display:flex;gap:8px}
+  /* .im-tab 的 flex/height/font-size 等已收敛到文件末尾唯一权威定义区（本轮修复：原第371行 R33 规则会造成 5 等分文字截断） */
+  .topbar-title{flex:0 0 auto;max-width:38vw;font-size:17px;line-height:36px}
+  .topbar .gs-wrap{flex:1 1 auto;min-width:0;max-width:420px}
+  .topbar .gs-input{height:36px;padding-top:0;padding-bottom:0;box-sizing:border-box}
+  /* C1 20260913k：「群聊」「添加好友」tab 页面视图——弹窗节点搬入侧栏面板宿主后取消浮层定位，随 tab 显隐 */
+  .im-panel-host{display:none;flex:1;overflow-y:auto;border-top:1px solid var(--border)}
+  .im-panel-host.active{display:block}
+  .im-panel-host .im-overlay{position:static;top:auto;left:auto;right:auto;bottom:auto;background:transparent;z-index:auto;align-items:stretch;justify-content:stretch;padding:10px}
+  .im-panel-host .im-modal{width:100%;max-width:none;max-height:none;margin:auto;box-shadow:none;border:1px solid var(--border)}
+  /* 2026-09-15 批次八：「添加好友」已拆掉弹窗外壳，改为页面内区块（ADR-3）；
+     与「我的好友/群聊」列表同一视觉：无卡片边框、无圆角、无遮罩，直接作为面板内容铺开 */
+  .im-af-sec{display:flex;flex-direction:column;padding:10px 14px;background:transparent}
+  .im-af-sec .im-af-search{padding:0;margin-bottom:10px}
+  .im-af-sec .im-af-list{background:transparent;border:0;padding:0}
+
+  /* 需求01：联系管理员固定入口 + 会话浮层（仅本页，全部 .ac- 前缀，不影响既有私信样式） */
+  /* R45（20260914e）：入口改为会话行同款（.im-sess 结构 + 圆形头像），仅保留必要的自身覆写：
+     与好友行同样的 10px 14px 内边距 / 下边框 / 卡片底色；hover 用 --bg 而非主色描边。 */
+  .ac-entry{gap:10px;padding:10px 14px;border-radius:0;border-bottom:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px;font-weight:400;cursor:pointer;border-top:0;border-left:0;border-right:0;position:relative}
+  .ac-entry:hover{background:var(--bg)}
+  .ac-entry .ac-av{position:relative;background:linear-gradient(135deg,var(--primary-light),#e9ecff);color:var(--primary)}
+  .ac-entry .im-n{font-size:14px;font-weight:600;color:var(--text)}
+  /* R43（20260914b）：联系管理员入口未读角标（管理员来信）。count>0 显示，>99 显示 99+ */
+  .ac-badge{position:absolute;top:-6px;right:-6px;min-width:17px;height:17px;line-height:17px;padding:0 4px;background:#ff5d5d;color:#fff;border-radius:9px;font-size:12px;font-weight:700;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.25);z-index:2}
+  /* R45：入口变为会话行后，角标改到行内右侧（与好友行 .im-badge 同一位置），不再浮在行外右上角 */
+  .ac-entry .ac-badge{position:static;display:inline-block;margin-left:auto;flex-shrink:0;box-shadow:none;font-size:11px;min-width:18px;height:18px;line-height:18px}
+  /* ADR-3（2026-09-15 批次八）：.ac-overlay 遮罩与 .ac-panel 浮层外壳已删除，
+     #acPanel 改为右侧会话区内与 #imConv 平级的视图容器 .im-ac-view（布局样式见页首样式块）。
+     以下 .ac-* 均为面板内部元素样式，原样保留（.ac-m / .ac-empty 由 admin-contact.js 生成的消息 HTML 使用）。 */
+  .ac-head{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--card);flex-shrink:0}
+  .ac-avatar{width:36px;height:36px;border-radius:50%;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+  .ac-title{font-size:15px;font-weight:700;color:var(--text)}
+  .ac-hint{font-size:11px;color:var(--text-secondary);margin-top:1px}
+  .ac-close{border:none;background:transparent;color:var(--text-secondary);font-size:16px;cursor:pointer;width:30px;height:30px;border-radius:8px;flex-shrink:0}
+  .ac-close:hover{background:var(--bg);color:var(--text)}
+  .ac-msgs{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:8px;min-height:160px;background:var(--bg)}
+  .ac-empty{text-align:center;padding:24px 8px;color:var(--text-secondary);font-size:13px}
+  .ac-m{max-width:78%;padding:8px 12px;border-radius:12px;font-size:14px;line-height:1.5;word-break:break-word}
+  /* R105 气泡线：AI/助手面板同私聊 —— 单色浅底+深色文字（固定值），时间移出气泡外下方。 */
+  .ac-m.me{align-self:flex-end;background:#95ec69;color:#111;border-bottom-right-radius:4px}
+  .ac-m.ot{align-self:flex-start;background:var(--card);border:1px solid var(--border);border-bottom-left-radius:4px;color:var(--text)}
+  .ac-m{position:relative;margin-bottom:8px}
+  .ac-m-text{white-space:pre-wrap}
+  .ac-m-time{position:absolute;top:100%;right:0;margin-top:3px;font-size:12px;opacity:1;text-align:right;color:var(--text-muted)}
+  body.dark .ac-m.me{background:#95ec69;color:#111}
+  .ac-composer{display:flex;gap:8px;align-items:flex-end;padding:10px 12px;background:var(--card);border-top:1px solid var(--border)}
+  .ac-composer textarea{flex:1;resize:none;height:44px;max-height:120px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;font-size:14px;outline:none;font-family:inherit;background:var(--bg);color:var(--text)}
+  .ac-composer textarea:focus{border-color:var(--primary)}
+  .ac-send{height:44px;padding:0 18px;border:none;border-radius:12px;background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff;cursor:pointer;flex-shrink:0}
+
+  /* ============================================================
+     IM-TAB 唯一权威定义区（本轮修复·收敛）
+     ------------------------------------------------------------
+     本轮收敛了 R01/R33 遗留的 4 处 .im-tab 定义：
+       ① 页首第21行 基础（flex:1 / padding:6px 0 / font-size:13px）
+       ② 页首第25行 position:relative（未读角标锚点）
+       ③ 第357行   position:relative（重复）
+       ④ 第371行   R33 视觉统一（flex:1 1 0 + 5 等分 + nowrap + overflow:hidden + ellipsis）
+     最终生效规则 = 本区块这一份（唯一）。
+     【根因】原第④条把 5 个 tab 五等分（每格约 60px@320px）后又加 white-space:nowrap +
+       overflow:hidden + text-overflow:ellipsis，"💬 会话 / 👥 好友 / 📩 申请" 这类
+       emoji+空格+双字中文被整体截断成空白，故用户看到「四个按钮文字显示不出来」。
+     【修法】改用 flex:1 1 auto + 内容自适应宽度，短文案（添加好友）不再被拉宽，
+       长文案优先拿到像素；去掉 ellipsis，窄屏下允许折行换行；tab 栏本身可横向滚动兜底，
+       emoji 一并去除（历史遗留 emoji 不再新增，去除属于布局修复，不影响激活态底色/圆角）。
+     【必须保留】position:relative —— .im-tab-badge/.tab-badge 未读红点依赖它为定位锚点。
+     ============================================================ */
+  .im-tab{position:relative;flex:1 1 auto;min-width:0;height:36px;line-height:34px;padding:0 2px;font-size:12px;box-sizing:border-box;text-align:center;border:1px solid var(--border);background:var(--bg);color:var(--text-secondary);border-radius:8px;cursor:pointer;white-space:normal;word-break:break-all;overflow:visible}
+  .im-tab.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+  /* 窄屏（安卓老机 320px 常见）：tab 栏横向滚动，每个 tab 保底可读宽度，文字完整不截断 */
+  @media (max-width:480px){
+    .im-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
+    /* 【修复 20260920】5 个 tab（会话/通讯录/群聊/申请/添加好友）原本 flex:0 0 auto，
+       按各 tab 内容宽度排完后总宽不足一行 → 整条 tab 栏右侧留白、不占满。
+       改为 flex:1 0 auto：flex-basis 仍为 auto（守住上一轮修好的「长文案优先拿像素、
+       不截断」），grow=1 把剩余空间补掉 → 自动铺满一行。
+       注意 grow 按 basis 比例分配剩余空间，是「等比例补足」而非「五等分」，
+       这正是本次想要的效果：文案长的多得、短的少得，且都不被压缩。
+       min-width:56px 保底可读宽度不动；overflow-x:auto 仍留作更极端窄屏的兜底。 */
+    .im-tab{flex:1 0 auto;min-width:56px;padding:0 6px;line-height:32px;height:34px;font-size:12px}
+  }
+</style>
+<script>
+/* 本页顶栏搜索框专用：只搜索聊天记录（好友昵称 + 本地/服务器消息内容），不搜发贴模块 */
+(function () {
+  'use strict';
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function fmtTime(t) {
+    if (!t) return '';
+    var d = new Date(t);
+    if (isNaN(d)) return '';
+    return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+  function apiBase() { return (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000')); }
+  function tok() { return localStorage.getItem('study_workbench_token') || ''; }
+
+  function render(kw, hits) {
+    var dd = document.getElementById('gsDropdown'); if (!dd) return;
+    if (!hits.length) { dd.innerHTML = '<div class="gs-empty">聊天记录里没有找到「' + esc(kw) + '」</div>'; }
+    else {
+      dd.innerHTML = hits.slice(0, 12).map(function (h) {
+        return '<div class="gs-item" onclick="window.__gsOpen(' + h.fid + ');closeGsDropdown && closeGsDropdown()">' +
+          '<div class="gs-item-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="18"></span></div><div class="gs-item-main">' +
+          '<div class="gs-item-title">' + esc(h.name) + '</div>' +
+          '<div class="gs-item-desc">' + esc(h.txt) + ' · ' + fmtTime(h.time) + '</div></div></div>';
+      }).join('') + (hits.length > 12 ? '<div class="gs-empty">还有 ' + (hits.length - 12) + ' 条结果未显示</div>' : '');
+    }
+    dd.classList.add('open');
+    /* C1 20260913k：动态插入的 data-icon span 需手动触发一次图标水合 */
+    if (window.lucideAutoRender) window.lucideAutoRender();
+  }
+  window.__gsOpen = function (fid) { if (typeof imOpenChat === 'function') imOpenChat(fid); };
+
+  window.globalSearch = function (kw) {
+    var dd = document.getElementById('gsDropdown'); if (!dd) return;
+    kw = (kw || '').trim();
+    if (!kw) { dd.classList.remove('open'); dd.innerHTML = ''; return; }
+    var kwL = kw.toLowerCase();
+    var hits = [], seen = {};
+    var data = null;
+    try { data = JSON.parse(localStorage.getItem('study_im_local_data') || 'null'); } catch (e) { }
+    if (data && data.chats) {
+      Object.keys(data.chats).forEach(function (fid) {
+        var c = data.chats[fid];
+        var nameHit = (c.nickname || '').toLowerCase().indexOf(kwL) >= 0;
+        var got = false;
+        ((data.messages || {})[fid] || []).forEach(function (m) {
+          if ((m.content || '').toLowerCase().indexOf(kwL) >= 0) {
+            hits.push({ fid: Number(fid), name: c.nickname || '好友', txt: m.content, time: m.time }); got = true;
+          }
+        });
+        if (nameHit && !got) hits.push({ fid: Number(fid), name: c.nickname || '好友', txt: '（联系人，点开查看聊天）', time: c.time || '' });
+        seen[fid] = 1;
+      });
+    }
+    render(kw, hits);
+
+    /* 服务器好友：异步补充搜索服务器聊天记录 */
+    var t = tok(); if (!t) return;
+    var servers = [];
+    if (data && data.chats) Object.keys(data.chats).forEach(function (fid) { if (Number(fid) >= 10000) servers.push({ fid: Number(fid), sid: Number(fid) - 10000, name: data.chats[fid].nickname }); });
+    // 本地缓存里还没有的服务器好友（刚加载的情况）也从会话列表补
+    if (typeof S !== 'undefined' && S && S.chats) S.chats.forEach(function (c) { if (c.isServer && c.serverId && servers.indexOf ) { var fid = 10000 + c.serverId; if (!seen[fid] && !servers.some(function (s) { return s.fid === fid; })) servers.push({ fid: fid, sid: c.serverId, name: c.nickname }); } });
+    if (!servers.length) return;
+    var serverHits = [], pending = servers.length;
+    servers.forEach(function (sv) {
+      fetch(apiBase() + '/api/chat/' + sv.sid + '/messages?limit=50', { headers: { 'Authorization': 'Bearer ' + t } })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          var nameHit = (sv.name || '').toLowerCase().indexOf(kwL) >= 0, got = false;
+          (d.items || []).forEach(function (m) {
+            if ((m.content || '').toLowerCase().indexOf(kwL) >= 0) {
+              serverHits.push({ fid: sv.fid, name: sv.name, txt: m.content, time: m.createdAt }); got = true;
+            }
+          });
+          if (nameHit && !got) serverHits.push({ fid: sv.fid, name: sv.name, txt: '（联系人，点开查看聊天）', time: '' });
+        })
+        .catch(function () { })
+        .finally(function () { if (--pending === 0) { Array.prototype.push.apply(hits, serverHits); render(kw, hits); } });
+    });
+  };
+})();
+</script>
+<script>
+/* C1 20260913k：「添加好友」「群聊」入口由弹窗改为 tab 页面视图。
+   实现方式：
+   1. 把 #imGroupModal / #imAddFriendModal 整体节点搬进侧栏面板宿主（DOM 位置变化、id 不变），
+      chat-local.js 的弹窗函数（imOpenGroupCreator / imOpenAddFriendModal 等）原样保留并复用——
+      其内部均按 id / querySelector 查找，搬家后依然命中，入口不再弹浮层；
+   2. 包装 imSwitchTab：groups / addfriend 两个 tab 走面板视图（隐藏 #imList、显示面板宿主、
+      复用原弹窗函数填充内容），其余 tab 走原逻辑并恢复列表；
+   3. 包装关闭函数：面板内 Esc / ✕ 关闭后自动回到「会话」tab，避免侧栏挂空面板。 */
+(function () {
+  'use strict';
+
+  var activePanel = null; // 当前面板 tab：null | 'groups' | 'addfriend'
+
+  function $id(x) { return document.getElementById(x); }
+
+  /* ============ W1-T3（2026-09-15 批次九）：联系管理员入口的 tab 归属 + 未读角标兜底 ============
+     1) #acEntry 只在「好友」tab（data-tab="friends"）可见，其余 4 个 tab 收起 —— 它是 #imList
+        之外的静态节点，原来的 showPanel / hidePanels / imSwitchTab 都不管它，所以 5 个 tab 全可见。
+     2) 未读角标兜底：assets/admin-contact.js（R43）把管理员来信未读数渲染进 #acEntryBadge
+        （位于 #acEntry 内部）。整行隐藏会连带藏掉未读提醒，故此处把 #acEntryBadge 的**内联状态**
+        （style.display + textContent，admin-contact.js 每 5s 由 refreshEntryBadge() 写入）
+        单向镜像到「好友」tab 标签上的 #acTabBadge —— 不改 admin-contact.js，也不额外发请求。
+        读的是内联 style 而非计算样式，因此 #acEntry 被 display:none 时依然能读到真实未读状态。 */
+  var AC_TAB = 'friends';
+  var acTabNow = '';   // 当前 tab（由 syncAcEntry 记录，未切换过时回落到 currentTab()）
+
+  function syncAcEntry(tab) {
+    acTabNow = tab;
+    var e = $id('acEntry');
+    if (e) e.style.display = (tab === AC_TAB) ? '' : 'none';
+  }
+
+  function acActiveTab() { return acTabNow || currentTab(); }
+
+  function currentTab() {
+    var on = document.querySelector('.im-tab.active');
+    return on ? (on.getAttribute('data-tab') || 'chats') : 'chats';
+  }
+
+  function acUnreadText() {
+    var b = $id('acEntryBadge');
+    if (!b) return '';
+    if (b.style.display === 'none') return '';
+    return String(b.textContent || '').replace(/^\s+|\s+$/g, '');
+  }
+
+  function syncAcTabBadge() {
+    var tab = document.querySelector('.im-tab[data-tab="' + AC_TAB + '"]');
+    if (!tab) return;
+    var dot = $id('acTabBadge');
+    if (!dot) {
+      dot = document.createElement('span');
+      dot.className = 'im-tab-badge';
+      dot.id = 'acTabBadge';
+    }
+    if (dot.parentNode !== tab) tab.appendChild(dot);
+    /* 已在「好友」tab 时 #acEntry 本身可见且自带 #acEntryBadge，镜像角标不再显示，避免同源双显 */
+    var txt = (acActiveTab() === AC_TAB) ? '' : acUnreadText();
+    if (txt) { dot.textContent = txt; dot.style.display = ''; }
+    else { dot.textContent = ''; dot.style.display = 'none'; }
+  }
+
+  /* 1. 搬家：模态节点移入侧栏面板宿主（幂等，只搬一次）
+        R56（2026-09-14）：imGroupModal 不再搬家 —— 「群聊」tab 改为承载「我的群聊」列表
+        （chat-local.js renderGroupsTab），建群弹层恢复为独立的 .im-overlay 浮层，
+        由列表顶部「+ 发起群聊」按钮触发 imOpenGroupCreator()。 */
+  function relocateModals() {
+    [['imAddFriendModal', 'imPanelAddFriend']].forEach(function (p) {
+      var modal = $id(p[0]), host = $id(p[1]);
+      if (modal && host && modal.parentElement !== host) host.appendChild(modal);
+    });
+  }
+
+  /* 2. 面板显隐：进入面板 tab 时隐藏会话列表并复用原弹窗函数填充内容 */
+  function showPanel(tab) {
+    var modalId = tab === 'groups' ? 'imGroupModal' : 'imAddFriendModal';
+    if (tab === 'groups' && typeof window.imOpenGroupCreator === 'function') window.imOpenGroupCreator();
+    else if (tab === 'addfriend' && typeof window.imOpenAddFriendModal === 'function') window.imOpenAddFriendModal();
+    var modal = $id(modalId);
+    if (!modal || modal.style.display === 'none') {
+      // 原函数因未登录等条件只 toast 未开面板 → 回退会话 tab，侧栏不留空白
+      window.imSwitchTab('chats');
+      return;
+    }
+    var list = $id('imList');
+    if (list) list.style.display = 'none';
+    ['imPanelGroups', 'imPanelAddFriend'].forEach(function (hid) {
+      var h = $id(hid);
+      if (h) h.classList.toggle('active', hid === (tab === 'groups' ? 'imPanelGroups' : 'imPanelAddFriend'));
+    });
+    activePanel = tab;
+  }
+
+  function hidePanels() {
+    var list = $id('imList');
+    if (list) list.style.display = '';
+    ['imPanelGroups', 'imPanelAddFriend'].forEach(function (hid) {
+      var h = $id(hid);
+      if (h) h.classList.remove('active');
+    });
+    activePanel = null;
+  }
+
+  /* 3. 包装 imSwitchTab（须在 chat-local.js 加载后执行） */
+  function patchSwitchTab() {
+    if (typeof window.imSwitchTab !== 'function' || window.__imSwitchTabPatched) return;
+    var real = window.imSwitchTab;
+    window.imSwitchTab = function (tab) {
+      /* W1-T3：#acEntry 仅「好友」tab 可见（放在最前，showPanel 回退到 chats 时会再进一次本函数） */
+      syncAcEntry(tab);
+      syncAcTabBadge();   // 切 tab 即时刷新镜像角标，不等下一轮 1s 轮询
+      /* R56（2026-09-14）：'groups' 不再是「面板 tab」——它现在承载「我的群聊」列表
+         （chat-local.js renderGroupsTab 渲染到 #imList），建群弹层改为列表内按钮触发的浮层。
+         只有 'addfriend' 仍走面板视图。 */
+      if (tab === 'addfriend') {
+        real(tab);        // 复用原逻辑：tab 高亮切换 + 列表占位渲染（渲染结果被面板覆盖）
+        showPanel(tab);
+        return;
+      }
+      hidePanels();
+      real(tab);
+    };
+    window.__imSwitchTabPatched = true;
+  }
+
+  /* 4. 包装关闭函数：面板处于激活态时关闭后回到会话 tab */
+  function patchClosers() {
+    [['imCloseGroupCreator'], ['imCloseAddFriendModal']].forEach(function (p) {
+      var name = p[0], fn = window[name];
+      if (typeof fn !== 'function' || fn.__imPanelPatched) return;
+      var wrapped = function () {
+        fn();
+        if (activePanel) window.imSwitchTab('chats');
+      };
+      wrapped.__imPanelPatched = true;
+      window[name] = wrapped;
+    });
+  }
+
+  function init() {
+    relocateModals();
+    patchSwitchTab();
+    patchClosers();
+    /* W1-T3 首屏状态：默认 tab 是 chats → #acEntry 收起；并启动角标镜像（1s 轮询 #acEntryBadge 内联状态） */
+    syncAcEntry(currentTab());
+    syncAcTabBadge();
+    setInterval(syncAcTabBadge, 1000);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+<script>
+/* R55（2026-09-14）：帖子分享「接收侧」—— 读 study_workbench_share_forward_v1 渲染转发卡片。
+   数据由社区帖子分享（线4）写入 localStorage；本页只在打开时读一次并渲染预览。
+   发送时由 chat-local.js 的 imSendText 调 window.__imConsumeForward() 取出深链拼到正文；
+   取消即移除。键缺失 / JSON 非法 / id 为空 → 不渲染、不抛错（零侵入）。
+   2026-09-14 修：兼容发送侧的 excerpt 摘要字段与字符串 id（原 Number(id) 会把 'n_001' 判为无效）。 */
+(function () {
+  'use strict';
+  var KEY = 'study_workbench_share_forward_v1';
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  /* 发送侧（社区.html R55）实际写入契约（只读核对，不改发送侧）：
+       {v:1, type:'note', id:String, title:String, excerpt:String, cover:String, url:'…#note=<id>', ts:Number}
+     两条兼容要点（2026-09-14 修）：
+       1) 摘要字段是 **excerpt**，不是 summary → 两者都兼容（优先 summary，兼容历史/他处写法）；
+       2) id 可能是字符串（本地笔记形如 'n_001'）或数字串（在线）→ **只校验非空**，不做 Number 强转，
+          否则字符串 id 会被 Number() 变成 NaN 判为无效，卡片直接不渲染。 */
+  function parsePayload() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (!raw) return null;
+      var p = JSON.parse(raw);
+      if (!p || typeof p !== 'object') return null;
+      var rawId = (p.id != null && p.id !== '') ? p.id : (p.noteId != null ? p.noteId : '');
+      var id = String(rawId == null ? '' : rawId).trim();
+      if (!id) return null;
+      var url = (typeof p.url === 'string' && p.url) ? p.url.trim() : '';
+      return {
+        id: id,
+        url: url,
+        title: String(p.title || p.name || '帖子').slice(0, 60),
+        summary: String(p.summary || p.excerpt || '').slice(0, 80)
+      };
+    } catch (e) { return null; }
+  }
+  function render() {
+    var host = document.getElementById('imForwardCard');
+    if (!host) return;
+    var p = parsePayload();
+    if (!p) { host.style.display = 'none'; host.innerHTML = ''; return; }
+    host.innerHTML =
+      '<div class="im-forward-tag">🔗 转发自帖子</div>' +
+      '<div class="im-forward-body"><div style="flex:1;min-width:0">' +
+        '<div class="im-forward-title">' + esc(p.title) + '</div>' +
+        (p.summary ? '<div class="im-forward-sum">' + esc(p.summary) + '</div>' : '') +
+      '</div><div class="im-forward-cancel" onclick="window.__imClearForwardCard()">取消</div></div>';
+    host.style.display = 'block';
+  }
+  window.__imClearForwardCard = function () {
+    try { localStorage.removeItem(KEY); } catch (e) { }
+    var host = document.getElementById('imForwardCard');
+    if (host) { host.style.display = 'none'; host.innerHTML = ''; }
+  };
+  window.__imConsumeForward = function () {
+    var p = parsePayload();
+    if (!p) return '';
+    window.__imClearForwardCard();
+    // 优先用发送侧已拼好的深链 url（自带 #note=<id>）；只有 id 的旧数据再自行拼，不再重新拼 url
+    return p.url || ('#note=' + p.id);
+  };
+  window.__imRenderForwardCard = render;
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render);
+  else render();
+})();
+</script>
+<script>
+/* =====================================================================
+   2026-09-15 批次八（ADR-3）：群设置 / 联系管理员 —— 遮罩弹窗 → 右栏「页面内视图」
+   ---------------------------------------------------------------------
+   #imGroupSettingsModal 与 #acPanel 已搬进 #imChat，与 #imEmpty / #imConv 平级。
+   本脚本只做「视图互斥切换」的包装：原函数（imOpenGroupSettings / imCloseGroupSettings /
+   xtOpenAdminChat / acClose）函数名与内部逻辑全部保留，仅在打开后隐藏会话、关闭后还原会话。
+   id 与内部控件 id 一个未动，chat-local.js / admin-contact.js 按 id 照常命中，无死链。
+   ===================================================================== */
+(function () {
+  'use strict';
+
+  var BASE = ['imEmpty', 'imConv'];  // 右栏基础视图（空态 / 会话）
+  var cur = null;    // 当前激活视图 id（null = 基础视图在显示）
+  var saved = null;  // 进入视图前的基础视图 display 快照
+
+  function $id(x) { return document.getElementById(x); }
+
+  function hideBase() {
+    saved = { mobile: document.body.classList.contains('im-mobile') };
+    BASE.forEach(function (id) {
+      var el = $id(id);
+      saved[id] = el ? el.style.display : '';
+      if (el) el.style.display = 'none';
+    });
+  }
+
+  function restoreBase() {
+    if (!saved) return;
+    BASE.forEach(function (id) {
+      var el = $id(id);
+      if (el) el.style.display = saved[id];
+    });
+    if (saved.mobile) document.body.classList.add('im-mobile');
+    else document.body.classList.remove('im-mobile');
+    saved = null;
+  }
+
+  function showView(id) {
+    if (cur === id) return;
+    if (cur) { var prev = $id(cur); if (prev) prev.style.display = 'none'; }
+    else hideBase();
+    cur = id;
+    var v = $id(id);
+    if (v) v.style.display = 'flex';
+    /* 窄屏右栏默认隐藏（.im-chat{display:none}），切视图时确保可见 */
+    document.body.classList.add('im-mobile');
+  }
+
+  function hideView(id) {
+    var v = $id(id);
+    if (v) v.style.display = 'none';
+    if (cur === id) { cur = null; restoreBase(); }
+  }
+
+  /* 打开类：原函数跑完再判断是否真的打开了（失败路径只 toast 不改 display） */
+  function wrapAfter(name, after) {
+    if (typeof window[name] !== 'function' || window[name].__imViewPatched) return;
+    var fn = window[name];
+    var w = function () { var r = fn.apply(this, arguments); after(); return r; };
+    w.__imViewPatched = true;
+    window[name] = w;
+  }
+
+  /* 关闭类：先收起视图再让原函数走（顺序无关，统一放后面即可） */
+  function wrapBefore(name, before) {
+    if (typeof window[name] !== 'function' || window[name].__imViewPatched) return;
+    var fn = window[name];
+    var w = function () { before(); return fn.apply(this, arguments); };
+    w.__imViewPatched = true;
+    window[name] = w;
+  }
+
+  function init() {
+    wrapAfter('imOpenGroupSettings', function () {
+      var m = $id('imGroupSettingsModal');
+      if (m && m.style.display !== 'none') showView('imGroupSettingsModal');
+    });
+    wrapAfter('imCloseGroupSettings', function () { hideView('imGroupSettingsModal'); });
+
+    wrapAfter('xtOpenAdminChat', function () {
+      var p = $id('acPanel');
+      if (p && p.style.display !== 'none') showView('acPanel');
+    });
+    wrapAfter('acClose', function () { hideView('acPanel'); });
+
+    /* 在视图里点左侧会话 → 先收起视图，避免两个视图同时占位 */
+    wrapBefore('imOpenChat', function () { if (cur) hideView(cur); });
+    wrapBefore('imBackToList', function () { if (cur) hideView(cur); });
+
+    /* admin-contact.js 的 Esc 分支直接调内部 closePanel()（不走 window.acClose），
+       这里补一刀还原基础视图；其监听器注册在前，此时面板已 display:none。 */
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && cur === 'acPanel') hideView('acPanel');
+    });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+<script>
+/* =====================================================================
+   R105b（2026-09-19）：输入框微信式双状态控制器（本页自有，不依赖 chat-local.js）。
+   - 空态：表情 + ➕(既有 imPlus 菜单) + 框内麦克风装饰；输入态(.is-typing)：➕隐 / 发送显 / 麦克风隐。
+   - #imInput input 事件：两参 classList.toggle（空格 trim 不算内容）。
+   - 发送（Enter 与按钮两路）/清空/表情插入均为程序化赋值（imSendText/imPickEmoji 直写 value），
+     不触发 input 事件 → 以 250ms 哨兵轮询兜底同步；发送按钮点击另有即时回切快路径，
+     且仅在 value 已空时回切（发送被拒不误清、焦点回输入框）。chat-local.js 零改动（他人占用中）。
+   ===================================================================== */
+(function () {
+  'use strict';
+  var input = document.getElementById('imInput');
+  if (!input || !input.closest) return;
+  var composer = input.closest('.im-composer');
+  if (!composer) return;
+  function syncComposerState() {
+    composer.classList.toggle('is-typing', String(input.value || '').trim().length > 0);
+  }
+  input.addEventListener('input', syncComposerState);
+  var sendBtn = composer.querySelector('.im-btn-send');
+  if (sendBtn) {
+    sendBtn.addEventListener('click', function () {
+      setTimeout(function () {
+        if (!String(input.value || '').trim()) {
+          composer.classList.remove('is-typing');
+          try { input.focus(); } catch (e0) {}
+        }
+      }, 0);
+    });
+  }
+  setInterval(syncComposerState, 250);
+  syncComposerState();
+})();
+
+/* =====================================================================
+   R88-I（2026-09-18）：私聊输入栏「+」浮层菜单（相册发图 / 拍摄 / 位置定位）
+   - 菜单开关：imTogglePlusMenu / imOpenPlusMenu / imClosePlusMenu（点遮罩、再点「+」、ESC 关闭）
+   - 相册发图 → imPickImage()（既有链路，不改）；拍摄 → #imCameraInput；位置 → imPickLocation()
+   - 位置定位复用 window.XT_LOC_PICK.pick，手动兜底用本页自建轻量输入弹层（❗禁用 window.prompt）
+   ES2017 上限：仅 var + function，无 ?. / ?? / 模板串 / 箭头函数。
+   ===================================================================== */
+(function () {
+  'use strict';
+  function $id(x) { return document.getElementById(x); }
+
+  /* ---------- 菜单开关 ---------- */
+  /* R6：面板升降后消息区保持底部锚定（即时 + 过渡结束各一次） */
+  function imPlusKeepBottom() {
+    var b = $id('imMsgs');
+    if (!b) return;
+    try { b.scrollTop = b.scrollHeight; } catch (e) { /* 静默 */ }
+    setTimeout(function () { try { b.scrollTop = b.scrollHeight; } catch (e2) { /* 静默 */ } }, 260);
+  }
+  function imOpenPlusMenu() {
+    var m = $id('imPlusMenu');
+    var mask = $id('imPlusMask');
+    if (!m) return;
+    /* R6：与表情面板互斥（微信式同高面板，切换时输入框不跳） */
+    try { if (window.imCloseEmojiPanel) window.imCloseEmojiPanel(); } catch (e0) { /* 静默 */ }
+    /* R143-2（微信式切换）：开面板 → 失焦输入框收起软键盘，面板接管键盘占位；
+       点输入框（focus/click/touchstart）→ 关面板 + 键盘回弹，自如切换。 */
+    try {
+      var ae = document.activeElement;
+      if (ae && ae.id === 'imInput' && typeof ae.blur === 'function') ae.blur();
+    } catch (eB) { /* 静默 */ }
+    m.classList.add('open');
+    if (mask) mask.classList.add('open');
+    imPlusKeepBottom();
+  }
+  function imClosePlusMenu() {
+    var m = $id('imPlusMenu');
+    var mask = $id('imPlusMask');
+    if (m) m.classList.remove('open');
+    if (mask) mask.classList.remove('open');
+    imPlusKeepBottom();
+  }
+  window.imOpenPlusMenu = imOpenPlusMenu;
+  window.imClosePlusMenu = imClosePlusMenu;
+  window.imTogglePlusMenu = function () {
+    var m = $id('imPlusMenu');
+    if (!m) return;
+    if (m.classList.contains('open')) imClosePlusMenu();
+    else imOpenPlusMenu();
+  };
+
+  /* ---------- 分支1：相册发图（走既有 imPickImage 链路，不回归） ---------- */
+  window.imPlusPickImage = function () {
+    imClosePlusMenu();
+    if (typeof window.imPickImage === 'function') window.imPickImage();
+  };
+
+  /* ---------- 分支1b：发送文件（不限类型，change→imSendFile(this)） ---------- */
+  window.imPlusPickFile = function () {
+    imClosePlusMenu();
+    var inp = $id('imFileInput');
+    if (!inp) { return; }
+    try { inp.value = ''; } catch (e) { /* 老 WebView 重置失败不影响发送 */ }
+    inp.click();
+  };
+
+  /* ---------- 分支2：拍摄（capture 输入，桌面退化为文件选择，同走 imSendImage） ---------- */
+  window.imPlusPickCamera = function () {
+    imClosePlusMenu();
+    var inp = $id('imCameraInput');
+    if (!inp) {
+      // 无输入控件时回落相册链路（保证永不假按钮）
+      if (typeof window.imPickImage === 'function') window.imPickImage();
+      return;
+    }
+    try { inp.value = ''; } catch (e) { /* 老 WebView 重置失败不影响发送 */ }
+    inp.click();
+  };
+
+  /* ---------- 手动输入弹层（❗禁用 window.prompt；本页轻量 sheet，随 .im- 风格） ---------- */
+  function imShowLocInput(title, placeholder, cb) {
+    var wrap = document.createElement('div');
+    wrap.className = 'im-loc-sheet'
+    var t = (title || '所在位置');
+    var ph = (placeholder || '如：图书馆 / 自习室');
+    var html = '';
+    html += '<div class="im-loc-sheet-mask"></div>';
+    html += '<div class="im-loc-sheet-body" role="dialog" aria-modal="true">';
+    html += '<div class="im-loc-sheet-title">' + t + '</div>';
+    html += '<input class="im-loc-sheet-input" type="text" maxlength="64" placeholder="' + ph + '">';
+    html += '<div class="im-loc-sheet-acts">';
+    html += '<button type="button" class="im-loc-sheet-btn cancel">取消</button>';
+    html += '<button type="button" class="im-loc-sheet-btn ok">确定</button>';
+    html += '</div></div>';
+    wrap.innerHTML = html;
+    document.body.appendChild(wrap);
+    var input = wrap.querySelector('.im-loc-sheet-input');
+    var done = false;
+    function close() {
+      if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
+      document.removeEventListener('keydown', onKey);
+    }
+    function finish(v) {
+      if (done) return;
+      done = true;
+      close();
+      if (typeof cb === 'function') cb(v);
+    }
+    function onKey(e) {
+      var k = e && e.key;
+      if (k === 'Escape' || k === 'Esc') finish('');
+      else if (k === 'Enter') finish((input.value || '').trim());
+    }
+    wrap.querySelector('.im-loc-sheet-mask').addEventListener('click', function () { finish(''); });
+    wrap.querySelector('.im-loc-sheet-btn.cancel').addEventListener('click', function () { finish(''); });
+    wrap.querySelector('.im-loc-sheet-btn.ok').addEventListener('click', function () { finish((input.value || '').trim()); });
+    input.addEventListener('keydown', function (e) { if (e && e.key === 'Enter') { try { e.preventDefault(); } catch (_e) {} finish((input.value || '').trim()); } });
+    document.addEventListener('keydown', onKey);
+    setTimeout(function () { try { input.focus(); } catch (e) {} }, 30);
+    // 暴露关闭入口（外链调用可复用）
+    wrap.__imClose = function () { finish(''); };
+  }
+  window.imShowLocInput = imShowLocInput;
+
+  /* ---------- 分支3：位置定位（XT_LOC_PICK 主入口 + 手动兜底） ---------- */
+  /* R88-J item8：加号菜单「定位」—— 打开微信式位置选择层（XT_LOC_PICK.openPicker）。
+     两条路径都在：①「用当前位置」= 直接发当前定位；②「搜索地址」= 搜索选择后发送。
+     R104 项3：openPicker 传 rich:true → 确认回传对象 {text, sub, lat, lng}，带坐标发地图卡。
+     openPicker 缺失时降级 onLoc（旧链路）。 */
+  window.imPlusPickLocation = function () {
+    imClosePlusMenu();
+    var LP = window.XT_LOC_PICK;
+    if (!LP || typeof LP.openPicker !== 'function') {
+      if (typeof window.imPickLocation === 'function') { window.imPickLocation(); return; }
+      onLoc('所在位置');
+      return;
+    }
+    LP.openPicker({
+      title: '发送位置',
+      confirmText: '发送',
+      current: '',
+      rich: true            // R104 项3：回传 {text, sub, lat, lng}（默认 false 时仅回文字，保持旧契约）
+    }, function (loc) {
+      if (!loc) return;
+      var t = loc.text == null ? '' : String(loc.text).replace(/^\s+|\s+$/g, '');
+      if (t && typeof window.imSendLocation === 'function') {
+        // R104d 批4：precise 透传（=== true 才置真；地点路径 false）
+        window.imSendLocation({ text: t, sub: loc.sub || '', lat: loc.lat, lng: loc.lng, precise: loc.precise === true });
+      }
+    });
+  };
+
+  /* ---------- 分支4：录音（R106 派工一·T2f/T2g） ---------- */
+  /* 单入口：输入栏麦克风键与加号菜单「录音」项都汇聚到 imMicClick →
+     chat-local.js window.imToggleRecord（三档降级：网页录音 / 原生桥 / 系统录音机）。 */
+  window.imMicClick = function () {
+    if (typeof window.imToggleRecord === 'function') window.imToggleRecord();
+  };
+  window.imPlusPickVoice = function () {
+    imClosePlusMenu();
+    window.imMicClick();
+  };
+  /* R104e 批5：加号菜单「实时位置」→ chat-local.js window.imLiveStart（闸门/降级/三态桥判定都在那边）。 */
+  window.imPlusPickLiveLoc = function () {
+    imClosePlusMenu();
+    if (typeof window.imLiveStart === 'function') window.imLiveStart();
+  };
+  /* L3 降级：调起系统录音机（隐藏 file input）。 */
+  window.imPickVoiceFile = function () {
+    var el = document.getElementById('imVoiceInput');
+    if (el) el.click();
+  };
+  /* 系统录音机回调：File 直接交给 chat-local.js 的 imSendVoiceBlob（魔数嗅探后发送）。 */
+  window.imSendVoiceFile = function (input) {
+    var f = input && input.files && input.files[0];
+    if (input) { try { input.value = ''; } catch (e) { } }
+    if (!f) return;
+    if (typeof window.imSendVoiceBlob === 'function') window.imSendVoiceBlob(f, 0);
+    else if (typeof window.toast === 'function') window.toast('当前环境不支持发送语音');
+  };
+
+  /* 旧链路（一键定位 → 逆地理 → 文字；失败手动兜底）。保留作 openPicker 缺失时的兜底。 */
+  function onLoc(fallbackTitle) {
+    if (!window.XT_LOC_PICK || typeof window.XT_LOC_PICK.pick !== 'function') {
+      imShowLocInput(fallbackTitle || '所在位置', '如：图书馆 / 自习室', function (v) {
+        var t = (v || '').replace(/^\s+|\s+$/g, '');
+        if (t && typeof window.imSendLocation === 'function') window.imSendLocation(t);
+      });
+      return;
+    }
+    var opts = {
+      fallbackTitle: fallbackTitle || '所在位置',
+      onManual: function (title, placeholder, cb) { imShowLocInput(title, placeholder, cb); }
+    };
+    window.XT_LOC_PICK.pick(opts, function (r) {
+      // R104 项3：pick 的 LocObj 已含 lat/lng；sub 用区级（无街道信息时留空 → 纯文字副行省略）。
+      if (r && r.text && typeof window.imSendLocation === 'function') {
+        window.imSendLocation({ text: r.text, sub: r.district || '', lat: r.lat, lng: r.lng, precise: false });   // R104d 批4：旧链路（地点）恒非精确
+      }
+    });
+  }
+  window.imPickLocation = function () { onLoc('所在位置'); };
+
+  /* R88-J：底座 _failToast 只认 window.XT_TOAST/window.toast；本页有 showToast，注入别名避免静默。 */
+  if (typeof window.toast !== 'function' && typeof window.showToast === 'function') { window.toast = window.showToast; }
+
+  /* ---------- 样式注入（.im- 前缀，随本页风格；只用固定值 + @media，禁 clamp/min/max） ---------- */
+  function injectCss() {
+    if ($id('imPlusCss')) return;
+    var st = document.createElement('style');
+    st.id = 'imPlusCss';
+    st.textContent =
+      /* R6（2026-09-20）微信式升降：加号菜单由 fixed 遮罩浮层改为 .im-composer 内换行子项，
+         flex:0 0 100% 独占一行（order:10 排在输入行之后），高度 0→300px 过渡，
+         输入栏随菜单一起升/降；与表情面板同高互斥 → 切换不跳。遮罩弃用。
+         关态 padding 上下必须为 0（否则 height:0 仍漏出 padding 一条）。 */
+      '.im-plus-mask{display:none}' +
+      '.im-plus-menu{flex:0 0 100%;order:10;background:#fff;border-radius:16px 16px 0 0;display:grid;grid-template-columns:repeat(4,1fr);gap:14px 8px;box-shadow:0 -6px 24px rgba(0,0,0,.12);height:0;overflow:hidden;padding:0 10px;transition:height .24s ease,padding .24s ease;box-sizing:border-box}' +
+      '.im-plus-menu.open{height:300px;padding:16px 10px calc(16px + env(safe-area-inset-bottom));overflow-y:auto;-webkit-overflow-scrolling:touch}' +
+      '.im-plus-item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 2px;font-size:12px;text-align:center;color:var(--text,#1f2328);cursor:pointer}' +
+      '.im-plus-item:active{background:#f2f3f5;border-radius:12px}' +
+      /* R88-M6 方案B：彩色圆角方底色块 + 白色图标（对齐微信「+」菜单）。 */
+      /* 图标升级（微信新版「+」面板风格）：浅色同系 tint 底 + 彩色线条图标（原为重彩渐变底 + 白图标）。 */
+      '.im-plus-ico{flex:0 0 auto;width:44px;height:44px;border-radius:14px;display:inline-flex;align-items:center;justify-content:center}' +
+      '.im-plus-ico .nav-icon{display:inline-flex;align-items:center;justify-content:center;color:inherit}' +
+      '.im-plus-ico .nav-icon svg{stroke:currentColor}' +
+      '.im-plus-ico--i1{background:rgba(18,168,106,.13);color:#12a86a}' +
+      '.im-plus-ico--i2{background:rgba(63,111,216,.13);color:#3f6fd8}' +
+      '.im-plus-ico--i3{background:rgba(224,138,30,.15);color:#d9860f}' +
+      /* R90 item3：.im-plus-ico--i4 = 「定位」项配色。
+         R106 校正：定位项早已回到加号菜单内（DOM 引用为「定位」行），旧注释「无 DOM 引用/改到 #imLocBtn」已失效。 */
+      '.im-plus-ico--i4{background:linear-gradient(135deg,#eb5757,#d13b3b)}' +
+      /* R106 T2b：--i5 = 「录音」项配色（紫，勿与 i1 绿重复）。 */
+      '.im-plus-ico--i5{background:rgba(109,63,216,.12);color:#6d3fd8}' +
+      /* R104e 批5（2026-09-19）：--i6 = 「实时位置」项配色（青，勿与 i1 绿 / i4 红重复）。 */
+      '.im-plus-ico--i6{background:rgba(11,124,123,.13);color:#0b7c7b}' +
+      '.im-plus-txt{width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;text-align:center}' +
+      '@media (max-width:360px){.im-plus-ico{width:40px;height:40px;border-radius:10px}.im-plus-menu{gap:10px 4px}.im-plus-menu.open{padding:12px 6px calc(16px + env(safe-area-inset-bottom))}}' +
+      '@media (max-height:520px){.im-plus-item{padding:6px 4px;gap:6px}.im-plus-ico{width:36px;height:36px;border-radius:9px}.im-plus-menu.open{height:220px;padding:6px 6px calc(10px + env(safe-area-inset-bottom))}}' +
+
+      '.im-loc-sheet{position:fixed;inset:0;z-index:215}' +
+      '.im-loc-sheet-mask{position:absolute;inset:0;background:rgba(0,0,0,.35)}' +
+      '.im-loc-sheet-body{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:86%;max-width:360px;background:#fff;border-radius:14px;padding:18px 18px 14px;box-shadow:0 8px 30px rgba(0,0,0,.2);max-height:80vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-sizing:border-box}' +
+      '.im-loc-sheet-title{font-size:15px;font-weight:700;color:var(--text,#1f2328);margin-bottom:12px}' +
+      '.im-loc-sheet-input{width:100%;box-sizing:border-box;height:42px;padding:0 12px;border:1px solid #dcdfe6;border-radius:10px;font-size:14px;outline:none;color:var(--text,#1f2328)}' +
+      '.im-loc-sheet-input:focus{border-color:var(--primary,#3b82f6)}' +
+      '.im-loc-sheet-acts{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}' +
+      '.im-loc-sheet-btn{height:38px;padding:0 18px;border:none;border-radius:10px;font-size:14px;cursor:pointer}' +
+      '.im-loc-sheet-btn.cancel{background:#f2f3f5;color:#666}' +
+      '.im-loc-sheet-btn.ok{background:var(--primary,#3b82f6);color:#fff}';
+    document.head.appendChild(st);
+  }
+
+  /* ==================================================================
+     R88-J / M7：通用文件上传器 imUploadFile（可配置端点 + 类型分流 + 分类失败提示）
+     - 端点常量集中管理，便于后续统一替换（文档端点由另一线提供 /api/uploads/file）。
+     - 前端按 MIME/后缀分流：图片→image、视频→video、音频→voice、其余→file。
+     - 仅做「上传拿 URL」，不在此处落消息（消息落库在 chat-local.js；本文件不改它）。
+     ES2017：仅 var/function，无 ?. / ?? / 模板串。
+     ================================================================== */
+  var UPLOAD_EP = {
+    image: '/api/uploads',            // ≤8MB  JPG/PNG/WebP/GIF
+    imageChat: '/api/uploads/image',  // ≤5MB  JPG/PNG/WebP/GIF（聊天图，更严）
+    video: '/api/uploads/video',      // ≤50MB MP4/WebM
+    voice: '/api/uploads/voice',      // ≤2MB  webm/ogg/mp4/wav
+    file: '/api/uploads/file'         // ≤20MB pdf/docx/xlsx/pptx/zip/rar（另一线提供）
+  };
+  var UPLOAD_LIMIT = { image: 8 * 1048576, imageChat: 5 * 1048576, video: 50 * 1048576, voice: 2 * 1048576, file: 20 * 1048576 };
+
+  function imApiBase() { return (window.STUDY_API_BASE || 'http://110.42.134.62:8000'); }
+  function imAuthToken() { try { return localStorage.getItem('study_workbench_token') || ''; } catch (e) { return ''; } }
+
+  /** 按 MIME/后缀判定上传类别。 */
+  function imUploadKind(file) {
+    var t = String((file && file.type) || '').toLowerCase();
+    var n = String((file && file.name) || '').toLowerCase();
+    if (t.indexOf('image/') === 0 || /\.(png|jpe?g|webp|gif)$/.test(n)) return 'image';
+    if (t.indexOf('video/') === 0 || /\.(mp4|webm)$/.test(n)) return 'video';
+    if (t.indexOf('audio/') === 0 || /\.(webm|ogg|m4a|wav|mp3)$/.test(n)) return 'voice';
+    return 'file';
+  }
+
+  /** 人性化大小（B/KB/MB）。 */
+  function imFmtSize(n) {
+    var s = Number(n) || 0;
+    if (s < 1024) return s + ' B';
+    if (s < 1048576) return (s / 1024).toFixed(1) + ' KB';
+    return (s / 1048576).toFixed(1) + ' MB';
+  }
+
+  function imUploadToast(msg, err) {
+    if (typeof window.showToast === 'function') { window.showToast(msg); return; }
+    if (typeof window.xtToast === 'function') { window.xtToast(err ? 'error' : 'info', msg); return; }
+  }
+
+  /**
+   * 上传单文件到对应端点。
+   * @param {File}     file
+   * @param {Function} cb   cb(err, res)  err=null 表示成功；res={url,kind}
+   *                        err = { code, kind, msg } 分类失败。
+   */
+  function imUploadFile(file, cb) {
+    var done = (typeof cb === 'function') ? cb : function () {};
+    if (!file) { done({ code: 'nofile', msg: '未选择文件' }, null); return; }
+    var kind = imUploadKind(file);
+    var ep = (kind === 'image') ? UPLOAD_EP.imageChat : UPLOAD_EP[kind];
+    var limit = UPLOAD_LIMIT[(kind === 'image') ? 'imageChat' : kind];
+    if (file.size && file.size > limit) {
+      done({ code: 'too_large', kind: kind, msg: '文件超过 ' + imFmtSize(limit) + '（当前 ' + imFmtSize(file.size) + '）' }, null);
+      return;
+    }
+    var token = imAuthToken();
+    if (!token) { done({ code: 'noauth', kind: kind, msg: '请先登录后再发送文件' }, null); return; }
+    var fd = new FormData();
+    fd.append('file', file);
+    fetch(imApiBase() + ep, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token },
+      body: fd
+    }).then(function (r) {
+      if (r.status === 404) { throw { code: 'not_ready', kind: kind, msg: '服务端尚未开放该类型上传（端点未就绪）' }; }
+      if (r.status === 400) { throw { code: 'rejected', kind: kind, msg: '文件类型不被接受：' + kind }; }
+      if (!r.ok) { throw { code: 'http_' + r.status, kind: kind, msg: '上传失败（HTTP ' + r.status + '）' }; }
+      return r.json();
+    }).then(function (d) {
+      if (!d || !d.url) { done({ code: 'no_url', kind: kind, msg: '上传成功但未返回地址' }, null); return; }
+      done(null, { url: d.url, kind: kind });
+    }).catch(function (e) {
+      if (e && e.code) { done(e, null); return; }
+      done({ code: 'network', kind: kind, msg: '网络异常，上传失败' }, null);
+    });
+  }
+  window.imUploadFile = imUploadFile;
+  window.imUploadEndpoints = UPLOAD_EP;
+
+  function boot() {
+    injectCss();
+    // ESC 关闭 + 点击消息区外收起
+    document.addEventListener('keydown', function (e) {
+      var k = e && e.key;
+      if (k === 'Escape' || k === 'Esc') {
+        imClosePlusMenu();
+        // R5：ESC 同时关闭表情底部面板（xtToast/面板未加载时由函数内守卫兜底）
+        if (typeof window.imCloseEmojiPanel === 'function') { try { window.imCloseEmojiPanel(); } catch (_e) { } }
+      }
+    });
+    // 图片图标水合（菜单内 nav-icon 由 icon-map.js autoRender 处理；此处兜底手动水合一次）
+    if (typeof window.lucideAutoRender === 'function') {
+      try { window.lucideAutoRender(); } catch (e) { /* 忽略 */ }
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+</script>
+<script src="assets/ai-config.js?v=20260925a"></script>
+<script src="assets/ai-presets.js?v=20260916O"></script>
+<script src="assets/ai-service.js?v=20260925a"></script>
+<script src="assets/ai-cap-registry.js?v=20260918c"></script>
+<script src="assets/ai-cap-image.js?v=20260920c"></script>
+<script src="assets/ai-cap-vision.js?v=20260920c"></script>
+<script src="assets/ai-cap-audio.js?v=20260920c"></script>
+<script src="assets/ai-cap-embed.js?v=20260920c"></script>
+<script src="assets/ai-cap-translate.js?v=20260920c"></script>
+<script src="assets/ai-cap-video.js?v=20260920c"></script>
+<script src="assets/ai-cap-3d.js?v=20260922a"></script>
+</body>
+</html>

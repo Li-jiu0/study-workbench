@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 星途 · 颜色资源
+     · ic_launcher_background：自适应图标背景层底色（品牌蓝 #5B8DEF，与站点主色一致）。
+     · splash_background：启动闪屏品牌底色（品牌蓝，冷启动无白/黑空档）。
+     · ic_launcher_foreground_tint：前景星形颜色（不透明白）。 -->
+<resources>
+    <color name="ic_launcher_background">#5B8DEF</color>
+    <color name="splash_background">#5B8DEF</color>
+    <color name="ic_launcher_foreground_tint">#FFFFFFFF</color>
+</resources>

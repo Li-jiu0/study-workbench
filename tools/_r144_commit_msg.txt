@@ -1,0 +1,59 @@
+发版 1.41（versionCode 42）+ R143/R144：位置共享多点连线与导航入口、聊天交互修复、移除切页原生绿条
+
+【R143 · 聊天与安卓壳】
+- 私聊页顶栏「✎」改为进入对方个人资料页（新增 imOpenPeerProfile / imPeerProfileUrl）；
+  返回时按 ?from=私聊&uid=&name= 回到当前聊天（xt-profile.js 的 otherReferrer 新增该分支，
+  maybeAutoOpenChat 据此重建会话）。本地演示会话仍回退原「设置备注」弹窗，原功能不删。
+- 表情面板 / 加号菜单 与 输入框 互斥切换：开面板即 blur 输入框（收软键盘），
+  点输入框即关面板；补 touchstart 兜底（老 WebView）。
+- 自定义表情「＋」修复移动端 ghost mouse 双触发：一次触屏点按后浏览器会补发合成
+  mousedown/mouseup，事件委托双绑 → imStickerPick 双触发 → App onShowFileChooser 二次
+  startActivityForResult 被系统吞掉。改为记录 lastTouchAt，800ms 内合成鼠标事件忽略；
+  桌面纯鼠标点击不受影响。
+- 安卓壳 MainActivity.java：移除 WebChromeClient.onProgressChanged 中的 showProgress 调用
+  与 attachBridgesAndLoad 中的 ensureProgressBar()，切页不再出现原生绿色细进度条；
+  方法体保留、pageProgress 恒为 null；onReceivedError「加载失败，点击重试」逻辑未动。
+
+【R144 · 实时位置共享增强（仅 live-location.html）】
+- 触发条件：本次 /api/live/state 返回的会话中「有效位置点」（hasFix===true 且 lat/lng 有限）
+  ≥2 时才绘制连线与距离标注；<2 清空连线层并收起导航按钮（单方共享体验不变）。
+- 多点连接方式：2 点一条直线段；≥3 点按稳定顺序连成闭合环。稳定顺序 = 自己排首位，
+  其余按 sharerId 字符串升序 → 轮询返回顺序抖动不会让线条跳变。
+- 距离计算规则：复用既有 haversineM（球面大圆距离，R=6371000m）即两点间直线距离；
+  每段标注在该段中点；≥3 点另在几何中心（各点经纬度算术平均）标注
+  「N 人 · 最远 X · 最近 Y」（两两全组合取极值）。文案：<1km 用「米」，≥1km 用「公里」
+  （<10km 一位小数，≥10km 取整）。
+- 更新时机：每次 /api/live/state 轮询（POLL_MS=4000ms）后经 onState → renderLinks 重算重绘；
+  用「点位签名」（每点 sharerId + 坐标 5 位小数）比对，签名未变则跳过重绘（防闪烁、省开销），
+  任一参与方坐标变化则整层替换、距离数值同步刷新；共享结束经 clearAllMarkers → clearLinks 清理。
+- 导航跳转行为：有效点 ≥2 时右下角「导航」按钮 → bottom sheet；起点默认「我的位置」
+  （自己没有有效坐标时取排序后首个他人点，可在胶囊行切换），终点为其余参与方并显示与起点的
+  直线距离；点「导航」拼高德 H5 URI（uri.amap.com/navigation，coordinate=gaode、callnative=1）
+  经 location.href 唤起（装了高德直接进 App，否则打开其网页版），异常回退 window.open；
+  行内「复制」把 lat,lng 写入剪贴板（clipboard API → execCommand 兜底）。
+  坐标按 GCJ-02 口径解释（与腾讯矢量瓦片、高德一致），不做 BD-09 转换。
+- 三件套：新增 #llNav / #llSheet / #llOriginRow / #llRows 容器 + .ll-dlabel / .ll-nav / .ll-sheet
+  等样式 + 独立函数块；原有 DOM 与功能全部保留。文件末尾新增 window.__LL_TEST__ 测试句柄
+  （沿用 chat-local.js 的 __IM_TEST__ 惯例）。
+
+【发版配套】
+- server/routers/version.json → 1.41 / versionCode 42 / 星途-1.41.apk，
+  新增 notes（6 条）与 changelog 头部 v1.41 条目（9 条）。
+- 协议.html 两处 .agr-doc-version → V1.41（用户协议 / 隐私政策）。
+- assets/xt-update.js CURRENT_VERSION → 1.41；3 个引用页（关于/更多/更新）戳 → 20260926a；
+  关于.html 兜底常量 1.32 → 1.41、占位 v1.32 → v1.41。
+- 版本戳：chat-local.js=20260926b（私聊.html）、xt-profile.js=20260926c（个人资料.html）。
+- android/AndroidManifest.xml → versionCode 42 / versionName 1.41。
+
+【验证】
+- tools/qa/_r144_jsdom.js → 46/46 R144_JSDOM_ALL_PASS（含逐段 Haversine 交叉校验、
+  签名不变不重绘、单点不画线、导航 URL/换起点/复制/结束态清理、DOM 新旧容器断言）。
+- tools/qa/_r143_jsdom.js → R143_JSDOM_ALL_PASS；回归 tools/verifier/_r141_verify.js
+  → R141_FRONT_ALL_PASS；tools/verifier/_r142_verify.js → R142_FRONT_ALL_PASS；
+  tools/qa/_r5_emoji_jsdom.js 全绿。
+- tools/verifier/_r141_syntax.js（新增）→ 35 项全过。
+- tools/qa/_r10_javac.py → PASS；APK 包内断言 tools/_r140_apk_verify.py → 37/37 PASS
+  （versionCode=42 / versionName=1.41 / CURRENT_VERSION=1.41 / 协议含 V1.41 /
+   live-location.html 含 R144 实现 / resources.arsc STORED 且数据起点 4 字节对齐）。
+
+注：.apk 不入库、不推 GitHub（用户口径）。

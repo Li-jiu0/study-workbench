@@ -1,0 +1,50 @@
+AI.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'
+blog_wechat.html -> match=2 expect=2 with演示=2 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'
+PPT案例拆解.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'
+PPT版式库.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'
+万能金句库.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'
+企业定向库.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'
+动态.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'
+商务礼仪.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'
+四级词汇.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'
+场景话术库.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'
+时政热点.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'
+工具.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'
+私聊.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'
+申论刷题.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'
+社区.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'
+英语.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'
+行测刷题.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'
+管理员.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'
+行测.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'
+面试题库.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'
+设置.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-page-node-id="9fBdF1DwtuEjxvbJFapEXD" data-icon="palette"></span><span data-page-node-id="gfATT8eA6DZxvyBLYOyXOz">演示</span>'
+错题本.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'
+面测.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'
+表达.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'
+更多.html -> match=1 expect=1 with演示=1 OK
+    sample_inner='<span class="nav-icon" data-icon="palette"></span><span>演示</span>'

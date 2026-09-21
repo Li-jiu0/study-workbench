@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#ff8c00">
+<title>AI</title>
+<link rel="stylesheet" href="assets/common.css?v=20260923c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<link rel="stylesheet" href="assets/polish.css?v=20260916O">
+<style>
+/* ============ AI 页（DeepSeek 风格）样式 ============ */
+:root{
+  --ai-orange:#ff8c00;
+  --ai-orange-d:#e67e00;
+  --ai-blue:#3b6cf6;
+  --ai-bg:#f6f7f9;
+  --ai-card:#ffffff;
+  --ai-border:#e7e9ee;
+  --ai-text:#1f2329;
+  --ai-sub:#5a6068;
+  --ai-muted:#9aa0a8;
+  --ai-code-bg:#f3f4f6;
+  --ai-radius:24px;
+}
+body.dark{
+  --ai-bg:#16181d;
+  --ai-card:#1f2228;
+  --ai-border:#2c3038;
+  --ai-text:#e8eaed;
+  --ai-sub:#b4bac2;
+  --ai-muted:#7b828c;
+  --ai-code-bg:#262a31;
+}
+
+/* 整体布局：复用主站 .app / .sidebar / .main */
+.ai-main{display:flex;flex-direction:column;height:100%;min-width:0;background:var(--ai-bg);}
+.ai-topbar{
+  height:calc(56px + env(safe-area-inset-top, 0px));flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
+  padding:env(safe-area-inset-top, 0px) 16px 0;background:var(--ai-card);border-bottom:1px solid var(--ai-border);
+}
+.ai-topbar-left,.ai-topbar-right{display:flex;align-items:center;gap:8px;}
+.ai-topbar-btn{
+  width:38px;height:38px;display:flex;align-items:center;justify-content:center;
+  border:none;background:transparent;border-radius:10px;color:var(--ai-sub);cursor:pointer;
+  transition:background .15s;
+}
+.ai-topbar-btn:hover{background:var(--ai-bg);}
+.ai-topbar-btn svg{width:22px;height:22px;}
+
+.ai-body{flex:1;display:flex;min-height:0;}
+
+/* —— AI 历史侧栏（桌面常驻 260px，可收起为窄条） —— */
+.ai-history{
+  width:260px;flex-shrink:0;background:var(--ai-card);border-right:1px solid var(--ai-border);
+  display:flex;flex-direction:column;transition:width .25s ease, transform .25s ease;
+}
+/* 三段式头部：左 品牌（sparkles+AI），右 搜索钮 + 收起钮 */
+.ai-hist-head{display:flex;align-items:center;justify-content:space-between;padding:14px 14px 8px;}
+.ai-hist-brand{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700;color:var(--ai-text);}
+.ai-hist-brand .nav-icon{width:22px;height:22px;color:var(--ai-orange);}
+.ai-hist-head-actions{display:flex;align-items:center;gap:2px;}
+.ai-hist-search-btn{
+  width:34px;height:34px;border:none;background:transparent;border-radius:9px;color:var(--ai-sub);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s;
+}
+.ai-hist-search-btn:hover{background:var(--ai-bg);}
+.ai-hist-search-btn .nav-icon{width:19px;height:19px;}
+
+/* 新建对话：白底 1px 边框克制按钮，橙只留给激活态与发送键 */
+.ai-newchat-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:calc(100% - 24px);height:40px;margin:6px 12px 10px;box-sizing:border-box;
+  border:1px solid var(--ai-border);border-radius:999px;background:var(--ai-card);
+  color:var(--ai-sub);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;
+}
+.ai-newchat-btn:hover{background:var(--ai-bg);border-color:var(--ai-orange);color:var(--ai-orange);}
+.ai-newchat-btn .nav-icon{width:18px;height:18px;flex-shrink:0;}
+
+.ai-hist-section{
+  font-size:11px;color:var(--ai-muted);padding:8px 16px 6px;font-weight:600;letter-spacing:.5px;
+}
+.ai-hist-list{flex:1;overflow-y:auto;padding:0 8px;}
+.ai-hist-empty{
+  flex:1;display:none;align-items:center;justify-content:center;color:var(--ai-muted);
+  font-size:13px;padding:30px 0;
+}
+.ai-history.is-empty .ai-hist-empty{display:flex;}
+.ai-history.is-empty .ai-hist-list{display:none;}
+.ai-hist-item-row{
+  display:flex;align-items:center;gap:8px;padding:11px 12px;border-radius:10px;cursor:pointer;
+  color:var(--ai-text);font-size:14px;margin-bottom:2px;transition:background .12s;
+}
+.ai-hist-item-row:hover{background:var(--ai-bg);}
+.ai-hist-item-row.active{background:var(--ai-bg);font-weight:600;}
+.ai-hist-item-row .ai-hist-title{
+  flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.ai-hist-item-row .ai-hist-del{
+  width:24px;height:24px;border:none;background:transparent;color:var(--ai-muted);
+  border-radius:6px;cursor:pointer;display:none;align-items:center;justify-content:center;flex-shrink:0;
+}
+.ai-hist-item-row:hover .ai-hist-del{display:flex;}
+.ai-hist-item-row .ai-hist-del:hover{color:#e0504d;background:rgba(224,80,77,.1);}
+.ai-hist-foot{padding:6px 12px 8px;border-top:1px solid var(--ai-border);display:flex;flex-direction:column;gap:2px;}
+.ai-hist-foot .ai-hist-foot-btn{
+  display:flex;align-items:center;gap:10px;padding:11px 12px;border:none;background:transparent;
+  color:var(--ai-sub);font-size:14px;cursor:pointer;border-radius:10px;text-align:left;transition:background .12s;
+}
+.ai-hist-foot .ai-hist-foot-btn:hover{background:var(--ai-bg);}
+.ai-hist-foot .ai-hist-foot-btn .nav-icon{width:18px;height:18px;flex-shrink:0;}
+/* 侧栏「模型」按钮文案跟随选中模型，可能较长：超长截断而不是撑破侧栏 */
+.ai-hist-foot .ai-hist-foot-btn .ai-foot-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ai-hist-foot .ai-hist-foot-btn.danger{color:#e0504d;}
+.ai-hist-foot .ai-hist-foot-btn.danger:hover{background:rgba(224,80,77,.08);}
+
+/* 底部用户区 */
+.ai-hist-user{
+  position:relative;display:flex;align-items:center;gap:10px;padding:10px 12px;
+  border-top:1px solid var(--ai-border);cursor:pointer;flex-shrink:0;
+}
+.ai-hist-user:hover{background:var(--ai-bg);}
+.ai-user-avatar{
+  width:34px;height:34px;border-radius:50%;background:var(--ai-orange);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0;
+}
+.ai-user-name{flex:1;font-size:14px;color:var(--ai-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ai-user-more{width:26px;height:26px;color:var(--ai-sub);display:flex;align-items:center;justify-content:center;border-radius:8px;flex-shrink:0;}
+.ai-user-more:hover{background:var(--ai-border);}
+.ai-user-more .nav-icon{width:18px;height:18px;}
+.ai-usermenu{
+  position:absolute;left:12px;right:12px;bottom:56px;background:var(--ai-card);
+  border:1px solid var(--ai-border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.14);
+  padding:6px;display:none;z-index:20;
+}
+.ai-usermenu.open{display:block;}
+.ai-usermenu-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:var(--ai-text);font-size:14px;cursor:pointer;}
+.ai-usermenu-item:hover{background:var(--ai-bg);}
+.ai-usermenu-item.danger{color:#e0504d;}
+.ai-usermenu-item .nav-icon{width:18px;height:18px;flex-shrink:0;}
+
+/* 收起态（窄条） */
+.ai-history.collapsed{width:64px;}
+.ai-history.collapsed .ai-hist-brand span:not(.nav-icon){display:none;}
+.ai-history.collapsed .ai-hist-section,
+.ai-history.collapsed .ai-hist-item-row .ai-hist-title,
+.ai-history.collapsed .ai-hist-foot-btn .ai-foot-label,
+.ai-history.collapsed .ai-hist-empty{display:none;}
+.ai-history.collapsed .ai-hist-foot-btn{justify-content:center;}
+.ai-history.collapsed .ai-user-name,
+.ai-history.collapsed .ai-user-more{display:none;}
+.ai-history.collapsed .ai-hist-user{justify-content:center;}
+.ai-history.collapsed .ai-newchat-btn{width:42px;height:42px;margin:6px auto 10px;border-radius:50%;font-size:0;}
+.ai-history.collapsed .ai-newchat-btn span:not(.nav-icon){display:none;}
+
+/* —— 对话区 —— */
+.ai-chat{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;position:relative;}
+.ai-scroll{flex:1;overflow-y:auto;display:flex;flex-direction:column;}
+.ai-welcome{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px 16px;width:100%;overflow-y:auto;
+}
+.ai-greeting{font-size:28px;font-weight:700;color:var(--ai-text);margin-bottom:36px;text-align:center;letter-spacing:.5px;}
+/* 输入区外观统一（需求 C）：空态与对话态共用同一套宽度/边距，
+   两个槽位（#aiWelcomeInputSlot / #aiDockInputSlot）外层不再各写一套，
+   避免互切时输入框宽度跳变。768px 与 .ai-msg 对齐。 */
+.ai-input-wrap{width:100%;max-width:768px;margin:0 auto;box-sizing:border-box;}
+
+/* 消息列表 */
+.ai-messages{flex:1;overflow-y:auto;padding:20px 16px 8px;display:none;flex-direction:column;gap:18px;}
+.ai-chat.in-conversation .ai-welcome{display:none;}
+.ai-chat.in-conversation .ai-messages{display:flex;}
+.ai-msg{display:flex;gap:10px;max-width:768px;width:100%;margin:0 auto;}
+.ai-msg-user{flex-direction:row-reverse;}
+.ai-avatar{
+  width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;color:#fff;user-select:none;
+}
+.ai-avatar-ai{background:var(--ai-blue);}
+.ai-avatar-user{background:var(--ai-orange);overflow:hidden;}
+.ai-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;}
+.ai-bubble{
+  padding:11px 15px;border-radius:14px;font-size:15px;line-height:1.65;word-break:break-word;overflow-wrap:anywhere;
+  max-width:85%;overflow:hidden;min-width:0;
+}
+.ai-msg-user .ai-bubble{background:var(--ai-orange);color:#fff;border-bottom-right-radius:4px;}
+.ai-msg-ai .ai-bubble{background:var(--ai-card);border:1px solid var(--ai-border);border-bottom-left-radius:4px;color:var(--ai-text);}
+.ai-bubble img.ai-msg-img{max-width:240px;border-radius:10px;margin-bottom:6px;display:block;}
+.ai-msg-actions{display:flex;gap:6px;margin-top:8px;}
+.ai-act{
+  display:inline-flex;align-items:center;gap:4px;border:1px solid var(--ai-border);background:var(--ai-card);
+  color:var(--ai-sub);font-size:12px;padding:4px 9px;border-radius:8px;cursor:pointer;transition:all .12s;
+}
+.ai-act:hover{color:var(--ai-blue);border-color:var(--ai-blue);}
+.ai-act svg{width:14px;height:14px;}
+.ai-msg-time{font-size:11px;color:var(--ai-muted);margin-top:4px;}
+/* 实际使用模型小字（回答底部） */
+.ai-msg-model{font-size:11px;color:var(--ai-muted);margin-top:6px;line-height:1.4;}
+/* 设置弹窗：上下文长度 / MAX 开关 / 功能介绍 */
+.ai-ctx-row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.ai-form-tip{font-size:12px;color:var(--ai-muted);line-height:1.5;margin-top:6px;}
+.ai-about-box{margin-top:16px;border-top:1px dashed var(--ai-border);padding-top:14px;}
+.ai-about-title{font-size:14px;font-weight:700;color:var(--ai-text);margin-bottom:10px;}
+.ai-about-sec{font-size:12.5px;color:var(--ai-sub);line-height:1.7;margin-bottom:9px;}
+
+/* 正在输入三点 */
+.ai-typing{display:inline-flex;gap:5px;padding:6px 2px;align-items:center;}
+.ai-typing span{width:7px;height:7px;border-radius:50%;background:var(--ai-muted);animation:ai-blink 1.3s infinite;}
+.ai-typing span:nth-child(2){animation-delay:.2s;}
+.ai-typing span:nth-child(3){animation-delay:.4s;}
+@keyframes ai-blink{0%,60%,100%{opacity:.3;transform:translateY(0);}30%{opacity:1;transform:translateY(-4px);}}
+
+/* 轻量 Markdown 渲染 */
+.ai-md h1,.ai-md h2,.ai-md h3{margin:10px 0 6px;line-height:1.35;font-weight:700;}
+.ai-md h1{font-size:19px;}.ai-md h2{font-size:17px;}.ai-md h3{font-size:15px;}
+.ai-md p{margin:6px 0;}
+.ai-md ul,.ai-md ol{margin:6px 0;padding-left:22px;}
+.ai-md li{margin:3px 0;}
+.ai-md code{
+  font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;font-size:13px;
+  background:var(--ai-code-bg);padding:1px 5px;border-radius:5px;
+}
+.ai-md pre{
+  background:var(--ai-code-bg);border:1px solid var(--ai-border);border-radius:10px;padding:12px 14px;
+  overflow-x:auto;margin:8px 0;
+}
+.ai-md pre code{background:none;padding:0;font-size:13px;line-height:1.55;white-space:pre;}
+.ai-md blockquote{
+  border-left:3px solid var(--ai-blue);background:var(--ai-bg);margin:8px 0;padding:6px 12px;
+  color:var(--ai-sub);border-radius:0 8px 8px 0;
+}
+.ai-md strong{font-weight:700;}
+/* R103：AI 生成视频全屏播放（手机 WebView 放大观看） */
+.ai-vid-box{position:relative;display:inline-block;max-width:100%;line-height:0;}
+.ai-vid-fs-btn{
+  position:absolute;top:8px;right:8px;display:flex;align-items:center;justify-content:center;
+  width:30px;height:30px;padding:0;border:1px solid rgba(255,255,255,.35);border-radius:8px;
+  background:rgba(0,0,0,.55);color:#fff;cursor:pointer;z-index:2;
+}
+.ai-vid-fs-btn:hover{background:rgba(0,0,0,.72);}
+.ai-vid-fs-btn:active{transform:scale(.94);}
+.ai-vid-fs-btn .ai-vid-ic-close{display:none;}
+.ai-vid-box.ai-vid-fs-active .ai-vid-fs-btn .ai-vid-ic-expand{display:none;}
+.ai-vid-box.ai-vid-fs-active .ai-vid-fs-btn .ai-vid-ic-close{display:inline-block;}
+/* CSS 全屏兜底：video 铺满视口（只改样式，同一元素 → 播放不中断） */
+video.ai-vid-full{
+  position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:0!important;
+  width:100vw!important;height:100vh!important;height:100dvh!important;max-width:none!important;max-height:none!important;
+  margin:0!important;border-radius:0!important;background:#000!important;object-fit:contain;
+  z-index:2147483001!important;
+}
+.ai-vid-box.ai-vid-fs-active .ai-vid-fs-btn{
+  position:fixed!important;top:14px!important;right:14px!important;left:auto!important;bottom:auto!important;
+  z-index:2147483002!important;width:36px!important;height:36px!important;
+}
+
+/* —— 输入框（DeepSeek 风格） —— */
+.ai-input-dock{flex-shrink:0;padding:10px 16px 14px;background:var(--ai-bg);}
+.ai-input-dock .ai-input-wrap{max-width:768px;margin:0 auto;}
+/* 需求 C：输入区"不变脸" —— 空态与对话态始终是同一个包住所有按钮的大圆角方框。
+   原来未聚焦是「背景=页面底色 + 边框透明」，容器等于隐形、控件像散在页面上，
+   一聚焦才突然变成白卡片 → 观感跳变。现在未聚焦也保留白底+淡描边+极轻阴影，
+   聚焦只做「加重」（橙描边 + 稍大阴影），形态与尺寸完全不动。 */
+.ai-input-box{
+  background:var(--ai-card);border:1px solid var(--ai-border);border-radius:var(--ai-radius);
+  padding:14px 16px 10px;box-shadow:0 1px 2px rgba(0,0,0,.04);
+  transition:background .15s,border-color .15s,box-shadow .15s;
+}
+.ai-input-box.focus{
+  background:var(--ai-card);border-color:rgba(255,140,0,.42);box-shadow:0 4px 16px rgba(0,0,0,.09);
+}
+.ai-img-preview{position:relative;display:inline-block;margin-bottom:10px;}
+.ai-img-preview img{height:64px;border-radius:8px;display:block;border:1px solid var(--ai-border);}
+.ai-img-remove{
+  position:absolute;top:-7px;right:-7px;width:20px;height:20px;border-radius:50%;border:none;
+  background:#e0504d;color:#fff;cursor:pointer;font-size:11px;line-height:1;display:flex;
+  align-items:center;justify-content:center;
+}
+/* textarea：彻底剥掉 UA 外观（老 WebView 的 textarea 自带 inset 阴影与边框，
+   只写 border:none 去不掉，必须 appearance:none），让它看起来就是容器里的一段文字 */
+.ai-input{
+  width:100%;box-sizing:border-box;display:block;
+  border:0;outline:0;background:transparent;
+  -webkit-appearance:none;appearance:none;
+  box-shadow:none;-webkit-box-shadow:none;
+  -webkit-tap-highlight-color:transparent;
+  resize:none;overflow-y:hidden;
+  font-size:16px;line-height:1.6;min-height:26px;max-height:160px;
+  color:var(--ai-text);font-family:inherit;padding:0;margin:0;
+}
+/* 双保险：彻底压掉 common.css 的 textarea:focus（border-color + 3px 光圈）与老 WebView UA 外观，
+   否则聚焦时仍会看到一圈"文本框"轮廓 */
+.ai-input:focus,
+.ai-input-box .ai-input:focus,
+.ai-input-row textarea:focus{
+  outline:none !important;
+  border:0 !important;
+  box-shadow:none !important;
+  -webkit-box-shadow:none !important;
+  background:transparent !important;
+}
+.ai-input::-webkit-input-placeholder{color:var(--ai-muted);}
+.ai-input::placeholder{color:var(--ai-muted);}
+/* 底部操作行：左 chips，右 📎 + 发送 */
+.ai-input-foot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:12px;gap:8px;}
+.ai-foot-left{display:flex;align-items:center;gap:8px;}
+/* R67/A：用量文案变长 → 右侧组允许折行+收缩（窄屏不溢出、不遮挡发送按钮；折行后仍右对齐） */
+.ai-foot-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;min-width:0;flex-shrink:1;}
+.ai-icon-btn{
+  width:34px;height:34px;border:none;background:transparent;border-radius:50%;color:var(--ai-sub);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s;
+}
+.ai-icon-btn:hover{background:var(--ai-bg);}
+.ai-icon-btn svg{width:20px;height:20px;}
+.ai-icon-btn.has-image{color:var(--ai-blue);}
+.ai-chip{
+  display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 12px;border-radius:18px;
+  border:1px solid var(--ai-border);background:var(--ai-bg);color:var(--ai-sub);font-size:13px;
+  cursor:pointer;transition:all .15s;font-weight:500;
+}
+.ai-chip svg{width:15px;height:15px;}
+.ai-chip.active{border-color:var(--ai-orange);color:var(--ai-orange);background:rgba(255,140,0,.08);font-weight:600;}
+.ai-model-btn{
+  display:inline-flex;align-items:center;gap:4px;height:34px;padding:0 12px;border-radius:18px;
+  border:1px solid var(--ai-border);background:var(--ai-bg);color:var(--ai-sub);font-size:13px;
+  cursor:pointer;transition:all .15s;font-weight:500;max-width:160px;
+}
+.ai-model-btn:hover{border-color:var(--ai-blue);}
+.ai-model-btn.disabled{opacity:.45;cursor:not-allowed;}
+.ai-model-btn .ai-model-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ai-model-btn .ai-caret{width:14px;height:14px;flex-shrink:0;}
+/* R66/N5 + R67/A/B/C：上下文用量紧凑圆环指示器（SVG dasharray 进度弧，兼容安卓老 WebView；整体 ~44px 内；R67/C 置于模型钮左侧紧邻）
+   正常态主题蓝；>80% 橙（warn）、>95% 红（hot）沿 CSS class 切换；完整信息在 title 悬浮 + cursor:help */
+.ai-ctx-usage{display:inline-flex;align-items:center;gap:3px;flex:none;line-height:1;user-select:none;cursor:help;vertical-align:middle;margin-right:-2px;}
+.ai-ctx-ring{display:block;flex:none;}
+.ai-ctx-ring-bg{stroke:var(--ai-border);}
+.ai-ctx-ring-fg{stroke:var(--ai-blue);transition:stroke .15s;}
+.ai-ctx-pct{font-size:11px;color:var(--ai-muted);white-space:nowrap;flex:none;}
+.ai-ctx-usage.warn .ai-ctx-ring-fg{stroke:#e8890c;}
+.ai-ctx-usage.warn .ai-ctx-pct{color:#e8890c;}
+.ai-ctx-usage.hot .ai-ctx-ring-fg{stroke:#e0504d;}
+.ai-ctx-usage.hot .ai-ctx-pct{color:#e0504d;font-weight:600;}
+/* 发送钮：40px 圆形，无内容浅灰、有内容橙 */
+.ai-send-btn{
+  width:40px;height:40px;border-radius:50%;border:none;background:var(--ai-orange);color:#fff;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,opacity .15s;flex-shrink:0;
+}
+.ai-send-btn:hover{background:var(--ai-orange-d);}
+.ai-send-btn:disabled{background:var(--ai-muted);cursor:not-allowed;opacity:.85;}
+.ai-send-btn svg{width:20px;height:20px;}
+
+/* —— 模型列表面板（输入框上方展开，替代原弹窗） —— */
+.ai-input-box{position:relative;}
+/* z-index 330：必须高于移动端抽屉遮罩 .ai-sidebar-overlay(250)、抽屉 .ai-history(260)
+   与底部导航(200)，否则从侧栏「模型」打开时面板被整个盖住＝点了没反应 */
+.ai-model-panel{
+  position:absolute;left:0;right:auto;bottom:calc(100% + 10px);z-index:330;width:300px;
+  max-width:calc(100vw - 24px);max-height:70vh;overflow-y:auto;box-sizing:border-box;
+  background:var(--ai-card);border:1px solid var(--ai-border);border-radius:14px;
+  box-shadow:0 12px 36px rgba(0,0,0,.16);padding:6px;display:none;text-align:left;
+}
+.ai-model-panel.open{display:block;}
+.ai-mp-head{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 9px;border-bottom:1px solid var(--ai-border);margin-bottom:3px;}
+.ai-mp-max{display:flex;align-items:center;gap:8px;cursor:pointer;}
+.ai-mp-max-text{font-size:13px;color:var(--ai-text);font-weight:600;}
+.ai-switch{width:36px;height:20px;border-radius:999px;background:var(--ai-border);position:relative;flex-shrink:0;transition:background .18s;}
+.ai-switch.on{background:var(--ai-orange);}
+.ai-switch-knob{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .18s;box-shadow:0 1px 2px rgba(0,0,0,.2);}
+.ai-switch.on .ai-switch-knob{left:18px;}
+.ai-mp-list{max-height:320px;overflow-y:auto;padding:2px;}
+.ai-mp-row{display:flex;align-items:center;gap:9px;padding:6px 10px;border-radius:8px;cursor:pointer;transition:background .12s;}
+.ai-mp-row:hover{background:var(--ai-bg);}
+.ai-mp-row.sel{background:rgba(255,140,0,.08);}
+.ai-mp-ic{width:20px;height:20px;border-radius:5px;background:var(--ai-bg);color:var(--ai-sub);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ai-mp-row.sel .ai-mp-ic{background:rgba(255,140,0,.14);color:var(--ai-orange);}
+.ai-mp-row-main{flex:1;min-width:0;}
+.ai-mp-name{font-size:13px;font-weight:500;color:var(--ai-text);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ai-mp-row.sel .ai-mp-name{color:var(--ai-orange);font-weight:600;}
+.ai-mp-right{display:flex;align-items:center;gap:7px;flex-shrink:0;}
+.ai-mp-rate{font-size:11.5px;color:var(--ai-muted);white-space:nowrap;}
+.ai-mp-check{width:14px;height:14px;color:var(--ai-orange);display:none;flex-shrink:0;}
+.ai-mp-check svg{width:14px;height:14px;}
+.ai-mp-row.sel .ai-mp-check{display:flex;align-items:center;justify-content:center;}
+.ai-mp-add{display:flex;align-items:center;gap:8px;padding:8px 10px;color:var(--ai-sub);font-size:13px;font-weight:500;cursor:pointer;border-radius:8px;margin-top:3px;border-top:1px solid var(--ai-border);border-radius:0 0 8px 8px;}
+.ai-mp-add:hover{background:var(--ai-bg);}
+.ai-mp-add-ic{width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--ai-muted);}
+/* R66/N1：三模式行瘦身（只留标题，单行 ~32-36px；已删副标题小字） */
+.ai-mp-mode{padding:7px 10px;min-height:34px;box-sizing:border-box;}
+.ai-mp-mode .ai-mp-name{font-size:13.5px;line-height:1.25;}
+
+/* —— 悬停详情浮层（对齐 DeepSeek：列表紧凑，详细信息 hover 才出现） —— */
+.ai-mp-detail{
+  position:absolute;left:calc(100% + 10px);top:0;width:272px;z-index:70;
+  background:var(--ai-card);border:1px solid var(--ai-border);border-radius:14px;
+  box-shadow:0 12px 36px rgba(0,0,0,.16);padding:16px;display:none;
+}
+.ai-mp-detail.open{display:block;}
+/* 窄屏/触摸设备：不支持 hover，详情改为「点行 → 行下方行内展开」（由 JS 把本节点搬到该行后面） */
+.ai-mp-detail.inline{
+  position:static;left:auto;top:auto;width:auto;z-index:auto;
+  box-shadow:none;background:var(--ai-bg);border-radius:10px;
+  margin:7px 0 9px;padding:12px;
+}
+.ai-mp-detail.inline.open{display:block;}
+.ai-mp-d-use{
+  display:block;width:100%;height:36px;margin-top:12px;border-radius:10px;
+  border:1px solid var(--ai-orange);background:rgba(255,140,0,.08);color:var(--ai-orange);
+  font-size:13px;font-weight:600;cursor:pointer;
+}
+.ai-mp-d-name{font-size:15px;font-weight:700;color:var(--ai-text);line-height:1.3;}
+.ai-mp-d-desc{font-size:12.5px;color:var(--ai-sub);margin-top:6px;line-height:1.55;overflow-wrap:break-word;word-break:break-word;}
+.ai-mp-d-sec{border-top:1px solid var(--ai-border);margin-top:13px;padding-top:13px;display:flex;flex-direction:column;gap:11px;}
+.ai-mp-d-row{display:flex;align-items:center;justify-content:space-between;font-size:13px;}
+.ai-mp-d-k{color:var(--ai-sub);}
+.ai-mp-d-v{color:var(--ai-text);font-weight:600;}
+.ai-mp-d-v.hl{color:var(--ai-orange);}
+@media (max-width:768px){
+  .ai-model-panel{width:calc(100vw - 48px);max-width:300px;}
+  /* 右侧悬浮卡在窄屏必然被裁，隐藏；行内展开版（.inline）仍可显示 */
+  .ai-mp-detail:not(.inline){display:none !important;}
+  .ai-mp-detail.inline{width:auto;}
+}
+
+/* —— 遮罩 & 弹窗（页内，非原生） —— */
+.ai-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;display:none;
+}
+.ai-overlay.open{display:block;}
+.ai-popup{
+  position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);
+  width:min(440px,92vw);max-height:84vh;overflow-y:auto;background:var(--ai-card);
+  border-radius:16px;z-index:310;padding:20px;display:none;opacity:0;transition:opacity .18s,transform .18s;
+  box-shadow:0 12px 40px rgba(0,0,0,.18);
+}
+.ai-popup.open{display:block;opacity:1;transform:translate(-50%,-50%) scale(1);}
+.ai-popup-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.ai-popup-title{font-size:17px;font-weight:700;color:var(--ai-text);}
+.ai-popup-close{
+  width:30px;height:30px;border:none;background:transparent;border-radius:8px;color:var(--ai-sub);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+.ai-popup-close:hover{background:var(--ai-bg);}
+.ai-popup-close svg{width:18px;height:18px;}
+.ai-tip-bar{
+  background:rgba(59,108,246,.08);border:1px solid rgba(59,108,246,.18);color:var(--ai-blue);
+  font-size:12.5px;padding:9px 12px;border-radius:10px;margin-bottom:14px;line-height:1.5;
+}
+
+/* 表单（自定义模型 / 设置） */
+.ai-form-group{margin-bottom:14px;}
+.ai-form-label{font-size:13px;color:var(--ai-sub);margin-bottom:6px;font-weight:600;}
+.ai-form-label .req{color:#e0504d;}
+.ai-form-input{
+  width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--ai-border);border-radius:10px;
+  font-size:14px;background:var(--ai-bg);color:var(--ai-text);outline:none;transition:border-color .15s;
+}
+.ai-form-input:focus{border-color:var(--ai-blue);}
+.ai-form-input.with-btn{padding-right:46px;}
+select.ai-form-input{
+  -webkit-appearance:none;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235a6068' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;background-size:16px 16px;
+  padding-right:38px;
+}
+.ai-input-wrap-rel{position:relative;}
+.ai-key-toggle{
+  position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:transparent;
+  color:var(--ai-sub);cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;
+}
+.ai-key-toggle svg{width:18px;height:18px;}
+.ai-types-row{display:flex;gap:8px;flex-wrap:wrap;}
+.ai-type-chip{
+  padding:7px 14px;border-radius:16px;border:1px solid var(--ai-border);background:var(--ai-card);
+  color:var(--ai-sub);font-size:13px;cursor:pointer;transition:all .15s;user-select:none;
+}
+.ai-type-chip.sel{border-color:var(--ai-blue);color:var(--ai-blue);background:rgba(59,108,246,.08);font-weight:600;}
+.ai-popup-actions{display:flex;gap:10px;margin-top:18px;}
+.ai-btn{
+  flex:1;height:42px;border-radius:12px;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;
+}
+.ai-btn-primary{background:var(--ai-orange);color:#fff;}
+.ai-btn-primary:hover{background:var(--ai-orange-d);}
+.ai-btn-ghost{background:var(--ai-bg);color:var(--ai-sub);border:1px solid var(--ai-border);}
+.ai-btn-ghost:hover{border-color:var(--ai-blue);color:var(--ai-blue);}
+.ai-btn-danger{background:rgba(224,80,77,.1);color:#e0504d;}
+.ai-btn-danger:hover{background:rgba(224,80,77,.18);}
+.ai-form-msg{font-size:12.5px;margin-top:10px;min-height:16px;}
+.ai-form-msg.ok{color:#52c41a;}
+.ai-form-msg.err{color:#e0504d;}
+
+/* 自定义模型弹窗：服务商预设 chips / 字段说明 / 跨域提示（与设置弹窗同一套表单风格） */
+.ai-preset-label{font-size:12px;color:var(--ai-muted);margin-bottom:7px;font-weight:600;}
+.ai-preset-row{display:flex;gap:8px;flex-wrap:wrap;}
+.ai-preset-chip{
+  padding:7px 13px;border-radius:16px;border:1px solid var(--ai-border);background:var(--ai-card);
+  color:var(--ai-sub);font-size:13px;cursor:pointer;transition:all .15s;user-select:none;
+}
+.ai-preset-chip.sel{border-color:var(--ai-blue);color:var(--ai-blue);background:rgba(59,108,246,.08);font-weight:600;}
+.ai-form-hint{font-size:12px;color:var(--ai-muted);line-height:1.5;margin-top:6px;}
+.ai-warn-bar{
+  background:rgba(250,173,20,.12);border:1px solid rgba(250,173,20,.3);color:#8a6116;
+  font-size:12px;line-height:1.55;padding:9px 12px;border-radius:10px;margin-top:8px;
+}
+body.dark .ai-warn-bar{background:rgba(250,173,20,.1);border-color:rgba(250,173,20,.26);color:#f0c269;}
+.ai-btn:disabled{opacity:.55;cursor:not-allowed;}
+/* 窄屏：chips 换行、按钮不挤压、弹窗不溢出 */
+@media (max-width:400px){
+  .ai-popup{width:94vw;padding:16px;}
+  .ai-popup-actions{gap:6px;}
+  .ai-popup-actions .ai-btn{height:40px;font-size:12.5px;padding:0 2px;}
+  .ai-preset-row{gap:6px;}
+  .ai-preset-chip{padding:6px 11px;font-size:12.5px;}
+  .ai-form-input{font-size:13.5px;}
+}
+
+/* 确认 popover（页内，非原生） */
+.ai-confirm{
+  position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);width:min(320px,88vw);
+  background:var(--ai-card);border-radius:14px;z-index:320;padding:20px;display:none;opacity:0;
+  transition:opacity .18s,transform .18s;box-shadow:0 12px 40px rgba(0,0,0,.2);text-align:center;
+}
+.ai-confirm.open{display:block;opacity:1;transform:translate(-50%,-50%) scale(1);}
+.ai-confirm-text{font-size:15px;color:var(--ai-text);line-height:1.6;margin-bottom:18px;}
+
+/* 移动端：AI 历史侧栏变抽屉 */
+.ai-sidebar-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:250;display:none;
+}
+.ai-sidebar-overlay.open{display:block;}
+@media (max-width:768px){
+  .ai-history{
+    position:fixed;top:0;left:0;bottom:0;z-index:260;transform:translateX(-100%);width:85%;
+    box-shadow:0 0 30px rgba(0,0,0,.2);
+  }
+  .ai-history.open{transform:translateX(0);}
+  .ai-history.collapsed{width:85%;}
+  .ai-history.collapsed .ai-newchat-btn span:not(.nav-icon){display:inline;}
+  .ai-history.collapsed .ai-hist-section,
+  .ai-history.collapsed .ai-hist-item-row .ai-hist-title,
+  .ai-history.collapsed .ai-hist-foot-btn .ai-foot-label,
+  .ai-history.collapsed .ai-hist-empty{display:block;}
+  .ai-history.collapsed .ai-hist-foot-btn{justify-content:flex-start;}
+  .ai-history.collapsed .ai-newchat-btn{width:calc(100% - 24px);height:40px;margin:6px 12px 10px;border-radius:999px;font-size:14px;}
+  /* 窄屏不再给欢迎态单独放开宽度（取消无限制宽度后，空态与对话态等宽 → 不跳变） */
+  .ai-welcome .ai-input-wrap{max-width:768px;}
+  .ai-greeting{font-size:22px;}
+  /* 底部导航（.bottom-nav）是 position:fixed、仅在此断点显示，会把输入 dock 压掉一半。
+     给 dock 预留导航高度，保证输入框完整落在导航之上，最后一条消息也不被遮住 */
+  .ai-input-dock{padding-bottom:calc(14px + var(--bottom-nav-height,64px));}
+  .ai-messages{padding-bottom:16px;}
+}
+@media (max-width:480px){
+  .ai-greeting{font-size:20px;margin-bottom:28px;}
+  .ai-input-box{border-radius:18px;}
+}
+
+/* 侧栏用户头像真实图片 */
+.ai-user-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;}
+
+/* 模型介绍弹窗 */
+.ai-intro-list{max-height:60vh;overflow-y:auto;padding-right:4px;}
+.ai-intro-item{padding:14px;border:1px solid var(--ai-border);border-radius:12px;margin-bottom:12px;background:var(--ai-bg);}
+.ai-intro-item:last-child{margin-bottom:0;}
+.ai-intro-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;}
+.ai-intro-name{font-size:15px;font-weight:700;color:var(--ai-text);}
+.ai-intro-tag{font-size:11px;padding:3px 8px;border-radius:999px;background:rgba(255,140,0,.12);color:var(--ai-orange);font-weight:600;white-space:nowrap;}
+.ai-intro-tag.custom{background:rgba(59,108,246,.12);color:var(--ai-blue);}
+.ai-intro-tag.auto{background:rgba(82,196,26,.12);color:#52c41a;}
+.ai-intro-meta{font-size:12px;color:var(--ai-sub);margin-bottom:8px;line-height:1.5;}
+.ai-intro-meta span:not(:last-child):after{content:' · ';color:var(--ai-muted);margin:0 4px;}
+.ai-intro-desc{font-size:13px;color:var(--ai-text);line-height:1.6;}
+.ai-intro-desc p{margin:0 0 6px;}
+.ai-intro-desc p:last-child{margin-bottom:0;}
+.ai-intro-empty{text-align:center;color:var(--ai-muted);font-size:13px;padding:30px 0;}
+
+/* R66/N4-N5 + R67/A/B：窄屏输入区与模型面板防溢出（≤420px 收紧按钮宽度、圆环间距与百分比字号、右侧组间距；折行时发送按钮仍右对齐可见） */
+/* R69 v4 移动端(<768px)输入区：① 发送钮缩小 ② 圆环仅样式隐藏（逻辑/数据保留）③ 深度思考 chip 缩小
+   ④ 单行不换行：chip + 模型钮 + 附件 + 发送 同排，全部可收缩不溢出；桌面端不受影响 */
+@media (max-width:768px){
+  .ai-input-box{padding:12px 12px 8px;}
+  .ai-input-foot{flex-wrap:nowrap;align-items:center;gap:6px;margin-top:8px;}
+  .ai-foot-left{flex:0 1 auto;min-width:0;}
+  .ai-foot-right{flex:1 1 auto;justify-content:flex-end;gap:6px;flex-wrap:nowrap;min-width:0;}
+  .ai-chip{height:28px;padding:0 9px;font-size:12px;gap:4px;border-radius:14px;}
+  .ai-chip svg{width:13px;height:13px;}
+  .ai-model-btn{flex:0 1 auto;min-width:0;max-width:132px;height:30px;padding:0 10px;font-size:12.5px;}
+  .ai-model-btn .ai-model-label{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ai-icon-btn{width:30px;height:30px;}
+  .ai-icon-btn svg{width:18px;height:18px;}
+  .ai-send-btn{width:34px;height:34px;}
+  .ai-send-btn svg{width:18px;height:18px;}
+  .ai-ctx-usage{display:none;}
+  .ai-bubble{overflow-wrap:anywhere;}
+  .ai-bubble img.ai-msg-img{max-width:100%;height:auto;}
+}
+/* 极窄屏(<=380px)：再收一档，保证单行且发送钮始终完整可见 */
+@media (max-width:380px){
+  .ai-input-foot{gap:5px;}
+  .ai-foot-right{gap:5px;}
+  .ai-chip{padding:0 8px;font-size:11.5px;}
+  .ai-model-btn{max-width:104px;}
+  .ai-icon-btn{width:28px;height:28px;}
+  .ai-send-btn{width:32px;height:32px;}
+}
+</style>
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
+</head>
+<body class="theme-home">
+
+<div class="app">
+  <!-- ===== 主站左侧导航（保留，首页正下方新增 AI） ===== -->
+  <nav class="sidebar">
+    <div class="logo">
+      <div class="logo-icon" data-icon="book-open"></div>
+      <div>
+        <div class="logo-text">星途</div>
+        <div class="logo-sub">致追梦的人-&gt;修身</div>
+      </div>
+    </div>
+    <div class="nav-list">
+      <div class="nav-item" data-page="home">
+        <span class="nav-icon" data-icon="home"></span><span>首页</span>
+      </div>
+      <!-- 新增：AI（首页正下方，一级入口，橙色高亮） -->
+      <div class="nav-item active" onclick="location.href='AI.html'">
+        <span class="nav-icon" data-icon="sparkles"></span><span>AI</span>
+      </div>
+      <div class="nav-section">学习模块</div>
+      <div class="nav-item" data-page="cet">
+        <span class="nav-icon" data-icon="book-open"></span><span>英语</span>
+      </div>
+      <div class="nav-item" data-page="exam">
+        <span class="nav-icon" data-icon="pencil"></span><span>行测</span>
+      </div>
+      <div class="nav-item" data-page="comm">
+        <span class="nav-icon" data-icon="message-square"></span><span>表达</span>
+      </div>
+      <div class="nav-item" data-page="interview">
+        <span class="nav-icon" data-icon="handshake"></span><span>面测</span>
+      </div>
+      <div class="nav-item" data-page="files">
+        <span class="nav-icon" data-icon="folder"></span><span>我的文件</span>
+      </div>
+      <div class="nav-section">创作</div>
+      <div class="nav-item" data-page="blog">
+        <span class="nav-icon" data-icon="globe"></span><span>社区</span>
+      </div>
+      <div class="nav-item" data-page="moments">
+        <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
+      </div>
+      <div class="nav-section">互动</div>
+      <div class="nav-item" data-external="1" onclick="gotoChat()" title="通讯录 · 添加好友（需在线模式）">
+        <span class="nav-icon" data-icon="users"></span><span>通讯录</span>
+      </div>
+      <div class="nav-section">中心</div>
+      <div class="nav-item" data-page="wrong-book">
+        <span class="nav-icon" data-icon="book"></span><span>错题本</span>
+      </div>
+      <div class="nav-item" data-page="profile">
+        <span class="nav-icon" data-icon="user"></span><span>个人中心</span>
+      </div>
+      <div class="nav-section">系统</div>
+      <div class="nav-item" data-page="settings">
+        <span class="nav-icon" data-icon="settings"></span><span>设置</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心">
+        <div class="user-avatar">学</div>
+        <div class="user-info">
+          <div class="user-name">同学</div>
+          <div class="user-streak"><span data-icon="fire" data-icon-size="14" style="vertical-align:-2px"></span> 连续打卡 0 天</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== AI 主区域 ===== -->
+  <div class="main ai-main">
+    <header class="ai-topbar">
+      <div class="ai-topbar-left">
+        <button class="ai-topbar-btn" id="aiMenuBtn" title="历史对话" aria-label="历史对话">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="ai-topbar-right">
+        <button class="ai-topbar-btn" id="aiNewTopBtn" title="新对话" aria-label="新对话">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="ai-body">
+      <!-- 历史侧栏 -->
+      <aside class="ai-history" id="aiHistory">
+        <div class="ai-hist-head">
+          <div class="ai-hist-brand">
+            <span class="nav-icon" data-icon="sparkles"></span>
+            <span>AI</span>
+          </div>
+          <div class="ai-hist-head-actions">
+            <button class="ai-hist-search-btn" id="aiCollapseBtn" title="收起/展开侧栏">
+              <span class="nav-icon" data-icon="x"></span>
+            </button>
+          </div>
+        </div>
+        <button class="ai-newchat-btn" id="aiNewChatBtn">
+          <span class="nav-icon" data-icon="plus"></span><span>新建对话</span>
+        </button>
+        <div class="ai-hist-section">历史对话</div>
+        <div class="ai-hist-list" id="aiHistoryList"></div>
+        <div class="ai-hist-empty">暂无历史对话</div>
+        <div class="ai-hist-foot">
+          <button class="ai-hist-foot-btn" id="aiModelInfoBtn">
+            <span class="nav-icon" data-icon="book"></span>
+            <span class="ai-foot-label">模型</span>
+          </button>
+          <button class="ai-hist-foot-btn" id="aiSettingsBtn">
+            <span class="nav-icon" data-icon="settings"></span>
+            <span class="ai-foot-label">添加模型</span>
+          </button>
+          <button class="ai-hist-foot-btn danger" id="aiClearBtn">
+            <span class="nav-icon" data-icon="trash"></span>
+            <span class="ai-foot-label">清除所有对话</span>
+          </button>
+        </div>
+        <div class="ai-hist-user" id="aiUserArea">
+          <div class="ai-user-avatar" id="aiUserAvatar">学</div>
+          <div class="ai-user-name" id="aiUserName">同学</div>
+          <div class="ai-user-more" id="aiUserMoreBtn" title="更多"><span class="nav-icon" data-icon="menu"></span></div>
+          <div class="ai-usermenu" id="aiUserMenu">
+            <div class="ai-usermenu-item" id="aiProfileBtn"><span class="nav-icon" data-icon="user"></span><span>个人中心</span></div>
+            <div class="ai-usermenu-item danger" id="aiLogoutBtn"><span class="nav-icon" data-icon="logout"></span><span>退出登录</span></div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 对话区 -->
+      <div class="ai-chat" id="aiChat">
+        <div class="ai-welcome" id="aiWelcome">
+          <div class="ai-greeting">欢迎使用，随时开始吧</div>
+          <div class="ai-input-wrap" id="aiWelcomeInputSlot">
+            <div class="ai-input-box" id="aiInputBox">
+              <div class="ai-img-preview" id="aiImgPreview" style="display:none">
+                <img id="aiImgThumb" alt="题目截图"/>
+                <button type="button" class="ai-img-remove" id="aiImgRemove" aria-label="移除图片">✕</button>
+              </div>
+              <textarea id="aiInput" class="ai-input" placeholder="问我任何学习问题..." rows="1"></textarea>
+              <div class="ai-input-foot">
+                <div class="ai-foot-left">
+                  <button type="button" class="ai-chip" id="aiDeepThinkChip" title="开启后强制深度推理">深度思考</button>
+                </div>
+                <div class="ai-foot-right">
+                  <span class="ai-ctx-usage" id="aiCtxUsage" title="已用 0% · 0 / 1.0K"><svg class="ai-ctx-ring" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle class="ai-ctx-ring-bg" cx="12" cy="12" r="9" fill="none" stroke-width="2.5"></circle><circle class="ai-ctx-ring-fg" cx="12" cy="12" r="9" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="0.00 56.55" transform="rotate(-90 12 12)"></circle></svg><span class="ai-ctx-pct">0%</span></span>
+                  <button type="button" class="ai-model-btn" id="aiModelBtn">
+                    <span class="ai-model-label" id="aiModelLabel">自动</span>
+                    <svg class="ai-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                  <button type="button" class="ai-icon-btn" id="aiAttachBtn" title="上传题目截图">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                  </button>
+                  <button type="button" class="ai-send-btn" id="aiSendBtn" title="发送">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                  </button>
+                </div>
+              </div>
+              <input type="file" id="aiFileInput" accept="image/*" style="display:none"/>
+              <div class="ai-model-panel" id="aiModelPanel">
+                <div class="ai-mp-head" id="aiMaxLabel">
+                  <span class="ai-mp-max-text">MAX 模式</span>
+                  <span class="ai-switch" id="aiMaxSwitch"><span class="ai-switch-knob"></span></span>
+                </div>
+                <div class="ai-mp-list" id="aiModelList"></div>
+                <div class="ai-mp-detail" id="aiMpDetail"></div>
+                <div class="ai-mp-add" id="aiCustomEntry">
+                  <span class="ai-mp-add-ic">⚙</span>
+                  <span class="ai-mp-name">添加模型</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ai-messages" id="aiMessages"></div>
+
+        <div class="ai-input-dock">
+          <div class="ai-input-wrap">
+            <div id="aiDockInputSlot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 底部导航（首页 | 互动 | 我的 | AI | 更多，AI active） ===== -->
+    <nav class="bottom-nav">
+      <div class="bottom-nav-list">
+        <div class="bottom-nav-item" data-page="home">
+          <div class="bn-icon" data-icon="home"></div><div class="bn-label">首页</div>
+        </div>
+        <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon" data-icon="message-circle"></div><div class="bn-label">互动</div></div>
+        <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon" data-icon="user"></div><div class="bn-label">我的</div></div>
+        <div class="bottom-nav-item active" onclick="location.href='AI.html'"><div class="bn-icon" data-icon="sparkles"></div><div class="bn-label">AI</div></div>
+        <div class="bottom-nav-item" onclick="location.href='更多.html'"><div class="bn-icon" data-icon="menu"></div><div class="bn-label">更多</div></div>
+      </div>
+    </nav>
+  </div>
+
+  <!-- 移动端历史抽屉遮罩 -->
+  <div class="ai-sidebar-overlay" id="aiSidebarOverlay"></div>
+</div>
+
+<!-- ===== 模型选择/说明已改为输入框上方列表面板（见 #aiInputBox 内 #aiModelPanel），不再单独弹窗 ===== -->
+
+<!-- ===== 弹层：自定义模型 ===== -->
+<div class="ai-overlay" id="customModelOverlay"></div>
+<div class="ai-popup" id="customModelPopup">
+  <div class="ai-popup-head">
+    <div class="ai-popup-title" id="customModelTitle">配置自定义模型</div>
+    <button class="ai-popup-close" data-close="customModelPopup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="ai-form-group">
+    <div class="ai-form-label">服务商 <span class="req">*</span></div>
+    <select class="ai-form-input ai-form-select" id="cmProvider"></select>
+    <div class="ai-form-hint">选择后会自动填入接口地址，并切换下方可选的模型 ID。</div>
+  </div>
+  <div class="ai-form-group">
+    <div class="ai-form-label">模型名称 <span class="req">*</span></div>
+    <input class="ai-form-input" id="cmName" placeholder="如：我的 DeepSeek"/>
+    <div class="ai-form-hint">显示在模型列表里的名字，随便起，方便你自己认就行。</div>
+  </div>
+  <div class="ai-form-group">
+    <div class="ai-form-label">API 地址 <span class="req">*</span></div>
+    <input class="ai-form-input" id="cmApiUrl" placeholder="https://api.siliconflow.cn/v1/chat/completions"/>
+    <div class="ai-form-hint">OpenAI 兼容的对话接口地址（一般是 .../chat/completions）。</div>
+    <div class="ai-warn-bar">网页环境仅支持允许跨域的平台（硅基流动 / DeepSeek 已验证可用）；不支持的平台测试连接会报网络错误。</div>
+  </div>
+  <div class="ai-form-group">
+    <div class="ai-form-label">API Key <span class="req">*</span></div>
+    <div class="ai-input-wrap-rel">
+      <input class="ai-form-input with-btn" id="cmKey" type="password" placeholder="sk-..."/>
+      <button class="ai-key-toggle" id="cmKeyToggle" title="显示/隐藏 Key">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+    <div class="ai-form-hint">在对应平台的控制台里创建，仅保存在本机浏览器，不会上传服务器。</div>
+  </div>
+  <div class="ai-form-group">
+    <div class="ai-form-label">模型 ID <span class="req">*</span></div>
+    <select class="ai-form-input ai-form-select" id="cmModelSelect"></select>
+    <input class="ai-form-input" id="cmModelId" placeholder="自定义模型 ID" style="display:none;margin-top:8px;"/>
+    <div class="ai-form-hint" id="cmModelHint">平台文档里的模型标识，填错会提示模型不存在。</div>
+  </div>
+  <div class="ai-form-group">
+    <div class="ai-form-label">适用类型（多选）</div>
+    <div class="ai-types-row" id="cmTypes">
+      <span class="ai-type-chip" data-type="general">通用</span>
+      <span class="ai-type-chip" data-type="math">推理</span>
+      <span class="ai-type-chip" data-type="image">图片</span>
+      <span class="ai-type-chip" data-type="audio">语音识别</span>
+      <span class="ai-type-chip" data-type="embedding">向量嵌入</span>
+      <span class="ai-type-chip" data-type="rerank">结果重排</span>
+    </div>
+  </div>
+  <div class="ai-form-msg" id="cmMsg"></div>
+  <div class="ai-popup-actions">
+    <button class="ai-btn ai-btn-ghost" id="cmTestBtn">测试连接</button>
+    <button class="ai-btn ai-btn-ghost" id="cmCancelBtn">取消</button>
+    <button class="ai-btn ai-btn-primary" id="cmSaveBtn">保存</button>
+  </div>
+  <div class="ai-popup-actions" id="cmEditActions" style="display:none">
+    <button class="ai-btn ai-btn-danger" id="cmDeleteBtn">删除该模型</button>
+  </div>
+</div>
+
+<!-- ===== 弹层：模型介绍 ===== -->
+<div class="ai-overlay" id="modelIntroOverlay"></div>
+<div class="ai-popup" id="modelIntroPopup">
+  <div class="ai-popup-head">
+    <div class="ai-popup-title">模型介绍</div>
+    <button class="ai-popup-close" data-close="modelIntroPopup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="ai-intro-list" id="modelIntroList"></div>
+</div>
+
+<!-- ===== 弹层：AI 设置（用户自有 Key） ===== -->
+<div class="ai-overlay" id="settingsOverlay"></div>
+<div class="ai-popup" id="settingsPopup">
+  <div class="ai-popup-head">
+    <div class="ai-popup-title">设置</div>
+    <button class="ai-popup-close" data-close="settingsPopup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="ai-tip-bar">填写你自己的 Key 后将优先使用，不填则用内置公共 Key，开箱即用。Key 仅保存在本机浏览器。</div>
+  <div class="ai-form-group">
+    <div class="ai-form-label">智谱 AI Key</div>
+    <div class="ai-input-wrap-rel">
+      <input class="ai-form-input with-btn" id="setKeyZhipu" type="password" placeholder="留空则用内置公共 Key"/>
+      <button class="ai-key-toggle" id="setKeyZhipuToggle" title="显示/隐藏 Key">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="ai-form-group">
+    <div class="ai-form-label">硅基流动 Key</div>
+    <div class="ai-input-wrap-rel">
+      <input class="ai-form-input with-btn" id="setKeySilicon" type="password" placeholder="留空则用内置公共 Key"/>
+      <button class="ai-key-toggle" id="setKeySiliconToggle" title="显示/隐藏 Key">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="ai-form-group">
+    <div class="ai-form-label">上下文长度（携带多少轮历史对话给模型）</div>
+    <div class="ai-type-chips" id="setCtxChips">
+      <span class="ai-type-chip" data-ctx="3">3 轮</span>
+      <span class="ai-type-chip" data-ctx="5">5 轮</span>
+      <span class="ai-type-chip" data-ctx="10">10 轮</span>
+      <span class="ai-type-chip" data-ctx="20">20 轮</span>
+      <span class="ai-type-chip" data-ctx="0">全部</span>
+    </div>
+    <div class="ai-form-tip">轮数越多越连贯，也越耗额度；「全部」会带上本次对话的完整历史。</div>
+  </div>
+  <div class="ai-form-group">
+    <div class="ai-form-label">MAX 模式</div>
+    <div class="ai-ctx-row">
+      <span class="ai-form-tip" style="margin:0">开启后单次回答上限提升到 4000 tokens，适合长文、申论批改与详细讲解。</span>
+      <span class="ai-switch" id="setMaxSwitch"><span class="ai-switch-knob"></span></span>
+    </div>
+  </div>
+  <div class="ai-popup-actions">
+    <button class="ai-btn ai-btn-ghost" id="setCancelBtn">取消</button>
+    <button class="ai-btn ai-btn-primary" id="setSaveBtn">保存</button>
+  </div>
+  <div class="ai-about-box">
+    <div class="ai-about-title">功能介绍</div>
+    <div class="ai-about-sec">
+      <b>🤖 自动选模型</b>：默认「自动（推荐）」会按问题类型挑最合适的模型——数学/推理题走 DeepSeek-R1，英语翻译走混元 MT，发图提问走视觉模型，其余走快速通用模型。你也可以手动指定任一模型。
+    </div>
+    <div class="ai-about-sec">
+      <b>📊 倍率</b>：每个模型右侧的倍率是本次消耗相对基准的系数（如 2x 表示消耗约两倍）。倍率越高，能力通常越强、额度消耗也越快。
+    </div>
+    <div class="ai-about-sec">
+      <b>🚀 MAX 模式</b>：把单次回答的输出上限提到 4000 tokens，写长文、批改申论、详细讲题时开启；日常问答关闭即可省额度。
+    </div>
+    <div class="ai-about-sec">
+      <b>🧠 深度思考</b>：开启后强制走推理模型，会先展开推导再给结论，适合数量关系、资料分析这类题；它与手动选模型互斥（选模型会自动退出深度思考）。
+    </div>
+    <div class="ai-about-sec">
+      <b>🖼️ 拍题</b>：点回形针上传题目照片，自动走视觉模型识别并解答。
+    </div>
+    <div class="ai-about-sec">
+      <b>💬 对话与历史</b>：左侧是历史对话，随时切回继续问；顶部「＋」直接开新对话，旧对话自动保存。回答底部会标注「由 XXX 回答」，方便你确认实际用的是哪个模型。
+    </div>
+    <div class="ai-about-sec">
+      <b>🔑 Key 说明</b>：不填 Key 也能直接用（内置公共额度）；填了自己的 Key 会优先使用，Key 只存在你本机浏览器里。
+    </div>
+  </div>
+</div>
+
+<!-- ===== 确认 popover（页内，非原生 confirm） ===== -->
+<div class="ai-confirm" id="aiConfirm">
+  <div class="ai-confirm-text" id="aiConfirmText">确认操作？</div>
+  <div class="ai-popup-actions">
+    <button class="ai-btn ai-btn-ghost" id="aiConfirmCancel">取消</button>
+    <button class="ai-btn ai-btn-primary" id="aiConfirmOk">确认</button>
+  </div>
+</div>
+
+<!-- ===== 兜底 toast（优先用 app.js 的 showToast） ===== -->
+<div id="aiToast" style="position:fixed;left:50%;bottom:80px;transform:translateX(-50%);z-index:400;background:rgba(0,0,0,.82);color:#fff;font-size:13.5px;padding:10px 18px;border-radius:10px;display:none;max-width:80vw;text-align:center;"></div>
+
+<!-- ===== 脚本（新文件引用先不带 ?v=，主理人波末统一打戳） ===== -->
+<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/xt-toast.js?v=20260923a" defer></script>
+<script src="assets/layer-stack.js?v=20260923a" defer></script>
+<script src="assets/error-boundary.js?v=20260924a" defer></script>
+<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/quest.js?v=20260916O" defer></script>
+<script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260924a" defer></script>
+<script src="assets/study-stats.js?v=20260916O" defer></script>
+<script src="assets/ai-config.js?v=20260925a" defer></script>
+<script src="assets/ai-presets.js?v=20260916O" defer></script>
+<script src="assets/ai-service.js?v=20260925a" defer></script>
+<script src="assets/ai-cap-registry.js?v=20260918c" defer></script>
+<script src="assets/ai-cap-image.js?v=20260920c" defer></script>
+<script src="assets/ai-cap-vision.js?v=20260920c" defer></script>
+<script src="assets/ai-cap-audio.js?v=20260920c" defer></script>
+<script src="assets/ai-cap-embed.js?v=20260920c" defer></script>
+<script src="assets/ai-cap-translate.js?v=20260920c" defer></script>
+<script src="assets/ai-cap-video.js?v=20260920c" defer></script>
+<script src="assets/ai-cap-3d.js?v=20260922a" defer></script>
+<script src="assets/ai-page.js?v=20260925a" defer></script>
+
+<!-- ===== R4-C / P2-3：返回键压栈桥（页面弹层逻辑在外部 js，用轻量观察器对接，不改外部 js） ===== -->
+<script>
+(function () {
+  'use strict';
+  var ITEMS = [
+    { id: 'aiSidebarOverlay', sel: '#aiSidebarOverlay', open: function (el) { return !!(el && el.classList && el.classList.contains('open')); }, close: function () { var el = document.getElementById('aiSidebarOverlay'); if (el) el.classList.remove('open'); var h = document.querySelector('.ai-history'); if (h) h.classList.remove('open'); } }
+  ];
+  var obsList = [];
+  function start() {
+    // 基建经 defer 加载，DOMContentLoaded 时已就绪；缺失则静默降级
+    if (typeof window.xtLayerPush !== 'function') { return; }
+    for (var i = 0; i < ITEMS.length; i++) {
+      (function (it) {
+        var node = document.querySelector(it.sel);
+        if (!node || typeof MutationObserver === 'undefined') { return; }
+        var last = !!it.open(node);
+        var mo = new MutationObserver(function () {
+          var now = !!it.open(node);
+          if (now === last) { return; }
+          last = now;
+          if (now) {
+            if (window.xtLayerRegister) { window.xtLayerRegister(it.id, null, it.close); }
+            if (window.xtLayerPush) { window.xtLayerPush(it.id); }
+          } else if (window.xtLayerPop) {
+            window.xtLayerPop(it.id);
+          }
+        });
+        mo.observe(node, { attributes: true, attributeFilter: ['class', 'style'] });
+        obsList.push(mo);
+      })(ITEMS[i]);
+    }
+  }
+  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', start); } else { start(); }
+})();
+</script>
+
+</body>
+</html>

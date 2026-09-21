@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b1026">
+<title>登录 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260923a">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<style>
+  :root{
+    --primary:#5b8def; --accent:#9b6bd9;
+    --text:#eef1ff; --text-dim:#9aa3c7;
+    --card:rgba(255,255,255,.07); --card-border:rgba(255,255,255,.14);
+    --field:rgba(255,255,255,.08); --field-border:rgba(255,255,255,.18);
+    --danger:#ff6b6b; --ok:#3ddc97;
+  }
+  *{box-sizing:border-box}
+  /* common.css 会锁 html/body 高度并隐藏滚动；矮屏 / 横屏时登录卡片会被裁掉且无法滚动，这里恢复纵向滚动 */
+  html,body{height:auto;min-height:100%;overflow-y:auto}
+  body{
+    margin:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:radial-gradient(1200px 800px at 20% -10%,#2b3a8f 0%,transparent 55%),
+               radial-gradient(1000px 700px at 110% 20%,#5b3a9f 0%,transparent 50%),
+               linear-gradient(160deg,#0b1026 0%,#141a3e 55%,#1c1440 100%);
+    color:var(--text);display:flex;align-items:center;justify-content:center;padding:calc(20px + env(safe-area-inset-top, 0px)) 20px 20px;overflow-x:hidden;
+  }
+  /* 星空背景 */
+  .stars{position:fixed;inset:0;pointer-events:none;z-index:0}
+  .stars i{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;opacity:.7;animation:tw 3s infinite ease-in-out}
+  @keyframes tw{0%,100%{opacity:.15;transform:scale(.7)}50%{opacity:.9;transform:scale(1.15)}}
+  .shooting{position:fixed;top:12%;left:-10%;width:140px;height:1.5px;background:linear-gradient(90deg,transparent,#fff);transform:rotate(-25deg);animation:shoot 7s infinite;pointer-events:none;z-index:0}
+  @keyframes shoot{0%,92%{opacity:0;transform:rotate(-25deg) translateX(0)}94%{opacity:.9}100%{opacity:0;transform:rotate(-25deg) translateX(120vw)}}
+
+  .login-card{
+    position:relative;z-index:1;width:100%;max-width:400px;
+    background:var(--card);border:1px solid var(--card-border);border-radius:22px;
+    padding:34px 30px 26px;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    box-shadow:0 24px 70px rgba(0,0,0,.45);
+    animation:cardIn .5s ease both;
+  }
+  @keyframes cardIn{from{opacity:0;transform:translateY(22px) scale(.97)}to{opacity:1;transform:none}}
+  .login-card.shake{animation:shake .4s}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+
+  .login-logo{text-align:center;margin-bottom:22px}
+  .lg-icon{
+    width:66px;height:66px;margin:0 auto 12px;border-radius:20px;font-size:32px;
+    display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#5b8def,#9b6bd9 60%,#e06bd9);
+    box-shadow:0 10px 30px rgba(91,141,239,.45),inset 0 1px 0 rgba(255,255,255,.35);
+  }
+  .lg-title{font-size:26px;font-weight:900;letter-spacing:6px;text-indent:6px;
+    background:linear-gradient(90deg,#aebcff,#e0c8ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .lg-sub{font-size:12px;color:var(--text-dim);margin-top:6px;letter-spacing:1px}
+
+  .login-tabs{display:flex;background:rgba(255,255,255,.06);border:1px solid var(--card-border);border-radius:12px;padding:4px;margin-bottom:18px}
+  .login-tab{flex:1;text-align:center;padding:9px 0;border-radius:9px;font-size:14px;color:var(--text-dim);cursor:pointer;transition:.25s;font-weight:600;user-select:none}
+  .login-tab.active{background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff;box-shadow:0 4px 14px rgba(91,141,239,.4)}
+
+  .form-group{margin-bottom:14px}
+  .form-label{font-size:12px;color:var(--text-dim);margin-bottom:6px;letter-spacing:.5px}
+  .field{position:relative}
+  .form-input{
+    width:100%;padding:12px 42px 12px 14px;border-radius:12px;font-size:14px;color:var(--text);
+    background:var(--field);border:1px solid var(--field-border);outline:none;transition:.2s;
+  }
+  .form-input::placeholder{color:#6b7399}
+  .form-input:focus{border-color:var(--primary);background:rgba(91,141,239,.1);box-shadow:0 0 0 3px rgba(91,141,239,.18)}
+  .form-input.bad{border-color:var(--danger);box-shadow:0 0 0 3px rgba(255,107,107,.15)}
+  .eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:32px;height:32px;border:none;background:none;color:var(--text-dim);cursor:pointer;font-size:16px;border-radius:8px}
+  .eye:hover{color:var(--text);background:rgba(255,255,255,.08)}
+  /* R103：图标由 emoji 换成 inline SVG 后，用 flex 居中避免基线偏移（复用同一 .eye 类，不新增类名） */
+  .eye{display:inline-flex;align-items:center;justify-content:center}
+  .eye>svg{display:block;width:18px;height:18px}
+  /* R4-B C4：密码可见按钮视觉仍 32px，::after 扩热区到 40x40。.eye 本身已是 position:absolute（天然定位上下文），无需再声明 position:relative，避免覆盖 L72 的绝对定位。right:6px 靠边，取 40px 仅外扩 4px，不遮挡输入框主体点击 */
+  .eye::after{content:'';position:absolute;left:50%;top:50%;width:40px;height:40px;transform:translate(-50%,-50%)}
+
+  /* 密码强度 */
+  .strength{display:flex;gap:5px;margin-top:7px;align-items:center}
+  .strength i{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.12);transition:.25s}
+  .strength i.on1{background:#ff6b6b}.strength i.on2{background:#ffb84d}.strength i.on3{background:#3ddc97}
+  .strength em{font-size:11px;color:var(--text-dim);font-style:normal;min-width:56px;text-align:right}
+  .match-ok{font-size:11px;color:var(--ok);margin-top:6px}
+  .match-bad{font-size:11px;color:var(--danger);margin-top:6px}
+
+  .btn-primary{
+    width:100%;margin-top:8px;padding:13px 0;border:none;border-radius:12px;cursor:pointer;
+    font-size:15px;font-weight:800;letter-spacing:3px;color:#fff;
+    background:linear-gradient(90deg,var(--primary),var(--accent));
+    box-shadow:0 8px 22px rgba(91,141,239,.4);transition:.25s;
+  }
+  .btn-primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 12px 28px rgba(91,141,239,.5)}
+  .btn-primary:disabled{opacity:.65;cursor:not-allowed}
+
+  .login-notice{
+    margin-top:16px;font-size:12px;line-height:1.8;color:var(--text-dim);
+    background:rgba(255,255,255,.05);border:1px solid var(--card-border);border-radius:12px;padding:10px 14px;
+  }
+  .login-notice b{color:var(--text)}
+  /* R105：用户协议 / 隐私政策 勾选行与页内弹层 */
+  .agree-row{display:flex;align-items:flex-start;gap:8px;margin:14px 2px 0;font-size:12px;line-height:1.7;color:var(--text-dim);text-align:left}
+  .agree-row input[type=checkbox]{width:16px;height:16px;flex:none;margin-top:2px;accent-color:#5b8def;cursor:pointer}
+  .agree-row label{cursor:pointer;flex:1}
+  .agree-row a{color:var(--primary);text-decoration:none;cursor:pointer}
+  .agree-row a:hover{text-decoration:underline}
+  .agree-row.shake-err{animation:shake .4s}
+  .agreement-sec{margin-bottom:14px}
+  .agreement-h{font-size:14px;font-weight:800;color:var(--text);margin-bottom:8px}
+  .agreement-p{font-size:12px;line-height:1.8;color:var(--text-dim);margin-bottom:6px;word-break:break-all}
+  .agreement-p b{color:var(--text)}
+  .err-box{
+    display:none;margin-bottom:14px;padding:10px 14px;border-radius:12px;font-size:13px;
+    background:rgba(255,107,107,.12);border:1px solid rgba(255,107,107,.4);color:#ffb4b4;
+  }
+  .err-box.show{display:block}
+  a{color:var(--primary)}
+
+  /* R73：忘记密码 / 找回账号 */
+  .login-links{text-align:right;margin:10px 2px 0}
+  .login-links a{font-size:12px;color:var(--text-dim);text-decoration:none}
+  .login-links a:hover{color:var(--primary)}
+  .modal-mask{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(6,9,24,.72);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+  .modal-mask.show{display:flex}
+  .modal-card{width:100%;max-width:380px;max-height:92vh;overflow-y:auto;background:rgba(20,26,62,.98);border:1px solid var(--card-border);border-radius:18px;padding:22px 20px;box-shadow:0 24px 70px rgba(0,0,0,.55)}
+  .modal-title{font-size:18px;font-weight:800;margin-bottom:6px}
+  .modal-sub{font-size:12px;color:var(--text-dim);line-height:1.7;margin-bottom:14px}
+  .find-code-row{display:flex;gap:8px;align-items:stretch}
+  .find-code-row .form-input{flex:1;min-width:0;padding-right:14px}
+  .btn-code{flex:none;padding:0 14px;border:1px solid var(--primary);background:rgba(91,141,239,.14);color:#cdd8ff;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+  .btn-code:disabled{opacity:.55;cursor:not-allowed}
+  .btn-ghost{width:100%;margin-top:8px;padding:11px 0;border:1px solid var(--card-border);background:none;color:var(--text-dim);border-radius:12px;font-size:14px;cursor:pointer}
+  .btn-ghost:hover{color:var(--text);border-color:rgba(255,255,255,.3)}
+  .find-result{margin-top:12px;font-size:13px;line-height:1.8;color:#bfe9d4;word-break:break-all}
+  @media (max-width:360px){ .modal-card{padding:18px 14px} .find-code-row{flex-wrap:wrap} .btn-code{width:100%;padding:11px 0} }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+<div class="shooting"></div>
+
+<div class="login-card" id="loginCard">
+  <div class="login-logo">
+    <div class="lg-icon" data-icon="zap"></div>
+    <div class="lg-title">星 途</div>
+    <div class="lg-sub" id="lgSub">祝君一切安好 · 诸事顺宜</div>
+  </div>
+
+  <!-- 登录 / 注册 切换 -->
+  <div class="login-tabs">
+    <div class="login-tab active" id="tabLogin" onclick="switchMode('login')">登 录</div>
+    <div class="login-tab" id="tabRegister" onclick="switchMode('register')">注 册</div>
+  </div>
+
+  <div class="err-box" id="errBox"></div>
+
+  <div class="form-group">
+    <div class="form-label">账号 / 绑定邮箱</div>
+    <div class="field">
+      <input type="text" class="form-input" id="loginAccount" placeholder="账号 / 绑定邮箱" autocomplete="username" maxlength="128">
+    </div>
+  </div>
+
+  <div class="form-group" id="nickGroup" style="display:none">
+    <div class="form-label">昵称（可选，不填默认用账号）</div>
+    <div class="field">
+      <input type="text" class="form-input" id="loginNickname" placeholder="给自己起个昵称" maxlength="20">
+    </div>
+  </div>
+
+  <div class="form-group">
+    <div class="form-label">密码</div>
+    <div class="field">
+      <input type="password" class="form-input" id="loginPass" placeholder="至少 8 位，含字母和数字" autocomplete="current-password" maxlength="64">
+      <button type="button" class="eye" id="eyePass" onclick="togglePw('loginPass',this)" title="显示/隐藏密码" aria-label="显示或隐藏密码"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+    </div>
+    <div class="strength" id="pwStrength" style="display:none">
+      <i id="s1"></i><i id="s2"></i><i id="s3"></i><em id="sTxt"></em>
+    </div>
+  </div>
+
+  <div class="form-group" id="confirmGroup" style="display:none">
+    <div class="form-label">确认密码</div>
+    <div class="field">
+      <input type="password" class="form-input" id="loginConfirm" placeholder="再输入一次密码" autocomplete="new-password" maxlength="64" oninput="checkMatch()">
+      <button type="button" class="eye" onclick="togglePw('loginConfirm',this)" aria-label="显示或隐藏密码"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+    </div>
+    <div id="matchTip"></div>
+  </div>
+
+  <!-- R105：隐私合规 —— 首次登录/注册前必须勾选同意；同意状态记入 localStorage['xt_privacy_agreed']，
+       已同意过则进入本页时自动勾上，不再强拦。协议文案用页内弹层承载（不新建页面）。 -->
+  <div class="agree-row" id="agreeRow">
+    <input type="checkbox" id="agreeChk">
+    <label for="agreeChk">我已阅读并同意<a onclick="openAgreement('ua')">《用户协议》</a>与<a onclick="openAgreement('privacy')">《隐私政策》</a>，并同意为功能适配与消息通知收集设备基础信息</label>
+  </div>
+
+  <button class="btn-primary" id="loginSubmitBtn" onclick="submitLogin()" aria-label="登录">登录</button>
+
+  <!-- R73：忘记密码 / 找回账号入口（仅在线模式可用） -->
+  <div class="login-links">
+    <a href="javascript:void(0)" id="findAccountLink" onclick="openFindAccount()">忘记密码 / 找回账号</a>
+  </div>
+
+  <div class="login-notice" id="loginNotice">💡 正在检测运行模式……</div>
+</div>
+
+<!-- R73：找回账号 / 重置密码 弹层 -->
+<div class="modal-mask" id="findModal">
+  <div class="modal-card">
+    <div class="modal-title">找回账号 / 重置密码</div>
+    <div class="modal-sub" id="findSub">输入已绑定的邮箱，获取验证码后即可找回账号；填写新密码可一并重置。</div>
+    <div class="err-box" id="findErr"></div>
+    <div class="form-group">
+      <div class="form-label">绑定邮箱</div>
+      <div class="field">
+        <input type="text" class="form-input" id="findEmail" placeholder="example@mail.com" autocomplete="email" maxlength="128">
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">邮箱验证码</div>
+      <div class="find-code-row">
+        <input type="text" class="form-input" id="findCode" placeholder="6 位数字验证码" inputmode="numeric" maxlength="6">
+        <button type="button" class="btn-code" id="findSendBtn" onclick="sendFindCode()">获取验证码</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">新密码（可选，填写即重置）</div>
+      <div class="field">
+        <input type="password" class="form-input" id="findNewPass" placeholder="不填则仅找回账号" autocomplete="new-password" maxlength="64">
+      </div>
+    </div>
+    <button class="btn-primary" id="findSubmitBtn" onclick="submitFindAccount()">找回账号</button>
+    <button type="button" class="btn-ghost" onclick="closeFindAccount()">取消</button>
+    <div id="findResult"></div>
+  </div>
+</div>
+
+<!-- R105：用户协议 / 隐私政策 页内弹层（复用找回账号弹层的 .modal-mask/.modal-card 范式，不新建页面） -->
+<div class="modal-mask" id="agreementModal">
+  <div class="modal-card">
+    <div class="modal-title">用户协议与隐私政策</div>
+    <div class="modal-sub">请仔细阅读以下内容，点击「同意并继续」表示你已理解并接受全部条款。</div>
+    <div class="agreement-sec" id="uaSection">
+      <div class="agreement-h">一、用户协议</div>
+      <div class="agreement-p">1. 本站为个人学习辅助工具，账号仅限本人使用，请妥善保管账号与密码。</div>
+      <div class="agreement-p">2. 请勿发布违法违规、侵犯他人权益的内容；发贴、评论等社区行为须遵守相关法律法规。</div>
+      <div class="agreement-p">3. 管理员有权对违规内容进行删除处理，对违规账号进行限制。</div>
+      <div class="agreement-p">4. 本站按「现状」提供服务，不对学习效果或服务可用性作任何承诺。</div>
+    </div>
+    <div class="agreement-sec" id="privacySection">
+      <div class="agreement-h">二、隐私政策</div>
+      <div class="agreement-p"><b>我们收集什么：</b>仅收集设备基础信息，包括设备品牌、型号、系统版本、App 版本、匿名设备标识、屏幕尺寸与系统语言，用于页面与功能适配以及 App 消息通知。</div>
+      <div class="agreement-p"><b>我们不收集：</b>IMEI、通讯录、短信、通话记录等任何敏感个人信息。</div>
+      <div class="agreement-p"><b>数据用途：</b>设备基础信息仅用于本站自身的服务（功能适配与消息通知），不用于任何第三方用途，不对外提供。</div>
+      <div class="agreement-p"><b>数据存储：</b>账号与社区数据保存在服务器；学习进度等本地数据保存在你的设备上，可随时在「设置 → 数据管理」导出或清除。</div>
+    </div>
+    <button type="button" class="btn-primary" onclick="agreeAndClose()">同意并继续</button>
+    <button type="button" class="btn-ghost" onclick="closeAgreement()">关闭</button>
+  </div>
+</div>
+
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/xt-toast.js?v=20260923a" defer></script>
+<script src="assets/error-boundary.js?v=20260924a" defer></script>
+<script src="assets/config.js?v=20260916O" defer></script>
+<script>
+/* ==================== 登录页逻辑（独立于 app.js） =====================================
+   双模式（自动检测，互不影响）：
+   - 在线模式：检测到 FastAPI 后端（默认 http://110.42.134.62:8000）→ 注册/登录走服务器，
+               返回 JWT（study_workbench_token），多人博客/评论/点赞/AI 全部可用。
+   - 离线模式（手机 App / 后端未启动）：账号仅存本机 localStorage（study_workbench_users，
+               密码 simpleHash 混淆，非加密），登录只写 study_workbench_auth 门禁标记，
+               全站以单机本地模式运行（发贴/学习数据均在 localStorage）。
+   存储：
+   - study_workbench_token : JWT 令牌（仅在线模式；assets/api.js 请求带 Authorization: Bearer）
+   - study_workbench_auth  : {account, loginAt} app.js 顶部“未登录跳转登录页”的门禁标记
+   - study_workbench_last_account : 记住上次登录的账号（仅预填） */
+var API_BASE = (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000'));
+var TOKEN_KEY = 'study_workbench_token';
+var REFRESH_KEY = 'study_workbench_refresh';
+var AUTH_KEY = 'study_workbench_auth';
+var USERS_KEY = 'study_workbench_users';
+var LAST_ACCOUNT_KEY = 'study_workbench_last_account';
+/* 需求01：管理员标记。登录/注册成功后落盘，供 更多.html「管理后台」入口与
+   管理员.html 读取（'1'=管理员，'0'=普通用户）；离线单机模式恒为 '0'。 */
+var ADMIN_FLAG_KEY = 'study_workbench_is_admin';
+var loginMode = 'login';
+var ONLINE = false; // 页面加载后探测后端得出，true=在线多人版，false=离线单机版
+
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+function saveSession(token, account, refreshToken, isAdmin) {
+  if (token) localStorage.setItem(TOKEN_KEY, token);
+  if (refreshToken) localStorage.setItem(REFRESH_KEY, refreshToken);
+  localStorage.setItem(AUTH_KEY, JSON.stringify({ account: account, loginAt: Date.now(), is_admin: !!isAdmin }));
+  localStorage.setItem(LAST_ACCOUNT_KEY, account || '');
+  try { localStorage.setItem(ADMIN_FLAG_KEY, isAdmin ? '1' : '0'); } catch (e) { /* 无痕模式忽略 */ }
+  /* R105：每次登录重置设备上报标记（上报本身在 reportDeviceInfo 里 feature-detect + 静默执行） */
+  try { localStorage.removeItem(DEVICE_REPORTED_KEY); } catch (eR105) { /* 忽略 */ }
+  reportDeviceInfo();
+  /* R3-L5：每次登录重置安装列表上报标记（上报前先过隐私同意 + 设备安全开关双门控） */
+  try { localStorage.removeItem(APP_SIG_REPORTED_KEY); } catch (eR3L5) { /* 忽略 */ }
+  reportInstalledApps();
+}
+/* 在线续期：access 过期时用 refresh 令牌静默换新（access + refresh 一起轮换） */
+function apiTryRefresh() {
+  var rt = localStorage.getItem(REFRESH_KEY);
+  if (!rt) return Promise.resolve(false);
+  return fetch(API_BASE + '/api/auth/refresh', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh: rt })
+  }).then(function (res) {
+    return res.json().then(function (d) { return { ok: res.ok, data: d }; });
+  }).then(function (r) {
+    if (!r.ok || !r.data || !r.data.token) return false;
+    localStorage.setItem(TOKEN_KEY, r.data.token);
+    if (r.data.refreshToken) localStorage.setItem(REFRESH_KEY, r.data.refreshToken);
+    return true;
+  }).catch(function () { return false; });
+}
+/* ---------- 离线模式：本地账号表（simpleHash 混淆，非加密，仅本机单用户场景） ---------- */
+function simpleHash(s) {
+  var h = 5381;
+  for (var i = 0; i < s.length; i++) { h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; }
+  return 'h' + h.toString(36);
+}
+function loadLocalUsers() {
+  try { return JSON.parse(localStorage.getItem(USERS_KEY)) || {}; } catch (e) { return {}; }
+}
+function saveLocalUsers(u) { localStorage.setItem(USERS_KEY, JSON.stringify(u)); }
+function writeLocalProfile(account, nickname) {
+  // 同步昵称到 app.js 的 appData.profile（key: study_workbench_data）
+  try {
+    var d = JSON.parse(localStorage.getItem('study_workbench_data')) || {};
+    if (!d.profile) d.profile = { name: '', avatar: '', motto: '' };
+    d.profile.name = nickname || account || '同学';
+    localStorage.setItem('study_workbench_data', JSON.stringify(d));
+  } catch (e) { }
+}
+
+/* ---------- 模式探测：先探测后端，再决定自动登录策略 ---------- */
+function probeBackend() {
+  var ctrl = ('AbortController' in window) ? new AbortController() : null;
+  var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 10000) : null;
+  return fetch(API_BASE + '/api/health', { signal: ctrl ? ctrl.signal : undefined })
+    .then(function (r) { return r.ok; })
+    .catch(function () { return false; })
+    .finally(function () { if (timer) clearTimeout(timer); });
+}
+
+function applyModeNotice() {
+  var sub = document.getElementById('lgSub');
+  var n = document.getElementById('loginNotice');
+  if (ONLINE) {
+    if (sub) sub.textContent = '祝君一切安好 · 诸事顺宜';
+    if (n) n.innerHTML = '<span style="font-size:14px;letter-spacing:2px;opacity:.85">幻想买馍 ----&gt; 修身</span>';
+  } else {
+    if (sub) sub.textContent = '单机离线版 · 数据保存在本机';
+    if (n) n.innerHTML = '📱 <b>单机离线模式</b>：未检测到后端服务器，数据保存在本机。<br>如需多人博客 / 在线 AI，请启动 <b>server/</b> 后端后重新打开。';
+  }
+}
+function escHtml(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+/* ---------- 星空背景 ---------- */
+(function drawStars() {
+  var box = document.getElementById('stars'); if (!box) return;
+  var html = '';
+  for (var i = 0; i < 90; i++) {
+    var sz = (Math.random() * 2 + 1).toFixed(1);
+    html += '<i style="left:' + (Math.random() * 100).toFixed(2) + '%;top:' + (Math.random() * 100).toFixed(2) + '%;width:' + sz + 'px;height:' + sz + 'px;animation-delay:' + (Math.random() * 3).toFixed(2) + 's;animation-duration:' + (2 + Math.random() * 3).toFixed(2) + 's"></i>';
+  }
+  box.innerHTML = html;
+})();
+
+/* ---------- 表单交互增强 ---------- */
+var USERNAME_RE = /^[A-Za-z0-9_\u4e00-\u9fa5]{3,20}$/;
+/* R73：绑定邮箱登录 —— 邮箱格式正则（与服务端 schemas._EMAIL_RE 对齐，仅基础格式校验） */
+var EMAIL_RE_LOGIN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+function showErr(msg) {
+  var box = document.getElementById('errBox');
+  box.innerHTML = '⚠️ ' + escHtml(msg);
+  box.classList.add('show');
+  var card = document.getElementById('loginCard');
+  card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+}
+function clearErr() { var b = document.getElementById('errBox'); b.classList.remove('show'); b.innerHTML = ''; }
+/* R103：密码可见性图标升级为干净 inline SVG（睁眼 / 闭眼两态，currentColor 跟随按钮文字色，点击切换保留）。
+   图标字符串集中定义于此；HTML 里的初态直接内联「睁眼」SVG，避免 emoji 闪现。 */
+var PWD_EYE_ON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+var PWD_EYE_OFF_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+function togglePw(id, btn) {
+  var inp = document.getElementById(id);
+  if (!inp) return;
+  var show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  if (btn) {
+    btn.innerHTML = show ? PWD_EYE_OFF_SVG : PWD_EYE_ON_SVG;
+    btn.setAttribute('aria-label', show ? '隐藏密码' : '显示密码');
+  }
+}
+/* ---------- 密码强度（与后端 server/schemas.py 对齐，P0-B 需求22） ----------
+   后端唯一规则：正则 ^(?=.*[A-Za-z])(?=.*\d).{8,64}$（≥8 位且同时含字母与数字，最长 64 位）
+                 + 弱密码黑名单（精确匹配）。
+   本页独立持有一份副本：设置.html 的 PW_STRONG_RE 跨页不可见，不能复用。
+   注意：本规则只作用于「注册」分支；登录分支不校验强度，否则会锁死存量 6~7 位老用户。 */
+var PW_STRONG_RE_LOGIN = /^(?=.*[A-Za-z])(?=.*\d).{8,64}$/;
+var PW_WEAK_DENYLIST_LOGIN = ['test123456', 'password', 'qwerty', 'qwerty123', '12345678',
+  '11111111', 'abc12345', 'admin123', 'iloveyou', '123456789'];
+
+/**
+ * 判断密码是否满足后端强度规则（≥8 位且同时含字母与数字，≤64 位）。
+ * @param {string} v 密码明文。
+ * @returns {boolean} 满足返回 true，否则 false。
+ */
+function pwStrongEnough(v) {
+  return PW_STRONG_RE_LOGIN.test(v || '');
+}
+
+/**
+ * 判断密码是否命中后端弱密码黑名单（精确匹配，与后端实现一致）。
+ * @param {string} v 密码明文。
+ * @returns {boolean} 命中返回 true，否则 false。
+ */
+function pwTooCommon(v) {
+  return PW_WEAK_DENYLIST_LOGIN.indexOf(v || '') >= 0;
+}
+
+function pwScore(v) {
+  if (!v) return 0;
+  var s = 0;
+  if (v.length >= 6) s++;
+  if (v.length >= 10 && /[A-Za-z]/.test(v) && /\d/.test(v)) s++;
+  if (v.length >= 12 && /[^A-Za-z0-9]/.test(v)) s++;
+  if (v.length < 6) s = Math.min(s, 1);
+  return Math.max(1, s); // 有输入至少 1 格
+}
+function refreshStrength() {
+  var v = document.getElementById('loginPass').value;
+  var box = document.getElementById('pwStrength');
+  if (loginMode !== 'register' || !v) { box.style.display = 'none'; return; }
+  box.style.display = 'flex';
+  var s = pwScore(v);
+  var names = { 1: '强度：弱', 2: '强度：中', 3: '强度：强' };
+  for (var i = 1; i <= 3; i++) {
+    var el = document.getElementById('s' + i);
+    el.className = i <= s ? 'on' + s : '';
+  }
+  document.getElementById('sTxt').textContent = names[s] || '';
+}
+function checkMatch() {
+  var tip = document.getElementById('matchTip');
+  var p = document.getElementById('loginPass').value;
+  var c = document.getElementById('loginConfirm').value;
+  if (loginMode !== 'register' || !c) { tip.innerHTML = ''; return null; }
+  if (p === c) { tip.innerHTML = '<div class="match-ok">✓ 两次密码一致</div>'; return true; }
+  tip.innerHTML = '<div class="match-bad">✗ 两次密码不一致</div>'; return false;
+}
+function markInput(id, bad) { document.getElementById(id).classList.toggle('bad', !!bad); }
+
+/* 回车流转：账号 → 密码 → 提交 */
+document.getElementById('loginAccount').addEventListener('keydown', function (e) { if (e.key === 'Enter') document.getElementById('loginPass').focus(); });
+document.getElementById('loginPass').addEventListener('keydown', function (e) { if (e.key === 'Enter') submitLogin(); });
+document.getElementById('loginConfirm').addEventListener('keydown', function (e) { if (e.key === 'Enter') submitLogin(); });
+document.getElementById('loginPass').addEventListener('input', refreshStrength);
+['loginAccount', 'loginPass', 'loginConfirm', 'loginNickname'].forEach(function (id) {
+  document.getElementById(id).addEventListener('input', function () { clearErr(); markInput(id, false); });
+});
+/* 记住上次登录的账号（仅预填，不存密码） */
+(function () {
+  var last = localStorage.getItem(LAST_ACCOUNT_KEY);
+  if (last) document.getElementById('loginAccount').value = last;
+})();
+
+(function detectModeAndAutoLogin() {
+  probeBackend().then(function (ok) {
+    ONLINE = ok;
+    applyModeNotice();
+    if (ONLINE) {
+      // 在线：access 有效直接进；否则用 refresh 静默续期后再进
+      var t = getToken();
+      if (t) {
+        fetch(API_BASE + '/api/auth/me', { headers: { 'Authorization': 'Bearer ' + t } })
+          .then(function (r) { return r.ok ? location.replace('学习工作台.html') : apiTryRefresh(); })
+          .then(function (ok) { if (ok === true) location.replace('学习工作台.html'); })
+          .catch(function () { });
+      } else if (localStorage.getItem(REFRESH_KEY)) {
+        apiTryRefresh().then(function (ok) { if (ok) location.replace('学习工作台.html'); });
+      }
+    } else {
+      // 离线：门禁标记存在且本地账号仍在 → 直接进工作台
+      var auth = null;
+      try { auth = JSON.parse(localStorage.getItem(AUTH_KEY)); } catch (e) { }
+      if (auth && auth.account && loadLocalUsers()[auth.account]) {
+        location.replace('学习工作台.html');
+      }
+    }
+  });
+})();
+
+function switchMode(mode) {
+  loginMode = mode;
+  clearErr();
+  document.getElementById('tabLogin').classList.toggle('active', mode === 'login');
+  document.getElementById('tabRegister').classList.toggle('active', mode === 'register');
+  document.getElementById('confirmGroup').style.display = mode === 'register' ? '' : 'none';
+  document.getElementById('nickGroup').style.display = mode === 'register' ? '' : 'none';
+  document.getElementById('loginSubmitBtn').textContent = mode === 'login' ? '登录' : '✨ 注 册 并 进 入';
+  refreshStrength();
+  if (mode !== 'register') { document.getElementById('matchTip').innerHTML = ''; }
+}
+
+/* ---------- 离线模式：本地注册 / 登录 ---------- */
+function localRegister(account, pass, nickname) {
+  var users = loadLocalUsers();
+  if (users[account]) { showErr('该账号已存在，请直接登录'); return false; }
+  users[account] = { pass: simpleHash(pass), nickname: nickname || '', createdAt: Date.now() };
+  saveLocalUsers(users);
+  saveSession(null, account);
+  writeLocalProfile(account, nickname || account);
+  return true;
+}
+function localLogin(account, pass) {
+  var users = loadLocalUsers();
+  var u = users[account];
+  if (!u) { showErr('本机没有该账号，请先注册'); return false; }
+  if (u.pass !== simpleHash(pass)) { showErr('密码错误，请重试'); return false; }
+  saveSession(null, account);
+  writeLocalProfile(account, u.nickname || account);
+  return true;
+}
+
+/* ---------- 统一前端校验 ---------- */
+function validate(account, pass) {
+  if (!account) { showErr('请输入账号或绑定邮箱'); markInput('loginAccount', true); return false; }
+  /* R73：登录标识放宽——含 @ 视为邮箱，否则按用户名规则校验。
+     R141/R142：账号（3-20 位中文 / 字母 / 数字 / 下划线）与注册账号规则一致，无需再放宽。 */
+  if (account.indexOf('@') >= 0) {
+    if (!EMAIL_RE_LOGIN.test(account)) { showErr('邮箱格式不正确'); markInput('loginAccount', true); return false; }
+  } else if (!USERNAME_RE.test(account)) { showErr('账号需为 3-20 位字母 / 数字 / 中文 / 下划线'); markInput('loginAccount', true); return false; }
+  if (!pass) { showErr('请输入密码'); markInput('loginPass', true); return false; }
+  if (pass.length > 64) { showErr('密码最多 64 位'); markInput('loginPass', true); return false; }
+  if (loginMode === 'register') {
+    /* 仅注册分支加严：登录分支到此为止只要求非空。
+       存量 6~7 位老用户必须仍能登录，后端登录接口本身也不校验强度，
+       把 ≥8 位或字母数字混合套到登录路径会直接锁死这批账号。 */
+    if (!pwStrongEnough(pass)) { showErr('密码强度不足：需至少 8 位，且同时包含字母和数字'); markInput('loginPass', true); return false; }
+    if (pwTooCommon(pass)) { showErr('该密码过于常见，请更换为更复杂的密码'); markInput('loginPass', true); return false; }
+    var c = document.getElementById('loginConfirm').value;
+    if (!c) { showErr('请再次输入确认密码'); markInput('loginConfirm', true); return false; }
+    if (c !== pass) { showErr('两次输入的密码不一致'); markInput('loginConfirm', true); return false; }
+  }
+  return true;
+}
+
+function submitLogin() {
+  var account = document.getElementById('loginAccount').value.trim();
+  var pass = document.getElementById('loginPass').value;
+  if (!validate(account, pass)) return;
+  /* R105：未勾选《用户协议》与《隐私政策》时 toast 提示并阻止提交（已同意过则勾选框自动带上，不再拦） */
+  var agreeChk = document.getElementById('agreeChk');
+  if (!agreeChk || !agreeChk.checked) {
+    var agreeRow = document.getElementById('agreeRow');
+    if (agreeRow) { agreeRow.classList.remove('shake-err'); void agreeRow.offsetWidth; agreeRow.classList.add('shake-err'); }
+    if (typeof window.xtToast === 'function') { try { window.xtToast('warning', '请先阅读并勾选同意《用户协议》与《隐私政策》'); } catch (e0) { /* 忽略 */ } }
+    showErr('请先阅读并勾选同意《用户协议》与《隐私政策》');
+    return;
+  }
+  var btn = document.getElementById('loginSubmitBtn');
+  var btnText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = loginMode === 'login' ? '⏳ 登录中…' : '⏳ 注册中…';
+
+  function fail(msg) { showErr(msg || '操作失败，请稍后再试'); btn.disabled = false; btn.textContent = btnText; }
+  function go() { location.href = '学习工作台.html'; }
+
+  /* —— 离线模式：先尝试本地，找不到再尝试在线 —— */
+  if (!ONLINE) {
+    setTimeout(function () { // 让按钮态渲染出来
+      var ok;
+      if (loginMode === 'register') {
+        ok = localRegister(account, pass, document.getElementById('loginNickname').value.trim());
+      } else {
+        ok = localLogin(account, pass);
+        // 本地找不到账户，自动尝试在线登录
+        if (!ok && !loadLocalUsers()[account]) { showOnlineRetry(account, pass, btn, btnText); return; }
+      }
+      if (ok) go(); else { btn.disabled = false; btn.textContent = btnText; }
+    }, 60);
+    return;
+  }
+
+  /* —— 在线模式：走后端 API —— */
+  var path, body;
+  if (loginMode === 'register') {
+    path = '/api/auth/register';
+    body = { username: account, password: pass, nickname: document.getElementById('loginNickname').value.trim() };
+  } else {
+    path = '/api/auth/login';
+    /* R73：登录标识兼容「用户名」与「绑定邮箱」——同时带 username 与 account：
+       新后端优先读 account（用户名或邮箱），旧后端仍能读 username（向后兼容）。 */
+    body = { username: account, account: account, password: pass };
+  }
+
+  fetch(API_BASE + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  }).then(function (res) {
+    return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+  }).then(function (r) {
+    if (!r.ok) { fail(r.data.detail || '操作失败，请稍后再试'); return; }
+    // 需求01：后端在登录/注册响应里给 is_admin（camelCase 与 snake_case 双写，两处都读）
+    var adminFlag = r.data.is_admin || (r.data.user && r.data.user.is_admin) ||
+      r.data.isAdmin || (r.data.user && r.data.user.isAdmin);
+    saveSession(r.data.token, r.data.user.username, r.data.refreshToken, adminFlag);
+    go();
+  }).catch(function () {
+    // 网络错误：后端可能刚好停了 → 切回离线模式提示（不自动用本地账号，避免账号混淆）
+    probeBackend().then(function (ok) {
+      ONLINE = ok; applyModeNotice();
+      if (!ok) {
+        showErr('无法连接后端服务器，已切换为【单机离线模式】，请重新提交即可使用本机账号');
+        btn.disabled = false; btn.textContent = btnText;
+      } else {
+        fail('网络异常，请稍后再试');
+      }
+    });
+  });
+}
+
+function showOnlineRetry(account, pass, btn, btnText) {
+  /* 离线模式下本地找不到账号 → 自动探测在线后端并尝试在线登录 */
+  probeBackend().then(function (ok) {
+    ONLINE = ok; applyModeNotice();
+    if (!ok) { showErr('本机没有该账号，且未检测到后端服务器；请先注册'); btn.disabled = false; btn.textContent = btnText; return; }
+    fetch(API_BASE + '/api/auth/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: account, password: pass })
+    }).then(function (res) {
+      return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+    }).then(function (r) {
+      if (!r.ok) { showErr(r.data.detail || '账号或密码错误'); btn.disabled = false; btn.textContent = btnText; return; }
+      var adminFlag2 = r.data.is_admin || (r.data.user && r.data.user.is_admin) ||
+        r.data.isAdmin || (r.data.user && r.data.user.isAdmin);
+      saveSession(r.data.token, r.data.user.username, r.data.refreshToken, adminFlag2);
+      location.href = '学习工作台.html';
+    }).catch(function () { showErr('网络异常，请稍后再试'); btn.disabled = false; btn.textContent = btnText; });
+  });
+}
+
+/* ==================== R105：隐私合规勾选 + 登录成功设备信息上报 ==================== */
+var PRIVACY_AGREED_KEY = 'xt_privacy_agreed';
+var DEVICE_REPORTED_KEY = 'xt_device_reported';
+
+/* 是否已同意过协议（localStorage '1'）。已同意则勾选框自动带上，不再强拦。 */
+function privacyAgreed() {
+  try { return localStorage.getItem(PRIVACY_AGREED_KEY) === '1'; } catch (e) { return false; }
+}
+/* 进入页面时回填已同意状态 */
+(function initAgreeState() {
+  var chk = document.getElementById('agreeChk');
+  if (chk && privacyAgreed()) chk.checked = true;
+})();
+function openAgreement(sec) {
+  var modal = document.getElementById('agreementModal');
+  if (!modal) return;
+  modal.classList.add('show');
+  var target = document.getElementById(sec === 'ua' ? 'uaSection' : 'privacySection');
+  if (target) { try { target.scrollIntoView({ block: 'start' }); } catch (e) { /* 老内核忽略 */ } }
+}
+function closeAgreement() {
+  var modal = document.getElementById('agreementModal');
+  if (modal) modal.classList.remove('show');
+}
+/* 弹层内点「同意并继续」：落盘已同意 + 自动勾上勾选框 */
+function agreeAndClose() {
+  try { localStorage.setItem(PRIVACY_AGREED_KEY, '1'); } catch (e) { /* 无痕模式忽略 */ }
+  var chk = document.getElementById('agreeChk');
+  if (chk) chk.checked = true;
+  closeAgreement();
+}
+document.getElementById('agreementModal').addEventListener('click', function (e) { if (e.target === this) closeAgreement(); });
+
+/* ---------- 登录成功后设备信息上报（仅 App 环境） ----------
+   App WebView 会注入 window.XTAppBridge.getDeviceInfo()（同步返回 JSON 字符串）。
+   Web 端 / 桥缺失 → feature-detect 静默跳过；上报失败也静默，绝不阻塞登录跳转。
+   防重复：saveSession 成功时先清 'xt_device_reported'，上报前置位——每次登录最多上报一次。 */
+function reportDeviceInfo() {
+  try {
+    if (!(window.XTAppBridge && typeof window.XTAppBridge.getDeviceInfo === 'function')) return;
+    if (localStorage.getItem(DEVICE_REPORTED_KEY) === '1') return;
+    var info = JSON.parse(window.XTAppBridge.getDeviceInfo());
+    if (!info || typeof info !== 'object') return;
+    localStorage.setItem(DEVICE_REPORTED_KEY, '1');
+    var headers = { 'Content-Type': 'application/json' };
+    var t = getToken();
+    if (t) headers['Authorization'] = 'Bearer ' + t;
+    fetch(API_BASE + '/api/user/device', { method: 'POST', headers: headers, body: JSON.stringify(info) })
+      .catch(function () { /* 网络失败静默：接口由后端线并行提供 */ });
+  } catch (e) { /* 任何异常都静默，不影响登录流程 */ }
+}
+
+/* ---------- R3-L5：账号与设备安全风控 —— 已安装应用指纹上报（仅 App 环境） ----------
+   铁律：仅在【用户同意隐私政策】且设置「设备安全」开关开启时才采集与上报；拒绝/关闭时不产生请求。
+   双门控：
+     · 前端门控：privacyAgreed() 且 stRiskOn() 都为真才继续（否则直接 return，不发请求）；
+     · 原生门控：桥 getInstalledAppsForRisk(agreed=true) 在原生侧再校验一次（不依赖前端自觉）。
+   上报内容：桥返回 {"ok":true,"sigs":["<加盐SHA-256>",...],"count":N}，仅哈希列表，无明文包名。
+   桥缺失 / 返回 not_agreed / 网络失败 → 静默跳过，绝不阻塞登录跳转。
+   防重复：与设备上报同法，saveSession 时清 'xt_appsig_reported'，上报前置位——每次登录最多一次。 */
+var APP_SIG_REPORTED_KEY = 'xt_appsig_reported';
+var RISK_ENABLED_KEY_L = 'xt_risk_enabled';  // 与 设置.html RISK_ENABLED_KEY 同键
+function riskOptIn() {
+  try { return localStorage.getItem(RISK_ENABLED_KEY_L) !== '0'; } catch (e) { return true; }
+}
+function reportInstalledApps() {
+  try {
+    // 前端门控①：必须已同意隐私政策
+    if (!privacyAgreed()) return;
+    // 前端门控②：设置中「设备安全」开关必须开启（默认随同意开启）
+    if (!riskOptIn()) return;
+    // 桥缺失（Web 端 / 旧 APK）→ 静默跳过
+    if (!(window.XTAppBridge && typeof window.XTAppBridge.getInstalledAppsForRisk === 'function')) return;
+    if (localStorage.getItem(APP_SIG_REPORTED_KEY) === '1') return;
+    var res = window.XTAppBridge.getInstalledAppsForRisk(true);
+    if (!res) return;
+    var data = JSON.parse(res);
+    if (!data || data.ok !== true || !data.sigs || !data.sigs.length) return; // not_agreed / error / 空 → 不发
+    localStorage.setItem(APP_SIG_REPORTED_KEY, '1');
+    var headers = { 'Content-Type': 'application/json' };
+    var t = getToken();
+    if (t) headers['Authorization'] = 'Bearer ' + t;
+    fetch(API_BASE + '/api/user/installed-apps', {
+      method: 'POST', headers: headers, body: JSON.stringify({ sigs: data.sigs })
+    }).catch(function () { /* 网络失败静默 */ });
+  } catch (e) { /* 任何异常都静默，不影响登录流程 */ }
+}
+
+/* ==================== R73：找回账号 / 重置密码 ==================== */
+var _findTimer = null;
+
+/** 提取后端错误文案：detail 可能是字符串，也可能是 pydantic 422 的错误数组。 */
+function apiDetail(data) {
+  if (!data) return '';
+  var d = data.detail;
+  if (typeof d === 'string') return d;
+  if (d && d.length && d[0]) { return String(d[0].msg || '').replace(/^Value error,\s*/, ''); }
+  return '';
+}
+/** 把 HTTP 状态码映射为用户可读中文提示（带回退）。 */
+function emailErrMsg(status, data) {
+  var d = apiDetail(data);
+  if (status === 503) return d || '邮件服务未配置，请联系管理员';
+  if (status === 502) return d || '验证码发送失败，请稍后重试';
+  if (status === 429) return d || '操作过于频繁，请稍后再试';
+  if (status === 410) return d || '验证码已过期，请重新获取';
+  if (status === 409) return d || '该邮箱已被其他账号绑定';
+  if (status === 404) return d || '该邮箱未绑定任何账号';
+  if (status === 401) return d || '登录已过期，请重新登录';
+  if (status === 422) return d || '输入格式不正确';
+  if (status === 400) return d || '请求有误，请检查后重试';
+  return d || '操作失败，请稍后再试';
+}
+function showFindErr(msg) { var b = document.getElementById('findErr'); b.innerHTML = '⚠️ ' + escHtml(msg); b.classList.add('show'); }
+function clearFindErr() { var b = document.getElementById('findErr'); b.classList.remove('show'); b.innerHTML = ''; }
+function openFindAccount() {
+  if (!ONLINE) { showErr('离线模式下无法找回账号，请先连接后端服务器'); return; }
+  clearFindErr();
+  document.getElementById('findResult').innerHTML = '';
+  document.getElementById('findModal').classList.add('show');
+}
+function closeFindAccount() {
+  document.getElementById('findModal').classList.remove('show');
+  if (_findTimer) { clearInterval(_findTimer); _findTimer = null; }
+  var sb = document.getElementById('findSendBtn'); sb.disabled = false; sb.textContent = '获取验证码';
+}
+/** 发送验证码 60 秒倒计时（ES2017 安全写法，无 ?. / ?? 等）。 */
+function startFindCountdown(sec) {
+  var btn = document.getElementById('findSendBtn');
+  var left = sec;
+  btn.disabled = true; btn.textContent = left + 's 后重发';
+  if (_findTimer) { clearInterval(_findTimer); }
+  _findTimer = setInterval(function () {
+    left--;
+    if (left <= 0) { clearInterval(_findTimer); _findTimer = null; btn.disabled = false; btn.textContent = '获取验证码'; return; }
+    btn.textContent = left + 's 后重发';
+  }, 1000);
+}
+function sendFindCode() {
+  var email = (document.getElementById('findEmail').value || '').trim();
+  if (!EMAIL_RE_LOGIN.test(email)) { showFindErr('请输入正确的邮箱地址'); return; }
+  var btn = document.getElementById('findSendBtn');
+  if (btn.disabled) return;
+  btn.disabled = true; btn.textContent = '发送中…';
+  fetch(API_BASE + '/api/auth/email/send-code', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email, purpose: 'reset' })
+  }).then(function (res) {
+    return res.json().then(function (d) { return { ok: res.ok, status: res.status, data: d }; });
+  }).then(function (r) {
+    if (!r.ok) { showFindErr(emailErrMsg(r.status, r.data)); btn.disabled = false; btn.textContent = '获取验证码'; return; }
+    clearFindErr();
+    startFindCountdown(60);
+  }).catch(function () { showFindErr('网络异常，请稍后再试'); btn.disabled = false; btn.textContent = '获取验证码'; });
+}
+function submitFindAccount() {
+  var email = (document.getElementById('findEmail').value || '').trim();
+  var code = (document.getElementById('findCode').value || '').trim();
+  var np = document.getElementById('findNewPass').value || '';
+  if (!EMAIL_RE_LOGIN.test(email)) { showFindErr('请输入正确的邮箱地址'); return; }
+  if (!/^\d{4,8}$/.test(code)) { showFindErr('请输入收到的邮箱验证码'); return; }
+  if (np) {
+    if (!pwStrongEnough(np)) { showFindErr('密码强度不足：需至少 8 位，且同时包含字母和数字'); return; }
+    if (pwTooCommon(np)) { showFindErr('该密码过于常见，请更换为更复杂的密码'); return; }
+  }
+  var btn = document.getElementById('findSubmitBtn');
+  var t = btn.textContent;
+  btn.disabled = true; btn.textContent = '⏳ 处理中…';
+  var payload = { email: email, code: code };
+  if (np) payload.newPassword = np;
+  fetch(API_BASE + '/api/auth/find-account', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).then(function (res) {
+    return res.json().then(function (d) { return { ok: res.ok, status: res.status, data: d }; });
+  }).then(function (r) {
+    btn.disabled = false; btn.textContent = t;
+    if (!r.ok) { showFindErr(emailErrMsg(r.status, r.data)); return; }
+    clearFindErr();
+    var html = '<div class="find-result">✅ 找回成功！<br>账号：<b>' + escHtml(r.data.username) + '</b>';
+    /* R141/R142：同步提示账号（即注册/登录账号；用户改过号时也一并回显） */
+    if (r.data.account) { html += '<br>账号：<b>' + escHtml(r.data.account) + '</b>'; }
+    if (r.data.passwordReset) { html += '<br>密码已重置，请用新密码登录。'; }
+    html += '</div>';
+    document.getElementById('findResult').innerHTML = html;
+    document.getElementById('loginAccount').value = r.data.username || email;
+  }).catch(function () { btn.disabled = false; btn.textContent = t; showFindErr('网络异常，请稍后再试'); });
+}
+/* 弹层交互：点击遮罩关闭、Esc 关闭 */
+document.getElementById('findModal').addEventListener('click', function (e) { if (e.target === this) closeFindAccount(); });
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeFindAccount(); });
+</script>
+</body>
+</html>

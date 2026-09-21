@@ -1,0 +1,146 @@
+############################################################################
+# 块3：朋友圈定位改「跳转整页」 —— assets/xt-moments.js + 朋友圈发布.html
+############################################################################
+
+=== xtmLocBtn / xtmAtBtn / openPicker / 地区选择.html 出现位置 ===
+  654|   /* R89-B: 草稿键（跳转「地区选择.html」往返必须不丢内容）。此键与 M3 本地视频草稿约定一致。 */
+  656|   var XTM_REGION_PICK_KEY = 'xt_region_pick';
+  657|   /* R89-B: 地区选择回写值 TTL（同 xt-profile.js / 地区选择.html 协议） */
+  669|   /** 消费地区选择回写值（一次性 + TTL），返回地址文本或 ''。 */
+  835|     var fl = $('xtmLocBtn'); if (fl) fl.className = 'xtm-fn' + (P.location ? ' on' : '');
+  964|     /* R89-B：若从「地区选择.html」跳回，消费一次回写值（TTL 10 分钟）并写入草稿位置。 */
+  997|     /* R90：点「位置」/「所在位置」→ 首选【跳转整页 地区选择.html】（用户明确要求跳转，非页内弹层）。
+  998|        R89-B 曾把首选做成同页半屏弹层（XT_LOC_PICK.openPicker），用户实测反馈要的是整页跳转，
+ 1000|        回写链路同 xt-profile.js / 地区选择.html 协议（localStorage['xt_region_pick'] + TTL 10 分钟）。
+ 1003|       /* 1) 首选【跳整页 地区选择.html?cur=<当前已选>&back=朋友圈发布.html】。
+ 1004|             先写草稿防止往返丢内容；选完由地区选择页回写 localStorage['xt_region_pick']，
+ 1008|       /* 2) 整页跳转不可用（环境受限）→ 降级到同页半屏选择器 XT_LOC_PICK.openPicker。 */
+ 1010|       if (LP && typeof LP.openPicker === 'function') {
+ 1012|           LP.openPicker({ title: '选择位置', confirmText: '确定', current: P ? P.location : '' }, function (text) {
+ 1016|         } catch (e) { /* openPicker 异常 → 继续降级本页手动输入 */ }
+ 1024|     /* R89-B：跳整页「地区选择.html」。返回 true 表示跳转已发起。 */
+ 1034|       var url = '地区选择.html?cur=' + encodeURIComponent(cur) + '&back=' + encodeURIComponent(back);
+ 1047|     var locBtn = $('xtmLocBtn');
+ 1049|     var locSelf = $('xtmAtBtn');
+
+=== 地区选择.html goBack() 实现 ===
+   19|   padding: 12px 16px; background: var(--card, #fff); border-bottom: 1px solid var(--border, #e6e9f0); }
+   20| .xtr-back { display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 10px;
+   21|   border: 1px solid var(--border, #e6e9f0); background: transparent; color: var(--text-secondary, #6b7280);
+   31|   border: 1px solid var(--border, #e6e9f0); background: var(--bg, #f5f7fb); }
+   32| .xtr-search input { flex: 1 1 auto; min-width: 0; border: none; outline: none; background: transparent;
+   39| .xtr-crumb .xtr-cb.on { background: var(--primary, #5B8DEF); color: #fff; }
+   44| .xtr-item:active { background: var(--bg, #f5f7fb); }
+   51|   border: 1px solid var(--border, #e6e9f0); background: var(--card, #fff); font-size: 14px;
+   57|   background: transparent; color: var(--primary, #5B8DEF); font-size: 12px; cursor: pointer; }
+   61|   border: 1px solid var(--border, #e6e9f0); background: var(--card, #fff); color: var(--text, #1f2937);
+   63| .xtr-recent .xtr-chip:active { background: var(--bg, #f5f7fb); }
+   67|   background: var(--text, #1f2937); color: #fff; padding: 12px 24px; border-radius: 12px; font-size: 14px;
+   76|     <button class="xtr-back" type="button" onclick="XtrPage.goBack()">‹ 返回</button>
+  120|    ④ 结果回写：localStorage['xt_region_pick'] + 跳回 back 页面（默认 个人中心.html）。
+  126|   var PICK_KEY = 'xt_region_pick';
+  171|     back: '个人中心.html',
+  216|       try { location.replace(state.back); } catch (e2) { location.href = state.back; }
+  347|     goBack: function () {
+  348|       if (state.back) { try { location.replace(state.back); } catch (e) { location.href = state.back; } return; }
+  349|       try { history.back(); } catch (e2) {}
+  395|     var b = param('back');
+  396|     if (b) state.back = b;
+
+=== 朋友圈发布.html 特征计数 ===
+bytes=12442
+xtmFileImg=1  xtmFileVid=1
+   39|       <button class="xtm-pub-cancel" id="xtmCancel" type="button">取消</button>
+   41|       <button class="xtm-pub-submit" id="xtmSubmit" type="button">发表</button>
+   50|       <input type="file" id="xtmFileImg" accept="image/*" multiple style="display:none">
+   51|       <input type="file" id="xtmFileVid" accept="video/*" style="display:none">
+   55|         <span class="xtm-fn" id="xtmLocBtn" role="button" tabindex="0"><span class="nav-icon" data-icon="map-pin" data-icon-size="14"></span> 位置</span>
+   58|         <span class="xtm-fn" id="xtmAtBtn" role="button" tabindex="0"><span class="nav-icon" data-icon="navigation" data-icon-size="14"></span> 所在位置</span>
+  139|         <button class="btn btn-outline" onclick="closeCountdownModal()">取消</button>
+  140|         <button class="btn btn-primary" onclick="saveCountdown()">保存</button>
+
+############################################################################
+# 块4：用量页文案精简 + 清空按钮改展开收缩 —— assets/xt-aiusage.js
+############################################################################
+
+=== 旧文案精确命中（0 = 已删）===
+  命中=0  行=[]   应已删除 (原 L861)
+      '本机记录 × 服务端累计 · 按今日次数 / 最近时间 / 名称排序'
+  命中=0  行=[]   应已删除 (原 L856)
+      '账号级共享额度，非本机'
+  命中=0  行=[]   应已删除 (原 L891)
+      '逐模型一行，不聚合；排序 / 高亮 / 筛选一律以「剩余可用量」为准（A 口径）'
+  命中=0  行=[]   应改为「排序方式」(原 L892)
+      '排序方式（剩余可用量口径）'
+  命中=0  行=[]   应改为「筛选」(原 L900)
+      '筛选（按剩余可用量）'
+
+=== 新文案「排序方式」全部出现位置（防误判 L873）===
+  870|         '<div class="xt-us-sublabel"><span>排序方式</span></div>' +
+  872|           '<select class="xt-us-select" id="UsageSortSel" aria-label="排序方式">' +
+  890|           '<div class="xt-us-sublabel"><span>排序方式</span></div>' +
+
+=== 新文案「筛选」全部出现位置 ===
+    2| // 依赖：assets/ai-service.js 在 window 上暴露的 XT_AI_USAGE（账本读写 / token 估算 / 汇总 / 筛选 / 排序）。
+    3| // 本文件只负责「挂载、懒渲染、筛选、排序、交互、按能力口径展示」；数据一律取自真实调用写入的账本。
+  549|   // ---------- R88-A：A 口径（剩余可用量 remaining）排序 / 筛选纯函数 ----------
+  557|   // A 口径排序（排序 / 高亮 / 筛选一律以 remaining 为准，不用 used 当主指标）：
+  594|   // A 口径筛选桶（纯函数，便于单测）：
+  598|   //        是 R88-A 的筛选口径，不改动 deriveStatus / statusLabel 的既有语义。
+  767|           " 个模型的配额/用量数据，已在「按模型单独列出」区块逐条展示（排序、高亮、筛选一律以「剩余可用量」为准，A 口径）。</div>"
+  899|             '<span>筛选</span>' +
+ 1013|   //   剩余可用量 remaining —— 主指标（A 口径）：排序 / 高亮 / 筛选全看它
+ 1056|   // 构建「逐模型」总表并应用 A 口径（筛选 → 排序）
+ 1086|     // A 口径筛选：默认 all 不改动集合
+ 1189|         ? "按当前筛选条件没有匹配的模型（可切回「全部」查看）"
+ 1717|     // R88-A：A 口径排序 / 筛选（只影响「按模型单独列出」区块，与本机「按能力」区块互不干扰）
+
+=== 关键 id 保全 ===
+  UsageClearBtn          出现 3   行=[929, 962, 1662]
+  UsageClearTxt          出现 4   行=[929, 1634, 1646, 1662]
+  UsageEmpty             出现 6   行=[882, 884, 885, 949, 1376, 1377]
+  UsageModelList         出现 2   行=[911, 953]
+  UsageQuotaSortBar      出现 3   行=[891, 954, 1718]
+  UsageQuotaFilterBar    出现 3   行=[904, 956, 1722]
+  UsageDetailList        出现 2   行=[921, 960]
+  UsageExportBtn         出现 2   行=[936, 963]
+  UsageRangeBar          出现 2   行=[863, 1706]
+  UsageSortBar           出现 0   行=[]
+
+=== bindClear / disarmClear / skeleton 实现 ===
+  function bindClear     行=[1638, 1663]
+  function disarmClear   行=[1629]
+  function skeleton      行=[800]
+  UsageClearBtn          行=[929, 962, 1662]
+  UsageClearTxt          行=[929, 1634, 1646, 1662]
+  xt-us-hint             行=[723, 766, 840, 850, 920, 937, 940, 1206, 1208]
+
+=== 折叠区相关（展开/收缩）===
+  701|     var html = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;line-height:1.6;">' +
+  898|           '<button type="button" class="xt-us-foldrow" id="UsageQuotaFilterToggle" aria-expanded="false">' +
+  924|             '<button type="button" class="xt-us-clear-head" id="UsageClearHead" aria-expanded="false">' +
+ 1278|   // ---------- 渲染：明细（默认折叠回复） ----------
+ 1342|       head += '<button type="button" class="xt-us-fold" aria-expanded="false">' +
+ 1343|           "<span>展开回复</span>" +
+ 1542|       toast("当前环境不支持下载，已展开原文请手动复制");
+ 1619|         head.setAttribute("aria-expanded", "false");
+ 1620|         if (label) label.textContent = "展开回复";
+ 1623|         head.setAttribute("aria-expanded", "true");
+ 1624|         if (label) label.textContent = "收起回复";
+ 1660|   /* R90：清空按钮改为「展开收缩」样式 —— 默认收起，点标题行才展开真正的清空按钮，
+ 1662|      危险操作默认折叠，可有效避免误触；#UsageClearBtn / #UsageClearTxt 依旧在展开体内，bindClear() 不受影响。 */
+ 1671|         head.setAttribute("aria-expanded", "false");
+ 1674|         head.setAttribute("aria-expanded", "true");
+ 1688|         tog.setAttribute("aria-expanded", "false");
+ 1692|         tog.setAttribute("aria-expanded", "true");
+
+=== .xt-us-hint 剩余命中（应仅注释或 0）===
+  723|       '<div class="xt-us-hint" style="margin-top:6px;">对照说明：服务端口径为账号级累计值（无「今日」拆分），本机口径来自本机浏览器账本；两列口径不同，不能直接相减对账。</div>' +
+  766|         ? '<div class="xt-us-hint">已连接：共 ' + fmtNum(rows.length) +
+  840|           '<div class="xt-us-hint" id="UsageUpdatedAt">—</div>' +
+  850|           '<div class="xt-us-sublabel"><span>服务端累计</span><span class="xt-us-hint" id="UsageServerStatus">加载中…</span></div>' +
+  920|           '<div class="xt-us-sublabel"><span>用量明细</span><span class="xt-us-hint" id="UsageDetailCount"></span></div>' +
+  937|           '<span class="xt-us-hint" id="UsageExportHint">导出 localStorage 原始账本（键名 xt_ai_usage_v1），可与本页数字逐条对账</span>' +
+  940|           '<div class="xt-us-hint">当前环境不支持直接下载文件，请手动复制下方原始账本内容：</div>' +
+ 1206|     var note = '<div class="xt-us-hint" style="margin-top:6px;">本机口径合计：' +
+ 1208|     if (existing.indexOf("xt-us-hint") === -1) {

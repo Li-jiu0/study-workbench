@@ -1,0 +1,114 @@
+
+== S0 环境自检：能否驱动 M5 面板 ==
+xtpChatBody 存在: true
+M5 工具条存在: false
+列表容器 .xtp-list 存在: false
+初始卡片数: 0
+初始 range 值: undefined
+body 内 ID 清单: []
+[FAIL] S0-1 环境可驱动：M5 工具条与列表均渲染
+
+== S1 造 3 条旧时间戳(2025-09)会话 → 应渲染 3 张卡 ==
+[FAIL] S1-1 range 默认 all，卡片数 = 3 || 实测=0
+[PASS] S1-2 无空态元素
+[PASS] S1-3 无重置按钮
+
+== S2 切 #xtpM5Range → d7：卡片应清零 + 空态含「当前筛选/近 7 天/本机共 3 条」 ==
+[FAIL] S2-0 成功派发 change 到 #xtpM5Range
+卡片数=0
+空态文案=null
+range 元素当前 value=undefined
+[PASS] S2-1 卡片清零（复现 P1 现象） || 实测=0
+[FAIL] S2-2 空态出现
+[FAIL] S2-3 空态含「当前筛选」
+[FAIL] S2-4 空态含「近 7 天」
+[FAIL] S2-5 空态含本机总数「3」 || null
+[FAIL] S2-6 空态不含服务端误导语（本机无服务端数据）
+
+== S3 ★关键：M5.range 未被静默回退（工程师声明「没有自动回退」） ==
+select.value = null
+select 中 selected 的 option value = n/a
+[PASS] S3-1 重复置 d7 后卡片仍为 0（未被回退到 all） || before=0 after=0
+[FAIL] S3-2 #xtpM5Range 的 value 仍为 d7（未被静默改写）
+[PASS] S3-3 反证成立：d7 下 3 条 2025 年数据被时间条件真实过滤掉 || =-0
+
+== S4 空态重置按钮存在且文案含「重置筛选」 ==
+按钮存在=false  文案=null
+[FAIL] S4-1 #xtpM5ResetFilter 存在
+[FAIL] S4-2 按钮文案含「重置筛选」
+[FAIL] S4-3 按钮容器 .xtp-m5-emptyact 存在
+
+== S5 点击重置按钮 → 3 卡恢复 + range 回 all + kw/tag/favOnly 全重置 ==
+tag 下拉是否有「乙」选项: false
+  设 tag=乙 后: 卡片=0 rangeEl=false
+  点 收藏 后: 卡片=0 rangeEl=false tagEl=false
+复合筛选后 卡片数=0 range=(null) tag=(null) favBtnOn=false
+[FAIL] S5-0 复合筛选下出现重置按钮
+[FAIL] S5-1 成功点击重置按钮
+重置后: 卡片=0 range=undefined tag=undefined favOn=false kw=undefined
+[FAIL] S5-2 3 张卡恢复 || 实测=0
+[FAIL] S5-3 range 回 all
+[FAIL] S5-4 tag 清空
+[PASS] S5-5 favOnly 关闭
+[FAIL] S5-6 关键词清空
+[PASS] S5-7 空态与重置按钮均消失
+
+== S6 边界①：本机 0 条 + 有筛选 → 不应出现重置按钮 ==
+卡片=0 空态=null 重置按钮=false
+[PASS] S6-1 卡片 0 张
+[FAIL] S6-2 空态文案为「本机暂无会话记录…」 || null
+[PASS] S6-3 无重置按钮（无意义）
+
+== S7 边界②：本机 >0、筛选后仍 >0 → 不应出现空态 ==
+卡片=0 空态=false 重置按钮=false
+[FAIL] S7-1 新数据在 d7 内仍显示 2 张卡 || 实测=0
+[PASS] S7-2 无空态
+[PASS] S7-3 无重置按钮
+
+== S8 边界③：新时间戳(今天) + range=d7 → 正常显示、无空态、无重置按钮 ==
+卡片=0 range=(null)
+[FAIL] S8-1 1 张卡正常显示 || 实测=0
+[PASS] S8-2 无空态 / 无重置按钮
+
+== S9 ★闭包陷阱回归：搜索框 + 时间筛选 + 重置按钮 三者互不串扰 ==
+S9-0 元素在位检查: range=false kw=false fav=false 卡片=0
+[FAIL] S9-0 搜索框 #xtpM5Kw 在位
+!! 无法继续 S9：搜索框缺失
+
+== S10 真因A 回归：清空确认框/ toast 文案点明「服务端记录不受影响/仍保留」 ==
+confirmBox 调用片段:
+confirmBox('清空全部对话记录',
+      '将删除本机全部 ' + n + ' 条会话（共 ' + totalMsg + ' 条消息），此操作不可恢复。\n（服务端记录不受影响，如需删除请联系管理员或等待后续版本支持）\n建议先「备份」。确定继续吗？',
+      '清空', true, function () {
+        localStorage.removeItem('ai_chat_history');
+[PASS] S10-1 confirm 文案含「本机全部 … 条会话」
+[PASS] S10-2 confirm 文案含「服务端记录不受影响」
+toast 片段: toast('已清空本机会话，服务端记录仍保留')
+[PASS] S10-3 toast 文案含「服务端记录仍保留」
+运行时 toast/confirmBox 可达性: window.toast=undefined window.confirmBox=undefined
+【标注】S10 为源码级验证（toast/confirmBox 为 IIFE 内闭包，jsdom 下不可直接调用捕获）。
+
+== 汇总 ==
+通过 15 / 37
+  FAIL: S0-1 环境可驱动：M5 工具条与列表均渲染 || 
+  FAIL: S1-1 range 默认 all，卡片数 = 3 || 实测=0
+  FAIL: S2-0 成功派发 change 到 #xtpM5Range || 
+  FAIL: S2-2 空态出现 || 
+  FAIL: S2-3 空态含「当前筛选」 || 
+  FAIL: S2-4 空态含「近 7 天」 || 
+  FAIL: S2-5 空态含本机总数「3」 || null
+  FAIL: S2-6 空态不含服务端误导语（本机无服务端数据） || 
+  FAIL: S3-2 #xtpM5Range 的 value 仍为 d7（未被静默改写） || 
+  FAIL: S4-1 #xtpM5ResetFilter 存在 || 
+  FAIL: S4-2 按钮文案含「重置筛选」 || 
+  FAIL: S4-3 按钮容器 .xtp-m5-emptyact 存在 || 
+  FAIL: S5-0 复合筛选下出现重置按钮 || 
+  FAIL: S5-1 成功点击重置按钮 || 
+  FAIL: S5-2 3 张卡恢复 || 实测=0
+  FAIL: S5-3 range 回 all || 
+  FAIL: S5-4 tag 清空 || 
+  FAIL: S5-6 关键词清空 || 
+  FAIL: S6-2 空态文案为「本机暂无会话记录…」 || null
+  FAIL: S7-1 新数据在 d7 内仍显示 2 张卡 || 实测=0
+  FAIL: S8-1 1 张卡正常显示 || 实测=0
+  FAIL: S9-0 搜索框 #xtpM5Kw 在位 || 

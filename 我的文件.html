@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#5B8DEF">
+<title>我的文件 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260923c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<link rel="stylesheet" href="assets/polish.css?v=20260916O">
+<style>
+/* ==================== R72-6/9（20260917）：我的文件 · 本地文件/题库/作品归集 ====================
+   本页把三个本地数据源汇总为一处：作品集（原个人中心/演示页迁来）、导入题库、以及可选登记条目。
+   样式全用 .mf- 前缀；作品集沿用原个人中心的 .xtf- 前缀，视觉一致，避免跨页漂移。 */
+.mf-stats{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.mf-stat{flex:1;min-width:92px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+.mf-stat-v{font-size:20px;font-weight:800;color:var(--text);line-height:1.2}
+.mf-stat-k{font-size:12px;color:var(--text-muted);margin-top:2px}
+.mf-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.mf-bar .mf-select{flex:1;min-width:150px}
+.mf-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.mf-item{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden;display:flex;flex-direction:column}
+.mf-thumb{width:100%;height:112px;object-fit:cover;display:block;background:var(--bg)}
+.mf-ph{width:100%;height:72px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);background:var(--bg);font-size:12px}
+.mf-body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:6px;flex:1}
+.mf-title{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mf-meta{display:flex;flex-wrap:wrap;gap:6px;font-size:12px;color:var(--text-muted);align-items:center}
+.mf-badge{font-size:11px;padding:1px 7px;border-radius:999px;background:rgba(91,141,239,.12);color:var(--primary,#5B8DEF)}
+.mf-acts{display:flex;gap:6px;margin-top:auto}
+.mf-acts .btn{flex:1;font-size:12px;padding:5px 8px;min-width:0}
+.mf-empty{grid-column:1/-1;padding:30px 12px;text-align:center;color:var(--text-muted);font-size:13px;line-height:1.8}
+.mf-tip{padding:12px 2px 0;font-size:12px;color:var(--text-muted);line-height:1.7}
+@media (max-width:560px){ .mf-list{grid-template-columns:1fr} .mf-bar .mf-select{min-width:0;flex:1 1 100%} .mf-bar .btn{flex:1 1 auto} }
+
+/* ==================== 作品集样式（原个人中心 N9-4，.xtf- 前缀整体迁移） ==================== */
+.xtf-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 0 0 12px; }
+.xtf-count { margin-left: auto; font-size: var(--xt-font-xs); color: var(--text-muted); }
+.xtf-tags { margin-top: 7px; display: flex; gap: 5px; flex-wrap: wrap; }
+.xtf-tag { font-size: 11px; padding: 2px 7px; border-radius: 999px; background: var(--bg);
+  border: 1px solid var(--border); color: var(--text-secondary); }
+.xtf-thumbs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.xtf-thumb-item { position: relative; width: 66px; height: 66px; }
+.xtf-thumb-item img { width: 66px; height: 66px; object-fit: cover; border-radius: 8px; display: block; }
+.xtf-x { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--danger, #E05040); color: #fff; font-size: 12px; line-height: 18px; text-align: center; cursor: pointer; }
+.xtf-err { display: none; color: var(--danger, #E05040); font-size: var(--xt-font-xs); margin-top: 6px; }
+.xtf-invalid { border-color: var(--danger, #E05040) !important; }
+.xtf-vimg { width: 100%; max-height: 42vh; object-fit: contain; background: var(--bg);
+  border-radius: 10px; display: block; }
+.xtf-vnav { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
+.xtf-vnav .btn { flex: none; padding: 6px 12px; font-size: var(--xt-font-xs); }
+.xtf-meta { font-size: var(--xt-font-xs); color: var(--text-muted); }
+/* 老 WebView（Chrome 50~58）不认 CSS inset 简写，.app-modal-mask 会失位；此处显式补齐四边定位 */
+.xtf-mask { top: 0; left: 0; right: 0; bottom: 0; z-index: 1250; }
+.xtf-mask .app-modal { background: var(--card); color: var(--text); }
+</style>
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
+</head>
+<body class="theme-home">
+
+<div class="app">
+<nav class="sidebar">
+    <div class="logo">
+      <div class="logo-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div>
+      <div>
+        <div class="logo-text">星途</div>
+        <div class="logo-sub">致追梦的人->修身</div>
+      </div>
+    </div>
+    <div class="nav-list">
+      <div class="nav-item" data-page="home">
+        <span class="nav-icon" data-icon="home"></span><span>首页</span>
+      </div>
+      <div class="nav-item" onclick="location.href='AI.html'">
+        <span class="nav-icon" data-icon="sparkles"></span><span>AI</span>
+      </div>
+      <div class="nav-section">学习模块</div>
+      <div class="nav-item" data-page="cet">
+        <span class="nav-icon" data-icon="book-open"></span><span>英语</span>
+      </div>
+      <div class="nav-item" data-page="exam">
+        <span class="nav-icon" data-icon="pencil"></span><span>行测</span>
+      </div>
+      <div class="nav-item" data-page="comm">
+        <span class="nav-icon" data-icon="message-square"></span><span>表达</span>
+      </div>
+      <div class="nav-item" data-page="interview">
+        <span class="nav-icon" data-icon="handshake"></span><span>面测</span>
+      </div>
+      <div class="nav-item" data-page="files">
+        <span class="nav-icon" data-icon="folder"></span><span>我的文件</span>
+      </div>
+      <div class="nav-section">创作</div>
+      <div class="nav-item" data-page="blog">
+        <span class="nav-icon" data-icon="globe"></span><span>社区</span>
+      </div>
+      <div class="nav-item" data-page="moments">
+        <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
+      </div>
+      <div class="nav-section">互动</div>
+      <div class="nav-item" data-external="1" onclick="gotoChat()" title="通讯录 · 添加好友（需在线模式）">
+        <span class="nav-icon" data-icon="users"></span><span>通讯录</span>
+      </div>
+      <div class="nav-section">中心</div>
+      <div class="nav-item" data-page="wrong-book">
+        <span class="nav-icon" data-icon="book"></span><span>错题本</span>
+      </div>
+      <div class="nav-item" data-page="profile">
+        <span class="nav-icon" data-icon="user"></span><span>个人中心</span>
+      </div>
+      <div class="nav-section">系统</div>
+      <div class="nav-item" data-page="settings">
+        <span class="nav-icon" data-icon="settings"></span><span>设置</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心">
+        <div class="user-avatar">学</div>
+        <div class="user-info">
+          <div class="user-name">同学</div>
+          <div class="user-streak"><span class="nav-icon" data-icon="fire" data-icon-size="14"></span> 连续打卡 0 天</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+<header class="topbar">
+      <div class="topbar-title" id="topbarTitle">我的文件</div>
+      <div class="gs-wrap" id="gsWrap">
+        <input type="text" class="gs-input" id="gsInput" placeholder="搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <div class="gs-dropdown" id="gsDropdown"></div>
+      </div>
+      <div class="topbar-stats">
+        <div class="stat-item"><span class="stat-icon" data-icon="fire" data-icon-size="16"></span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="clock" data-icon-size="16"></span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="check" data-icon-size="16"></span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
+      </div>
+      <div class="topbar-date" id="topbarDate"></div>
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="20"></span></div>
+    </header>
+    <div class="content">
+      <div class="page active" id="page-files">
+        <div class="morepage-head">
+          <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='学习工作台.html'}" title="返回" aria-label="返回"><span data-icon="arrow-left" data-icon-size="18"></span></button>
+          <div class="morepage-title"><span class="nav-icon" data-icon="folder" data-icon-size="20"></span> 我的文件</div>
+        </div>
+
+        <!-- 顶部统计条：文件数 / 题库数 / 最近更新 -->
+        <div class="mf-stats" id="mfStats"></div>
+
+        <!-- 过滤与操作条：模块分类下拉（数据动态汇总） + 添加作品 + 导入题库入口 -->
+        <div class="mf-bar">
+          <select class="form-input mf-select" id="mfModule" onchange="xtFilesFilter(this.value)"></select>
+          <button class="btn btn-outline" type="button" onclick="location.href='导入题库.html'"><span class="nav-icon" data-icon="inbox" data-icon-size="14"></span> 导入题库</button>
+          <button class="btn btn-primary" type="button" onclick="xtFilesAdd()">+ 添加作品</button>
+        </div>
+
+        <!-- 文件 / 题库 / 作品列表 -->
+        <div class="mf-list" id="mfList">加载中…</div>
+
+        <div class="mf-tip">文件与作品都保存在本机浏览器（localStorage），换设备 / 清缓存会丢失，重要内容请先在「设置 → 导出数据备份」导出一份。导入的题库由「导入题库」页写入，可在本页统一查看与删除。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部导航（手机端） -->
+    <nav class="bottom-nav">
+    <div class="bottom-nav-list">
+      <div class="bottom-nav-item" data-page="home">
+        <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
+      </div>
+      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-square" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
+      <div class="bottom-nav-item" onclick="location.href='AI.html'"><div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div></div>
+      <div class="bottom-nav-item" onclick="location.href='更多.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 更多面板遮罩（全站共用 DOM） -->
+    <div class="more-overlay" onclick="toggleMorePanel()"></div>
+
+  <!-- 更多面板（全站共用 DOM） -->
+  <div class="bottom-more-panel" id="morePanel">
+    <div class="bottom-more-title">更多功能</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="navigateTo('moments');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="rss" data-icon-size="20"></span></div><div class="bm-label">动态空间</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogStats()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
+      </div>
+      <div class="bottom-more-item" onclick="if(window.gotoBlogMine){gotoBlogMine()}else{location.href='社区.html#mine'}">
+        <div class="bm-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div><div class="bm-label">互动广场</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div><div class="bm-label">错题本</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div><div class="bm-label">设置</div>
+      </div>
+      <div class="bottom-more-item" onclick="showAbout()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div><div class="bm-label">关于</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 工具面板遮罩 + 工具面板（全站共用 DOM，app.js 的 toggleToolsPanel 需要它们存在） -->
+  <div class="more-overlay" onclick="toggleToolsPanel()" id="toolsOverlay"></div>
+  <div class="bottom-more-panel" id="toolsPanel">
+    <div class="bottom-more-title"><span class="nav-icon" data-icon="wrench" data-icon-size="20"></span> 更多工具</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="location.href='AI模拟面试.html';toggleToolsPanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="mic" data-icon-size="20"></span></div><div class="bm-label">AI面试</div>
+      </div>
+      <div class="bottom-more-item" onclick="location.href='PPT版式库.html';toggleToolsPanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">PPT版式</div>
+      </div>
+      <div class="bottom-more-item" onclick="location.href='四级经验分享.html';toggleToolsPanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div><div class="bm-label">四级经验</div>
+      </div>
+      <div class="bottom-more-item" onclick="if(window.openQuest){openQuest()}else{location.href='工具.html'};toggleToolsPanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="zap" data-icon-size="20"></span></div><div class="bm-label">穿越英语</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加倒计时弹窗（全站共用 DOM，app.js 顶层无守卫监听它，必须存在） -->
+  <div class="modal-overlay" id="countdownModal">    <div class="modal">
+      <div class="modal-title" id="countdownModalTitle">添加倒计时</div>
+      <div class="form-group">
+        <div class="form-label">名称</div>
+        <input type="text" class="form-input" id="cdName" placeholder="如：四级考试、秋招截止">
+      </div>
+      <div class="form-group">
+        <div class="form-label">日期</div>
+        <input type="date" class="form-input" id="cdDate">
+      </div>
+      <div class="form-group">
+        <div class="form-label">颜色</div>
+        <div class="color-picker" id="cdColorPicker">
+          <div class="color-dot active" style="background:#5B8DEF" data-color="#5B8DEF"></div>
+          <div class="color-dot" style="background:#E05040" data-color="#E05040"></div>
+          <div class="color-dot" style="background:#9B6BD9" data-color="#9B6BD9"></div>
+          <div class="color-dot" style="background:#D4A056" data-color="#D4A056"></div>
+          <div class="color-dot" style="background:#36CFC9" data-color="#36CFC9"></div>
+          <div class="color-dot" style="background:#FF9F68" data-color="#FF9F68"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--xt-font-base);color:var(--text-secondary)">
+          <input type="checkbox" id="cdPinned"> 置顶显示
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeCountdownModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveCountdown()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast提示 -->
+  <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center"></div>
+
+  <!-- ==================== AI学习助手（悬浮聊天窗口） ==================== -->
+  <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">
+    <span class="nav-icon" data-icon="bot" data-icon-size="20"></span><span class="ai-mode-badge" id="aiModeBadge">AI</span>
+  </div>
+  <div class="ai-panel" id="aiPanel">
+    <div class="ai-panel-header">
+      <div class="ai-avatar"><span class="nav-icon" data-icon="bot" data-icon-size="20"></span></div>
+      <div style="flex:1">
+        <div class="ai-title">AI学习助手</div>
+        <div class="ai-subtitle" id="aiSubtitle">已接入 AI · 模型：自动（推荐）</div>
+      </div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录"><span class="nav-icon" data-icon="delete" data-icon-size="18"></span></div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板"><span class="nav-icon" data-icon="close" data-icon-size="16"></span></div>
+    </div>
+    <div class="ai-messages" id="aiMessages"></div>
+    <div class="ai-input-row">
+      <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()"><span class="nav-icon" data-icon="arrow-right" data-icon-size="18"></span></div>
+    </div>
+  </div>
+
+  <!-- 添加作品弹窗（原个人中心 #xtFolioAddModal，整段迁移；id 与控件全部保留） -->
+  <div class="modal-overlay app-modal-mask xtf-mask" id="xtFolioAddModal">
+    <div class="modal app-modal" style="max-width:520px">
+      <button class="app-modal-close" type="button" onclick="xtFolioCloseAdd()" title="关闭">×</button>
+      <div class="modal-title">添加作品</div>
+      <div class="form-group">
+        <div class="form-label">作品标题</div>
+        <input type="text" class="form-input" id="xfTitle" maxlength="40" placeholder="如：秋招简历 V3 / 四级冲刺 PPT">
+        <div class="xtf-err" id="xfTitleErr">请填写作品标题</div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">类型</div>
+        <select class="form-input" id="xfType"></select>
+      </div>
+      <div class="form-group">
+        <div class="form-label">封面图片（选填，最多 4 张，自动压缩）</div>
+        <input type="file" id="xfFiles" accept="image/*" multiple style="display:none" onchange="xtFolioPick(this)">
+        <button class="btn btn-outline" type="button" style="font-size:var(--xt-font-sm);padding:8px 14px" onclick="document.getElementById('xfFiles').click()">＋ 选择图片</button>
+        <div class="xtf-thumbs" id="xfThumbs"></div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">标签（选填，逗号分隔）</div>
+        <input type="text" class="form-input" id="xfTags" maxlength="60" placeholder="如：秋招,简历,一页纸">
+      </div>
+      <div class="form-group">
+        <div class="form-label">作品链接（选填）</div>
+        <input type="text" class="form-input" id="xfLink" maxlength="300" placeholder="https://…">
+      </div>
+      <div class="form-group">
+        <div class="form-label">作品说明（选填）</div>
+        <textarea class="form-input" id="xfDesc" maxlength="300" rows="3" style="resize:vertical" placeholder="记录这次作品的亮点 / 下次要改的地方"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" type="button" onclick="xtFolioCloseAdd()">取消</button>
+        <button class="btn btn-primary" type="button" id="xfSaveBtn" onclick="xtFolioSave()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 查看作品弹窗（原个人中心 #xtFolioViewModal，整段迁移） -->
+  <div class="modal-overlay app-modal-mask xtf-mask" id="xtFolioViewModal">
+    <div class="modal app-modal" style="max-width:560px">
+      <button class="app-modal-close" type="button" onclick="xtFolioCloseView()" title="关闭">×</button>
+      <div class="modal-title" id="xfVTitle">作品</div>
+      <div id="xfVStage">
+        <img class="xtf-vimg" id="xfVImg" alt="">
+        <div class="xtf-vnav">
+          <button class="btn btn-outline" type="button" id="xfVPrev" onclick="xtFolioNav(-1)">‹ 上一张</button>
+          <span id="xfVCount" style="font-size:var(--xt-font-xs);color:var(--text-secondary)">暂无图片</span>
+          <button class="btn btn-outline" type="button" id="xfVNext" onclick="xtFolioNav(1)">下一张 ›</button>
+        </div>
+      </div>
+      <div class="xtf-meta" id="xfVMeta" style="white-space:normal;margin-top:8px"></div>
+      <div class="xtf-tags" id="xfVTags"></div>
+      <div id="xfVDesc" style="margin-top:10px;font-size:var(--xt-font-base);color:var(--text);line-height:1.8;white-space:pre-wrap"></div>
+      <div id="xfVLink" style="margin-top:8px;font-size:var(--xt-font-sm)"></div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" type="button" id="xfVFav" onclick="xtFolioToggleFav('')">收藏</button>
+        <button class="btn btn-primary" type="button" onclick="xtFolioCloseView()">关闭</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/xt-toast.js?v=20260923a" defer></script>
+<script src="assets/error-boundary.js?v=20260924a" defer></script>
+<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/quest.js?v=20260916O" defer></script>
+<script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260924a" defer></script>
+<script src="assets/study-stats.js?v=20260916O" defer></script>
+<script src="assets/ai-config.js?v=20260925a"></script>
+<script src="assets/ai-presets.js?v=20260916O"></script>
+<script src="assets/ai-service.js?v=20260925a"></script>
+<script src="assets/ai-cap-registry.js?v=20260918c"></script>
+<script src="assets/ai-cap-image.js?v=20260920c"></script>
+<script src="assets/ai-cap-vision.js?v=20260920c"></script>
+<script src="assets/ai-cap-audio.js?v=20260920c"></script>
+<script src="assets/ai-cap-embed.js?v=20260920c"></script>
+<script src="assets/ai-cap-translate.js?v=20260920c"></script>
+<script src="assets/ai-cap-video.js?v=20260920c"></script>
+<script src="assets/ai-cap-3d.js?v=20260922a"></script>
+<script>
+/* ==================== R72-6/9（20260917）：我的文件 ====================
+   范围：**纯前端 localStorage**，本批不新增后端。把三类本地数据汇总到一处：
+     ① 作品集：xtc:lib:pf:folio:works（本页新增）+ 收藏 xtc:lib:pf:folio:fav
+                + 只读聚合 xtc:lib:pptw:works（原演示页 PPT 作品集；演示页已下线，作品迁入本页）
+     ② 导入题库：study_workbench_imports（importer.js 写入）+ study_workbench_custom（qbank.js 内置库自建）
+     ③ 可选登记：study_workbench_mf_registry（window.xtFilesRegister 写入，导入流程可选增强）
+   契约：数据键为唯一真相；登记函数为可选增强，供导入流程跨页调用（typeof 守卫）。
+   语法上限 ES2017（老 WebView）：无可选链 / 空值合并 / 对象展开 / 指数运算等；
+   禁用原生 alert/confirm/prompt：提示走 showToast，删除确认走 uiConfirm；
+   新增全局一律 typeof 守卫，绝不与别处已存在的全局名重复声明。 */
+(function () {
+  'use strict';
+
+  var KEY_WORKS = 'xtc:lib:pf:folio:works';
+  var KEY_FAV = 'xtc:lib:pf:folio:fav';
+  var KEY_PPT = 'xtc:lib:pptw:works';
+  var KEY_IMPORTS = 'study_workbench_imports';
+  var KEY_CUSTOM = 'study_workbench_custom';
+  var KEY_REG = 'study_workbench_mf_registry';
+
+  var TYPES = ['PPT', '写作', '设计', '视频', '简历', '其他'];
+  var MAX_IMAGES = 4;
+  var MAX_EDGE = 1000;          // 封面图长边压缩上限
+  var KEEP_BELOW = 300 * 1024;  // 小于该体积且无需缩放时保留原图
+  var MOD_ORDER = ['题库', '四级词汇', '行测刷题', '面试题库', '万能金句', '场景话术', '商务礼仪', 'PPT版式', 'PPT案例', 'PPT作品', '笔记', '其他'];
+
+  var pending = [];     // 添加弹窗里待保存的封面图 base64
+  var curId = '';       // 查看弹窗当前条目 id
+  var curImg = 0;       // 查看弹窗第几张图
+  var curModule = 'all'; // 模块筛选
+
+  /* ------------------------------------------------------------ 基础工具 */
+  function $id(x) { return document.getElementById(x); }
+
+  function esc(s) {
+    return String(s === null || s === undefined ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function isArr(v) { return Object.prototype.toString.call(v) === '[object Array]'; }
+
+  function wrapKey(k) {
+    try { if (typeof window.lsKey === 'function') return window.lsKey(k); } catch (e) { /* 忽略 */ }
+    return k;
+  }
+
+  function lsGet(key, def) {
+    try {
+      var raw = localStorage.getItem(wrapKey(key));
+      if (raw === null || raw === undefined) raw = localStorage.getItem(key);
+      if (raw === null || raw === undefined) return def;
+      var v = JSON.parse(raw);
+      return (v === null || v === undefined) ? def : v;
+    } catch (e) { return def; }
+  }
+
+  function lsSet(key, val) {
+    try { localStorage.setItem(wrapKey(key), JSON.stringify(val)); return true; }
+    catch (e) { return false; }
+  }
+
+  function toast(msg) {
+    if (typeof window.showToast === 'function') { try { window.showToast(msg); return; } catch (e) { /* 继续兜底 */ } }
+    if (typeof window.xtToast === 'function') { try { window.xtToast('info', msg); } catch (e2) { /* 忽略 */ } }
+  }
+
+  /** 删除确认：优先站内 uiConfirm；不可用时**绝不使用原生 confirm**，直接放弃并提示 */
+  function askConfirm(msg, okLabel, cb) {
+    if (typeof window.uiConfirm === 'function') {
+      try {
+        window.uiConfirm(msg, okLabel).then(function (ok) { if (ok) cb(); });
+        return;
+      } catch (e) { /* 落到下方兜底 */ }
+    }
+    toast('确认组件未加载，已取消操作');
+  }
+
+  function newId() {
+    return 'f_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+  }
+
+  function fmtDate(v) {
+    if (!v) return '';
+    if (typeof v === 'number') {
+      try { return new Date(v).toLocaleDateString('zh-CN'); } catch (e) { return ''; }
+    }
+    var s = String(v);
+    if (s.indexOf('-') < 0 && s.indexOf('/') >= 0) return s;
+    var d = new Date(s);
+    if (isNaN(d.getTime())) return s.slice(0, 10);
+    try { return d.toLocaleDateString('zh-CN'); } catch (e2) { return s.slice(0, 10); }
+  }
+
+  function tsOf(x) {
+    var t = new Date((x && x.createdAt) || 0).getTime();
+    return isNaN(t) ? 0 : t;
+  }
+
+  function fmtSize(n) {
+    var b = Number(n) || 0;
+    if (b <= 0) return '';
+    if (b < 1024) return b + ' B';
+    if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+    return (b / 1024 / 1024).toFixed(1) + ' MB';
+  }
+
+  /** 从事件目标向上找带指定属性的节点（不依赖 Element.closest，兼容老 WebView） */
+  function upTo(node, attr) {
+    var n = node;
+    while (n && n !== document.body && n !== document) {
+      if (n.getAttribute && n.getAttribute(attr) !== null) return n;
+      n = n.parentNode;
+    }
+    return null;
+  }
+
+  /* ------------------------------------------------------------ 数据层：作品 */
+  function normMine(o) {
+    var x = o || {};
+    return {
+      id: x.id || newId(),
+      title: String(x.title || '未命名作品'),
+      type: x.type || '其他',
+      images: isArr(x.images) ? x.images.slice(0, MAX_IMAGES) : [],
+      link: String(x.link || ''),
+      desc: String(x.desc || x.description || ''),
+      tags: isArr(x.tags) ? x.tags.slice(0, 8) : [],
+      createdAt: x.createdAt || new Date().toISOString(),
+      src: 'mine'
+    };
+  }
+
+  /** 只读/聚合原演示页 PPT 作品集（assets/ppt-works.js 的结构） */
+  function normPpt(o) {
+    var x = o || {};
+    return {
+      id: x.id || ('ppt_' + Math.random().toString(36).slice(2, 8)),
+      title: String(x.title || '未命名作品'),
+      type: String(x.type || 'PPT'),
+      images: isArr(x.images) ? x.images.slice(0, MAX_IMAGES) : [],
+      link: String(x.link || ''),
+      desc: String(x.description || x.note || ''),
+      tags: isArr(x.tags) ? x.tags.slice(0, 8) : [],
+      createdAt: x.createdAt || x.date || '',
+      src: 'ppt'
+    };
+  }
+
+  function loadWorks() {
+    var out = [];
+    var mine = lsGet(KEY_WORKS, []);
+    if (isArr(mine)) { for (var i = 0; i < mine.length; i++) out.push(normMine(mine[i])); }
+    var ppt = lsGet(KEY_PPT, []);
+    if (isArr(ppt)) { for (var j = 0; j < ppt.length; j++) out.push(normPpt(ppt[j])); }
+    return out;
+  }
+
+  function saveMine(list) { return lsSet(KEY_WORKS, list); }
+
+  function loadFav() {
+    var f = lsGet(KEY_FAV, {});
+    if (!f || typeof f !== 'object' || isArr(f)) return {};
+    return f;
+  }
+
+  function isFav(id) { var f = loadFav(); return !!(f && f[id]); }
+
+  function saveFav(e) { return lsSet(KEY_FAV, e); }
+
+  /* ------------------------------------------------------------ 数据层：题库 */
+  function bankEntries() {
+    var out = [];
+    var imp = lsGet(KEY_IMPORTS, {});
+    if (imp && typeof imp === 'object' && !isArr(imp)) {
+      var names = Object.keys(imp);
+      for (var i = 0; i < names.length; i++) {
+        var b = imp[names[i]] || {};
+        var items = isArr(b.items) ? b.items.length : 0;
+        out.push({
+          id: 'imp:' + names[i],
+          title: String(b.label || names[i]),
+          kind: 'bank', module: String(b.module || '题库'), source: 'import',
+          items: items, size: 0,
+          createdAt: b.updatedAt || '', payload: b
+        });
+      }
+    }
+    var cus = lsGet(KEY_CUSTOM, {});
+    if (cus && typeof cus === 'object' && !isArr(cus)) {
+      var ck = Object.keys(cus);
+      for (var k = 0; k < ck.length; k++) {
+        var arr = isArr(cus[ck]) ? cus[ck] : [];
+        if (!arr.length) continue;
+        out.push({
+          id: 'cus:' + ck[k],
+          title: String(ck[k]),
+          kind: 'bank', module: '题库', source: 'custom',
+          items: arr.length, size: 0,
+          createdAt: '', payload: arr
+        });
+      }
+    }
+    return out;
+  }
+
+  /* ------------------------------------------------------------ 数据层：登记条目（可选增强） */
+  function loadRegistry() {
+    var r = lsGet(KEY_REG, []);
+    return isArr(r) ? r : [];
+  }
+  function saveRegistry(list) { return lsSet(KEY_REG, list); }
+
+  function regEntry(e) {
+    var x = e || {};
+    return {
+      id: String(x.id || ('reg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6))),
+      title: String(x.title || '未命名'),
+      kind: x.kind || 'other',
+      module: x.module || '其他',
+      source: x.source || 'reg',
+      items: Number(x.items) || 0,
+      size: Number(x.size) || 0,
+      createdAt: x.createdAt || new Date().toISOString(),
+      payload: x.payload || null
+    };
+  }
+
+  /* ------------------------------------------------------------ 统一条目 */
+  function workEntry(w) {
+    return {
+      id: w.id, title: w.title, kind: 'work', module: 'PPT作品',
+      source: w.src, items: (w.images || []).length, size: 0,
+      createdAt: w.createdAt, payload: w
+    };
+  }
+
+  function buildEntries() {
+    var out = [], seen = {};
+    var works = loadWorks();
+    for (var i = 0; i < works.length; i++) {
+      var we = workEntry(works[i]);
+      if (seen[we.id]) continue;
+      seen[we.id] = 1; out.push(we);
+    }
+    var banks = bankEntries();
+    for (var j = 0; j < banks.length; j++) {
+      if (seen[banks[j].id]) continue;
+      seen[banks[j].id] = 1; out.push(banks[j]);
+    }
+    var reg = loadRegistry();
+    for (var k = 0; k < reg.length; k++) {
+      var re = regEntry(reg[k]);
+      if (seen[re.id]) continue;
+      seen[re.id] = 1; out.push(re);
+    }
+    out.sort(function (a, b) { return tsOf(b) - tsOf(a); });
+    return out;
+  }
+
+  function findEntry(id) {
+    var list = buildEntries();
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    return null;
+  }
+
+  function kindLabel(kind) {
+    if (kind === 'work') return '作品';
+    if (kind === 'bank') return '题库';
+    if (kind === 'note') return '笔记';
+    return '其他';
+  }
+
+  function srcLabel(e) {
+    if (e.kind === 'work') return e.source === 'ppt' ? '演示 · PPT' : '我添加的';
+    if (e.kind === 'bank') return e.source === 'custom' ? '自建题库' : '导入题库';
+    return e.source === 'reg' ? '登记' : '其他';
+  }
+
+  /* ------------------------------------------------------------ 列表渲染 */
+  function moduleOptions(list) {
+    var found = {}, have = [];
+    for (var i = 0; i < list.length; i++) {
+      var m = list[i].module || '其他';
+      if (!found[m]) { found[m] = 1; have.push(m); }
+    }
+    // 固定顺序在前，额外模块按发现顺序补在后面
+    var ordered = [];
+    for (var a = 0; a < MOD_ORDER.length; a++) if (found[MOD_ORDER[a]]) ordered.push(MOD_ORDER[a]);
+    for (var b = 0; b < have.length; b++) if (ordered.indexOf(have[b]) < 0) ordered.push(have[b]);
+    return ordered;
+  }
+
+  function fillModuleSelect(list) {
+    var sel = $id('mfModule');
+    if (!sel) return;
+    var mods = moduleOptions(list);
+    var html = '<option value="all">全部模块</option>';
+    for (var i = 0; i < mods.length; i++) {
+      html += '<option value="' + esc(mods[i]) + '">' + esc(mods[i]) + '</option>';
+    }
+    sel.innerHTML = html;
+    sel.value = (curModule === 'all' || mods.indexOf(curModule) >= 0) ? curModule : 'all';
+    if (!sel.value) sel.value = 'all';
+  }
+
+  function statsHtml(list) {
+    var banks = 0, latest = 0;
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].kind === 'bank') banks++;
+      var t = tsOf(list[i]);
+      if (t > latest) latest = t;
+    }
+    var latestStr = latest ? fmtDate(latest) : '—';
+    return '<div class="mf-stat"><div class="mf-stat-v">' + list.length + '</div><div class="mf-stat-k">文件 / 作品总数</div></div>' +
+      '<div class="mf-stat"><div class="mf-stat-v">' + banks + '</div><div class="mf-stat-k">题库</div></div>' +
+      '<div class="mf-stat"><div class="mf-stat-v" style="font-size:14px;line-height:1.5">' + esc(latestStr) + '</div><div class="mf-stat-k">最近更新</div></div>';
+  }
+
+  function metaHtml(e) {
+    var tag = '<span class="mf-badge">' + esc(kindLabel(e.kind)) + '</span>';
+    var mod = '<span>' + esc(e.module || '其他') + '</span>';
+    var src = '<span>· ' + esc(srcLabel(e)) + '</span>';
+    var time = e.createdAt ? '<span>· ' + esc(fmtDate(e.createdAt)) + '</span>' : '';
+    var qty = '';
+    if (e.kind === 'bank') qty = '<span>· ' + e.items + ' 条</span>';
+    else if (e.size > 0) qty = '<span>· ' + esc(fmtSize(e.size)) + '</span>';
+    else if (e.items > 0) qty = '<span>· ' + e.items + ' 图</span>';
+    return tag + mod + src + time + qty;
+  }
+
+  function cardHtml(e) {
+    var cover = '';
+    if (e.kind === 'work' && e.payload && isArr(e.payload.images) && e.payload.images.length) {
+      cover = '<img class="mf-thumb" src="' + esc(e.payload.images[0]) + '" alt="">';
+    } else {
+      cover = '<div class="mf-ph">' + esc(kindLabel(e.kind)) + '</div>';
+    }
+    return '<div class="mf-item" data-mf-id="' + esc(e.id) + '">' +
+      cover +
+      '<div class="mf-body">' +
+        '<div class="mf-title" title="' + esc(e.title) + '">' + esc(e.title) + '</div>' +
+        '<div class="mf-meta">' + metaHtml(e) + '</div>' +
+        '<div class="mf-acts">' +
+          '<button type="button" class="btn btn-outline" data-mf-view="' + esc(e.id) + '">查看</button>' +
+          '<button type="button" class="btn btn-outline" data-mf-del="' + esc(e.id) + '">删除</button>' +
+        '</div>' +
+      '</div></div>';
+  }
+
+  function render() {
+    var list = buildEntries();
+    fillModuleSelect(list);
+    var stat = $id('mfStats');
+    if (stat) stat.innerHTML = statsHtml(list);
+    var grid = $id('mfList');
+    if (!grid) return;
+    var shown = [];
+    for (var i = 0; i < list.length; i++) {
+      if (curModule !== 'all' && (list[i].module || '其他') !== curModule) continue;
+      shown.push(list[i]);
+    }
+    if (!shown.length) {
+      var tip = (curModule === 'all')
+        ? '还没有文件或作品。点「+ 添加作品」记录练习成果，或在「导入题库」导入自己的题库。'
+        : '「' + curModule + '」下暂时没有内容。';
+      grid.innerHTML = '<div class="mf-empty">' + esc(tip) + '</div>';
+      return;
+    }
+    var html = '';
+    for (var k = 0; k < shown.length; k++) html += cardHtml(shown[k]);
+    grid.innerHTML = html;
+  }
+
+  /* ------------------------------------------------------------ 查看 / 删除 */
+  function paintWorkView(w) {
+    var imgs = (w.images || []);
+    if (curImg < 0) curImg = 0;
+    if (imgs.length && curImg > imgs.length - 1) curImg = imgs.length - 1;
+    var t = $id('xfVTitle'), m = $id('xfVMeta'), d = $id('xfVDesc');
+    var tg = $id('xfVTags'), lk = $id('xfVLink'), img = $id('xfVImg');
+    var cnt = $id('xfVCount'), prev = $id('xfVPrev'), next = $id('xfVNext');
+    var stage = $id('xfVStage'), favBtn = $id('xfVFav');
+    if (stage) stage.style.display = '';
+    if (t) t.textContent = w.title;
+    if (m) m.textContent = fmtDate(w.createdAt) + ' · ' + (w.type || '其他') + (w.src === 'ppt' ? ' · 来自演示页' : '');
+    if (d) d.textContent = w.desc || '（暂无作品说明）';
+    if (tg) {
+      var th = '';
+      for (var i = 0; i < w.tags.length; i++) th += '<span class="xtf-tag">' + esc(w.tags[i]) + '</span>';
+      tg.innerHTML = th;
+    }
+    if (lk) {
+      if (w.link) {
+        var href = (/^https?:\/\//i.test(w.link) ? w.link : 'http://' + w.link);
+        lk.innerHTML = '<a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer" style="color:var(--primary);text-decoration:none">' + esc(w.link) + '</a>';
+      } else { lk.innerHTML = ''; }
+    }
+    if (img) {
+      if (imgs.length) { img.src = imgs[curImg]; img.style.display = 'block'; }
+      else { img.removeAttribute('src'); img.style.display = 'none'; }
+    }
+    if (cnt) cnt.textContent = imgs.length ? ((curImg + 1) + ' / ' + imgs.length) : '暂无图片';
+    var multi = imgs.length > 1;
+    if (prev) prev.style.display = multi ? '' : 'none';
+    if (next) next.style.display = multi ? '' : 'none';
+    if (favBtn) {
+      favBtn.style.display = '';
+      var on = isFav(w.id);
+      favBtn.textContent = on ? '★ 已收藏' : '☆ 收藏';
+      favBtn.onclick = function () { toggleFav(w.id); };
+    }
+  }
+
+  function bankPreview(e) {
+    var arr = isArr(e.payload) ? e.payload : (e.payload && isArr(e.payload.items) ? e.payload.items : []);
+    var lines = [];
+    for (var i = 0; i < arr.length && i < 20; i++) {
+      var it = arr[i] || {};
+      var one = it.q ? (it.q + (isArr(it.options) && it.options.length ? '（' + it.options.join(' / ') + '）' : ''))
+        : (it.word ? (it.word + (it.meaning ? '  ' + it.meaning : ''))
+          : (it.text || it.question || it.title || JSON.stringify(it)));
+      lines.push((i + 1) + '. ' + one);
+    }
+    return lines.length ? lines.join('\n') : '（该题库暂无内容）';
+  }
+
+  function paintBankView(e) {
+    var t = $id('xfVTitle'), m = $id('xfVMeta'), d = $id('xfVDesc');
+    var tg = $id('xfVTags'), lk = $id('xfVLink'), stage = $id('xfVStage'), favBtn = $id('xfVFav');
+    if (stage) stage.style.display = 'none';
+    if (tg) tg.innerHTML = '';
+    if (lk) lk.innerHTML = '';
+    if (favBtn) favBtn.style.display = 'none';
+    if (t) t.textContent = e.title;
+    if (m) m.textContent = srcLabel(e) + ' · 共 ' + e.items + ' 条' + (e.createdAt ? ' · ' + fmtDate(e.createdAt) : '');
+    if (d) d.textContent = bankPreview(e);
+  }
+
+  function openEntry(id) {
+    var e = findEntry(id);
+    if (!e) { toast('内容不存在或已被删除'); return; }
+    curId = id;
+    if (e.kind === 'work') { curImg = 0; paintWorkView(e.payload); }
+    else paintBankView(e);
+    openMask('xtFolioViewModal');
+  }
+
+  function delEntry(id) {
+    var e = findEntry(id);
+    if (!e) { toast('内容不存在或已被删除'); return; }
+    var name = e.title;
+    askConfirm('删除「' + name + '」？此操作不可恢复。', '删除', function () {
+      if (e.kind === 'work') {
+        var key = (e.source === 'ppt') ? KEY_PPT : KEY_WORKS;
+        var raw = lsGet(key, []);
+        var next = [];
+        if (isArr(raw)) { for (var i = 0; i < raw.length; i++) if (raw[i] && raw[i].id !== id) next.push(raw[i]); }
+        lsSet(key, next);
+        var f = loadFav();
+        if (f[id]) { delete f[id]; saveFav(f); }
+      } else if (e.kind === 'bank') {
+        var nm = id.slice(id.indexOf(':') + 1);
+        if (e.source === 'custom') {
+          var cus = lsGet(KEY_CUSTOM, {});
+          if (cus && cus[nm]) { delete cus[nm]; lsSet(KEY_CUSTOM, cus); }
+        } else {
+          var imp = lsGet(KEY_IMPORTS, {});
+          if (imp && imp[nm]) { delete imp[nm]; lsSet(KEY_IMPORTS, imp); }
+        }
+      } else {
+        var reg = loadRegistry(); var nx = [];
+        for (var j = 0; j < reg.length; j++) {
+          var re = regEntry(reg[j]);
+          if (re.id !== id) nx.push(reg[j]);
+        }
+        saveRegistry(nx);
+      }
+      if (curId === id) closeView();
+      render();
+      toast('已删除');
+    });
+  }
+
+  function toggleFav(id) {
+    if (!id) id = curId;
+    if (!id) return;
+    var e = findEntry(id);
+    if (!e || e.kind !== 'work') { toast('该内容不支持收藏'); return; }
+    var f = loadFav();
+    if (f[id]) { delete f[id]; toast('已取消收藏'); }
+    else { f[id] = 1; toast('已收藏，刷新后仍在'); }
+    if (!saveFav(f)) { toast('本地空间不足，收藏未保存'); return; }
+    render();
+    if (curId === id && e.kind === 'work') paintWorkView(e.payload);
+  }
+
+  /* ------------------------------------------------------------ 弹窗开合 */
+  function openMask(id) {
+    if (typeof window.openAppModal === 'function') {
+      try { window.openAppModal(id); return; } catch (e) { /* 继续兜底 */ }
+    }
+    var m = $id(id);
+    if (!m) return;
+    m.classList.add('active');
+    try { document.body.classList.add('modal-lock'); } catch (e2) { /* 忽略 */ }
+  }
+
+  function closeMask(id) {
+    if (typeof window.closeAppModal === 'function') {
+      try { window.closeAppModal(id); return; } catch (e) { /* 继续兜底 */ }
+    }
+    var m = $id(id);
+    if (!m) return;
+    m.classList.remove('active');
+    try { document.body.classList.remove('modal-lock'); } catch (e2) { /* 忽略 */ }
+  }
+
+  function clearTitleErr() {
+    var err = $id('xfTitleErr');
+    if (err) err.style.display = 'none';
+    var t = $id('xfTitle');
+    if (t && t.classList) t.classList.remove('xtf-invalid');
+  }
+
+  function renderPending() {
+    var box = $id('xfThumbs');
+    if (!box) return;
+    var html = '';
+    for (var i = 0; i < pending.length; i++) {
+      html += '<div class="xtf-thumb-item"><img src="' + esc(pending[i]) + '" alt="">' +
+        '<span class="xtf-x" data-xf-rm="' + i + '">×</span></div>';
+    }
+    box.innerHTML = html;
+  }
+
+  function openAdd() {
+    pending = [];
+    var t = $id('xfTitle'); if (t) { t.value = ''; if (t.classList) t.classList.remove('xtf-invalid'); }
+    var d = $id('xfDesc'); if (d) d.value = '';
+    var g = $id('xfTags'); if (g) g.value = '';
+    var l = $id('xfLink'); if (l) l.value = '';
+    var s = $id('xfType'); if (s) s.value = TYPES[0];
+    var f = $id('xfFiles'); if (f) f.value = '';
+    clearTitleErr();
+    renderPending();
+    openMask('xtFolioAddModal');
+  }
+
+  function closeAdd() {
+    pending = [];
+    clearTitleErr();
+    closeMask('xtFolioAddModal');
+  }
+
+  function rmPending(idx) {
+    if (isNaN(idx) || idx < 0 || idx >= pending.length) return;
+    pending.splice(idx, 1);
+    renderPending();
+  }
+
+  /* ------------------------------------------------------------ 图片压缩 */
+  function readShrink(file, cb) {
+    if (!window.FileReader) { cb(''); return; }
+    var fr = new FileReader();
+    fr.onload = function () { shrink(String(fr.result || ''), cb); };
+    fr.onerror = function () { cb(''); };
+    fr.readAsDataURL(file);
+  }
+
+  function shrink(dataUrl, cb) {
+    if (!dataUrl) { cb(''); return; }
+    if (!window.Image) { cb(dataUrl); return; }
+    var img = new Image();
+    img.onload = function () {
+      var w = img.naturalWidth || img.width || 0;
+      var h = img.naturalHeight || img.height || 0;
+      if (!w || !h) { cb(dataUrl); return; }
+      var scale = Math.min(1, MAX_EDGE / w, MAX_EDGE / h);
+      if (scale >= 1 && dataUrl.length < KEEP_BELOW) { cb(dataUrl); return; }
+      try {
+        var cw = Math.max(1, Math.round(w * scale));
+        var ch = Math.max(1, Math.round(h * scale));
+        var cv = document.createElement('canvas');
+        cv.width = cw; cv.height = ch;
+        var ctx = cv.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, cw, ch);
+        ctx.drawImage(img, 0, 0, cw, ch);
+        cb(cv.toDataURL('image/jpeg', 0.72));
+      } catch (e) { cb(dataUrl); }
+    };
+    img.onerror = function () { cb(dataUrl); };
+    img.src = dataUrl;
+  }
+
+  function pickFiles(input) {
+    var files = (input && input.files) ? input.files : [];
+    if (!files.length) return;
+    for (var i = 0; i < files.length; i++) {
+      var f = files[i];
+      if (!f) continue;
+      if (pending.length >= MAX_IMAGES) { toast('最多 ' + MAX_IMAGES + ' 张封面图，多余的已忽略'); break; }
+      (function (file) {
+        readShrink(file, function (d) {
+          if (d && pending.length < MAX_IMAGES) pending.push(d);
+          renderPending();
+        });
+      })(f);
+    }
+  }
+
+  function saveWork() {
+    var tEl = $id('xfTitle');
+    var title = String(((tEl || {}).value) || '').trim();
+    if (!title) {
+      var err = $id('xfTitleErr');
+      if (err) err.style.display = 'block';
+      if (tEl) {
+        if (tEl.classList) tEl.classList.add('xtf-invalid');
+        try { tEl.focus(); } catch (e) { /* 老 WebView 忽略 */ }
+      }
+      toast('请填写作品标题');
+      return;
+    }
+    clearTitleErr();
+    var type = String((($id('xfType') || {}).value) || TYPES[0]);
+    var desc = String((($id('xfDesc') || {}).value) || '').trim();
+    var link = String((($id('xfLink') || {}).value) || '').trim();
+    var tagStr = String((($id('xfTags') || {}).value) || '').trim();
+    var tags = [];
+    if (tagStr) {
+      var parts = tagStr.split(/[,，;；\s]+/);
+      for (var i = 0; i < parts.length && tags.length < 6; i++) if (parts[i]) tags.push(parts[i]);
+    }
+    var item = normMine({
+      id: newId(),
+      title: title.slice(0, 40),
+      type: type,
+      images: pending.slice(0, MAX_IMAGES),
+      link: link.slice(0, 300),
+      desc: desc.slice(0, 300),
+      tags: tags,
+      createdAt: new Date().toISOString()
+    });
+    var mine = lsGet(KEY_WORKS, []);
+    if (!isArr(mine)) mine = [];
+    mine.push(item);
+    if (!saveMine(mine)) {
+      var lite = normMine(item);
+      lite.images = [];
+      mine[mine.length - 1] = lite;
+      if (!saveMine(mine)) {
+        mine.pop();
+        saveMine(mine);
+        toast('本地空间不足，请先删除部分作品再试');
+        return;
+      }
+      toast('本地空间不足，已保存为纯文本（不含图片）');
+    } else {
+      toast('作品已保存');
+    }
+    pending = [];
+    closeAdd();
+    render();
+  }
+
+  /* ------------------------------------------------------------ 查看弹窗 */
+  function openView(id) { openEntry(id); }
+
+  function closeView() {
+    curId = '';
+    curImg = 0;
+    closeMask('xtFolioViewModal');
+  }
+
+  function nav(delta) {
+    var e = findEntry(curId);
+    if (!e || e.kind !== 'work') return;
+    var len = (e.payload.images || []).length;
+    if (!len) return;
+    curImg = (curImg + delta + len) % len;
+    paintWorkView(e.payload);
+  }
+
+  /* ------------------------------------------------------------ 对外登记入口（可选增强） */
+  function xtFilesRegister(entry) {
+    try {
+      if (!entry) return false;
+      var e = regEntry(entry);
+      var list = loadRegistry();
+      var found = false;
+      for (var i = 0; i < list.length; i++) {
+        var cur = regEntry(list[i]);
+        // 幂等：同来源同 id 不重复登记（以 id 为准）
+        if (cur.id === e.id) { list[i] = e; found = true; break; }
+      }
+      if (!found) list.push(e);
+      saveRegistry(list);
+      render();
+      return true;
+    } catch (err) { return false; }
+  }
+
+  function xtFilesRemove(id) {
+    try {
+      if (!id) return false;
+      var list = loadRegistry();
+      var next = [];
+      for (var i = 0; i < list.length; i++) {
+        var re = regEntry(list[i]);
+        if (re.id !== id) next.push(list[i]);
+      }
+      saveRegistry(next);
+      render();
+      return true;
+    } catch (err) { return false; }
+  }
+
+  /* ------------------------------------------------------------ 事件绑定 */
+  function bind() {
+    var grid = $id('mfList');
+    if (grid && !grid.getAttribute('data-mf-bound')) {
+      grid.setAttribute('data-mf-bound', '1');
+      grid.addEventListener('click', function (e) {
+        var t = e.target || e.srcElement;
+        var n = upTo(t, 'data-mf-view');
+        if (n) { openEntry(n.getAttribute('data-mf-view')); return; }
+        n = upTo(t, 'data-mf-del');
+        if (n) { delEntry(n.getAttribute('data-mf-del')); return; }
+        n = upTo(t, 'data-mf-id');
+        if (n) { openEntry(n.getAttribute('data-mf-id')); }
+      });
+    }
+    var th = $id('xfThumbs');
+    if (th && !th.getAttribute('data-xf-bound')) {
+      th.setAttribute('data-xf-bound', '1');
+      th.addEventListener('click', function (e) {
+        var t = e.target || e.srcElement;
+        var n = upTo(t, 'data-xf-rm');
+        if (n) rmPending(parseInt(n.getAttribute('data-xf-rm'), 10));
+      });
+    }
+    var sel = $id('xfType');
+    if (sel && !sel.getAttribute('data-xf-bound')) {
+      sel.setAttribute('data-xf-bound', '1');
+      var opts = '';
+      for (var i = 0; i < TYPES.length; i++) {
+        opts += '<option value="' + esc(TYPES[i]) + '">' + esc(TYPES[i]) + '</option>';
+      }
+      sel.innerHTML = opts;
+    }
+  }
+
+  /* ------------------------------------------------------------ 对外（typeof 守卫，绝不重复声明全局） */
+  if (typeof window.xtFilesRender !== 'function') window.xtFilesRender = render;
+  if (typeof window.xtFilesFilter !== 'function') {
+    window.xtFilesFilter = function (m) { curModule = m || 'all'; render(); };
+  }
+  if (typeof window.xtFilesOpen !== 'function') window.xtFilesOpen = openEntry;
+  if (typeof window.xtFilesDel !== 'function') window.xtFilesDel = delEntry;
+  if (typeof window.xtFilesAdd !== 'function') window.xtFilesAdd = openAdd;
+  if (typeof window.xtFilesRegister !== 'function') window.xtFilesRegister = xtFilesRegister;
+  if (typeof window.xtFilesRemove !== 'function') window.xtFilesRemove = xtFilesRemove;
+  if (typeof window.xtFolioOpenAdd !== 'function') window.xtFolioOpenAdd = openAdd;
+  if (typeof window.xtFolioCloseAdd !== 'function') window.xtFolioCloseAdd = closeAdd;
+  if (typeof window.xtFolioSave !== 'function') window.xtFolioSave = saveWork;
+  if (typeof window.xtFolioPick !== 'function') window.xtFolioPick = pickFiles;
+  if (typeof window.xtFolioOpenView !== 'function') window.xtFolioOpenView = openView;
+  if (typeof window.xtFolioCloseView !== 'function') window.xtFolioCloseView = closeView;
+  if (typeof window.xtFolioNav !== 'function') window.xtFolioNav = nav;
+  if (typeof window.xtFolioToggleFav !== 'function') window.xtFolioToggleFav = toggleFav;
+  if (typeof window.xtFolioDel !== 'function') window.xtFolioDel = delEntry;
+
+  function boot() {
+    bind();
+    render();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+  // importer.js 导入成功后（跨页可能在本地触发）回调，刷新列表
+  window.mfAfterImport = function () { try { render(); } catch (e) { /* 忽略 */ } };
+})();
+</script>
+</body>
+</html>

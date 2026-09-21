@@ -1,0 +1,161 @@
+{
+  "at": "2026-09-13T18:51:04.180Z",
+  "withC1": true,
+  "results": [
+    {
+      "name": "qa_a2a3a4_final_0913.js",
+      "desc": "A2-A4 验收三连（数据隔离/计数器/个人中心路由）",
+      "status": "PASS",
+      "exit": 0,
+      "counts": {
+        "total": 59,
+        "pass": 59,
+        "fail": 0,
+        "mode": "assert"
+      },
+      "verdict": "=== 汇总: 断言 59 | 通过 59 | 失败 0 ===",
+      "failures": []
+    },
+    {
+      "name": "qa_b12_trim_0913h.js",
+      "desc": "B1+B2 删减验证",
+      "status": "PASS",
+      "exit": 0,
+      "counts": {
+        "total": 2,
+        "pass": 2,
+        "fail": 0,
+        "mode": "page"
+      },
+      "verdict": "========= B1+B2 删减验证: ALL PASS =========",
+      "failures": []
+    },
+    {
+      "name": "qa_b3_b4_smoke.js",
+      "desc": "B3+B4 删减冒烟",
+      "status": "PASS",
+      "exit": 0,
+      "counts": {
+        "total": 2,
+        "pass": 2,
+        "fail": 0,
+        "mode": "page"
+      },
+      "verdict": "=========== B3+B4 冒烟: ALL PASS ===========",
+      "failures": []
+    },
+    {
+      "name": "qa_c23_0913h.js",
+      "desc": "C2+C3 重构验证",
+      "status": "PASS",
+      "exit": 0,
+      "counts": {
+        "total": 2,
+        "pass": 2,
+        "fail": 0,
+        "mode": "page"
+      },
+      "verdict": "========= C2+C3 重构验证: ALL PASS =========",
+      "failures": []
+    },
+    {
+      "name": "qa_e1_icon_smoke.js",
+      "desc": "E1 图标全站冒烟（15 页）",
+      "status": "PASS",
+      "exit": 0,
+      "counts": {
+        "total": 15,
+        "pass": 15,
+        "fail": 0,
+        "mode": "page"
+      },
+      "verdict": "=========== E1 冒烟: ALL PASS ===========",
+      "failures": []
+    },
+    {
+      "name": "qa_blogwechat_quest_0913.js",
+      "desc": "blog_wechat 死链修复",
+      "status": "PASS",
+      "exit": 0,
+      "counts": {
+        "total": 6,
+        "pass": 6,
+        "fail": 0,
+        "mode": "assert"
+      },
+      "verdict": "=== blog_wechat 死链修复验证: 断言 6 | 通过 6 | 失败 0 ===",
+      "failures": []
+    },
+    {
+      "name": "qa_c1_0913h.js",
+      "desc": "C1 好友页菜单重排",
+      "status": "FAIL",
+      "exit": 1,
+      "counts": {
+        "total": 1,
+        "pass": 0,
+        "fail": 1,
+        "mode": "page"
+      },
+      "verdict": "========= C1 好友页菜单重排验证: FAIL=1 =========",
+      "failures": [
+        "--- 私聊.html : FAIL ---"
+      ]
+    }
+  ],
+  "antiOverwrite": [
+    {
+      "id": "A-①",
+      "name": "assets/api.js 含 window.lsKey('study_workbench_ai_chat')（同步 AI 历史走前缀键）",
+      "pass": true,
+      "detail": "line 1143"
+    },
+    {
+      "id": "A-②",
+      "name": "assets/study-stats.js 前缀化完好（本地助手引用 window.lsKey；stats/queue/tool_ 三类键均前缀）",
+      "pass": true,
+      "detail": "helper=true keys=[true,true,true] bareStore=false bareQueue=false bareTool=false"
+    },
+    {
+      "id": "A-③",
+      "name": "个人中心.html「穿越英语」守卫写法（if(window.openQuest)…）且无裸调残留",
+      "pass": true,
+      "detail": "line 491"
+    }
+  ],
+  "c1Menu": [
+    {
+      "id": "C1-①",
+      "name": "私聊.html 五个 .im-tab 顺序 = 会话/好友/群聊/申请/加好友（共 5 个）",
+      "pass": true,
+      "detail": "order=[\"会话\",\"好友\",\"群聊\",\"申请\",\"加好友\"]"
+    },
+    {
+      "id": "C1-②",
+      "name": "「加好友」为最后一个 tab",
+      "pass": true,
+      "detail": "last=加好友"
+    },
+    {
+      "id": "C1-③",
+      "name": "五个 onclick 目标逐一在位且顺序一致",
+      "pass": true,
+      "detail": "got=[\"imSwitchTab('chats')\",\"imSwitchTab('friends')\",\"imSwitchTab('groups')\",\"imSwitchTab('requests')\",\"imSwitchTab('addfriend')\"]"
+    },
+    {
+      "id": "C1-④",
+      "name": "「+好友」「➕ 加好友」字样 0 命中",
+      "pass": true,
+      "detail": "+好友=false ➕加好友=false"
+    },
+    {
+      "id": "C1-⑤",
+      "name": "im-tab-add 使用设计令牌（var(--primary-...)），无硬编码橙色",
+      "pass": false,
+      "detail": "token=false"
+    }
+  ],
+  "totalFail": 1,
+  "pending": 0,
+  "antiFail": 1
+}

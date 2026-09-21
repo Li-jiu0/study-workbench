@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#f2f2f2">
+<title>个人资料 · 星途</title>
+<!-- R73 需求15（v2）：微信 / QQ 风格移动端「个人资料」设置页。
+     入口：个人中心.html 的「个人资料」分组卡（已改为直达本页）。
+     数据：全部读取本机 localStorage（assets/xt-profile.js），无数据一律显示 0；
+           角标 / 右侧小字无真实来源时不显示。
+     子视图（我的笔记 / 我的收藏 / 学习数据 / AI对话记录 / 个人信息编辑）
+           均为本页内全屏推入层，不新建文件。
+     R86-C：「AI对话记录」主数据源改为服务端 GET /api/ai/history（仅当前登录用户自己的记录，
+           扁平消息 items:[{role,content,provider,createdAt}]，**没有会话 ID**），前端按时间
+           自然间隔分段渲染并标注时间；加载中 / 失败 / 空 三态齐备；未登录不发请求（游客态
+           必然 401）。本机 localStorage.ai_chat_history（会话结构）降级为离线兜底。
+     R86-C：头像裁剪改为微信风格全屏暗色裁剪台（拖动 + 双指捏合 + 滑杆，输出仍为正方形图片）。 -->
+<link rel="stylesheet" href="assets/common.css?v=20260923c">
+<link rel="stylesheet" href="assets/xt-profile.css?v=20260919b">
+<style>
+  /* 顶部安全区：透明状态栏下 .xtp-topbar（sticky，xt-profile.css 高 48px）整体加高补偿。
+     R141：旧 WebView 不认 env(safe-area-inset-*)，必须优先用原生注入的 --xt-satop，
+           否则刘海/挖孔机型顶部被系统状态栏压住（与 common.css 全局 .topbar 同一写法）。 */
+  .xtp-topbar { height: calc(48px + var(--xt-satop, env(safe-area-inset-top, 0px))); padding-top: var(--xt-satop, env(safe-area-inset-top, 0px)); }
+</style>
+</head>
+<body class="theme-home">
+
+<div class="xtp-wrap">
+  <header class="xtp-topbar">
+    <button class="xtp-back" type="button" data-act="back">
+      <span class="nav-icon" data-icon="arrow-left" data-icon-size="18"></span> 返回
+    </button>
+    <div class="xtp-topbar-title">个人资料</div>
+    <button class="xtp-theme" id="xtpThemeBtn" type="button" data-act="theme" title="切换深浅色">
+      <span class="nav-icon" data-icon="moon" data-icon-size="18"></span>
+    </button>
+  </header>
+
+  <main id="xtProfileRoot" class="xtp-root"></main>
+</div>
+
+<!-- 全屏子视图宿主（我的笔记 / 我的收藏 / 学习数据 / AI对话记录 / 个人信息编辑） -->
+<div id="xtpViews"></div>
+<div id="xtpToast" class="xtp-toast"></div>
+<div id="xtpModalHost"></div>
+
+<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/config.js?v=20260917" defer></script>
+<!-- api.js：仅为「邮箱」双态读取服务端真实绑定态（GET /api/auth/me → email / emailVerified）。
+     与 设置.html 同版本号同顺序（config.js 之后）；该文件顶层无 DOM 副作用，
+     其自动初始化只碰 #profileBox（本页不存在）且包在 try/catch 内。 -->
+<script src="assets/api.js?v=20260924a" defer></script>
+<script src="assets/xt-settings.js?v=20260922c" defer></script>
+<script src="assets/xt-profile.js?v=20260926c" defer></script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+xt-aiusage.js: size=75729 crlf=0 loneCR=0
+ai-settings.html: size=46638 crlf=0 loneCR=0
+朋友圈发布.html: size=12530 crlf=169 loneCR=0
+xt-moments.js: size=58770 crlf=1179 loneCR=0
+[PASS] js-aiusage: UsageQuotaSortSel >=1
+[PASS] js-aiusage: 5 个 option 文案保留（模型名称 全局 2 处=新旧 select 各一）
+[PASS] js-aiusage: 旧收放结构全清 0
+[PASS] js-aiusage: 旧裸 chips bar 清 0
+[PASS] js-aiusage: bindQuotaSortFold 残留 0
+[PASS] js-aiusage: QUOTA_SORT_LABEL 残留 0
+[PASS] js-aiusage: data-quota-sort 残留 0
+[PASS] js-aiusage: bindQuotaFilterFold 未受影响
+[PASS] js-aiusage: state.quotaSort 数据链路保留
+[PASS] js-aiusage: el.quotaSortSel cache+回填+监听 >=3
+[PASS] html-set: xt-aiusage.js?v=20260918f =1
+[PASS] html-set: xt-aiusage.js?v=20260918e =0
+[PASS] html-pub: id="xtmLocBtn" =0
+[PASS] html-pub: id="xtmAtBtn" 仍在
+[PASS] html-pub: 其余功能按钮 4 个仍在
+[PASS] js-mom: xtmLocBtn 引用清 0
+[PASS] js-mom: xtmPickLocation 保留（xtmAtBtn 仍用）
+[PASS] 行尾: xt-aiusage.js 纯 LF
+[PASS] 行尾: ai-settings.html 纯 LF
+[PASS] 行尾: 朋友圈发布.html 纯 CRLF(loneCR=0)
+[PASS] 行尾: xt-moments.js 纯 CRLF(loneCR=0)
+EDIT_ALL=PASS

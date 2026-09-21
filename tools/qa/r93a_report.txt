@@ -1,0 +1,81 @@
+R93-1 交付报告 —— AI 设置页「功能分类」新增「梯子」分组
+工程师：寇豆码（software-engineer-任务一）
+日期：2026-09-18
+状态：✅ 完成，escheck DONE 0，jsdom 29/29 PASS
+
+================================================================
+一、需求
+用户原话：「按功能分类排序中增加一个梯子排序，就是需要用到梯子的模型」
+即：AI 设置页「功能分类」Tab 的分类体系里新增「梯子」分组，归拢所有
+需要科学上网（海外代理）才能用的模型（OpenRouter / Google Gemini 等）。
+
+================================================================
+二、改动文件（仅 2 个）
+1. assets/ai-settings.js：134060 → 137022 B，纯 LF（crlf=0/loneCR=0 读回验证）
+   纯渲染层实现，共 8 处插入/修改（E1–E7 + F1）：
+   - E1 新增 proxyModelsList()：复用既有 isNeedVPN()（模型级/平台级 needVPN）
+     与 providerNeedProxy()（平台级 needProxy）推导「需要梯子」，
+     不读不改 ai-config.js 的任何数据。
+   - E2 familyGroupsHtml() 尾部追加「梯子」组：与内置 6 族（文本/视觉/语音/
+     检索/视频/3D）同层级，组头复用 xt-set-group / xt-set-group-h /
+     xt-set-group-count，卡片复用 xt-set-card 系，模型条复用 xt-cat-addchip
+     样式（cursor:default 纯展示）+ 既有 xt-set-badge-vpn「需梯子」角标 +
+     providerNameOf() 平台名；空组不渲染（与内置族同口径）。
+   - E3 modelInCategory(id,'proxy') 特判：catKey==='proxy' 时按
+     isNeedVPN||providerNeedProxy 判定 → 排序筛选 / 模型列表过滤 / 映射到
+     AI 页（mapToAiList）三处现有链路自动生效。
+   - E4 catLabelOf('proxy') → 「梯子」（toast/横幅显示名）。
+   - E5 sortByCategory 在 catKey==='proxy' 时按需代理判定归组（需代理模型
+     整体排最前，组内仍按退役降级 + 健康 ms 升序），默认「按内置分类归组」
+     行为完全不变。
+   - E6 排序弹窗「按功能分类」下拉追加 <optgroup label="梯子">（option
+     value=proxy「梯子（需科学上网）」），无需代理模型时不追加。
+   - E7 功能分类 Tab 底部说明文案补充「梯子」组口径。
+   - F1 【顺带修复 R88-M1 遗留 Bug】分类筛选横幅「显示全部」按钮
+     （data-sort-act="catclear"）渲染在模型列表横幅里、不在排序弹窗遮罩内，
+     而遮罩是唯一的 data-sort-act 委托入口 → 按钮点击永不生效。
+     补 document 级委托且只认 catclear（弹窗内无此按钮，不会重复响应）。
+     不修则「梯子」筛选进去后用户点「显示全部」无反应，故纳入本期。
+
+2. ai-settings.html：46638 B（crlf=0）
+   仅 ai-settings.js 引用版本号 20260918d → 20260918e（其余脚本版本未动）。
+
+================================================================
+三、不改动清单（读回校验通过，与 R92-A 收尾态逐字节一致）
+- assets/ai-config.js（44754 B）—— 需求明确不改，仅只读消费 providers[x].needProxy/needVPN
+- assets/ai-page.js（138586 B）/ assets/ai-service.js（150566 B）/ AI.html（56608 B）
+- assets/xt-update.js（39089 B）/ 更新.html（23107 B）
+
+================================================================
+四、验证结果
+1. escheck_es2017.js（ES2017 天花板）：DONE 0
+   静态扫描另确认无 ?.、??、.replaceAll(、.at(、catch{、反引号。
+2. 字节/换行读回：ai-settings.js 写前 134060 B crlf=0 → 写后 137022 B
+   crlf=0 loneCR=0，纯 LF 保持；全部 7 个替换锚点 old_count=1 才落盘，
+   否则 ABORT 不写。
+3. jsdom 端到端（真实 ai-config.js + 改后 ai-settings.js，29/29 PASS）：
+   - 功能分类 Tab 渲染出「梯子」组，组计数 = 运行时按 provider 独立推导
+     的需代理模型数（5 个：or-auto / or-nemotron-super / or-nemotron-ultra /
+     gm-flash-lite / gm-flash，分属 OpenRouter、Google Gemini 平台）；
+   - 5 个海外模型全部出现在梯子组并带「需梯子」角标与平台名；
+     42 个国内模型（ark/qianfan/zhipu/siliconflow 等）零泄漏进梯子组；
+   - 排序弹窗分类下拉出现「梯子」optgroup（value=proxy），内置 optgroup 不受影响；
+   - 选「梯子」→ 按分类排序：5 个需代理模型整体排最前（连续段长度=5），
+     尾部无残留，order 总数不变（无数据丢失），lastSort.catKey='proxy'；
+   - 点横幅「显示全部」→ catKey 清空、模型列表恢复全量（F1 修复生效）。
+4. 交互一致性：分组块/筛选 chip/角标全部复用既有 CSS 类，无新增样式。
+
+================================================================
+五、设计说明与假设
+1. 「梯子」组是纯展示视图组（非功能路由槽）：不写入 BUILTIN_CATS/
+   CAT_OF_TYPE/settings.categories，不产生新路由 key，自定义分类体系零迁移。
+2. 「需要梯子」判定沿用 R81/R83 既有口径：providers[x].needVPN===true 或
+   needProxy===true（平台级），与模型列表既有「需梯子」角标完全一致。
+3. 排序弹窗的「梯子」筛选项与 Tab 内分组块同时提供，覆盖用户原话
+   「按功能分类排序中增加一个梯子排序」的两种理解。
+4. F1 为 R88-M1 遗留缺陷（与本功能同一交互链路，最小修复，已注明）。
+
+================================================================
+六、遗留 / 建议
+- 无阻塞项。若后续 ai-config.js 新增海外平台（如 openai 官方直连），
+  只要该 provider 标 needProxy/needVPN，梯子组与筛选项自动收拢，无需改码。

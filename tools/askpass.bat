@@ -1,0 +1,1 @@
+@echo %SW_PASS%

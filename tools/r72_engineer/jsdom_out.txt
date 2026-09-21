@@ -1,0 +1,11 @@
+PASS R72_build_from_conversations
+PASS R72_display_name
+PASS R72_remark_of
+PASS R72_storage_account_prefix
+PASS R72_get_ai_config
+PASS R72_group_admin_view_readonly
+PASS R72_remark_editor_no_native
+PASS R72_loadChats_uses_conversations
+PASS R72_loadChats_offline_fallback
+FAIL R72_loadChats_uses_conversations_async :: 应请求 /api/chat/conversations
+PASS R72_loadChats_offline_fallback_async

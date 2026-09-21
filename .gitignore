@@ -1,0 +1,242 @@
+# ===== 2026-09-20 R137-GH：GitHub 上传准备补充 =====
+# 1) APK 构建产物（96MB/个，且每次打包都会变；分发走 GitHub Releases 或服务器 static/apk）
+#    历史说明：R130 提交曾把 星途-1.30.apk 入库作为发版归档，现改为统一不入库，避免仓库膨胀。
+*.apk
+# 2) 签名私钥（自签开发密钥，避免公开仓库被冒名打包）
+android/workbench.keystore
+# 3) 测试用数据库（非生产数据，但含测试账号，不入库）
+*.db
+# 4) 临时/过程目录（测试浏览器档案、QA 临时工作区、本批清理残留）
+.tmp_eng*/
+_tmp_*/
+_w2t1_img/
+_bak-pre*/
+_cleanup_scan.txt
+_cleanup_targets.txt
+# 5) 后端虚拟环境（本地依赖，用 pip install -r requirements.txt 还原）
+server/.venv/
+# 6) 部署工具二进制（随用随取，不入库）
+tools/plink.exe
+tools/pscp.exe
+
+# 构建产物
+android/build/
+android/gen/
+android/bin/
+*.class
+*.dex
+
+# 保留 APK（如需忽略取消下一行注释）
+# *.apk
+
+# 临时文件
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
+
+# 备份目录
+备份/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# ===== 以下为 2026-09-11 整理：不入库的本地调试产物与敏感文件 =====
+# 含服务器密码的部署脚本（切勿推送到公开仓库！）
+upload_v23.ps1
+
+# 后端真实配置（含 JWT 密钥与各家大模型 API Key，只留 .env.example 模板入库）
+server/.env
+.env
+.env.local
+
+# 数据库与备份（含用户真实数据：账号/密码哈希/私信，绝不入库！）
+# 历史事故：2026-09-11 发现 server/data.db 与 server/backups/ 曾被推上公开仓库，
+# 已用 git-filter-repo 从全部提交中清除，并在此永久忽略，防止复发。
+server/data.db
+server/data.db.backup-*
+*.db-journal
+*.db-wal
+server/backups/
+
+# 反馈等后端运行数据目录（免登录反馈落盘 server/data/feedback.json，属运行时数据，
+# 每次真实提交都会追写，绝不入库；2026-09-13 需求01 收尾补充）
+server/data/*
+!server/data/model_quota.json
+!server/data/model_registry.json
+
+# ===== 2026-09-18：服务端用量账本（多用户累计，绝不能随部署覆盖）=====
+# model_usage.json 是运行时累计账本：服务器上的才是真实用量，
+# 一旦入库，下次部署会把真实用量覆盖成 0 -> 所有人用量归零 -> 直接超量欠费。
+# 注意：model_quota.json / model_registry.json 是配置，必须入库（见上方 ! 放行）。
+# 用量账本（运行时累计，服务器上的才是真实数据）
+server/data/model_usage.json
+
+# ===== 2026-09-19 R104c：地点搜索每日计数（运行时数据，绝不能上线覆盖）=====
+# geo_place_count.json 记录当日 /api/geo/place 已消耗次数，靠它让「当日 150 熔断」扛重启；
+# 一旦入库，下次部署会把服务器真实计数覆盖成 0 -> 熔断形同虚设。
+# （虽已被上方 `server/data/*` 覆盖，此处仍显式列出，沿用 model_usage.json 的既有做法。）
+server/data/geo_place_count.json
+
+# ===== 2026-09-19 批5：静态地图每日计数（运行时数据，绝不能上线覆盖）=====
+# geo_staticmap_count.json 记录当日 /api/geo/staticmap 已消耗次数，靠它让「6000/日 熔断」扛重启；
+# 一旦入库，下次部署会把服务器真实计数覆盖成 0 -> 熔断形同虚设。
+# （虽已被上方 `server/data/*` 覆盖，此处仍显式列出，沿用 geo_place_count.json 的既有做法。）
+server/data/geo_staticmap_count.json
+
+# 后端真实配置（含 JWT 密钥与各家大模型 API Key，只留 .env.example 模板入库）
+server/.env
+.env
+.env.local
+
+# 数据库文件（含用户真实数据，绝不入库）
+server/data.db
+server/data.db.backup-*
+*.db-journal
+*.db-wal
+
+# 助手/工具本地数据
+.workbuddy/
+.codebuddy/
+
+# 一次性调试脚本（历史排查产物）
+add_*.py
+check_*.py
+cleanup_*.py
+do_*.py
+do_rename_*.py
+enhance_*.py
+enrich_*.py
+expand_*.py
+fix_*.py
+make_*.py
+merge_*.py
+modify_*.py
+remove_*.py
+rename_*.py
+restore_*.py
+rewrite_*.py
+rollback_*.py
+test_*.py
+unify_*.py
+update_version*.py
+
+# 调试截图
+ai_settings_full.png
+bug*.png
+error_screenshot.png
+home_broken.png
+more_menu_5.png
+old_settings_*.png
+page_broken.png
+profile_layout_broken.png
+profile_two_learn.png
+screenshot_*.png
+settings_broken.png
+settings_problem.png
+settings_target.png
+settings_v3_screenshot.png
+sidebar_broken*.png
+two_learn.png
+wx1.png
+wx2.png
+wx3.png
+
+# 废弃的设置页/个人中心历史变体
+settings.html
+settings_*.html
+profile.html
+profile_v*.html
+设置_旧版.html
+
+# 整站副本
+学习工作台(2)/
+
+# 部署打包产物
+tools/frontend_update_*.tar.gz
+
+# 结果预览截图
+广场编辑页-改版效果.png
+设置页-新功能.png
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# Node 依赖（jsdom 校验器，用 npm ci 还原，不入库）
+node_modules/
+
+# 部署打包临时产物（tar.gz 由 tools/deploy_*.py 现打现传）
+tools/deploy_*.tar.gz
+tools/frontend_update_*.tar.gz
+tools/server_fix_*.tar.gz
+# 2026-09-21 R11：web-only 部署包（约 2.9MB，从工作树 + _r11_manifest.json 可现打现传）
+tools/_r11*_deploy.tar.gz
+tools/_r11*_deploy*.txt
+tools/_r11*_out.txt
+# 2026-09-21 R140（1.40 发版）同上：部署包/清单/构建与部署日志
+tools/_r140_deploy.tar.gz
+tools/_r140_*.txt
+tools/_r140_build.log
+tools/_r140_manifest.json
+
+# QA 过程产物（截图 / 探针脚本 / 线上资源快照，仅供人工排查，不入库）
+.qa/
+
+# ===== 2026-09-12 批次五（寇豆码）：打包与校验过程产物 =====
+# 本地临时工作目录（打包日志、旧版 APK 回滚备份等）
+.tmp_eng/
+# APK 校验器生成的报告（每次跑都会重写，属过程产物，不入库）
+tools/qa/_apk_assets_check.txt
+tools/qa/_apk_layout_check.txt
+tools/qa/_apk_preflight.txt
+tools/qa/_apk_tracked.txt
+
+# ===== 2026-09-12 批次五（主理人）：QA 一次性输出统归不入库 =====
+# tools/qa/ 下所有下划线开头的 .txt 都是探针/自检的过程产物，每次跑都会重写，
+# 跟着进公开仓库只会污染历史。后续新增校验脚本也请沿用 _ 前缀命名输出。
+tools/qa/_*.txt
+
+# ===== 2026-09-12 P0-B T05：HTTPS 文档暂不做，工作区保留不入 git =====
+# 用户拍板：需求 17 HTTPS 暂不做；文档不入库。详见 docs/WITHDRAWN.md。
+# 恢复条件：Q 线（跨端专项）启动 + 用户确认做 HTTPS + 有可用域名。
+docs/HTTPS+APP跨端改造方案-2026-09-12.md
+
+# ===== 2026-09-12 P0-B 紧急事故：.git 损坏的保命备份，保留学查但不入库 =====
+# 事件：工程师误用 GIT_SEQUENCE_EDITOR=true git rebase -i 触发 filter-repo
+# 导致 .git/objects/pack + refs/heads/main 全空；恢复后保留备份以防排查需要
+.git-corrupted-backup-20260912-emergency/
+tools/_artifacts/
+*.bak-*
+
+# ===== 2026-09-13 批次三：verifier 过程产物不入库 =====
+# 沿用 tools/qa/_*.txt 的既有口径：verifier 目录下下划线开头的 .txt 与 out_*.txt
+# 都是探针/自检的运行时输出，每次跑都会重写，入库只会污染历史。
+# 注意：tools/verifier/_backup_0913b/ 是 14 个分片的最初原始版本备份，**必须入库**，勿套用本规则。
+tools/verifier/_*.txt
+tools/verifier/out_*.txt
+
+# ===== 2026-09-14 批次七：本地参考资料 PDF 不入库 =====
+# tencent_2025_interim/ 是腾讯2025中期报告的本地参考资料（约19MB），
+# 20260914f 提交时曾被误扫入，已剔除；此规则防止复发。
+tencent_2025_interim/*.pdf
+
+# ===== 2026-09-20 R138：本批过程产物（临时目录 / 探针输出 / 截图）不入库 =====
+# 一律「下划线前缀 + 批次号」的临时物：线上快照目录、js 临时工作区、
+# 脚本输出 txt、QA 截图与探针报告。入库只会污染历史，需要时本地重跑即可。
+_r1*_prod/
+_r106_js_tmp/
+_r138_*_out.txt
+_qa_*.png
+_a8_*.txt
+server/zz_*.txt
+tools/tools_md5_r1*.txt
+tools/qa/_*_shot_*.png
+
+# ===== 2026-09-21 R11h：探针原始输出不含明文 API Key 入库 =====
+# tools/_probe*.json 是「把带 key 的 curl 命令原样落盘」的探针输出
+# （如 _probe73q_raw.json 内含 Gemini key 明文）。R7c 曾因此触发 GitHub push protection，
+# 已 git rm --cached；此处加规则防止再被 git add -A 带进仓库。
+tools/_probe*.json

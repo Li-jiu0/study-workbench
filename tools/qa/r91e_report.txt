@@ -1,0 +1,86 @@
+================================================================================
+R91-E 报告 —— ①模型排序收放壳推倒改 select 下拉 ②朋友圈发布页删「位置」按钮
+执行人：software-engineer-任务一｜代码树：D:\下载的文件\学习工作台
+================================================================================
+
+一、任务 1：模型级排序改 select 下拉（用户口径变更：要和上方「排序方式」同款下拉）
+--------------------------------------------------------------------------------
+改动文件：assets/xt-aiusage.js（纯 LF，二进制编辑+回读校验；行号为 R91-D 改后行号）
+
+A1  skeleton()（R91-D 加的 #UsageQuotaSortToggle/#UsageQuotaSortFold 收放壳 +
+    #UsageQuotaSortBar 5 chips，原 L890-903）整体替换为：
+      '<div class="xt-us-selectrow">' +
+        '<select class="xt-us-select" id="UsageQuotaSortSel" aria-label="模型排序方式">' +
+          5 个 <option>（value=remaining/remainingDesc/used/quota/name，
+          文案与原 5 chips 逐字一致：剩余可用量（少 → 多）/（多 → 少）/已使用量
+          （多 → 少）/资源配额（大 → 小）/模型名称）
+        '</select>'
+    样式复用既有 .xt-us-selectrow/.xt-us-select（与 #UsageSortSel 同款），零新增 CSS。
+A2  删 R91-D 的 QUOTA_SORT_LABEL + syncQuotaSortLabel() 整块。
+A3  renderAll()：R91-D 的 syncQuotaSortLabel() 行替换为 select 回填——
+      if (el.quotaSortSel) { el.quotaSortSel.value = state.quotaSort; }
+    （与 el.sortSel 同款；option 不写 selected 属性，避免双源）
+A4  删 R91-D 的 bindQuotaSortFold() 整个函数。
+A5  bind()：bindChips("UsageQuotaSortBar","data-quota-sort",...) 替换为
+    el.quotaSortSel change 监听（写 state.quotaSort + renderAll()，照 #UsageSortSel
+    接线方式）；数据链路 state.quotaSort 取值集合不变。
+A6  bind() 删 bindQuotaSortFold() 调用。
+A7  cache()：el.quotaSortBar = byId("UsageQuotaSortBar") →
+    el.quotaSortSel = byId("UsageQuotaSortSel")。
+
+版本号：ai-settings.html（纯 LF）xt-aiusage.js?v=20260918e → v=20260918f。
+注：team-lead 消息里写的 L849 实际在 L870（另一引用早已在 E 线升到 e），以实际为准。
+
+二、任务 2：朋友圈发布页删「位置」按钮
+--------------------------------------------------------------------------------
+引用清单（改前 Grep 全库）：产品代码仅 3 处——朋友圈发布.html L55（按钮节点）、
+xt-moments.js L835（on 类同步）、L1047-1048（onclick 绑定）；其余命中全部位于
+tools/ 与 tools/qa/ 下的历史 QA 脚本（r88j_test.js、r90_*、r89_* 等），属时点产物
+未改动（重跑会因按钮不存在而报缺失，属预期）。
+
+C1  朋友圈发布.html（CRLF）：删除 L55 #xtmLocBtn「位置」按钮整行；L53 功能栏注释
+    同步去掉「位置」并加 R91-E 说明（与「所在位置」重复）。保留 #xtmAtBtn
+    「所在位置」及其他 4 个功能按钮。
+D1  assets/xt-moments.js（CRLF）：删 L835（$('xtmLocBtn') 的 on 类同步——按钮已删，
+    死引用）。
+D2  删 L1047-1048（var locBtn = $('xtmLocBtn'); locBtn.onclick = xtmPickLocation;——
+    死引用）。xtmPickLocation 函数本体保留（L1050 #xtmAtBtn 仍绑定使用）。
+    位置数据链路（P.location / chosen 展示 / 发布参数 location）不受影响。
+
+三、字节 / 行尾
+--------------------------------------------------------------------------------
+assets/xt-aiusage.js   77660 → 75729 B（-1931），crlf=0 loneCR=0（纯 LF，回读一致）
+ai-settings.html       46638 → 46638 B（±0），crlf=0 loneCR=0（纯 LF，回读一致）
+朋友圈发布.html        12612 → 12530 B（-82），crlf=169 loneCR=0（纯 CRLF，回读一致）
+assets/xt-moments.js   58946 → 58770 B（-176），crlf=1179 loneCR=0（纯 CRLF，回读一致）
+新增脚本：tools/qa/r91e_edit.py、r91e_runner*.py、r91e_verify.py、r91e_edit_result.txt、
+r91e_jsdom_smoke.js、r91e_jsdom_report.txt、r91e_escheck.txt、本报告。
+
+四、验证（一次跑完）
+--------------------------------------------------------------------------------
+1. escheck_es2017.js → DONE 0（PASS）。
+2. 命中核验全 PASS（r91e_edit_result.txt）：
+   - UsageQuotaSortSel ≥1；el.quotaSortSel cache/回填/监听 ≥3；
+     state.quotaSort 数据链路保留；bindQuotaFilterFold 与「筛选」收放行未受影响；
+   - 旧收放结构（Toggle/Fold/Cur/Bar/bindQuotaSortFold/QUOTA_SORT_LABEL/
+     data-quota-sort）全部清 0；
+   - 朋友圈发布.html：id="xtmLocBtn"=0，id="xtmAtBtn"=1，其余 4 功能按钮各=1；
+   - xt-moments.js：xtmLocBtn 引用=0，xtmPickLocation 保留。
+   说明：核验脚本本身出过两个谓词笔误（bytes 字面量不解析 \uXXXX 转义导致首轮
+   A3 匹配失败——发生在写盘前安全中止；「模型名称」计数谓词过严——实际新旧
+   select 各一条=2 为正确值），均已修正，最终 EDIT_ALL=PASS；产品文件编辑一次成功。
+3. jsdom 断言（JSDOM_ALL PASS，r91e_jsdom_report.txt）：
+   - #UsageQuotaSortSel 存在、在 .xt-us-selectrow 内、5 个 option、首项文案
+     「剩余可用量（少 → 多）」、第 5 项「模型名称」；
+   - value 由 JS 回填为 remaining、innerHTML 无 selected 属性（无双源）；
+   - change → value=name 应用成功且无 console 错误；
+   - 旧 Toggle/Fold/Cur/Bar 全部不存在；「筛选」收放行与 #UsageSortSel 完好。
+4. 朋友圈部分：静态命中核验覆盖（按钮删除 + 引用清零 + 函数保留）；删除的两处
+   JS 引用原本就带 null 守卫、且已整体移除，无 NPE 风险。
+
+五、遗留
+--------------------------------------------------------------------------------
+- tools/ 下历史 QA 脚本对 #xtmLocBtn 的断言已过时（按钮按用户要求删除），如需
+  可后续清理为指向 #xtmAtBtn 的等价断言。
+- 其余无遗留；未触碰 xt-profile.js / ai.py / 私聊.html / 个人中心.html / common.css。
+================================================================================

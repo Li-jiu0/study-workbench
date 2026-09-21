@@ -1,0 +1,79 @@
+================================================================================
+R92-B 修复报告：删除三个「即将下线」模型
+工程师：software-engineer-任务二
+日期：2026-09-19（R92）
+================================================================================
+
+一、全项目引用清单（Grep：ark-seedance-1-5-pro / -1-0-lite-t2v / -1-0-lite-i2v）
+
+  产品代码（必须处理）：
+  - assets/ai-config.js
+      L492-527 三个 builtinModels 条目（tag:"即将下线"，fallback 分别指向
+      ark-seedance-1-0-pro / -1-0-pro / -1-0-pro-fast —— 三者均保留）
+      L901-903 modelDetails 三条说明
+  产品文档（同步更新）：
+  - AI模型对接文档.md L123-131 视频生成退役表（3 行 + 计数「5 个」）
+  按铁律不动：
+  - server/data/model_registry.json L32-34、server/data/model_quota.json L32-34
+    （server/ 禁改；且条目自带 expireAt:2026-09-21 自动过期，保留为历史记录，
+    已在文档标注中说明）
+  历史交付物/日志（不属活文档，不动）：
+  - deliverables/software-company/ai-models-incremental-design-20260918.md（日期快照）
+  - 更新日志-20260918-第六批-R87.md、交接文档-20260918h、给接手AI的开场指令
+  tools/ 历史脚本与输出（不动）：
+  - tools/qa/arkquota_verify*.py、tools/_r87_t01_*.py、tools/_t03_* 等
+  .bak 备份：无命中，无需处理。
+
+二、改动点
+
+  工具：tools/qa/_r92b_patch.py（字节级替换，行尾自适应）。
+
+  1. assets/ai-config.js（纯 CRLF，改前实测 CRLF=1101 / pureLF=0）
+     a) 删除 builtinModels 三个完整条目（36 行，L492-527）：
+        ark-seedance-1-5-pro / ark-seedance-1-0-lite-t2v / ark-seedance-1-0-lite-i2v
+     b) 删除 modelDetails 对应三条说明（3 行，L901-903）
+     fallback 检查（第 2 步要求）：
+     - 3 个被删条目自身的 fallback 指向 ark-seedance-1-0-pro / -pro-fast（保留，无需改）；
+     - 全 AI_CONFIG 反向检查：无任何其他条目/modelModes 链/默认值指向这 3 个被删 id
+       （加载验证 V3/V4/V6 实证 clean），无需改指向。
+     字节/行尾：46895 → 44754 字节（-2141）；CRLF 1101 → 1064 / pureLF 0（纯 CRLF 保持，
+     -37 = 条目块 35 个换行 + modelDetails 3 行 2 个换行）。
+
+  2. AI模型对接文档.md（纯 LF，改前 CRLF=0 / LF=298）
+     a) 「视频生成（5 个）」→「视频生成（2 个）」（L123）
+     b) 删除退役表 3 行（L129-131），原位插入 3 行删除标注（block quote）：
+        「2026-09-19（R92-B）：三个『即将下线』模型已从前端模型配置
+        （assets/ai-config.js 模型条目 + modelDetails）删除；服务端
+        model_registry.json / model_quota.json 对应条目带 expireAt:2026-09-21
+        自动过期，保留作为历史记录。」
+        —— 依任务口径「标注已删除或删除」取标注式删除，标注行保留 id 供追溯
+           （回读命中各 1 次即此标注行，表格行 0 命中）。
+     字节/行尾：15347 → 15351 字节（删 3 行长约等于加 3 行标注，净 +4）；纯 LF 298 行保持。
+
+三、命中核验（改后回读）
+
+  [js]  三个被删 id 命中 = 0 / 0 / 0 ✅
+  [js]  保留模型 ark-seedance-1-0-pro 命中 8、-pro-fast 命中 4（条目+fallback 引用完好）✅
+  [doc] 三个 id 各命中 1 = 删除标注行（表格行 0）✅
+
+四、验证结果
+
+  1. ES2017：node tools/qa/escheck_es2017.js → tools/qa/r92b_escheck.txt = DONE 0 ✅
+  2. node vm 加载 ai-config.js（tools/qa/_r92b_loadcheck.js，输出 r92b_loadcheck.txt）：
+     V1 加载无语法/运行时错误；AI_CONFIG 正常导出 ✅
+     V2 builtinModels 47 - 3 = 44（modelDetails 同为 44，同增同减一致）✅
+     V3 三个被删 id 在整个 AI_CONFIG（含 models/modelDetails/modelModes/fallback）命中 0 ✅
+     V4 所有模型 fallback 均指向现存 id，无悬空引用 ✅
+     V5 保留模型 ark-seedance-1-0-pro / -pro-fast 在列 ✅
+     V6 modelModes 三模式链无被删 id ✅
+     汇总 pass=9 fail=0 → R92B_LOAD_PASS ✅
+
+五、合规确认
+
+  - 未动：ai-page.js / xt-profile.js / ai.py / 私聊.html / 个人中心.html /
+    common.css / xt-aiusage.js / ai-settings.html / server/** / .bak / tools 历史
+  - ai-config.js 无新增 JS（纯删除），escheck DONE 0
+  - 二进制读写 + 行尾回读（两文件各自原行尾保持）；无并行 Edit
+  - 无 prompt/alert/confirm
+================================================================================
+报告完

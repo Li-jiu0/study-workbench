@@ -1,0 +1,398 @@
+================================================================================
+星途学习工作台 — R143 发布前只读盘点报告
+（R143 + R144 合并发版 1.41 的准备工作）
+生成方式：纯只读盘点。未修改任何源码/配置，未 git add/commit/checkout，未部署。
+生成文件：tools/_r143_stamp_report.txt
+================================================================================
+
+
+【一】全站版本戳盘点
+--------------------------------------------------------------------------------
+执行命令：
+  python tools/_r140_stamp_inventory.py
+（该脚本只读：扫描仓库根目录 *.html，正则提取 <asset>.js/.css?v=<stamp>。
+  注意：脚本用 os.listdir(ROOT) 仅扫描“根目录”下的 .html，
+  因此 备份/、tools/、tools/qa/、tools/_r141_prod/、tools/_r142_prod/ 等子目录
+  下的 html 不计入统计——这些均为备份/工具页，非上线页面。）
+
+============== 脚本原始输出（stdout）开始 ==============
+== 引用带戳静态资源的页面数：53 ==
+
+== 各资产戳分布 ==
+  单一 assets/admin-contact.js      20260917b(1页)
+  单一 assets/admin.css             20260916O(1页)
+  单一 assets/admin.js              20260916O(2页)
+★多戳 assets/ai-cap-3d.js          20260922a(36页) 20260923b(2页)
+★多戳 assets/ai-cap-audio.js       20260920c(36页) 20260923b(2页)
+★多戳 assets/ai-cap-embed.js       20260920c(36页) 20260923b(2页)
+★多戳 assets/ai-cap-image.js       20260920c(36页) 20260923b(2页)
+★多戳 assets/ai-cap-registry.js    20260918c(35页) 20260918d(1页) 20260923b(2页)
+★多戳 assets/ai-cap-translate.js   20260920c(36页) 20260923b(2页)
+★多戳 assets/ai-cap-video.js       20260920c(36页) 20260923b(2页)
+★多戳 assets/ai-cap-vision.js      20260920c(36页) 20260923b(2页)
+★多戳 assets/ai-config.js          20260920c(2页) 20260925a(36页)
+★多戳 assets/ai-page.js            20260920e(1页) 20260925a(1页)
+★多戳 assets/ai-presets.js         20260916O(35页) 20260923b(2页)
+★多戳 assets/ai-service.js         20260920e(2页) 20260925a(36页)
+  单一 assets/ai-settings.js        20260923c(1页)
+★多戳 assets/api.js                20260922c(2页) 20260924a(37页)
+★多戳 assets/app.js                20260922c(1页) 20260923a(1页) 20260925a(43页)
+  单一 assets/cet-read.js           20260916O(1页)
+  单一 assets/cet-translate.js      20260916O(1页)
+  单一 assets/chat-local.js         20260926b(1页)
+  单一 assets/comm-cases.js         20260916O(1页)
+★多戳 assets/common.css            20260920e(1页) 20260923a(4页) 20260923c(46页)
+  单一 assets/company-lib.js        20260916O(1页)
+★多戳 assets/config.js             20260916O(42页) 20260917(1页) 20260923b(2页)
+  单一 assets/data-cet-read.js      20260916O(1页)
+  单一 assets/data-cet-translate.js 20260916O(1页)
+  单一 assets/data-comm-cases.js    20260916O(1页)
+  单一 assets/data-exam-company.js  20260916O(1页)
+  单一 assets/data-iv-after.js      20260916O(1页)
+  单一 assets/data-iv-prep.js       20260916O(1页)
+  单一 assets/data-ppt-templates.js 20260916O(1页)
+  单一 assets/data/shenlun-inline.js 20260916O(1页)
+  单一 assets/emoji/manifest.js     20260916O(1页)
+★多戳 assets/error-boundary.js     20260916O(2页) 20260924a(43页)
+  单一 assets/group-discussion.js   20260925b(1页)
+  单一 assets/hotnews.js            20260916O(2页)
+  单一 assets/i-partner.js          20260925a(1页)
+★多戳 assets/icon-map.js           20260919l(1页) 20260923a(47页) 20260923b(2页)
+  单一 assets/img-viewer.js         20260922c(4页)
+★多戳 assets/importer.js           20260917b(2页) 20260923b(1页)
+  单一 assets/iv-after.js           20260916O(1页)
+  单一 assets/iv-prep.js            20260916O(1页)
+  单一 assets/layer-stack.js        20260923a(8页)
+  单一 assets/mini-cet.js           20260916O(2页)
+  单一 assets/mini-comm.js          20260916O(1页)
+  单一 assets/mini-exam.js          20260916O(3页)
+  单一 assets/mini-interview.js     20260916O(1页)
+  单一 assets/mini.js               20260916O(4页)
+  单一 assets/mock-engine.js        20260916O(3页)
+  单一 assets/mock-result.js        20260916O(1页)
+★多戳 assets/page-head.css         20260916O(40页) 20260922a(3页) 20260923b(2页)
+★多戳 assets/polish.css            20260916O(36页) 20260922a(3页) 20260923b(2页)
+★多戳 assets/qbank.js              20260916O(11页) 20260923b(1页)
+★多戳 assets/quest.js              20260916O(11页) 20260923b(1页)
+  单一 assets/roleplay.js           20260916O(1页)
+★多戳 assets/states.css            20260916O(40页) 20260922a(3页) 20260923b(2页)
+  单一 assets/study-stats.js        20260916O(16页)
+  单一 assets/subpage-router.js     20260923d(2页)
+  单一 assets/topic-express.js      20260916O(1页)
+  单一 assets/tpl-preview.js        20260916O(1页)
+  单一 assets/voiceplayer.js        20260925a(2页)
+  单一 assets/xt-aiusage.js         20260918f(1页)
+  单一 assets/xt-content.js         20260916O(3页)
+  单一 assets/xt-log.js             20260925d(1页)
+  单一 assets/xt-moments.css        20260926a(3页)
+  单一 assets/xt-moments.js         20260922c(3页)
+★多戳 assets/xt-polyfill.js        20260916O(45页) 20260922a(3页) 20260923b(2页)
+  单一 assets/xt-profile.css        20260919b(1页)
+  单一 assets/xt-profile.js         20260926c(1页)
+  单一 assets/xt-region.js          20260919j(4页)
+★多戳 assets/xt-settings.js        20260922c(1页) 20260923b(2页)
+★多戳 assets/xt-toast.js           20260916O(1页) 20260923a(42页) 20260923b(2页)
+  单一 assets/xt-update.js          20260925a(3页)
+  单一 data/mock-papers.js          20260916O(3页)
+
+== 多戳资产明细 ==
+（原文见上一节，此处按资产归并列出「戳 -> 页面」以便整改）
+
+  ai-cap-3d.js        ?v=20260922a -> 36页(AI.html / AI模拟面试.html / PPT案例拆解.html / PPT版式库.html / _r6_preR4_AI.html / ai-settings.html / blog_wechat.html / 万能金句库.html / 企业定向库.html / 关于.html / 动态空间.html / 商务礼仪.html / 四级词汇.html / 场景话术库.html / 学习工作台.html / 学习概括.html / 导入题库.html / 工具.html / 我的动态.html / 我的文件.html / 时政热点.html / 更多.html / 朋友圈发布.html / 演示.html / 申论刷题.html / 社区.html / 私聊.html / 管理员.html / 英语.html / 行测.html / 行测刷题.html / 表达.html / 赞助.html / 错题本.html / 面测.html / 面试题库.html)
+  ai-cap-3d.js        ?v=20260923b -> 个人中心.html, 设置.html
+  ai-cap-audio.js     ?v=20260920c -> 36页(同上群)
+  ai-cap-audio.js     ?v=20260923b -> 个人中心.html, 设置.html
+  ai-cap-embed.js     ?v=20260920c -> 36页(同上群)
+  ai-cap-embed.js     ?v=20260923b -> 个人中心.html, 设置.html
+  ai-cap-image.js     ?v=20260920c -> 36页(同上群)
+  ai-cap-image.js     ?v=20260923b -> 个人中心.html, 设置.html
+  ai-cap-registry.js  ?v=20260918c -> 35页
+  ai-cap-registry.js  ?v=20260918d -> blog_wechat.html
+  ai-cap-registry.js  ?v=20260923b -> 个人中心.html, 设置.html
+  ai-cap-translate.js ?v=20260920c -> 36页(同上群)
+  ai-cap-translate.js ?v=20260923b -> 个人中心.html, 设置.html
+  ai-cap-video.js     ?v=20260920c -> 36页(同上群)
+  ai-cap-video.js     ?v=20260923b -> 个人中心.html, 设置.html
+  ai-cap-vision.js    ?v=20260920c -> 36页(同上群)
+  ai-cap-vision.js    ?v=20260923b -> 个人中心.html, 设置.html
+  ai-config.js        ?v=20260920c -> _r6_preR4_AI.html, blog_wechat.html
+  ai-config.js        ?v=20260925a -> 36页(AI 相关群 + 个人中心/设置等)
+  ai-page.js          ?v=20260920e -> _r6_preR4_AI.html
+  ai-page.js          ?v=20260925a -> AI.html
+  ai-presets.js       ?v=20260916O -> 35页
+  ai-presets.js       ?v=20260923b -> 个人中心.html, 设置.html
+  ai-service.js       ?v=20260920e -> _r6_preR4_AI.html, blog_wechat.html
+  ai-service.js       ?v=20260925a -> 36页
+  api.js              ?v=20260922c -> _r6_preR4_AI.html, blog_wechat.html
+  api.js              ?v=20260924a -> 37页
+  app.js              ?v=20260922c -> _r6_preR4_AI.html
+  app.js              ?v=20260923a -> blog_wechat.html
+  app.js              ?v=20260925a -> 43页
+  common.css          ?v=20260920e -> _r6_preR4_AI.html
+  common.css          ?v=20260923a -> AI模拟面试.html, blog_wechat.html, 好友申请.html, 登录.html
+  common.css          ?v=20260923c -> 46页(含 live-location.html / 个人资料.html 等)
+  config.js           ?v=20260916O -> 42页
+  config.js           ?v=20260917  -> 个人资料.html
+  config.js           ?v=20260923b -> 个人中心.html, 设置.html
+  error-boundary.js   ?v=20260916O -> _r6_preR4_AI.html, blog_wechat.html
+  error-boundary.js   ?v=20260924a -> 43页
+  icon-map.js         ?v=20260919l -> _r6_preR4_AI.html
+  icon-map.js         ?v=20260923a -> 47页
+  icon-map.js         ?v=20260923b -> 个人中心.html, 设置.html
+  importer.js         ?v=20260917b -> 导入题库.html, 工具.html
+  importer.js         ?v=20260923b -> 设置.html
+  page-head.css       ?v=20260916O -> 40页
+  page-head.css       ?v=20260922a -> 协议.html, 数据管理.html, 日志.html
+  page-head.css       ?v=20260923b -> 个人中心.html, 设置.html
+  polish.css          ?v=20260916O -> 36页
+  polish.css          ?v=20260922a -> 协议.html, 数据管理.html, 日志.html
+  polish.css          ?v=20260923b -> 个人中心.html, 设置.html
+  qbank.js            ?v=20260916O -> 11页
+  qbank.js            ?v=20260923b -> 设置.html
+  quest.js            ?v=20260916O -> 11页
+  quest.js            ?v=20260923b -> 个人中心.html
+  states.css          ?v=20260916O -> 40页
+  states.css          ?v=20260922a -> 协议.html, 数据管理.html, 日志.html
+  states.css          ?v=20260923b -> 个人中心.html, 设置.html
+  xt-polyfill.js      ?v=20260916O -> 45页
+  xt-polyfill.js      ?v=20260922a -> 协议.html, 数据管理.html, 日志.html
+  xt-polyfill.js      ?v=20260923b -> 个人中心.html, 设置.html
+  xt-settings.js      ?v=20260922c -> 个人资料.html
+  xt-settings.js      ?v=20260923b -> 个人中心.html, 设置.html
+  xt-toast.js         ?v=20260916O -> _r6_preR4_AI.html
+  xt-toast.js         ?v=20260923a -> 42页
+  xt-toast.js         ?v=20260923b -> 个人中心.html, 设置.html
+============== 脚本原始输出（stdout）结束 ==============
+
+
+【二】多戳 / 异常戳清单（★ 需决策）
+--------------------------------------------------------------------------------
+共 27 个资产存在“同一资产、不同页面用了不同戳”的情况。按成因可归为三类：
+
+  A. R143 三项资产 —— 全部「单一戳」，一致，无需整改：
+     · chat-local.js      : 20260926b （仅 私聊.html）
+     · xt-profile.js      : 20260926c （仅 个人资料.html）
+     · xt-moments.css     : 20260926a （动态空间.html / 我的动态.html / 朋友圈发布.html，3 页同戳）
+     · xt-update.js       : 20260925a （关于.html / 更多.html / 更新.html，3 页同戳）
+
+  B. 非上线页面造成的多戳（_r6_preR4_AI.html、blog_wechat.html 属备份/博文页，
+     不参与本次发版；可忽略）：
+     ai-cap-registry.js(=20260918d 仅 blog_wechat)、ai-config.js(=20260920c)、
+     ai-page.js(=20260920e)、ai-service.js(=20260920e)、api.js(=20260922c)、
+     app.js(=20260922c / 20260923a)、common.css(=20260920e)、
+     error-boundary.js(=20260916O)、icon-map.js(=20260919l)、xt-toast.js(=20260916O)
+
+  C. 上线页面间的多戳（主要成因：个人中心.html / 设置.html 两个「子页壳」
+     长期停留在旧戳；另有 协议.html/数据管理.html/日志.html 一组、登录相关一组）。
+        这属于 R141/R140 遗留的历史状态，并非 R143 引入。明细：
+     · ai-cap-3d.js       : 20260922a(36页) vs 20260923b(个人中心/设置)
+     · ai-cap-audio.js    : 20260920c(36页) vs 20260923b(个人中心/设置)
+     · ai-cap-embed.js    : 20260920c(36页) vs 20260923b(个人中心/设置)
+     · ai-cap-image.js    : 20260920c(36页) vs 20260923b(个人中心/设置)
+     · ai-cap-registry.js : 20260918c(35页) vs 20260923b(个人中心/设置)
+     · ai-cap-translate.js: 20260920c(36页) vs 20260923b(个人中心/设置)
+     · ai-cap-video.js    : 20260920c(36页) vs 20260923b(个人中心/设置)
+     · ai-cap-vision.js   : 20260920c(36页) vs 20260923b(个人中心/设置)
+     · ai-config.js       : 20260920c(2页) vs 20260925a(36页)
+     · ai-presets.js      : 20260916O(35页) vs 20260923b(个人中心/设置)
+     · ai-service.js      : 20260920e(2页) vs 20260925a(36页)
+     · api.js             : 20260922c(2页) vs 20260924a(37页)
+     · app.js             : 20260922c(1) / 20260923a(1) / 20260925a(43)
+     · common.css         : 20260920e(1) / 20260923a(4) / 20260923c(46)
+     · config.js          : 20260916O(42) / 20260917(个人资料) / 20260923b(个人中心/设置)
+     · error-boundary.js  : 20260916O(2) / 20260924a(43)
+     · icon-map.js        : 20260919l(1) / 20260923a(47) / 20260923b(2)
+     · importer.js        : 20260917b(2) / 20260923b(设置)
+     · page-head.css      : 20260916O(40) / 20260922a(协议/数据管理/日志) / 20260923b(个人中心/设置)
+     · polish.css         : 20260916O(36) / 20260922a(协议/数据管理/日志) / 20260923b(个人中心/设置)
+     · qbank.js           : 20260916O(11) / 20260923b(设置)
+     · quest.js           : 20260916O(11) / 20260923b(个人中心)
+     · states.css         : 20260916O(40) / 20260922a(协议/数据管理/日志) / 20260923b(个人中心/设置)
+     · xt-polyfill.js     : 20260916O(45) / 20260922a(协议/数据管理/日志) / 20260923b(个人中心/设置)
+     · xt-settings.js     : 20260922c(个人资料) / 20260923b(个人中心/设置)
+     · xt-toast.js        : 20260916O(1) / 20260923a(42) / 20260923b(2)
+
+  ⚠ 风险判断（供 team-lead 决策）：
+     · 若判定口径是“同一资产内容变更后，所有引用页必须统一到最新戳”，
+       则 C 类全部为待修项；
+     · 但从历史看，个人中心.html / 设置.html 长期独立停留在 20260923b，
+       属既有约定/历史遗留，R143 本身未触碰这些资产；是否随 1.41 一并统一由 team-lead 拍板。
+     · 本次 R143 明确涉及的三项资产（chat-local.js / xt-profile.js / xt-moments.css）
+       均为单一戳，本身一致。
+
+
+【三】R143 三项资产的“引用页 + 戳值”精确清单
+--------------------------------------------------------------------------------
+  assets/chat-local.js   ?v=20260926b
+      → 私聊.html            第488行： <script src="assets/chat-local.js?v=20260926b" defer></script>
+        （其余出现“chat-local.js”字样的仅为注释；tools/qa、tools/_r141_prod、备份/ 下为工具/备份页，非上线）
+
+  assets/xt-profile.js   ?v=20260926c
+      → 个人资料.html        第56行： <script src="assets/xt-profile.js?v=20260926c" defer></script>
+
+  assets/xt-moments.css  ?v=20260926a
+      → 动态空间.html        第12行： <link rel="stylesheet" href="assets/xt-moments.css?v=20260926a">
+      → 我的动态.html        第12行： <link rel="stylesheet" href="assets/xt-moments.css?v=20260926a">
+      → 朋友圈发布.html      第12行： <link rel="stylesheet" href="assets/xt-moments.css?v=20260926a">
+
+
+【四】发版必改文件与精确字符串
+--------------------------------------------------------------------------------
+4.1  server/routers/version.json —— 完整当前内容（原样）
+--------------------------------------------------------------------------------
+{
+  "version": "1.40",
+  "versionCode": 41,
+  "apkFileName": "星途-1.40.apk",
+  "notes": [
+    "新增：AI 模型全面升级 —— 接入豆包 Seedream 5.0 图片生成、Seedance 视频生成、Hyper3D 3D 生成、Doubao-Seed-2.1-Pro 等新模型，额度用完后自动从列表隐藏",
+    "重要：服务端已部署专属网络中转 —— Google Gemini、OpenRouter 等原需自己挂代理才能用的海外大模型，现在打开 App 即可直接使用，手机无需任何设置",
+    "修复：日志页「一键上报」始终失败（提示「上报失败 HTTP 0」）的问题；日志时间改为按设备本地时间显示（此前显示的是世界时，慢了 8 小时）",
+    "修复：用过一次语音输入 / 跟读后，麦克风被一直占用，导致之后各页面都无法再用麦克风的问题",
+    "新增：无领导小组讨论（AI 实战）接入 AI 对练，AI 会扮演其他考生发言，并支持整屏沉浸式讨论",
+    "提示：旧头像在其它页面仍有缓存，请重新更换一次头像，新头像才会全站生效",
+    "本次还优化了「i人伙伴团」对话布局、页面顶部安全区与返回逻辑，详见下方更新日志 v1.40"
+  ],
+  "changelog": [
+    { "version": "v1.40", "date": "2026-09-21", "notes": [ ...31 条... ] },
+    { "version": "v1.39", "date": "2026-09-21", "notes": [ ... ] },
+    { "version": "v1.38", "date": "2026-09-20", ... },
+    ... 直到 v2.0 ...
+  ],
+  "publishedAt": "2026-09-21T19:02:52+08:00",
+  "forced": false
+}
+
+※ 结构说明：
+   - 顶层字段：version / versionCode / apkFileName / notes[] / changelog[] / publishedAt / forced
+   - changelog[] 为数组，元素结构：{ "version": "vX.Y", "date": "YYYY-MM-DD", "notes": [ "..." ] }
+   - 最新一条位于 changelog[0]（v1.40），发版时应在数组头部插入新的 v1.41 条目。
+   - notes[] 是「关于/更新页」展示的本次要点；每项为纯中文字符串。
+
+★ 三个待改字段的当前值：
+   version      = "1.40"                 → 应改为 "1.41"
+   versionCode  = 41                      → 应改为 42
+   apkFileName  = "星途-1.40.apk"        → 应改为 "星途-1.41.apk"
+
+4.2  协议.html —— agr-doc-version
+--------------------------------------------------------------------------------
+grep "agr-doc-version" 命中 2 处（均为文档正文行；另有 CSS 定义 .agr-doc-version 属样式，非版本行）：
+
+  ① 第88行（星途用户服务协议，用户协议）：
+     87:              <h2 style="margin-top:0">星途用户服务协议</h2>
+     88:              <div class="agr-doc-version">版本：V1.40 · 生效日期：2026-09-21</div>
+     89:
+
+  ② 第140行（星途隐私政策）：
+     139:              <h2 style="margin-top:0">星途隐私政策</h2>
+     140:              <div class="agr-doc-version">版本：V1.40 · 生效日期：2026-09-21 · 本平台服务器位于中华人民共和国境内</div>
+     141:
+
+  → 共 2 处实质性版本行：
+     · 用户协议（第88行）
+     · 隐私政策（第140行）
+  → 隐私政策那条尾部【带】「本平台服务器位于中华人民共和国境内」，用户协议那条【不带】。
+
+4.3  assets/xt-update.js —— CURRENT_VERSION 及引用页
+--------------------------------------------------------------------------------
+定义（第36行）：
+    var CURRENT_VERSION = '1.40';
+（第14行注释：CURRENT_VERSION 当前版本号字符串（★ 发版必须同步修改 ★））
+另：第42行  try { window.XT_VERSION = CURRENT_VERSION; }  （对外暴露单一版本来源）
+   第1065行 api.CURRENT_VERSION = CURRENT_VERSION;
+
+★ 当前值：'1.40'  → 应改为 '1.41'
+
+被以下 3 个根目录页面引用（戳一致，均为 20260925a）：
+   · 关于.html    第456行： <script src="assets/xt-update.js?v=20260925a"></script>
+   · 更多.html    第303行： <script src="assets/xt-update.js?v=20260925a" defer></script>
+   · 更新.html    第384行： <script src="assets/xt-update.js?v=20260925a" defer></script>
+（注：数据管理.html / 设置.html 已在早前版本移除 xt-update.js 引用，页内仅有注释说明。）
+
+  补充：关于.html 第462行存在兜底常量 '1.32'（xt-update.js 完全未加载时用），
+       与 CURRENT_VERSION 同值——发版时需一并核对是否同步（原文注释写“与 CURRENT_VERSION 同值”）。
+
+
+【五】android 打包与校验脚本
+--------------------------------------------------------------------------------
+均存在：
+  · android/build_apk.py            （存在）
+  · tools/qa/_r10_javac.py          （存在）
+  · tools/_r140_apk_verify.py       （存在）
+
+5.1  android/build_apk.py —— APK 打包（Python 版，替代 build-apk.sh）
+--------------------------------------------------------------------------------
+用法：直接运行，无需命令行参数。
+  python android/build_apk.py
+关键常量（脚本头部）：
+  BUILD = C:\Users\ATM\android-build
+  JDK   = <BUILD>\jdk\jdk-17.0.20.1+1          （JDK 17）
+  SDK   = <BUILD>\sdk ; BT = sdk\build-tools\34.0.0 ; android.jar = sdk\platforms\android-35\android.jar
+  ROOT  = D:\下载的文件\学习工作台
+  KEPT  = <ROOT>\android\workbench.keystore      （签名用 keystore）
+  FINAL_APK = <ROOT>\星途-安卓App.apk            （产物输出到此）
+  SIGNED    = <临时目录>\app-signed.apk
+流程：创建临时工作目录 → 拷贝 assets/data → 编译资源 → javac → d8 dex →
+      打包 → zipalign → 用 workbench.keystore 签名 → 输出到 星途-安卓App.apk。
+产出： D:\下载的文件\学习工作台\星途-安卓App.apk
+⚠ 本次未运行（按要求只读）。发版时产物名可能需重命名为 星途-1.41.apk 再上传。
+
+5.2  tools/qa/_r10_javac.py —— 安卓线 javac 全树编译校验
+--------------------------------------------------------------------------------
+用法：直接运行，无需参数。
+  python tools/qa/_r10_javac.py
+做法：JDK17 + android-35 android.jar + 生成 R.java 桩 + ASCII 临时目录 + sourcepath，
+      对 <ROOT>\android\java 全树编译（复制源码、忽略 *.bak*）。
+产出：仅打印（不产出 APK，不改源码）；期望 javac exit=0。
+用途：R10 安卓改动后的静态编译门禁（例如本次 MainActivity.java 的改动）。
+
+5.3  tools/_r140_apk_verify.py —— APK 包内硬断言
+--------------------------------------------------------------------------------
+用法：直接运行，无需参数（读取固定路径的已构建 APK）。
+  python tools/_r140_apk_verify.py
+读取： APK = <ROOT>\星途-安卓App.apk ; AAPT2 = C:\Users\ATM\android-build\sdk\build-tools\34.0.0\aapt2.exe
+校验项（脚本注释 A–H）：
+  A 版本： aapt2 dump badging → versionCode=41 / versionName=1.40
+  B 白名单： build_apk.REQUIRED_ASSETS 全部在包内
+  C 页面： 包内 HTML 数量 + 关键新页（日志.html/更新.html/关于.html）
+  D 内容： 包内 xt-update.js CURRENT_VERSION='1.40'
+  E 安全： 包内所有 .js 零明文 Gemini key（AQ. / AIza）
+  F 新模型： ai-config.js 含 ark-seedream-5-0 / ark-hyper3d-gen2 / ark-seedance-1-0-pro
+  G 戳：    面测.html=20260925b、日志.html=20260925d、关于.html 的 xt-update.js=20260925a
+  H resources.arsc 必须 STORED 且 4 字节对齐
+产出：仅打印 PASS/FAIL（不改文件）。
+⚠ 该脚本的期望值写死为 1.40/41，发版 1.41 时需相应更新期望（versionCode→42、versionName→1.41、
+   D 项 CURRENT_VERSION→1.41）后才能作为 1.41 的门禁。
+
+
+【六】git 工作树状态（只读）
+--------------------------------------------------------------------------------
+命令： git -C "D:\下载的文件\学习工作台" status --porcelain
+      git -C "D:\下载的文件\学习工作台" log --oneline -3
+
+---- git status --porcelain（已跟踪文件的改动）----
+ M android/java/com/study/workbench/MainActivity.java
+ M assets/chat-local.js
+ M assets/xt-profile.js
+ M 个人资料.html
+ M 私聊.html
+（其余大量 ?? 未跟踪文件为历史发版脚本/报告/备份目录/临时产物，非本次改动重点）
+
+★ 已跟踪改动文件清单（5 个）：
+   - android/java/com/study/workbench/MainActivity.java   （安卓壳：移除 onProgressChanged 内 showProgress / ensureProgressBar）
+   - assets/chat-local.js                                  （前端资产）
+   - assets/xt-profile.js                                  （前端资产）
+   - 个人资料.html                                         （引用页：xt-profile.js 戳 → 20260926c）
+   - 私聊.html                                             （引用页：chat-local.js 戳 → 20260926b）
+
+---- git log --oneline -3 ----
+2713813 R141 + R142：个人信息「用户ID」改为「账号」（= 注册/登录账号），日志入口迁到个人中心
+21fecf4 安全：推送前中和 index 里残留的真实密钥片段
+b9c0027 发版 1.40（versionCode 41）+ 网页端与 APK 同步上线
+
+（HEAD = 2713813；线上当前版本 1.40 / versionCode 41。）
+
+
+================================================================================
+报告结束
+================================================================================

@@ -1,0 +1,25 @@
+{
+ "errs": [],
+ "sortCat_options": 13,
+ "sortCat_optgroups": 6,
+ "lastSort": {
+  "mode": "cat",
+  "catKey": "video",
+  "innerMode": ""
+ },
+ "hideUnavailable": true,
+ "order": [
+  "ark-seedance-1-5-pro",
+  "glm-4.7",
+  "sf-bge-m3"
+ ],
+ "retire_badge_in_list": true,
+ "retire_badge_in_intro": true,
+ "intro_has_sec_what": true,
+ "intro_has_sec_ability": true,
+ "intro_has_sec_how": true,
+ "intro_has_sec_cost": true,
+ "intro_has_sec_advice": true,
+ "intro_sec_count": 12,
+ "sortpreview_has_badge": true
+}

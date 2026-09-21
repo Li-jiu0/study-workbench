@@ -1,0 +1,356 @@
+{
+  "total": 70,
+  "pass": 50,
+  "results": [
+    {
+      "name": "B3-1.0 xt-moments.js 可在 jsdom 中加载并暴露 XTM",
+      "pass": true,
+      "detail": "err="
+    },
+    {
+      "name": "B3-1.1 #xtmLocBtn 存在",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-1.2 #xtmAtBtn 存在",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-1.3 #xtmLocBtn 发起整页跳转（nav 非空）",
+      "pass": false,
+      "detail": "[]"
+    },
+    {
+      "name": "B3-1.4 #xtmAtBtn 发起整页跳转（nav 非空）",
+      "pass": false,
+      "detail": "[]"
+    },
+    {
+      "name": "B3-1.5-loc URL 含 地区选择.html",
+      "pass": false,
+      "detail": ""
+    },
+    {
+      "name": "B3-1.6-loc URL 含 cur=",
+      "pass": false,
+      "detail": ""
+    },
+    {
+      "name": "B3-1.7-loc URL 含 back=",
+      "pass": false,
+      "detail": ""
+    },
+    {
+      "name": "B3-1.8-loc back 值为 朋友圈发布.html",
+      "pass": false,
+      "detail": ""
+    },
+    {
+      "name": "B3-1.5-at URL 含 地区选择.html",
+      "pass": false,
+      "detail": ""
+    },
+    {
+      "name": "B3-1.6-at URL 含 cur=",
+      "pass": false,
+      "detail": ""
+    },
+    {
+      "name": "B3-1.7-at URL 含 back=",
+      "pass": false,
+      "detail": ""
+    },
+    {
+      "name": "B3-1.8-at back 值为 朋友圈发布.html",
+      "pass": false,
+      "detail": ""
+    },
+    {
+      "name": "B3-2.1 地区选择.html 默认 back = 个人中心.html",
+      "pass": true,
+      "detail": "个人中心.html"
+    },
+    {
+      "name": "B3-2.2 goBack 使用 state.back 跳转",
+      "pass": false,
+      "detail": ""
+    },
+    {
+      "name": "B3-2.3 goBack 用 location.replace(state.back)",
+      "pass": false,
+      "detail": ""
+    },
+    {
+      "name": "B3-2.4 从 URL 读 back 并写入 state.back（闭环成立）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-2R.1 goBack() 真的跳回 朋友圈发布.html（非默认 个人中心.html）",
+      "pass": true,
+      "detail": "replaced=null href=http://localhost/%E5%9C%B0%E5%8C%BA%E9%80%89%E6%8B%A9.html?back=%E6%9C%8B%E5%8F%8B%E5%9C%88%E5%8F%91%E5%B8%83.html"
+    },
+    {
+      "name": "B3-2R.2 goBack() 未跳向默认的 个人中心.html",
+      "pass": true,
+      "detail": "replaced=null"
+    },
+    {
+      "name": "B3-3.1 跳转被拒 → 降级到 openPicker",
+      "pass": false,
+      "detail": ""
+    },
+    {
+      "name": "B3-3.2 降级过程不抛异常",
+      "pass": false,
+      "detail": "d.getElementById(...).onclick is not a function"
+    },
+    {
+      "name": "B3-3.3 openPicker 抛异常被吞掉，未冒泡到调用方",
+      "pass": false,
+      "detail": "d.getElementById(...).onclick is not a function"
+    },
+    {
+      "name": "B3-3.4 降级到本页输入层（出现 sheet 节点或至少不白屏）",
+      "pass": false,
+      "detail": "未找到 sheet 节点"
+    },
+    {
+      "name": "B3-3.5 双降级都不抛异常",
+      "pass": false,
+      "detail": "d.getElementById(...).onclick is not a function"
+    },
+    {
+      "name": "B3-4.1 新鲜回写值被消费后 key 被删除",
+      "pass": false,
+      "detail": "\"{\\\"text\\\":\\\"R90省R90市\\\",\\\"ts\\\":1789733003209}\""
+    },
+    {
+      "name": "B3-4.2 值写入位置显示区",
+      "pass": false,
+      "detail": "\"位置\""
+    },
+    {
+      "name": "B3-4.3 无 key 时位置显示不残留旧值",
+      "pass": true,
+      "detail": "\"位置\""
+    },
+    {
+      "name": "B3-4.4 TTL 过期值被拒绝（不写入显示区）",
+      "pass": true,
+      "detail": "\"位置\""
+    },
+    {
+      "name": "B3-4.5 畸形 JSON 不抛异常且不写入显示区",
+      "pass": true,
+      "detail": "显示=\"位置\""
+    },
+    {
+      "name": "B3-4.6 畸形 JSON 加载不抛异常",
+      "pass": true,
+      "detail": "null"
+    },
+    {
+      "name": "B3-5.1 #xtmFileImg 在位",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-5.2 #xtmFileVid 在位",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-5.3 #xtmCancel 与 #xtmSubmit 在位",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-5.4 #xtmLocBtn 与 #xtmAtBtn 在位",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B3-5.5 字节数 == 12612（任务书期望未改）",
+      "pass": true,
+      "detail": "实测 12612（差 0）"
+    },
+    {
+      "name": "B4-1.1 旧文案已删除: 本机记录 × 服务端累计 · 按今日次数 /…",
+      "pass": true,
+      "detail": "命中=0"
+    },
+    {
+      "name": "B4-1.2 旧文案已删除: 账号级共享额度，非本机…",
+      "pass": true,
+      "detail": "命中=0"
+    },
+    {
+      "name": "B4-1.3 旧文案已删除: 逐模型一行，不聚合；排序 / 高亮 / 筛选…",
+      "pass": true,
+      "detail": "命中=0"
+    },
+    {
+      "name": "B4-1.4 旧文案已删除: 排序方式（剩余可用量口径）…",
+      "pass": true,
+      "detail": "命中=0"
+    },
+    {
+      "name": "B4-1.5 旧文案已删除: 筛选（按剩余可用量）…",
+      "pass": true,
+      "detail": "命中=0"
+    },
+    {
+      "name": "B4-2.1 「排序方式」出现 2 处（L870 sublabel + L890 sublabel）",
+      "pass": false,
+      "detail": "实测 3"
+    },
+    {
+      "name": "B4-2.2 未被误改：仍有「排序方式」文案",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B4-2.3 UsageSortSel 的 aria-label 仍是「排序方式」（未被误改）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B4-2.4 已无「排序方式（剩余可用量口径）」残留",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B4-2.5 「筛选」文案存在（原「筛选（按剩余可用量）」已改）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B4-3.1 skeleton 源码 div 标签计数不出现「闭合数 < 开标签数」的硬伤",
+      "pass": true,
+      "detail": "open=47 close=47"
+    },
+    {
+      "name": "B4-3R.1 xt-aiusage.js 可加载（无语法/立即执行异常）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B4-4.UsageClearBtn 源码中存在",
+      "pass": true,
+      "detail": "id= 字面出现 1 次"
+    },
+    {
+      "name": "B4-4.UsageClearTxt 源码中存在",
+      "pass": true,
+      "detail": "id= 字面出现 1 次"
+    },
+    {
+      "name": "B4-4.UsageEmpty 源码中存在",
+      "pass": true,
+      "detail": "id= 字面出现 1 次"
+    },
+    {
+      "name": "B4-4.UsageModelList 源码中存在",
+      "pass": true,
+      "detail": "id= 字面出现 1 次"
+    },
+    {
+      "name": "B4-4.UsageQuotaSortBar 源码中存在",
+      "pass": true,
+      "detail": "id= 字面出现 1 次"
+    },
+    {
+      "name": "B4-4.UsageQuotaFilterBar 源码中存在",
+      "pass": true,
+      "detail": "id= 字面出现 1 次"
+    },
+    {
+      "name": "B4-4.UsageDetailList 源码中存在",
+      "pass": true,
+      "detail": "id= 字面出现 1 次"
+    },
+    {
+      "name": "B4-4.UsageExportBtn 源码中存在",
+      "pass": true,
+      "detail": "id= 字面出现 1 次"
+    },
+    {
+      "name": "B4-4.UsageRangeBar 源码中存在",
+      "pass": true,
+      "detail": "id= 字面出现 1 次"
+    },
+    {
+      "name": "B4-4.UsageClearHead 源码中存在",
+      "pass": true,
+      "detail": "id= 字面出现 1 次"
+    },
+    {
+      "name": "B4-4.UsageQuotaFilterToggle 源码中存在",
+      "pass": true,
+      "detail": "id= 字面出现 1 次"
+    },
+    {
+      "name": "B4-4.UsageSortSel 源码中存在",
+      "pass": true,
+      "detail": "id= 字面出现 1 次"
+    },
+    {
+      "name": "B4-4.X 任务书所述 UsageSortBar 实际名为 UsageSortSel（排序控件未被删）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B4-5.1 bindClear 存在",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B4-5.2 disarmClear 存在（防误触核心）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B4-5.3 清空按钮已改造为折叠（bindClearFold 存在）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B4-5.4 防误触逻辑保留：clearArmed 两段式",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B4-5.5 第一次点击只武装（文案变「再点一次确认清空」）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B4-5.6 武装后超时自动解除（disarmClear 被 setTimeout 调用）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B4-5.7 折叠区默认收起（aria-expanded=\"false\"）",
+      "pass": true,
+      "detail": "<button type=\"button\" class=\"xt-us-clear-head\" id=\"UsageClearHead\" aria-expanded=\"false\">"
+    },
+    {
+      "name": "B4-5.8 UsageClearBtn 在展开体内（.xt-us-clear-body 紧随 head）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B4-5.9 bindClear 仍用 byId 取 #UsageClearBtn（结构改造后不失配）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B4-5.10 折叠切换：className 加/去 open + aria-expanded 同步",
+      "pass": true,
+      "detail": ""
+    }
+  ]
+}

@@ -1,0 +1,288 @@
+############ 1) 超长行里的 gotoChat 上下文 ############
+== 个人中心.html L137  len=1574  gotoChat次数=1
+   ...tem" data-page="moments"> <span class="nav-icon" data-icon="rss"></span><span>动态空间</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="boo...
+
+== 动态空间.html L40  len=1668  gotoChat次数=1
+   ...r(--primary),var(--accent));color:#fff;border-radius:10px"> <span class="nav-icon" data-icon="rss"></span><span>动态空间</span> </div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="boo...
+
+== 我的动态.html L20  len=1668  gotoChat次数=1
+   ...r(--primary),var(--accent));color:#fff;border-radius:10px"> <span class="nav-icon" data-icon="rss"></span><span>动态空间</span> </div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="boo...
+
+== 朋友圈发布.html L20  len=1668  gotoChat次数=1
+   ...r(--primary),var(--accent));color:#fff;border-radius:10px"> <span class="nav-icon" data-icon="rss"></span><span>动态空间</span> </div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="boo...
+
+== 私聊.html L92  len=1490  gotoChat次数=1
+   ...tem" data-page="moments"> <span class="nav-icon" data-icon="rss"></span><span>动态空间</span> </div> <div class="nav-section">互动</div> <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）"> <span class="nav-icon" data-icon="users"></span><span>好友</span> </div> <div class="nav-section">中心</div> <div class="nav-item" data-page="wrong-book"> <span class="nav-icon" data-icon="boo...
+
+== 设置.html L62  len=138  gotoChat次数=1
+   ...      <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）" data-page-node-id="aRHuZziE37CzDXzVSpuzLp">...
+
+############ 2) bottom-nav-item 多行写法 ############
+----- 关于.html  L270..L285   [bottom-nav]
+  270|   <nav class="bottom-nav">
+  271|     <div class="bottom-nav-list">
+  272|       <div class="bottom-nav-item" onclick="location.href='学习工作台.html'">
+  273|         <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
+  274|       </div>
+  275|       <div class="bottom-nav-item" onclick="gotoChat()">
+  276|         <div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div>
+  277|       </div>
+  278|       <div class="bottom-nav-item" onclick="openBlogProfile()">
+  279|         <div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div>
+  280|       </div>
+  281|       <div class="bottom-nav-item" onclick="location.href='AI.html'">
+  282|         <div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div>
+  283|       </div>
+  284|       <div class="bottom-nav-item active" onclick="location.href='更多.html'">
+  285|         <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
+
+----- 学习概括.html  L303..L316   [bottom-nav]
+  303|   <nav class="bottom-nav">
+  304|     <div class="bottom-nav-list">
+  305|       <div class="bottom-nav-item" onclick="location.href='学习工作台.html'">
+  306|         <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
+  307|       </div>
+  308|       <div class="bottom-nav-item" onclick="gotoChat()">
+  309|         <div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div>
+  310|       </div>
+  311|       <div class="bottom-nav-item" onclick="openBlogProfile()">
+  312|         <div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div>
+  313|       </div>
+  314|       <div class="bottom-nav-item" onclick="location.href='AI.html'">
+  315|         <div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div>
+  316|       </div>
+
+----- 赞助.html  L193..L206   [bottom-nav]
+  193|   <nav class="bottom-nav">
+  194|     <div class="bottom-nav-list">
+  195|       <div class="bottom-nav-item" onclick="location.href='学习工作台.html'">
+  196|         <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
+  197|       </div>
+  198|       <div class="bottom-nav-item" onclick="gotoChat()">
+  199|         <div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div>
+  200|       </div>
+  201|       <div class="bottom-nav-item" onclick="openBlogProfile()">
+  202|         <div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div>
+  203|       </div>
+  204|       <div class="bottom-nav-item" onclick="location.href='AI.html'">
+  205|         <div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div>
+  206|       </div>
+
+----- 更新.html  L203..L216   [bottom-nav]
+  203|   <nav class="bottom-nav">
+  204|     <div class="bottom-nav-list">
+  205|       <div class="bottom-nav-item" onclick="location.href='学习工作台.html'">
+  206|         <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
+  207|       </div>
+  208|       <div class="bottom-nav-item" onclick="gotoChat()">
+  209|         <div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div>
+  210|       </div>
+  211|       <div class="bottom-nav-item" onclick="openBlogProfile()">
+  212|         <div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div>
+  213|       </div>
+  214|       <div class="bottom-nav-item" onclick="location.href='AI.html'">
+  215|         <div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div>
+  216|       </div>
+
+############ 3) 设置.html 候选点 ############
+----- 设置.html  L688..L694   [st-quick-it 快捷工具]
+  688|               <button class="st-quick-it" onclick="openImporter()" data-page-node-id="ktNGYLWUAT12GwDjLmC98D"><span class="sq-ic" data-page-node-id="BqfxQ0BEzXLYboGHEoZ0jf" data-icon="inbox" data-icon-size="16"></span>导入题库</button>
+  689|               <button class="st-quick-it" onclick="openFocusTimer()" data-page-node-id="MbONyy1dnrSLi2NxZEwFhr"><span class="sq-ic" data-page-node-id="nAfgSM9UgUrpWjvS6YUEba" data-icon="clock" data-icon-size="16"></span>专注计时</button>
+  690|               <button class="st-quick-it" onclick="openBlogStats()" data-page-node-id="6oFa7YzjMZVaew2IdC0EHL"><span class="sq-ic" data-page-node-id="1FqvhtNlrqAYclQDNnA994" data-icon="chart-bar" data-icon-size="16"></span>学习统计</button>
+  691|               <button class="st-quick-it" onclick="gotoChat()" data-page-node-id="LfJXwWr8Syn7tvQOmdyf9R"><span class="sq-ic" data-page-node-id="jDCMH1PciHiJXbPqrGjXHa" data-icon="message-circle" data-icon-size="16"></span>好友私信</button>
+  692|             </div>
+  693|           </div>
+  694|         </div>
+
+----- 设置.html  L418..L423   [通知描述]
+  418|           <div class="setting-row" data-page-node-id="3klQicnx1f44TmhXB4LU5w">
+  419|             <div class="setting-info" data-page-node-id="zQYS674kPEeojADV0Z1Rln">
+  420|               <div class="setting-name" data-page-node-id="1oXVKZKw4xgiqaXNoCLBgS">新私信提醒</div>
+  421|               <div class="setting-desc" data-page-node-id="7bpW0nvVNJ8tjDqeOfd2oH">在线登录后，收到好友新私信时给出网页提示（需允许通知权限）</div>
+  422|             </div>
+  423|             <div class="setting-actions" id="swChatNotify" data-page-node-id="T5xYIisV2ScKmIKUFke0iB">
+
+----- 设置.html  L510..L516   [FAQ]
+  510|           <div class="fb-faq" id="fbFaq">
+  511|             <div class="fb-faq-item">
+  512|               <div class="fb-faq-q" onclick="fbToggleFaq(this)"><span class="nav-icon" data-icon="message-square" data-icon-size="16"></span> 消息发不出去怎么办？<span>▾</span></div>
+  513|               <div class="fb-faq-a">① 确认后端已启动（设置页右上角能收到通知说明在线）；② 只能与好友互发消息，先在「好友」页添加；③ 若被对方拉黑会提示「无法发送消息」。离线时聊天会自动切到本地演示模式。</div>
+  514|             </div>
+  515|             <div class="fb-faq-item">
+  516|               <div class="fb-faq-q" onclick="fbToggleFaq(this)"><span class="nav-icon" data-icon="image" data-icon-size="16"></span> 图片 / 头像不显示？<span>▾</span></div>
+
+----- 设置.html  L522..L527   [FAQ 数据存储]
+  522|             </div>
+  523|             <div class="fb-faq-item">
+  524|               <div class="fb-faq-q" onclick="fbToggleFaq(this)"><span class="nav-icon" data-icon="package" data-icon-size="16"></span> 换电脑 / 换浏览器数据还在吗？<span>▾</span></div>
+  525|               <div class="fb-faq-a">发贴、好友、消息存在服务器，登录即恢复；词汇进度、错题本等学习数据保存在本机，可在「数据管理」导出 JSON 备份后导入新设备。</div>
+  526|             </div>
+  527|             <div class="fb-faq-item">
+
+----- 设置.html  L828..L836   [隐私注释]
+  828|         </section>
+  829| 
+  830|         <!-- 隐私与安全（T01 增量 2026-09-11；需求9 20260917 精简文案）：① 黑名单管理（真实走
+  831|              GET /api/friends/blocked 读取、DELETE /api/friends/block/{id} 移出，非本地假成功）
+  832|              ②「动态可见范围 / 谁可加我好友 / 能否被搜索到」三项可见性控件（读取 GET /api/auth/me，
+  833|              保存 PUT /api/users/me/privacy，见脚本 stSetMomentScope / stSetFriendPolicy / stSetSearchable）。 -->
+  834|         <section data-subpage="privacy">
+  835|         <div class="card privacy-card" id="privacyCard">
+  836|           <div class="card-header">
+
+----- 设置.html  L853..L870   [隐私控件]
+  853|               <div class="privacy-row-sub">谁可以看到你发布的动态（发布时按此范围收敛）</div>
+  854|             </div>
+  855|             <div class="privacy-row-ctrl">
+  856|               <select class="form-input privacy-select" id="stMomentScope" disabled onchange="stSetMomentScope(this.value)">
+  857|                 <option value="public">公开</option>
+  858|                 <option value="friends">仅好友</option>
+  859|                 <option value="private">仅自己</option>
+  860|               </select>
+  861|             </div>
+  862|           </div>
+  863|           <div class="privacy-row" id="privacyFriendPolicyRow">
+  864|             <div class="privacy-row-main">
+  865|               <div class="privacy-row-name">谁可以加我好友</div>
+  866|               <div class="privacy-row-sub">控制他人向你发起好友申请的权限</div>
+  867|             </div>
+  868|             <div class="privacy-row-ctrl">
+  869|               <select class="form-input privacy-select" id="stFriendPolicy" disabled onchange="stSetFriendPolicy(this.value)">
+  870|                 <option value="everyone">所有人可直接加（无需我同意）</option>
+
+----- 设置.html  L898..L904   [功能清单]
+  898|             <div style="font-size:var(--xt-font-md);font-weight:800;color:var(--text)" data-page-node-id="cebfOtFTEwudkshNDRmtpw"><span class="nav-icon" data-icon="rocket" data-icon-size="16"></span> 星途 · 学习工作台 v2.2 · 致追梦的人->修身</div>
+  899|             <div style="margin-top:6px" data-page-node-id="BKe1rLTpXIQ0FqOJ4JZE9P">一款面向在校生与求职者的<b data-page-node-id="UMbLDaqutazwD7WYrwd692">全流程学习与备考工具箱</b>：从日常打卡、词汇记忆到刷题模考、面试表达，再到 AI 辅助与社区互动，学习记录默认保存在本机浏览器；登录服务器后，发贴/私信/AI 记录可多端同步（数据库存服务器）。</div>
+  900|             <div style="margin-top:8px;font-weight:600;color:var(--text)" data-page-node-id="MjyN21aAMXf0HRWdcpw2ur"><span class="nav-icon" data-icon="inbox" data-icon-size="16"></span> 学习模块</div>
+  901|             <div data-page-node-id="mi6yoar3f5KakALoBUL75p">首页学习台(每日任务/专注计时/学习提醒) · 四级词汇(间隔重复) · 听说训练(情景口语/听力精听) · 英语(听力/口语/阅读/翻译) · 行测刷题 · 错题本 · 行测(企业定向库/时政热点/真题模考/话题表达训练) · 面试题库 · 表达 · 面测 · 演示(设计基础/版式库/案例拆解/实战模板) · 万能金句/场景话术 · 社区(发贴/评论/点赞) · 好友私信</div>
+  902|             <div style="margin-top:8px;font-weight:600;color:var(--text)" data-page-node-id="3Go179ureNmpTmQEArBbZo"><span class="nav-icon" data-icon="wrench" data-icon-size="16"></span> 便捷能力</div>
+  903|             <div data-page-node-id="vsfN2AkFnyTSLv1V5dZjUJ">导入题库(Word/Excel/文本选目标导入) · 各题库“我的题库”自建/导入导出 · AI(多模型/用量/记录/读发贴) · 学习统计 · 数据备份与迁移 · 发贴回收站 · Markdown 导出 · 外观(主题跟随系统+配色皮肤) · 数据总览 · 每日学习提醒 · 账号与隐私安全 · 反馈直达创作者</div>
+  904|             <div style="margin-top:10px;border-top:1px dashed var(--border);padding-top:8px;color:var(--text-muted);font-size:var(--xt-font-sm)" data-page-node-id="sA7LgG0fY7DvUL0lu3V6vv">版本 20260913k · 更新日期 2026-09-13：英语「听力训练」升级为页内面板（听力精听+口语跟读双模块，场景台词扩充）· 表达（案例拆解/i人伙伴团/角色扮演）、面测（面试准备/面试后）、演示（设计基础/实战
+
+----- 设置.html  L1981..L1987   [MOMENT_SCOPE_LABEL]
+  1981|    契约：momentVisibility ∈ public/friends/private；friendAllow ∈ everyone/need_confirm/nobody；searchable 为 bool。
+  1982|    保存失败 → 回滚 UI 到保存前的值 + toast，避免「UI 已改、后端没存」不一致。 */
+  1983| var privacyState = { loaded: false, enabled: false, current: { momentVisibility: 'public', friendAllow: 'need_confirm', searchable: true } };
+  1984| var MOMENT_SCOPE_LABEL = { public: '公开', friends: '仅好友', private: '仅自己' };
+  1985| var FRIEND_POLICY_LABEL = { everyone: '所有人可直接加', need_confirm: '需要我验证', nobody: '不允许任何人' };
+  1986| 
+  1987| function stRenderSearchable(on) {
+
+############ 4) 关于.html ab-chip ############
+----- 关于.html  L188..L200   [ab-chip]
+  188|               <span class="ab-chip">面试题库</span>
+  189|               <span class="ab-chip">AI 模拟面试</span>
+  190|               <span class="ab-chip">时政热点</span>
+  191|               <span class="ab-chip">表达</span>
+  192|               <span class="ab-chip">商务礼仪</span>
+  193|               <span class="ab-chip">我的文件</span>
+  194|               <span class="ab-chip">万能金句 / 场景话术</span>
+  195|               <span class="ab-chip">动态社区</span>
+  196|               <span class="ab-chip">好友私信</span>
+  197|             </div>
+  198|           </div>
+  199| 
+  200|           <div class="ab-card">
+
+############ 5) 个人中心.html ############
+----- 个人中心.html  L580..L590   [通知描述]
+  580|             '</select>' +
+  581|           '</div>' +
+  582|         '</div>',
+  583|         '<div class="pf-pref-row">' +
+  584|           '<div class="pf-pref-info"><div class="pf-pref-name">' + pfPrefIcon('bell') + '新私信提醒</div>' +
+  585|           '<div class="pf-pref-desc">在线登录后，收到好友新私信时给出网页提示（需允许通知权限）</div></div>' +
+  586|           '<div class="pf-pref-actions">' +
+  587|             '<button type="button" class="theme-option' + (st.chatNotify !== false ? ' active' : '') + '" onclick="pfSetPref(\'chatNotify\', true)">开启</button>' +
+  588|             '<button type="button" class="theme-option' + (st.chatNotify !== false ? '' : ' active') + '" onclick="pfSetPref(\'chatNotify\', false)">关闭</button>' +
+  589|           '</div>' +
+  590|         '</div>'
+
+############ 6) 全部「加好友」出现点 (根目录 *.html) ############
+  好友申请.html L6| ...<title>添加好友 · 星途</title>...
+  好友申请.html L47| ...a-page-node-id="7s49AzquiJN8MifzFZOXQU"><span data-icon="plus" data-icon-size="18" style="vertical-align:-3px"></span> 添加好友</div>...
+  好友申请.html L114| ...      else act = '<button class="af-btn" onclick="addFriend(' + u.id + ',' + i + ')" id="addBtn' + i + '">➕ 添加好友</button>';...
+  好友申请.html L133| ...    if (!tok()) { box.innerHTML = '<div class="af-empty">🔒 请先<a href="登录.html" style="color:var(--primary)">登录</a>后使用添加好友功能</div>'; return; }...
+  私聊.html L122| ...            <!-- C1 20260913k：五 tab 顺序不变（会话→好友→群聊→申请→加好友）；「群聊」「加好友」由弹窗改为 tab 页面视图（onclick 改 imSwitchTab，原弹窗函数保留供面板复用） -->...
+  私聊.html L122| ...            <!-- C1 20260913k：五 tab 顺序不变（会话→好友→群聊→申请→加好友）；「群聊」「加好友」由弹窗改为 tab 页面视图（onclick 改 imSwitchTab，原弹窗函数保留供面板复用） -->...
+  私聊.html L128| ...            <button class="im-tab im-tab-add" data-tab="addfriend" onclick="imSwitchTab('addfriend')" title="搜索用户名/昵称添加好友">添加好友</button>...
+  私聊.html L128| ...        <button class="im-tab im-tab-add" data-tab="addfriend" onclick="imSwitchTab('addfriend')" title="搜索用户名/昵称添加好友">添加好友</button>...
+  私聊.html L141| ...        <!-- C1 20260913k：「群聊」「加好友」tab 面板宿主（原弹窗节点由页尾脚本整体搬入，id 不变，chat-local.js 弹窗函数照常按 id 命中） -->...
+  私聊.html L304| ...  <!-- ==================== 加好友模态（A3，2026-09-11；批次二 2026-09-11h 移除弹窗内「旧页回退」入口） ====================...
+  私聊.html L360| ...  /* R33（20260913r）：tab 视觉统一——去掉 .im-tab-add 的特殊填充/加粗与专属 hover，加好友与其余 4 个 tab 同享 .im-tab/.im-tab.active；“im-tab-add” 类保留在 DOM 仅作语义标记，无样式副作用 */...
+  私聊.html L381| ...  /* C1 20260913k：「群聊」「加好友」tab 页面视图——弹窗节点搬入侧栏面板宿主后取消浮层定位，随 tab 显隐 */...
+  私聊.html L386| ...  /* 2026-09-15 批次八：「加好友」已拆掉弹窗外壳，改为页面内区块（ADR-3）；...
+  私聊.html L436| ...     【修法】改用 flex:1 1 auto + 内容自适应宽度，短文案（加好友）不再被拉宽，...
+  私聊.html L531| .../* C1 20260913k：「加好友」「群聊」入口由弹窗改为 tab 页面视图。...
+
+加好友 总出现次数 = 15
+############ 7) 社区.html 分享区 ############
+----- 社区.html  L588..L612   [分享注释]
+  588| })();
+  589| </script>
+  590| <script>
+  591| /* ===================================================================
+  592|    R55（20260914）：社区帖子分享 —— 复制链接 / 转发给好友 / 系统分享
+  593|    -------------------------------------------------------------------
+  594|    设计原则：不修改 app.js / api.js 中任何既有函数的内部实现，只在卡片渲染
+  595|    完成后向统计行（.note-body > .nc-actions，第一个）右侧「叠加」分享按钮。
+  596|    点赞 / 评论 / 浏览三个计数与卡片原有 onclick 打开详情的行为完全不变。
+  597| 
+  598|    兼容两套渲染器：
+  599|      · 本地模式 assets/app.js  renderBlogList()  —— 同步，id 形如 openBlogDetail('abc')
+  600|      · 在线模式 assets/api.js  renderBlogList()  —— 异步，id 形如 openBlogDetail(123)
+  601|    因此用 MutationObserver 监听两个 grid 的 childList，而不是包一层函数。
+  602| 
+  603|    【B 转发契约】写入 localStorage 键 study_workbench_share_forward_v1，
+  604|    再调用站内现成的 gotoChat()（assets/api.js）跳转私聊页；私聊页读取该键
+  605|    后即可把卡片渲染进输入框发送（读取侧不在本页实现范围）。
+  606|    【C 系统分享】navigator.share 不可用（如 file:// 协议）时自动回退到 A。
+  607|    =================================================================== */
+  608| (function () {
+  609|   var FWD_KEY = 'study_workbench_share_forward_v1';
+  610| 
+  611|   function toast(msg) { try { if (typeof showToast === 'function') showToast(msg); } catch (e) { } }
+  612| 
+
+----- 社区.html  L655..L695   [分享菜单]
+  655|   }
+  656|   function doCopy(id) {
+  657|     copyText(shareUrl(id)).then(function (ok) {
+  658|       toast(ok ? '🔗 帖子链接已复制，粘贴给同学吧～' : '⚠️ 复制失败，请手动复制地址栏链接');
+  659|     });
+  660|   }
+  661| 
+  662|   // ---- B 转发给好友 / 群：存卡片 → gotoChat()（在线校验由 gotoChat 负责）----
+  663|   function doForward(id) {
+  664|     var p = payload(id);
+  665|     try { localStorage.setItem(FWD_KEY, JSON.stringify(p)); } catch (e) { }
+  666|     var t = (p.title || '').slice(0, 12);
+  667|     toast('📨 已带上《' + (t || '这篇发贴') + '》卡片，去选好友 / 群发送');
+  668|     if (typeof gotoChat === 'function') gotoChat();
+  669|     else location.href = '私聊.html';
+  670|   }
+  671| 
+  672|   // ---- C 系统分享：不支持时回退 A ----
+  673|   function doSystem(id) {
+  674|     var p = payload(id);
+  675|     if (!navigator.share) { doCopy(id); return; }
+  676|     try {
+  677|       navigator.share({ title: p.title || '星途社区发贴', text: p.excerpt || p.title || '', url: p.url })
+  678|         .catch(function (err) { if (!err || err.name !== 'AbortError') doCopy(id); });
+  679|     } catch (e) { doCopy(id); }
+  680|   }
+  681| 
+  682|   // ---- 浮动小菜单（全页复用一个）----
+  683|   var menu = null, curId = '', curBtn = null;
+  684|   function ensureMenu() {
+  685|     if (menu) return menu;
+  686|     menu = document.createElement('div');
+  687|     menu.id = 'xtShareMenu';
+  688|     menu.className = 'xt-share-menu';
+  689|     menu.innerHTML =
+  690|       '<button type="button" class="xt-share-item" data-act="copy"><span class="nav-icon" data-icon="clipboard" data-icon-size="14"></span>复制链接</button>' +
+  691|       '<button type="button" class="xt-share-item" data-act="forward"><span class="nav-icon" data-icon="users" data-icon-size="14"></span>转发给好友 / 群</button>' +
+  692|       '<button type="button" class="xt-share-item" data-act="system"><span class="nav-icon" data-icon="smartphone" data-icon-size="14"></span>系统分享</button>';
+  693|     document.body.appendChild(menu);
+  694|     menu.addEventListener('click', function (e) {
+  695|       var it = e.target.closest ? e.target.closest('.xt-share-item') : null;

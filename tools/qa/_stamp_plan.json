@@ -1,0 +1,413 @@
+[
+  {
+    "asset": "common.css",
+    "path": "assets/common.css",
+    "mtime": "2026-09-18 18:51:23",
+    "this_batch": true,
+    "stamps": [
+      "20260917b"
+    ],
+    "page_total": 46,
+    "page_map": {
+      "20260917b": 46
+    }
+  },
+  {
+    "asset": "xt-profile.css",
+    "path": "assets/xt-profile.css",
+    "mtime": "2026-09-18 18:52:04",
+    "this_batch": true,
+    "stamps": [
+      "20260917b"
+    ],
+    "page_total": 1,
+    "page_map": {
+      "20260917b": 1
+    }
+  },
+  {
+    "asset": "xt-update.js",
+    "path": "assets/xt-update.js",
+    "mtime": "2026-09-18 18:52:53",
+    "this_batch": true,
+    "stamps": [
+      "20260918c"
+    ],
+    "page_total": 3,
+    "page_map": {
+      "20260918c": 3
+    }
+  },
+  {
+    "asset": "xt-moments.js",
+    "path": "assets/xt-moments.js",
+    "mtime": "2026-09-18 18:53:14",
+    "this_batch": true,
+    "stamps": [
+      "20260917b"
+    ],
+    "page_total": 3,
+    "page_map": {
+      "20260917b": 3
+    }
+  },
+  {
+    "asset": "xt-profile.js",
+    "path": "assets/xt-profile.js",
+    "mtime": "2026-09-18 18:54:21",
+    "this_batch": true,
+    "stamps": [
+      "20260917b"
+    ],
+    "page_total": 1,
+    "page_map": {
+      "20260917b": 1
+    }
+  },
+  {
+    "asset": "ai-service.js",
+    "path": "assets/ai-service.js",
+    "mtime": "2026-09-18 18:54:47",
+    "this_batch": true,
+    "stamps": [
+      "20260918b",
+      "20260918c"
+    ],
+    "page_total": 37,
+    "page_map": {
+      "20260918c": 36,
+      "20260918b": 1
+    }
+  },
+  {
+    "asset": "ai-settings.js",
+    "path": "assets/ai-settings.js",
+    "mtime": "2026-09-18 18:55:25",
+    "this_batch": true,
+    "stamps": [
+      "20260918c"
+    ],
+    "page_total": 1,
+    "page_map": {
+      "20260918c": 1
+    }
+  },
+  {
+    "asset": "ai-page.js",
+    "path": "assets/ai-page.js",
+    "mtime": "2026-09-18 18:56:36",
+    "this_batch": true,
+    "stamps": [
+      "20260918c"
+    ],
+    "page_total": 1,
+    "page_map": {
+      "20260918c": 1
+    }
+  },
+  {
+    "asset": "page-head.css",
+    "path": "assets/page-head.css",
+    "mtime": "2026-09-14 16:09:05",
+    "this_batch": false,
+    "stamps": [
+      "20260916O"
+    ],
+    "page_total": 41,
+    "page_map": {
+      "20260916O": 41
+    }
+  },
+  {
+    "asset": "states.css",
+    "path": "assets/states.css",
+    "mtime": "2026-09-14 16:09:05",
+    "this_batch": false,
+    "stamps": [
+      "20260916O"
+    ],
+    "page_total": 41,
+    "page_map": {
+      "20260916O": 41
+    }
+  },
+  {
+    "asset": "polish.css",
+    "path": "assets/polish.css",
+    "mtime": "2026-09-14 16:09:05",
+    "this_batch": false,
+    "stamps": [
+      "20260916O"
+    ],
+    "page_total": 37,
+    "page_map": {
+      "20260916O": 37
+    }
+  },
+  {
+    "asset": "xt-toast.js",
+    "path": "assets/xt-toast.js",
+    "mtime": "2026-09-14 16:09:05",
+    "this_batch": false,
+    "stamps": [
+      "20260916O"
+    ],
+    "page_total": 41,
+    "page_map": {
+      "20260916O": 41
+    }
+  },
+  {
+    "asset": "error-boundary.js",
+    "path": "assets/error-boundary.js",
+    "mtime": "2026-09-14 16:09:05",
+    "this_batch": false,
+    "stamps": [
+      "20260916O"
+    ],
+    "page_total": 41,
+    "page_map": {
+      "20260916O": 41
+    }
+  },
+  {
+    "asset": "config.js",
+    "path": "assets/config.js",
+    "mtime": "2026-09-14 16:09:05",
+    "this_batch": false,
+    "stamps": [
+      "20260916O",
+      "20260917"
+    ],
+    "page_total": 43,
+    "page_map": {
+      "20260916O": 42,
+      "20260917": 1
+    }
+  },
+  {
+    "asset": "xt-polyfill.js",
+    "path": "assets/xt-polyfill.js",
+    "mtime": "2026-09-16 03:28:47",
+    "this_batch": false,
+    "stamps": [
+      "20260916O"
+    ],
+    "page_total": 45,
+    "page_map": {
+      "20260916O": 45
+    }
+  },
+  {
+    "asset": "xt-moments.css",
+    "path": "assets/xt-moments.css",
+    "mtime": "2026-09-17 23:07:19",
+    "this_batch": false,
+    "stamps": [
+      "20260917b"
+    ],
+    "page_total": 3,
+    "page_map": {
+      "20260917b": 3
+    }
+  },
+  {
+    "asset": "ai-cap-registry.js",
+    "path": "assets/ai-cap-registry.js",
+    "mtime": "2026-09-18 14:23:51",
+    "this_batch": false,
+    "stamps": [
+      "20260918c"
+    ],
+    "page_total": 36,
+    "page_map": {
+      "20260918c": 36
+    }
+  },
+  {
+    "asset": "ai-config.js",
+    "path": "assets/ai-config.js",
+    "mtime": "2026-09-18 16:27:09",
+    "this_batch": false,
+    "stamps": [
+      "20260918b",
+      "20260918c"
+    ],
+    "page_total": 37,
+    "page_map": {
+      "20260918c": 36,
+      "20260918b": 1
+    }
+  },
+  {
+    "asset": "ai-cap-image.js",
+    "path": "assets/ai-cap-image.js",
+    "mtime": "2026-09-18 16:27:09",
+    "this_batch": false,
+    "stamps": [
+      "20260918c"
+    ],
+    "page_total": 36,
+    "page_map": {
+      "20260918c": 36
+    }
+  },
+  {
+    "asset": "ai-cap-audio.js",
+    "path": "assets/ai-cap-audio.js",
+    "mtime": "2026-09-18 16:27:09",
+    "this_batch": false,
+    "stamps": [
+      "20260918c"
+    ],
+    "page_total": 36,
+    "page_map": {
+      "20260918c": 36
+    }
+  },
+  {
+    "asset": "ai-cap-embed.js",
+    "path": "assets/ai-cap-embed.js",
+    "mtime": "2026-09-18 16:27:09",
+    "this_batch": false,
+    "stamps": [
+      "20260918c"
+    ],
+    "page_total": 36,
+    "page_map": {
+      "20260918c": 36
+    }
+  },
+  {
+    "asset": "ai-cap-translate.js",
+    "path": "assets/ai-cap-translate.js",
+    "mtime": "2026-09-18 16:27:09",
+    "this_batch": false,
+    "stamps": [
+      "20260918c"
+    ],
+    "page_total": 36,
+    "page_map": {
+      "20260918c": 36
+    }
+  },
+  {
+    "asset": "ai-cap-vision.js",
+    "path": "assets/ai-cap-vision.js",
+    "mtime": "2026-09-18 16:30:40",
+    "this_batch": false,
+    "stamps": [
+      "20260918c"
+    ],
+    "page_total": 36,
+    "page_map": {
+      "20260918c": 36
+    }
+  },
+  {
+    "asset": "ai-cap-video.js",
+    "path": "assets/ai-cap-video.js",
+    "mtime": "2026-09-18 16:30:40",
+    "this_batch": false,
+    "stamps": [
+      "20260918c"
+    ],
+    "page_total": 36,
+    "page_map": {
+      "20260918c": 36
+    }
+  },
+  {
+    "asset": "ai-cap-3d.js",
+    "path": "assets/ai-cap-3d.js",
+    "mtime": "2026-09-18 16:30:40",
+    "this_batch": false,
+    "stamps": [
+      "20260918c"
+    ],
+    "page_total": 36,
+    "page_map": {
+      "20260918c": 36
+    }
+  },
+  {
+    "asset": "xt-region.js",
+    "path": "assets/xt-region.js",
+    "mtime": "2026-09-18 18:09:12",
+    "this_batch": false,
+    "stamps": [
+      "20260918a"
+    ],
+    "page_total": 3,
+    "page_map": {
+      "20260918a": 3
+    }
+  },
+  {
+    "asset": "app.js",
+    "path": "assets/app.js",
+    "mtime": "2026-09-18 18:13:00",
+    "this_batch": false,
+    "stamps": [
+      "20260917b"
+    ],
+    "page_total": 41,
+    "page_map": {
+      "20260917b": 41
+    }
+  },
+  {
+    "asset": "api.js",
+    "path": "assets/api.js",
+    "mtime": "2026-09-18 18:13:00",
+    "this_batch": false,
+    "stamps": [
+      "20260917b"
+    ],
+    "page_total": 37,
+    "page_map": {
+      "20260917b": 37
+    }
+  },
+  {
+    "asset": "xt-aiusage.js",
+    "path": "assets/xt-aiusage.js",
+    "mtime": "2026-09-18 18:17:20",
+    "this_batch": false,
+    "stamps": [
+      "20260918c"
+    ],
+    "page_total": 1,
+    "page_map": {
+      "20260918c": 1
+    }
+  },
+  {
+    "asset": "icon-map.js",
+    "path": "assets/icon-map.js",
+    "mtime": "2026-09-18 18:18:09",
+    "this_batch": false,
+    "stamps": [
+      "20260916O",
+      "20260917"
+    ],
+    "page_total": 46,
+    "page_map": {
+      "20260916O": 45,
+      "20260917": 1
+    }
+  },
+  {
+    "asset": "chat-local.js",
+    "path": "assets/chat-local.js",
+    "mtime": "2026-09-18 18:19:12",
+    "this_batch": false,
+    "stamps": [
+      "20260917b"
+    ],
+    "page_total": 1,
+    "page_map": {
+      "20260917b": 1
+    }
+  }
+]

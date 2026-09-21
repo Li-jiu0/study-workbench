@@ -1,0 +1,25 @@
+PROD bytes=37112  LOCAL bytes=27582
+diff: added(LOCAL only)=7  removed(PROD only)=7
+--- unified diff (n=0) ---
+--- PROD/登录.html
++++ LOCAL/登录.html
+@@ -1 +1 @@
+-﻿<!DOCTYPE html>
++<!DOCTYPE html>
+@@ -114 +114 @@
+-    <div class="lg-sub" id="lgSub">注册登录后开启学习</div>
++    <div class="lg-sub" id="lgSub">祝君一切安好 · 诸事顺宜</div>
+@@ -159 +159 @@
+-  <button class="btn-primary" id="loginSubmitBtn" onclick="submitLogin()" aria-label="登录或注册按钮">🚀 登 录</button>
++  <button class="btn-primary" id="loginSubmitBtn" onclick="submitLogin()" aria-label="登录">登录</button>
+@@ -252,2 +252,2 @@
+-    if (sub) sub.textContent = '多人在线版 · 注册登录后开启学习';
+-    if (n) n.innerHTML = '💡 <b>多人在线版</b>：账号密码保存在服务器数据库（密码加盐哈希），登录使用 JWT 令牌，支持静态续期。<br>后端地址：<b>' + escHtml(API_BASE || '同源部署') + '</b>';
++    if (sub) sub.textContent = '祝君一切安好 · 诸事顺宜';
++    if (n) n.innerHTML = '💡 <b>当前为多人在线版</b><br>后端地址：<b>' + escHtml(API_BASE || '同源部署') + '</b>';
+@@ -256 +256 @@
+-    if (n) n.innerHTML = '📱 <b>单机离线模式</b>：未检测到后端服务器，账号仅保存在<b>本机</b>（localStorage，密码混淆存储）。<br>所有学习数据、发贴均在本机，适合个人使用；如需多人博客/在线 AI，请启动 <b>server/</b> 后端后重新打开。';
++    if (n) n.innerHTML = '📱 <b>单机离线模式</b>：未检测到后端服务器，数据保存在本机。<br>如需多人博客 / 在线 AI，请启动 <b>server/</b> 后端后重新打开。';
+@@ -394 +394 @@
+-  document.getElementById('loginSubmitBtn').textContent = mode === 'login' ? '🚀 登 录' : '✨ 注 册 并 进 入';
++  document.getElementById('loginSubmitBtn').textContent = mode === 'login' ? '登录' : '✨ 注 册 并 进 入';

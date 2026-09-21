@@ -1,0 +1,180 @@
+  291| 
+  292|   /* ==================================================== AI 对话记录（R86-C）
+  293|    * 【原实现的三个问题】
+  294|    *   1) 请求未发：原 chatBody() 从不调用 GET /api/ai/history，登录用户的真实历史一条都拉不到；
+  295|    *   2) 字段错配：它把本机 localStorage.ai_chat_history 当成「扁平消息数组」逐条读
+  296|    *      role / content / time，而该键的真实结构是「会话数组」
+  297|    *      [{id,title,createdAt,updatedAt,messages:[{role,content}]}]（见 assets/ai-page.js:799），
+  298|    *      于是每条都被渲染成「记录 /（无文本内容）」且时间为空；
+  299|    *   3) 状态缺失：同步渲染，无 loading / 错误 / 空 三态，拉不到数据时页面像卡死。
+  300|    * 【修正口径】
+  301|    *   主数据源 = GET /api/ai/history（服务端只返回当前登录用户自己的记录；
+  302|    *   返回结构为扁平消息 items:[{role,content,provider,createdAt}]，**没有会话 ID**）；
+  303|    *   前端按「自然时间间隔」分段渲染，不编造任何会话 ID；每条消息明确标注时间；
+  304|    *   未登录 / 请求失败 / 成功但为空 三态各自明确呈现并提供重试入口；
+  305|    *   本机 ai_chat_history（会话结构）降级为离线兜底，按会话分组渲染。
+  306|    * ------------------------------------------------------------------ */
+  307|   var AI_CHAT = {
+  308|     phase: 'idle',      // idle | loading | ok | err | guest
+  309|     items: [],          // 服务端原始扁平消息（时间正序）
+  310|     groups: [],         // 按自然间隔切分后的「段」
+  311|     total: 0,           // 服务端记录条数
+  312|     err: '',            // 失败原因（仅用于展示，不含敏感内容）
+  313|     localGroups: [],    // 本机会话兜底
+  314|     _p: null            // 进行中的请求 Promise（防并发重复请求）
+  315|   };
+  316|   var AI_CHAT_LIMIT = 200;               // 与后端 limit 上限一致（后端 clamp 到 500）
+  317|   var AI_CHAT_GAP_MS = 30 * 60 * 1000;   // 相邻消息间隔超过 30 分钟 → 另起一段
+  318| 
+  319|   /** 解析后端 createdAt（'YYYY-MM-DD HH:MM:SS'）或 ISO / epoch → 时间戳 ms；无法解析返回 0 */
+  320|   function parseTs(v) {
+  321|     if (v === null || v === undefined || v === '') { return 0; }
+  322|     if (typeof v === 'number') { return isFinite(v) ? (v > 100000000000 ? v : v * 1000) : 0; }
+  323|     var s = String(v).trim();
+  324|     var m = s.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
+  325|     if (m) {
+  326|       var t = new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10),
+  327|         parseInt(m[4], 10), parseInt(m[5], 10), m[6] ? parseInt(m[6], 10) : 0).getTime();
+  328|       return isFinite(t) ? t : 0;
+  329|     }
+  330|     var n = Number(s);
+  331|     if (isFinite(n) && n > 0) { return n > 100000000000 ? n : n * 1000; }
+  332|     var dp = Date.parse(s);
+  333|     return isFinite(dp) ? dp : 0;
+  334|   }
+  335|   /** 时间戳 → 'YYYY-MM-DD HH:MM' */
+  336|   function tsText(ts) {
+  337|     var d = new Date(ts);
+  338|     return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) +
+  339|       ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  340|   }
+  341|   /** 时间戳 → 'HH:MM'（tsText 的第 11 位起） */
+  342|   function tsClock(ts) { return tsText(ts).slice(11); }
+  343|   /** 时间戳 → '今天' / '昨天' / 'YYYY-MM-DD' */
+  344|   function dayText(ts) {
+  345|     var d = new Date(ts);
+  346|     var n = new Date();
+  347|     var y = new Date(n.getTime() - 86400000);
+  348|     var a = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+  349|     var b = n.getFullYear() * 10000 + (n.getMonth() + 1) * 100 + n.getDate();
+  350|     var c = y.getFullYear() * 10000 + (y.getMonth() + 1) * 100 + y.getDate();
+  351|     if (a === b) { return '今天'; }
+  352|     if (a === c) { return '昨天'; }
+  353|     return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  354|   }
+  355|   /** 本机 ai_chat_history 的消息总条数（会话结构：逐会话累加 messages.length） */
+  356|   function localChatCount() {
+  357|     var arr = aiChatArr(), n = 0, i;
+  358|     for (i = 0; i < arr.length; i++) {
+  359|       var ms = (arr[i] && isArr(arr[i].messages)) ? arr[i].messages : [];
+  360|       n += ms.length;
+  361|     }
+  362|     return n;
+  363|   }
+  364|   /** 把服务端扁平消息（时间正序）按自然间隔切成若干段；不编造会话 ID */
+  365|   function aiGroupByGap(items) {
+  366|     var groups = [], i, cur = null, prevTs = 0;
+  367|     for (i = 0; i < items.length; i++) {
+  368|       var it = items[i] || {};
+  369|       if (!it || typeof it !== 'object') { continue; }
+  370|       var ts = parseTs(it.createdAt || it.created_at || it.time || it.ts);
+  371|       var role = (it.role === 'user') ? 'user' : ((it.role === 'assistant') ? 'assistant' : 'other');
+  372|       var text = (it.content === undefined || it.content === null) ? '' : String(it.content);
+  373|       if (!text && it.text) { text = String(it.text); }
+  374|       if (!text && it.message) { text = String(it.message); }
+  375|       var provider = (it.provider === undefined || it.provider === null) ? '' : String(it.provider);
+  376|       var needNew = (cur === null);
+  377|       if (!needNew && ts > 0 && prevTs > 0 && (ts - prevTs) > AI_CHAT_GAP_MS) { needNew = true; }
+  378|       if (needNew) {
+  379|         cur = { startTs: ts, endTs: ts, items: [], hasTime: (ts > 0) };
+  380|         groups.push(cur);
+  381|       }
+  382|       cur.items.push({ role: role, text: text, ts: ts, provider: provider });
+  383|       if (ts > 0) { if (ts > cur.endTs) { cur.endTs = ts; } prevTs = ts; }
+  384|     }
+  385|     return groups;
+  386|   }
+  387|   /** 本机 ai_chat_history（会话结构）→ 段数组，仅作离线兜底 */
+  388|   function aiLocalGroups() {
+  389|     var arr = aiChatArr(), groups = [], i, j;
+  390|     for (i = 0; i < arr.length; i++) {
+  391|       var c = arr[i] || {};
+  392|       if (!c || typeof c !== 'object') { continue; }
+  393|       var msgs = isArr(c.messages) ? c.messages : [];
+  394|       var items = [], startTs = 0, endTs = 0;
+  395|       for (j = 0; j < msgs.length; j++) {
+  396|         var mm = msgs[j] || {};
+  397|         var text = (mm.content === undefined || mm.content === null) ? '' : String(mm.content);
+  398|         var ts = parseTs(mm.time || mm.ts || mm.createdAt);
+  399|         items.push({
+  400|           role: (mm.role === 'user') ? 'user' : ((mm.role === 'assistant') ? 'assistant' : 'other'),
+  401|           text: text, ts: ts, provider: ''
+  402|         });
+  403|         if (ts > 0) { if (!startTs || ts < startTs) { startTs = ts; } if (ts > endTs) { endTs = ts; } }
+  404|       }
+  405|       if (!items.length) { continue; }
+  406|       var base = parseTs(c.createdAt || c.updatedAt);
+  407|       if (!startTs) { startTs = base; }
+  408|       if (!endTs) { endTs = base; }
+  409|       groups.push({ startTs: startTs, endTs: endTs, items: items, hasTime: (startTs > 0), title: String(c.title || ''), local: true });
+  410|     }
+  411|     groups.sort(function (a, b) { return (a.startTs || 0) - (b.startTs || 0); });
+  412|     return groups;
+  413|   }
+  414|   /** 是否可走服务端：api.js 已加载 + 有登录态（游客态请求必然 401，故直接跳过不发请求） */
+  415|   function aiApiReady() {
+  416|     if (typeof window.isOnlineSession !== 'function') { return false; }
+  417|     if (!window.isOnlineSession()) { return false; }
+  418|     return typeof window.api === 'function';
+  419|   }
+  420|   /** 拉取当前登录用户的 AI 对话记录；force=true 忽略缓存重新请求。始终返回 Promise */
+  421|   function fetchAiChat(force) {
+  422|     if (!force && AI_CHAT._p) { return AI_CHAT._p; }
+  423|     if (!force && (AI_CHAT.phase === 'ok' || AI_CHAT.phase === 'err' || AI_CHAT.phase === 'guest')) {
+  424|       return Promise.resolve(AI_CHAT);
+  425|     }
+  426|     AI_CHAT.localGroups = aiLocalGroups();
+  427|     if (!aiApiReady()) {
+  428|       AI_CHAT.phase = 'guest';
+  429|       AI_CHAT.items = []; AI_CHAT.groups = []; AI_CHAT.total = 0; AI_CHAT.err = '';
+  430|       console.warn('[xt-profile] AI对话记录：未登录或 api.js 未就绪，跳过 GET /api/ai/history，仅展示本机兜底');
+  431|       return Promise.resolve(AI_CHAT);
+  432|     }
+  433|     AI_CHAT.phase = 'loading';
+  434|     console.warn('[xt-profile] AI对话记录：请求 GET /api/ai/history?limit=' + AI_CHAT_LIMIT);
+  435|     var p = window.api('/api/ai/history?limit=' + AI_CHAT_LIMIT, { method: 'GET' }).then(function (d) {
+  436|       var items = (d && isArr(d.items)) ? d.items : [];
+  437|       AI_CHAT.items = items;
+  438|       AI_CHAT.groups = aiGroupByGap(items);
+  439|       AI_CHAT.total = items.length;
+  440|       AI_CHAT.err = '';
+  441|       AI_CHAT.phase = 'ok';
+  442|       console.warn('[xt-profile] AI对话记录：成功，条数=' + items.length + '，分段=' + AI_CHAT.groups.length);
+  443|       return AI_CHAT;
+  444|     })['catch'](function (e) {
+  445|       AI_CHAT.phase = 'err';
+  446|       AI_CHAT.items = []; AI_CHAT.groups = []; AI_CHAT.total = 0;
+  447|       AI_CHAT.err = (e && e.message) ? String(e.message) : '网络请求失败';
+  448|       console.warn('[xt-profile] AI对话记录：请求失败 → ' + AI_CHAT.err);
+  449|       return AI_CHAT;
+  450|     });
+  451|     var q = p.then(function (r) { AI_CHAT._p = null; return r; });
+  452|     AI_CHAT._p = q;
+  453|     return q;
+  454|   }
+  455| 
+  456|   /* ============================ 个人信息编辑 · 扩展字段的真实数据源 ============================ */
+  457|   /* 三个既有字段直接复用 appData.profile（与 设置.html / 个人中心.html 的资料编辑同源，单一真相）：
+  458|        地区 = profile.city ｜ 生日 = profile.birthday ｜ 目标 = profile.goal
+  459|      两个后端无能力的纯自填字段写入本页自有键（按账号隔离，经 lsKey 前缀化）：
+  460|        手机号 / 邮箱 = xt_profile_fields_v1@<账号>                                        */
+  461|   var FIELDS_KEY = 'xt_profile_fields_v1';
+  462| 
+  463|   /** 读本页自填字段表（按账号隔离） */
+  464|   function profileFields() {
+  465|     var o = readAcctJSON(FIELDS_KEY, null);
+  466|     return (o && typeof o === 'object') ? o : {};
+  467|   }
+  468|   /** 写本页自填字段（空值即删除键，不留空串假数据） */
+  469|   function saveField(key, val) {
+  470|     var o = profileFields();

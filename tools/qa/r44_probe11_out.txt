@@ -1,0 +1,95 @@
+=== A. 回滚基线：备份文件是否存在 ===
+-rw-r--r-- 1 root root 192512 Sep 13 19:14 data.db.before-20260913l
+-rw-r--r-- 1 root root 196608 Sep 13 19:43 data.db.before-20260913m
+-rw-r--r-- 1 root root 196608 Sep 13 22:32 data.db.before-20260913n
+-rw-r--r-- 1 root root 196608 Sep 13 23:13 data.db.before-20260913o
+-rw-r--r-- 1 root root 200704 Sep 14 02:01 data.db.before-20260914b
+-rw-r--r-- 1 root root 200704 Sep 14 02:17 data.db.before-20260914c
+-rw-r--r-- 1 root root 180224 Sep 13 05:51 data.db.before-purge-20260913e
+drwxr-xr-x 3 root root   4096 Sep 11 16:15 hotfix-20260911-p0
+---
+-rw-rw-rw- 1 root root 1027 Sep 13 18:55 /opt/study-workbench/server/.env.bak-20260914c
+
+=== B. .env 结构（只统计键名与行数，不打印值）===
+ENV_LINES: 32
+ENV_KEYS:
+ADMIN_PASSWORD
+DATABASE_PATH
+DEEPSEEK_API_KEY
+FEEDBACK_ADMIN_KEY
+JWT_EXPIRE_DAYS
+JWT_SECRET
+KIMI_API_KEY
+OPENAI_API_KEY
+QWEN_API_KEY
+ZHIPU_API_KEY
+BAK_LINES: 30
+BAK_KEYS:
+DATABASE_PATH
+DEEPSEEK_API_KEY
+FEEDBACK_ADMIN_KEY
+JWT_EXPIRE_DAYS
+JWT_SECRET
+KIMI_API_KEY
+OPENAI_API_KEY
+QWEN_API_KEY
+ZHIPU_API_KEY
+
+=== C. 服务状态（重启后是否稳定）===
+ACTIVE: active
+START : Mon 2026-09-14 02:36:51 CST
+PID   : 1120278
+NRESTARTS: 0
+
+=== D. 重启后日志：Traceback / ERROR / 500 回归检查 ===
+TRACEBACK_COUNT: 0
+0
+ERROR_COUNT: 0
+0
+HTTP500_COUNT: 0
+0
+HTTP4XX_COUNT: 18
+--- 最近 15 条 4xx/5xx 明细 ---
+Sep 14 02:38:05 VM-0-10-ubuntu uvicorn[1120278]: INFO:     127.0.0.1:37534 - "GET /api/feedback/mine HTTP/1.1" 401 Unauthorized
+Sep 14 02:38:24 VM-0-10-ubuntu uvicorn[1120278]: INFO:     127.0.0.1:0 - "GET /api/admin/contact HTTP/1.0" 401 Unauthorized
+Sep 14 02:38:24 VM-0-10-ubuntu uvicorn[1120278]: INFO:     127.0.0.1:46368 - "GET /api/admin/contact HTTP/1.1" 401 Unauthorized
+Sep 14 02:39:18 VM-0-10-ubuntu uvicorn[1120278]: INFO:     127.0.0.1:47992 - "GET /api/admin/contact HTTP/1.1" 401 Unauthorized
+Sep 14 02:39:18 VM-0-10-ubuntu uvicorn[1120278]: INFO:     127.0.0.1:48000 - "GET /api/admin/users HTTP/1.1" 401 Unauthorized
+Sep 14 02:39:18 VM-0-10-ubuntu uvicorn[1120278]: INFO:     127.0.0.1:48004 - "GET /api/feedback/mine HTTP/1.1" 401 Unauthorized
+Sep 14 02:39:18 VM-0-10-ubuntu uvicorn[1120278]: INFO:     127.0.0.1:48010 - "GET /api/chat/unread HTTP/1.1" 401 Unauthorized
+Sep 14 02:40:22 VM-0-10-ubuntu uvicorn[1120278]: INFO:     127.0.0.1:59922 - "GET /api/admin/contact HTTP/1.1" 401 Unauthorized
+Sep 14 02:41:49 VM-0-10-ubuntu uvicorn[1120278]: INFO:     182.204.50.206:0 - "GET /api/admin/contact HTTP/1.0" 401 Unauthorized
+Sep 14 02:41:49 VM-0-10-ubuntu uvicorn[1120278]: INFO:     182.204.50.206:0 - "GET /api/admin/overview HTTP/1.0" 401 Unauthorized
+Sep 14 02:41:49 VM-0-10-ubuntu uvicorn[1120278]: INFO:     182.204.50.206:0 - "GET /api/admin/users HTTP/1.0" 401 Unauthorized
+Sep 14 02:41:49 VM-0-10-ubuntu uvicorn[1120278]: INFO:     182.204.50.206:0 - "GET /api/admin/online HTTP/1.0" 401 Unauthorized
+Sep 14 02:41:50 VM-0-10-ubuntu uvicorn[1120278]: INFO:     182.204.50.206:0 - "GET /api/admin/feedback HTTP/1.0" 401 Unauthorized
+Sep 14 02:41:50 VM-0-10-ubuntu uvicorn[1120278]: INFO:     182.204.50.206:0 - "GET /api/feedback/mine HTTP/1.0" 401 Unauthorized
+Sep 14 02:41:50 VM-0-10-ubuntu uvicorn[1120278]: INFO:     182.204.50.206:0 - "GET /api/chat/unread HTTP/1.0" 401 Unauthorized
+
+=== E. 关键端点当前状态 ===
+  /api/health -> 200
+  /api/admin/contact -> 401
+  /api/admin/users -> 401
+  /api/admin/overview -> 401
+  /api/admin/online -> 401
+  /api/admin/feedback -> 401
+  /api/auth/me -> 401
+  /api/chat/unread -> 401
+  /api/feedback/mine -> 401
+
+=== F. 站点首页与关键静态资源 ===
+  / -> 200
+  /assets/admin-contact.js -> 200
+  /assets/chat-local.js -> 200
+  /data/mock-papers.js -> 200
+
+=== G. 数据完整性（只读）===
+  users        9
+  messages     123
+  notes        2
+  friends      5
+  moments      1
+  feedbacks    0
+  study_logs   993
+  users.has_is_admin: YES
+  admin rows: 1

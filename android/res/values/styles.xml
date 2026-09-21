@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 星途 · 主题样式（S2 启动闪屏）
+     AppTheme 继承系统 Theme.Material.Light.NoActionBar（与改造前一致，避免引入任何
+     Design/AppCompat 依赖，维持工程「零 androidx」铁律），仅覆盖 android:windowBackground
+     为 layer-list（品牌蓝底 + 居中白星）。
+
+     之所以用 windowBackground 方案而非 androidx SplashScreen / 自绘 View：
+       · 零依赖：纯系统资源，不引入 splashscreen 库；
+       · 零代码：冷启动由 Window 在首帧前绘制，main 线程无额外开销；
+       · 无空档：用户在 Activity onCreate 到 WebView 首帧之间看到品牌色，不是白/黑屏；
+       · 进页即被 WebView 覆盖，无需手动移除闪屏。
+     API 21+ 均支持 layer-list / windowBackground，无需建 values-v21 目录。 -->
+<resources>
+
+    <style name="AppTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+    </style>
+
+</resources>

@@ -1,0 +1,2508 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="T644pKH8TzKnQZYp0uMX8Y">
+<head data-page-node-id="zBpP04ygieGNnvsjrpSpBf">
+<meta charset="UTF-8" data-page-node-id="F1s43AzcWXyQRzpbolootk">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" data-page-node-id="ppAOS1DYQGgIIySlO2fdxi">
+<meta name="theme-color" content="#5B8DEF" data-page-node-id="EXvc7QppIKtHC8PUM71nFK">
+<title>设置 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260923c" data-page-node-id="oNplQZjsSu34O6b7wLTk3t">
+<link rel="stylesheet" href="assets/page-head.css?v=20260923b">
+<link rel="stylesheet" href="assets/states.css?v=20260923b">
+<link rel="stylesheet" href="assets/polish.css?v=20260923b" data-page-node-id="gZ2lwtNBjEq5CgqQTlbjFi">
+<script src="assets/xt-settings.js?v=20260923b"></script>
+<script src="assets/xt-polyfill.js?v=20260923b"></script>
+<script>window.__XT_PROD__=true;</script>
+<!-- 【FOUC 修复 20260923 / R7c 修正 2026-09-20】本页 12 个子页 [data-subpage] 区块防首帧闪现：
+     样式表置于 head 内（render-blocking）首绘前生效；但必须用 body:not(.sp-ready) 门控——
+     路由 init 第一时间给 body 加 sp-ready 后本规则永久失效，显隐交还路由内联样式。
+     （原裸规则会把显形压死：路由 style.display='' 只清内联样式，CSS display:none 继续生效
+     → 点进子页整页空白；1.37 真机 nav-trace 日志已实证 render 全触发仍空白。） -->
+<style>body:not(.sp-ready) [data-subpage]{display:none}</style>
+</head>
+<body class="theme-home" data-page-node-id="wneJ1qXxVLXB9kpk29RxqH">
+
+<div class="app" data-page-node-id="TdG0c63MR0oC1ELeOBMyKO">
+<nav class="sidebar" data-page-node-id="ZNCljMWVuAHSzrDHEq0Ggl">
+    <div class="logo" data-page-node-id="O8JOxeTYPHFoy5rxZa4C5C">
+      <div class="logo-icon" data-page-node-id="HoLvSTfLYvgLWkkFzGbXVp" data-icon="book-open"></div>
+      <div data-page-node-id="RyQwxSk5V1mMG3VHeFJiQK">
+        <div class="logo-text" data-page-node-id="6JUMbT7UVHhgF2tmsoHu4f">星途</div>
+        <div class="logo-sub" data-page-node-id="xueAe6aIZiHQV6R70coERY">致追梦的人->修身</div>
+      </div>
+    </div>
+    <div class="nav-list" data-page-node-id="hF3VUIl5jd56VEofU5JtGn">
+      <div class="nav-item" data-page="home" data-page-node-id="QHKWCTC7Hk4ZBrJNmY7Oel">
+        <span class="nav-icon" data-page-node-id="XESDLAaBLGDUDRO4U8LSLy" data-icon="home"></span><span data-page-node-id="LBtGhSjdNTzbvmRot81Cjf">首页</span>
+      </div>
+      <div class="nav-item" onclick="location.href='AI.html'">
+        <span class="nav-icon" data-icon="sparkles"></span><span>AI</span>
+      </div>
+      <div class="nav-section" data-page-node-id="HWAxJvadJS4l9Ljpa6spEr">学习模块</div>
+      <div class="nav-item" data-page="cet" data-page-node-id="dx1wrZCsoaDLhkvLwKxVB6">
+        <span class="nav-icon" data-page-node-id="BHmKEzL3bp3sAD3CcGQyoD" data-icon="book-open"></span><span data-page-node-id="q9gZWnL1OGLzbJ1rHBYpbg">英语</span>
+      </div>
+      <div class="nav-item" data-page="exam" data-page-node-id="lYONZDS68eUbw26FjbMB8o">
+        <span class="nav-icon" data-page-node-id="l21Y8gwnTQ3DloGLBCxsha" data-icon="pencil"></span><span data-page-node-id="AsoEegm27jKDAMOsMoA1jY">行测</span>
+      </div>
+      <!-- 【ADR-3 2026-09-15】时政热点：原 openHotNewsPanel() 弹窗已升级为独立页 时政热点.html -->
+      <div class="nav-item" onclick="location.href='时政热点.html'" title="时政热点（实时榜单 / 分类筛选 / 详情 / 收藏）">
+        <span class="nav-icon" data-icon="fire"></span><span>时政热点</span>
+      </div>
+      <div class="nav-item" data-page="comm" data-page-node-id="iEONKqpKBoGCi2BFamhVvE">
+        <span class="nav-icon" data-page-node-id="PdaI8EaPDGDmFxyfbpCNRU" data-icon="message-square"></span><span data-page-node-id="3ViTi1o59ozHrPYr8eGjol">表达</span>
+      </div>
+      <div class="nav-item" data-page="interview" data-page-node-id="6l1gPFTwfktxgarp1lF8TR">
+        <span class="nav-icon" data-page-node-id="lpyATX0Q8LhFN2SYhOxQLN" data-icon="handshake"></span><span data-page-node-id="yNYjQCsNUFjHQ9504rP4oy">面测</span>
+      </div>
+      <div class="nav-item" data-page="files" data-page-node-id="B4ca91ZoqJrq5TNg0x9tXQ">
+        <span class="nav-icon" data-page-node-id="9fBdF1DwtuEjxvbJFapEXD" data-icon="folder"></span><span data-page-node-id="gfATT8eA6DZxvyBLYOyXOz">我的文件</span>
+      </div>
+      <div class="nav-section" data-page-node-id="MTHcLZXShESY9uypWnfuWH">创作</div>
+      <div class="nav-item" data-page="blog" data-page-node-id="DZFZQABtRTNDfpMidIwfuZ">
+        <span class="nav-icon" data-page-node-id="S7J9mnuXIauEdFtXjfGLqP" data-icon="globe"></span><span data-page-node-id="gAx8X58sva5egzFjqHvc7l">社区</span>
+      </div>
+      <div class="nav-item" data-page="moments">
+        <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
+      </div>
+      <div class="nav-section" data-page-node-id="62IraBitJHEEuHbz3ikLXg">互动</div>
+      <div class="nav-item" data-external="1" onclick="gotoChat()" title="通讯录 · 添加好友（需在线模式）" data-page-node-id="aRHuZziE37CzDXzVSpuzLp">
+        <span class="nav-icon" data-page-node-id="UfPubWfBVnWQCCK18VHIbF" data-icon="users"></span><span data-page-node-id="FJ6cJs19JUXpu7ErWAIPFf">通讯录</span>
+      </div>
+      <div class="nav-section" data-page-node-id="ePW0ZBqDVKXZScQqa1uCpu">中心</div>
+      <div class="nav-item" data-page="wrong-book" data-page-node-id="cDwGyUqeA6dJMNegwo1L3i">
+        <span class="nav-icon" data-page-node-id="GdXPckIktIKbYZsLI8gdcd" data-icon="book"></span><span data-page-node-id="Fqi3L13gpyBWE7MVqEJRby">错题本</span>
+      </div>
+            <div class="nav-item" data-page="profile" data-page-node-id="26mJKm0tmipShCnFCS2DrV">
+        <span class="nav-icon" data-page-node-id="t91YDIvEMP0j1QusiEDCiR" data-icon="user"></span><span data-page-node-id="7WeQkbbwodYXAsrGeN3Zl4">个人中心</span>
+      </div>
+<div class="nav-section" data-page-node-id="mpO53FQ5QgoboO9Q9A1dUX">系统</div>
+      <div class="nav-item active" data-page="settings" data-page-node-id="Fq52d9x9vt5MU3sjYoYnrp">
+        <span class="nav-icon" data-page-node-id="4xLtFlTxaWTK9TnNyBWF9P" data-icon="settings"></span><span data-page-node-id="eFC2YpCR720r7IFxqhBoaQ">设置</span>
+      </div>
+    </div>
+    <div class="sidebar-footer" data-page-node-id="XbqCHIbHp2JFR6tjbhmj8v">
+      <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心" data-page-node-id="c4xX9yOqXSjJ1GBBoo4shb">
+        <div class="user-avatar" data-page-node-id="WUsoBjpqpfddATxpCM3lGE">学</div>
+        <div class="user-info" data-page-node-id="urgdX0RBBM4cxmK5SGC8q3">
+          <div class="user-name" data-page-node-id="d6RXTz7bpGaT1c6OBZZfxr">同学</div>
+          <div class="user-streak" data-page-node-id="lh7pvygV5PExEJYlqg8RH7"><span class="nav-icon" data-icon="fire" data-icon-size="14"></span> 连续打卡 0 天</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main" data-page-node-id="NIf9PmWo8FeFJ98LAdetyY">
+<header class="topbar" data-page-node-id="0rJrCT6HdAUjDv9M9GfF3l">
+      <div class="topbar-title" id="topbarTitle" data-page-node-id="NL28KHzkGta4853wWGshRl">设置</div>
+      <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
+      <div class="gs-wrap" id="gsWrap" data-page-node-id="IguuWuMsxQiedLs4FHHhT0">
+        <input type="text" class="gs-input" id="gsInput" placeholder="搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)" data-page-node-id="1WlTOG7qVmoQ9HgEJGZBVp">
+        <div class="gs-dropdown" id="gsDropdown" data-page-node-id="GjFhVnDPGyepk64JaHm4ZB"></div>
+      </div>
+      <div class="topbar-stats" data-page-node-id="AkcibESwBZjSizqNJVem63">
+        <div class="stat-item" data-page-node-id="gkbcShNWbIz2o9AepTSG1y"><span class="stat-icon" data-page-node-id="3qkqZ2a99hjrSsZ1JMwYCt"><span class="nav-icon" data-icon="fire" data-icon-size="16"></span></span><span data-page-node-id="pV0h0G7UIHexES6NDiTjNu">连续 <span class="stat-value" id="streakDays" data-page-node-id="MsfS0S9uVbj1FAtIoigsSQ">0</span> 天</span></div>
+        <div class="stat-item" data-page-node-id="0oiWqsseAzK7MPPXPOsYvM"><span class="stat-icon" data-page-node-id="0VAtAiBqWfYZGBtWPytRc1"><span class="nav-icon" data-icon="clock" data-icon-size="16"></span></span><span data-page-node-id="EBpezz5EQjhbxpBozCb3fj">今日 <span class="stat-value" id="todayMinutes" data-page-node-id="IQtjuGHvhkXAdDTdDpvpIJ">0</span> 分钟</span></div>
+        <div class="stat-item" data-page-node-id="1v4tb2usErvrPXgLqq5ASA"><span class="stat-icon" data-page-node-id="B2LZ7n5UkSaI6vHnPccWGs"><span class="nav-icon" data-icon="check" data-icon-size="16"></span></span><span data-page-node-id="DwIaDwvRlHVTYY8440Fy2B">完成 <span class="stat-value" id="todayTasks" data-page-node-id="kSpc3OowlvEb07L17SwtFC">0</span>/<span id="totalTasks" data-page-node-id="BjKhvCpplXKRNTS9w9Kl1v">5</span></span></div>
+      </div>
+      <div class="topbar-date" id="topbarDate" data-page-node-id="bGDBPM1cazh0U6gBt4Ys8t"></div>
+      <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0" data-page-node-id="J4kAX0Y9Eo4Aca8h290xYk"><span class="nav-icon" data-icon="moon" data-icon-size="18"></span></div>
+    </header>
+<div class="page active" id="page-settings" data-page-node-id="KtjrhZicD6TywqrJjlmnvL">
+        <!-- T02 批次五 hash 路由：面包屑（router 维护）+ 第一层分组卡列表（默认显示） -->
+        <div class="subpage-header"></div>
+        <div class="subpage-list">
+          <div class="subpage-group-card" onclick="SubpageRouter.navigate('appearance')">
+            <div class="sgc-icon"><span class="nav-icon" data-icon="palette" data-icon-size="20"></span></div>
+            <div class="sgc-main"><div class="sgc-title">外观</div><div class="sgc-desc">主题外观、配色皮肤</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
+          <div class="subpage-group-card" onclick="SubpageRouter.navigate('reading')">
+            <div class="sgc-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="20"></span></div>
+            <div class="sgc-main"><div class="sgc-title">阅读与界面</div><div class="sgc-desc">全局字号、动效与紧凑模式偏好</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
+          <div class="subpage-group-card" onclick="SubpageRouter.navigate('voice')">
+            <div class="sgc-icon"><span class="nav-icon" data-icon="headphones" data-icon-size="20"></span></div>
+            <div class="sgc-main"><div class="sgc-title">语音与朗读</div><div class="sgc-desc">朗读开关、语速、英文发音口音</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
+          <div class="subpage-group-card" onclick="SubpageRouter.navigate('help')">
+            <div class="sgc-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div>
+            <div class="sgc-main"><div class="sgc-title">帮助与反馈</div><div class="sgc-desc">常见问题、意见反馈、我的反馈</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
+          <div class="subpage-group-card" onclick="SubpageRouter.navigate('account')">
+            <div class="sgc-icon"><span class="nav-icon" data-icon="locked" data-icon-size="20"></span></div>
+            <div class="sgc-main"><div class="sgc-title">账号与安全</div><div class="sgc-desc">登录状态、密码与登录模式</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
+          <div class="subpage-group-card" onclick="SubpageRouter.navigate('privacy')">
+            <div class="sgc-icon"><span class="nav-icon" data-icon="locked" data-icon-size="20"></span></div>
+            <div class="sgc-main"><div class="sgc-title">隐私与安全</div><div class="sgc-desc">动态可见范围、谁可加我、能否被搜到、黑名单</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
+          <div class="subpage-group-card" onclick="SubpageRouter.navigate('content')">
+            <div class="sgc-icon"><span class="nav-icon" data-icon="pen" data-icon-size="20"></span></div>
+            <div class="sgc-main"><div class="sgc-title">发贴与学习</div><div class="sgc-desc">发贴默认偏好、学习目标与习惯</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
+          <div class="subpage-group-card" onclick="SubpageRouter.navigate('ai')">
+            <div class="sgc-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div>
+            <div class="sgc-main"><div class="sgc-title">AI 模型</div><div class="sgc-desc">服务端密钥、AI 模型选择</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
+          <div class="subpage-group-card" onclick="SubpageRouter.navigate('about')">
+            <div class="sgc-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div>
+            <div class="sgc-main"><div class="sgc-title">数据与关于</div><div class="sgc-desc">存储空间、帮助反馈、关于</div></div>
+            <div class="sgc-arrow">›</div>
+          </div>
+        </div>
+
+        <!-- 外观设置 -->
+        <section data-subpage="appearance">
+        <div class="card" data-page-node-id="7b4WyatAv3sHfJbv2gD1lW">
+          <div class="card-header" data-page-node-id="y1QX8jjswrVl386693fdDr">
+            <div class="card-title" data-page-node-id="ZykqgcSr8VxWVEsBw2BDJ8"><span class="title-icon" data-page-node-id="vtWowTcEIkeJNMBiE4zpZI" data-icon="palette"></span>外观</div>
+          </div>
+          <div class="setting-row" data-page-node-id="BUEvnVe2O61drl0vdHhI1T">
+            <div class="setting-info" data-page-node-id="wsJJoZqJEuj8LavKdou9Yo">
+              <div class="setting-name" data-page-node-id="jv09LZ1vEChw8l0gUaQOEE">主题模式</div>
+              <div class="setting-desc" data-page-node-id="JFFPXmeW3erle9ldvQVsqq">深色模式适合夜间学习，选择会自动保存</div>
+            </div>
+            <div class="setting-actions" id="themeOptions" data-page-node-id="IapC4ssuAWsEDxcGuAZ1MD">
+              <button class="theme-option active" data-mode="light" onclick="setTheme('light')" data-page-node-id="ErKZrP4VyalkJ3TZftlr4q"><span class="nav-icon" data-icon="sun" data-icon-size="14"></span> 浅色</button>
+              <button class="theme-option" data-mode="dark" onclick="setTheme('dark')" data-page-node-id="5sGQFIO8UbUrYieTQPlitu"><span class="nav-icon" data-icon="moon" data-icon-size="14"></span> 深色</button>
+              <button class="theme-option" data-mode="auto" onclick="setTheme('auto')" data-page-node-id="TE0YlEbqoJtg7bj82d493p"><span class="nav-icon" data-icon="monitor" data-icon-size="14"></span> 跟随系统</button>
+            </div>
+          </div>
+          <div class="setting-row" data-page-node-id="wGvWpYOyyj3qnAjNqNi0Fh">
+            <div class="setting-info" data-page-node-id="446gbRHdKNiP3rzBKQ9nyN">
+              <div class="setting-name" data-page-node-id="jH6Ws1FlFxrbsCRrjpvmHb">界面配色</div>
+              <div class="setting-desc" data-page-node-id="LgEaZLoacoAdpou7n0sIyM">全局配色皮肤（会覆盖模块主色），选择后自动保存</div>
+            </div>
+            <div class="setting-actions" style="flex-wrap:wrap" data-page-node-id="Cr6zz3RGdPkXYexGiuRxzm">
+              <button class="theme-option" data-skin="default" onclick="setSkin('default')" data-page-node-id="pqDZIrAJ4CK6NtQfuQBOEM"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-2px;background:#5B8DEF"></span> 默认</button>
+              <button class="theme-option" data-skin="violet" onclick="setSkin('violet')" data-page-node-id="vCZ1dwmWCcPjGc8pgeEZwe"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-2px;background:#9B6BD9"></span> 暮紫</button>
+              <button class="theme-option" data-skin="forest" onclick="setSkin('forest')" data-page-node-id="AYV5TLCMqhQLi6juIC6UyY"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-2px;background:#2F9E63"></span> 森林</button>
+              <button class="theme-option" data-skin="sunset" onclick="setSkin('sunset')" data-page-node-id="ik2vDDcAULuwcakvGge7hb"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-2px;background:#E8833A"></span> 暖阳</button>
+              <button class="theme-option" data-skin="ocean" onclick="setSkin('ocean')" data-page-node-id="0mR7pwcGtMapSrFVUHV6DF"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-2px;background:#2C6FBF"></span> 深蓝</button>
+              <button class="theme-option" data-skin="mono" onclick="setSkin('mono')" data-page-node-id="MXyaHeJSfBJBCy04EVRQep"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-2px;background:#4B5563"></span> 极简</button>
+              <button class="theme-option" data-skin="rose" onclick="setSkin('rose')" data-page-node-id="Vh3COXRoCFfCYMhTUDoLEs"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-2px;background:#E36D8C"></span> 樱花</button>
+            </div>
+          </div>
+        </div>
+        </section>
+
+        <!-- 阅读与界面（【9/11 新增】；C3 20260913h：提升为一级菜单 reading） -->
+        <section data-subpage="reading">
+        <div class="card" data-page-node-id="EnrL89SBCpsPxZslMZSyhM">
+          <div class="card-header" data-page-node-id="dpJMpndv6PTGkjExIB97HA">
+            <div class="card-title" data-page-node-id="xj1BeOWLHqsQXZd00mAMjO"><span class="title-icon" data-page-node-id="bEpwVg0ImkCJxXXIFmhgWP" data-icon="ruler"></span>阅读与界面</div>
+            <div class="card-action" data-page-node-id="5Z3Z17gvmi5SUwnEgTz2IE">即时生效</div>
+          </div>
+          <div class="setting-row" data-page-node-id="GJrAUWczFKQDtE5jZy52Xt">
+            <div class="setting-info" data-page-node-id="HAf5xJEm3PotTJAVv4FWb9">
+              <div class="setting-name" data-page-node-id="6w1EKC6mQRSXwFs77mj5af">全局字号</div>
+              <div class="setting-desc" data-page-node-id="7xF0U8lNTFd481RMRBCttn">调节全站正文字号，适配不同屏幕与视力</div>
+            </div>
+            <div class="setting-actions" data-page-node-id="yxHsMTqBTNY3aCczSkRZUh">
+              <div class="seg" id="stFontSize" data-page-node-id="64IekXILBVw7DkZ3h8LBhy">
+                <button data-v="small" onclick="stSeg('fontSize','small',this)" data-page-node-id="298w6soJ5bdKlWEB8w9y7J">小</button>
+                <button data-v="normal" onclick="stSeg('fontSize','normal',this)" data-page-node-id="gihHTCOGPVwCiSxkcvj1BC">标准</button>
+                <button data-v="large" onclick="stSeg('fontSize','large',this)" data-page-node-id="mXWSnFD9zpXt4PDZjCKEdK">大</button>
+                <button data-v="xlarge" onclick="stSeg('fontSize','xlarge',this)" data-page-node-id="4Fx1OBHHkU1JtAq5RaPjwr">特大</button>
+              </div>
+            </div>
+          </div>
+          <div class="setting-row" data-page-node-id="SmVyFbLqRLO2SsYmqxKNrw">
+            <div class="setting-info" data-page-node-id="0FrLK3W8bnjdv79yNFHOlz">
+              <div class="setting-name" data-page-node-id="WpWcgWwMajXt8tcrzELQ6B">社区编辑 / 阅读区字号</div>
+              <div class="setting-desc" data-page-node-id="cCAWsqK883KGiSTI0gZeC6">只影响「社区」的编辑器输入区与实时预览区</div>
+            </div>
+            <div class="setting-actions" data-page-node-id="HZSc4lh4GRYEB4hVw5xCoF">
+              <div class="seg" id="stReaderFont" data-page-node-id="lIqIsHpJZJ4X7UoDyKwiJF">
+                <button data-v="normal" onclick="stSeg('readerFont','normal',this)" data-page-node-id="Ihp1afrc7r42eSbjyDhR3c">标准</button>
+                <button data-v="large" onclick="stSeg('readerFont','large',this)" data-page-node-id="E7YygRHJCKxNHrzcM0ml4W">大</button>
+                <button data-v="xlarge" onclick="stSeg('readerFont','xlarge',this)" data-page-node-id="KGRTt22ngppXpySM2YVali">特大</button>
+              </div>
+            </div>
+          </div>
+          <div class="setting-row" data-page-node-id="RlUr36uPT8mO40GLWZvUNV">
+            <div class="setting-info" data-page-node-id="oF7HvczmQ1w5PpnX6XzDCH">
+              <div class="setting-name" data-page-node-id="KPYK0GRQd7M7zfjyYlCdDz">减少界面动效</div>
+              <div class="setting-desc" data-page-node-id="WkN3t8lcmRSO5PjATBoxq3">关闭卡片浮起、页面淡入等动画，低配设备更流畅</div>
+            </div>
+            <div class="setting-actions" id="swReduceMotion" data-page-node-id="Ow0R1IVjmOfoDLl7xzwO4E">
+              <button class="theme-option" data-val="1" onclick="stToggle('reduceMotion',true,this)" data-page-node-id="uBMW2GhrXflz7WsksZn19P"><span class="nav-icon" data-icon="check" data-icon-size="14"></span> 开启</button>
+              <button class="theme-option" data-val="0" onclick="stToggle('reduceMotion',false,this)" data-page-node-id="t2i5wIiFpoKzGuRVYzYU5V"><span class="nav-icon" data-icon="close" data-icon-size="14"></span> 关闭</button>
+            </div>
+          </div>
+          <div class="setting-row" data-page-node-id="sL7VVkeRfH5ZcIT7bfLtXw">
+            <div class="setting-info" data-page-node-id="V7YWKdCKGBk5BFvRDGnsWb">
+              <div class="setting-name" data-page-node-id="Y9yzqtg6KNY6T6FLPjSWck">紧凑模式</div>
+              <div class="setting-desc" data-page-node-id="dKXef7xCXHbUpAhzjOs9Pk">压缩卡片内边距与间距，一屏显示更多内容</div>
+            </div>
+            <div class="setting-actions" id="swCompact" data-page-node-id="mqw8cP72u7TrclPnNBVtAC">
+              <button class="theme-option" data-val="1" onclick="stToggle('compact',true,this)" data-page-node-id="6dSJ5BgOvRG3CaNYH56Yoa"><span class="nav-icon" data-icon="check" data-icon-size="14"></span> 开启</button>
+              <button class="theme-option" data-val="0" onclick="stToggle('compact',false,this)" data-page-node-id="kGirTzvmvqbo6TDv2dZYyj"><span class="nav-icon" data-icon="close" data-icon-size="14"></span> 关闭</button>
+            </div>
+          </div>
+          <!-- R103：AI 悬浮球显示开关。用户可长按悬浮球选「关闭悬浮球」永久隐藏（assets/app.js 会写
+               localStorage['study_workbench_ai_fab_hidden']='1' 并把球 display:none）。本开关负责重新开启：
+               开启 = removeItem(key) + 若存在则 window.setAiFabVisible(true)；关闭 = 写 key '1' + 若存在则
+               window.setAiFabVisible(false)。本页不直接操作 #aiFab 元素（有些页面没有该元素）。 -->
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">AI 悬浮球</div>
+              <div class="setting-desc">首页右下角的 AI 助手入口，关闭后可在设置里重新开启</div>
+            </div>
+            <div class="setting-actions" id="swAiFab">
+              <button class="theme-option" data-val="1" onclick="stAiFabToggle(true)"><span class="nav-icon" data-icon="check" data-icon-size="14"></span> 开启</button>
+              <button class="theme-option" data-val="0" onclick="stAiFabToggle(false)"><span class="nav-icon" data-icon="close" data-icon-size="14"></span> 关闭</button>
+            </div>
+          </div>
+        </div>
+        </section>
+
+        <!-- 发贴默认偏好（【9/11 新增】） -->
+        <section data-subpage="content">
+        <div class="card" data-page-node-id="PE6br21m6lYUsHl917UUSg">
+          <div class="card-header" data-page-node-id="Jw0O3DUwgiFhqlG0nnbj1Q">
+            <div class="card-title" data-page-node-id="7zLm1JkRwWzQjcoWsh2HoL"><span class="title-icon" data-page-node-id="L8Gza9bPIyNKCYjJjj5wI9" data-icon="pen"></span>发贴默认偏好</div>
+            <div class="card-action" data-page-node-id="SQ0sBVQW9y1NenfDNWLbN5">社区编辑器自动套用</div>
+          </div>
+          <div class="setting-row" data-page-node-id="sIMMPwQu1uHSWZMEwTfduX">
+            <div class="setting-info" data-page-node-id="X5PBqBCyNDLmb1MyvQeAAE">
+              <div class="setting-name" data-page-node-id="AV8ln6DODukX9dNxm6InAp">默认分类</div>
+              <div class="setting-desc" data-page-node-id="9RCHz2AfJGmuDJZwAHVMWn">新建发贴时默认选中的学习模块分类</div>
+            </div>
+            <div class="setting-actions" data-page-node-id="Vn8gG8DYa29Aww8JICXCkU">
+              <select class="form-input" id="stBlogCat" style="min-width:170px" onchange="setSetting('blogCat',this.value);showToast('✅ 默认分类已保存')" data-page-node-id="aIQe6ArUHnVYqVRnvGdTjj"></select>
+            </div>
+          </div>
+          <div class="setting-row" data-page-node-id="ziAYb8wKrfqryDrUckNTvg">
+            <div class="setting-info" data-page-node-id="Y7dB72hLo2Qubcpviu5A8W">
+              <div class="setting-name" data-page-node-id="MktN4fFlkbfmCSIMMvCusE">默认可见范围</div>
+              <div class="setting-desc" data-page-node-id="TmGQOJOMQnljREqQzWspAE">新建发贴默认是「公开」还是「仅自己可见」</div>
+            </div>
+            <div class="setting-actions" data-page-node-id="GaftEltKzYPHTAFXaBkZF0">
+              <select class="form-input" id="stBlogPrivacy" onchange="setSetting('blogPrivacy',this.value);showToast('✅ 默认可见范围已保存')" data-page-node-id="BG8iY2N63kc1MLQOMHA01e">
+                <option value="public" data-page-node-id="yAQlqOtqm5ajDhAVFi3lqk">公开</option>
+                <option value="private" data-page-node-id="35Y2dWeIVfb2FysNxAysNJ">私密</option>
+              </select>
+            </div>
+          </div>
+          <div class="setting-row" data-page-node-id="i7liViFOqXwBW6fe7fS0Bj">
+            <div class="setting-info" data-page-node-id="u6LCnOEyddUKen8MiAcTYC">
+              <div class="setting-name" data-page-node-id="lhq5GWivFM6rcCBlpgMGdy">常用标签</div>
+              <div class="setting-desc" data-page-node-id="UR0ZInn3OUECf5OuwNpLog">新建发贴时自动填入（逗号分隔，最多 6 个），留空则不填</div>
+            </div>
+            <div class="setting-actions" style="flex:1;max-width:280px;min-width:180px" data-page-node-id="1A2deEjQqBocICQEnpVCFu">
+              <input type="text" class="form-input" id="stBlogTags" placeholder="如：错题总结, 英语单词" style="width:100%" onchange="stSaveBlogTags()" data-page-node-id="xb2IrYntesoz3vE0IeHyng">
+            </div>
+          </div>
+        </div>
+        </section>
+
+        <!-- 学习目标 -->
+        <section data-subpage="content">
+        <div class="card" data-page-node-id="OvRyfUkqP8EgQCTBECQSim">
+          <div class="card-header" data-page-node-id="GOhrMidMdvSai5I7Gx6iUo">
+            <div class="card-title" data-page-node-id="K94iz5qM30gbzHZ5jDLXuc"><span class="title-icon" data-page-node-id="DiUTStksgAet2voo0Sts5F" data-icon="trophy"></span>学习目标与习惯</div>
+          </div>
+          <div class="setting-row" data-page-node-id="PLFay4xaTndZcKYQtIhv1p">
+            <div class="setting-info" data-page-node-id="qd5eQH2NFieDVEZeJbR1te">
+              <div class="setting-name" data-page-node-id="9RKDILlfDcbW2Ba8SRLGrN">每日新增学习内容</div>
+              <div class="setting-desc" data-page-node-id="v7PxOxMKwgHTcxNjZEmAGy">内容库（商务礼仪 / 面试题库 / PPT版式 / 场景话术 / 金句）每天为你安排的新条目数</div>
+            </div>
+            <div class="setting-actions" data-page-node-id="a7ESq6e6ForCpUMnIsD3Dg">
+              <select class="form-input" id="stDailyNew" onchange="setSetting('dailyNew',+this.value);showToast('✅ 每日新增条数已保存')" data-page-node-id="Wvc8niwC5Z2N4sXNt0Yz9t">
+                <option value="1" data-page-node-id="WysRrluEE5ZNReDPTTrVjC">1 条/天</option><option value="2" data-page-node-id="RWerjOZm8MKUeZ1YlrKdAD">2 条/天</option><option value="3" data-page-node-id="8EFWS0hemFzELHk2VMpr9i">3 条/天</option>
+                <option value="4" data-page-node-id="J980mMbo2UmSM6IeDRVdR9">4 条/天</option><option value="5" data-page-node-id="16njJ7li2VbpEdHPVjhlJv">5 条/天</option><option value="6" data-page-node-id="SPeZijF2ECn1agkLaN0fVv">6 条/天</option>
+                <option value="8" data-page-node-id="X6rtE1SV0p76QGFTX7GT27">8 条/天</option><option value="10" data-page-node-id="2PUD1xfCKMJWzsrbEzGGUh">10 条/天</option>
+              </select>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">每日复习量</div>
+              <div class="setting-desc">四级词汇每日复习队列的词数上限（到期词优先，未到期按最早复习日补足）</div>
+            </div>
+            <div class="setting-actions">
+              <select class="form-input" id="stDailyReview" onchange="setSetting('dailyReview',+this.value);showToast('✅ 每日复习量已保存')">
+                <option value="10">10 词/天</option>
+                <option value="20">20 词/天</option>
+                <option value="30">30 词/天</option>
+                <option value="50">50 词/天</option>
+                <option value="100">100 词/天</option>
+              </select>
+            </div>
+          </div>
+          <div class="setting-row" data-page-node-id="jsREkIE5SYQxYMHggP2gQK">
+            <div class="setting-info" data-page-node-id="tazRWCRQzYWIMvAqR7sz2g">
+              <div class="setting-name" data-page-node-id="OxdkCkvEQLGT07UJqElrvr">专注学习时长（默认）</div>
+              <div class="setting-desc" data-page-node-id="JPQiYHfUWg9YCqgnCBKh9y">番茄钟专注的默认分钟数，可在任意页面快速开始</div>
+            </div>
+            <div class="setting-actions" style="gap:6px" data-page-node-id="p6oaVqfnIMQBT3K6XB83x6">
+              <select class="form-input" id="stFocus" style="width:110px" onchange="setSetting('focusMinutes',+this.value)" data-page-node-id="h9XrPnPriW4Swjigfx25tV">
+                <option value="15" data-page-node-id="VJ8psorJZVUGVaO53rW0k7">15 分钟</option><option value="25" data-page-node-id="nAVQefzDZDDgLOwqHw52oQ">25 分钟</option>
+                <option value="45" data-page-node-id="3LsvEHJY8DCEJJo05e09C0">45 分钟</option><option value="60" data-page-node-id="LDwhoK0r2FHYNmCzHB9tgZ">60 分钟</option>
+              </select>
+              <button class="btn btn-primary" onclick="openFocusTimer()" data-page-node-id="xMQZgWIOOqZyfCPxtNtjiG"><span class="nav-icon" data-icon="play" data-icon-size="14"></span> 开始专注</button>
+            </div>
+          </div>
+
+          <!-- 【9/11 新增】每日学习时长上限 -->
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">每日学习时长上限</div>
+              <div class="setting-desc">到站即开始计时（切到后台自动暂停）。达到上限后仅友好提醒，不会强制中断学习</div>
+            </div>
+            <div class="setting-actions" style="gap:6px">
+              <label class="st-switch" title="启用上限提醒">
+                <input type="checkbox" id="stLimitOn" onchange="setSetting('studyLimitOn',this.checked);syncStudyLimitUI();showToast(this.checked?'✅ 已开启每日时长上限':'已关闭时长上限')">
+                <span class="st-switch-slider"></span>
+              </label>
+              <select class="form-input" id="stLimitHours" style="width:110px" onchange="setSetting('studyLimitHours',+this.value);syncStudyLimitUI();showToast('✅ 每日上限已设为 '+this.value+' 小时')">
+                <option value="1">1 小时</option><option value="2">2 小时</option><option value="3">3 小时</option>
+                <option value="4">4 小时</option><option value="5">5 小时</option><option value="6">6 小时</option>
+                <option value="8">8 小时</option><option value="10">10 小时</option>
+              </select>
+            </div>
+          </div>
+          <div class="setting-row" style="border-top:none;padding-top:0">
+            <div class="setting-info">
+              <div class="setting-name">今日学习进度</div>
+              <div class="setting-desc" id="stLimitTodayDesc">正在统计…</div>
+            </div>
+            <div class="setting-actions">
+              <button class="btn btn-ghost" onclick="resetTodayStudyTime()">重置今日</button>
+            </div>
+          </div>
+          <div style="padding:0 18px 16px">
+            <div class="st-limit-bar"><i id="stLimitBar" style="width:0%"></i></div>
+            <div class="st-limit-tip" id="stLimitTip"></div>
+          </div>
+        </div>
+        </section>
+
+        <!-- 语音（C3 20260913h：提升为一级菜单 voice） -->
+        <section data-subpage="voice">
+        <div class="card" data-page-node-id="30BJOEyfUA0kDwDFzV6Myh">
+          <div class="card-header" data-page-node-id="4ygm6PxU0kcfq3wvZRYhXs">
+            <div class="card-title" data-page-node-id="ts34Ui250fFbX4uWz2pcOC"><span class="title-icon" data-page-node-id="4VDaZjc0lVqJbv4mSmzcwc" data-icon="headphones"></span>语音与朗读</div>
+          </div>
+          <div class="setting-row" data-page-node-id="iBSdZY56eRQCA7Enz3sXqy">
+            <div class="setting-info" data-page-node-id="CytGGpVjkeonZBz0RMj4LA">
+              <div class="setting-name" data-page-node-id="1zKvW7SDs8tNl0JjnXGoJe">朗读开关</div>
+              <div class="setting-desc" data-page-node-id="X5AsSvbVFYm6N6a5g5N3Oq">控制词汇 / 口语 / 面试练习里的语音朗读（浏览器语音合成）</div>
+            </div>
+            <div class="setting-actions" id="swAutoSpeak" data-page-node-id="2G4clzhHHGMyesjgBD5WoY">
+              <button class="theme-option" data-val="1" onclick="stToggle('autoSpeak',true,this)" data-page-node-id="hZrI8yU9GHMr5TuaT3CLDC"><span class="nav-icon" data-icon="check" data-icon-size="14"></span> 开启</button>
+              <button class="theme-option" data-val="0" onclick="stToggle('autoSpeak',false,this)" data-page-node-id="235f3OzytQdtHdsBrIvDXS"><span class="nav-icon" data-icon="close" data-icon-size="14"></span> 关闭</button>
+            </div>
+          </div>
+          <div class="setting-row" data-page-node-id="MlGqMB9kadyQSZkidRTeLV">
+            <div class="setting-info" data-page-node-id="aCECogJevjr1S34AcJJJBf">
+              <div class="setting-name" data-page-node-id="ousgx0d9XfzoWG4RFoRdJt">朗读语速</div>
+              <div class="setting-desc" data-page-node-id="pitoJJOG0VUsQBKkbYhqrK">没有单独指定语速的朗读会使用该默认值</div>
+            </div>
+            <div class="setting-actions" data-page-node-id="VS8capz6kKYCUuD8Iu1rlY">
+              <select class="form-input" id="stVoiceRate" onchange="setSetting('voiceRate',+this.value)" data-page-node-id="atgY5HBxpOCinM2EE7KYIE">
+                <option value="0.7" data-page-node-id="XFgqBYNDIXNGGO2JHzHpdv">慢速</option><option value="0.9" data-page-node-id="yaHdJLH3C25fcAd0f4YIMF">标准</option>
+                <option value="1.15" data-page-node-id="dHVUtqirs5BlfDxGKYR84o">较快</option><option value="1.4" data-page-node-id="XDqwEDwaQgDZCDRWyyz9ci">快速</option>
+              </select>
+            </div>
+          </div>
+          <div class="setting-row" data-page-node-id="sEEnhWagEzsSdG7sjCrxOK">
+            <div class="setting-info" data-page-node-id="0xKv7XwveBP0Wqt8u67lHv">
+              <div class="setting-name" data-page-node-id="f0TlGoLAQj86b9oJsAX2rK">英文发音口音</div>
+              <div class="setting-desc" data-page-node-id="CUfHTaX6rrjZkbbMIpJfis">英文单词 / 句子朗读的音色口音</div>
+            </div>
+            <div class="setting-actions" data-page-node-id="f4P4NgFLcHgWLmJoghENgR">
+              <select class="form-input" id="stVoiceLang" onchange="setSetting('voiceLang',this.value)" data-page-node-id="zcuIkXkv9QwrD0emWXCGOZ">
+                <option value="en-US" data-page-node-id="ycuV2DYLcGLEcHZ923eUdu">美式</option><option value="en-GB" data-page-node-id="ql9oFUKTYOyCEn9lNEcLzq">英式</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        </section>
+
+        <!-- 通知 -->
+        <section data-subpage="appearance">
+        <div class="card" data-page-node-id="shNHjwV3EHE3pRwaX6HeXC">
+          <div class="card-header" data-page-node-id="2u3ElCCNdVlWE0St2xuL8a">
+            <div class="card-title" data-page-node-id="uebgrNkFHSlewoKKykmRHs"><span class="title-icon" data-page-node-id="aYtR35y8ztW46piBpwfQnF" data-icon="alert-triangle"></span>提醒与通知</div>
+          </div>
+          <div class="setting-row" data-page-node-id="3klQicnx1f44TmhXB4LU5w">
+            <div class="setting-info" data-page-node-id="zQYS674kPEeojADV0Z1Rln">
+              <div class="setting-name" data-page-node-id="1oXVKZKw4xgiqaXNoCLBgS">新私信提醒</div>
+              <div class="setting-desc" data-page-node-id="7bpW0nvVNJ8tjDqeOfd2oH">在线登录后，收到好友新私信时给出网页提示（需允许通知权限）</div>
+            </div>
+            <div class="setting-actions" id="swChatNotify" data-page-node-id="T5xYIisV2ScKmIKUFke0iB">
+              <button class="theme-option" data-val="1" onclick="stToggle('chatNotify',true,this)" data-page-node-id="cixXYn6A3TYyCpKJCL3OTS"><span class="nav-icon" data-icon="check" data-icon-size="14"></span> 开启</button>
+              <button class="theme-option" data-val="0" onclick="stToggle('chatNotify',false,this)" data-page-node-id="oq0uFtDvmTtiuShUs40v9p"><span class="nav-icon" data-icon="close" data-icon-size="14"></span> 关闭</button>
+            </div>
+          </div>
+          <!-- R105：App 后台消息通知总开关。状态存 localStorage['xt_notify_enabled']（'1'/'0'，缺省='1'=开）。
+               切换时 feature-detect 原生桥 window.XTAppBridge.setMsgNotify(on)（由安卓端并行注入；
+               Web 端 / 桥缺失时静默跳过，不允许报错）。关闭只停后台推送提醒，
+               不影响进入聊天页自动清零未读等既有逻辑。 -->
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">消息通知</div>
+              <div class="setting-desc">App 收到新私信 / 回复时在系统通知栏提醒（关闭后停止后台消息提醒）</div>
+            </div>
+            <div class="setting-actions" id="swMsgNotify">
+              <button class="theme-option" data-val="1" onclick="stMsgNotifyToggle(true)"><span class="nav-icon" data-icon="check" data-icon-size="14"></span> 开启</button>
+              <button class="theme-option" data-val="0" onclick="stMsgNotifyToggle(false)"><span class="nav-icon" data-icon="close" data-icon-size="14"></span> 关闭</button>
+            </div>
+          </div>
+        <!-- 每日学习提醒（【9/11 新增】；需求B：纯前端定时提醒到达率受页面存活限制——需 App 保持打开） -->
+          <div class="setting-row" data-page-node-id="l1KqfYu1Myi3i2vMRfEurs">
+            <div class="setting-info" data-page-node-id="reisKw0dEY8QBoiVtAknSg">
+              <div class="setting-name" data-page-node-id="m3FAVfWotA60v9XHT1TnqI">每日学习提醒</div>
+              <div class="setting-desc" data-page-node-id="uwc391hZ1q09ZSjWh2BHie">到点后以网页通知提醒你打卡学习（需先授权通知权限）<b>· 需 App 保持打开</b></div>
+            </div>
+            <div class="setting-actions" id="swStudyRemind" data-page-node-id="fow41uztmFtSxtqgtfjbIB">
+              <button class="theme-option" data-val="1" onclick="stToggle('studyRemind',true,this);applyStudyReminder()" data-page-node-id="dviafJtgb7h9zmZHDKURYr"><span class="nav-icon" data-icon="check" data-icon-size="14"></span> 开启</button>
+              <button class="theme-option" data-val="0" onclick="stToggle('studyRemind',false,this);applyStudyReminder()" data-page-node-id="YKhVqrUwlpombXKuVkS9HV"><span class="nav-icon" data-icon="close" data-icon-size="14"></span> 关闭</button>
+            </div>
+          </div>
+          <div class="setting-row" data-page-node-id="hVCi4iYum1a2LfaSwEdbEM">
+            <div class="setting-info" data-page-node-id="Psuo1jjYAnghcinJCHPKND">
+              <div class="setting-name" data-page-node-id="yQ4AqAPwCHCmkNNeR0gOVI">提醒时间</div>
+              <div class="setting-desc" data-page-node-id="BPWkEE4cWmHlabAq6A2xPE">每天在该时间提醒一次（页面需保持打开）</div>
+            </div>
+            <div class="setting-actions" data-page-node-id="dZiLlBvS94GMip5gZCcAyK">
+              <input type="time" class="form-input" id="stRemindTime" value="20:00" onchange="setSetting('remindTime',this.value);applyStudyReminder();showToast('✅ 提醒时间已保存')" data-page-node-id="65rRPdgcdIF6mEPeFyVyxm">
+              <button class="btn btn-outline" onclick="requestNotifyPermission()" data-page-node-id="5qYR1eJg6OmLwTLHwqH8Rn"><span class="nav-icon" data-icon="bell" data-icon-size="14"></span> 授权通知</button>
+            </div>
+          </div>
+        </div>
+        </section>
+
+        <!-- 数据管理（需求 3 重构：原导出/导入/清空等操作全部收进独立页 数据管理.html，
+             本卡瘦身为「存储空间」一行入口；统计/清理/备份/检测更新均在新页） -->
+        <section data-subpage="about">
+        <div class="card" data-page-node-id="DfyIF0SHAUqXLzX7Xg63wM">
+          <div class="card-header" data-page-node-id="ENm5SJ0XkCpCDO4t8IHSod">
+            <div class="card-title" data-page-node-id="WZciCdFmp1YMRwrPT14vAF"><span class="title-icon" data-page-node-id="x4o7VSTFQ9lJ0OJ1YtiRzL" data-icon="package"></span>数据管理</div>
+          </div>
+          <!-- R11：带 ?from= 进入数据管理页，使其返回键能显式回本页（全站禁用 history.back，防历史栈乒乓） -->
+          <div class="setting-row" onclick="location.href='数据管理.html?from=设置'" style="cursor:pointer">
+            <div class="setting-info">
+              <div class="setting-name">存储空间</div>
+              <div class="setting-desc">占用统计 · 分类清理 · 备份与恢复</div>
+            </div>
+            <div class="setting-actions">
+              <button class="btn btn-outline"><span class="nav-icon" data-icon="package" data-icon-size="14"></span> 进入</button>
+            </div>
+          </div>
+        </div>
+        </section>
+
+        <!-- 【后续扩展点】帮助与反馈卡（T6 增量 2026-09-11）：FAQ 手风琴（纯前端离线可用）+ 反馈表单 + 我的反馈。
+             提交走 /api/feedbacks（≥10 字，服务端限频 10 分钟 1 条）；失败暂存 study_workbench_feedback_outbox。
+             【后续扩展点：反馈处理台】管理员查询/处理接口本轮留空。 -->
+        <section data-subpage="help">
+        <div class="card" id="feedbackCard">
+          <div class="card-header">
+            <div class="card-title"><span class="title-icon" data-icon="help-circle"></span>帮助与反馈</div>
+            <div class="card-action" id="fbStatusBadge"></div>
+          </div>
+
+          <!-- 常见问题（纯前端静态内容，离线可用） -->
+          <div class="fb-faq" id="fbFaq">
+            <div class="fb-faq-item">
+              <div class="fb-faq-q" onclick="fbToggleFaq(this)"><span class="nav-icon" data-icon="message-square" data-icon-size="16"></span> 消息发不出去怎么办？<span>▾</span></div>
+              <div class="fb-faq-a">① 确认后端已启动（设置页右上角能收到通知说明在线）；② 只能与好友互发消息，先在「通讯录」页添加；③ 若被对方拉黑会提示「无法发送消息」。离线时聊天会自动切到本地演示模式。</div>
+            </div>
+            <div class="fb-faq-item">
+              <div class="fb-faq-q" onclick="fbToggleFaq(this)"><span class="nav-icon" data-icon="image" data-icon-size="16"></span> 图片 / 头像不显示？<span>▾</span></div>
+              <div class="fb-faq-a">图片由后端 uploads 目录提供。file:// 打开页面时会自动拼接后端地址；请确认后端在运行，且没有浏览器插件拦截图片。</div>
+            </div>
+            <div class="fb-faq-item">
+              <div class="fb-faq-q" onclick="fbToggleFaq(this)"><span class="nav-icon" data-icon="locked" data-icon-size="16"></span> 密码忘记了怎么找回？<span>▾</span></div>
+              <div class="fb-faq-a">当前版本暂不支持自助找回，请联系管理员在服务器端重置。注册后建议在「账号与安全」里记好密码。</div>
+            </div>
+            <div class="fb-faq-item">
+              <div class="fb-faq-q" onclick="fbToggleFaq(this)"><span class="nav-icon" data-icon="package" data-icon-size="16"></span> 换电脑 / 换浏览器数据还在吗？<span>▾</span></div>
+              <div class="fb-faq-a">发贴、好友、消息存在服务器，登录即恢复；词汇进度、错题本等学习数据保存在本机，可在「数据管理」导出 JSON 备份后导入新设备。</div>
+            </div>
+            <div class="fb-faq-item">
+              <div class="fb-faq-q" onclick="fbToggleFaq(this)"><span class="nav-icon" data-icon="bot" data-icon-size="16"></span> AI 功能报「未配置密钥」？<span>▾</span></div>
+              <div class="fb-faq-a">密钥由管理员配置在服务器端，前端不接触任何密钥。若提示未配置，请联系管理员在 server/.env 填写对应 API Key 并重启后端。</div>
+            </div>
+            <div class="fb-faq-item">
+              <div class="fb-faq-q" onclick="fbToggleFaq(this)"><span class="nav-icon" data-icon="send" data-icon-size="16"></span> 反馈提交了没人回？<span>▾</span></div>
+              <div class="fb-faq-a">反馈会进入开发者的处理队列，状态会显示在下方「我的反馈」里（待处理 / 已回复）。提交成功会返回一个编号（如 #123），方便追踪。</div>
+            </div>
+            <div class="fb-faq-item">
+              <div class="fb-faq-q" onclick="fbToggleFaq(this)"><span class="nav-icon" data-icon="bell" data-icon-size="16"></span> 收不到通知？<span>▾</span></div>
+              <div class="fb-faq-a">① 先到「提醒与通知」确认「消息通知」与「新私信提醒」开关已开启；② 手机厂商常默认禁止第三方 App 后台自启与通知，需手动放行：<br>· 华为：设置 → 应用和服务 → 应用启动管理 → 本应用 → 关闭「自动管理」，允许自启动 / 关联启动 / 后台活动；<br>· 小米：设置 → 应用设置 → 应用管理 → 本应用 → 打开「自启动」，并在「通知管理」里允许通知；<br>· OPPO：设置 → 应用管理 → 本应用 → 允许自启动 + 允许通知，电池选项设为「不优化」；<br>· vivo：设置 → 应用与权限 → 应用管理 → 本应用 → 允许自启动 + 允许后台高耗电；<br>· 其他 Android：设置 → 应用 → 本应用 → 通知 → 允许通知，并在最近任务里给本应用加锁防清理；<br>③ 完成后把 App 从后台划掉再重新打开一次即可生效。</div>
+            </div>
+          </div>
+
+          <!-- 提交反馈表单 -->
+          <div class="fb-form">
+            <div class="fb-row">
+              <label class="fb-label">反馈类型</label>
+              <select id="fbType" class="fb-input">
+                <option value="bug">功能异常</option>
+                <option value="suggest">体验建议</option>
+                <option value="content">内容问题</option>
+                <option value="other">其他</option>
+              </select>
+            </div>
+            <div class="fb-row">
+              <label class="fb-label">问题描述（至少 10 字）</label>
+              <textarea id="fbContent" class="fb-input" rows="3" maxlength="2000" placeholder="请描述遇到的问题或建议…"></textarea>
+              <div class="fb-hint"><span id="fbLenTip">0 / 10 字</span></div>
+            </div>
+            <div class="fb-row fb-inline">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:var(--xt-font-base)">
+                <input type="checkbox" id="fbAnonymous"> 匿名提交
+              </label>
+              <span style="flex:1"></span>
+              <button class="btn btn-primary" id="fbSubmitBtn" onclick="fbSubmit()">提交反馈</button>
+            </div>
+          </div>
+
+          <!-- 给创作者提优化建议（20260913k）：直达创作者的轻量表单，POST /api/feedback {nickname,type,content} -->
+          <div class="fb-form" id="creatorFeedbackBlock">
+            <div class="fb-row" style="display:flex;align-items:center;gap:8px">
+              <span class="nav-icon" data-icon="sparkles" data-icon-size="18" style="color:var(--primary)"></span>
+              <div style="font-size:13px;font-weight:700;color:var(--text)">给创作者提优化建议</div>
+            </div>
+            <div class="fb-row">
+              <label class="fb-label">昵称（自动带入当前账号，可修改）</label>
+              <input type="text" id="cfNickname" class="fb-input" maxlength="30" placeholder="怎么称呼你？">
+            </div>
+            <div class="fb-row">
+              <label class="fb-label">类型</label>
+              <div class="cf-chips" id="cfTypeChips">
+                <button type="button" class="cf-chip active" data-value="优化建议" onclick="cfPickType(this)">优化建议</button>
+                <button type="button" class="cf-chip" data-value="问题反馈" onclick="cfPickType(this)">问题反馈</button>
+                <button type="button" class="cf-chip" data-value="新功能期望" onclick="cfPickType(this)">新功能期望</button>
+              </div>
+            </div>
+            <div class="fb-row">
+              <label class="fb-label">想说的话</label>
+              <textarea id="cfContent" class="fb-input" rows="3" maxlength="1000" placeholder="写下你的建议、遇到的问题或期待的新功能…"></textarea>
+            </div>
+            <div class="fb-row fb-inline">
+              <span style="flex:1"></span>
+              <button class="btn btn-primary" id="cfSubmitBtn" onclick="cfSubmit()">提交</button>
+            </div>
+          </div>
+
+          <!-- 我的反馈 -->
+          <div class="fb-mine">
+            <div class="fb-mine-title"><span class="nav-icon" data-icon="send" data-icon-size="16"></span> 我的反馈</div>
+            <div id="fbMineList" style="font-size:var(--xt-font-base);color:var(--text-secondary)">加载中…</div>
+          </div>
+        </div>
+        </section>
+
+        <!-- AI 模型选择：多人在线版为服务端密钥（表单由 api.js 覆盖渲染）；单机版（安卓 APK / 无 api.js）
+             由页面底部脚本改标题并渲染本地直连表单（app.js 的 renderAiProviderForm，密钥仅存本机 localStorage） -->
+        <section data-subpage="ai">
+        <div class="card" id="aiServerCard" data-page-node-id="OfysPTC9dEZhuyqAe8ltKZ">
+          <div class="card-header" data-page-node-id="BGgOnSAqUeASJnNip7ZlS3">
+            <div class="card-title" id="aiServerCardTitle" data-page-node-id="s3dGkvAXxdDlOLtZGOtbYM"><span class="title-icon" data-page-node-id="HXEGQ2YIOoYPLeOk65mhFY" data-icon="sparkles"></span>AI 模型选择（服务端密钥）</div>
+            <div class="card-action" id="aiProviderBadge" data-page-node-id="NdOY88AZHH3eeFLwRvNuXq">右下角 AI 助手</div>
+          </div>
+          <div class="setting-row" id="aiServerNoteRow" data-page-node-id="VnVGUlTjTYVmUsKtE0rAyS">
+            <div class="setting-info" data-page-node-id="BY6iZ4iafbPJEvr72LHRdb">
+              <div class="setting-name" data-page-node-id="Z25PDouSE8v9bgZD3TfXTJ">选择对话模型</div>
+              <div class="setting-desc" data-page-node-id="igB3S3wZwAjOEy9fHA7Mzh">API 密钥保存在服务器 server/.env，前端不保存、不传输任何密钥；此处仅选择要使用的模型（带流式输出与上下文记忆）</div>
+            </div>
+          </div>
+          <div id="aiProviderForm" data-page-node-id="HmLP2r0h2fEG0GEBb6SNAO"></div>
+          <div class="setting-row" data-page-node-id="7iDCKPT5wMf7t0IsUrTD1d">
+            <div class="setting-info" data-page-node-id="PpT6QOhKHsy3qauVaaFAoI">
+              <div class="setting-name" data-page-node-id="hWgADRGMqbHVWGg1Epw3k3">AI 温度（创作/严谨）</div>
+              <div class="setting-desc" data-page-node-id="Xs9DoTr0BNTvHG0FLggHqZ">越低越严谨、越高越有创意；空=使用模型默认</div>
+            </div>
+            <div class="setting-actions" data-page-node-id="t8HFF5HdktgLAcNNt4BgZf">
+              <select class="form-input" id="stAiTemp" onchange="setSetting('aiTemp',this.value);showToast('✅ 已保存')" data-page-node-id="fac9wns6LfIoChyFXCuAPC">
+                <option value="" data-page-node-id="Oos4NxHYQXswxHYoUd1g4S">跟随模型默认</option><option value="0.3" data-page-node-id="ESmG3ZGaOPVrVbO3th65Kt">更严谨 0.3</option>
+                <option value="0.7" data-page-node-id="n6P8B3kZCCEsjlbqUnhtsl">平衡 0.7</option><option value="1.0" data-page-node-id="fGNyDl9166G8kE4IbMNDCl">活泼 1.0</option><option value="1.3" data-page-node-id="NkEl7hHzPb645eOeFgkJz1">有创意 1.3</option>
+              </select>
+            </div>
+          </div>
+          <div class="setting-row" data-page-node-id="RKO97JXn8WznzVePpPNAk4">
+            <div class="setting-info" data-page-node-id="3A4bSuHDXvUBEeFN69J3oM">
+              <div class="setting-name" data-page-node-id="dUza0K6ATP41htGIyhH2Rf">AI 最大输出</div>
+              <div class="setting-desc" data-page-node-id="e8mO9A09TFbSsUXmvaD72n">单次回答最多 token 数（空=使用模型默认）</div>
+            </div>
+            <div class="setting-actions" data-page-node-id="4EslQ3zTgp3f0bidNyRgMZ">
+              <select class="form-input" id="stAiMax" onchange="setSetting('aiMax',this.value);showToast('✅ 已保存')" data-page-node-id="LE3w9SyRN79mpOz799vcA9">
+                <option value="" data-page-node-id="F57tPcky3qefykvrhSO1fL">跟随模型默认</option><option value="1024" data-page-node-id="dO9kBGxlgPESPHY8CaD2JG">较短 1024</option>
+                <option value="2048" data-page-node-id="NZWOOJlgAhwrqqXO2yAYpU">标准 2048</option><option value="4096" data-page-node-id="zq53jm3G7RV3WT8cbq3p7d">较长 4096</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        </section>
+
+        <!-- 本地发贴迁移（多人在线版：把旧 localStorage 发贴一键上传服务器，函数见 assets/api.js 的 migrateLocalNotes()。
+             单机版由页面底部脚本自动隐藏本卡片） -->
+        <section data-subpage="about">
+        <div class="card" id="migrateCard" data-page-node-id="fCayf8b6DTno8OfbcMH2bK">
+          <div class="card-header" data-page-node-id="AYUTDZLOnBJogvviEwiYsl">
+            <div class="card-title" data-page-node-id="SNQ8mpIRI4p1EYd3foXbxW"><span class="title-icon" data-page-node-id="se2ivrKUPFQHCGLkiakrY2" data-icon="inbox"></span>本地发贴迁移</div>
+            <div class="card-action" data-page-node-id="YBA1cblAYYhHBCEmsQb2JY">旧数据 → 服务器</div>
+          </div>
+          <div class="setting-row" data-page-node-id="tlZbHaCZ5502ArCQ40MoZ5">
+            <div class="setting-info" data-page-node-id="cb2Jir6ScjGShovnoEVLjE">
+              <div class="setting-name" data-page-node-id="nz8fyoU9TJEoOJO8HH9WoL">迁移到服务器数据库</div>
+              <div class="setting-desc" data-page-node-id="HCCA8jkwxxp92rXWvgr9LN">把本机 localStorage 里的旧版发贴（含评论、标签、点赞数）导入当前登录账号名下；重复迁移自动跳过，详见 运行说明.md</div>
+            </div>
+            <div class="setting-actions" data-page-node-id="hssVdXEUtGuZnlooNhARA4">
+              <button class="btn btn-primary" onclick="migrateLocalNotes()" data-page-node-id="aNhH7eGLDUeXlTrl0DPqLH"><span class="nav-icon" data-icon="download" data-icon-size="14"></span> 一键迁移</button>
+            </div>
+          </div>
+        </div>
+        </section>
+
+        <!-- 【需求 3 数据管理重构 20260922a】原「数据总览 / 快捷入口 / 维护与重置」三个 section 已删除：
+             数据总览与维护（清理缓存 / 重置外观 / 一键备份 / 检测更新）全部迁入独立页 数据管理.html
+             （stRefreshOverview / stClearCache / stResetAppearance 函数一并迁走，口径一致）；
+             快捷入口磁贴与首页功能中心重复，按设计直接删除不迁移。 -->
+
+        <!-- 账号与安全（【9/11 新增】） -->
+        <section data-subpage="account">
+        <div class="card" id="accountCard" data-page-node-id="1N6HW7c2IJC9DSTDlJsSRx">
+          <div class="card-header" data-page-node-id="K10Njp3BjmMKS3ohNmSRrJ">
+            <div class="card-title" data-page-node-id="8DTkteij4jj3mCzWuKbkFv"><span class="title-icon" data-page-node-id="uW4x5U2X1EG3v5vBhx3TmR" data-icon="locked"></span>账号与安全</div>
+            <div class="card-action" id="stAcctMode" data-page-node-id="dUDdZG0ctpjKFlWLnsX8ZH">检测中…</div>
+          </div>
+          <div class="setting-row" data-page-node-id="TfY10HFpskFuat0azviA24">
+            <div class="setting-info" data-page-node-id="BXxCmMag10usJBZXrA3LLS">
+              <div class="setting-name" data-page-node-id="njYE9vxLsFr3t6cDNLwE3x">当前账号</div>
+              <div class="setting-desc" id="stAcctDesc" data-page-node-id="jXJB5Djo7UnFoQhDUcC0gC">—</div>
+            </div>
+            <div class="setting-actions" data-page-node-id="KFyUcIkiFCXU6AK4W9mjqq">
+              <button class="btn btn-outline" onclick="stChangePassword()" data-page-node-id="UO3fR3wi5k4ofw7OPGfQ4a"><span class="nav-icon" data-icon="locked" data-icon-size="14"></span> 修改密码</button>
+              <button class="btn btn-outline" onclick="doLogout()" data-page-node-id="fDYJjfu772PG4CtC1gZjey"><span class="nav-icon" data-icon="logout" data-icon-size="14"></span> 退出登录</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-name">账号 ID</div>
+              <div class="setting-desc" id="stAcctId">—</div>
+            </div>
+          </div>
+          <div class="setting-row" data-page-node-id="XP18LCXD1rEj6yJewUE5s4">
+            <div class="setting-info" data-page-node-id="EKACO3MQv472SyidSTTDoa">
+              <div class="setting-name" data-page-node-id="GZnaHk979w0Y65JCDkzOXI">注销本机账号</div>
+              <div class="setting-desc" data-page-node-id="XefG2tuaUiyAhBaOwNO9y4">删除本机保存的账号记录（学习数据保留在本机）。服务器账号注销需后端接口支持。【后续扩展点】</div>
+            </div>
+            <div class="setting-actions" data-page-node-id="MY2rxBAfDSrs3DgUJBP6Sa">
+              <button class="btn btn-danger" onclick="stDeleteAccount()" data-page-node-id="gVm2cMEFCIqKaj09EPxFqj"><span class="nav-icon" data-icon="trash" data-icon-size="14"></span> 注销本机账号</button>
+            </div>
+          </div>
+
+          <!-- 绑定与认证（任务 E · 2026-09-16；R73d · 2026-09-18 删除手机号/微信号入口）：邮箱号绑定状态 + 页面内可展开区块。
+               ADR-3：一律使用页面内可展开区块（.st-bind-panel.active），不使用任何遮罩弹窗；
+               状态与操作全部由脚本 stRenderBindings() 动态渲染（数据源见下方脚本区契约注释）。 -->
+          <div class="setting-row st-bind-row" id="stBindRow">
+            <div class="setting-info">
+              <div class="setting-name">绑定与认证</div>
+              <div class="setting-desc">绑定邮箱号，用于账号找回与登录安全。</div>
+            </div>
+          </div>
+          <div id="stBindList" class="st-bind-list"></div>
+
+          <div class="st-bind-panel" id="stBindPanel">
+            <div class="st-bind-title" id="stBindPanelTitle"><span class="nav-icon" data-icon="shield-check" data-icon-size="16"></span> 绑定认证</div>
+            <div class="st-bind-hint" id="stBindPanelHint">请填写下方信息完成绑定。</div>
+
+            <!-- 手机号 / 邮箱号：目标值 + 获取验证码（60 秒倒计时）+ 验证码输入 -->
+            <div class="form-group" id="stBindValueGroup">
+              <div class="form-label" id="stBindValueLabel">绑定号码</div>
+              <div class="st-bind-input-row">
+                <input type="text" class="form-input" id="stBindValue" autocomplete="off" placeholder="请输入">
+                <button class="btn btn-outline" id="stBindCodeBtn" onclick="stSendBindCode()">获取验证码</button>
+              </div>
+            </div>
+            <div class="form-group" id="stBindCodeGroup">
+              <div class="form-label">验证码（6 位数字）</div>
+              <input type="text" class="form-input" id="stBindCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="请输入收到的验证码">
+            </div>
+
+            <div class="setting-actions">
+              <button class="btn btn-outline" onclick="stCloseBindPanel()">取消</button>
+              <button class="btn btn-primary" id="stBindSubmitBtn" onclick="stSubmitBind()">确认绑定</button>
+            </div>
+          </div>
+
+          <!-- ADR-3（2026-09-15）：修改密码由遮罩弹窗改为页面内可展开区块（原 #stPwdModal 遮罩形态移除）
+               仅在线账号使用：三个输入框 id、显隐函数名、提交/取消按钮全部保持不变，提交走 POST /api/auth/change-password -->
+          <div class="st-pwd-panel" id="stPwdModal">
+            <div class="st-pwd-title"><span class="nav-icon" data-icon="locked" data-icon-size="16"></span> 修改密码</div>
+            <div class="st-pwd-hint">修改成功后，其他设备上的登录状态会失效，需要用新密码重新登录。</div>
+            <div class="form-group">
+              <div class="form-label">当前密码</div>
+              <input type="password" class="form-input" id="stPwdOld" autocomplete="current-password" placeholder="请输入当前密码">
+            </div>
+            <div class="form-group">
+              <div class="form-label">新密码（至少 8 位，且同时包含字母和数字）</div>
+              <input type="password" class="form-input" id="stPwdNew" autocomplete="new-password" placeholder="请输入新密码">
+            </div>
+            <div class="form-group">
+              <div class="form-label">确认新密码</div>
+              <input type="password" class="form-input" id="stPwdNew2" autocomplete="new-password" placeholder="请再次输入新密码">
+            </div>
+            <div class="setting-actions">
+              <button class="btn btn-outline" onclick="stClosePwdModal()">取消</button>
+              <button class="btn btn-primary" id="stPwdSubmitBtn" onclick="stSubmitPwd()">确认修改</button>
+            </div>
+          </div>
+        </div>
+        </section>
+
+        <!-- 隐私与安全（T01 增量 2026-09-11；需求9 20260917 精简文案）：① 黑名单管理（真实走
+             GET /api/friends/blocked 读取、DELETE /api/friends/block/{id} 移出，非本地假成功）
+             ②「动态可见范围 / 谁可加我好友 / 能否被搜索到」三项可见性控件（读取 GET /api/auth/me，
+             保存 PUT /api/users/me/privacy，见脚本 stSetMomentScope / stSetFriendPolicy / stSetSearchable）。 -->
+        <section data-subpage="privacy">
+        <div class="card privacy-card" id="privacyCard">
+          <div class="card-header">
+            <div class="card-title"><span class="title-icon" data-icon="locked"></span>隐私与安全</div>
+            <div class="card-action">仅你可见</div>
+          </div>
+
+          <!-- ① 黑名单管理 -->
+          <div class="privacy-sec-title"><span class="nav-icon" data-icon="ban" data-icon-size="16"></span> 黑名单</div>
+          <div class="privacy-list" id="stBlockedList">
+            <div class="privacy-empty">加载中…</div>
+          </div>
+
+          <!-- ③ 可见性控件（T05 接线 2026-09-11：读取 GET /api/auth/me、保存 PUT /api/users/me/privacy） -->
+          <div class="privacy-sec-title"><span class="nav-icon" data-icon="eye" data-icon-size="16"></span> 可见性</div>
+          <div class="privacy-hint" id="privacyOnlineHint" style="display:none;margin:0 18px 8px;font-size:var(--xt-font-sm);color:var(--text-secondary);line-height:1.6"></div>
+          <div class="privacy-row" id="privacyMomentRow">
+            <div class="privacy-row-main">
+              <div class="privacy-row-name">动态可见范围</div>
+              <div class="privacy-row-sub">谁可以看到你发布的动态（发布时按此范围收敛）</div>
+            </div>
+            <div class="privacy-row-ctrl">
+              <select class="form-input privacy-select" id="stMomentScope" disabled onchange="stSetMomentScope(this.value)">
+                <option value="public">公开</option>
+                <option value="friends">仅好友</option>
+                <option value="private">仅自己</option>
+              </select>
+            </div>
+          </div>
+          <div class="privacy-row" id="privacyFriendPolicyRow">
+            <div class="privacy-row-main">
+              <div class="privacy-row-name">谁可以加我好友</div>
+              <div class="privacy-row-sub">控制他人向你发起好友申请的权限</div>
+            </div>
+            <div class="privacy-row-ctrl">
+              <select class="form-input privacy-select" id="stFriendPolicy" disabled onchange="stSetFriendPolicy(this.value)">
+                <option value="everyone">所有人可直接加（无需我同意）</option>
+                <option value="need_confirm">需要我验证</option>
+                <option value="nobody">不允许任何人</option>
+              </select>
+            </div>
+          </div>
+          <div class="privacy-row" id="privacySearchableRow">
+            <div class="privacy-row-main">
+              <div class="privacy-row-name">能否被搜索到</div>
+              <div class="privacy-row-sub">关闭后其他用户无法通过昵称搜索到你</div>
+            </div>
+            <div class="privacy-row-ctrl">
+              <div class="privacy-seg" id="stSearchableSeg">
+                <button class="theme-option" data-val="1" onclick="stSetSearchable(true)"><span class="nav-icon" data-icon="check" data-icon-size="14"></span> 允许</button>
+                <button class="theme-option" data-val="0" onclick="stSetSearchable(false)"><span class="nav-icon" data-icon="close" data-icon-size="14"></span> 不允许</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- R3-L5：账号与设备安全风控 —— 读取已安装应用列表（第三方应用包名的加盐 SHA-256 哈希）。
+               默认随隐私政策同意开启，可随时关闭；关闭后原生侧不再采集，前端也不产生上传请求。
+               状态存 localStorage['xt_risk_enabled']（'1'/'0'，缺省='1'=开），并与原生桥同步。 -->
+          <div class="privacy-sec-title"><span class="nav-icon" data-icon="locked" data-icon-size="16"></span> 设备安全</div>
+          <div class="privacy-row" id="privacyRiskRow">
+            <div class="privacy-row-main">
+              <div class="privacy-row-name">读取已安装应用列表（用于账号与设备安全）</div>
+              <div class="privacy-row-sub">仅采集你手动安装的第三方应用包名的<b>加盐哈希</b>（不含明文包名、应用名、图标），用于识别多开 / 模拟器 / 异常设备等账号安全风险；<b>不用于广告或用户画像</b>，可随时关闭。</div>
+            </div>
+            <div class="privacy-row-ctrl">
+              <div class="privacy-seg" id="stRiskSeg">
+                <button class="theme-option" data-val="1" onclick="stRiskToggle(true)"><span class="nav-icon" data-icon="check" data-icon-size="14"></span> 开启</button>
+                <button class="theme-option" data-val="0" onclick="stRiskToggle(false)"><span class="nav-icon" data-icon="close" data-icon-size="14"></span> 关闭</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 需求 2（协议重写）：新增《用户协议》《隐私政策》全文页入口（独立页 协议.html，?tab=ua|privacy） -->
+          <div class="privacy-row" id="privacyAgreementRow" onclick="location.href='协议.html?tab=ua'" style="cursor:pointer">
+            <div class="privacy-row-main">
+              <div class="privacy-row-name">用户协议与隐私政策</div>
+              <div class="privacy-row-sub">查看《星途用户服务协议》与《星途隐私政策》全文</div>
+            </div>
+            <div class="privacy-row-ctrl" style="color:var(--text-secondary);font-size:16px">›</div>
+          </div>
+        </div>
+        </section>
+
+      </div>
+  </div>
+
+
+
+  <!-- 底部导航（手机端） -->
+    <nav class="bottom-nav" data-page-node-id="Ncn4EM5S8FGxnizWEV0csQ">
+    <div class="bottom-nav-list" data-page-node-id="vwYPrGAAsvLW9lHc5cM7rt">
+      <div class="bottom-nav-item" data-page="home" data-page-node-id="5UimSCzpv1LxE5htWorg9d">
+        <div class="bn-icon" data-page-node-id="XAPfy2FTDZcag42PtJlrT8"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label" data-page-node-id="YGP3v4QhQ0ipNcECmaJeul">首页</div>
+      </div>
+      <div class="bottom-nav-item" onclick="gotoChat()" data-page-node-id="NsLaG0uBanAAznCAPvIc0O"><div class="bn-icon" data-page-node-id="Tq4ip4vwJT0XmqCEq38JaF"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label" data-page-node-id="RUNHZXD9FR0EQ5l6oqdbzo">互动</div></div>
+      <div class="bottom-nav-item" onclick="openBlogProfile()" data-page-node-id="RaT18I6FriR3fckGp8v3Zy"><div class="bn-icon" data-page-node-id="btDDEBxDhMl71Nhrcgt7oZ"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label" data-page-node-id="Mtbmg1k5KtGYFzA64zK2Bo">我的</div></div>
+            <div class="bottom-nav-item" onclick="location.href='AI.html'"><div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div></div>
+            <div class="bottom-nav-item" onclick="location.href='更多.html'" data-page-node-id="FDvcH3OKeFZPh7OeDDAizQ">
+        <div class="bn-icon" data-page-node-id="Ji3HW2J4pfytslmCXm2DjJ"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label" data-page-node-id="R1aif1tulRLYR4aHlsJX3F">更多</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 更多面板遮罩 -->
+    <div class="more-overlay" onclick="toggleMorePanel()" data-page-node-id="9nHHGe3viZItzWWfQ5X96i"></div>
+
+  <!-- 更多面板 -->
+  <div class="bottom-more-panel" id="morePanel" data-page-node-id="fDG9Ixim5VoggdQ5Zwg8eZ">
+    <div class="bottom-more-title" data-page-node-id="WPXsZzVA6ZBonbftPllUgE">更多功能</div>
+    <div class="bottom-more-grid" data-page-node-id="IFgMyrjq11TpyJr6Bqu44G">
+      <div class="bottom-more-item" onclick="navigateTo('moments');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="rss" data-icon-size="20"></span></div><div class="bm-label">动态空间</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogStats()" data-page-node-id="LUZNCaeXMtlQtPLBh4GfSE">
+        <div class="bm-icon" data-page-node-id="A0V3GIvVU1w4bAYHSfQ2p2"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label" data-page-node-id="HX2aG0Qdd0sOwRiRFMAAfi">学习统计</div>
+      </div>
+      <div class="bottom-more-item" onclick="if(window.gotoBlogMine){gotoBlogMine()}else{location.href='社区.html#mine'}" data-page-node-id="VgiFa3kH0GIeFosW69CeyA">
+        <div class="bm-icon" data-page-node-id="LHMKCx1RVpAQ3F2MN7y2uc"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div><div class="bm-label" data-page-node-id="zWCVqZgjizrjBK7DUgDMPf">互动广场</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()" data-page-node-id="0HK573KtBQehSqqw346fHc">
+        <div class="bm-icon" data-page-node-id="smn0D5s5lVgIdjZHnV91GM"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div><div class="bm-label" data-page-node-id="iEcF8SbLOGgpn1rTLplRDl">错题本</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()" data-page-node-id="rfmNfVBPfkviAPGQBNh6V6">
+        <div class="bm-icon" data-page-node-id="VMfqBOFraocmuBM7c28xQJ"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div><div class="bm-label" data-page-node-id="7EZGWfdToPJI73AOiEW5iD">设置</div>
+      </div>
+      <div class="bottom-more-item" onclick="showAbout()" data-page-node-id="4RUlh5QkCREzQv6ukTuK2G">
+        <div class="bm-icon" data-page-node-id="K6T8KJGuBuFrTWnclQ3eEY"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div><div class="bm-label" data-page-node-id="VrTETejVCmqv7mpeYiXLlE">关于</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加倒计时弹窗 -->
+  <div class="modal-overlay" id="countdownModal" data-page-node-id="GrVFCLHUnzsbc0tVx7qOkz">    <div class="modal" data-page-node-id="9BtweqsT8GffdMEjIxjHZE">
+      <div class="modal-title" id="countdownModalTitle" data-page-node-id="v8lOwmAnLUAG8IbqxJvVfD">添加倒计时</div>
+      <div class="form-group" data-page-node-id="HAdG16Deu9R2ZVxxSgT7ZI">
+        <div class="form-label" data-page-node-id="z1h4saHcTINKuUHYxaRSKV">名称</div>
+        <input type="text" class="form-input" id="cdName" placeholder="如：四级考试、秋招截止" data-page-node-id="W0mJ1KKdEFq31o6U0MJskw">
+      </div>
+      <div class="form-group" data-page-node-id="71llf3HzWyIXVB9dymCO7G">
+        <div class="form-label" data-page-node-id="RBb4hsG3WtlKWO9CxvHkYT">日期</div>
+        <input type="date" class="form-input" id="cdDate" data-page-node-id="64R3EZgyEtQXEFI52h7BC4">
+      </div>
+      <div class="form-group" data-page-node-id="vmcTcR90TSVFBNtvu6zxI7">
+        <div class="form-label" data-page-node-id="fuYUBsz6Ymcn4nBYkg2RoH">颜色</div>
+        <div class="color-picker" id="cdColorPicker" data-page-node-id="bKhOWTVtLWS3EF1BowS1gf">
+          <div class="color-dot active" style="background:#5B8DEF" data-color="#5B8DEF" data-page-node-id="GK54VnYLY90tIhyDvclkiM"></div>
+          <div class="color-dot" style="background:#E05040" data-color="#E05040" data-page-node-id="iIVDQVwbvK6jKtQRnvNjyl"></div>
+          <div class="color-dot" style="background:#9B6BD9" data-color="#9B6BD9" data-page-node-id="UNtllFb0sG6iLteliEncI2"></div>
+          <div class="color-dot" style="background:#D4A056" data-color="#D4A056" data-page-node-id="uGNRJrS299Gpphf8eTjY0L"></div>
+          <div class="color-dot" style="background:#36CFC9" data-color="#36CFC9" data-page-node-id="H0V7lF2TjmKb8n0JD2BhGp"></div>
+          <div class="color-dot" style="background:#FF9F68" data-color="#FF9F68" data-page-node-id="MaAECA20BYC9saQ0kKnxUA"></div>
+        </div>
+      </div>
+      <div class="form-group" data-page-node-id="jxvU4HgPvdXSVY1dbUxU7l">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--xt-font-base);color:var(--text-secondary)" data-page-node-id="UvNPS5ziWjGHil1nAmaiSr">
+          <input type="checkbox" id="cdPinned" data-page-node-id="tYe0tzzfYDkqC8To7CYDJ1"> 置顶显示
+        </label>
+      </div>
+      <div class="modal-actions" data-page-node-id="oE6GLukcUaQr49tZGKlkBJ">
+        <button class="btn btn-outline" onclick="closeCountdownModal()" data-page-node-id="e8II8ZNbD6irjW8bvReFbo">取消</button>
+        <button class="btn btn-primary" onclick="saveCountdown()" data-page-node-id="0veR4eA0NHVCgFWIqVfals">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast提示 -->
+  <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center" data-page-node-id="wP99njdpsTfCtQaqLA3DEt"></div>
+
+  <!-- ==================== AI学习助手（悬浮聊天窗口） ====================
+       说明：
+       1. 默认“本地演示模式”：不联网、不调API、无密钥，由内置规则引擎回复；
+       2. 【后续扩展点】启动 ai-server 后端后，把下方 JS 里的 AI_CONFIG.apiUrl
+          填上后端地址（如 http://localhost:3000/api/chat），即可切换为真实AI流式对话；
+       3. 安全约束：大模型密钥只放在后端 .env 里，前端代码永远不出现密钥。 -->
+  <!-- 悬浮头像：可按住拖拽到任意位置（见下方 JS.initAiFabDrag），点击打开/收起面板，双击复位 -->
+  <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）" data-page-node-id="bSxxXAg2cnSUFjWjH9hvj8">
+    <span class="nav-icon" data-icon="bot" data-icon-size="22"></span><span class="ai-mode-badge" id="aiModeBadge" data-page-node-id="sFObKorWChn7xtQiofBtDj">演示</span>
+  </div>
+  <div class="ai-panel" id="aiPanel" data-page-node-id="yqvqWP03ZRpELjIdQvGmUK">
+    <div class="ai-panel-header" data-page-node-id="Sn1yFOLIOf3JH74ZgSpArF">
+      <div class="ai-avatar" data-page-node-id="DZDUmN0pqNI1nPBUbRY95k">🤖</div>
+      <div style="flex:1" data-page-node-id="35vh4EXsFOybYmJc2eSieb">
+        <div class="ai-title" data-page-node-id="9jOo65ikEVECH8ugm5FBBl">AI学习助手</div>
+        <div class="ai-subtitle" id="aiSubtitle" data-page-node-id="zvkEKCZWdVTu2LpJxDzU7e">本地演示模式 · 历史已保存</div>
+      </div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录" data-page-node-id="4KHEJXbcBZ53EOdmNnvNS4"><span class="nav-icon" data-icon="eraser" data-icon-size="16"></span></div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板" data-page-node-id="KEI22Sre2TscLvhappuQbA"><span class="nav-icon" data-icon="close" data-icon-size="16"></span></div>
+    </div>
+    <div class="ai-messages" id="aiMessages" data-page-node-id="XILADxBeCDogFBndxphKOY"></div>
+    <div class="ai-input-row" data-page-node-id="wxjMZ0ZvtRp6uN0DqMPF77">
+      <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：四级怎么复习？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()" data-page-node-id="launXIbOS5a1CYeED4DcIR"><span class="nav-icon" data-icon="send" data-icon-size="16"></span></div>
+    </div>
+  </div>
+
+
+
+</div>
+
+<script src="assets/icon-map.js?v=20260923b" defer></script>
+<script src="assets/xt-toast.js?v=20260923b" defer></script>
+<script src="assets/error-boundary.js?v=20260924a" defer></script>
+<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/config.js?v=20260923b" defer></script>
+<!-- 【需求B】检测更新入口已从设置页移除（收敛到 数据管理页 / 关于页），xt-update.js 引用同步移除 -->
+<script src="assets/api.js?v=20260924a" defer></script>
+<script src="assets/subpage-router.js?v=20260923d" defer></script>
+<script src="assets/qbank.js?v=20260923b" defer></script>
+<script src="assets/importer.js?v=20260923b" defer></script>
+<script>
+/* 设置页兜底实现（只在本页内联，不改动 app.js）：
+   本页的内联脚本在「解析期」同步执行，而 app.js 是 defer 加载的，此刻
+   loadAllSettings / getSetting / setSetting 尚未定义，初始化 IIFE 会抛 ReferenceError，
+   导致设置项回填失败、按钮点击无响应。
+   这里按 app.js 的同一份约定（localStorage key: study_workbench_settings + 默认值）
+   提供轻量实现；等 app.js 执行完毕后，会由它的正式实现覆盖（函数声明覆盖属性）。
+   全部 try/catch：任何读取/写入失败都静默降级为默认值，绝不抛异常。 */
+(function () {
+  if (typeof window === 'undefined') return;
+  var SETTINGS_KEY_FALLBACK = 'study_workbench_settings';
+  /* 【需求B 设置项核对】无效项键已同步移除（与 xt-settings.js DEFAULTS 同步，逻辑接线由并行线处理）：
+     reviewRemind / cardAutoPlay / studyLimitWarn 全项目无消费点；
+     notesPublic / canSearch / studyPublic 已被服务端账号级隐私取代
+     （User.searchable / User.moment_visibility / User.friend_allow，见本页隐私与安全卡）。
+     旧用户 JSON 中的残留键按 hasOwnProperty(DEFAULTS) 合并范式天然被忽略，无需迁移。 */
+  var FALLBACK_DEFAULTS = {
+    theme: 'light', color: 'blue', fontSize: 'normal',
+    dailyNew: 50, dailyReview: 20, focusMinutes: 25,
+    studyLimitOn: true, studyLimitHours: 4,
+    autoSpeak: true, voiceRate: 0.9, voiceLang: 'en-US',
+    chatNotify: true, studyRemind: false,
+    keepScreen: false,
+    blogCat: 'cet', blogPrivacy: 'public', blogTags: '',
+    readerFont: 'normal', reduceMotion: false, compact: false, remindTime: '20:00',
+    aiTemp: '', aiMax: '', aiStream: true, aiContext: true,
+    aiAvatar: '\uD83E\uDD16', aiPanelWidth: 'normal'
+  };
+  function readAll() {
+    var o = {}, k;
+    for (k in FALLBACK_DEFAULTS) {
+      if (Object.prototype.hasOwnProperty.call(FALLBACK_DEFAULTS, k)) o[k] = FALLBACK_DEFAULTS[k];
+    }
+    try {
+      var raw = window.localStorage ? window.localStorage.getItem(SETTINGS_KEY_FALLBACK) : null;
+      if (raw) {
+        var p = JSON.parse(raw);
+        if (p && typeof p === 'object') {
+          for (k in p) { if (Object.prototype.hasOwnProperty.call(p, k)) o[k] = p[k]; }
+        }
+      }
+    } catch (e) { }
+    return o;
+  }
+  if (typeof window.loadAllSettings !== 'function') {
+    window.loadAllSettings = function () { try { return readAll(); } catch (e) { return {}; } };
+  }
+  if (typeof window.getSetting !== 'function') {
+    window.getSetting = function (k, def) {
+      try {
+        var v = readAll()[k];
+        return (typeof v === 'undefined' || v === null) ? def : v;
+      } catch (e) { return def; }
+    };
+  }
+  if (typeof window.setSetting !== 'function') {
+    window.setSetting = function (k, v) {
+      try {
+        var o = readAll();
+        o[k] = v;
+        if (window.localStorage) window.localStorage.setItem(SETTINGS_KEY_FALLBACK, JSON.stringify(o));
+      } catch (e) { return; }
+      try { if (typeof applySettings === 'function') applySettings(); } catch (e2) { }
+    };
+  }
+  if (typeof window.saveSetting !== 'function' && typeof window.setSetting === 'function') {
+    window.saveSetting = window.setSetting;
+  }
+})();
+</script>
+<script>
+/* 单机离线版（如安卓 APK，未打包 assets/api.js）适配：
+   ① 隐藏依赖后端的「本地发贴迁移」卡片；
+   ② AI 卡片改为「本地直连 / 演示」配置（app.js 的 renderAiProviderForm，密钥仅存本机 localStorage）。
+   在线多人版（加载了 api.js）不受影响，仍走服务端密钥表单。 */
+(function () {
+  if (typeof loadCurrentUser !== 'function') {
+    var mig = document.getElementById('migrateCard');
+    if (mig) mig.style.display = 'none';
+    var aiCard = document.getElementById('aiServerCard');
+    if (aiCard) {
+      aiCard.style.display = '';
+      var t = document.getElementById('aiServerCardTitle');
+      if (t) t.innerHTML = '<span class="title-icon" data-icon="sparkles"></span>AI 助手（本地直连 / 演示）';
+      if (typeof lucideAutoRender === 'function') lucideAutoRender();
+      var note = document.getElementById('aiServerNoteRow');
+      if (note) note.style.display = 'none';
+      var badge = document.getElementById('aiProviderBadge');
+      if (badge) badge.textContent = '密钥仅存本机';
+      if (typeof renderAiProviderForm === 'function') renderAiProviderForm();
+    }
+  }
+})();
+</script>
+
+<script>
+/* 设置页：把控件初始化为已保存值；开关用 theme-option 双按钮 */
+function stToggle(key, val, el) {
+  setSetting(key, val);
+  var wrap = el.parentElement;
+  wrap.querySelectorAll('.theme-option').forEach(function (b) {
+    b.classList.toggle('active', (b.getAttribute('data-val') === '1') === !!val);
+  });
+  showToast('✅ 设置已保存');
+}
+/* R103：AI 悬浮球显示开关。契约与 assets/app.js 保持一致：
+   localStorage key 'study_workbench_ai_fab_hidden'，值 '1' = 已隐藏；键不存在或 '0' = 显示。
+   开启：removeItem(key)，随后若 typeof window.setAiFabVisible === 'function' 则调用 setAiFabVisible(true) 实时生效
+        （该函数并非所有页面都存在，必须 typeof 判空）。
+   关闭：写 key '1'，并（若存在）调用 window.setAiFabVisible(false)（app.js 会同时写 key 与隐藏球）。
+   本页只负责写 localStorage + 调用该函数，不直接操作 #aiFab 元素。 */
+var AI_FAB_HIDE_KEY = 'study_workbench_ai_fab_hidden';
+function stAiFabHidden() {
+  try { return localStorage.getItem(AI_FAB_HIDE_KEY) === '1'; } catch (e) { return false; }
+}
+function stRenderAiFabUI() {
+  var on = !stAiFabHidden();
+  var wrap = document.getElementById('swAiFab'); if (!wrap) return;
+  wrap.querySelectorAll('.theme-option').forEach(function (b) {
+    b.classList.toggle('active', (b.getAttribute('data-val') === '1') === on);
+  });
+}
+function stAiFabToggle(visible) {
+  visible = !!visible;
+  try {
+    if (visible) { localStorage.removeItem(AI_FAB_HIDE_KEY); }
+    else { localStorage.setItem(AI_FAB_HIDE_KEY, '1'); }
+  } catch (e) { /* 忽略：隐私模式下 localStorage 可能不可用 */ }
+  if (typeof window.setAiFabVisible === 'function') {
+    try { window.setAiFabVisible(visible); } catch (e2) { /* 忽略 */ }
+  }
+  stRenderAiFabUI();
+  showToast(visible ? '✅ 已重新开启 AI 悬浮球' : '已关闭 AI 悬浮球（可在设置里重新开启）');
+}
+/* R105：App 后台消息通知总开关。契约：
+   localStorage key 'xt_notify_enabled'：'1'=开（缺省），'0'=关。
+   切换时 feature-detect 原生桥 window.XTAppBridge.setMsgNotify(on)：
+   该桥由安卓端并行实现，Web 端 / 桥缺失时必须静默跳过，不允许抛错；
+   关闭只停后台推送提醒，不改变进聊天页自动清零未读等既有逻辑。 */
+var MSG_NOTIFY_KEY = 'xt_notify_enabled';
+function stMsgNotifyOn() {
+  try { return localStorage.getItem(MSG_NOTIFY_KEY) !== '0'; } catch (e) { return true; }
+}
+function stRenderMsgNotifyUI() {
+  var on = stMsgNotifyOn();
+  var wrap = document.getElementById('swMsgNotify'); if (!wrap) return;
+  wrap.querySelectorAll('.theme-option').forEach(function (b) {
+    b.classList.toggle('active', (b.getAttribute('data-val') === '1') === on);
+  });
+}
+function stMsgNotifyToggle(on) {
+  on = !!on;
+  try { localStorage.setItem(MSG_NOTIFY_KEY, on ? '1' : '0'); } catch (e) { /* 无痕模式忽略 */ }
+  try {
+    if (window.XTAppBridge && typeof window.XTAppBridge.setMsgNotify === 'function') {
+      window.XTAppBridge.setMsgNotify(on);
+    }
+  } catch (e2) { /* 桥异常也不影响开关状态与 UI */ }
+  stRenderMsgNotifyUI();
+  showToast(on ? '✅ 已开启消息通知' : '已关闭消息通知，将停止后台消息提醒');
+}
+
+/* R3-L5：设备安全 —— 「读取已安装应用列表」开关。契约：
+   localStorage key 'xt_risk_enabled'：'1'=开（缺省，随隐私政策同意开启），'0'=关。
+   关闭时 feature-detect 原生桥 window.XTAppBridge.setRiskEnabled(false)，并同步把
+   开关状态写到协议页共用的 'xt_privacy_agreed' 之外（原生侧另有独立开关 xt_risk_prefs）。
+   Web 端 / 桥缺失时静默跳过，不允许抛错；关闭后不再采集、不再产生上报请求。 */
+var RISK_ENABLED_KEY = 'xt_risk_enabled';
+function stRiskOn() {
+  try { return localStorage.getItem(RISK_ENABLED_KEY) !== '0'; } catch (e) { return true; }
+}
+function stRenderRiskUI() {
+  var on = stRiskOn();
+  var wrap = document.getElementById('stRiskSeg'); if (!wrap) return;
+  wrap.querySelectorAll('.theme-option').forEach(function (b) {
+    b.classList.toggle('active', (b.getAttribute('data-val') === '1') === on);
+  });
+}
+function stRiskToggle(on) {
+  on = !!on;
+  try { localStorage.setItem(RISK_ENABLED_KEY, on ? '1' : '0'); } catch (e) { /* 无痕模式忽略 */ }
+  try {
+    if (window.XTAppBridge && typeof window.XTAppBridge.setRiskEnabled === 'function') {
+      window.XTAppBridge.setRiskEnabled(on);
+    }
+  } catch (e2) { /* 桥异常也不影响开关状态与 UI */ }
+  stRenderRiskUI();
+  showToast(on ? '✅ 已开启设备安全（读取已安装应用列表）' : '已关闭设备安全，将不再读取已安装应用列表');
+}
+
+(function initSettingsUI() {
+  stRenderAiFabUI();
+  stRenderMsgNotifyUI();
+  stRenderRiskUI();
+  var set = loadAllSettings();
+  var pick = function (id, v) { var el = document.getElementById(id); if (el) el.value = v; };
+  pick('stDailyNew', set.dailyNew);
+  pick('stDailyReview', set.dailyReview == null ? 20 : set.dailyReview);
+  pick('stAiTemp', set.aiTemp == null ? '' : set.aiTemp);
+  pick('stAiMax', set.aiMax == null ? '' : set.aiMax);
+  pick('stFocus', set.focusMinutes);
+  pick('stVoiceRate', set.voiceRate);
+  pick('stVoiceLang', set.voiceLang);
+  var apply = function (id, on) {
+    var wrap = document.getElementById(id); if (!wrap) return;
+    wrap.querySelectorAll('.theme-option').forEach(function (b) {
+      b.classList.toggle('active', (b.getAttribute('data-val') === '1') === !!on);
+    });
+  };
+  apply('swAutoSpeak', set.autoSpeak);
+  apply('swChatNotify', set.chatNotify);
+})();
+</script>
+
+<script>
+/* 外观配色皮肤：激活态高亮 */
+function __applySkinUI() {
+  if (typeof currentSkin === 'undefined') return;
+  document.querySelectorAll('[data-skin]').forEach(function (b) {
+    b.classList.toggle('active', b.getAttribute('data-skin') === currentSkin);
+  });
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(__applySkinUI, 200); });
+else setTimeout(__applySkinUI, 200);
+</script>
+
+<script>
+/* ===================================================================
+   设置页 · 【9/11 新增】实用功能脚本
+   -------------------------------------------------------------------
+   包含：分段控件 / 发贴默认偏好 / 数据总览 / 每日学习提醒 /
+         缓存清理 / 外观重置 / 账号与安全（本地单机版可改密码、注销）
+   说明：只调用 app.js 已有函数（setSetting/loadAllSettings/exportData/doLogout…），
+         不改动任何既有逻辑；在线模式下需要后端接口的能力标注为【后续扩展点】。
+   =================================================================== */
+
+/* ---------- 通用：分段控件（字号类） ---------- */
+function stSeg(key, val, el) {
+  setSetting(key, val);
+  var wrap = el.parentElement;
+  if (wrap) wrap.querySelectorAll('button').forEach(function (b) {
+    b.classList.toggle('active', b.getAttribute('data-v') === val);
+  });
+  showToast('✅ 已保存');
+}
+function stApplySegUI() {
+  var set = loadAllSettings();
+  var apply = function (id, v) {
+    var wrap = document.getElementById(id); if (!wrap) return;
+    wrap.querySelectorAll('button').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-v') === v);
+    });
+  };
+  apply('stFontSize', set.fontSize || 'normal');
+  apply('stReaderFont', set.readerFont || 'normal');
+}
+
+/* ---------- 发贴默认偏好 ---------- */
+function stFillBlogCat() {
+  var sel = document.getElementById('stBlogCat'); if (!sel) return;
+  var cats = [];
+  try { cats = (typeof BLOG_CATS !== 'undefined' && BLOG_CATS) ? BLOG_CATS : []; } catch (e) { cats = []; }
+  if (!cats || !cats.length) cats = [
+    { id: 'cet', name: '英语' }, { id: 'exam', name: '行测' },
+    { id: 'comm', name: '表达' }, { id: 'interview', name: '面测' },
+    { id: 'ppt', name: '演示' }, { id: 'other', name: '其他' }
+  ];
+  sel.innerHTML = cats.map(function (c) { return '<option value="' + c.id + '">' + c.name + '</option>'; }).join('');
+  sel.value = getSetting('blogCat') || 'cet';
+  var pv = document.getElementById('stBlogPrivacy'); if (pv) pv.value = getSetting('blogPrivacy') || 'public';
+  var tg = document.getElementById('stBlogTags'); if (tg) tg.value = getSetting('blogTags') || '';
+}
+function stSaveBlogTags() {
+  var el = document.getElementById('stBlogTags'); if (!el) return;
+  var tags = el.value.split(/[,，]/).map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 6);
+  el.value = tags.join(', ');
+  setSetting('blogTags', el.value);
+  showToast('✅ 常用标签已保存');
+}
+
+/* ---------- 数据总览 ----------
+   【需求 3 数据管理重构 20260922a】stFmtSize / stRefreshOverview 已整体迁入 数据管理.html
+   （统计口径不变：(k.length+v.length)*2 全键求和，5MB 假设上限）；设置页不再保留。 */
+
+/* ---------- 每日学习提醒 ---------- */
+function requestNotifyPermission() {
+  if (typeof Notification === 'undefined') { showToast('⚠️ 当前环境不支持网页通知'); return; }
+  if (Notification.permission === 'granted') { showToast('✅ 通知权限已开启'); return; }
+  if (Notification.permission === 'denied') { showToast('⚠️ 通知权限被拒绝，请在浏览器/系统设置中允许'); return; }
+  try {
+    Notification.requestPermission().then(function (p) {
+      showToast(p === 'granted' ? '✅ 通知权限已开启' : '⚠️ 未获得通知权限');
+    });
+  } catch (e) { showToast('⚠️ 通知授权失败'); }
+}
+function applyStudyReminder() {
+  var s = loadAllSettings();
+  if (window.__stRemindTimer) { clearInterval(window.__stRemindTimer); window.__stRemindTimer = null; }
+  if (!s.studyRemind) return;
+  var tick = function () {
+    var now = new Date();
+    var hm = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
+    var dk = now.toDateString();
+    if (hm === (s.remindTime || '20:00') && window.__stRemindDay !== dk) {
+      window.__stRemindDay = dk;
+      try {
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+          new Notification('🚀 星途 · 学习提醒', { body: '该打卡学习啦，今天的任务完成了吗？' });
+        } else {
+          showToast('⏰ 学习提醒：该打卡学习啦！');
+        }
+      } catch (e) { showToast('⏰ 学习提醒：该打卡学习啦！'); }
+    }
+  };
+  window.__stRemindTimer = setInterval(tick, 30000);
+  tick();
+}
+
+/* ---------- 维护：清理缓存 / 重置外观 ----------
+   【需求 3 数据管理重构 20260922a】stClearCache / stResetAppearance / resetAppearanceNow
+   已整体迁入 数据管理.html（逻辑与键清单原样迁移，口径一致）；设置页不再保留。 */
+
+/* ---------- 账号与安全 ---------- */
+function stEsc(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+  });
+}
+function stCurAccount() {
+  var acct = '';
+  try {
+    /* R142：优先取「账号」（account，即注册/登录账号）；无则依次回退注册用户名 / 昵称。 */
+    if (typeof CURRENT_USER !== 'undefined' && CURRENT_USER) acct = CURRENT_USER.account || CURRENT_USER.username || CURRENT_USER.nickname || '';
+    if (!acct) { acct = (JSON.parse(localStorage.getItem('study_workbench_auth') || '{}').account) || ''; }
+    if (!acct) { acct = (JSON.parse(localStorage.getItem('study_workbench_auth') || '{}').username) || ''; }
+    if (!acct) { acct = (JSON.parse(localStorage.getItem('study_workbench_auth') || '{}').nickname) || ''; }
+  } catch (e) { }
+  return acct;
+}
+function stIsOnline() {
+  try { return (typeof apiGetToken === 'function') && !!apiGetToken(); } catch (e) { return false; }
+}
+var ST_ACCT_RETRIES = 0; // R34：账号检测延迟重试计数（最多 2 次）
+function stInitAccount() {
+  var desc = document.getElementById('stAcctDesc');
+  var mode = document.getElementById('stAcctMode');
+  var online = stIsOnline();
+  var acct = stCurAccount();
+  /* R34 加固（2026-09-15）：CURRENT_USER 由 api.js 的 async loadCurrentUser 异步填充，
+     DOMContentLoaded 时可能尚未就绪。若在线（apiGetToken 有值，说明必然有账号）但此时
+     取不到 CURRENT_USER，则 600ms 后再刷一次，最多重试 2 次，避免误显示「访客态」。 */
+  if (ST_ACCT_RETRIES < 2 && online && (typeof CURRENT_USER === 'undefined' || !CURRENT_USER)) {
+    ST_ACCT_RETRIES++;
+    setTimeout(function () { try { stInitAccount(); } catch (e) { } }, 600);
+  }
+  if (mode) mode.textContent = online ? '🌐 在线模式（服务器）' : '📱 本地单机模式';
+  if (desc) desc.innerHTML = acct
+    ? ('账号：<b>' + stEsc(acct) + '</b>　' + (online ? '数据存于服务器，可多端同步' : '账号与数据仅保存在本机浏览器'))
+    : '未获取到登录账号（可能为访客状态）';
+  /* R103：补显示「账号 ID」。数据来源：真实登录态 CURRENT_USER.id（assets/api.js 的 loadCurrentUser()
+     读取 GET /api/auth/me，服务端 server/routers/auth.py 返回 user.id）。拿不到就如实说明，不造假。 */
+  var idEl = document.getElementById('stAcctId');
+  if (idEl) {
+    var curUser = (typeof CURRENT_USER !== 'undefined') ? CURRENT_USER : null;
+    if (online && curUser && curUser.id != null) {
+      /* R141/R142：ID 位置直接显示「账号」—— 账号 = 用户注册 / 登录所用的账号，
+         可在「个人资料 → 个人信息」里每 30 天改一次；改过之后此处会显示新账号，
+         括号里保留仍可用于登录的「注册账号」。 */
+      var acctShown = curUser.account ? String(curUser.account) : String(curUser.username || curUser.id);
+      idEl.innerHTML = 'ID：<b>' + stEsc(acctShown) + '</b>' +
+        ((curUser.username && String(curUser.username) !== acctShown) ? '　注册账号：' + stEsc(curUser.username) : '');
+      idEl.setAttribute('data-id', String(curUser.id));
+    } else if (!online) {
+      idEl.innerHTML = '本地单机模式，无服务器账号 ID' + (acct ? '（本机账号：' + stEsc(acct) + '）' : '');
+      idEl.removeAttribute('data-id');
+    } else {
+      idEl.textContent = '获取中…';
+      idEl.removeAttribute('data-id');
+    }
+  }
+  /* 任务 E：同步刷新绑定与认证状态（真实反映本机数据，不停留占位文案） */
+  try { if (typeof stRenderBindings === 'function') stRenderBindings(); } catch (e) { }
+  /* 在线模式：再向服务端拉一次已绑定邮箱，保证显示的是服务器真实状态 */
+  try { if (typeof stLoadBindingsRemote === 'function') stLoadBindingsRemote(); } catch (e2) { }
+}
+function stSimpleHash(s) {
+  var h = 5381;
+  for (var i = 0; i < s.length; i++) { h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; }
+  return 'h' + h.toString(36);
+}
+/* ---------- 密码强度（P0-B 需求22：前端规则与后端 server/schemas.py 对齐） ----------
+   后端唯一规则：正则 ^(?=.*[A-Za-z])(?=.*\d).{8,64}$（≥8 位且同时含字母与数字，最长 64 位）
+                 + 弱密码黑名单（大小写精确匹配）。
+   前端必须在提交前用同一套规则拦截，否则用户只能在后端 422 之后才知道密码不合规。 */
+var PW_STRONG_RE = /^(?=.*[A-Za-z])(?=.*\d).{8,64}$/;
+var PW_WEAK_DENYLIST = ['test123456', 'password', 'qwerty', 'qwerty123', '12345678',
+  '11111111', 'abc12345', 'admin123', 'iloveyou', '123456789'];
+
+/**
+ * 判断密码是否满足后端强度规则（≥8 位且同时含字母与数字，≤64 位）。
+ * @param {string} v 密码明文。
+ * @returns {boolean} 满足返回 true，否则 false。
+ */
+function pwStrongEnough(v) {
+  return PW_STRONG_RE.test(v || '');
+}
+
+/**
+ * 判断密码是否命中后端弱密码黑名单（精确匹配，与后端实现一致）。
+ * @param {string} v 密码明文。
+ * @returns {boolean} 命中返回 true，否则 false。
+ */
+function pwTooCommon(v) {
+  return PW_WEAK_DENYLIST.indexOf(v || '') >= 0;
+}
+
+/**
+ * 新密码统一前置校验：不合规时直接用页面已有 showToast 轻提示，不改变任何交互形态。
+ * @param {string} np 新密码明文。
+ * @returns {boolean} 校验通过返回 true；失败时已提示并返回 false。
+ */
+function stCheckNewPassword(np) {
+  if (!pwStrongEnough(np)) { showToast('⚠️ 密码强度不足：需至少 8 位，且同时包含字母和数字'); return false; }
+  if (pwTooCommon(np)) { showToast('⚠️ 该密码过于常见，请更换为更复杂的密码'); return false; }
+  return true;
+}
+
+function stChangePassword() {
+  /* ADR-3：在线态不再弹遮罩，改为页面内区块展开/收起（再次点击同一按钮即收起） */
+  if (stIsOnline()) {
+    var panel = document.getElementById('stPwdModal');
+    if (panel && panel.classList.contains('active')) { stClosePwdModal(); return; }
+    stOpenPwdModal();
+    return;
+  }
+  var acct = stCurAccount();
+  if (!acct) { showToast('⚠️ 未获取到当前账号'); return; }
+  var users = {};
+  try { users = JSON.parse(localStorage.getItem('study_workbench_users') || '{}'); } catch (e) { users = {}; }
+  if (!users[acct]) { showToast('⚠️ 本机未找到该账号记录'); return; }
+  /* 全站禁用原生 prompt：改用 uiPrompt（取消返回 null，与原生一致） */
+  uiPrompt('修改密码 · 请输入当前密码：', '').then(function (oldP) {
+    if (oldP === null) return;
+    if (users[acct].pass !== stSimpleHash(oldP)) { showToast('当前密码不正确'); return; }
+    uiPrompt('请输入新密码（至少 8 位，且同时包含字母和数字）：', '').then(function (np) {
+      if (np === null) return;
+      if (!stCheckNewPassword(np)) return;
+      uiPrompt('请再次输入新密码：', '').then(function (np2) {
+        if (np2 === null) return;
+        if (np !== np2) { showToast('两次输入不一致'); return; }
+        users[acct].pass = stSimpleHash(np);
+        try { localStorage.setItem('study_workbench_users', JSON.stringify(users)); } catch (e) { showToast('保存失败'); return; }
+        showToast('密码已修改，请牢记新密码');
+      });
+    });
+  });
+}
+
+/* ---------- A6：在线账号修改密码（前端表单 → POST /api/auth/change-password） ---------- */
+/* ADR-3（2026-09-15）：显隐函数签名不变，函数体改为切换页面内区块 .st-pwd-panel 的显隐，
+   不再有 .modal-overlay 遮罩；依赖 #stPwdModal.active 的校验脚本行为保持不变。 */
+function stOpenPwdModal() {
+  if (!stIsOnline()) { showToast('⚠️ 当前未登录在线账号'); return; }
+  var ids = ['stPwdOld', 'stPwdNew', 'stPwdNew2'];
+  ids.forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
+  var m = document.getElementById('stPwdModal');
+  if (m) m.classList.add('active');
+  var first = document.getElementById('stPwdOld');
+  if (first) setTimeout(function () {
+    try { if (m && m.scrollIntoView) m.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {}
+    first.focus();
+  }, 80);
+}
+function stClosePwdModal() {
+  var m = document.getElementById('stPwdModal');
+  if (m) m.classList.remove('active');
+}
+function stSubmitPwd() {
+  var oldP = (document.getElementById('stPwdOld') || {}).value || '';
+  var np = (document.getElementById('stPwdNew') || {}).value || '';
+  var np2 = (document.getElementById('stPwdNew2') || {}).value || '';
+  if (!oldP) { showToast('⚠️ 请输入当前密码'); return; }
+  if (!stCheckNewPassword(np)) return;
+  if (np !== np2) { showToast('⚠️ 两次输入的新密码不一致'); return; }
+  if (np === oldP) { showToast('⚠️ 新密码不能与当前密码相同'); return; }
+  var btn = document.getElementById('stPwdSubmitBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '提交中…'; }
+  var doReq = (typeof api === 'function')
+    ? api('/api/auth/change-password', { method: 'POST', body: { oldPassword: oldP, newPassword: np } })
+    : Promise.reject(new Error('接口不可用（assets/api.js 未加载）'));
+  doReq.then(function () {
+    stClosePwdModal();
+    showToast('✅ 密码已修改，其他设备需重新登录');
+  }).catch(function (e) {
+    showToast('❌ ' + ((e && e.message) || '修改失败，请稍后重试'));
+  }).finally(function () {
+    if (btn) { btn.disabled = false; btn.textContent = '确认修改'; }
+  });
+}
+function stDeleteAccount() {
+  if (stIsOnline()) { showToast('ℹ️ 在线账号注销需后端接口支持（【后续扩展点】）'); return; }
+  var acct = stCurAccount();
+  if (!acct) { showToast('⚠️ 未获取到当前账号'); return; }
+  /* 全站禁用原生 confirm：两次确认均走 uiConfirm */
+  uiConfirm('确定注销本机账号「' + acct + '」吗？\n账号记录将被删除，学习数据仍保留在本机。', '注销').then(function (ok1) {
+    if (!ok1) return;
+    uiConfirm('再次确认：注销后需重新注册该账号才能登录。继续吗？', '确认注销').then(function (ok2) {
+      if (!ok2) return;
+      try {
+        var users = JSON.parse(localStorage.getItem('study_workbench_users') || '{}');
+        delete users[acct];
+        localStorage.setItem('study_workbench_users', JSON.stringify(users));
+      } catch (e) { }
+      showToast('本机账号已注销，即将返回登录页…');
+      setTimeout(function () {
+        try { localStorage.removeItem('study_workbench_auth'); } catch (e) { }
+        location.replace('登录.html');
+      }, 1200);
+    });
+  });
+}
+
+/* ==================== 任务 E：绑定与认证（2026-09-16 新增） ====================
+   ADR-3：一律使用页面内可展开区块（#stBindPanel.active），不使用任何遮罩弹窗。
+   绑定项：邮箱号（R73d 起仅保留邮箱，手机号/微信号入口已删），显示「未绑定」或脱敏值，每行一个操作按钮。
+
+   数据源与接口契约（前端只对接后端「已实现」的真实路由，不写死任何后端假设）：
+     ① 本地单机模式（stIsOnline() === false）：
+        - 绑定状态存本机 localStorage，键名 'study_workbench_bindings'（经 window.lsKey 前缀化）。
+        - 结构（JSON 字符串）：
+            { "phone": { "value": "13800005678", "at": 1710000000000 },
+              "email": { "value": "ab@qq.com",     "at": 1710000000000 },
+              "wechat":{ "value": "alex_wx",        "at": 1710000000000 } }
+          未绑定的项字段缺失或 value 为空串。
+        - 验证码为本地模拟：任意 6 位数字即视为通过（注释已注明）。
+     ② 在线模式（stIsOnline() === true）—— 邮箱号对接 server/routers/auth.py（前缀 /api/auth）真实路由：
+            发送验证码  POST /api/auth/email/send-code   body { email, purpose:"bind" }
+                        200 {ok,email,purpose,expiresIn} / 503 邮件服务未配置 / 502 发送失败 / 429 限频 / 400 用途非法
+            校验并绑定  POST /api/auth/email/bind        body { email, code }（需登录）
+                        200 {ok,email} / 409 该邮箱已被其他账号绑定 / 410 验证码已过期 / 400 验证码错误（detail 带剩余次数）/ 429 尝试过多
+            解绑        POST /api/auth/email/unbind      （需登录）200 {ok}
+            查询绑定    GET  /api/auth/me                → email / emailVerified
+        - 手机号 / 微信号：后端未提供任何接口 → 在线模式明确提示「暂未开放」，绝不静默失败/假装成功。
+        - 请求统一走全站封装 api('/api/...', { method, body })（assets/api.js）：非 2xx 抛 Error(detail)，
+          后端四类异常文案（发送失败 / 过期 / 错误 / 邮箱被占用）与「邮件服务未配置」均可如实展示；401 由其内部自动刷新。
+   ============================================================================ */
+
+var ST_BIND_CHANNELS = ['email']; /* R73d(20260918)：手机号/微信号绑定入口按需求删除，仅保留邮箱 */
+var ST_BIND_META = {
+  phone:  { name: '手机号', icon: 'smartphone', ph: '请输入 11 位手机号' },
+  wechat: { name: '微信号', icon: 'message-circle', ph: '请输入微信号（字母开头，6-20 位）' },
+  email:  { name: '邮箱号', icon: 'mail', ph: '请输入邮箱地址' }
+};
+/* 当前正在编辑的绑定渠道（null 表示面板收起） */
+var stBindEditing = null;
+/* 验证码倒计时句柄：全局唯一，保证任何时刻最多一个 timer，幂等可清理 */
+var stBindCodeTimer = null;
+/* 在线模式：服务端已绑定邮箱缓存（null=未知；'' = 未绑定；其它 = 已绑定邮箱）。stRemoteEmailLoaded 标记是否已拉到。 */
+var stRemoteEmail = null;
+var stRemoteEmailLoaded = false;
+
+/** 统一读取本机绑定表（键名 study_workbench_bindings，经 lsKey 前缀化）。 */
+function stBindReadLocal() {
+  var raw = null;
+  try {
+    var key = (typeof window.lsKey === 'function') ? window.lsKey('study_workbench_bindings') : 'study_workbench_bindings';
+    raw = localStorage.getItem(key);
+  } catch (e) { raw = null; }
+  var obj = {};
+  try { obj = raw ? JSON.parse(raw) : {}; } catch (e2) { obj = {}; }
+  if (!obj || typeof obj !== 'object') obj = {};
+  return obj;
+}
+
+/** 统一写入本机绑定表（键名 study_workbench_bindings，经 lsKey 前缀化）。 */
+function stBindWriteLocal(obj) {
+  try {
+    var key = (typeof window.lsKey === 'function') ? window.lsKey('study_workbench_bindings') : 'study_workbench_bindings';
+    localStorage.setItem(key, JSON.stringify(obj || {}));
+    return true;
+  } catch (e) { return false; }
+}
+
+/**
+ * 对绑定值做脱敏显示。
+ * @param {string} channel phone | email | wechat
+ * @param {string} value 原始值
+ * @returns {string} 脱敏后的展示串（空值返回空串）
+ */
+function stBindMask(channel, value) {
+  var v = String(value == null ? '' : value);
+  if (!v) return '';
+  if (channel === 'phone') {
+    // 138****5678：保留前 3 后 4
+    if (v.length >= 7) return v.slice(0, 3) + '****' + v.slice(v.length - 4);
+    return '****';
+  }
+  if (channel === 'email') {
+    // ab***@qq.com：本地部分保留前 1-2 位，域名完整
+    var at = v.indexOf('@');
+    if (at <= 0) return '***';
+    var local = v.slice(0, at);
+    var domain = v.slice(at);
+    var keep = local.length >= 2 ? local.slice(0, 2) : local.slice(0, 1);
+    return keep + '***' + domain;
+  }
+  // wechat：部分打码，保留前 2 位与后 1 位
+  if (v.length <= 3) return v.slice(0, 1) + '***';
+  return v.slice(0, 2) + '***' + v.slice(v.length - 1);
+}
+
+/**
+ * 校验绑定目标值是否合法（前端强校验，不只依赖后端）。
+ * @param {string} channel phone | email | wechat
+ * @param {string} v 输入值
+ * @returns {boolean}
+ */
+function stBindValidateTarget(channel, v) {
+  var s = String(v == null ? '' : v).trim();
+  if (!s) return false;
+  if (channel === 'phone') return /^1[3-9]\d{9}$/.test(s);
+  if (channel === 'email') return /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(s);
+  if (channel === 'wechat') return /^[a-zA-Z][a-zA-Z0-9_-]{5,19}$/.test(s);
+  return false;
+}
+
+/** 渲染「绑定与认证」三项列表（状态真实反映数据，不使用占位文案）。 */
+function stRenderBindings() {
+  var list = document.getElementById('stBindList');
+  if (!list) return;
+  var local = stBindReadLocal();
+  var online = stIsOnline();
+  var html = '';
+  for (var i = 0; i < ST_BIND_CHANNELS.length; i++) {
+    var ch = ST_BIND_CHANNELS[i];
+    var meta = ST_BIND_META[ch];
+    var rec = local[ch];
+    var val = (rec && rec.value) ? String(rec.value) : '';
+    /* 邮箱号：在线模式以服务端为准（stLoadBindingsRemote 已拉到才覆盖，避免误显示未绑定） */
+    if (ch === 'email' && online && stRemoteEmailLoaded) val = stRemoteEmail || '';
+    var shown = val ? stBindMask(ch, val) : '未绑定';
+    var valCls = val ? 'st-bind-item-val' : 'st-bind-item-val none';
+    var actions = val
+      ? ('<button class="btn btn-outline" type="button" onclick="stOpenBindPanel(\'' + ch + '\')">更换</button>'
+         + '<button class="btn btn-outline" type="button" onclick="stUnbind(\'' + ch + '\')">解绑</button>')
+      : ('<button class="btn btn-outline" type="button" onclick="stOpenBindPanel(\'' + ch + '\')">绑定</button>');
+    html += '<div class="st-bind-item">'
+      + '<div class="st-bind-item-info">'
+      +   '<div class="st-bind-item-name"><span class="nav-icon" data-icon="' + meta.icon + '" data-icon-size="14"></span> ' + stEsc(meta.name) + '</div>'
+      +   '<div class="' + valCls + '">' + stEsc(shown) + '</div>'
+      + '</div>'
+      + '<div class="st-bind-item-actions">'
+      +   actions
+      + '</div>'
+      + '</div>';
+  }
+  list.innerHTML = html;
+  if (typeof window.renderIcons === 'function') { try { window.renderIcons(list); } catch (e) { } }
+}
+
+/** 在线模式：从服务端读取已绑定邮箱（GET /api/auth/me → email / emailVerified）并刷新列表。
+    失败静默保留本地展示，不阻塞页面；仅在在线（有 token）时调用。 */
+function stLoadBindingsRemote() {
+  if (!stIsOnline()) return;
+  var doReq = (typeof api === 'function')
+    ? api('/api/auth/me', { method: 'GET' })
+    : Promise.reject(new Error('接口不可用（assets/api.js 未加载）'));
+  doReq.then(function (me) {
+    stRemoteEmail = (me && me.email) ? String(me.email) : '';
+    stRemoteEmailLoaded = true;
+    stRenderBindings();
+  }).catch(function () { /* 读取失败：保持本地展示 */ });
+}
+
+/** 清理验证码倒计时句柄（幂等，可重复调用）。 */
+function stBindClearTimer() {
+  if (stBindCodeTimer) {
+    clearInterval(stBindCodeTimer);
+    stBindCodeTimer = null;
+  }
+}
+
+/** 复位「获取验证码」按钮为可点状态。 */
+function stBindResetCodeBtn() {
+  var btn = document.getElementById('stBindCodeBtn');
+  if (btn) { btn.disabled = false; btn.textContent = '获取验证码'; }
+}
+
+/**
+ * 60 秒幂等倒计时：任何时刻只有一个 timer，重复点击不会叠加。
+ * @param {HTMLButtonElement} btn 触发按钮
+ */
+function stBindStartCountdown(btn) {
+  stBindClearTimer();
+  var remain = 60;
+  if (btn) { btn.disabled = true; btn.textContent = remain + ' 秒后重试'; }
+  stBindCodeTimer = setInterval(function () {
+    remain--;
+    if (remain <= 0) {
+      stBindClearTimer();
+      stBindResetCodeBtn();
+      return;
+    }
+    var b = document.getElementById('stBindCodeBtn');
+    if (b) { b.disabled = true; b.textContent = remain + ' 秒后重试'; }
+  }, 1000);
+}
+
+/**
+ * 打开绑定面板（页面内可展开区块）。
+ * @param {string} channel phone | wechat | email
+ */
+function stOpenBindPanel(channel) {
+  if (ST_BIND_CHANNELS.indexOf(channel) < 0) return;
+  var meta = ST_BIND_META[channel];
+  var local = stBindReadLocal();
+  var rec = local[channel];
+  var hasVal = !!(rec && rec.value);
+
+  stBindEditing = channel;
+  /* 若已绑定，打开面板即为「更换/解绑」操作，先给出解绑入口（用二次确认） */
+  stBindClearTimer();
+  stBindResetCodeBtn();
+
+  var title = document.getElementById('stBindPanelTitle');
+  if (title) {
+    title.innerHTML = '<span class="nav-icon" data-icon="' + meta.icon + '" data-icon-size="16"></span> '
+      + (hasVal ? ('更换 / 解绑' + stEsc(meta.name)) : ('绑定' + stEsc(meta.name)));
+  }
+  var hint = document.getElementById('stBindPanelHint');
+  var needCode = (channel === 'phone' || channel === 'email');
+  if (hint) {
+    hint.textContent = needCode
+      ? ('请输入' + meta.name + '，点击「获取验证码」后填写收到的 6 位数字验证码。')
+      : ('请输入' + meta.name + '（字母开头，6-20 位，可含字母/数字/下划线/短横线），无需验证码。');
+  }
+  /* 验证码相关控件仅手机号/邮箱可见 */
+  var valueLabel = document.getElementById('stBindValueLabel');
+  if (valueLabel) valueLabel.textContent = ('绑定' + meta.name);
+  var valueInput = document.getElementById('stBindValue');
+  if (valueInput) { valueInput.value = ''; valueInput.placeholder = meta.ph; }
+  var codeGroup = document.getElementById('stBindCodeGroup');
+  if (codeGroup) codeGroup.style.display = needCode ? '' : 'none';
+  var codeInput = document.getElementById('stBindCode');
+  if (codeInput) codeInput.value = '';
+  var codeBtn = document.getElementById('stBindCodeBtn');
+  if (codeBtn) codeBtn.style.display = needCode ? '' : 'none';
+  var submit = document.getElementById('stBindSubmitBtn');
+  if (submit) { submit.disabled = false; submit.textContent = hasVal ? '确认更换' : '确认绑定'; }
+
+  var panel = document.getElementById('stBindPanel');
+  if (panel) {
+    panel.classList.add('active');
+    if (panel.scrollIntoView) { try { panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) { } }
+  }
+  if (valueInput) setTimeout(function () { try { valueInput.focus(); } catch (e) { } }, 80);
+  if (typeof window.renderIcons === 'function') { try { window.renderIcons(panel || document); } catch (e) { } }
+}
+
+/** 收起绑定面板（并清理倒计时，幂等）。 */
+function stCloseBindPanel() {
+  stBindClearTimer();
+  stBindResetCodeBtn();
+  stBindEditing = null;
+  var panel = document.getElementById('stBindPanel');
+  if (panel) panel.classList.remove('active');
+}
+
+/**
+ * 发送验证码（手机号/邮箱）：先做前端格式校验，再走本地模拟或真实接口。
+ * 邮箱（在线）：POST /api/auth/email/send-code，body { email, purpose:"bind" }。
+ *   后端异常（503 邮件服务未配置 / 502 发送失败 / 429 限频 / 400 用途非法）经 assets/api.js 的
+ *   api() 抛成 Error(detail)，此处如实展示，绝不吞成「操作失败」。
+ * 幂等：倒计时期间按钮禁用，不会叠加多个 timer。
+ */
+function stSendBindCode() {
+  var ch = stBindEditing;
+  if (ch !== 'phone' && ch !== 'email') { showToast('⚠️ 当前渠道无需验证码'); return; }
+  var input = document.getElementById('stBindValue');
+  var target = input ? String(input.value || '').trim() : '';
+  if (!stBindValidateTarget(ch, target)) {
+    showToast(ch === 'phone' ? '⚠️ 请输入正确的 11 位手机号' : '⚠️ 请输入正确的邮箱地址');
+    return;
+  }
+  var btn = document.getElementById('stBindCodeBtn');
+
+  /* 本地单机模式：本地模拟发码（任意 6 位数字通过），立即进入倒计时 */
+  if (!stIsOnline()) {
+    stBindStartCountdown(btn);
+    showToast('📱 验证码已发送（本地模拟，任意 6 位数字均可通过）');
+    return;
+  }
+
+  /* 在线模式：邮箱走真实接口 */
+  if (ch === 'email') {
+    stBindStartCountdown(btn);
+    var doReq = (typeof api === 'function')
+      ? api('/api/auth/email/send-code', { method: 'POST', body: { email: target, purpose: 'bind' } })
+      : Promise.reject(new Error('接口不可用（assets/api.js 未加载）'));
+    doReq.then(function () {
+      showToast('✅ 验证码已发送至 ' + target + '，请查收（10 分钟内有效）');
+    }).catch(function (e) {
+      /* 发送失败即恢复按钮，避免用户被错误锁在倒计时里；错误文案如实展示 */
+      stBindClearTimer();
+      stBindResetCodeBtn();
+      showToast('❌ ' + ((e && e.message) ? String(e.message) : '验证码发送失败，请稍后重试'));
+    });
+    return;
+  }
+
+  /* 在线模式：手机号 —— 后端未提供短信接口，明确告知，不假装成功 */
+  stBindClearTimer();
+  stBindResetCodeBtn();
+  showToast('⚠️ 手机号绑定暂未开放（后端未提供短信接口），请改用邮箱绑定');
+}
+
+/**
+ * 提交绑定（手机号/邮箱需验证码，微信号仅需格式校验）。
+ * 本地模式写 localStorage（study_workbench_bindings），刷新后状态仍在；
+ * 在线模式调用约定接口，失败明确提示，不静默失败、不假装成功。
+ */
+function stSubmitBind() {
+  var ch = stBindEditing;
+  if (!ch) { showToast('⚠️ 请先选择要绑定的项目'); return; }
+  var input = document.getElementById('stBindValue');
+  var target = input ? String(input.value || '').trim() : '';
+  if (!stBindValidateTarget(ch, target)) {
+    if (ch === 'phone') showToast('⚠️ 请输入正确的 11 位手机号（1 开头）');
+    else if (ch === 'email') showToast('⚠️ 请输入正确的邮箱地址');
+    else showToast('⚠️ 微信号需以字母开头，6-20 位，可含字母/数字/下划线/短横线');
+    return;
+  }
+  var code = '';
+  if (ch === 'phone' || ch === 'email') {
+    var codeEl = document.getElementById('stBindCode');
+    code = codeEl ? String(codeEl.value || '').trim() : '';
+    if (!code) { showToast('⚠️ 请先输入验证码'); return; }
+    /* 本地模式下验证码规则为 6 位数字（本地模拟，非真实短信校验） */
+    if (ch === 'phone' || ch === 'email') {
+      if (!/^\d{6}$/.test(code)) { showToast('⚠️ 验证码应为 6 位数字'); return; }
+    }
+  }
+  var btn = document.getElementById('stBindSubmitBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '提交中…'; }
+
+  var finishOk = function (channel, value) {
+    var local = stBindReadLocal();
+    local[channel] = { value: String(value), at: Date.now() };
+    var saved = stBindWriteLocal(local);
+    if (!saved) { showToast('❌ 本机保存失败，请检查浏览器存储权限'); }
+    stClearBindCodeGroup();
+    stCloseBindPanel();
+    stRenderBindings();
+    showToast(saved ? ('✅ ' + ST_BIND_META[channel].name + '已绑定') : '⚠️ 已提交但未能保存');
+  };
+  var finishFail = function (e) {
+    if (btn) { btn.disabled = false; btn.textContent = '确认绑定'; }
+    var msg = (e && e.message) ? String(e.message) : '';
+    showToast('❌ ' + (msg || '绑定失败，请稍后重试'));
+  };
+
+  /* 本地单机模式：直接写本机存储 */
+  if (!stIsOnline()) {
+    finishOk(ch, target);
+    return;
+  }
+
+  /* 在线模式：邮箱走真实绑定接口 POST /api/auth/email/bind（body { email, code }）
+     后端异常：409 该邮箱已被其他账号绑定 / 410 验证码已过期 / 400 验证码错误 / 429 尝试过多，均由 finishFail 如实展示。 */
+  if (ch === 'email') {
+    var doReq = (typeof api === 'function')
+      ? api('/api/auth/email/bind', { method: 'POST', body: { email: target, code: code } })
+      : Promise.reject(new Error('接口不可用（assets/api.js 未加载）'));
+    doReq.then(function (d) {
+      stRemoteEmail = (d && d.email) ? String(d.email) : target;
+      stRemoteEmailLoaded = true;
+      finishOk(ch, target);
+    }).catch(finishFail);
+    return;
+  }
+
+  /* 在线模式：手机号 / 微信号 —— 后端未提供接口，明确告知，不假装成功 */
+  if (btn) { btn.disabled = false; btn.textContent = '确认绑定'; }
+  showToast('⚠️ ' + ST_BIND_META[ch].name + '绑定暂未开放（后端未提供接口），请改用邮箱绑定');
+}
+
+/** 解绑某一渠道（二次确认，走 uiConfirm）。 */
+function stUnbind(channel) {
+  if (ST_BIND_CHANNELS.indexOf(channel) < 0) return;
+  var meta = ST_BIND_META[channel];
+  uiConfirm('确定解绑' + meta.name + '吗？解绑后将无法用其找回账号。', '解绑').then(function (ok) {
+    if (!ok) return;
+    var removeLocal = function () {
+      var local = stBindReadLocal();
+      delete local[channel];
+      var saved = stBindWriteLocal(local);
+      if (stBindEditing === channel) stCloseBindPanel();
+      stRenderBindings();
+      showToast(saved ? ('已解绑' + meta.name) : '⚠️ 解绑未能保存，请重试');
+    };
+    /* 在线模式：邮箱走真实解绑接口 POST /api/auth/email/unbind */
+    if (stIsOnline() && channel === 'email') {
+      var doReq = (typeof api === 'function')
+        ? api('/api/auth/email/unbind', { method: 'POST' })
+        : Promise.reject(new Error('接口不可用（assets/api.js 未加载）'));
+      doReq.then(function () {
+        stRemoteEmail = ''; stRemoteEmailLoaded = true;
+        removeLocal();
+      }).catch(function (e) {
+        showToast('❌ 解绑失败：' + ((e && e.message) ? String(e.message) : '网络错误'));
+      });
+      return;
+    }
+    removeLocal();
+  });
+}
+
+/** 清空验证码输入（提交成功后调用）。 */
+function stClearBindCodeGroup() {
+  var codeEl = document.getElementById('stBindCode');
+  if (codeEl) codeEl.value = '';
+}
+
+/* ---------- 隐私与安全 · 黑名单（T01 增量 2026-09-11） ----------
+   列表：GET /api/friends/blocked（字段 id/nickname/avatarUrl/motto/since，接口 _peer_brief 不含 username）；
+   移出：DELETE /api/friends/block/{uid}。地址统一走 assets/config.js。 */
+function stPrivacyBase() {
+  return (typeof window.getApiBase === 'function') ? window.getApiBase()
+    : (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : '');
+}
+function stPrivacyToken() {
+  try { if (typeof apiGetToken === 'function') return apiGetToken() || ''; } catch (e) { }
+  return localStorage.getItem('study_workbench_token') || '';
+}
+function stAvatarFallback(name) {
+  var s = String(name == null ? '' : name).trim();
+  return s ? s.slice(0, 1) : '？';
+}
+function stLoadBlocked() {
+  var box = document.getElementById('stBlockedList');
+  if (!box) return;
+  var token = stPrivacyToken();
+  if (!token) { box.innerHTML = '<div class="privacy-empty">登录后可管理黑名单</div>'; return; }
+  box.innerHTML = '<div class="privacy-empty">加载中…</div>';
+  fetch(stPrivacyBase() + '/api/friends/blocked', { headers: { 'Authorization': 'Bearer ' + token } })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      var items = (d && d.items) || [];
+      if (!items.length) { box.innerHTML = '<div class="privacy-empty">黑名单为空，暂时没有拉黑的用户</div>'; return; }
+      // 接口 _peer_brief 不返回 username，行内只展示头像 + 昵称，避免出现空白 @账号
+      box.innerHTML = items.map(function (u) {
+        var name = u.nickname || ('用户 ' + u.id);
+        var av = u.avatarUrl
+          ? '<img class="privacy-av" src="' + stEsc(u.avatarUrl) + '" alt="">'
+          : '<div class="privacy-av privacy-av-text">' + stEsc(stAvatarFallback(name)) + '</div>';
+        return '<div class="privacy-row privacy-item">' + av +
+          '<div class="privacy-row-main"><div class="privacy-row-name">' + stEsc(name) + '</div>' +
+          '<div class="privacy-row-sub">已拉黑</div></div>' +
+          '<button class="btn btn-outline privacy-row-btn" onclick="stUnblock(' + u.id + ')">移出</button>' +
+          '</div>';
+      }).join('');
+    })
+    .catch(function () { box.innerHTML = '<div class="privacy-empty">加载失败，请稍后重试</div>'; });
+}
+function stUnblock(uid) {
+  if (!uid) return;
+  var token = stPrivacyToken();
+  if (!token) { if (typeof showToast === 'function') showToast('请先登录'); return; }
+  fetch(stPrivacyBase() + '/api/friends/block/' + uid, {
+    method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token }
+  })
+    .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error((d && d.detail) || '移出失败'); return d; }); })
+    .then(function () {
+      if (typeof showToast === 'function') showToast('✅ 已移出黑名单');
+      stLoadBlocked();
+    })
+    .catch(function (e) {
+      if (typeof showToast === 'function') showToast('移出失败：' + (e.message || ''));
+      else if (typeof uiAlert === 'function') uiAlert('移出失败');
+    });
+}
+/* ---------- 隐私与安全 · 可见性三控件（T05 接线 2026-09-11） ----------
+   读取：GET /api/auth/me 的 privacy；保存：PUT /api/users/me/privacy（部分更新，只传变更字段）。
+   契约：momentVisibility ∈ public/friends/private；friendAllow ∈ everyone/need_confirm/nobody；searchable 为 bool。
+   保存失败 → 回滚 UI 到保存前的值 + toast，避免「UI 已改、后端没存」不一致。 */
+var privacyState = { loaded: false, enabled: false, current: { momentVisibility: 'public', friendAllow: 'need_confirm', searchable: true } };
+var MOMENT_SCOPE_LABEL = { public: '公开', friends: '仅好友', private: '仅自己' };
+var FRIEND_POLICY_LABEL = { everyone: '所有人可直接加', need_confirm: '需要我验证', nobody: '不允许任何人' };
+
+function stRenderSearchable(on) {
+  var wrap = document.getElementById('stSearchableSeg');
+  if (!wrap) return;
+  wrap.querySelectorAll('button').forEach(function (b) {
+    b.classList.toggle('active', (b.getAttribute('data-val') === '1') === !!on);
+  });
+}
+function stRenderPrivacy(p) {
+  p = p || {};
+  var ms = document.getElementById('stMomentScope');
+  if (ms && MOMENT_SCOPE_LABEL[p.momentVisibility]) ms.value = p.momentVisibility;
+  var fp = document.getElementById('stFriendPolicy');
+  if (fp && FRIEND_POLICY_LABEL[p.friendAllow]) fp.value = p.friendAllow;
+  stRenderSearchable(p.searchable !== false);
+}
+function stPrivacySetEnabled(on) {
+  privacyState.enabled = !!on;
+  ['stMomentScope', 'stFriendPolicy'].forEach(function (id) {
+    var el = document.getElementById(id); if (el) el.disabled = !on;
+  });
+  var wrap = document.getElementById('stSearchableSeg');
+  if (wrap) wrap.querySelectorAll('button').forEach(function (b) { b.disabled = !on; });
+}
+function stLoadPrivacy() {
+  var hint = document.getElementById('privacyOnlineHint');
+  var token = stPrivacyToken();
+  if (!token) {
+    stPrivacySetEnabled(false);
+    if (hint) { hint.textContent = '🔌 需登录后在线使用；当前为单机模式'; hint.style.display = 'block'; }
+    return;
+  }
+  stPrivacySetEnabled(false); // 加载中先禁用，避免用未加载的默认值覆盖服务端设置
+  fetch(stPrivacyBase() + '/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } })
+    .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error((d && d.detail) || '读取失败'); return d; }); })
+    .then(function (me) {
+      var p = me && me.privacy;
+      if (!p) { if (hint) { hint.textContent = '暂无法读取隐私设置（后端未就绪）'; hint.style.display = 'block'; } return; }
+      privacyState.current = {
+        momentVisibility: MOMENT_SCOPE_LABEL[p.momentVisibility] ? p.momentVisibility : 'public',
+        friendAllow: FRIEND_POLICY_LABEL[p.friendAllow] ? p.friendAllow : 'need_confirm',
+        searchable: p.searchable !== false
+      };
+      privacyState.loaded = true;
+      if (hint) hint.style.display = 'none';
+      stRenderPrivacy(privacyState.current);
+      stPrivacySetEnabled(true);
+    })
+    .catch(function (e) {
+      if (hint) { hint.textContent = '🔌 隐私设置需登录后在线使用'; hint.style.display = 'block'; }
+      if (typeof showToast === 'function') showToast('隐私设置读取失败：' + ((e && e.message) || '网络错误'));
+    });
+}
+function stSavePrivacy(patch) {
+  var token = stPrivacyToken();
+  var before = Object.assign({}, privacyState.current);
+  if (!token) {
+    stRenderPrivacy(before);
+    if (typeof showToast === 'function') showToast('请先登录后使用');
+    return;
+  }
+  fetch(stPrivacyBase() + '/api/users/me/privacy', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: JSON.stringify(patch) // 部分更新：只传变更字段
+  })
+    .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error((d && d.detail) || '保存失败'); return d; }); })
+    .then(function (d) {
+      // 契约：响应返回全量 privacy → 以服务端为准回填
+      var next = {
+        momentVisibility: MOMENT_SCOPE_LABEL[d.momentVisibility] ? d.momentVisibility : before.momentVisibility,
+        friendAllow: FRIEND_POLICY_LABEL[d.friendAllow] ? d.friendAllow : before.friendAllow,
+        searchable: d.searchable !== false
+      };
+      privacyState.current = next;
+      stRenderPrivacy(next);
+      if (typeof showToast === 'function') showToast('✅ 已保存');
+    })
+    .catch(function (e) {
+      privacyState.current = before; // 回滚
+      stRenderPrivacy(before);
+      if (typeof showToast === 'function') showToast('⚠️ 保存失败：' + ((e && e.message) || '网络错误'));
+    });
+}
+function stSetMomentScope(v) {
+  if (!MOMENT_SCOPE_LABEL[v] || v === privacyState.current.momentVisibility) { stRenderPrivacy(privacyState.current); return; }
+  stSavePrivacy({ momentVisibility: v });
+}
+function stSetFriendPolicy(v) {
+  if (!FRIEND_POLICY_LABEL[v] || v === privacyState.current.friendAllow) { stRenderPrivacy(privacyState.current); return; }
+  stSavePrivacy({ friendAllow: v });
+}
+function stSetSearchable(on) {
+  on = !!on;
+  stRenderSearchable(on); // 立即反映点击态，保存失败将回滚
+  if (privacyState.loaded && on === privacyState.current.searchable) return;
+  stSavePrivacy({ searchable: on });
+}
+if (typeof window !== 'undefined') {
+  window.stLoadBlocked = stLoadBlocked;
+  window.stUnblock = stUnblock;
+  window.stLoadPrivacy = stLoadPrivacy;
+  window.stSetMomentScope = stSetMomentScope;
+  window.stSetFriendPolicy = stSetFriendPolicy;
+  window.stSetSearchable = stSetSearchable;
+}
+
+/* ---------- 初始化 ---------- */
+(function stInit() {
+  stFillBlogCat();
+  stApplySegUI();
+  var s = loadAllSettings();
+  var rt = document.getElementById('stRemindTime');
+  if (rt && s.remindTime) rt.value = s.remindTime;
+  var apply = function (id, on) {
+    var w = document.getElementById(id); if (!w) return;
+    w.querySelectorAll('.theme-option').forEach(function (b) { b.classList.toggle('active', (b.getAttribute('data-val') === '1') === !!on); });
+  };
+  apply('swReduceMotion', s.reduceMotion);
+  apply('swCompact', s.compact);
+  apply('swStudyRemind', s.studyRemind);
+  /* 【需求 3】stRefreshOverview() 已随数据总览卡迁入 数据管理.html，此处调用移除 */
+  applyStudyReminder();
+  stLoadBlocked();
+  stLoadPrivacy();
+})();
+
+/* R34（寇豆码 2026-09-15）：账号检测原在解析期 IIFE 内「同步」调用 stInitAccount()，
+   但本页内联脚本先于 defer 脚本（app.js/api.js/config.js）执行，此时 CURRENT_USER /
+   apiGetToken 尚不存在，导致卡片永远停在「检测中… / —」。
+   修复：延后到依赖就绪后再调用。defer 脚本在 DOMContentLoaded 之前已执行完毕，
+   故挂 DOMContentLoaded 最稳妥；若事件已过（readyState 已非 loading）则立即执行兜底。
+   进入「账号与安全」子页时由下方 T02 区块的 onSubpageChange 再刷新一次。 */
+if (typeof stInitAccount === 'function') {
+  if (document.readyState !== 'loading') {
+    stInitAccount();
+  } else {
+    window.addEventListener('DOMContentLoaded', stInitAccount);
+  }
+}
+</script>
+
+<script>
+/* ==================== 帮助与反馈（T6 增量 2026-09-11） ====================
+   FAQ 手风琴：纯前端，离线可用。
+   反馈提交：POST /api/feedbacks（≥10 字前端拦截；服务端限频 10 分钟 1 条 / 每天 5 条）。
+   成功 → toast 显示编号 #id 并刷新「我的反馈」；失败 → 暂存 study_workbench_feedback_outbox。
+   【后续扩展点：反馈处理台】管理员查询/标记已处理接口（后端 feedbackAdmin() 留空）。 */
+(function () {
+  'use strict';
+  function $id(x) { return document.getElementById(x); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  // 地址统一走 assets/config.js（本页禁止硬编码 IP）
+  function apiBase() { return (typeof window.getApiBase === 'function') ? window.getApiBase() : (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ''); }
+  function tok() { return localStorage.getItem('study_workbench_token') || ''; }
+  var OUTBOX_KEY = 'study_workbench_feedback_outbox';
+  /* 需求01：我提交过的反馈本地账本（含未登录提交的公开反馈），用于回查管理员回复。
+     结构：[{id, source:'public'|'account', type, content, createdAt}]，最多留 20 条。 */
+  var MY_FB_KEY = 'xt_my_feedback_ids';
+
+  function loadMyFbLedger() {
+    try {
+      var raw = JSON.parse(localStorage.getItem(MY_FB_KEY) || '[]');
+      return Array.isArray(raw) ? raw : [];
+    } catch (e) { return []; }
+  }
+  function saveMyFbLedger(list) {
+    try { localStorage.setItem(MY_FB_KEY, JSON.stringify((list || []).slice(-20))); } catch (e) { /* 无痕模式忽略 */ }
+  }
+  function rememberMyFb(rec) {
+    if (!rec || rec.id === undefined || rec.id === null) return;
+    var list = loadMyFbLedger();
+    for (var i = 0; i < list.length; i++) {
+      if (String(list[i].id) === String(rec.id)) { list[i] = rec; saveMyFbLedger(list); return; }
+    }
+    list.push(rec);
+    saveMyFbLedger(list);
+  }
+  var FB_TYPE_TEXT = { bug: '功能异常', suggest: '体验建议', content: '内容问题', other: '其他' };
+  var FB_STATUS_TEXT = { pending: '待处理', replied: '已回复' };
+
+  window.fbToggleFaq = function (q) {
+    var item = q.parentElement;
+    if (item) item.classList.toggle('open');
+  };
+
+  // 字数提示（≥10 字才能提交）
+  var contentEl = $id('fbContent');
+  if (contentEl) {
+    contentEl.addEventListener('input', function () {
+      var n = (contentEl.value || '').trim().length;
+      var tip = $id('fbLenTip');
+      if (tip) {
+        tip.textContent = n + ' / 10 字';
+        tip.style.color = n >= 10 ? '#22c55e' : '';
+      }
+    });
+  }
+
+  window.fbSubmit = function () {
+    var content = (($id('fbContent') || {}).value || '').trim();
+    if (content.length < 10) { if (typeof showToast === 'function') showToast('反馈描述至少 10 个字'); else if (typeof uiAlert === 'function') uiAlert('反馈描述至少 10 个字'); return; }
+    var body = {
+      type: ($id('fbType') || {}).value || 'other',
+      content: content,
+      anonymous: !!($id('fbAnonymous') || {}).checked
+    };
+    var btn = $id('fbSubmitBtn');
+    if (btn) { btn.disabled = true; btn.textContent = '提交中…'; }
+    fetch(apiBase() + '/api/feedbacks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() },
+      body: JSON.stringify(body)
+    })
+    .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.detail || '提交失败'); return d; }); })
+    .then(function (d) {
+      if (typeof showToast === 'function') showToast('✅ 已收到，编号 #' + d.id);
+      // 需求01：记住编号，便于在「我的反馈」里回查管理员回复
+      rememberMyFb({ id: d.id, source: 'account', type: body.type, content: content, createdAt: d.createdAt || d.created_at || '' });
+      $id('fbContent').value = '';
+      loadMine();
+    })
+    .catch(function (e) {
+      // 离线降级：本地暂存待补发【后续扩展点：反馈 outbox 自动补发】
+      try {
+        var box = JSON.parse(localStorage.getItem(OUTBOX_KEY) || '[]');
+        box.push(body);
+        localStorage.setItem(OUTBOX_KEY, JSON.stringify(box.slice(-10)));
+      } catch (er) { }
+      if (typeof showToast === 'function') showToast('反馈暂未送达，请稍后重试（已暂存本地）');
+      else if (typeof uiAlert === 'function') uiAlert('反馈暂未送达，请稍后重试：' + (e.message || ''));
+    })
+    .finally(function () { if (btn) { btn.disabled = false; btn.textContent = '提交反馈'; } });
+  };
+
+  /* 需求01：我的反馈 = 服务端回查（含管理员 reply）∪ 本地提交账本。
+     主接口 GET /api/feedback/mine（带 token）；后端尚未兑现时回退旧 GET /api/feedbacks/mine。
+     有 reply 显著展示「管理员回复」，没有则显示「等待回复」。 */
+  function fetchMineFromServer() {
+    var t = tok();
+    if (!t) return Promise.resolve([]);
+    var headers = { 'Authorization': 'Bearer ' + t };
+    return fetch(apiBase() + '/api/feedback/mine', { headers: headers })
+      .then(function (r) {
+        if (!r.ok) throw new Error('mine not ready');
+        return r.json();
+      })
+      .then(function (d) {
+        var items = Array.isArray(d) ? d : (d.items || []);
+        return items.map(function (f) { return { id: f.id, source: 'server', type: f.type, content: f.content, createdAt: f.createdAt || f.created_at || '', status: f.status, reply: f.reply || '' }; });
+      })
+      .catch(function () {
+        // 新接口未就绪 → 回退旧接口（结构：{items:[{id,type,content,createdAt,status}]}）
+        return fetch(apiBase() + '/api/feedbacks/mine', { headers: headers })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            var items = Array.isArray(d) ? d : (d.items || []);
+            return items.map(function (f) { return { id: f.id, source: 'server', type: f.type, content: f.content, createdAt: f.createdAt || f.created_at || '', status: f.status, reply: f.reply || '' }; });
+          })
+          .catch(function () { return null; });   // null = 后端不可用，仅用本地账本
+      });
+  }
+
+  function renderMine(items) {
+    var box = $id('fbMineList');
+    if (!box) return;
+    if (!items.length) {
+      box.innerHTML = tok() ? '还没有提交过反馈' : '提交过的反馈会显示在这里（登录后还能看到管理员回复）';
+    } else {
+      box.innerHTML = items.slice(0, 10).map(function (f) {
+        var replied = !!(f.reply && String(f.reply).trim()) || f.status === 'replied';
+        var replyHtml = replied
+          ? '<div class="fb-mine-reply"><b>管理员回复：</b>' + esc(f.reply || '（已处理）') + '</div>'
+          : '<div class="fb-mine-wait">等待回复</div>';
+        return '<div class="fb-mine-item">' +
+          '<div class="fb-mine-top">' +
+            '<span class="fb-mine-status ' + (replied ? 'ok' : 'wait') + '">' + (replied ? '已回复' : '待处理') + '</span>' +
+            '<span class="fb-mine-id">#' + esc(f.id) + ' · ' + esc(FB_TYPE_TEXT[f.type] || f.type) + ' · ' + esc(f.createdAt || '') + '</span>' +
+          '</div>' +
+          '<div class="fb-mine-content">' + esc(f.content) + '</div>' +
+          replyHtml +
+          '</div>';
+      }).join('');
+    }
+    var pending = items.filter(function (x) { return !(x.reply && String(x.reply).trim()) && x.status !== 'replied'; }).length;
+    var badge = $id('fbStatusBadge');
+    if (badge) badge.textContent = pending ? pending + ' 条待处理' : (items.length ? '无待处理' : '');
+  }
+
+  function loadMine() {
+    var box = $id('fbMineList');
+    if (!box) return;
+    fetchMineFromServer().then(function (serverItems) {
+      var ledger = loadMyFbLedger();
+      var byId = {};
+      var out = [];
+      var i;
+      if (serverItems) {
+        for (i = 0; i < serverItems.length; i++) {
+          byId[String(serverItems[i].id)] = serverItems[i];
+          out.push(serverItems[i]);
+        }
+      }
+      // 本地账本补位：未登录提交的公开反馈 / 服务端未返回的条目
+      for (i = 0; i < ledger.length; i++) {
+        var rec = ledger[i] || {};
+        var key = String(rec.id);
+        if (!byId[key]) {
+          out.push({ id: rec.id, source: rec.source || 'public', type: rec.type, content: rec.content, createdAt: rec.createdAt || '', status: 'pending', reply: '' });
+        } else if (!byId[key].content && rec.content) {
+          byId[key].content = rec.content;
+          byId[key].createdAt = byId[key].createdAt || rec.createdAt || '';
+        }
+      }
+      out.sort(function (a, b) { return String(b.createdAt || '').localeCompare(String(a.createdAt || '')); });
+      renderMine(out);
+      if (serverItems === null && !ledger.length) {
+        box.innerHTML = '反馈需联网查看（后端不可用）';
+      }
+    });
+  }
+  // 供「给创作者提优化建议」提交成功后刷新
+  window.xtLoadMyFeedback = loadMine;
+
+  if (document.readyState !== 'loading') loadMine();
+  else document.addEventListener('DOMContentLoaded', loadMine);
+})();
+</script>
+
+<script>
+/* ==================== 给创作者提优化建议（20260913k） ====================
+   轻量表单：POST /api/feedback，body { nickname, type, content }。
+   type 三选一 chip：优化建议 / 问题反馈 / 新功能期望。
+   昵称自动带入当前登录账号（可读则回填，可手改），成功/失败均 toast。 */
+(function () {
+  'use strict';
+  function $id(x) { return document.getElementById(x); }
+  // 地址统一走 assets/config.js（本页禁止硬编码 IP）
+  function apiBase() { return (typeof window.getApiBase === 'function') ? window.getApiBase() : (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ''); }
+  var cfType = '优化建议';
+
+  window.cfPickType = function (btn) {
+    if (!btn) return;
+    var chips = document.querySelectorAll('#cfTypeChips .cf-chip');
+    for (var i = 0; i < chips.length; i++) chips[i].classList.remove('active');
+    btn.classList.add('active');
+    cfType = btn.getAttribute('data-value') || '优化建议';
+  };
+
+  // 昵称自动带入：优先 CURRENT_USER / stCurAccount()，回退 localStorage 登录信息
+  function cfPrefill() {
+    var el = $id('cfNickname');
+    if (!el || el.value) return;
+    var name = '';
+    try {
+      if (typeof stCurAccount === 'function') name = stCurAccount() || '';
+      if (!name) name = (JSON.parse(localStorage.getItem('study_workbench_auth') || '{}').nickname) || '';
+    } catch (e) { /* 忽略解析失败，留空可手填 */ }
+    if (name) el.value = name;
+  }
+
+  window.cfSubmit = function () {
+    var content = (($id('cfContent') || {}).value || '').trim();
+    if (!content) { if (typeof showToast === 'function') showToast('请先填写反馈内容'); return; }
+    var body = {
+      nickname: (($id('cfNickname') || {}).value || '').trim(),
+      type: cfType,
+      content: content
+    };
+    var btn = $id('cfSubmitBtn');
+    if (btn) { btn.disabled = true; btn.textContent = '提交中…'; }
+    fetch(apiBase() + '/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.detail || 'error'); return d; }); })
+      .then(function (d) {
+        if (d && d.ok === false) { if (typeof showToast === 'function') showToast('提交失败，请稍后再试'); return; }
+        // 需求01：记住编号（公开反馈免登录提交，本地账本是回查回复的唯一凭据）
+        var cfId = (d && (d.id !== undefined ? d.id : (d.data && d.data.id)));
+        if (cfId !== undefined && cfId !== null) {
+          rememberMyFb({
+            id: cfId, source: 'public', type: cfType, content: content,
+            createdAt: (d && (d.createdAt || d.created_at)) || ''
+          });
+          if (typeof showToast === 'function') showToast('已提交，感谢反馈（编号 #' + cfId + '）');
+        } else if (typeof showToast === 'function') showToast('已提交，感谢反馈');
+        $id('cfContent').value = '';
+        if (typeof window.xtLoadMyFeedback === 'function') window.xtLoadMyFeedback();
+      })
+      .catch(function () {
+        if (typeof showToast === 'function') showToast('提交失败，请稍后再试');
+      })
+      .finally(function () { if (btn) { btn.disabled = false; btn.textContent = '提交'; } });
+  };
+
+  if (document.readyState !== 'loading') cfPrefill();
+  else document.addEventListener('DOMContentLoaded', cfPrefill);
+})();
+</script>
+
+<style>
+/* ==================== 帮助与反馈卡样式（T6 增量） ==================== */
+.fb-faq{padding:4px 0}
+.fb-faq-item{border-bottom:1px solid var(--border)}
+.fb-faq-item:last-child{border-bottom:none}
+.fb-faq-q{display:flex;justify-content:space-between;align-items:center;padding:10px 4px;font-size:13px;font-weight:600;cursor:pointer;user-select:none}
+.fb-faq-q span{color:var(--text-secondary);transition:transform .2s}
+.fb-faq-item.open .fb-faq-q span{transform:rotate(180deg)}
+.fb-faq-a{display:none;padding:0 4px 10px;font-size:12.5px;color:var(--text-secondary);line-height:1.7}
+.fb-faq-item.open .fb-faq-a{display:block}
+.fb-form{padding:10px 4px;border-top:1px solid var(--border)}
+.fb-row{margin-bottom:10px}
+.fb-label{display:block;font-size:12px;color:var(--text-secondary);margin-bottom:5px}
+.fb-input{width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-size:13px;font-family:inherit;outline:none;background:var(--bg);color:var(--text);resize:vertical}
+.fb-input:focus{border-color:var(--primary)}
+.fb-inline{display:flex;align-items:center;gap:10px}
+.fb-hint{text-align:right;font-size:11px;color:var(--text-secondary);margin-top:3px}
+.fb-mine{padding:10px 4px;border-top:1px solid var(--border)}
+.fb-mine-title{font-size:13px;font-weight:600;margin-bottom:6px}
+/* 需求01：我的反馈条目 —— 管理员回复显著展示，无回复显示「等待回复」 */
+.fb-mine-item{padding:8px 0;border-bottom:1px dashed var(--border)}
+.fb-mine-item:last-child{border-bottom:none}
+.fb-mine-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.fb-mine-status{font-size:11px;line-height:16px;padding:0 8px;border-radius:8px;flex-shrink:0}
+.fb-mine-status.ok{background:#e8f8ee;color:#22a55e}
+.fb-mine-status.wait{background:#fdf3e2;color:#c8841b}
+.fb-mine-id{font-size:var(--xt-font-xs);color:var(--text-secondary);word-break:break-all}
+.fb-mine-content{font-size:var(--xt-font-base);color:var(--text);line-height:1.7;word-break:break-word;white-space:pre-wrap}
+.fb-mine-reply{margin-top:6px;padding:8px 10px;border-radius:10px;background:var(--primary-light);font-size:12.5px;line-height:1.7;color:var(--text);word-break:break-word;white-space:pre-wrap}
+.fb-mine-wait{margin-top:6px;font-size:12px;color:var(--text-muted)}
+/* 给创作者提优化建议：类型三选一 chip（对齐全站设计令牌） */
+.cf-chips{display:flex;gap:8px;flex-wrap:wrap}
+.cf-chip{border:1px solid var(--border);background:var(--bg);color:var(--text-secondary);border-radius:999px;padding:5px 14px;font-size:12.5px;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
+.cf-chip.active{border-color:var(--primary);background:var(--primary);color:#fff;font-weight:600}
+
+/* ==================== ADR-3：修改密码「页面内可展开区块」（2026-09-15） ====================
+   原 .modal-overlay 遮罩形态已移除；改为账号与安全卡片内的内联区块，靠 .active 类切换显隐，
+   样式全部复用全站令牌与页面已有 card / form-input / btn 写法，不新增色板。 */
+.st-pwd-panel{display:none;margin-top:2px;padding:16px 0 2px;border-top:1px solid var(--border)}
+.st-pwd-panel.active{display:block}
+.st-pwd-title{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--text)}
+.st-pwd-hint{font-size:12px;color:var(--text-muted);line-height:1.7;margin:6px 0 14px}
+.st-pwd-panel .form-group{margin-bottom:14px}
+.st-pwd-panel .setting-actions{justify-content:flex-end;flex-wrap:wrap}
+@media (max-width:560px){
+  .st-pwd-panel .setting-actions .btn{flex:1;justify-content:center}
+}
+
+/* ==================== 任务 E：绑定与认证「页面内可展开区块」（2026-09-16） ====================
+   手机号 / 微信号 / 邮箱号三项绑定，样式完全对齐上方 .st-pwd-panel 组，仅沿用全站令牌，不新增色板。 */
+.st-bind-list{display:block}
+.st-bind-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.st-bind-item:last-child{border-bottom:none}
+.st-bind-item-info{min-width:0;flex:1}
+.st-bind-item-name{font-size:14px;color:var(--text);font-weight:600;display:flex;align-items:center;gap:6px}
+.st-bind-item-val{font-size:12px;color:var(--text-secondary);line-height:1.7;margin-top:2px;word-break:break-all}
+.st-bind-item-val.none{color:var(--text-muted)}
+.st-bind-item-actions{flex-shrink:0;display:flex;gap:8px}
+.st-bind-panel{display:none;margin-top:2px;padding:16px 0 2px;border-top:1px solid var(--border)}
+.st-bind-panel.active{display:block}
+.st-bind-title{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--text)}
+.st-bind-hint{font-size:12px;color:var(--text-muted);line-height:1.7;margin:6px 0 14px}
+.st-bind-panel .form-group{margin-bottom:14px}
+.st-bind-panel .setting-actions{justify-content:flex-end;flex-wrap:wrap}
+.st-bind-input-row{display:flex;gap:8px;align-items:center}
+.st-bind-input-row .form-input{flex:1;min-width:0}
+.st-bind-input-row .btn{flex-shrink:0;white-space:nowrap}
+@media (max-width:560px){
+  .st-bind-panel .setting-actions .btn{flex:1;justify-content:center}
+  .st-bind-item{flex-wrap:wrap}
+}
+
+/* ==================== 需求20-B（2026-09-17）：窄屏文字 / 布局加固 ====================
+   设置项行（.setting-row/.setting-info/.setting-actions）的窄屏换行、min-width:0、flex-shrink:0
+   已由 assets/common.css 的 ≤560px 规则保证（说明文字占满整行、控件换行到下一行，不与文字重叠）。
+   这里只补本页特有的两处窄屏风险：字号分段控件（.seg）与快捷入口磁贴（.st-quick）在 320~380 下
+   不被挤压成逐字断行、不撑破页面；并保证长说明文字可断行（A10/A11）。 */
+@media (max-width:380px){
+  .setting-actions{width:100%}
+  .setting-actions .seg{flex-wrap:wrap;justify-content:flex-start;max-width:100%}
+  .setting-actions .seg button{padding:6px 10px}
+  .setting-name,.setting-desc,.card-title{overflow-wrap:anywhere;word-break:break-word}
+}
+</style>
+<script>
+/* T02 批次五（寇豆码 2026-09-12）：hash 路由初始化 */
+(function () {
+  function bootSubpage() {
+    /* R7b nav-trace（2026-09-20）：App 内子页空白取证打点（浏览器 console，App 内落盘） */
+    try { if (window.errorBoundary && typeof window.errorBoundary.report === 'function') window.errorBoundary.report('nav-trace: settings boot, SubpageRouter=' + (typeof SubpageRouter), '', 'nav-trace'); } catch (e) {}
+    if (typeof SubpageRouter === 'undefined' || !SubpageRouter || typeof SubpageRouter.init !== 'function') return;
+    SubpageRouter.init({
+      rootSelector: '#page-settings',
+      defaultSubpage: 'list',
+      sectionsSelector: '[data-subpage]',
+      breadcrumbSelector: '.subpage-header',
+      pageTitle: '设置',
+      rootHref: '设置.html'
+    });
+    try { if (window.errorBoundary && typeof window.errorBoundary.report === 'function') window.errorBoundary.report('nav-trace: settings subpage init ok', '', 'nav-trace'); } catch (e) {}
+    SubpageRouter.onSubpageChange(function (key, params) {
+      try { if (window.errorBoundary && typeof window.errorBoundary.report === 'function') window.errorBoundary.report('nav-trace: settings subpage render: ' + key, '', 'nav-trace'); } catch (e) {}
+      /* 需求20-B：子页切换后滚动位置归零，避免停留在上一子页的滚动位置（错位观感） */
+      try { window.scrollTo(0, 0); } catch (e0) { }
+      var sc = document.querySelector('.content');
+      if (sc) { try { sc.scrollTop = 0; } catch (e1) { } }
+      // privacy 子页面激活时拉取隐私三控件（批次四 T05 落地，stLoadPrivacy 保留）
+      if (key === 'privacy') {
+        try { if (typeof stLoadPrivacy === 'function') stLoadPrivacy(); } catch (e) { if (window.console) console.warn('stLoadPrivacy error', e); }
+      }
+      // R34（寇豆码 2026-09-15）：进入「账号与安全」子页时刷新一次账号检测，
+      // 保证登录态（CURRENT_USER / apiGetToken）就绪后卡片显示正确账号，而非残留「检测中… / —」。
+      if (key === 'account') {
+        try { if (typeof stInitAccount === 'function') stInitAccount(); } catch (e) { if (window.console) console.warn('stInitAccount error', e); }
+        /* 任务 E：进入「账号与安全」时刷新绑定状态（真实反映数据，不停留占位文案） */
+        try { if (typeof stRenderBindings === 'function') stRenderBindings(); } catch (e) { if (window.console) console.warn('stRenderBindings error', e); }
+        /* 在线模式：从服务端拉取已绑定邮箱，避免只显示本地缓存 */
+        try { if (typeof stLoadBindingsRemote === 'function') stLoadBindingsRemote(); } catch (e2) { if (window.console) console.warn('stLoadBindingsRemote error', e2); }
+      }
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootSubpage);
+  else bootSubpage();
+})();
+</script>
+<script src="assets/ai-config.js?v=20260925a"></script>
+<script src="assets/ai-presets.js?v=20260923b"></script>
+<script src="assets/ai-service.js?v=20260925a"></script>
+<script src="assets/ai-cap-registry.js?v=20260923b"></script>
+<script src="assets/ai-cap-image.js?v=20260923b"></script>
+<script src="assets/ai-cap-vision.js?v=20260923b"></script>
+<script src="assets/ai-cap-audio.js?v=20260923b"></script>
+<script src="assets/ai-cap-embed.js?v=20260923b"></script>
+<script src="assets/ai-cap-translate.js?v=20260923b"></script>
+<script src="assets/ai-cap-video.js?v=20260923b"></script>
+<script src="assets/ai-cap-3d.js?v=20260923b"></script>
+</body>
+</html>

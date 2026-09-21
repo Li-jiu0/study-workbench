@@ -1,0 +1,28 @@
+=== openView / renderView / backView 定义 ===
+ 1146|   function renderPage() {
+ 1212|     var el = $('xtpView_' + id);
+ 1216|     el.id = 'xtpView_' + id;
+ 1221|   function openView(id) {
+ 1231|     var el = $('xtpView_' + id);
+ 1236|   function backView(id) {
+ 1253|   function renderView(id, el) {
+ 1571|   function chatBody() { return '<div id="xtpChatBody">' + chatBodyHtml() + '</div>'; }
+ 1574|     var box = el.querySelector('#xtpChatBody');
+ 1578|       var b = $('xtpChatBody');
+ 1583|   function paintChat(box) {
+ 1592|           var b = $('xtpChatBody');
+ 2146|     var box = $('xtpChatBody');
+ 2574|           var ev = $('xtpView_edit');
+ 2618|         var ev = $('xtpView_edit');
+ 2820|       var ev = $('xtpView_edit');
+
+=== VIEWS 表 / 视图 id 常量 ===
+  294|    *   1) 请求未发：原 chatBody() 从不调用 GET /api/ai/history，登录用户的真实历史一条都拉不到；
+  728|       btns += '<button class="xtp-hero-act" type="button" data-other-act="chat">' +
+  852|           if (a === 'chat') {
+ 1085|         { icon: 'bot', title: 'AI对话记录', view: 'chat', badge: chatBadge() }
+ 1260|     else if (id === 'chat') { title = 'AI对话记录'; body = chatBody(); }
+ 1270|     if (id === 'chat') { bindChatView(el); }
+ 1542|   function chatBodyHtml() {
+ 1571|   function chatBody() { return '<div id="xtpChatBody">' + chatBodyHtml() + '</div>'; }
+ 1584|     box.innerHTML = chatBodyHtml();

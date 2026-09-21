@@ -1,0 +1,2 @@
+script 0 syntax OK
+script 1 syntax OK

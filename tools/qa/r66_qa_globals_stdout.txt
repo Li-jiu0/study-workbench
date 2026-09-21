@@ -1,0 +1,42 @@
+[ai-config] 结构校验通过：24 个模型 / 6 个平台
+===== [H] 语法编译（vm.Script，抓 SyntaxError；等价 node --check） =====
+[PASS] 编译通过: assets/ai-settings.js
+[PASS] 编译通过: assets/ai-page.js
+[PASS] 编译通过: assets/ai-config.js
+[PASS] 编译通过: assets/ai-service.js
+
+===== [I] 沙箱运行：真实文件级顶层全局 + window.* 赋值探测 =====
+[INFO] assets/ai-settings.js 顶层全局=xtAiSettings ; window.*=document,localStorage,console,setTimeout,clearTimeout,setInterval,clearInterval,location,navigator,matchMedia,TextDecoder,atob,btoa,fetch,AbortController,JSON,Math,Date,Object,Array,String,Number,Boolean,RegExp,parseInt,parseFloat,isNaN,Promise,globalThis,xtAiSettings
+[INFO] assets/ai-page.js 顶层全局=(无，IIFE 包裹) ; window.*=document,localStorage,console,setTimeout,clearTimeout,setInterval,clearInterval,location,navigator,matchMedia,TextDecoder,atob,btoa,fetch,AbortController,JSON,Math,Date,Object,Array,String,Number,Boolean,RegExp,parseInt,parseFloat,isNaN,Promise,globalThis
+[INFO] assets/ai-config.js 顶层全局=AI_CONFIG ; window.*=document,localStorage,console,setTimeout,clearTimeout,setInterval,clearInterval,location,navigator,matchMedia,TextDecoder,atob,btoa,fetch,AbortController,JSON,Math,Date,Object,Array,String,Number,Boolean,RegExp,parseInt,parseFloat,isNaN,Promise,globalThis,AI_CONFIG
+[INFO] assets/ai-service.js 顶层全局=AI_SERVICE,callAI,aiGetModelSettings,aiSaveModelSettings,aiHealthCheck ; window.*=document,localStorage,console,setTimeout,clearTimeout,setInterval,clearInterval,location,navigator,matchMedia,TextDecoder,atob,btoa,fetch,AbortController,JSON,Math,Date,Object,Array,String,Number,Boolean,RegExp,parseInt,parseFloat,isNaN,Promise,globalThis,AI_SERVICE,callAI,aiGetModelSettings,aiSaveModelSettings,aiHealthCheck
+
+[GUARDED] window.document 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.localStorage 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.console 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.setTimeout 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.clearTimeout 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.setInterval 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.clearInterval 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.location 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.navigator 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.matchMedia 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.TextDecoder 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.atob 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.btoa 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.fetch 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.AbortController 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.JSON 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.Math 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.Date 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.Object 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.Array 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.String 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.Number 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.Boolean 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.RegExp 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.parseInt 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.parseFloat 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.isNaN 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.Promise 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）
+[GUARDED] window.globalThis 跨文件出现: assets/ai-settings.js, assets/ai-page.js, assets/ai-config.js, assets/ai-service.js （需人工确认是否都带 typeof 守卫）

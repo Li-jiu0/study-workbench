@@ -1,0 +1,5 @@
+[init] {"toggleExists":true,"foldExists":true,"curExists":true,"barInsideFold":true,"chipsCount":5,"initCollapsed":true,"initCurLabel":"剩余可用量（少 → 多）","ariaInit":"false"}
+[expand] open=true
+[chip] curLabel="模型名称" expect="模型名称"
+[regression] collapseAgain=true filterFoldOpen=true consoleErrors=[]
+JSDOM_ALL => PASS

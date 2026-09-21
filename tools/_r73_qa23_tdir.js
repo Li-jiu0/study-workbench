@@ -1,0 +1,10 @@
+const fs = require('fs');
+const ROOT = 'D:/下载的文件/学习工作台';
+const TOOLS = ROOT + '/tools';
+const cfg = JSON.parse(fs.readFileSync(TOOLS + '/_r73_qa23_cfg.json', 'utf8'));
+const p = cfg.dynamic_4[2];
+const fp = ROOT + '/' + p;
+console.log('fp', fp);
+console.log('exists', fs.existsSync(fp));
+console.log('hex', Buffer.from(fp, 'utf8').toString('hex').slice(0, 60));
+console.log('utf8_of_hex', Buffer.from(Buffer.from(fp, 'utf8').toString('hex'), 'hex').toString('utf8').slice(0, 30));

@@ -1,0 +1,40 @@
+=== xtmTakeRegionPick ===
+  670|   function xtmTakeRegionPick() {
+  965|     var __rp = xtmTakeRegionPick();
+
+=== xtmApplyLocation ===
+  682|   function xtmApplyLocation(text) {
+ 1013|             if (text) { xtmApplyLocation(text); toast('已记录位置'); }
+ 1021|         xtmApplyLocation(v);
+
+=== xtmNav ===
+  659|   /** 跳转缝（可被测试覆写：window.xtmNavHook / window.xtpNavHook）。 */
+  660|   function xtmNav(url) {
+  662|       if (window.xtmNavHook && typeof window.xtmNavHook === 'function') { window.xtmNavHook(url); return; }
+ 1001|        全程绝不弹原生对话框，坐标绝不进字符串。跳转走 xtmNav() 可测缝，便于 jsdom 断言。 */
+ 1037|         var hook = (typeof window.xtmNavHook === 'function') ? window.xtmNavHook :
+ 1043|         xtmNav(url);
+
+=== function inputSheet ===
+  377|   function inputSheet(title, placeholder, value, onOk) {
+
+=== XTM_REGION_PICK_KEY ===
+  656|   var XTM_REGION_PICK_KEY = 'xt_region_pick';
+  672|     try { raw = localStorage.getItem(XTM_REGION_PICK_KEY) || ''; } catch (e) { return ''; }
+  676|     try { localStorage.removeItem(XTM_REGION_PICK_KEY); } catch (e3) { /* 忽略 */ }
+
+=== XTM_REGION_PICK_TTL ===
+
+=== xtmSaveDraft ===
+ 1032|       if (P && typeof xtmSaveDraft === 'function') { try { xtmSaveDraft(); } catch (ed) { /* 忽略 */ } }
+
+=== function xtmWriteRegionPick ===
+
+=== window.XTM ===
+ 1172|   window.XTM = XTM;
+
+=== window.xtm ===
+  659|   /** 跳转缝（可被测试覆写：window.xtmNavHook / window.xtpNavHook）。 */
+  662|       if (window.xtmNavHook && typeof window.xtmNavHook === 'function') { window.xtmNavHook(url); return; }
+ 1037|         var hook = (typeof window.xtmNavHook === 'function') ? window.xtmNavHook :
+

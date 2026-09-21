@@ -1,0 +1,41 @@
+mode: GO
+  local database.py    md5=dd6f43a977b2f5cc4c7f1eba5aa33565 loneLF=0
+  local schemas.py     md5=689feab7a3dd77c44e97849991fef56e loneLF=0
+  local chat.py        md5=df9bf6ad04274a12336673b10bdfa398 loneLF=0
+  local friends.py     md5=fa1deb06e1674a7d73cabb1128ce48cd loneLF=0
+  local groups.py      md5=8d3763e9cd2ab3233db8911c2a1f807d loneLF=0
+  local ddl.sql        md5=99359a55ab41fe2a87d7b57ee8590d26 loneLF=0
+
+[计划步骤]
+ 1) 远端备份: mkdir -p /opt/study-workbench/backups/hotfix-r72-20260917 && cp -a 5*py + 建表SQL.sql + data.db 备份目录
+ 2) pscp 上传 6 件到 /tmp/up_r72/ （ddl 用 ASCII 名 ddl.sql）
+ 3) 远端 md5(暂存) 与本地比对
+ 4) 远端点对点安装：暂存→目标；ddl.sql→建表SQL.sql(shutil.move)
+ 5) 远端 md5(安装后) 三方一致
+
+[1] 备份 rc=0
+chat.py
+data.db
+database.py
+friends.py
+groups.py
+schemas.py
+建表SQL.sql
+
+[2] 暂存目录 rc=0
+    up database.py    rc=0
+    up schemas.py     rc=0
+    up chat.py        rc=0
+    up friends.py     rc=0
+    up groups.py      rc=0
+    up ddl.sql        rc=0
+
+[3] 暂存 md5：{'chat.py': 'df9bf6ad04274a12336673b10bdfa398', 'database.py': 'dd6f43a977b2f5cc4c7f1eba5aa33565', 'ddl.sql': '99359a55ab41fe2a87d7b57ee8590d26', 'friends.py': 'fa1deb06e1674a7d73cabb1128ce48cd', 'groups.py': '8d3763e9cd2ab3233db8911c2a1f807d', 'schemas.py': '689feab7a3dd77c44e97849991fef56e'}
+    staging == local : True
+
+[4] 安装 rc=0 
+
+[5] 安装后 md5：{'database.py': 'dd6f43a977b2f5cc4c7f1eba5aa33565', 'schemas.py': '689feab7a3dd77c44e97849991fef56e', 'chat.py': 'df9bf6ad04274a12336673b10bdfa398', 'friends.py': 'fa1deb06e1674a7d73cabb1128ce48cd', 'groups.py': '8d3763e9cd2ab3233db8911c2a1f807d', 'ddl.sql': '99359a55ab41fe2a87d7b57ee8590d26'}
+    local == staged == installed : True
+WROTE D:\下载的文件\学习工作台\tools\r72_engineer\stage_b_deploy_out.txt
+EXIT=0

@@ -1,0 +1,226 @@
+==================================================
+FILE database.py
+  local bytes=26678 lines=495 | server bytes=25803 lines=479
+  ① 符号清单
+    class  server-local = []
+    def    server-local = []
+    route  server-local = []
+    route  local-server = []
+  ② 实质代码行（去空白/去整行注释）
+    server-only 行数 = 0  （必须 0）
+    local-only  行数 = 10  （应为本批 R72 补丁）
+      [L] """好友备注（Bug3，R72）：owner 对 peer 的私有备注名，仅本人可见。
+      [L] - 不改 friends 表结构（历史库零迁移），备注属「本人私有」，与好友关系解耦。
+      [L] - 唯一约束 (owner_id, peer_id)：同一人对同一好友只存一条；
+      [L] - 空串/去空格后为空 = 无备注（路由层删除该行）；
+      [L] __table_args__ = (UniqueConstraint("owner_id", "peer_id", name="uq_friend_remark"),)
+      [L] __tablename__ = "friend_remarks"
+      [L] class FriendRemark(Base):
+      [L] peer_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+      [L] remark = Column(String(20), nullable=False, default="")
+      [L] updated_at = Column(String(19), nullable=False)
+  ③ 模型列/关系  server-local = []
+     模型列/关系  local-server = ['peer_id', 'remark']
+
+==================================================
+FILE schemas.py
+  local bytes=10503 lines=290 | server bytes=9917 lines=278
+  ① 符号清单
+    class  server-local = []
+    def    server-local = []
+    route  server-local = []
+    route  local-server = []
+  ② 实质代码行（去空白/去整行注释）
+    server-only 行数 = 0  （必须 0）
+    local-only  行数 = 8  （应为本批 R72 补丁）
+      [L] """好友备注（Bug3，R72）：PUT /api/friends/{peer_id}/remark 请求体。
+      [L] - 空串 / 去空格后为空 = 删除该备注（回退显示对方昵称）；
+      [L] - 警告：不要把备注塞进 schemas.user_brief()：它被 notes/moments/social 多处复用，
+      [L] - 长度由路由层截断到 20 字（此处不设 max_length，避免超长直接 422，
+      [L] class FriendRemarkIn(BaseModel):
+      [L] remark: str | None = None
+      [L] 塞进去会污染公开契约。
+      [L] 统一走「截断」语义，与群名片 groupNickname 的处理风格一致）。
+  ③ Pydantic 字段  server-local = []
+     Pydantic 字段  local-server = ['remark']
+
+==================================================
+FILE routers/chat.py
+  local bytes=11094 lines=249 | server bytes=6911 lines=157
+  ① 符号清单
+    class  server-local = []
+    def    server-local = []
+    route  server-local = []
+    route  local-server = ['get /conversations']
+  ② 实质代码行（去空白/去整行注释）
+    server-only 行数 = 3  （必须 0）
+      [S] from database import Message, User, can_message, get_db, is_friend, now_iso
+      [S] from sqlalchemy import and_, or_
+      [S] return {"total": total, "items": sorted(by_peer.values(), key=lambda x: -x["lastId"])}
+    local-only  行数 = 76  （应为本批 R72 补丁）
+      [L] """当前用户的「全部会话」列表（Bug1 修复，R72）。
+      [L] "content": lm.content,
+      [L] "createdAt": lm.created_at,
+      [L] "id": lm.id,
+      [L] "kind": lm.kind,
+      [L] "lastMessage": {
+      [L] "peerAvatar": (u.avatar if u else None),
+      [L] "peerId": pid,
+      [L] "peerNickname": (u.nickname if u else "已注销用户"),
+      [L] "peerRemark": remarks.get(pid, ""),
+      [L] "senderId": lm.sender_id,
+      [L] "unreadCount": int(unread.get(pid, 0)),
+      [L] "updatedAt": (lm.created_at if lm else ""),
+      [L] ).all()
+      [L] - 普通用户：返回有往来的对端 + 我的好友（好友可无消息，lastMessage 为 null）。
+      [L] - 管理员：返回与任何用户有过往来的会话；
+      [L] .filter(Message.group_id.is_(None),
+      [L] .filter(Message.receiver_id == me, Message.group_id.is_(None),
+      [L] .group_by(Message.sender_id).all()
+      [L] .group_by(peer_expr)
+      [L] @router.get("/conversations")
+      [L] FriendRemark.owner_id == me,
+      [L] FriendRemark.owner_id == user.id,
+      [L] FriendRemark.peer_id.in_(list(by_peer.keys())),
+      [L] FriendRemark.peer_id.in_(list(peer_ids)),
+      [L] Message.read_at.is_(None))
+      [L] db.query(peer_expr.label("peer"), func.max(Message.id).label("last_id"))
+      [L] def list_conversations(limit: int = 100, user: User = Depends(get_current_user),
+      [L] else_=Message.sender_id)
+      [L] for it in items:
+      [L] for peer, last_id in last_rows:
+      [L] for pid in peer_ids:
+      [L] for r in db.query(FriendRemark).filter(
+      [L] from database import (FriendRemark, Message, User, can_message, friend_ids_of,
+      [L] from sqlalchemy import and_, case, func, or_
+      [L] get_db, is_admin_user, is_friend, now_iso)
+      [L] if not is_admin_user(user):
+      [L] if not peer_ids:
+      [L] if peer and peer != me:
+      [L] it["peerRemark"] = remarks.get(it["peerId"], "")
+      [L] items = []
+      [L] items = sorted(by_peer.values(), key=lambda x: -x["lastId"])
+      [L] items.append({
+      [L] items.sort(key=lambda x: x["updatedAt"] or "", reverse=True)
+      [L] last_id_by_peer: dict[int, int] = {}
+      [L] last_id_by_peer[peer] = last_id
+      [L] last_ids = list(last_id_by_peer.values())
+      [L] last_msgs = {
+      [L] last_rows = (
+      [L] limit = min(max(limit, 1), 500)
+      [L] lm = last_msgs.get(last_id_by_peer.get(pid))
+      [L] m.id: m for m in db.query(Message).filter(Message.id.in_(last_ids)).all()
+      [L] me = user.id
+      [L] or_(Message.sender_id == me, Message.receiver_id == me))
+      [L] peer_expr = case((Message.sender_id == me, Message.receiver_id),
+      [L] peer_ids = set(last_id_by_peer.keys())
+      [L] peer_ids |= friend_ids_of(db, me)
+      [L] peer_ids.discard(me)
+      [L] r.peer_id: (r.remark or "")
+      [L] remarks = {
+
+==================================================
+FILE routers/friends.py
+  local bytes=16563 lines=362 | server bytes=14687 lines=321
+  ① 符号清单
+    class  server-local = []
+    def    server-local = []
+    route  server-local = []
+    route  local-server = ['put /{peer_id}/remark']
+  ② 实质代码行（去空白/去整行注释）
+    server-only 行数 = 4  （必须 0）
+      [S] from database import (Friend, FriendRequest, User, UserBlock, friend_pair,
+      [S] from schemas import user_brief
+      [S] get_db, is_admin_user, is_friend, now_iso)
+      [S] out.append({**_peer_brief(peer), "since": f.created_at})
+    local-only  行数 = 34  （应为本批 R72 补丁）
+      [L] """设置 / 清除对某人的备注（Bug3，R72）。
+      [L] "peerRemark": remarks.get(peer_id, "")})
+      [L] - body.remark 去空格后为空 = 删除该备注（回退显示对方昵称）；
+      [L] - 备注是**请求者私有**数据，只有本人能读写，绝不回显给他人。
+      [L] - 校验对象必须是「我可对话的对端」：好友，或管理员↔任意用户（can_message 放行）；
+      [L] - 长度截断到 20 字；
+      [L] @router.put("/{peer_id}/remark")
+      [L] FriendRemark.owner_id == user.id, FriendRemark.peer_id == peer_id
+      [L] can_message, friend_pair, get_db, is_admin_user, is_friend,
+      [L] db.add(FriendRemark(owner_id=user.id, peer_id=peer_id,
+      [L] db: Session = Depends(get_db)):
+      [L] def set_friend_remark(peer_id: int, body: FriendRemarkIn,
+      [L] else:
+      [L] for r in db.query(FriendRemark).filter(FriendRemark.owner_id == user.id).all()
+      [L] from database import (Friend, FriendRemark, FriendRequest, User, UserBlock,
+      [L] from schemas import FriendRemarkIn, user_brief
+      [L] if not can_message(db, user.id, peer_id):
+      [L] if not remark:
+      [L] if peer_id == user.id:
+      [L] if row:
+      [L] now_iso)
+      [L] out.append({**_peer_brief(peer), "since": f.created_at,
+      [L] r.peer_id: (r.remark or "")
+      [L] raise HTTPException(400, "不能给自己设置备注")
+      [L] raise HTTPException(403, "只能给好友设置备注")
+      [L] remark = (body.remark or "").strip()[:20]
+      [L] remark=remark, updated_at=now_iso()))
+      [L] remarks = {
+      [L] return {"ok": True, "peerId": peer_id, "peerRemark": ""}
+      [L] return {"ok": True, "peerId": peer_id, "peerRemark": remark}
+      [L] row = db.query(FriendRemark).filter(
+      [L] row.remark = remark
+      [L] row.updated_at = now_iso()
+      [L] user: User = Depends(get_current_user),
+
+==================================================
+FILE routers/groups.py
+  local bytes=17803 lines=406 | server bytes=15596 lines=350
+  ① 符号清单
+    class  server-local = []
+    def    server-local = []
+    route  server-local = []
+    route  local-server = []
+  ② 实质代码行（去空白/去整行注释）
+    server-only 行数 = 2  （必须 0）
+      [S] """我的群列表：memberCount / lastMessage / unreadCount（游标模型一次算清）。"""
+      [S] friend_ids_of, get_db, now_iso)
+    local-only  行数 = 41  （应为本批 R72 补丁）
+      [L] """我的群列表：memberCount / lastMessage / unreadCount（游标模型一次算清）。
+      [L] """管理员视图群列表（Bug2，R72）：返回**全部群**，只读。
+      [L] "content": (last.content or "")[:80],
+      [L] "createdAt": last.created_at,
+      [L] "kind": last.kind,
+      [L] "memberCount": int(member_counts.get(g.id, 0)),
+      [L] "role": "admin-view",
+      [L] "senderId": last.sender_id,
+      [L] "unreadCount": 0,
+      [L] )
+      [L] .filter(ChatGroupMember.group_id.in_(gids))
+      [L] .filter(Message.group_id.in_(gids))
+      [L] .group_by(ChatGroupMember.group_id).all()
+      [L] .group_by(Message.group_id).all()
+      [L] Bug2（R72）：管理员账号改为返回**全部群**（role='admin-view'、unreadCount=0，只读视图）；
+      [L] db.query(ChatGroupMember.group_id, func.count(ChatGroupMember.id))
+      [L] def _admin_group_rows(db: Session) -> list[dict]:
+      [L] for g in groups:
+      [L] for gid, mid in db.query(Message.group_id, func.max(Message.id))
+      [L] for m in db.query(Message).filter(Message.id.in_(last_ids)).all()
+      [L] friend_ids_of, get_db, is_admin_user, now_iso)
+      [L] gid: mid
+      [L] gids = [g.id for g in groups]
+      [L] groups = db.query(ChatGroup).all()
+      [L] if gid
+      [L] if is_admin_user(user):
+      [L] if not groups:
+      [L] last = last_msgs.get(last_id_by_gid.get(g.id))
+      [L] last_id_by_gid = {
+      [L] last_ids = list(last_id_by_gid.values())
+      [L] last_msgs = {
+      [L] m.id: m
+      [L] member_counts = dict(
+      [L] return []
+      [L] return items
+      [L] return {"items": _admin_group_rows(db)}
+      [L] } if last_ids else {}
+      [L] 只在「我的成员行」之外补一条管理员分支，不改 require_member / group_detail：
+      [L] 普通用户逻辑完全不变。
+      [L] 管理员点进群详情仍是 403（既定口径），前端按只读卡片渲染、不可点入。
+      [L] 读语义：管理员不是群成员、无已读游标，unreadCount 恒 0；lastMessage 照常算。
+

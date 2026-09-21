@@ -1,0 +1,466 @@
+"""群聊路由（P0-3，2026-09-11 增量）。
+
+模型：chat_groups + chat_group_members（每人 last_read_msg_id 已读游标）。
+已读模型：群内不做逐条「对方已读」回执，只保证自己未读数准确（架构决策 §9-2）。
+ws 仅作在线加速：groupMsg / groupInvited 通过 wsmanager 点对点投递，离线静默。
+"""
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import and_, func
+from sqlalchemy.orm import Session
+
+from database import (ChatGroup, ChatGroupMember, Message, User,
+                      friend_ids_of, get_db, is_admin_user, now_iso)
+from rate_limit import rate_limit
+# R3b-C U9：复用 chat.py 的引用解析 / 摘要工具（chat.py 不反向 import groups，无循环依赖）。
+from routers.chat import resolve_reply
+from schemas import (GroupCreateIn, GroupMeIn, GroupMsgIn, GroupPatchIn,
+                     GroupReadIn, GroupTransferIn)
+from security import get_current_user
+from wsmanager import send_to
+
+router = APIRouter(prefix="/api/groups", tags=["groups"])
+
+MAX_GROUP_SIZE = 50  # 建群第 51 人被拒（含创建者）
+
+
+def _group_nick_map(db: Session, gid: int) -> dict[int, str]:
+    """构造群名片映射 {user_id: group_nickname}（T04，D5；空串保留以便回退全局昵称）。"""
+    rows = db.query(ChatGroupMember.user_id, ChatGroupMember.group_nickname).filter(
+        ChatGroupMember.group_id == gid).all()
+    return {uid: (nick or "") for uid, nick in rows}
+
+
+def group_msg_dict(m: Message, sender: User | None, group_id: int,
+                   nick_map: dict[int, str] | None = None) -> dict:
+    """群消息序列化（公开字段）。
+
+    昵称优先级（T04，D5）：群名片(非空) > 全局昵称 > "已注销用户"；头像恒取全局头像。
+    """
+    nick = (nick_map or {}).get(m.sender_id) or ""
+    if nick.strip():
+        display = nick.strip()
+    elif sender:
+        display = sender.nickname
+    else:
+        display = "已注销用户"
+    d = {
+        "id": m.id,
+        "groupId": group_id,
+        "senderId": m.sender_id,
+        "senderNickname": display,
+        "senderAvatar": sender.avatar if sender else None,
+        "kind": m.kind,
+        "content": m.content,
+        # 批5：与私聊 msg_dict 对齐，补齐坐标字段（旧数据自然为 ""/None/False）
+        "sub": getattr(m, "sub", "") or "",
+        "lat": getattr(m, "lat", None),
+        "lng": getattr(m, "lng", None),
+        "precise": bool(getattr(m, "precise", False)),
+        "createdAt": m.created_at,
+    }
+    # R3b-C U9：引用字段（与私聊 msg_dict 同口径）；老消息无该四列 → reply=None。
+    rtid = getattr(m, "reply_to_id", None)
+    if rtid:
+        d["reply"] = {
+            "toId": rtid,
+            "senderName": getattr(m, "reply_sender_name", None) or "",
+            "kind": getattr(m, "reply_kind", None) or "text",
+            "text": getattr(m, "reply_text", None) or "",
+        }
+    else:
+        d["reply"] = None
+    return d
+
+
+async def _persist_and_push_group_msg(db: Session, gid: int, sender: User, kind: str,
+                                      content: str, sub: str = "", lat: float | None = None,
+                                      lng: float | None = None,
+                                      precise: bool = False,
+                                      reply: tuple[int | None, str, str, str] | None = None) -> Message:
+    """批5：群消息「写库 + 遍历除发送者外的成员推送」共用实现。
+
+    send_group_message（普通群消息）与 send_group_card（实时位置系统卡片）共用；
+    离线成员靠轮询兜底（与既有行为一致）。
+    R3b-C U9：新增可选 reply（已解析引用快照元组），缺省 None → 四列全 NULL，零影响。
+    """
+    rid, rname, rkind, rtext = reply if reply else (None, "", "", "")
+    m = Message(sender_id=sender.id, receiver_id=0, group_id=gid, kind=kind,
+                content=content, sub=sub or "", lat=lat, lng=lng, precise=precise,
+                reply_to_id=rid, reply_sender_name=(rname or None),
+                reply_kind=(rkind or None), reply_text=(rtext or None),
+                read_at=None, created_at=now_iso())
+    db.add(m)
+    db.commit()
+    db.refresh(m)
+    others = db.query(ChatGroupMember.user_id).filter(
+        ChatGroupMember.group_id == gid, ChatGroupMember.user_id != sender.id).all()
+    nick_map = _group_nick_map(db, gid)
+    payload = {"type": "groupMsg", "groupId": gid,
+               "message": group_msg_dict(m, sender, gid, nick_map)}
+    for (uid,) in others:
+        await send_to(uid, payload)
+    return m
+
+
+async def send_group_card(db: Session, gid: int, sender: User, content: str,
+                          share_id: str) -> Message:
+    """批5：落一条群聊实时位置共享系统卡片（kind=location_live，sub=shareId，不含坐标）。"""
+    return await _persist_and_push_group_msg(db, gid, sender, "location_live", content,
+                                             sub=share_id)
+
+
+def require_group(db: Session, gid: int) -> ChatGroup:
+    g = db.get(ChatGroup, gid)
+    if not g:
+        raise HTTPException(404, "群不存在或已解散")
+    return g
+
+
+def require_member(db: Session, gid: int, uid: int) -> ChatGroupMember:
+    """仅成员可访问；非成员一律 403。"""
+    m = db.query(ChatGroupMember).filter(
+        ChatGroupMember.group_id == gid, ChatGroupMember.user_id == uid).first()
+    if not m:
+        raise HTTPException(403, "你不是该群成员")
+    return m
+
+
+@router.post("")
+async def create_group(body: GroupCreateIn, user: User = Depends(get_current_user),
+                       db: Session = Depends(get_db)):
+    """建群：memberIds 须均为我的好友（去重后 2~49 人，加自己 ≤50），创建者自动入群 role=owner。"""
+    name = body.name.strip()
+    if not name:
+        raise HTTPException(400, "群名称不能为空")
+    if len(name) > 20:
+        raise HTTPException(400, "群名称最长 20 字")
+    friend_ids = friend_ids_of(db, user.id)
+    member_ids: list[int] = []
+    for uid in body.memberIds:
+        if uid in member_ids or uid == user.id:
+            continue
+        if uid not in friend_ids:
+            raise HTTPException(400, "只能邀请你的好友入群")
+        member_ids.append(uid)
+    if len(member_ids) + 1 > MAX_GROUP_SIZE:
+        raise HTTPException(400, f"群人数上限 {MAX_GROUP_SIZE} 人")
+    g = ChatGroup(name=name, owner_id=user.id, avatar=None, created_at=now_iso())
+    db.add(g)
+    db.flush()  # 拿到 g.id
+    db.add(ChatGroupMember(group_id=g.id, user_id=user.id, role="owner",
+                           last_read_msg_id=0, joined_at=now_iso()))
+    for uid in member_ids:
+        db.add(ChatGroupMember(group_id=g.id, user_id=uid, role="member",
+                               last_read_msg_id=0, joined_at=now_iso()))
+    db.commit()
+    # 在线加速：向每个被邀请成员推送入群提醒（离线静默，靠轮询兜底）
+    payload = {"type": "groupInvited", "group": {"id": g.id, "name": g.name, "ownerId": user.id}}
+    for uid in member_ids:
+        await send_to(uid, payload)
+    return {"id": g.id, "name": g.name, "memberCount": len(member_ids) + 1}
+
+
+def _admin_group_rows(db: Session) -> list[dict]:
+    """管理员视图群列表（Bug2，R72）：返回**全部群**，只读。
+
+    只在「我的成员行」之外补一条管理员分支，不改 require_member / group_detail：
+    管理员点进群详情仍是 403（既定口径），前端按只读卡片渲染、不可点入。
+    读语义：管理员不是群成员、无已读游标，unreadCount 恒 0；lastMessage 照常算。
+    """
+    groups = db.query(ChatGroup).all()
+    if not groups:
+        return []
+    gids = [g.id for g in groups]
+    member_counts = dict(
+        db.query(ChatGroupMember.group_id, func.count(ChatGroupMember.id))
+        .filter(ChatGroupMember.group_id.in_(gids))
+        .group_by(ChatGroupMember.group_id).all()
+    )
+    last_id_by_gid = {
+        gid: mid
+        for gid, mid in db.query(Message.group_id, func.max(Message.id))
+        .filter(Message.group_id.in_(gids))
+        .group_by(Message.group_id).all()
+        if gid
+    }
+    last_ids = list(last_id_by_gid.values())
+    last_msgs = {
+        m.id: m
+        for m in db.query(Message).filter(Message.id.in_(last_ids)).all()
+    } if last_ids else {}
+    items = []
+    for g in groups:
+        last = last_msgs.get(last_id_by_gid.get(g.id))
+        items.append({
+            "id": g.id,
+            "name": g.name,
+            "ownerId": g.owner_id,
+            "avatar": g.avatar,
+            "memberCount": int(member_counts.get(g.id, 0)),
+            "lastMessage": {
+                "content": (last.content or "")[:80],
+                "kind": last.kind,
+                "senderId": last.sender_id,
+                "sub": getattr(last, "sub", "") or "",
+                "lat": getattr(last, "lat", None),
+                "lng": getattr(last, "lng", None),
+                "precise": bool(getattr(last, "precise", False)),
+                "createdAt": last.created_at,
+            } if last else None,
+            "unreadCount": 0,
+            "role": "admin-view",
+        })
+    items.sort(key=lambda x: (x["lastMessage"] or {}).get("createdAt", "") or "", reverse=True)
+    return items
+
+
+@router.get("")
+def list_groups(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """我的群列表：memberCount / lastMessage / unreadCount（游标模型一次算清）。
+
+    Bug2（R72）：管理员账号改为返回**全部群**（role='admin-view'、unreadCount=0，只读视图）；
+    普通用户逻辑完全不变。
+    """
+    if is_admin_user(user):
+        return {"items": _admin_group_rows(db)}
+    my_members = db.query(ChatGroupMember).filter(
+        ChatGroupMember.user_id == user.id).all()
+    items = []
+    for me in my_members:
+        g = db.get(ChatGroup, me.group_id)
+        if not g:
+            continue
+        member_count = db.query(func.count(ChatGroupMember.id)).filter(
+            ChatGroupMember.group_id == g.id).scalar() or 0
+        last = db.query(Message).filter(Message.group_id == g.id).order_by(
+            Message.id.desc()).first()
+        unread = db.query(func.count(Message.id)).filter(
+            Message.group_id == g.id, Message.id > me.last_read_msg_id,
+            Message.sender_id != user.id).scalar() or 0
+        items.append({
+            "id": g.id,
+            "name": g.name,
+            "ownerId": g.owner_id,
+            "avatar": g.avatar,          # R53：群头像（群列表行 / 会话头展示）
+            "memberCount": member_count,
+            "lastMessage": {
+                "content": last.content[:80] if last else "",
+                "kind": last.kind if last else "text",
+                "senderId": last.sender_id if last else 0,
+                "sub": (getattr(last, "sub", "") or "") if last else "",
+                "lat": getattr(last, "lat", None) if last else None,
+                "lng": getattr(last, "lng", None) if last else None,
+                "precise": bool(getattr(last, "precise", False)) if last else False,
+                "createdAt": last.created_at if last else "",
+            } if last else None,
+            "unreadCount": unread,
+            "role": me.role,
+        })
+    items.sort(key=lambda x: (x["lastMessage"] or {}).get("createdAt", "") or "", reverse=True)
+    return {"items": items}
+
+
+@router.get("/{gid}")
+def group_detail(gid: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """群详情 + 成员列表（user_brief 白名单 + role；绝不返回 phone/gender/birthday）。
+
+    T04 增量：额外返回 announcement / myRole / myGroupNickname，成员项补 groupNickname。
+    """
+    g = require_group(db, gid)
+    me = require_member(db, gid, user.id)
+    rows = db.query(ChatGroupMember, User).join(
+        User, ChatGroupMember.user_id == User.id).filter(
+        ChatGroupMember.group_id == gid).order_by(ChatGroupMember.id).all()
+    return {
+        "id": g.id,
+        "name": g.name,
+        "ownerId": g.owner_id,
+        "avatar": g.avatar,
+        "announcement": g.announcement or "",
+        "myRole": me.role,
+        "myGroupNickname": me.group_nickname or "",
+        "createdAt": g.created_at,
+        "members": [
+            {"id": u.id, "nickname": u.nickname, "avatarUrl": u.avatar,
+             "role": m.role, "groupNickname": m.group_nickname or "", "joinedAt": m.joined_at}
+            for m, u in rows
+        ],
+    }
+
+
+@router.patch("/{gid}")
+def patch_group(gid: int, body: GroupPatchIn, user: User = Depends(get_current_user),
+                db: Session = Depends(get_db), _rl: None = Depends(rate_limit("default"))):
+    """改群名 / 群公告（T04，D1）：部分更新，仅群主/管理员。
+
+    权限判定统一写 role in ('owner','admin')。【后续扩展点：设置管理员】
+    """
+    g = require_group(db, gid)
+    me = require_member(db, gid, user.id)
+    if me.role not in ("owner", "admin"):  # 【后续扩展点：设置管理员】
+        raise HTTPException(403, "仅群主/管理员可以修改")
+    if body.name is not None:
+        name = body.name.strip()
+        if not name:
+            raise HTTPException(400, "群名称不能为空")
+        if len(name) > 20:
+            raise HTTPException(400, "群名称最长 20 字")
+        g.name = name
+    if body.announcement is not None:
+        ann = body.announcement.strip()
+        if len(ann) > 300:
+            raise HTTPException(400, "公告最长 300 字")
+        g.announcement = ann
+    if body.avatar is not None:
+        # R53（2026-09-14）：群头像三选一 —— 上传图片 URL / color:#RRGGBB 色块 / 短 emoji 文本。
+        # 服务端只做长度与前缀白名单校验（防把整段脚本塞进 avatar 字段），具体内容由前端保证。
+        a = body.avatar.strip()
+        if len(a) > 200:
+            raise HTTPException(400, "群头像取值过长")
+        if a and not (a.startswith("/uploads/") or a.startswith("color:#")) and len(a) > 16:
+            raise HTTPException(400, "群头像格式不正确")
+        g.avatar = a or None
+    db.commit()
+    return {"id": g.id, "name": g.name, "announcement": g.announcement or "",
+            "avatar": g.avatar}
+
+
+@router.patch("/{gid}/me")
+def patch_group_me(gid: int, body: GroupMeIn, user: User = Depends(get_current_user),
+                   db: Session = Depends(get_db), _rl: None = Depends(rate_limit("default"))):
+    """设置我在本群的群名片（T04，D5）：仅成员本人；空串 = 清除回退全局昵称。"""
+    require_group(db, gid)
+    me = require_member(db, gid, user.id)
+    if body.groupNickname is not None:
+        nick = body.groupNickname.strip()
+        if len(nick) > 20:
+            raise HTTPException(400, "群昵称最长 20 字")
+        me.group_nickname = nick
+        db.commit()
+    return {"groupNickname": me.group_nickname or ""}
+
+
+@router.get("/{gid}/messages")
+async def group_messages(gid: int, before_id: int = 0, limit: int = 30, mark_read: int = 1,
+                         user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """群消息分页（id 游标向前，时间正序 + hasMore）。markRead=1 自动推进我的已读游标。"""
+    g = require_group(db, gid)
+    me = require_member(db, gid, user.id)
+    limit = min(max(limit, 1), 100)
+    cond = Message.group_id == gid
+    if before_id:
+        cond = and_(cond, Message.id < before_id)
+    rows = db.query(Message, User).join(
+        User, Message.sender_id == User.id).filter(cond).order_by(
+        Message.id.desc()).limit(limit + 1).all()
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+    rows.reverse()
+    if mark_read and rows:
+        latest_id = max(m.id for m, _ in rows)
+        if latest_id > me.last_read_msg_id:
+            me.last_read_msg_id = latest_id
+            db.commit()
+    sender_ids = {m.sender_id for m, _ in rows}
+    senders = {u.id: u for u in db.query(User).filter(User.id.in_(sender_ids)).all()} if sender_ids else {}
+    nick_map = _group_nick_map(db, gid)
+    return {
+        "id": g.id,
+        "name": g.name,
+        "items": [group_msg_dict(m, senders.get(m.sender_id), gid, nick_map) for m, _ in rows],
+        "hasMore": has_more,
+        "nextBefore": rows[0][0].id if has_more and rows else 0,
+    }
+
+
+@router.post("/{gid}/messages")
+async def send_group_message(gid: int, body: GroupMsgIn,
+                             user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """发群消息：写库后对除发送者外全部在线成员推送 groupMsg（离线靠轮询兜底）。"""
+    require_group(db, gid)
+    require_member(db, gid, user.id)
+    content = body.content.strip()
+    # 批5：kind 白名单补 location / location_live（群聊此前连 location 都没有）；
+    # 位置类消息允许「纯坐标、无文本」，其余 kind 仍禁止空消息。
+    kind = (body.kind if body.kind in ("text", "image", "voice", "location", "location_live")
+            else "text")
+    if not content and kind not in ("location", "location_live"):
+        raise HTTPException(400, "消息不能为空")
+    # R3b-C U9：解析引用（非法引用 / 跨群引用忽略 → 空快照，不报错）
+    reply_snap = resolve_reply(db, body.reply, user, None, gid)
+    m = await _persist_and_push_group_msg(db, gid, user, kind, content,
+                                          sub=body.sub, lat=body.lat, lng=body.lng,
+                                          precise=body.precise, reply=reply_snap)
+    return group_msg_dict(m, user, gid, _group_nick_map(db, gid))
+
+
+@router.post("/{gid}/read")
+def mark_group_read(gid: int, body: GroupReadIn,
+                    user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """推进我的群已读游标（只保证自己的未读数准确，群内不回执逐条已读）。"""
+    require_group(db, gid)
+    me = require_member(db, gid, user.id)
+    if body.upToId > me.last_read_msg_id:
+        me.last_read_msg_id = body.upToId
+        db.commit()
+    return {"ok": True, "lastReadMsgId": me.last_read_msg_id}
+
+
+@router.delete("/{gid}/members/{uid}")
+def kick_member(gid: int, uid: int, user: User = Depends(get_current_user),
+                db: Session = Depends(get_db)):
+    """群主踢人（最小版群管理）。群主不能踢自己（用退群解散）。"""
+    g = require_group(db, gid)
+    if g.owner_id != user.id:
+        raise HTTPException(403, "仅群主可以移除成员")
+    if uid == user.id:
+        raise HTTPException(400, "群主不能移除自己，请使用退群解散")
+    me = require_member(db, gid, uid)
+    db.delete(me)
+    db.commit()
+    return {"ok": True}
+
+
+@router.post("/{gid}/transfer")
+def transfer_owner(gid: int, body: GroupTransferIn,
+                   user: User = Depends(get_current_user), db: Session = Depends(get_db),
+                   _rl: None = Depends(rate_limit("default"))):
+    """群主转让（R54，2026-09-14）：仅群主；新群主必须是本群现有成员。
+
+    转让后：chat_groups.owner_id 改指新群主；新群主 role=owner，原群主降级为 admin。
+    返回 {ok, ownerId}，前端据此刷新成员列表角标与操作按钮。
+    """
+    g = require_group(db, gid)
+    if g.owner_id != user.id:
+        raise HTTPException(403, "仅群主可以转让群主")
+    uid = int(body.userId)
+    if uid == user.id:
+        raise HTTPException(400, "你已经是该群群主")
+    target = db.query(ChatGroupMember).filter(
+        ChatGroupMember.group_id == gid, ChatGroupMember.user_id == uid).first()
+    if not target:
+        raise HTTPException(404, "该用户不是本群成员")
+    g.owner_id = uid
+    target.role = "owner"
+    mine = db.query(ChatGroupMember).filter(
+        ChatGroupMember.group_id == gid, ChatGroupMember.user_id == user.id).first()
+    if mine:
+        mine.role = "admin"
+    db.commit()
+    return {"ok": True, "ownerId": uid}
+
+
+@router.post("/{gid}/quit")
+def quit_group(gid: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """退群；群主退群 = 解散（成员与群消息一并清理）。【群主转让见 POST /{gid}/transfer】"""
+    require_group(db, gid)
+    me = require_member(db, gid, user.id)
+    if me.role == "owner":
+        # 显式清理子表（SQLite 默认不启用外键级联，避免孤儿行）
+        db.query(ChatGroupMember).filter(ChatGroupMember.group_id == gid).delete()
+        db.query(Message).filter(Message.group_id == gid).delete()
+        db.delete(require_group(db, gid))
+    else:
+        db.delete(me)
+    db.commit()
+    return {"ok": True, "dissolved": me.role == "owner"}

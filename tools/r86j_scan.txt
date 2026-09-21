@@ -1,0 +1,339 @@
+# r86j 扫描报告 —— 关键词: 好友 / 加好友 / 通讯录 / gotoChat / 好友申请.html
+# 根目录 *.html 共 48 个
+# 含「好友」的行数=133  含「加好友」的行数=13  含「通讯录」的行数=2
+
+### 每文件统计 (命中行数 / 换行符 / 字节数)
+  AI.html                                        hits=3    eol=CRLF   size=55854
+  AI模拟面试.html                                    hits=0    eol=CRLF   size=71855
+  PPT案例拆解.html                                   hits=3    eol=CRLF   size=14031
+  PPT版式库.html                                    hits=3    eol=CRLF   size=16955
+  PPT素材库.html                                    hits=0    eol=CRLF   size=40956
+  ai-settings.html                               hits=0    eol=LF     size=40637
+  blog_wechat.html                               hits=3    eol=CRLF   size=24935
+  mock_exam.html                                 hits=0    eol=CRLF   size=23402
+  mock_exam_result.html                          hits=0    eol=CRLF   size=12888
+  mock_exam_run.html                             hits=0    eol=CRLF   size=32697
+  万能金句库.html                                     hits=3    eol=CRLF   size=15325
+  个人中心.html                                      hits=3    eol=CRLF   size=95017
+  个人资料.html                                      hits=0    eol=CRLF   size=2959
+  企业定向库.html                                     hits=3    eol=CRLF   size=24275
+  关于.html                                        hits=4    eol=CRLF   size=27532
+  动态空间.html                                      hits=3    eol=CRLF   size=14172
+  商务礼仪.html                                      hits=3    eol=CRLF   size=15226
+  四级经验分享.html                                    hits=0    eol=CRLF   size=24526
+  四级词汇.html                                      hits=3    eol=CRLF   size=20438
+  地区选择.html                                      hits=0    eol=CRLF   size=15925
+  场景话术库.html                                     hits=3    eol=CRLF   size=19458
+  好友申请.html                                      hits=17   eol=CRLF   size=13021
+  学习工作台.html                                     hits=3    eol=CRLF   size=52782
+  学习概括.html                                      hits=3    eol=CRLF   size=46350
+  学途.html                                        hits=0    eol=CRLF   size=42906
+  导入题库.html                                      hits=3    eol=CRLF   size=22862
+  工具.html                                        hits=3    eol=CRLF   size=29459
+  我的动态.html                                      hits=2    eol=CRLF   size=11537
+  我的文件.html                                      hits=3    eol=CRLF   size=53944
+  时政热点.html                                      hits=3    eol=CRLF   size=25066
+  更多.html                                        hits=3    eol=CRLF   size=17794
+  更新.html                                        hits=3    eol=LF     size=19553
+  朋友圈发布.html                                     hits=3    eol=CRLF   size=11559
+  演示.html                                        hits=3    eol=CRLF   size=16435
+  申论刷题.html                                      hits=3    eol=CRLF   size=94746
+  登录.html                                        hits=0    eol=CRLF   size=37590
+  社区.html                                        hits=9    eol=CRLF   size=42994
+  私聊.html                                        hits=35   eol=CRLF   size=58646
+  管理员.html                                       hits=3    eol=CRLF   size=17684
+  英语.html                                        hits=3    eol=CRLF   size=46149
+  行测.html                                        hits=3    eol=CRLF   size=25947
+  行测刷题.html                                      hits=3    eol=CRLF   size=18792
+  表达.html                                        hits=3    eol=CRLF   size=32644
+  设置.html                                        hits=13   eol=CRLF   size=164485
+  赞助.html                                        hits=3    eol=CRLF   size=26089
+  错题本.html                                       hits=3    eol=CRLF   size=37082
+  面测.html                                        hits=3    eol=CRLF   size=59718
+  面试题库.html                                      hits=3    eol=CRLF   size=13980
+
+### 明细
+
+====================================================================================================
+FILE: AI.html   [EOL=CRLF]  [size=55854 bytes]
+  L631  | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L632  | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L782  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon" data-icon="message-circle"></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: PPT案例拆解.html   [EOL=CRLF]  [size=14031 bytes]
+  L70   | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L71   | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L132  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: PPT版式库.html   [EOL=CRLF]  [size=16955 bytes]
+  L71   | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L72   | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L150  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: blog_wechat.html   [EOL=CRLF]  [size=24935 bytes]
+  L79   | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友 · 好友申请（需在线模式）">
+  L80   | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L252  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 万能金句库.html   [EOL=CRLF]  [size=15325 bytes]
+  L70   | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L71   | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L144  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 个人中心.html   [EOL=CRLF]  [size=95017 bytes]
+  L137  | <div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>面测</span> </div> <div class="nav-item" data-page="files"> <span class="nav-icon" data-icon="folder"></span><span>我的文件</span> </div> <div class="nav-section">创作</div> <div class= ...<TRUNC>
+  L392  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-square" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+  L585  | '<div class="pf-pref-desc">在线登录后，收到好友新私信时给出网页提示（需允许通知权限）</div></div>' +
+
+====================================================================================================
+FILE: 企业定向库.html   [EOL=CRLF]  [size=24275 bytes]
+  L171  | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L172  | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L252  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-square" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 关于.html   [EOL=CRLF]  [size=27532 bytes]
+  L113  | <div class="nav-item" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L114  | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L196  | <span class="ab-chip">好友私信</span>
+  L275  | <div class="bottom-nav-item" onclick="gotoChat()">
+
+====================================================================================================
+FILE: 动态空间.html   [EOL=CRLF]  [size=14172 bytes]
+  L40   | <div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>面测</span> </div> <div class="nav-item" data-page="files"> <span class="nav-icon" data-icon="folder"></span><span>我的文件</span> </div> <div class="nav-section">创作</div> <div class= ...<TRUNC>
+  L84   | <!-- 【后续扩展点：空流推荐好友 / 关注话题】 -->
+  L95   | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 商务礼仪.html   [EOL=CRLF]  [size=15226 bytes]
+  L70   | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L71   | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L142  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 四级词汇.html   [EOL=CRLF]  [size=20438 bytes]
+  L70   | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L71   | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L183  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 场景话术库.html   [EOL=CRLF]  [size=19458 bytes]
+  L137  | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L138  | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L207  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 好友申请.html   [EOL=CRLF]  [size=13021 bytes]
+  L6    | <title>添加好友 · 星途</title>
+  L9    | /* common.css 会锁 html/body 高度并隐藏滚动，本页为独立长页面（好友申请列表），恢复滚动 */
+  L47   | <div class="af-title" data-page-node-id="7s49AzquiJN8MifzFZOXQU"><span data-icon="plus" data-icon-size="18" style="vertical-align:-3px"></span> 添加好友</div>
+  L57   | <div class="af-tip" data-page-node-id="OVdWLPGz4C6hITcpOEEMGy"><span data-icon="lightbulb" data-icon-size="14" style="vertical-align:-3px"></span> 输入对方的用户名（@开头那个）或昵称，发送好友申请，对方同意后即可私聊。</div>
+  L110  | /* 批次二 需求11（2026-09-11h）：已是好友的搜索结果行只保留「发消息」，
+  L111  | 删除好友入口统一收敛到对方公开主页（个人中心.html?user=id → api.js renderUserHome，uiConfirm 二次确认）。 */
+  L114  | else act = '<button class="af-btn" onclick="addFriend(' + u.id + ',' + i + ')" id="addBtn' + i + '">➕ 添加好友</button>';
+  L124  | toast(r.autoAccepted ? '✅ 你们已经是好友啦，去私聊吧' : '✅ 好友申请已发送，等待对方同意');
+  L126  | if (b) { b.className = 'af-btn gray'; b.textContent = r.autoAccepted ? '已是好友' : '已发送'; b.onclick = null; }
+  L133  | if (!tok()) { box.innerHTML = '<div class="af-empty">🔒 请先<a href="登录.html" style="color:var(--primary)">登录</a>后使用添加好友功能</div>'; return; }
+  L137  | if (!inc.length) { box.innerHTML = '<div class="af-empty">暂无收到的好友申请</div>'; return; }
+  L153  | /* ==================== A4/A5（2026-09-11）：已是好友 → 「发消息」 ====================
+  L154  | 批次二 需求11（2026-09-11h）：行内「删除好友」按钮已移除；afRemoveFriend 函数保留（可回退），
+  L155  | 删除好友的正式入口在对方公开主页（api.js renderUserHome，uiConfirm 二次确认）。 */
+  L166  | /* 全站禁用原生 confirm：改走 app.js 的 uiConfirm（轻量页内确认层）。删除好友的正式入口在对方公开主页（api.js renderUserHome）。 */
+  L169  | window.uiConfirm('确定删除该好友吗？\n删除后双方互不可见，且无法继续私聊。', '删除').then(function (ok) {
+  L172  | .then(function () { toast('已删除好友，可重新添加'); doSearch(); })
+
+====================================================================================================
+FILE: 学习工作台.html   [EOL=CRLF]  [size=52782 bytes]
+  L57   | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）" data-page-node-id="MkwQOoDzG0iWIoaH2QdDsX">
+  L58   | <span class="nav-icon" data-page-node-id="h6UK1ZjYMukjm4jCHWXufG" data-icon="users"></span><span data-page-node-id="TPMJcuxg9BsTXxvoDlSmik">好友</span>
+  L356  | <div class="bottom-nav-item" onclick="if(typeof gotoChat==='function'){gotoChat();return false}location.href='私聊.html';return false"><div class="bn-icon" data-icon="message-circle"></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 学习概括.html   [EOL=CRLF]  [size=46350 bytes]
+  L157  | <div class="nav-item" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L158  | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L308  | <div class="bottom-nav-item" onclick="gotoChat()">
+
+====================================================================================================
+FILE: 导入题库.html   [EOL=CRLF]  [size=22862 bytes]
+  L85   | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L86   | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L155  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-square" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 工具.html   [EOL=CRLF]  [size=29459 bytes]
+  L87   | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L88   | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L320  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-square" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 我的动态.html   [EOL=CRLF]  [size=11537 bytes]
+  L20   | <div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>面测</span> </div> <div class="nav-item" data-page="files"> <span class="nav-icon" data-icon="folder"></span><span>我的文件</span> </div> <div class="nav-section">创作</div> <div class= ...<TRUNC>
+  L75   | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 我的文件.html   [EOL=CRLF]  [size=53944 bytes]
+  L103  | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L104  | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L175  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-square" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 时政热点.html   [EOL=CRLF]  [size=25066 bytes]
+  L179  | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L180  | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L268  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 更多.html   [EOL=CRLF]  [size=17794 bytes]
+  L63   | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L64   | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L180  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 更新.html   [EOL=LF]  [size=19553 bytes]
+  L131  | <div class="nav-item" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L132  | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L208  | <div class="bottom-nav-item" onclick="gotoChat()">
+
+====================================================================================================
+FILE: 朋友圈发布.html   [EOL=CRLF]  [size=11559 bytes]
+  L20   | <div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>面测</span> </div> <div class="nav-item" data-page="files"> <span class="nav-icon" data-icon="folder"></span><span>我的文件</span> </div> <div class="nav-section">创作</div> <div class= ...<TRUNC>
+  L64   | <!-- 【后续扩展点：草稿自动保存 / 发表后 @提醒好友通知】 -->
+  L75   | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 演示.html   [EOL=CRLF]  [size=16435 bytes]
+  L67   | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L68   | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L138  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-square" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 申论刷题.html   [EOL=CRLF]  [size=94746 bytes]
+  L189  | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L190  | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L262  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 社区.html   [EOL=CRLF]  [size=42994 bytes]
+  L136  | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L137  | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L337  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+  L592  | R55（20260914）：社区帖子分享 —— 复制链接 / 转发给好友 / 系统分享
+  L604  | 再调用站内现成的 gotoChat()（assets/api.js）跳转私聊页；私聊页读取该键
+  L662  | // ---- B 转发给好友 / 群：存卡片 → gotoChat()（在线校验由 gotoChat 负责）----
+  L667  | toast('📨 已带上《' + (t || '这篇发贴') + '》卡片，去选好友 / 群发送');
+  L668  | if (typeof gotoChat === 'function') gotoChat();
+  L691  | '<button type="button" class="xt-share-item" data-act="forward"><span class="nav-icon" data-icon="users" data-icon-size="14"></span>转发给好友 / 群</button>' +
+
+====================================================================================================
+FILE: 私聊.html   [EOL=CRLF]  [size=58646 bytes]
+  L26   | /* W1-T3（2026-09-15 批次九）：联系管理员入口 #acEntry 收窄为仅在「好友」tab 可见，
+  L27   | 未读角标同步镜像到「好友」tab 标签上的 #acTabBadge（避免入口收起后未读提醒一起消失）。 */
+  L92   | <div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>表达</span> </div> <div class="nav-item" data-page="interview"> <span class="nav-icon" data-icon="handshake"></span><span>面测</span> </div> <div class="nav-item" data-page="files"> <span class="nav-icon" data-icon="folder"></span><span>我的文件</span> </div> <div class="nav-section">创作</div> <div class= ...<TRUNC>
+  L96   | <div class="topbar-title" id="topbarTitle">通讯录</div>
+  L122  | <!-- C1 20260913k：五 tab 顺序不变（会话→好友→群聊→申请→加好友）；「群聊」「加好友」由弹窗改为 tab 页面视图（onclick 改 imSwitchTab，原弹窗函数保留供面板复用） -->
+  L124  | <button class="im-tab" data-tab="friends" onclick="imSwitchTab('friends')">通讯录</button>
+  L126  | <!-- 【后续扩展点】发起群聊（T4 增量）：多选好友建群，本地模式提示「群聊需要联网」 -->
+  L128  | <button class="im-tab im-tab-add" data-tab="addfriend" onclick="imSwitchTab('addfriend')" title="搜索用户名/昵称添加好友">添加好友</button>
+  L132  | 点击后由 assets/admin-contact.js 直接走 /api/chat/* 开会话，绕开好友前置。
+  L133  | R45（20260914e）：视觉改为与好友会话行（.im-sess）同款 —— 圆形盾牌头像 + 昵称 + 最近一条消息/时间，
+  L136  | <div class="ac-entry im-sess" id="acEntry" onclick="xtOpenAdminChat()" title="联系管理员（管理员不参与好友列表）">
+  L141  | <!-- C1 20260913k：「群聊」「加好友」tab 面板宿主（原弹窗节点由页尾脚本整体搬入，id 不变，chat-local.js 弹窗函数照常按 id 命中） -->
+  L147  | <div class="im-empty" id="imEmpty">👈 选择左侧好友开始私聊</div>
+  L220  | <div class="bottom-nav-item active" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+  L292  | 步骤：好友多选（≥2 人）→ 命名（≤20 字）→ 创建并进入群会话。
+  L304  | <!-- ==================== 加好友模态（A3，2026-09-11；批次二 2026-09-11h 移除弹窗内「旧页回退」入口） ====================
+  L306  | 注：好友申请.html 文件本身保留（直连 URL 仍可访问作为后门），但弹窗内不再提供跳转入口。 -->
+  L360  | /* R33（20260913r）：tab 视觉统一——去掉 .im-tab-add 的特殊填充/加粗与专属 hover，加好友与其余 4 个 tab 同享 .im-tab/.im-tab.active；“im-tab-add” 类保留在 DOM 仅作语义标记，无样式副作用 */
+  L381  | /* C1 20260913k：「群聊」「加好友」tab 页面视图——弹窗节点搬入侧栏面板宿主后取消浮层定位，随 tab 显隐 */
+  L386  | /* 2026-09-15 批次八：「加好友」已拆掉弹窗外壳，改为页面内区块（ADR-3）；
+  L387  | 与「我的好友/群聊」列表同一视觉：无卡片边框、无圆角、无遮罩，直接作为面板内容铺开 */
+  L394  | 与好友行同样的 10px 14px 内边距 / 下边框 / 卡片底色；hover 用 --bg 而非主色描边。 */
+  L401  | /* R45：入口变为会话行后，角标改到行内右侧（与好友行 .im-badge 同一位置），不再浮在行外右上角 */
+  L434  | overflow:hidden + text-overflow:ellipsis，"💬 会话 / 👥 好友 / 📩 申请" 这类
+  L436  | 【修法】改用 flex:1 1 auto + 内容自适应宽度，短文案（加好友）不再被拉宽，
+  L450  | /* 本页顶栏搜索框专用：只搜索聊天记录（好友昵称 + 本地/服务器消息内容），不搜发贴模块 */
+  L495  | hits.push({ fid: Number(fid), name: c.nickname || '好友', txt: m.content, time: m.time }); got = true;
+  L498  | if (nameHit && !got) hits.push({ fid: Number(fid), name: c.nickname || '好友', txt: '（联系人，点开查看聊天）', time: c.time || '' });
+  L504  | /* 服务器好友：异步补充搜索服务器聊天记录 */
+  L508  | // 本地缓存里还没有的服务器好友（刚加载的情况）也从会话列表补
+  L531  | /* C1 20260913k：「加好友」「群聊」入口由弹窗改为 tab 页面视图。
+  L547  | 1) #acEntry 只在「好友」tab（data-tab="friends"）可见，其余 4 个 tab 收起 —— 它是 #imList
+  L552  | 单向镜像到「好友」tab 标签上的 #acTabBadge —— 不改 admin-contact.js，也不额外发请求。
+  L587  | /* 已在「好友」tab 时 #acEntry 本身可见且自带 #acEntryBadge，镜像角标不再显示，避免同源双显 */
+  L639  | /* W1-T3：#acEntry 仅「好友」tab 可见（放在最前，showPanel 回退到 chats 时会再进一次本函数） */
+
+====================================================================================================
+FILE: 管理员.html   [EOL=CRLF]  [size=17684 bytes]
+  L71   | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L72   | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L178  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 英语.html   [EOL=CRLF]  [size=46149 bytes]
+  L84   | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L85   | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L340  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 行测.html   [EOL=CRLF]  [size=25947 bytes]
+  L70   | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L71   | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L250  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-square" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 行测刷题.html   [EOL=CRLF]  [size=18792 bytes]
+  L70   | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L71   | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L175  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 表达.html   [EOL=CRLF]  [size=32644 bytes]
+  L158  | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L159  | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L240  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-square" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 设置.html   [EOL=CRLF]  [size=164485 bytes]
+  L62   | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）" data-page-node-id="aRHuZziE37CzDXzVSpuzLp">
+  L63   | <span class="nav-icon" data-page-node-id="UfPubWfBVnWQCCK18VHIbF" data-icon="users"></span><span data-page-node-id="FJ6cJs19JUXpu7ErWAIPFf">好友</span>
+  L421  | <div class="setting-desc" data-page-node-id="7bpW0nvVNJ8tjDqeOfd2oH">在线登录后，收到好友新私信时给出网页提示（需允许通知权限）</div>
+  L513  | <div class="fb-faq-a">① 确认后端已启动（设置页右上角能收到通知说明在线）；② 只能与好友互发消息，先在「好友」页添加；③ 若被对方拉黑会提示「无法发送消息」。离线时聊天会自动切到本地演示模式。</div>
+  L525  | <div class="fb-faq-a">发贴、好友、消息存在服务器，登录即恢复；词汇进度、错题本等学习数据保存在本机，可在「数据管理」导出 JSON 备份后导入新设备。</div>
+  L691  | <button class="st-quick-it" onclick="gotoChat()" data-page-node-id="LfJXwWr8Syn7tvQOmdyf9R"><span class="sq-ic" data-page-node-id="jDCMH1PciHiJXbPqrGjXHa" data-icon="message-circle" data-icon-size="16"></span>好友私信</button>
+  L832  | ②「动态可见范围 / 谁可加我好友 / 能否被搜索到」三项可见性控件（读取 GET /api/auth/me，
+  L858  | <option value="friends">仅好友</option>
+  L865  | <div class="privacy-row-name">谁可以加我好友</div>
+  L866  | <div class="privacy-row-sub">控制他人向你发起好友申请的权限</div>
+  L901  | <div data-page-node-id="mi6yoar3f5KakALoBUL75p">首页学习台(每日任务/专注计时/学习提醒) · 四级词汇(间隔重复) · 听说训练(情景口语/听力精听) · 英语(听力/口语/阅读/翻译) · 行测刷题 · 错题本 · 行测(企业定向库/时政热点/真题模考/话题表达训练) · 面试题库 · 表达 · 面测 · 演示(设计基础/版式库/案例拆解/实战模板) · 万能金句/场景话术 · 社区(发贴/评论/点赞) · 好友私信</div>
+  L920  | <div class="bottom-nav-item" onclick="gotoChat()" data-page-node-id="NsLaG0uBanAAznCAPvIc0O"><div class="bn-icon" data-page-node-id="Tq4ip4vwJT0XmqCEq38JaF"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label" data-page-node-id="RUNHZXD9FR0EQ5l6oqdbzo">互动</div></div>
+  L1984 | var MOMENT_SCOPE_LABEL = { public: '公开', friends: '仅好友', private: '仅自己' };
+
+====================================================================================================
+FILE: 赞助.html   [EOL=CRLF]  [size=26089 bytes]
+  L113  | <div class="nav-item" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L114  | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L198  | <div class="bottom-nav-item" onclick="gotoChat()">
+
+====================================================================================================
+FILE: 错题本.html   [EOL=CRLF]  [size=37082 bytes]
+  L57   | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L58   | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L166  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 面测.html   [EOL=CRLF]  [size=59718 bytes]
+  L57   | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L58   | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L394  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+
+====================================================================================================
+FILE: 面试题库.html   [EOL=CRLF]  [size=13980 bytes]
+  L70   | <div class="nav-item" data-external="1" onclick="gotoChat()" title="好友私信 · 好友申请（需在线模式）">
+  L71   | <span class="nav-icon" data-icon="users"></span><span>好友</span>
+  L132  | <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>

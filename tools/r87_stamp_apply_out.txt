@@ -1,0 +1,814 @@
+=== R87 资产刷戳 pass ===
+模式: apply（写盘）
+新戳: 20260918c   目标资产: 补戳 10 + 升戳 4 = 14
+根 HTML（排除 blog_wechat.html）: 47 个
+
+-- BEFORE 目标资产戳分布 --
+  assets/ai-cap-registry.js      stamped={}  bare=36
+  assets/ai-cap-image.js         stamped={}  bare=36
+  assets/ai-cap-vision.js        stamped={}  bare=36
+  assets/ai-cap-audio.js         stamped={}  bare=36
+  assets/ai-cap-embed.js         stamped={}  bare=36
+  assets/ai-cap-translate.js     stamped={}  bare=36
+  assets/ai-cap-video.js         stamped={}  bare=36
+  assets/ai-cap-3d.js            stamped={}  bare=36
+  assets/xt-aiusage.js           stamped={}  bare=1
+  assets/xt-update.js            stamped={}  bare=2
+  assets/ai-config.js            stamped={'20260918b': 36}  bare=0
+  assets/ai-service.js           stamped={'20260918b': 36}  bare=0
+  assets/ai-settings.js          stamped={'20260918b': 1}  bare=0
+  assets/ai-page.js              stamped={'20260918b': 1}  bare=0
+
+-- 逐页改动（37 个文件） --
+  [AI.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1, 'ai-page.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b" defer></script>
+        + <script src="assets/ai-config.js?v=20260918c" defer></script>
+        - <script src="assets/ai-service.js?v=20260918b" defer></script>
+        + <script src="assets/ai-service.js?v=20260918c" defer></script>
+        - <script src="assets/ai-cap-registry.js" defer></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c" defer></script>
+        - <script src="assets/ai-cap-image.js" defer></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c" defer></script>
+        - <script src="assets/ai-cap-vision.js" defer></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c" defer></script>
+        - <script src="assets/ai-cap-audio.js" defer></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c" defer></script>
+        - <script src="assets/ai-cap-embed.js" defer></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c" defer></script>
+        - <script src="assets/ai-cap-translate.js" defer></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c" defer></script>
+        - <script src="assets/ai-cap-video.js" defer></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c" defer></script>
+        - <script src="assets/ai-cap-3d.js" defer></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c" defer></script>
+        - <script src="assets/ai-page.js?v=20260918b" defer></script>
+        + <script src="assets/ai-page.js?v=20260918c" defer></script>
+  [AI模拟面试.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [PPT案例拆解.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [PPT版式库.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [ai-settings.html] +108 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'xt-aiusage.js': 1, 'ai-config.js': 1, 'ai-service.js': 1, 'ai-settings.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b" defer></script>
+        + <script src="assets/ai-config.js?v=20260918c" defer></script>
+        -   <script src="assets/ai-service.js?v=20260918b" defer></script>
+        +   <script src="assets/ai-service.js?v=20260918c" defer></script>
+        -   <script src="assets/ai-cap-registry.js" defer></script>
+        +   <script src="assets/ai-cap-registry.js?v=20260918c" defer></script>
+        -   <script src="assets/ai-cap-image.js" defer></script>
+        +   <script src="assets/ai-cap-image.js?v=20260918c" defer></script>
+        -   <script src="assets/ai-cap-vision.js" defer></script>
+        +   <script src="assets/ai-cap-vision.js?v=20260918c" defer></script>
+        -   <script src="assets/ai-cap-audio.js" defer></script>
+        +   <script src="assets/ai-cap-audio.js?v=20260918c" defer></script>
+        -   <script src="assets/ai-cap-embed.js" defer></script>
+        +   <script src="assets/ai-cap-embed.js?v=20260918c" defer></script>
+        -   <script src="assets/ai-cap-translate.js" defer></script>
+        +   <script src="assets/ai-cap-translate.js?v=20260918c" defer></script>
+        -   <script src="assets/ai-cap-video.js" defer></script>
+        +   <script src="assets/ai-cap-video.js?v=20260918c" defer></script>
+        -   <script src="assets/ai-cap-3d.js" defer></script>
+        +   <script src="assets/ai-cap-3d.js?v=20260918c" defer></script>
+        - <script src="assets/ai-settings.js?v=20260918b" defer></script>
+        + <script src="assets/ai-settings.js?v=20260918c" defer></script>
+        - <script src="assets/xt-aiusage.js" defer></script>
+        + <script src="assets/xt-aiusage.js?v=20260918c" defer></script>
+  [万能金句库.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [个人中心.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [企业定向库.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [关于.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [动态空间.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [商务礼仪.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [四级词汇.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [场景话术库.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [学习工作台.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [学习概括.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [导入题库.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [工具.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [我的动态.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [我的文件.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [时政热点.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [更多.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [更新.html] +12 bytes  {'xt-update.js': 1}
+        - <script src="assets/xt-update.js" defer></script>
+        + <script src="assets/xt-update.js?v=20260918c" defer></script>
+  [朋友圈发布.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [演示.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [申论刷题.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [社区.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [私聊.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [管理员.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [英语.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [行测.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [行测刷题.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [表达.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [设置.html] +108 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'xt-update.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/xt-update.js" defer></script>
+        + <script src="assets/xt-update.js?v=20260918c" defer></script>
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [赞助.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [错题本.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [面测.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+  [面试题库.html] +96 bytes  {'ai-cap-registry.js': 1, 'ai-cap-image.js': 1, 'ai-cap-vision.js': 1, 'ai-cap-audio.js': 1, 'ai-cap-embed.js': 1, 'ai-cap-translate.js': 1, 'ai-cap-video.js': 1, 'ai-cap-3d.js': 1, 'ai-config.js': 1, 'ai-service.js': 1}
+        - <script src="assets/ai-config.js?v=20260918b"></script>
+        + <script src="assets/ai-config.js?v=20260918c"></script>
+        - <script src="assets/ai-service.js?v=20260918b"></script>
+        + <script src="assets/ai-service.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-registry.js"></script>
+        + <script src="assets/ai-cap-registry.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-image.js"></script>
+        + <script src="assets/ai-cap-image.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-vision.js"></script>
+        + <script src="assets/ai-cap-vision.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-audio.js"></script>
+        + <script src="assets/ai-cap-audio.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-embed.js"></script>
+        + <script src="assets/ai-cap-embed.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-translate.js"></script>
+        + <script src="assets/ai-cap-translate.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-video.js"></script>
+        + <script src="assets/ai-cap-video.js?v=20260918c"></script>
+        - <script src="assets/ai-cap-3d.js"></script>
+        + <script src="assets/ai-cap-3d.js?v=20260918c"></script>
+
+已写入 37 个文件（备份后缀 .bak-pre-r87-20260918）。
+
+-- AFTER 目标资产戳分布（独立标签解析复验） --
+  assets/ai-cap-registry.js      {'20260918c': 36}            bare=0  PASS
+  assets/ai-cap-image.js         {'20260918c': 36}            bare=0  PASS
+  assets/ai-cap-vision.js        {'20260918c': 36}            bare=0  PASS
+  assets/ai-cap-audio.js         {'20260918c': 36}            bare=0  PASS
+  assets/ai-cap-embed.js         {'20260918c': 36}            bare=0  PASS
+  assets/ai-cap-translate.js     {'20260918c': 36}            bare=0  PASS
+  assets/ai-cap-video.js         {'20260918c': 36}            bare=0  PASS
+  assets/ai-cap-3d.js            {'20260918c': 36}            bare=0  PASS
+  assets/xt-aiusage.js           {'20260918c': 1}             bare=0  PASS
+  assets/xt-update.js            {'20260918c': 2}             bare=0  PASS
+  assets/ai-config.js            {'20260918c': 36}            bare=0  PASS
+  assets/ai-service.js           {'20260918c': 36}            bare=0  PASS
+  assets/ai-settings.js          {'20260918c': 1}             bare=0  PASS
+  assets/ai-page.js              {'20260918c': 1}             bare=0  PASS
+
+-- 事故特征扫描 --
+  .js.js?v= / .css.css?v= 命中: 0 
+  非属性命中（assets/<target>?v= 前 40B 无 src=/href=）: 0 
+  行尾 loneLF 违规: 0 
+
+=== 结论: 全部自检通过 ✅ ===

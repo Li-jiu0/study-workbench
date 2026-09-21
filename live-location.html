@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="aRIn0aReJ7KvaU3TxBhLjN">
+<head data-page-node-id="dIzcWeV2NC0whbeG3Ks14n">
+<meta charset="UTF-8" data-page-node-id="36U4Tsk7YE52NBtBWeYRXY">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" data-page-node-id="ipDHwwGBbneFy0AeaoU0kc">
+<meta name="theme-color" content="#5B8DEF" data-page-node-id="EKZnMq4nT1CY2pYh9HCqq0">
+<title>实时位置 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260923c" data-page-node-id="Og9lYMy4zP9AMkVMY5YpKi">
+<link rel="stylesheet" href="assets/leaflet/leaflet.css" data-page-node-id="UgaY39kJnjXwd1AR38AT1L">
+<style>
+  /* common.css 会锁 html/body 高度并隐藏滚动，本页为独立交互地图页，恢复滚动/占满视口 */
+  html, body { height: 100%; }
+  body { margin: 0; background: #e9edf3; font-family: inherit; overflow: hidden; }
+  /* 微信同款：全屏沉浸地图，控件全部悬浮叠加，无常文档流标题栏/状态条 */
+  .ll-map { position: fixed; inset: 0; background: #e9edf3; }
+  #llMap { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+  /* 左上角返回：半透明圆形黑底 + 白色箭头，避开状态栏 */
+  .ll-back { position: fixed; z-index: 1100; left: 12px; top: calc(10px + env(safe-area-inset-top, 0px)); width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(0,0,0,.45); color: #fff; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,.25); padding: 0; }
+  .ll-back:active { background: rgba(0,0,0,.62); }
+  /* 返回键右侧：对方昵称半透明胶囊 */
+  .ll-name { position: fixed; z-index: 1100; left: 62px; top: calc(10px + env(safe-area-inset-top, 0px)); height: 40px; display: flex; align-items: center; padding: 0 16px; border-radius: 20px; background: rgba(0,0,0,.45); color: #fff; font-size: 14px; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,.25); white-space: nowrap; }
+  /* 头像气泡 marker（L.divIcon 自绘）：圆角方形头像白描边 + 底部白三角指向精确坐标 */
+  .ll-ava { position: relative; width: 44px; height: 44px; border-radius: 9px; border: 2.5px solid #fff; background: #5B8DEF; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
+  .ll-ava-txt { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; font-weight: 700; }
+  .ll-ava img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; }
+  .ll-marker-tip { width: 0; height: 0; margin: -1px auto 0; border: 6px solid transparent; border-top-color: #fff; }
+  /* 底部状态胶囊：底部居中悬浮，半透明深底白字 */
+  .ll-bar { position: fixed; z-index: 1100; left: 50%; transform: translateX(-50%); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; background: rgba(0,0,0,.55); color: #fff; font-size: 13px; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+  .ll-bar.stale { background: rgba(120,72,0,.72); }
+  .ll-bdot { width: 8px; height: 8px; border-radius: 50%; background: #4cd964; flex: 0 0 auto; }
+  .ll-bar.stale .ll-bdot { background: #ffb340; }
+  .ll-bspin { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: llspin 0.9s linear infinite; flex: 0 0 auto; }
+  @keyframes llspin { to { transform: rotate(360deg); } }
+  /* 占位层：坐标尚未就绪时覆盖在地图之上，绝不能留白（修「地图加载不出来」的关键） */
+  .ll-loading { position: fixed; inset: 0; z-index: 900; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: #e9edf3; color: #6b7280; }
+  .ll-spinner { width: 34px; height: 34px; border: 3px solid #cfd6e4; border-top-color: #5B8DEF; border-radius: 50%; animation: llspin 0.9s linear infinite; }
+  .ll-loading-txt { font-size: 14px; }
+  .ll-loading-sub { font-size: 12px; color: #9aa3b2; }
+  .ll-ended { position: fixed; inset: 0; z-index: 900; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: rgba(233,237,243,.92); color: #6b7280; text-align: center; padding: 0 24px; }
+  .ll-ended b { font-size: 16px; color: #1f2937; }
+  .ll-toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px; z-index: 9999; transition: opacity .25s; opacity: 0; max-width: 86%; text-align: center; }
+
+  /* ===================== R144：多点连线 + 点间直线距离标注 + 导航入口 ===================== */
+  /* 距离标签：divIcon 包裹层零尺寸、i 自身 -50%/-50% 平移 → 标签几何中心正落在「线段中点」 */
+  .ll-dlabel { background: transparent; border: 0; }
+  .ll-dlabel i { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); display: inline-block; padding: 2px 8px; border-radius: 10px; background: rgba(255,255,255,.95); color: #1f2937; font-size: 11px; font-weight: 700; font-style: normal; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,.3); border: 1px solid rgba(91,141,239,.6); }
+  /* 汇总标签（≥3 人时落在几何中心）：深底白字，与段距标签区分 */
+  .ll-dlabel.sum i { background: rgba(31,41,55,.9); color: #fff; border-color: rgba(255,255,255,.4); }
+  /* 右下角「导航」悬浮按钮：仅当有效位置点 ≥2 时由 JS 加 .on 显示 */
+  .ll-nav { position: fixed; z-index: 1100; right: 12px; bottom: calc(60px + env(safe-area-inset-bottom, 0px)); display: none; align-items: center; gap: 6px; height: 40px; padding: 0 16px; border: 0; border-radius: 20px; background: #5B8DEF; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,.3); }
+  .ll-nav.on { display: flex; }
+  .ll-nav:active { background: #4a7ade; }
+  /* 导航选择面板：底部 bottom sheet（遮罩 + 圆角白底），起点可选、终点即成员 */
+  .ll-sheet { position: fixed; inset: 0; z-index: 1200; display: none; background: rgba(0,0,0,.35); }
+  .ll-sheet.open { display: block; }
+  .ll-sheet-box { position: absolute; left: 0; right: 0; bottom: 0; max-height: 74%; overflow-y: auto; background: #fff; border-radius: 16px 16px 0 0; padding: 8px 0 calc(10px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -4px 20px rgba(0,0,0,.25); }
+  .ll-sheet-hd { display: flex; align-items: center; justify-content: space-between; padding: 6px 16px 10px; }
+  .ll-sheet-hd b { font-size: 15px; color: #1f2937; }
+  .ll-sheet-x { border: 0; background: #f2f4f8; color: #6b7280; width: 28px; height: 28px; border-radius: 50%; font-size: 15px; line-height: 1; cursor: pointer; }
+  .ll-sheet-sec { padding: 6px 16px 2px; font-size: 12px; color: #9aa3b2; }
+  .ll-origin-row { display: flex; gap: 8px; overflow-x: auto; padding: 6px 16px 8px; -webkit-overflow-scrolling: touch; }
+  .ll-origin { flex: 0 0 auto; height: 30px; padding: 0 12px; border-radius: 15px; border: 1px solid #dfe4ee; background: #f7f9fc; color: #4b5563; font-size: 12px; cursor: pointer; white-space: nowrap; }
+  .ll-origin.on { background: #e8f0ff; border-color: #5B8DEF; color: #2f5fd0; font-weight: 700; }
+  .ll-row { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-top: 1px solid #f0f2f6; }
+  .ll-row-ava { position: relative; flex: 0 0 auto; width: 34px; height: 34px; border-radius: 8px; background: #5B8DEF; color: #fff; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .ll-row-ava img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; }
+  .ll-row-mid { flex: 1 1 auto; min-width: 0; }
+  .ll-row-nm { font-size: 14px; color: #1f2937; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ll-row-sub { font-size: 12px; color: #9aa3b2; margin-top: 2px; }
+  .ll-row-act { flex: 0 0 auto; display: flex; gap: 6px; }
+  .ll-mini { height: 30px; padding: 0 12px; border-radius: 15px; border: 0; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .ll-mini.pri { background: #5B8DEF; color: #fff; }
+  .ll-mini.pri:active { background: #4a7ade; }
+  .ll-mini.sec { background: #f2f4f8; color: #4b5563; }
+  .ll-sheet-ft { padding: 10px 16px 2px; font-size: 11px; color: #b0b7c3; line-height: 1.6; }
+  /* Leaflet 默认版权/attribution 在小屏占位，隐藏避免突兀（瓦片已带腾讯来源） */
+  .leaflet-control-attribution { display: none; }
+</style>
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__ = true;</script>
+<script src="assets/leaflet/leaflet.js"></script>
+</head>
+<body data-page-node-id="aNkAbKbhN6JSqQbqhilF5S">
+<div id="llMap" class="ll-map" data-page-node-id="jewfC0U8Oj2rs9IARKM6Si"></div>
+<!-- 智能返回：有历史回上一页，无历史兜底回私聊（本页唯一入口惯例，照抄好友申请.html） -->
+<button class="ll-back" onclick="if(history.length data-page-node-id="zXkaBsjbxPc2K4y7u7P54o">1){history.back()}else{location.href='私聊.html'}" title="返回" aria-label="返回"><span data-icon="arrow-left" data-icon-size="18" style="line-height:1" data-page-node-id="rc1ATE1KTBLHlqNo5P0NV2">&#8592;</span></button>
+<!-- 对方昵称胶囊（chat-local.js 跳转携带 name 参数，缺省显示「对方」） -->
+<div class="ll-name" id="llName" data-page-node-id="LkpiuDXDn8N6f4qowNJ1Gr">对方</div>
+<div class="ll-loading" id="llLoading" data-page-node-id="RFEZJ2OK7NF6yhXVGiZfWD">
+  <div class="ll-spinner" data-page-node-id="lXYRhXF60HLUYFext71zTn"></div>
+  <div class="ll-loading-txt" id="llLoadingTxt" data-page-node-id="nN7tdkfx49QGcLjcD4Skul">正在获取位置…</div>
+  <div class="ll-loading-sub" data-page-node-id="2PLVpHpjiNfl9qBWjsFM1e">共享发起后请稍候，地图加载完成前不会留白</div>
+</div>
+<div class="ll-ended" id="llEnded" style="display:none" data-page-node-id="sgigjnEYKJNOoBgLelm3OF">
+  <b data-page-node-id="NAtghwfTS1PiMCdB9eAnVx">实时位置共享已结束</b>
+  <div data-page-node-id="ZMY0tR1wmfPe362sS6JmJ7">对方已停止共享，没有可显示的坐标。</div>
+</div>
+<div class="ll-bar" id="llBar" data-page-node-id="ZiNOeWtIfGteVBlwQ9RwHt"><span class="ll-bspin" data-page-node-id="D0IELTCSkS4JX4QmNVDeq9"></span><span data-page-node-id="T0HBx0wYCQppV15LdX9io5">连接中…</span></div>
+<div class="ll-toast" id="llToast" data-page-node-id="ijVYISzgVPJZcCbmD8Cfr2"></div>
+<!-- ===== R144：导航入口（有效位置点 ≥2 时由 JS 加 .on 显示在右下角） ===== -->
+<button class="ll-nav" id="llNav" type="button" aria-label="发起导航" data-page-node-id="PkSSJKEG6Ow7viIuYVUF3S"><span data-page-node-id="RTUz7aRo12VKhqrOquwVBU">&#10132;</span><span data-page-node-id="kIVitzeVlbLQS1knbDiRNI">导航</span></button>
+<!-- ===== R144：导航选择面板（起点可切换、终点即各参与方；内容由 JS 渲染，不写死） ===== -->
+<div class="ll-sheet" id="llSheet" data-page-node-id="loj9MSBreZmYFHLA7BPNLu">
+  <div class="ll-sheet-box" data-page-node-id="ZkBDxRvtkFSIi9unnPvaFz">
+    <div class="ll-sheet-hd" data-page-node-id="EnneKnIj6Gi3RVQUTKbxGg"><b data-page-node-id="uDnHgAq9hTFN5zgRucJ3gu">发起导航</b><button class="ll-sheet-x" id="llSheetX" type="button" aria-label="关闭" data-page-node-id="nQ6CN7RO6MmduS3idD4h0V">&#10005;</button></div>
+    <div class="ll-sheet-sec" data-page-node-id="u7Cn2ue2BkxBLP758BfdEU">起点（默认你的位置）</div>
+    <div class="ll-origin-row" id="llOriginRow" data-page-node-id="EtO5CwuDOsKtteapzJAKNd"></div>
+    <div class="ll-sheet-sec" data-page-node-id="aWvgI1798j6GVLrwzVdxX7">终点（点「导航」发起路线）</div>
+    <div id="llRows" data-page-node-id="DzKSAkEkGzIUBAkUnMTamT"></div>
+    <div class="ll-sheet-ft" data-page-node-id="mtRUZtp5XPZzK0Do05VoRV">距离为两点间直线距离（球面大圆，Haversine）；坐标按 GCJ-02 口径传给地图，优先唤起高德，未安装则打开其网页版。</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* —— 与 assets/chat-local.js 同义的鉴权/接口封装（复用其请求头写法）—— */
+  function apiBase() {
+    return (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000'));
+  }
+  function tok() { return localStorage.getItem('study_workbench_token') || ''; }
+
+  /* 腾讯栅格瓦片 key：与 assets/xt-region.js 的 GEO.tencentKey 同源（R130 已定版，勿换）。 */
+  var TENCENT_KEY = 'RRTBZ-GNGKQ-3KD5W-2SS5K-YIHG5-S4BAP';
+
+  function toast(msg) {
+    var el = document.getElementById('llToast');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.opacity = '1';
+    clearTimeout(el._t);
+    el._t = setTimeout(function () { el.style.opacity = '0'; }, 2200);
+  }
+
+  /* —— 从 URL query 取 shareId（优先，仅作展示参考）/ peerId / groupId ——
+     注意：服务端 /api/live/state 仅接受 peerId|groupId（二选一，见 server/routers/liveloc.py），
+     shareId 不在该接口参数之列，故轮询一律用 peerId/groupId；shareId 仅携带展示。 */
+  var params = (function () {
+    var u = location.search || '';
+    var m = {};
+    var arr = u.replace(/^\?/, '').split('&');
+    for (var i = 0; i < arr.length; i++) {
+      if (!arr[i]) continue;
+      var kv = arr[i].split('=');
+      m[decodeURIComponent(kv[0])] = decodeURIComponent(kv.slice(1).join('=') || '');
+    }
+    return m;
+  })();
+  var qShare = params['shareId'] || '';
+  var qPeer = params['peerId'] || '';
+  var qGroup = params['groupId'] || '';
+  /* R3·L2：join=1（默认，微信式「点进即加入」）→ 进页自动 POST /api/live/start 并上报自己的坐标；
+     join=0（「仅查看」）→ 只围观对方，不上报自己。缺省按「加入」处理，保证双方都上屏。 */
+  var qJoin = (params['join'] === '0') ? false : true;
+  /* 身份展示参数（chat-local.js imLiveViewUrl 附带，仅展示用，不参与接口鉴权） */
+  var qName = params['name'] || '';
+  var qAvatar = params['avatar'] || '';
+
+  var apiQuery = '';
+  if (qPeer) apiQuery = 'peerId=' + encodeURIComponent(qPeer);
+  else if (qGroup) apiQuery = 'groupId=' + encodeURIComponent(qGroup);
+
+  var POLL_MS = 4000;            // 轮询间隔（任务要求 3-5s）
+  /* 双向共享：markers 按 sharerId 字典管理（key = String(sharerId)），支持多 marker 与移除消失者 */
+  var map = null, markers = {};
+  var revealed = false;          // 是否已拿到任一有效坐标并打点（首次 reveal 后不再强制居中）
+  var ended = false;             // 共享已结束（停止轮询）
+  var stale = false;             // 全部已 fix 会话均超时未心跳
+  /* ===== R144 状态（多点连线 / 距离标注 / 导航）=====
+     linkLayer 与 markers 分离：连线与标签整体挂在独立图层组，重绘时整组替换，绝不误伤 marker。 */
+  var linkLayer = null;          // 连线 + 距离标签的 Leaflet 图层组
+  var linkSig = '';              // 上一轮点位签名（身份 + 坐标）→ 未变则跳过重绘（防轮询闪烁）
+  var lastPts = [];              // 最近一轮「有效位置点」（hasFix 且坐标有限），供导航面板使用
+  var navOriginId = '';          // 导航面板当前选中的起点 sharerId（'' = 未定，打开时取默认）
+  /* 当前登录用户（GET /api/auth/me 平铺返回：id / nickname / avatarUrl，见 server/routers/auth.py）。
+     localStorage 侧 study_workbench_uid 仅作 id 兜底，昵称/头像一律以 me 接口为准。 */
+  var myId = Number(localStorage.getItem('study_workbench_uid')) || 0;
+  var myName = '', myAvatar = '';
+  /* 网页端 tick 兜底状态机（详见下方 §2.4 段） */
+  var nativePushAt = 0;          // 原生心跳最近一次时间戳（MainActivity.pushLocationUpdate → __onLocationUpdate）
+  var ownTick = { watchId: null, shareId: '', ended: false, lastLat: null, lastLng: null, lastTs: 0, denied: false };
+  var NATIVE_HEARTBEAT_MS = 30000;  // 原生心跳 30s 内视为「原生服务存活」，web 侧不兜底
+  var TICK_MIN_GAP_MS = 15000;      // 距上次上报 ≥15s 才再报（镜像原生节流）
+  var TICK_MIN_DIST_M = 30;         // 位移 >30m 才再报
+
+  /* ===== R3·L2：进页自动「加入共享」（微信式点进即加入）=====
+     根因：旧版 live-location.html 从不调 /api/live/start，接收方只围观、不上报自己 → 双方各看各的。
+     修法：进页时若 join=1 且本人对该 peer/group 尚无 active 会话 → 自动 start 一次并开始上报；
+           离页/结束时 stop。复用下方 §2.4 三态上报（原生桥优先，JS watchPosition 兜底），不新写定位。
+     幂等：重复 start 由后端 _end_existing 先结束本人同目标旧会话；本页 sideStart 单飞防重入。 */
+  var joined = false;            // 本页是否已进入「我在共享」状态
+  var joinStarting = false;      // start 请求单飞（防重入）
+  var sideStart = '';            // 本页自动加入得到的 shareId（离页时 stop 用；仅自己拥有）
+  var autoJoinArmed = false;     // 自动加入仅尝试一次，避免轮询反复触发
+
+  /* 进页自动加入：join=1 + 未加入 + 有会话参数 + 有 token。 */
+  function autoJoinOnce() {
+    if (!qJoin || autoJoinArmed || ended) return;
+    if (!apiQuery) return;                 // 私聊需 peerId / 群聊需 groupId
+    if (!tok()) return;                    // 未登录：poll 已给提示
+    autoJoinArmed = true;
+    tryJoinShare();
+  }
+
+  /* 真正发 start（幂等）：POST /api/live/start {peerId|groupId, silent:true}，成功后置 joined + 三态上报。
+     先查一次 state：若本人对该目标已有 active 会话 → 直接复用（不再 start，避免反复进出产生重复会话/卡片）。 */
+  function tryJoinShare() {
+    if (joinStarting || joined || ended) return;
+    joinStarting = true;
+    fetch(apiBase() + '/api/live/state?' + apiQuery, {
+      headers: { 'Authorization': 'Bearer ' + tok() }
+    })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (st) {
+        /* 已在共享（本人会话存在）→ 复用旧 shareId，只补起上报，不再 start */
+        var mine = null;
+        if (st && Array.isArray(st.sessions) && myId > 0) {
+          for (var i = 0; i < st.sessions.length; i++) {
+            if (st.sessions[i] && String(st.sessions[i].sharerId) === String(myId)) { mine = st.sessions[i]; break; }
+          }
+        }
+        if (mine && mine.shareId) {
+          joinStarting = false;
+          sideStart = String(mine.shareId);
+          joined = true;
+          armUpload();
+          return;
+        }
+        doStart();
+      })
+      .catch(function () { doStart(); });   // state 失败也尝试 start（幂等由后端 _end_existing 保证）
+  }
+
+  /* 发 start（silent:true：隐式加入不落「开始共享」卡片，避免聊天流刷屏）。 */
+  function doStart() {
+    var body = qPeer ? { peerId: Number(qPeer), silent: true } : { groupId: Number(qGroup), silent: true };
+    fetch(apiBase() + '/api/live/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() },
+      body: JSON.stringify(body)
+    })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        joinStarting = false;
+        if (!d || !d.ok || !d.shareId) return;   // 失败静默：仍可围观对方（poll 继续）
+        sideStart = String(d.shareId);
+        joined = true;
+        armUpload();                             // 三态：原生桥优先 → watchPosition 兜底
+      })
+      .catch(function () { joinStarting = false; });
+  }
+
+  /* 三态上报（镜像 chat-local.js imLiveArmUpload）：
+     ① 桥在且 startLocationShare 返回 true → 原生负责上报，绝不起 watchPosition（防双边重复上报）；
+     ② 桥不存在 / 返回 false → JS watchPosition 兜底（§2.4，节流复用 ownTick 状态机）。 */
+  function armUpload() {
+    var br = bridge();
+    if (br) {
+      var okb = false;
+      try { okb = br.startLocationShare(String(sideStart)) === true; } catch (e) { okb = false; }
+      if (okb) return;
+    }
+    startOwnTickForce();
+  }
+
+  /* 原生桥探测（与 chat-local.js 同契约：XTAppBridge 为主，StudyAndroid 别名兜底） */
+  function bridge() {
+    var b = window.XTAppBridge || window.StudyAndroid || null;
+    return (b && typeof b.startLocationShare === 'function') ? b : null;
+  }
+
+  /* 强制启动 watchPosition 上报（绕过 syncOwnTick 的「原生存活」判断：
+     自动加入时需立即上报，若原生已存活则 startOwnTick 内部会自行停掉，不双跑）。 */
+  function startOwnTickForce() {
+    if (!sideStart) return;
+    ownTick.shareId = sideStart;
+    ownTick.ended = false;
+    if (ownTick.watchId === null && !nativeAlive()) startOwnTick();
+  }
+
+  /* 离页/结束：stop 我的自动加入会话（仅当本页 start 出来的 shareId），并停上报。
+     用 keepalive 提升离页时请求的送达率；重复调用幂等（sideStart 置空）。 */
+  function leaveAndStop() {
+    stopOwnTick();
+    var sid = sideStart;
+    sideStart = '';
+    joined = false;
+    var br = bridge();
+    if (br && typeof br.stopLocationShare === 'function') { try { br.stopLocationShare(); } catch (e) { } }
+    if (!sid || !tok()) return;
+    try {
+      fetch(apiBase() + '/api/live/stop', {
+        method: 'POST',
+        keepalive: true,
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() },
+        body: JSON.stringify({ shareId: sid })
+      }).catch(function () { });
+    } catch (e) { /* 离页竞态：静默 */ }
+  }
+
+  function $(id) { return document.getElementById(id); }
+
+  /* 修 (0,0) 漂移根因：Number(null)===0 会通过 isFinite，必须先显式判空再 Number */
+  function num(v) { return (v === null || v === undefined || v === '') ? NaN : Number(v); }
+
+  function showLoading(txt) {
+    var l = $('llLoading'); if (l) l.style.display = 'flex';
+    if (txt) { var t = $('llLoadingTxt'); if (t) t.textContent = txt; }
+    setBar('<span class="ll-bspin"></span><span>正在获取位置…</span>');
+  }
+  function hideLoading() { var l = $('llLoading'); if (l) l.style.display = 'none'; }
+  function showEnded() {
+    ended = true;
+    stopOwnTick();
+    clearAllMarkers();
+    var e = $('llEnded'); if (e) e.style.display = 'flex';
+    hideLoading();
+    setBar('<span class="ll-bdot"></span><span>对方已结束共享</span>', true);
+    toast('实时位置共享已结束');
+  }
+
+  function clearAllMarkers() {
+    for (var k in markers) {
+      try { map.removeLayer(markers[k]); } catch (e) { /* 地图可能未初始化 */ }
+      delete markers[k];
+    }
+    clearLinks();   // R144：共享结束时连线与距离标签一并清空（顺带收起导航按钮）
+  }
+
+  /* 底部状态胶囊（微信同款三态）：正在获取位置… → 实时共享中 → 对方已结束共享/位置已失效 */
+  function setBar(html, staleCls) {
+    var bar = $('llBar');
+    if (!bar) return;
+    bar.className = 'll-bar' + (staleCls ? ' stale' : '');
+    bar.innerHTML = html;
+  }
+
+  function updateBar() {
+    /* 权限拒绝提示持续追加（不影响继续轮询观看对方坐标） */
+    var hint = ownTick.denied ? '（未授权，对方看不到你的位置）' : '';
+    if (stale) setBar('<span class="ll-bdot"></span><span>位置已失效</span>' + hint, true);
+    else setBar('<span class="ll-bdot"></span><span>实时共享中</span>' + hint);
+  }
+
+  /* 腾讯栅格瓦片图层（覆写 getTileUrl 翻转 y，子域 rt0/1/2，照抄 xt-region.js _makeTencentTileLayer） */
+  function makeTencentTileLayer() {
+    var Cls = L.TileLayer.extend({
+      getTileUrl: function (coords) {
+        var z = (typeof this._getZoomForUrl === 'function') ? this._getZoomForUrl() : coords.z;
+        var s = (typeof this._getSubdomain === 'function') ? this._getSubdomain(coords) : '0';
+        var y = Math.pow(2, z) - 1 - coords.y;
+        return 'https://rt' + s + '.map.gtimg.com/realtimerender?z=' + z +
+          '&x=' + coords.x + '&y=' + y +
+          '&type=vector&style=0&key=' + encodeURIComponent(TENCENT_KEY);
+      }
+    });
+    return new Cls('', { subdomains: '012', minZoom: 3, maxZoom: 18, maxNativeZoom: 18 });
+  }
+
+  function initMap() {
+    map = L.map('llMap', { zoomControl: true, attributionControl: false }).setView([39.9042, 116.4074], 16);
+    makeTencentTileLayer().addTo(map);
+  }
+
+  /* 微信同款头像气泡 marker：圆角方形头像（白描边）+ 底部白三角指向精确坐标。
+     带参版本 llAvatarIcon(name, avatar)：
+     - 自己：me 接口的 nickname/avatarUrl；me 失败 → 首字占位 + 蓝底（传空串自然兜底）
+     - 对方（私聊）：URL ?name/?avatar=（chat-local.js imLiveViewUrl 附带）
+     - 群聊其他成员：服务端 sharerName 首字占位
+     头像取值仅认 http(s)/uploads/data: 前缀，失败 onerror 隐藏图 → 露出首字占位。
+     🔴 安全（R144 QA P1）：昵称首字与头像 URL 均来自服务端 / URL 参数，一律经 escHtml 转义后再拼 HTML，
+        否则 URL 里带引号可跳出 src 属性注入 onerror（与同页 avaHtml / buildSheet 的口径保持一致）。 */
+  function llAvatarIcon(name, avatar) {
+    var nm = name || '对方';
+    var av = avatar || '';
+    var img = '';
+    if (/^(https?:|\/uploads\/|data:)/.test(av)) {
+      var url = av.indexOf('http') === 0 ? av : apiBase() + av;
+      img = '<img src="' + escHtml(url) + '" alt="" onerror="this.style.display=\'none\'">';
+    }
+    return L.divIcon({
+      className: 'll-marker',
+      html: '<div class="ll-ava"><span class="ll-ava-txt">' + escHtml(nm.slice(0, 1)) + '</span>' + img + '</div><div class="ll-marker-tip"></div>',
+      iconSize: [44, 54],
+      iconAnchor: [22, 54]   /* 锚在三角尖 */
+    });
+  }
+
+  /* 进页调一次 /api/auth/me：拿自己的 id/nickname/avatarUrl（平铺结构，字段名已核对 auth.py） */
+  function loadMe() {
+    if (!tok()) return;
+    fetch(apiBase() + '/api/auth/me', { headers: { 'Authorization': 'Bearer ' + tok() } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d) return;
+        myId = Number(d.id) || myId;
+        myName = String(d.nickname || '');
+        myAvatar = String(d.avatarUrl || '');   // 注意字段名是 avatarUrl（auth.py 平铺返回）
+        /* me 迟到时自己的 marker 已用占位图渲染 → 就地刷新图标 */
+        var mk = markers[String(myId)];
+        if (mk && mk.setIcon) mk.setIcon(llAvatarIcon(myName, myAvatar));
+      })
+      .catch(function () { /* 失败静默：自己 marker 用首字占位 + 蓝底 */ });
+  }
+
+  function onState(d) {
+    var list = (d && Array.isArray(d.sessions)) ? d.sessions : null;
+    /* 无活动共享（含 sessions 空数组）且已打过点 → 判定结束；还没打点 → 继续等待。
+       R3·L2：本页若已自动加入（joined），且本人会话仍在 sessions 里 → 不判结束（自己还在共享，
+       只是对方停了），改为「对方已停止共享」的非破坏提示，自己的 marker 仍保留。 */
+    var selfStillSharing = false;
+    if (joined && sideStart && list !== null) {
+      for (var z = 0; z < list.length; z++) {
+        if (list[z] && String(list[z].shareId) === String(sideStart)) { selfStillSharing = true; break; }
+      }
+    }
+    if (!d || d.active !== true || (list !== null && list.length === 0)) {
+      if (selfStillSharing && revealed) { showPeerEnded(); return; }
+      if (revealed) showEnded();
+      else showLoading('正在获取位置…');
+      return;
+    }
+    var otherActive = false;   // 除本人外是否还有对方/其他成员在共享（用于「仅我一人」提示）
+    var items = [];
+    var i, s;
+    if (list !== null) {
+      for (i = 0; i < list.length; i++) items.push(list[i]);
+    } else {
+      /* 兼容旧后端/回滚：sessions 非数组 → 回退读顶层单会话（同样过 num() 判空） */
+      items.push({
+        sharerId: d.sharerId,
+        lat: d.lat, lng: d.lng,
+        hasFix: !(d.lat === null || d.lat === undefined || d.lng === null || d.lng === undefined),
+        stale: !!d.stale,
+        updatedAt: d.updatedAt
+      });
+    }
+    /* 双（多）marker 渲染：hasFix:true 且坐标有限才画，未就绪的会话跳过——绝不出现 (0,0) */
+    var seen = {};
+    var anyFix = false, anyUnstale = false;
+    var bounds = null;
+    var pts = [];   // R144：本论有效位置点（身份 + 名称 + 头像 + 坐标），供连线/距离/导航复用
+    for (i = 0; i < items.length; i++) {
+      s = items[i] || {};
+      var lat = num(s.lat), lng = num(s.lng);
+      if (!(s.hasFix === true && isFinite(lat) && isFinite(lng))) continue;
+      var sid = String(s.sharerId != null ? s.sharerId : '');
+      seen[sid] = true;
+      anyFix = true;
+      if (!s.stale) anyUnstale = true;
+      var isSelf = (myId > 0 && sid === String(myId));
+      if (!isSelf) otherActive = true;   // 有非本人的共享方上屏（对方/群成员）
+      var nm, av;
+      if (isSelf) { nm = myName || '我'; av = myAvatar; }
+      else if (qPeer) { nm = qName || '对方'; av = qAvatar; }   // 私聊对方：沿用 URL 参数
+      else { nm = s.sharerName || '星'; av = ''; }               // 群聊其他成员：sharerName 首字占位
+      var ll = [lat, lng];
+      var mk = markers[sid];
+      if (!mk) { mk = L.marker(ll, { icon: llAvatarIcon(nm, av) }).addTo(map); markers[sid] = mk; }
+      else mk.setLatLng(ll);
+      if (!bounds) bounds = L.latLngBounds(ll, ll);
+      else bounds.extend(ll);
+      pts.push({ id: sid, name: nm, avatar: av, lat: lat, lng: lng, isSelf: isSelf });   // R144
+    }
+    /* 移除消失者：上一轮在、本轮没有（或 hasFix 变 false）→ 摘 marker（覆盖单方停止的半结束态） */
+    for (var k in markers) {
+      if (!seen[k]) {
+        try { map.removeLayer(markers[k]); } catch (e) { /* noop */ }
+        delete markers[k];
+      }
+    }
+    /* R144：重算多点连线与点间直线距离（有效点 <2 → 内部自动清空连线层并收起导航按钮） */
+    renderLinks(pts);
+    if (!anyFix) {
+      /* 有会话但无一就绪：保持「正在获取位置…」占位（原生首报 / web 兜底首报前） */
+      if (!revealed) showLoading('正在获取位置…');
+      return;
+    }
+    /* 底部条三态聚合：任一会话非 stale → 实时共享中；全部已 fix 会话均 stale → 位置已失效 */
+    stale = !anyUnstale;
+    /* R3·L2：对方已停、只剩我自己 → 隐藏「等待对方」提示并恢复正常底栏（自己仍在共享） */
+    var pe = $('llEnded');
+    if (pe && pe.style.display !== 'none' && (otherActive || !joined)) pe.style.display = 'none';
+    if (!revealed) {
+      revealed = true;
+      hideLoading();
+      /* 首次 reveal 视角：≥2 个 marker 用 fitBounds，单个 setView；此后不再每次轮询强制居中 */
+      if (Object.keys(markers).length >= 2) {
+        map.fitBounds(bounds, { maxZoom: 16, padding: [40, 40] });
+      } else {
+        map.setView(bounds.getCenter(), map.getZoom());
+      }
+    }
+    if (joined && !otherActive) {
+      /* 只我一人上屏（对方结束 / 尚未就绪）：底栏提示等待对方，不判「共享已结束」卡死自己 */
+      setBar('<span class="ll-bspin"></span><span>你已加入共享，等待对方…</span>');
+      return;
+    }
+    updateBar();
+  }
+
+  /* R3·L2：对方已停止共享，但本页自己仍在共享（joined）→ 只做轻提示，不停自己、不盖 ended 全屏层。 */
+  function showPeerEnded() {
+    setBar('<span class="ll-bdot"></span><span>对方已停止共享</span>', true);
+  }
+
+  function poll() {
+    if (ended) return;
+    if (!tok()) { showLoading('请先登录后再查看实时位置'); return; }
+    if (!apiQuery) { showLoading('缺少会话参数，无法定位'); return; }
+    fetch(apiBase() + '/api/live/state?' + apiQuery, {
+      headers: { 'Authorization': 'Bearer ' + tok() }
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        onState(d);
+        /* tick 兜底状态机：有自己会话 → 确保兜底运行；无 → 停（仅在原生通道不可见时真正生效） */
+        syncOwnTick(d && d.sessions);
+      })
+      /* 失败静默容忍：保留现有占位，不刷屏 toast、不 alert */
+      .catch(function () { if (!revealed && !ended) showLoading('正在获取位置…'); });
+  }
+
+  /* ===================== §2.4 网页端 tick 兜底（修缺陷 3，最简版） =====================
+
+     触发条件（全部满足才启用）：
+     1. 本页存在自己的会话（sessions 中 sharerId === myId，拿到自己的 shareId）；
+     2. 原生通道不可见：页面加载即声明 window.__onLocationUpdate（MainActivity.pushLocationUpdate
+        会向当前 WebView evaluateJavascript 该函数，壳零改动即可作为「原生服务存活心跳」）；
+        Date.now() - nativePushAt < 30s 视为原生存活 → 不启用/停掉 web watchPosition；
+     3. document.hidden === false（后台 JS 本就被冻结，显式判断避免语义歧义）。
+
+     上报节流（镜像原生参数，防刷）：首次 fix 立即上报一次；此后位移 >30m 或距上次 ≥15s 才 POST /api/live/tick。
+     tick 403（会话已结束/过期）→ 停兜底；网络失败静默；自己的会话从 sessions 消失 → 停兜底。
+     查看别人共享 / 群聊未发起者 / 原生壳内 → 不启用。 */
+  window.__onLocationUpdate = function (json) {
+    try {
+      nativePushAt = Date.now();
+      /* 原生已接管 → 立即停掉 web 兜底（APK 内不双跑） */
+      stopOwnTick();
+    } catch (e) { /* 原生侧注入失败不致崩 */ }
+  };
+
+  function nativeAlive() { return (Date.now() - nativePushAt) < NATIVE_HEARTBEAT_MS; }
+
+  function haversineM(la1, lo1, la2, lo2) {
+    var rad = Math.PI / 180;
+    var dLa = (la2 - la1) * rad, dLo = (lo2 - lo1) * rad;
+    var a = Math.sin(dLa / 2) * Math.sin(dLa / 2) +
+            Math.cos(la1 * rad) * Math.cos(la2 * rad) * Math.sin(dLo / 2) * Math.sin(dLo / 2);
+    return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  /* ===================== R144：多点连线 / 点间直线距离 / 导航入口 =====================
+
+     需求口径（实现即契约，逐条对应）：
+     【触发条件】本次 /api/live/state 返回的会话中，「有效位置点」≥2 时才开始绘制连线与距离标注；
+                 有效点 = hasFix===true 且 lat/lng 均为有限数（沿用既有「绝不画 (0,0)」口径）。
+                 私聊双方都开启共享 → 2 点；群聊多人同时共享 → N 点（含自己在内的全部参与方）。
+                 <2 点时清空连线层并隐藏导航按钮（单方共享不产生任何连线，原体验不变）。
+     【多点连接方式】2 点 → 一条直线段；≥3 点 → 把全部点按稳定顺序连成**闭合环**
+                 （i → i+1 → … → 末点回起点），用线路把各参与方串起来，直观体现「谁离谁多远」。
+                 稳定顺序 = 自己排首位，其余按 sharerId 字符串升序 → 轮询返回顺序抖动不会让线条跳变。
+     【距离计算规则】haversineM() 球面大圆距离（地球半径 6371000 m），即两点间**直线距离**；
+                 每段取该段两端点坐标算距离，标注在该段**中点**；
+                 ≥3 点再在**几何中心（各点经纬度算术平均）**加一枚汇总标签：
+                 「N 人 · 最远 X · 最近 Y」（两两全组合取极值）。
+                 文案格式：<1000m → 「123 米」；≥1000m → 「1.2 公里」（<10km 一位小数，≥10km 取整）。
+     【更新时机】每次 /api/live/state 轮询回调（POLL_MS=4000ms）后经 onState → renderLinks() 重算重绘；
+                 用「点位签名」（每点 sharerId + 坐标 5 位小数）比对，签名未变则**跳过重绘**——不闪屏、不重建图层；
+                 任一参与方坐标变化 → 签名变 → 整层替换，距离数值同步刷新。
+                 共享结束（sessions 空）→ clearAllMarkers() 内连带 clearLinks()，连线与标签一并消失。
+     【导航跳转行为】有效点 ≥2 时右下角出现「导航」按钮 → 打开 bottom sheet：
+                 ① 起点：默认「我的位置」（自己没有有效坐标时取排序后首个他人点），可在胶囊行切换；
+                 ② 终点：除起点外的各参与方，行内显示「与起点的直线距离」，点「导航」发起路线；
+                 ③ 跳转：拼高德 H5 导航 URI（uri.amap.com/navigation，coordinate=gaode，
+                    callnative=1 → 装了高德直接唤起 App，未装则在同一 WebView 打开其网页版路线），
+                    经 location.href 触发，异常回退 window.open；
+                 ④ 行内「复制」把该点 lat,lng 写入剪贴板（clipboard API → execCommand 兜底），便于粘贴到其他地图。
+                 坐标系口径：全站定位坐标按 GCJ-02 解释（与腾讯矢量瓦片、高德一致），故不做 BD-09 转换。
+                 【后续扩展点】若要在聊天页「实时位置」横幅上直接挂导航入口，可复用本页 URL 叠加 nav=1 参数，
+                 本批不改 chat-local.js。 */
+
+  /* HTML 转义（昵称/群成员名来自服务端，一律转义后再拼 HTML） */
+  function escHtml(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  /* 稳定排序：自己优先，其余按 sharerId 升序（字符串比较）→ 几何顺序在轮询间保持恒定 */
+  function stableOrderPts(pts) {
+    return pts.slice().sort(function (a, b) {
+      var sa = (myId > 0 && a.id === String(myId)) ? 0 : 1;
+      var sb = (myId > 0 && b.id === String(myId)) ? 0 : 1;
+      if (sa !== sb) return sa - sb;
+      return a.id < b.id ? -1 : (a.id > b.id ? 1 : 0);
+    });
+  }
+
+  /* 距离文案：<1000m 用米；≥1000m 用公里（<10km 一位小数，≥10km 取整） */
+  function fmtDist(m) {
+    if (!isFinite(m) || m < 0) return '';
+    if (m < 1000) return Math.round(m) + ' 米';
+    var km = m / 1000;
+    return (km < 10 ? km.toFixed(1) : String(Math.round(km))) + ' 公里';
+  }
+
+  /* 距离标签图标：包裹层零尺寸 + i 自身 translate(-50%,-50%) → 标签中心精确落在给定经纬度 */
+  function llDistIcon(txt, cls) {
+    return L.divIcon({
+      className: 'll-dlabel' + (cls ? ' ' + cls : ''),
+      html: '<i>' + escHtml(txt) + '</i>',
+      iconSize: [0, 0],
+      iconAnchor: [0, 0]
+    });
+  }
+
+  function hasPt(arr, id) {
+    for (var i = 0; i < arr.length; i++) { if (arr[i].id === id) return true; }
+    return false;
+  }
+
+  function clearLinks() {
+    if (linkLayer) {
+      try { map.removeLayer(linkLayer); } catch (e) { /* 地图可能未初始化 */ }
+      linkLayer = null;
+    }
+    linkSig = '';
+    lastPts = [];
+    var nb = $('llNav');
+    if (nb) nb.className = 'll-nav';
+    closeSheet();     // 无可导航对象时顺手收起面板，避免残留旧数据
+  }
+
+  /* 主入口：按有效点集合重画连线 + 距离标注（幂等，可反复调用） */
+  function renderLinks(pts) {
+    if (!map) return;
+    var arr = stableOrderPts(pts || []);
+    if (arr.length < 2) { clearLinks(); return; }      // 单点 / 无点：不画线
+    lastPts = arr;
+    var nb = $('llNav');
+    if (nb) { nb.className = 'll-nav on'; }            // 有效点 ≥2 → 亮出导航入口
+    if (navOriginId && !hasPt(arr, navOriginId)) navOriginId = '';
+    var parts = [];
+    for (var i = 0; i < arr.length; i++) {
+      /* 精度 6 位小数（≈0.11m）：5 位（≈0.55m）在亚米级位移时会漏更新标签（R144 QA P2） */
+      parts.push(arr[i].id + ':' + arr[i].lat.toFixed(6) + ',' + arr[i].lng.toFixed(6));
+    }
+    var sig = parts.join('|');
+    if (sig === linkSig) return;                       // 几何未变 → 跳过重绘（防闪、省开销）
+    linkSig = sig;
+    if (linkLayer) { try { map.removeLayer(linkLayer); } catch (e) { /* noop */ } }
+    linkLayer = L.layerGroup().addTo(map);
+    var n = arr.length;
+    var segs = (n >= 3) ? n : 1;                       // n=2 单段；n≥3 闭合环（末点回起点）
+    for (var k = 0; k < segs; k++) {
+      var a = arr[k], b = arr[(k + 1) % n];
+      L.polyline([[a.lat, a.lng], [b.lat, b.lng]], {
+        color: '#5B8DEF', weight: 3, opacity: 0.85, dashArray: '6,6', interactive: false
+      }).addTo(linkLayer);
+      var d = haversineM(a.lat, a.lng, b.lat, b.lng);
+      L.marker([(a.lat + b.lat) / 2, (a.lng + b.lng) / 2],
+        { icon: llDistIcon(fmtDist(d)), interactive: false, zIndexOffset: 400 }).addTo(linkLayer);
+    }
+    if (n >= 3) {
+      var sLat = 0, sLng = 0, mx = -1, mn = Infinity, q, r, dd;
+      for (var p = 0; p < n; p++) { sLat += arr[p].lat; sLng += arr[p].lng; }
+      for (q = 0; q < n; q++) {
+        for (r = q + 1; r < n; r++) {
+          dd = haversineM(arr[q].lat, arr[q].lng, arr[r].lat, arr[r].lng);
+          if (dd > mx) mx = dd;
+          if (dd < mn) mn = dd;
+        }
+      }
+      L.marker([sLat / n, sLng / n], {
+        icon: llDistIcon(n + ' 人 · 最远 ' + fmtDist(mx) + ' · 最近 ' + fmtDist(mn), 'sum'),
+        interactive: false, zIndexOffset: 400
+      }).addTo(linkLayer);
+    }
+  }
+
+  /* ---------- R144 导航面板 ---------- */
+  function ptById(id) {
+    for (var i = 0; i < lastPts.length; i++) { if (lastPts[i].id === id) return lastPts[i]; }
+    return null;
+  }
+  function defaultOriginId() {
+    if (!lastPts.length) return '';
+    if (myId > 0 && ptById(String(myId))) return String(myId);
+    return lastPts[0].id;
+  }
+  function openSheet() {
+    if (lastPts.length < 2) { toast('需要至少两人在共享位置才能导航'); return; }
+    navOriginId = hasPt(lastPts, navOriginId) ? navOriginId : defaultOriginId();
+    buildSheet();
+    var s = $('llSheet'); if (s) s.className = 'll-sheet open';
+  }
+  function closeSheet() { var s = $('llSheet'); if (s) s.className = 'll-sheet'; }
+
+  function avaHtml(p) {
+    var av = String(p.avatar || '');
+    var img = '';
+    if (/^(https?:|\/uploads\/|data:)/.test(av)) {
+      var url = av.indexOf('http') === 0 ? av : (apiBase() + av);
+      img = '<img src="' + escHtml(url) + '" alt="" onerror="this.style.display=\'none\'">';
+    }
+    return '<div class="ll-row-ava"><span>' + escHtml(String(p.name || '').slice(0, 1)) + '</span>' + img + '</div>';
+  }
+
+  function buildSheet() {
+    var orow = $('llOriginRow'), rows = $('llRows');
+    if (!orow || !rows) return;
+    var i, p, from = ptById(navOriginId), html = '';
+    for (i = 0; i < lastPts.length; i++) {
+      p = lastPts[i];
+      html += '<button class="ll-origin' + (p.id === navOriginId ? ' on' : '') +
+        '" type="button" data-oid="' + escHtml(encodeURIComponent(p.id)) + '">' + escHtml(p.name) + '</button>';
+    }
+    orow.innerHTML = html;
+    html = '';
+    for (i = 0; i < lastPts.length; i++) {
+      p = lastPts[i];
+      if (p.id === navOriginId) continue;             // 起点不列为终点
+      var d = from ? haversineM(from.lat, from.lng, p.lat, p.lng) : NaN;
+      html += '<div class="ll-row">' + avaHtml(p) +
+        '<div class="ll-row-mid"><div class="ll-row-nm">' + escHtml(p.name) + '</div>' +
+        '<div class="ll-row-sub">直线距离 ' + (isFinite(d) ? fmtDist(d) : '—') + '</div></div>' +
+        '<div class="ll-row-act">' +
+        '<button class="ll-mini pri" type="button" data-nav="' + escHtml(encodeURIComponent(p.id)) + '">导航</button>' +
+        '<button class="ll-mini sec" type="button" data-copy="' + escHtml(encodeURIComponent(p.id)) + '">复制</button>' +
+        '</div></div>';
+    }
+    rows.innerHTML = html || '<div class="ll-sheet-ft">暂无可导航的成员。</div>';
+  }
+
+  /* 事件委托：起点胶囊换起点；成员行「导航」/「复制」 */
+  function sheetDelegate(ev) {
+    var t = ev.target;
+    while (t && t.getAttribute &&
+           t.getAttribute('data-oid') === null &&
+           t.getAttribute('data-nav') === null &&
+           t.getAttribute('data-copy') === null) t = t.parentNode;
+    if (!t || !t.getAttribute) return;
+    var oid = t.getAttribute('data-oid'), nid = t.getAttribute('data-nav'), cid = t.getAttribute('data-copy');
+    if (oid !== null) { navOriginId = decodeURIComponent(oid); buildSheet(); return; }
+    if (nid !== null) { llStartNav(decodeURIComponent(nid)); return; }
+    if (cid !== null) { llCopyCoord(decodeURIComponent(cid)); }
+  }
+
+  /* 导航链接构造（纯函数，便于单测断言）：高德 H5 路线 URI，coordinate=gaode 明示 GCJ-02 口径，
+     callnative=1 → 装了高德直接唤起 App，未装则在同一 WebView 打开网页版路线。 */
+  function navUrlFor(from, to) {
+    return 'https://uri.amap.com/navigation?from=' +
+      encodeURIComponent(from.lng.toFixed(6) + ',' + from.lat.toFixed(6) + ',' + (from.name || '起点')) +
+      '&to=' + encodeURIComponent(to.lng.toFixed(6) + ',' + to.lat.toFixed(6) + ',' + (to.name || '终点')) +
+      '&mode=car&policy=1&src=xingtu&coordinate=gaode&callnative=1';
+  }
+
+  function llStartNav(toId) {
+    var to = ptById(toId), from = ptById(navOriginId);
+    if (!from || !to) { toast('缺少起点或终点坐标'); return; }
+    if (from.id === to.id) { toast('起点与终点相同'); return; }
+    var url = navUrlFor(from, to);
+    toast('正在唤起地图导航…');
+    closeSheet();
+    try { location.href = url; }
+    catch (e) { try { window.open(url, '_blank'); } catch (e2) { toast('无法打开导航链接'); } }
+  }
+
+  function llCopyCoord(id) {
+    var p = ptById(id);
+    if (!p) return;
+    var txt = p.lat.toFixed(6) + ',' + p.lng.toFixed(6);
+    var ok = function () { toast('已复制坐标 ' + txt); };
+    var no = function () { toast('坐标：' + txt); };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(ok, no);
+        return;
+      }
+    } catch (e) { /* 老 WebView 无 clipboard API → 走 execCommand */ }
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = txt;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      ok();
+    } catch (e2) { no(); }
+  }
+
+  /* 导航 UI 绑定（页面脚本位于 body 末尾，DOM 已就绪） */
+  function bindNavUi() {
+    var nb = $('llNav'), sx = $('llSheetX'), sh = $('llSheet');
+    var box = sh && sh.querySelector ? sh.querySelector('.ll-sheet-box') : null;
+    if (nb) nb.addEventListener('click', openSheet);
+    if (sx) sx.addEventListener('click', closeSheet);
+    if (!sh) return;
+    sh.addEventListener('click', function (ev) {
+      /* 点遮罩空白（面板容器之外）关闭；点面板内部不关 */
+      if (box && !(box.contains && box.contains(ev.target))) closeSheet();
+    });
+    sh.addEventListener('click', sheetDelegate);
+  }
+
+  function syncOwnTick(list) {
+    if (ended || !Array.isArray(list) || !(myId > 0)) { stopOwnTick(); return; }
+    var own = null;
+    for (var i = 0; i < list.length; i++) {
+      var s = list[i] || {};
+      if (s.shareId && String(s.sharerId) === String(myId)) { own = s; break; }
+    }
+    if (!own) { stopOwnTick(); return; }        // 自己的会话已 stop/过期 → 停兜底
+    if (ownTick.shareId !== own.shareId) {
+      stopOwnTick();
+      ownTick.shareId = own.shareId;
+    }
+    if (ownTick.watchId === null && !nativeAlive() && !ownTick.ended && !ownTick.denied) {
+      startOwnTick();
+    }
+  }
+
+  function startOwnTick() {
+    if (!navigator.geolocation || !navigator.geolocation.watchPosition) return;
+    ownTick.watchId = navigator.geolocation.watchPosition(function (pos) {
+      if (nativeAlive()) { stopOwnTick(); return; }   // 原生接管 → 立即停，不双跑
+      if (document.hidden) return;
+      if (!pos || !pos.coords) return;
+      var lat = pos.coords.latitude, lng = pos.coords.longitude;
+      if (typeof lat !== 'number' || typeof lng !== 'number' || !isFinite(lat) || !isFinite(lng)) return;
+      var now = Date.now();
+      var first = (ownTick.lastTs === 0);             // 首次 fix 立即上报一次
+      var moved = (ownTick.lastLat !== null &&
+                   haversineM(ownTick.lastLat, ownTick.lastLng, lat, lng) > TICK_MIN_DIST_M);
+      var gap = (now - ownTick.lastTs) >= TICK_MIN_GAP_MS;
+      if (!first && !moved && !gap) return;
+      ownTick.lastLat = lat; ownTick.lastLng = lng; ownTick.lastTs = now;
+      fetch(apiBase() + '/api/live/tick', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + tok(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shareId: ownTick.shareId, lat: lat, lng: lng })
+      }).then(function (r) {
+        if (r.status === 403) {                       // 会话已结束/过期 → 停兜底，不再重试
+          ownTick.ended = true;
+          stopOwnTick();
+        }
+      }).catch(function () { /* 网络失败静默，下个节流窗口自然重试 */ });
+    }, function (err) {
+      if (err && err.code === 1) {                    // PERMISSION_DENIED
+        ownTick.denied = true;
+        stopOwnTick();
+        toast('未授权定位，网页端无法上报你的位置');
+        if (revealed) updateBar();                    // 底部条追加「对方看不到你的位置」，观看不受影响
+      }
+      /* 其他错误（POSITION_UNAVAILABLE / 超时）静默：watchPosition 会继续回调 */
+    }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
+  }
+
+  function stopOwnTick() {
+    if (ownTick.watchId !== null && navigator.geolocation && navigator.geolocation.clearWatch) {
+      navigator.geolocation.clearWatch(ownTick.watchId);
+    }
+    ownTick.watchId = null;
+    ownTick.lastLat = null; ownTick.lastLng = null; ownTick.lastTs = 0;
+    /* shareId / ended / denied 保留：syncOwnTick 依 shareId 判断续跑，403 与权限拒绝后不再重启 */
+  }
+
+  function start() {
+    /* 顶部昵称胶囊：chat-local.js 跳转带 name，缺省兜底「对方」 */
+    var nm = $('llName');
+    if (nm) nm.textContent = qName || '对方';
+    if (typeof window.L === 'undefined' || !L.map) {
+      toast('地图组件加载失败');
+      showLoading('地图组件加载失败，请重试');
+      return;
+    }
+    try { initMap(); }
+    catch (e) { toast('地图初始化失败'); showLoading('地图初始化失败，请重试'); return; }
+    if (!tok()) { showLoading('请先登录后再查看实时位置'); return; }
+    if (!apiQuery) { showLoading('缺少会话参数，无法定位'); return; }
+    loadMe();                                // 自己的昵称/头像来源（一次，失败走占位）
+    bindNavUi();                             // R144：导航按钮 / 面板事件绑定
+    autoJoinOnce();                          // R3·L2：join=1 时进页自动加入共享（微信式点进即加入）
+    poll();                                  // 进页立即拉一次
+    setInterval(poll, POLL_MS);              // 持续轮询更新（实时移动）
+  }
+
+  /* 离页清理：停止上报 + stop 本页自动加入的会话（防止「幽灵会话」占着 pair/群索引）。
+     pagehide + beforeunload 双挂（部分 WebView 只触发其一）；visibilitychange→hidden 兜底手机切后台。 */
+  window.addEventListener('pagehide', leaveAndStop);
+  window.addEventListener('beforeunload', leaveAndStop);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden' && joined) leaveAndStop();
+  });
+
+  /* ===== jsdom 验收入口（沿用 assets/chat-local.js 的 __IM_TEST__ 惯例）=====
+     浏览器内为只读调试句柄，不改变任何运行行为；jsdom 用它把页面私有状态喂进断言。 */
+  window.__LL_TEST__ = {
+    S: {
+      get myId() { return myId; },
+      get lastPts() { return lastPts; },
+      get linkSig() { return linkSig; },
+      get navOriginId() { return navOriginId; },
+      set navOriginId(v) { navOriginId = v; }
+    },
+    onState: onState, renderLinks: renderLinks, clearLinks: clearLinks,
+    stableOrderPts: stableOrderPts, fmtDist: fmtDist, haversineM: haversineM,
+    navUrlFor: navUrlFor, llStartNav: llStartNav, llCopyCoord: llCopyCoord,
+    openSheet: openSheet, closeSheet: closeSheet, buildSheet: buildSheet,
+    ptById: ptById, escHtml: escHtml, llAvatarIcon: llAvatarIcon
+  };
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+})();
+</script>
+</body>
+</html>

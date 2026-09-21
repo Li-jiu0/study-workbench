@@ -1,0 +1,12 @@
+R91-B patch log for 私聊.html
+file size before=78180
+CRLF=1180  LF_total=1180  pure_LF=0
+[OK] im-plus-mask 60 -> 210 (old hit=1, replaced)
+[OK] im-plus-menu 61 -> 211 (old hit=1, replaced)
+[OK] im-loc-sheet 80 -> 215 (old hit=1, replaced)
+file size after=78183
+after: CRLF=1180  LF_total=1180  pure_LF=0
+[VERIFY] im-plus-mask 60 -> 210 : new hit=1  old hit=0
+[VERIFY] im-plus-menu 61 -> 211 : new hit=1  old hit=0
+[VERIFY] im-loc-sheet 80 -> 215 : new hit=1  old hit=0
+RESULT=PASS

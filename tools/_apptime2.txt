@@ -1,0 +1,1 @@
+lines=9766 emojis=7044 maxline=701869 sec=0.05

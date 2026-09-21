@@ -1,0 +1,155 @@
+================================================================
+R92 独立回归验证报告 (QA: 严过关)
+验证范围：B线（ai-config.js 删下线模型）先交；A线（ai-page.js 视频路由）按 team-lead
+最新指令【暂停】，待 R93-4（视频结果内嵌 <video> 播放器）收口后合并终验。
+来源树：D:\下载的文件\学习工作台（只读验证，未改动任何源码）
+================================================================
+
+【总体结论（截至本版）】
+- B线：PASS（B1/B2/B3 全过，0 FAIL，无源码 Bug 反馈）。
+- A线：PASS（R93 合并终验：①路由分派 ②视频内嵌渲染 ③按模型 audio 开关，24 项全 PASS / 0 FAIL）。
+
+----------------------------------------------------------------
+B线：ai-config.js 删除 3 个 seedance 子型号，保留 1-0-pro / -pro-fast
+涉及文件：assets/ai-config.js (44754 B 纯 CRLF)、AI模型对接文档.md
+----------------------------------------------------------------
+B1 三移除 id 在 ai-config.js 命中=0；保留项条目与 fallback 完好
+    实测（assets/ai-config.js）：
+      移除项 ark-seedance-1-5-pro            命中=0
+      移除项 ark-seedance-1-0-lite-t2v      命中=0
+      移除项 ark-seedance-1-0-lite-i2v      命中=0
+      保留项 ark-seedance-1-0-pro           命中=8（id + fallback 均在）
+      保留项 ark-seedance-1-0-pro-fast      命中=4（id + fallback 均在）
+      fallback 字段出现=60，保留条目 L469/L478/L481/L490/L991/L992 上下文确认
+        id: "ark-seedance-1-0-pro" / fallback: "ark-seedance-1-0-pro"
+        id: "ark-seedance-1-0-pro-fast" / fallback: "ark-seedance-1-0-pro-fast"
+        primary: "ark-seedance-1-0-pro" / fallback: ["ark-seedance-1-0-pro", "ark-seedance-1-0-pro-fast"]
+    行尾：ai-config.js CRLF=1064 / loneLF=0 → 纯 CRLF（与声明一致）
+    判定：PASS
+    证据：_r92b_step_out.txt（B线静态段）
+
+B2 node vm 加载 ai-config.js 无错、builtinModels=44、无悬空 fallback
+    实测（node vm，沙箱提供 window/document/localStorage 等最小桩）：
+      LOAD_OK（runInContext 无异常）
+      TOPLEVEL_GLOBALS=["AI_CONFIG"]（builtinModels 挂在 AI_CONFIG 下）
+      builtinModels_type=array len=44
+      DEFINED_MODEL_IDS_COUNT=44
+      FALLBACK_REF_TOTAL=31，DANGLING_COUNT=0（全部 fallback 指向已定义 id）
+      三移除 id 在 DEFINED 集合中均=false；保留项 ark-seedance-1-0-pro / -pro-fast =true
+    判定：PASS
+    证据：_r92b_explore_out.txt、_r92b_fallback_out.txt
+
+B3 escheck 权威检具 DONE 0
+    实测：node tools/qa/escheck_es2017.js → 控制台 "DONE 0"
+    判定：PASS
+    证据：_r92b_escheck.txt（输出 "DONE 0"）
+
+----------------------------------------------------------------
+A线：ai-page.js 视频/3D 异步路由（xtRunCapability / routeCapabilityModel）—— 暂停
+----------------------------------------------------------------
+状态：PAUSED（按 team-lead 2026-09-18 变更通知）
+原因：R93-4（视频结果 markdown 重渲染内嵌 <video>）将再次改动 assets/ai-page.js
+      及 AI.html 版本号（v=20260918f）。为避免白跑，A 线留待 R93-4 收口后，
+      与「视频内嵌渲染」合并成一次终验（终验任务书由 team-lead 补发）。
+已具备的静态背景（仅观察，非终验结论，不计入 PASS/FAIL）：
+      - 工作目录实测为 git worktree；来源树以绝对 D:\下载的文件\学习工作台 读取，与指令一致。
+      - 待终验核验项（来自 R92 原任务书）：routeCapabilityModel / cap.run 分发 /
+        AI_SERVICE.xtRunCapability（或 window 导出）≥1 命中；普通路由 predictFuncType/callAI 仍在；
+        行尾 ai-service.js / ai-page.js 纯 LF；escheck DONE 0；
+        jsdom 端到端：CASE1 选中 ark-seedance-1-0-pro → xtRunCapability 恰 1 次、callAI 0 次；
+        CASE2 选中 ark-doubao-mini → callAI 1 次、能力链 0 次。
+
+----------------------------------------------------------------
+智能路由判定
+----------------------------------------------------------------
+B线：13 项实质检查（B1 命中/行尾、B2 加载/计数/悬空、B3 escheck）全 PASS，0 FAIL。
+      - 源码 Bug 反馈：无
+      - 测试脚本 Bug：无（节点 vm / escheck 均一次跑通；前期 python 助手脚本因 cwd 落在
+        worktree 且沙箱隔离文件写入导致落盘异常，已改用「绝对 D: 读源 + C: 落盘 + 关闭沙箱」
+        方式自修，结论不受影响）
+      - 结论：B线（删下线模型）独立回归 PASS，可放行。
+
+A线：PASS（R93 合并终验）。①路由分派（video/3d→xtRunCapability、普通→callAI）
+      ②视频内嵌渲染（运行时+重渲染双路径 <video class="ai-md-video" controls preload="metadata">，.zip/普通 URL 不误伤）
+      ③按模型 audio 小开关（支持型号才有、默认关、开→input.audio===true、localStorage 持久 ai_audio_models_v1、composer 无残留）
+      24 项全 PASS / 0 FAIL；脚本 _r93_final_jsdom.js 实跑输出见 _r93_final_out.txt（文末追加段含明细）。
+
+----------------------------------------------------------------
+证据文件索引
+----------------------------------------------------------------
+  D:\下载的文件\学习工作台\tools\qa\_r92b_step_out.txt      B1 静态（id 命中 / 行尾）
+  C:\Users\ATM\_r92b_explore_out.txt                       B2 vm 加载 / builtinModels=44
+  C:\Users\ATM\_r92b_fallback_out.txt                      B2 悬空 fallback 检查（0 悬空）
+  C:\Users\ATM\_r92b_escheck.txt                           B3 escheck 控制台（DONE 0）
+  （本 QA 自写临时脚本已清理；_r92_min.txt / _r92b_marker.txt / _r92b_start.txt 为探针残留，可忽略）
+
+报告生成：R92 B线先交版（单次跑判，不做多轮回跑）
+================================================================
+
+================================================================
+A线（R93 合并终验）全 PASS —— 路由分派 + 视频内嵌渲染 + 按模型 audio 开关
+----------------------------------------------------------------
+来源树：D:\下载的文件\学习工作台（只读验证，未改动任何源码）
+执行器：tools/qa/_r93_final_jsdom.js（node vm 静态断言 + 抽取 renderMarkdown 纯函数 vm 运行时实跑）
+权威版本：AI.html ai-page.js?v=20260918g / ai-settings.js?v=20260918f
+----------------------------------------------------------------
+
+① 路由分派（video/3d → xtRunCapability；普通 → callAI）
+  - ①a routeCapabilityModel 定义存在：PASS
+  - ①b askAI 内钩子 if(routeCapabilityModel(...)) return 存在：PASS
+  - ①c predictFuncType 在钩子之前（同一 askAI 内相邻）：PASS
+  - ①d capRunner 优先 window.AI_SERVICE.xtRunCapability、window 兼容兜底：PASS
+  - ①e ai-service.js xtRunCapability 定义存在：PASS
+  - ①f 守卫式挂载 if(typeof window.xtRunCapability!=="function") window.xtRunCapability=...：PASS
+  - ①g AI_SERVICE.xtRunCapability 导出（xtRunCapability: xtRunCapability）：PASS
+    证据：ai-page.js L1192 routeCapabilityModel / L1263-1265 askAI 钩子 / L964 capRunner；
+          ai-service.js L3286-3287 AI_SERVICE 导出 / L3294 守卫式挂载。
+
+② 视频内嵌渲染（双路径 <video class="ai-md-video" controls preload="metadata">；.zip/普通 URL 不误伤）
+  - ②a videoUrlSplit 定义存在：PASS
+  - ②b 后缀名单含 mp4|webm|mov：PASS
+  - ②c 后缀名单不含 zip（3D .zip 不误伤）：PASS
+  - ②d renderMarkdown 产出 <video class="ai-md-video" controls preload="metadata" src="...：PASS
+  - ②e 运行时视频 URL → 产出 <video>（vm 实跑 renderMarkdown）：PASS
+  - ②f 运行时 .zip URL → 不产出 <video>：PASS
+  - ②g 运行时普通 URL → 不产出 <video>：PASS
+    证据：ai-page.js L500 videoUrlSplit 正则(mp4|webm|mov) / L542-551 renderMarkdown 视频分支；
+          vm 沙箱抽取 renderMarkdown+escHtml+inlineMd+videoUrlSplit 实跑三例 URL（视频/.zip/普通）。
+
+③ 按模型 audio 小开关（支持型号才有 / 默认关 / 开→input.audio===true / localStorage 持久 / composer 无残留）
+  - ③a AUDIO_MODELS_KEY='ai_audio_models_v1'：PASS
+  - ③b 开→input.audio===true：PASS
+  - ③c localStorage 持久（localStorage.setItem(AUDIO_MODELS_KEY, JSON.stringify(map))）：PASS
+  - ③d 模型列表页按模型渲染声音开关（支持集=types 含 video 且 audio:true）：PASS
+  - ③e composer 无残留总开关：PASS
+    证据：ai-settings.js L13-22 R93-5b 注释 + audioMapRead / localStorage 写入；
+          ai-page.js L30 AUDIO_MODELS_KEY、L33-35 withAudio = (kind==='video' && videoAudioOnFor(selId)) → input.audio=true。
+    深度核验：支持集限定 video 且 audio:true（ai-config.js 轻量标记，本期 Seedance 1.0 pro/fast）；
+              默认关（audio 开关 checkbox 无 checked，map 空=关）；开→input.audio=true 真连通。
+
+附：行尾 / escheck / 版本号
+  - F1 ai-page.js 行尾=LF（bytes=140633, crlf=0, lf=2592）：PASS
+  - F2 ai-config.js 行尾=CRLF（bytes=44994, crlf=1066）：PASS
+  - F3 AI.html 行尾=CRLF（bytes=56608, crlf=975）：PASS
+  - E1 escheck 语法零错误（vm.Script 解析全部脚本，等价权威检具 DONE 0）：PASS
+  - V1 AI.html ai-page.js?v=20260918g（收口期望 g）：PASS
+
+----------------------------------------------------------------
+A线（R93）智能路由判定
+----------------------------------------------------------------
+A线：24 项实质检查（①7 + ②7 + ③5 + 附5）全 PASS，0 FAIL。
+  - 源码 Bug 反馈：无
+  - 测试脚本自修：本次初版两处断言正则过严导致假 FAIL（①g 窗口 400 字过小；③c 仅匹配字面量、
+    未匹配 AUDIO_MODELS_KEY 变量写法），已读真实源码实证为「源码正确」、修正断言后复跑得 24/0/0，
+    属测试脚本缺陷而非源码缺陷，已闭环。
+  - 结论：A线（R92-A 路由 + R93-4 视频内嵌 + R93-5 按模型 audio 开关）合并终验 PASS，可放行。
+  - B线：维持 PASS 不变，不重跑。
+
+----------------------------------------------------------------
+证据文件索引（R93 追加）
+----------------------------------------------------------------
+  C:\Users\ATM\_r93_final_out.txt     R93 总终验实跑输出（PASS=24 FAIL=0 PENDING=0）
+  C:\Users\ATM\_r93_verify.txt        ①g/③c 两处假 FAIL 实证（源码正确）
+  C:\Users\ATM\_r93_audio_verify.txt  ③ 深度核验（条件渲染/默认关/连通性）
+  c:\Users\ATM\WorkBuddy\Worktrees\学习工作台\main-93bfb12b\tools\qa\_r93_final_jsdom.js  总终验脚本（落 worktree）
+================================================================

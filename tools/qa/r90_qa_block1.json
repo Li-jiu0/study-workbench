@@ -1,0 +1,316 @@
+{
+  "total": 62,
+  "pass": 62,
+  "results": [
+    {
+      "name": "S0-1 M5 工具条渲染成功",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S0-2 #xtpM5Range 在位",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S0-3 #xtpM5Kw 在位",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S0-4 #xtpM5Tag 在位",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S0-5 #xtpM5Fav 在位",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S1-1 range 默认 all 且卡片数 = 3",
+      "pass": true,
+      "detail": "cards=3 range=all"
+    },
+    {
+      "name": "S1-2 无空态元素",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S1-3 无重置按钮",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S2-0 成功派发 change 到 #xtpM5Range",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S2-1 卡片清零（复现 P1 现象）",
+      "pass": true,
+      "detail": "实测=0"
+    },
+    {
+      "name": "S2-2 空态出现",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S2-3 空态含「当前筛选」",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S2-4 空态含「近 7 天」",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S2-5 空态含本机总数（本机共 3 条）",
+      "pass": true,
+      "detail": "\"没有符合条件的对话（当前筛选：近 7 天，本机共 3 条）。\""
+    },
+    {
+      "name": "S2-6 空态不含误导性「服务端还有」文案",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S3-1 range 元素值仍为 d7",
+      "pass": true,
+      "detail": "实测=d7"
+    },
+    {
+      "name": "S3-2 重复置 d7 后卡片仍为 0（未被回退到 all）",
+      "pass": true,
+      "detail": "before=0 after=0"
+    },
+    {
+      "name": "S3-3 反证：若被静默改成 all 卡片会回到 3，实测 0 → 未回退",
+      "pass": true,
+      "detail": "实测=0"
+    },
+    {
+      "name": "S4-1 #xtpM5ResetFilter 存在",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S4-2 按钮文案含「重置筛选」",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S4-3 容器 .xtp-m5-emptyact 存在",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S5-0 复合筛选(tag+fav+d7)下出现重置按钮",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S5-1 成功点击重置按钮",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S5-2 3 张卡恢复",
+      "pass": true,
+      "detail": "实测=3"
+    },
+    {
+      "name": "S5-3 range 回 all",
+      "pass": true,
+      "detail": "all"
+    },
+    {
+      "name": "S5-4 tag 清空",
+      "pass": true,
+      "detail": "\"\""
+    },
+    {
+      "name": "S5-5 favOnly 关闭",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S5-6 关键词清空",
+      "pass": true,
+      "detail": "\"\""
+    },
+    {
+      "name": "S5-7 空态与重置按钮均消失",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S6-1 卡片 0 张",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S6-2 空态文案为「本机暂无会话记录…」",
+      "pass": true,
+      "detail": "\"本机暂无会话记录（本页的清理、删除只作用于本机会话）。去 AI 问答页对话后，会自动出现在这里。\""
+    },
+    {
+      "name": "S6-3 无重置按钮（无意义）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S7-1 d7 下 2 张新卡仍显示",
+      "pass": true,
+      "detail": "实测=2"
+    },
+    {
+      "name": "S7-2 无空态",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S7-3 无重置按钮",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S8-1 1 张卡正常显示",
+      "pass": true,
+      "detail": "实测=1"
+    },
+    {
+      "name": "S8-2 无空态 / 无重置按钮",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S8-3 today 下 1 张卡正常",
+      "pass": true,
+      "detail": "实测=1"
+    },
+    {
+      "name": "S9-1 搜索生效：1 张卡",
+      "pass": true,
+      "detail": "实测=1"
+    },
+    {
+      "name": "S9-2 搜索后仍能切筛选（range 元素=d7）",
+      "pass": true,
+      "detail": "d7"
+    },
+    {
+      "name": "S9-3 双重过滤：0 张（对话3 在 100 天前）",
+      "pass": true,
+      "detail": "实测=0"
+    },
+    {
+      "name": "S9-4 重绘后搜索框保留关键词",
+      "pass": true,
+      "detail": "\"对话 3\""
+    },
+    {
+      "name": "S9-5 出现重置按钮",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S9-6 重置后 3 张卡全回",
+      "pass": true,
+      "detail": "实测=3"
+    },
+    {
+      "name": "S9-7 重置后搜索框清空",
+      "pass": true,
+      "detail": "\"\""
+    },
+    {
+      "name": "S9-8 先筛选后搜索：1 张（对话2 在 d7 内）",
+      "pass": true,
+      "detail": "实测=1"
+    },
+    {
+      "name": "S9-9 先筛选后搜索：range 未被搜索破坏",
+      "pass": true,
+      "detail": "d7"
+    },
+    {
+      "name": "S9-10 时间与关键词同时生效 → 0 张",
+      "pass": true,
+      "detail": "实测=0"
+    },
+    {
+      "name": "S9-11 range 仍为 d7",
+      "pass": true,
+      "detail": "d7"
+    },
+    {
+      "name": "S9-12 再次重置恢复 3 张卡（处理器未失效）",
+      "pass": true,
+      "detail": "实测=3"
+    },
+    {
+      "name": "S9-13 tag 下拉可被赋值且生效",
+      "pass": true,
+      "detail": "\"甲\""
+    },
+    {
+      "name": "S9-13b 单 tag 筛选生效（甲 只有 1 条）",
+      "pass": true,
+      "detail": "实测=1"
+    },
+    {
+      "name": "S9-14 tag+d7 复合为空 → 出现重置按钮",
+      "pass": true,
+      "detail": "卡片=0"
+    },
+    {
+      "name": "S9-15 重置后 tag 清空、卡片恢复 3",
+      "pass": true,
+      "detail": "cards=3 tag=\"\""
+    },
+    {
+      "name": "S9-14 favOnly 与 range 可叠加",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S9-15 重置后 favOnly 关闭、卡片恢复",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S10-1 confirm 文案含「本机全部 N 条会话」",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S10-2 confirm 文案含「服务端记录不受影响」",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S10-3 toast 文案含「服务端记录仍保留」",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S11-1 无筛选 → 无重置按钮",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S11-2 本机 0 → 无重置按钮",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "S11-3 有筛选但列表非空 → 无重置按钮",
+      "pass": true,
+      "detail": ""
+    }
+  ]
+}

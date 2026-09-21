@@ -1,0 +1,169 @@
+========== assets/topic-express.js
+   L4 - * 适用于央国企笔试/面试的综合分析能力训练
+   L4 + * 适用于行测/面试的综合分析能力训练
+   L448 - // ========== 关闭（返回央国企笔试主页，与其他模块的返回方式一致） ==========
+   L448 + // ========== 关闭（返回行测主页，与其他模块的返回方式一致） ==========
+
+========== assets/data-exam-company.js
+   L488 - q: '关于央国企笔试的组织方，下面哪种说法更符合通用情况？',
+   L488 + q: '关于行测的组织方，下面哪种说法更符合通用情况？',
+
+========== assets/chat-local.js
+   L236 - systemPrompt: '你叫小星，是用户的学习搭子，积极向上、充满正能量。你和用户一起备考四级、行测、央国企笔试等。语气热情鼓励，会主动关心用户的学习进度，看到用户偷懒会温柔提醒，用户取得进步会真心夸奖。回复简洁自然，像身边真实的学习伙伴，不要长篇大论讲道理，多用短句和感叹号，适当用emoji。如果用户问学习问题，给出具体可执行的建议；如果用户闲聊，就轻松回应。'
+   L236 + systemPrompt: '你叫小星，是用户的学习搭子，积极向上、充满正能量。你和用户一起备考四级、行测等。语气热情鼓励，会主动关心用户的学习进度，看到用户偷懒会温柔提醒，用户取得进步会真心夸奖。回复简洁自然，像身边真实的学习伙伴，不要长篇大论讲道理，多用短句和感叹号，适当用emoji。如果用户问学习问题，给出具体可执行的建议；如果用户闲聊，就轻松回应。'
+   L240 - systemPrompt: '你是「星途」学习平台的 AI 助手，专业、高效、乐于助人。你擅长回答四级备考、行测技巧、央国企笔试、面试准备、PPT制作、学习方法等方面的问题。语气专业友好，回答结构化（先给结论，再分要点），但不要太生硬。如果用户问学习问题，给出具体可执行的建议；如果用户闲聊，也会友好回应。适当用emoji，但不要过度。回复要实用，不要空泛。'
+   L240 + systemPrompt: '你是「星途」学习平台的 AI 助手，专业、高效、乐于助人。你擅长回答英语、行测技巧、行测、面试准备、PPT制作、学习方法等方面的问题。语气专业友好，回答结构化（先给结论，再分要点），但不要太生硬。如果用户问学习问题，给出具体可执行的建议；如果用户闲聊，也会友好回应。适当用emoji，但不要过度。回复要实用，不要空泛。'
+   L287 - ai: ['我是星途AI助手，有什么可以帮你的吗？', '关于学习问题，我可以给你一些建议', '你可以问我四级备考、行测技巧、PPT制作等问题', '让我想想...这个问题我是这样看的', '希望我的回答对你有帮助！']
+   L287 + ai: ['我是星途AI助手，有什么可以帮你的吗？', '关于学习问题，我可以给你一些建议', '你可以问我英语、行测技巧、PPT制作等问题', '让我想想...这个问题我是这样看的', '希望我的回答对你有帮助！']
+   L292 - { keywords: ['四级', '英语', '单词'], reply: '四级备考要坚持每天背单词哦，有什么不懂的可以问我！' },
+   L292 + { keywords: ['四级', '英语', '单词'], reply: '英语要坚持每天背单词哦，有什么不懂的可以问我！' },
+
+========== assets/mini-cet.js
+   L1 - /* 四级备考 占位模块内容（听力/阅读/写作/翻译/模考） */
+   L1 + /* 英语 占位模块内容（听力/阅读/写作/翻译/模考） */
+
+========== assets/mini-comm.js
+   L1 - /* 高情商表达 占位模块内容 */
+   L1 + /* 表达 占位模块内容 */
+
+========== assets/mini-exam.js
+   L1 - /* 央国企笔试 占位模块内容 */
+   L1 + /* 行测 占位模块内容 */
+
+========== assets/mini-interview.js
+   L1 - /* 商务礼仪面试 占位模块内容 */
+   L1 + /* 面测 占位模块内容 */
+
+========== assets/mini-ppt.js
+   L1 - /* PPT训练 占位模块内容 */
+   L1 + /* 演示 占位模块内容 */
+
+========== assets/ai-page.js
+   L64 - 'hunyuan-mt-7b': { platform: '硅基流动', type: '通用文本（多语言）', params: '7B', stars: '★★★', advantage: '腾讯混元开源，多语言强，翻译好', applicable: '英语翻译、四级备考、多语言问答' }
+   L64 + 'hunyuan-mt-7b': { platform: '硅基流动', type: '通用文本（多语言）', params: '7B', stars: '★★★', advantage: '腾讯混元开源，多语言强，翻译好', applicable: '英语翻译、英语、多语言问答' }
+
+========== assets/ai-presets.js
+   L29 - keywords: ["四级", "英语四级", "四级备考", "怎么备考"],
+   L29 + keywords: ["四级", "英语四级", "英语", "怎么备考"],
+
+========== assets/roleplay.js
+   L4 - 把「高情商表达」页内「角色扮演训练」的完整实现（DOM 结构 + 样式 +
+   L4 + 把「表达」页内「角色扮演训练」的完整实现（DOM 结构 + 样式 +
+   L106 - // 当前挂载配置（backTo/onBack 由 mountRolePlay 的 options 决定，默认回落到高情商表达页 comm）
+   L106 + // 当前挂载配置（backTo/onBack 由 mountRolePlay 的 options 决定，默认回落到表达页 comm）
+   L121 - // 该页已下线（如高情商表达页删除菜单后）则退化为就近挂载到 #roleplayMount。
+   L121 + // 该页已下线（如表达页删除菜单后）则退化为就近挂载到 #roleplayMount。
+   L380 - /* ------------------------- 自举：高情商表达页内置锚点 #roleplayMount 自动挂载 ------------------------- */
+   L380 + /* ------------------------- 自举：表达页内置锚点 #roleplayMount 自动挂载 ------------------------- */
+
+========== assets/qbank.js
+   L336 - 'PPT案例拆解.html': 'cases', '行测刷题.html': 'exam', '央国企笔试.html': 'exam'
+   L336 + 'PPT案例拆解.html': 'cases', '行测刷题.html': 'exam', '行测.html': 'exam'
+
+========== assets/app.js
+   L504 - // ===== 广场（发贴系统）数据 =====
+   L504 + // ===== 社区（发贴系统）数据 =====
+   L1448 - home: '首页', cet: '四级备考', exam: '央国企笔试备考',
+   L1448 + home: '首页', cet: '英语', exam: '行测备考',
+   L1449 - comm: '高情商表达', interview: '商务礼仪及面试', ppt: 'PPT训练',
+   L1449 + comm: '表达', interview: '面测', ppt: '演示',
+   L1452 - …s': 'PPT案例拆解', 'comm-scenes': '场景话术库', 'comm-quotes': '万能金句库', 'settings': '设置', 'blog': '广场', 'profile': '个人中心'
+   L1452 + …s': 'PPT案例拆解', 'comm-scenes': '场景话术库', 'comm-quotes': '万能金句库', 'settings': '设置', 'blog': '社区', 'profile': '个人中心'
+   L1459 - cet: '四级备考.html', 'speaking-demo': '四级备考.html',
+   L1459 + cet: '英语.html', 'speaking-demo': '英语.html',
+   L1460 - exam: '央国企笔试.html', 'exam-demo': '央国企笔试.html',
+   L1460 + exam: '行测.html', 'exam-demo': '行测.html',
+   L1461 - comm: '高情商表达.html', 'roleplay-demo': '高情商表达.html',
+   L1461 + comm: '表达.html', 'roleplay-demo': '表达.html',
+   L1462 - interview: '商务礼仪面试.html', 'interview-demo': '商务礼仪面试.html',
+   L1462 + interview: '面测.html', 'interview-demo': '面测.html',
+   L1463 - ppt: 'PPT训练.html',
+   L1463 + ppt: '演示.html',
+   L1464 - blog: '学习博客.html',
+   L1464 + blog: '社区.html',
+   L1673 - const names = { cet: '四级备考', exam: '央国企笔试', comm: '高情商表达', interview: '商务礼仪面试', ppt: 'PPT训练' };
+   L1673 + const names = { cet: '英语', exam: '行测', comm: '表达', interview: '面测', ppt: '演示' };
+   L1838 - //  · 央国企笔试.html 的行测入口就是 exam-center（同一套 EXAM_BANK），不再重复出卡。
+   L1838 + //  · 行测.html 的行测入口就是 exam-center（同一套 EXAM_BANK），不再重复出卡。
+   ...(其余省略，共 57 行变化)
+
+========== assets/api.js
+   L152 - function gotoBlogMine() { location.href = '学习博客.html#mine'; }
+   L152 + function gotoBlogMine() { location.href = '社区.html#mine'; }
+   L163 - '<a class="chip" href="学习博客.html#mine" style="text-decoration:none"><span class="nav-icon" data-icon="inbox" data-icon-size="12"></span> 我的发贴·回收站</a>' +
+   L163 + '<a class="chip" href="社区.html#mine" style="text-decoration:none"><span class="nav-icon" data-icon="inbox" data-icon-size="12"></span> 我的发贴·回收站</a>' +
+   L164 - '<a class="chip" href="学习博客.html#favorite" style="text-decoration:none"><span class="nav-icon" data-icon="bookmark" data-icon-size="12"></span> 我的收藏</a>' +
+   L164 + '<a class="chip" href="社区.html#favorite" style="text-decoration:none"><span class="nav-icon" data-icon="bookmark" data-icon-size="12"></span> 我的收藏</a>' +
+   L165 - '<a class="chip" href="学习博客.html" style="text-decoration:none"><span class="nav-icon" data-icon="globe" data-icon-size="12"></span> 广场</a>' +
+   L165 + '<a class="chip" href="社区.html" style="text-decoration:none"><span class="nav-icon" data-icon="globe" data-icon-size="12"></span> 社区</a>' +
+   L454 - /* ---------- 广场 / 我的文章 ---------- */
+   L454 + /* ---------- 社区 / 我的文章 ---------- */
+   L484 - showToast('⚠️ 广场加载失败：' + e.message);
+   L484 + showToast('⚠️ 社区加载失败：' + e.message);
+   L910 - …entById('page-blog')){closeGsDropdown();openBlogDetail(" + n.id + ");}else{location.href='学习博客.html#note=" + n.id + "';}" };
+   L910 + …entById('page-blog')){closeGsDropdown();openBlogDetail(" + n.id + ");}else{location.href='社区.html#note=" + n.id + "';}" };
+   L1165 - else location.href = '学习博客.html#note=' + noteId;
+   L1165 + else location.href = '社区.html#note=' + noteId;
+   L1364 - '<button class="btn btn-outline" onclick="location.href=' + "'学习博客.html'" + '"><span class="nav-icon" data-icon="pen" data-icon-size="14"></span> 去写发贴</button></div></div>' +
+   L1364 + '<button class="btn btn-outline" onclick="location.href=' + "'社区.html'" + '"><span class="nav-icon" data-icon="pen" data-icon-size="14"></span> 去写发贴</button></div></div>' +
+   L1403 - …'<div onclick="location.href=' + "'央国企笔试.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:point
+   L1403 + …'<div onclick="location.href=' + "'行测.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"
+   L1453 - '<button class="btn btn-outline" onclick="location.href=' + "'学习博客.html'" + '"><span class="nav-icon" data-icon="pen" data-icon-size="14"></span> 去写发贴</button></div></div>' +
+   L1453 + '<button class="btn btn-outline" onclick="location.href=' + "'社区.html'" + '"><span class="nav-icon" data-icon="pen" data-icon-size="14"></span> 去写发贴</button></div></div>' +
+   L1492 - …'<div onclick="location.href=' + "'央国企笔试.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:point
+   L1492 + …'<div onclick="location.href=' + "'行测.html'" + '" style="padding:12px;background:var(--bg);border-radius:10px;cursor:pointer"
+
+--- 四级经验分享.html : (无变化)
+========== 更多.html
+   L52 - <span class="nav-icon" data-icon="book-open"></span><span>四级备考</span>
+   L52 + <span class="nav-icon" data-icon="book-open"></span><span>英语</span>
+   L55 - <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span>
+   L55 + <span class="nav-icon" data-icon="pencil"></span><span>行测</span>
+   L58 - <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span>
+   L58 + <span class="nav-icon" data-icon="message-square"></span><span>表达</span>
+   L61 - <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span>
+   L61 + <span class="nav-icon" data-icon="handshake"></span><span>面测</span>
+   L64 - <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span>
+   L64 + <span class="nav-icon" data-icon="palette"></span><span>演示</span>
+   L68 - <span class="nav-icon" data-icon="globe"></span><span>广场</span>
+   L68 + <span class="nav-icon" data-icon="globe"></span><span>社区</span>
+   L221 - <span class="nav-icon" data-icon="book-open"></span><span>四级备考</span>
+   L221 + <span class="nav-icon" data-icon="book-open"></span><span>英语</span>
+   L224 - <span class="nav-icon" data-icon="pencil"></span><span>央国企笔试</span>
+   L224 + <span class="nav-icon" data-icon="pencil"></span><span>行测</span>
+   L227 - <span class="nav-icon" data-icon="message-square"></span><span>高情商表达</span>
+   L227 + <span class="nav-icon" data-icon="message-square"></span><span>表达</span>
+   L230 - <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span>
+   L230 + <span class="nav-icon" data-icon="handshake"></span><span>面测</span>
+   L233 - <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span>
+   L233 + <span class="nav-icon" data-icon="palette"></span><span>演示</span>
+   L237 - <span class="nav-icon" data-icon="globe"></span><span>广场</span>
+   L237 + <span class="nav-icon" data-icon="globe"></span><span>社区</span>
+   ...(其余省略，共 13 行变化)
+
+========== 设置.html
+   L36 - <span class="nav-icon" data-page-node-id="BHmKEzL3bp3sAD3CcGQyoD" data-icon="book-open"></span><span data-page-node-id="q9gZWnL1OGLzbJ1rHBYpbg">四级备考</span>
+   L36 + <span class="nav-icon" data-page-node-id="BHmKEzL3bp3sAD3CcGQyoD" data-icon="book-open"></span><span data-page-node-id="q9gZWnL1OGLzbJ1rHBYpbg">英语</span>
+   L39 - <span class="nav-icon" data-page-node-id="l21Y8gwnTQ3DloGLBCxsha" data-icon="pencil"></span><span data-page-node-id="AsoEegm27jKDAMOsMoA1jY">央国企笔试</span>
+   L39 + <span class="nav-icon" data-page-node-id="l21Y8gwnTQ3DloGLBCxsha" data-icon="pencil"></span><span data-page-node-id="AsoEegm27jKDAMOsMoA1jY">行测</span>
+   L46 - <span class="nav-icon" data-page-node-id="PdaI8EaPDGDmFxyfbpCNRU" data-icon="message-square"></span><span data-page-node-id="3ViTi1o59ozHrPYr8eGjol">高情商表达</span>
+   L46 + <span class="nav-icon" data-page-node-id="PdaI8EaPDGDmFxyfbpCNRU" data-icon="message-square"></span><span data-page-node-id="3ViTi1o59ozHrPYr8eGjol">表达</span>
+   L49 - <span class="nav-icon" data-page-node-id="lpyATX0Q8LhFN2SYhOxQLN" data-icon="handshake"></span><span data-page-node-id="yNYjQCsNUFjHQ9504rP4oy">商务礼仪面试</span>
+   L49 + <span class="nav-icon" data-page-node-id="lpyATX0Q8LhFN2SYhOxQLN" data-icon="handshake"></span><span data-page-node-id="yNYjQCsNUFjHQ9504rP4oy">面测</span>
+   L52 - <span class="nav-icon" data-page-node-id="9fBdF1DwtuEjxvbJFapEXD" data-icon="palette"></span><span data-page-node-id="gfATT8eA6DZxvyBLYOyXOz">PPT训练</span>
+   L52 + <span class="nav-icon" data-page-node-id="9fBdF1DwtuEjxvbJFapEXD" data-icon="palette"></span><span data-page-node-id="gfATT8eA6DZxvyBLYOyXOz">演示</span>
+   L56 - <span class="nav-icon" data-page-node-id="S7J9mnuXIauEdFtXjfGLqP" data-icon="globe"></span><span data-page-node-id="gAx8X58sva5egzFjqHvc7l">广场</span>
+   L56 + <span class="nav-icon" data-page-node-id="S7J9mnuXIauEdFtXjfGLqP" data-icon="globe"></span><span data-page-node-id="gAx8X58sva5egzFjqHvc7l">社区</span>
+   L211 - <div class="setting-name" data-page-node-id="WpWcgWwMajXt8tcrzELQ6B">广场编辑 / 阅读区字号</div>
+   L211 + <div class="setting-name" data-page-node-id="WpWcgWwMajXt8tcrzELQ6B">社区编辑 / 阅读区字号</div>
+   L212 - <div class="setting-desc" data-page-node-id="cCAWsqK883KGiSTI0gZeC6">只影响「广场」的编辑器输入区与实时预览区</div>
+   L212 + <div class="setting-desc" data-page-node-id="cCAWsqK883KGiSTI0gZeC6">只影响「社区」的编辑器输入区与实时预览区</div>
+   L250 - <div class="card-action" data-page-node-id="SQ0sBVQW9y1NenfDNWLbN5">广场编辑器自动套用</div>
+   L250 + <div class="card-action" data-page-node-id="SQ0sBVQW9y1NenfDNWLbN5">社区编辑器自动套用</div>
+   L857 - …e-node-id="mi6yoar3f5KakALoBUL75p">首页学习台(每日任务/专注计时/学习提醒) · 四级词汇(间隔重复) · 听说训练(情景口语/听力精听) · 四级备考(听力/口语/阅读/翻译) · 行测刷题 · 错题本 · 央国企笔试(行测/企业定向库/时政热点/真题模考/话题表达训练) · 面试题库 · 高情商表达 · 商务礼仪面试 
+   L857 + …e-node-id="mi6yoar3f5KakALoBUL75p">首页学习台(每日任务/专注计时/学习提醒) · 四级词汇(间隔重复) · 听说训练(情景口语/听力精听) · 英语(听力/口语/阅读/翻译) · 行测刷题 · 错题本 · 行测(企业定向库/时政热点/真题模考/话题表达训练) · 面试题库 · 表达 · 面测 · 演示(设计基础/版式库/案
+   L860 - …(--xt-font-sm)" data-page-node-id="sA7LgG0fY7DvUL0lu3V6vv">版本 20260913k · 更新日期 2026-09-13：四级备考「听力训练」升级为页内面板（听力精听+口语跟读双模块，场景台词扩充）· 高情商表达（案例拆解/i人伙伴团/角色扮演）、商务礼仪面试（面试准备/面试后）、PPT训练（设计基础
+   L860 + …(--xt-font-sm)" data-page-node-id="sA7LgG0fY7DvUL0lu3V6vv">版本 20260913k · 更新日期 2026-09-13：英语「听力训练」升级为页内面板（听力精听+口语跟读双模块，场景台词扩充）· 表达（案例拆解/i人伙伴团/角色扮演）、面测（面试准备/面试后）、演示（设计基础/实战模板库/技巧提升）
+   L1158 - { id: 'cet', name: '四级备考' }, { id: 'exam', name: '央国企笔试' },
+   L1158 + { id: 'cet', name: '英语' }, { id: 'exam', name: '行测' },
+   ...(其余省略，共 14 行变化)

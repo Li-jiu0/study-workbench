@@ -1,0 +1,17 @@
+R91-F patch log for assets/xt-update.js
+file size before=38340  CRLF=0  LF_total=1094  pure_LF=1094  => NL=b'\n'
+[OK] helper: paintIcons() after rootId decl
+[OK] renderNew: paint after innerHTML
+[OK] renderLatest: paint after innerHTML
+[OK] renderStarting: paint after innerHTML
+[OK] renderError: paint after innerHTML
+[OK] applySettingsState new-btn
+[OK] applySettingsState latest-btn
+[OK] applySettingsState starting-btn
+[OK] applySettingsState error-btn
+[OK] startDownload btn
+[OK] restoreBtn
+file size after=39089  CRLF=0  LF_total=1114  pure_LF=1114
+[VERIFY] paintIcons(); call sites=10 (expect 10)
+[VERIFY] function paintIcons() definitions=1 (expect 1)
+RESULT=PASS

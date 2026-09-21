@@ -1,0 +1,66 @@
+=== 动态广场 出现处 ===
+  assets/app.js | ...color:#374151;line-height:1.7;margin-top:4px">四级备考（词汇+听说）· 行测刷题 · 申论刷题 · 错题本 · 央国企定向库 · 面试题库 · AI 模拟面试 · 时政热点 · 高情商表达 · 商务礼仪 · PPT 训练 · 万能金句 / 场景话术 · 动态广场 · 好友私信</div>' +...
+
+=== 动态.html 标题/侧栏 ===
+  7: <title>动态 · 星途</title>
+  72: <div class="topbar-title" id="topbarTitle">动态</div>
+
+=== 设置.html 855-862 ===
+  855:             <div style="margin-top:6px" data-page-node-id="BKe1rLTpXIQ0FqOJ4JZE9P">一款面向在校生与求职者的<b data-page-node-id="UMbLDaqutazwD7WYrwd692">全流程学习与备考工具箱</b>：从日常打卡、词汇记忆到刷题模考、面试表达，再到 AI 辅助与社区互动，学习记录默认保存在本机浏览器；登录服务器后，发贴/私信/AI 记录可多端同步（数据库存服务器）。</div>
+  856:             <div style="margin-top:8px;font-weight:600;color:var(--text)" data-page-node-id="MjyN21aAMXf0HRWdcpw2ur"><span class="nav-icon" data-icon="inbox" data-icon-size="16"></span> 学习模块</div>
+  857:             <div data-page-node-id="mi6yoar3f5KakALoBUL75p">首页学习台(每日任务/专注计时/学习提醒) · 四级词汇(间隔重复) · 听说训练(情景口语/听力精听) · 四级备考(听力/口语/阅读/翻译) · 行测刷题 · 错题本 · 央国企笔试(行测/企业定向库/时政热点/真题模考/话题表达训练) · 面试题库 · 高情商表达 · 商务礼仪面试 · PPT训练(设计基础/版式库/案例拆解/实战模板) · 万能金句/场景话术 · 广场(发贴/评论/点赞) · 好友私信</div>
+  858:             <div style="margin-top:8px;font-weight:600;color:var(--text)" data-page-node-id="3Go179ureNmpTmQEArBbZo"><span class="nav-icon" data-icon="wrench" data-icon-size="16"></span> 便捷能力</div>
+  859:             <div data-page-node-id="vsfN2AkFnyTSLv1V5dZjUJ">导入题库(Word/Excel/文本选目标导入) · 各题库“我的题库”自建/导入导出 · AI(多模型/用量/记录/读发贴) · 学习统计 · 数据备份与迁移 · 发贴回收站 · Markdown 导出 · 外观(主题跟随系统+配色皮肤) · 数据总览 · 每日学习提醒 · 账号与隐私安全 · 反馈直达创作者</div>
+  860:             <div style="margin-top:10px;border-top:1px dashed var(--border);padding-top:8px;color:var(--text-muted);font-size:var(--xt-font-sm)" data-page-node-id="sA7LgG0fY7DvUL0lu3V6vv">版本 20260913k · 更新日期 2026-09-13：四级备考「听力训练」升级为页内面板（听力精听+口语跟读双模块，场景台词扩充）· 高情商表达（案例拆解/i人伙伴团/角色扮演）、商务礼仪面试（面试准备/面试后）、PPT训练（设计基础/实战模板库/技巧提升）由弹窗改页面并重构版式 · 广场评论支持回复嵌套与收起展开、修复评论头像显示 · 我的文章改列表导航、分类筛选改下拉 · 个人中心学习偏好支持页内直设、修复发
+  861:             <div style="margin-top:14px;text-align:right;font-style:italic;color:var(--text-secondary)" data-page-node-id="GnUdRryGLdmU50l8qbYfl5">—— 小叶子</div>
+  862:           </div>
+  863:         </div>
+  864:         </section>
+  865:       </div>
+
+=== 更多.html 相关片段 ===
+  60:       <div class="nav-item" data-page="interview">
+  61:         <span class="nav-icon" data-icon="handshake"></span><span>商务礼仪面试</span>
+  62:       </div>
+  63:       <div class="nav-item" data-page="ppt">
+  64:         <span class="nav-icon" data-icon="palette"></span><span>PPT训练</span>
+  65:       </div>
+  66:       <div class="nav-section">创作</div>
+  67:       <div class="nav-item" data-page="blog">
+  68:         <span class="nav-icon" data-icon="globe"></span><span>广场</span>
+  69:       </div>
+  70:       <div class="nav-section">互动</div>
+  125:              W3-T1（2026-09-15）：在「常用」组补「工具箱」入口（此前更多页无任何指向 工具.html 的卡片）。
+  126:              2026-09-15 用户反馈：分组收放撤除，恢复直接平铺；
+  127:              2026-09-16 用户反馈：分组小标题删除，卡片直接平铺（与个人中心页一致） -->
+  128:         <div class="morepage-list">
+  129:           <!-- 2026-09-16 用户反馈：学习统计入口卡删除（openBlogStats 不再从更多页直达）。 -->
+  130:           <div class="morepage-card morepage-list-item" onclick="gotoBlogMine()">
+  131:             <div class="mpc-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div>
+  132:             <div class="mpc-title">互动广场</div>
+  133:             <div class="mpc-desc">我的发贴 · 草稿 · 收藏</div>
+  134:           </div>
+  235:       <div class="nav-section">创作</div>
+  236:       <div class="nav-item" data-page="blog">
+  237:         <span class="nav-icon" data-icon="globe"></span><span>广场</span>
+  238:       </div>
+
+=== 6 个待改名页面 title/topbar/nav ===
+--- 学习博客.html
+   7: <title>广场 · 星途</title>
+   151: <div class="topbar-title" id="topbarTitle">广场</div>
+--- 四级备考.html
+   7: <title>四级备考 · 星途</title>
+   98: <div class="topbar-title" id="topbarTitle">四级备考</div>
+--- 央国企笔试.html
+   7: <title>央国企笔试备考 · 星途</title>
+   82: <div class="topbar-title" id="topbarTitle">央国企笔试备考</div>
+--- 高情商表达.html
+   7: <title>高情商表达 · 星途</title>
+   172: <div class="topbar-title" id="topbarTitle">高情商表达</div>
+--- 商务礼仪面试.html
+   7: <title>商务礼仪及面试 · 星途</title>
+   82: <div class="topbar-title" id="topbarTitle">商务礼仪及面试</div>
+--- PPT训练.html
+   7: <title>PPT训练 · 星途</title>
+   106: <div class="topbar-title" id="topbarTitle">PPT训练</div>

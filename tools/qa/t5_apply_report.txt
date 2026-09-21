@@ -1,0 +1,50 @@
+MODE = APPLY
+扫描文件数 = 91（根 html + assets js，跳过 ai-config.js）
+
+=== 文件重命名 ===
+  OK 学习博客.html -> 社区.html
+  OK 四级备考.html -> 英语.html
+  OK 央国企笔试.html -> 行测.html
+  OK 高情商表达.html -> 表达.html
+  OK 商务礼仪面试.html -> 面测.html
+  OK PPT训练.html -> 演示.html
+
+=== 保护（未改动，原样保留）===
+  文化广场，广场的一边             : 1
+  互动广场                   : 36
+  笔记广场                   : 1
+  文化广场                   : 1
+  某市中心广场                 : 2
+  现沿广场                   : 1
+  社区广场                   : 1
+  文旅项目大广场                : 1
+  四级备考四步法                : 1
+  英语四级备考                 : 2
+  保护合计            : 47
+
+=== 例外预处理 ===
+  央国企笔试(行测/          -> 行测(            : 1
+  行测、央国企笔试等          -> 行测等            : 1
+
+=== 文件名引用替换 ===
+  学习博客.html          -> 社区.html        : 23
+  四级备考.html          -> 英语.html        : 15
+  央国企笔试.html         -> 行测.html        : 12
+  高情商表达.html         -> 表达.html        : 4
+  商务礼仪面试.html        -> 面测.html        : 7
+  PPT训练.html         -> 演示.html        : 9
+  文件名替换合计      : 70
+
+=== 展示文案替换 ===
+  商务礼仪及面试          -> 面测             : 3
+  商务礼仪面试           -> 面测             : 41
+  高情商表达            -> 表达             : 52
+  四级备考             -> 英语             : 52
+  央国企笔试            -> 行测             : 47
+  PPT 训练           -> 演示             : 3
+  PPT训练            -> 演示             : 42
+  广场               -> 社区             : 61
+  展示文案替换合计    : 301
+
+=== 被修改文件（52）===
+  AI.html, PPT案例拆解.html, PPT版式库.html, PPT训练.html, blog_wechat.html, mock_exam.html, 万能金句库.html, 个人中心.html, 企业定向库.html, 动态.html, 商务礼仪.html, 商务礼仪面试.html, 四级备考.html, 四级词汇.html, 场景话术库.html, 央国企笔试.html, 学习博客.html, 学习工作台.html, 学途.html, 工具.html, 时政热点.html, 更多.html, 申论刷题.html, 私聊.html, 管理员.html, 行测刷题.html, 设置.html, 错题本.html, 面试题库.html, 高情商表达.html, assets\ai-page.js, assets\ai-presets.js, assets\api.js, assets\app.js, assets\cet-read.js, assets\cet-translate.js, assets\chat-local.js, assets\comm-cases.js, assets\data-exam-company.js, assets\design-class.js, assets\group-discussion.js, assets\mini-cet.js, assets\mini-comm.js, assets\mini-exam.js, assets\mini-interview.js, assets\mini-ppt.js, assets\ppt-tips.js, assets\ppt-works.js, assets\qbank.js, assets\roleplay.js, assets\topic-express.js, assets\tpl-preview.js

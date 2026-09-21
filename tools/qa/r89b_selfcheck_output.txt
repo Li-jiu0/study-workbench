@@ -1,0 +1,34 @@
+=== 行尾 / 体积复核 ===
+地区选择.html                  bytes=19110   CRLF=409   loneLF=0   loneCR=0  
+朋友圈发布.html                 bytes=12612   CRLF=170   loneLF=0   loneCR=0  
+assets/xt-region.js        bytes=46800   CRLF=0     loneLF=924 loneCR=0  
+assets/xt-moments.js       bytes=58723   CRLF=1182  loneLF=0   loneCR=0  
+
+=== HTML 结构配对自检 ===
+-- 地区选择.html
+   <!--       0    -->        0     OK
+   <div       22   </div      22    OK
+   <style     1    </style    1     OK
+   <script    3    </script   3     OK
+   <button    2    </button   2     OK
+-- 朋友圈发布.html
+   <!--       11   -->        11    OK
+   <div       101  </div      101   OK
+   <style     0    </style    0     OK
+   <script    21   </script   21    OK
+   <button    4    </button   4     OK
+
+=== 禁用语法扫描（改动文件） ===
+assets/xt-region.js        banned-hits=17 [('\\?\\.', 456), ('\\?\\?', 456), ('(?<![=!<>])\\*\\*', 239), ('(?<![=!<>])\\*\\*', 252), ('(?<![=!<>])\\*\\*', 278), ('(?<![=!<>])\\*\\*', 373), ('(?<![=!<>])\\*\\*', 402), ('(?<![=!<>])\\*\\*', 464), ('(?<![=!<>])\\*\\*', 472), ('(?<![=!<>])\\*\\*', 479), ('(?<![=!<>])\\*\\*', 486), ('(?<![=!<>])\\*\\*', 503)]
+assets/xt-moments.js       banned-hits=3 [('(?<![=!<>])\\*\\*', 659), ('(?<![=!<>])\\*\\*', 669), ('(?<![=!<>])\\*\\*', 681)]
+
+=== 坐标泄露扫描（不得出现经纬度明文） ===
+assets/xt-region.js        经纬度字样=3
+assets/xt-moments.js       经纬度字样=0
+地区选择.html                  经纬度字样=0
+
+=== 原生弹窗扫描（禁止 prompt/alert/confirm） ===
+地区选择.html                  prompt/alert=[]
+朋友圈发布.html                 prompt/alert=[]
+assets/xt-region.js        prompt/alert=[]
+assets/xt-moments.js       prompt/alert=[]
