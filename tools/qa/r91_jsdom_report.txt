@@ -1,0 +1,6 @@
+[home] root=true chatCell=true badge="2" qaErrors=[] jsdomErrors=[]
+[chat] {"chatViewOpen":true,"m5Header":true,"localSessionShown":true,"noSrvNote":true,"quicktipNew":true,"historyCalls":[],"totalCalls":3}
+[calls] ["GET /api/auth/me","GET /api/notifications","GET /api/chat/unread"]
+HOME => PASS
+CHAT => PASS
+JSDOM_ALL => PASS

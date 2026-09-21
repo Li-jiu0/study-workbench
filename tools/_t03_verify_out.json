@@ -1,0 +1,115 @@
+{
+ "catSchema": {
+  "js": [
+   329,
+   413,
+   414,
+   440,
+   442,
+   485,
+   488,
+   510
+  ],
+  "html": []
+ },
+ "hideUnavailable": {
+  "js": [
+   330,
+   413,
+   415,
+   1571,
+   1572,
+   1576,
+   1778,
+   1785,
+   1812,
+   1815,
+   1817
+  ],
+  "html": []
+ },
+ "lastSort": {
+  "js": [
+   331,
+   335,
+   413,
+   416,
+   1606,
+   1609,
+   1778,
+   1781
+  ],
+  "html": []
+ },
+ "xt:health-changed": {
+  "js": [
+   1040
+  ],
+  "html": []
+ },
+ "#setSortCat": {
+  "js": [],
+  "html": [
+   768
+  ]
+ },
+ "#setSortCatInner": {
+  "js": [],
+  "html": [
+   769
+  ]
+ },
+ "#setUsageRoot": {
+  "js": [],
+  "html": [
+   734
+  ]
+ },
+ "#setHideUnavail": {
+  "js": [],
+  "html": [
+   773
+  ]
+ },
+ "BUILTIN_CATS_entries": 12,
+ "CAT_OF_TYPE_keys": 14,
+ "ALL_TYPE_KEYS": [
+  "general",
+  "reasoning",
+  "math",
+  "image",
+  "imagegen",
+  "translate",
+  "longtext",
+  "creative",
+  "interview",
+  "audio",
+  "embedding",
+  "rerank",
+  "video",
+  "3d"
+ ],
+ "RESERVED_KEYS_line": "var RESERVED_KEYS = [];",
+ "FAMILY_ORDER_line": "var FAMILY_ORDER = ['text', 'vision', 'audio', 'retrieval', 'video', 'three_d'];",
+ "html_script_order": [
+  [
+   "ai-cap-translate.js",
+   40073
+  ],
+  [
+   "ai-cap-video.js",
+   40132
+  ],
+  [
+   "ai-cap-3d.js",
+   40187
+  ],
+  [
+   "ai-settings.js",
+   40237
+  ]
+ ],
+ "usageRoot_first": true,
+ "legacy_translate_cleanup": [],
+ "chip_hidden_translate": []
+}

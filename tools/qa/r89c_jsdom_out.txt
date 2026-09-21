@@ -1,0 +1,2 @@
+jsdom assertions: 25/25 passed
+ALL PASS

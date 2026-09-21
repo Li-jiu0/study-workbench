@@ -1,0 +1,930 @@
+===== FUNCTIONAL-UI(高置信) (118) =====
+AI.html:725  <button type="button" class="ai-img-remove" id="aiImgRemove" aria-label="移除图片">✕</button>
+assets/ai-page.js:386  '<button type="button" data-mem-del="' + i + '" title="删除" style="flex:none;border:none;background:none;color:#e5484d;cursor:pointer;font-size:12px;padding:0 2px;">✕</but
+assets/ai-page.js:877  '<button type="button" id="aiAudioRemove" title="移除" style="border:none;background:none;color:#e5484d;cursor:pointer;font-size:12px;padding:0 2px;">✕</button>';
+assets/ai-page.js:1305  '<button class="ai-hist-del" title="删除">✕</button>';
+assets/api.js:321  var actionBtns = '<button class="btn btn-outline" onclick="location.href=' + "'个人中心.html'" + '">← 回我的主页</button>';
+assets/api.js:713  <button class="ni-btn ${fav ? 'active' : ''}" onclick="toggleNoteFavorite()">${fav ? '★ 已收藏' : '☆ 收藏'}</button>
+assets/app.js:3320  '<div class="ai-partner-picker-head"><div class="ai-partner-picker-title">选择模型（与 AI 页同步）</div><div class="ai-close" onclick="closeAiModelPicker()">✕</div></div>' +
+assets/app.js:3536  '<div class="ai-partner-picker-head"><div class="ai-partner-picker-title">换个伙伴</div><div class="ai-close" onclick="closeAiPartnerPicker()">✕</div></div>' +
+assets/app.js:4431  + (m.isMine ? '<div class="bd-del" title="删除" onclick="event.stopPropagation();deleteBoardMsg(' + m.id + ')">✕</div>' : '');
+assets/app.js:5602  '<button class="btn btn-outline" onclick="window.__focusClose&&window.__focusClose()">✕ 关闭</button></div></div>';
+assets/app.js:5930  <button class="btn btn-outline btn-sm" style="margin-left:auto;padding:4px 12px;font-size:12px" onclick="resetViewedProgress('etiquette');appData.dailyQueues.etiquette={d
+assets/app.js:5997  <button class="btn btn-outline btn-sm" style="margin-left:auto;padding:4px 12px;font-size:12px" onclick="resetViewedProgress('ivQuestions');appData.dailyQueues.ivQuestion
+assets/app.js:7288  '<div class="card-action" style="font-size:12px" onclick="toggleHomeEdit()">' + (window.__homeEdit ? '✓ 完成' : '✎ 自选/排序') + '</div></div>' +
+assets/app.js:7768  <button class="ni-btn ${fav ? 'active' : ''}" onclick="toggleNoteFavorite()">${fav ? '★ 已收藏' : '☆ 收藏'}</button>
+assets/chat-local.js:1557  '<div style="cursor:pointer;color:#999;font-size:18px" onclick="this.closest(\'.im-overlay\').remove()">✕</div></div>' +
+assets/chat-local.js:1563  '<button class="btn btn-danger" id="imDelConfirmBtn">🗑 删除</button></div>' +
+assets/chat-local.js:1627  '<div style="font-size:20px;cursor:pointer;color:#999" onclick="this.closest(\'div[style*=fixed]\').remove()">✕</div></div>' +
+assets/chat-local.js:2219  '<span class="im-iv-btn" data-act="close">✕</span>' +
+assets/chat-local.js:2836  act = '<button class="im-af-btn" onclick="window.imAfOpenChat(' + u.id + ')">💬 发消息</button>';
+assets/chat-local.js:2842  act = '<button class="im-af-btn" onclick="window.imAfSendRequest(' + u.id + ',this)">➕ 添加好友</button>';
+assets/chat-local.js:3226  return '<div class="im-gsel">' + renderAvatar(f.avatarUrl || f.avatar, imFriendNameOf(f, '')) + '<span onclick="window.imToggleGroupMember(' + uid + ')">✕</span></div>';
+assets/chat-local.js:3381  '<div style="cursor:pointer;color:#999;font-size:var(--xt-font-2xl)" onclick="imCloseUserProfile()">✕</div></div>' +
+assets/chat-local.js:3510  '<div style="cursor:pointer;color:#999;font-size:18px" onclick="imCloseRemarkEditor()">✕</div></div>' +
+assets/chat-local.js:3679  '<button class="btn im-gs-danger" onclick="imQuitGroup()">' + (isOwner ? '🗑️ 解散群聊' : '🚪 退出群聊') + '</button>' +
+assets/chat-local.js:3928  '<span class="im-emoji-fav' + (fav ? ' on' : '') + '" onclick="event.stopPropagation();window.imFavEmoji(\'' + code + '\')">🌟</span></div>';
+assets/group-discussion.js:115  <div class="gd-arrow">→</div>
+assets/group-discussion.js:125  <button class="gd-btn gd-btn-primary" onclick="GroupDiscussion.random()">🎲 随机抽题</button>
+assets/group-discussion.js:164  <button class="gd-back" onclick="GroupDiscussion.back()">← 换题</button>
+assets/group-discussion.js:180  <span class="gd-char-chip-avatar">🧑</span>
+assets/group-discussion.js:191  <button class="gd-btn gd-btn-outline" onclick="GroupDiscussion.nextRound()">➡️ 下一轮</button>
+assets/group-discussion.js:192  <button class="gd-btn gd-btn-warn" onclick="GroupDiscussion.endDiscussion()">🏁 结束讨论</button>
+assets/group-discussion.js:254  <button class="gd-btn gd-btn-outline" onclick="GroupDiscussion.select('${currentTopic.id}')">🔄 再练一次</button>
+assets/group-discussion.js:255  <button class="gd-btn gd-btn-primary" onclick="GroupDiscussion.random()">🎲 下一个题目</button>
+assets/group-discussion.js:256  <button class="gd-btn gd-btn-outline" onclick="GroupDiscussion.back()">📋 返回题目</button>
+assets/group-discussion.js:281  <button class="gd-close" onclick="GroupDiscussion.close()">✕</button>
+assets/i-partner.js:1046  <button class="ip-back" onclick="IPartner.back()">← 换个伙伴</button>
+assets/i-partner.js:1091  <button class="ip-close" onclick="IPartner.close()">✕</button>
+assets/importer.js:327  '<button class="btn btn-primary" onclick="document.getElementById(\'impFile\').click()">📄 选择文件</button>' +
+assets/importer.js:369  '<button class="btn btn-outline" onclick="__impBackFile()">← 换文件</button>' +
+assets/importer.js:570  m.innerHTML = '<div class="imp-box"><div class="imp-head"><b>📥 导入题库</b><button class="imp-x" onclick="__impClose()">✕</button></div><div class="imp-body" id="impBody"></d
+assets/mini.js:90  m.innerHTML = '<div class="mz-box"><div class="mz-head"><b>' + esc(S.cat.t) + '</b><button class="mz-x" onclick="openMiniQuiz.__close()">✕</button></div>' +
+assets/mini.js:127  acts.innerHTML = last ? '<button class="mz-btn ghost" onclick="openMiniQuiz.__again()">↺ 再来一组</button><button class="mz-btn primary" onclick="openMiniQuiz.__finish()">查看成
+assets/mini.js:147  acts.innerHTML = '<button class="mz-btn ghost" onclick="openMiniQuiz.__again()">↺ 再来一组</button><button class="mz-btn primary" onclick="openMiniQuiz.__close()">完成</button>
+assets/qbank.js:165  m.innerHTML = '<div class="qb-box"><div class="qb-head"><b>' + esc(cfg.label) + ' · 我的题库</b><button class="qb-x" onclick="window.__qbClose()">✕</button></div>' +
+assets/qbank.js:178  var spk = (cur.key === 'cet' && it.word) ? '<button class="btn btn-outline btn-sm" style="margin-right:6px" onclick="event.stopPropagation();' + (typeof window.speakWordN
+assets/qbank.js:187  '<button class="btn btn-outline btn-sm" onclick="window.__qbImport()">📥 导入 JSON</button>' +
+assets/qbank.js:188  '<button class="btn btn-outline btn-sm" onclick="window.__qbExport(1)">📤 导出(自定义)</button>' +
+assets/qbank.js:189  '<button class="btn btn-outline btn-sm" onclick="window.__qbExport(0)">📤 导出(完整题库)</button>' +
+assets/qbank.js:202  '<button class="btn btn-outline btn-sm" onclick="window.__qbBack()">← 返回</button>' +
+assets/tpl-preview.js:1213  '<button type="button" class="xtpl-btn" data-act="close"><em>← 返回</em></button>' +
+assets/voiceplayer.js:654  '<button class="y" onclick="openVoiceTrain.__mark(0)">😕 没听懂</button>' +
+assets/voiceplayer.js:655  '<button class="y solid" onclick="openVoiceTrain.__mark(1)">😊 听懂了</button>' +
+assets/voiceplayer.js:715  '<button class="vp-back" onclick="openVoiceTrain.__close()">← 返回</button>' +
+assets/xt-moments.js:187  '<span class="xtm-act' + (m.likedByMe ? ' on' : '') + '" onclick="XTM.like(' + m.id + ')">' + (m.likedByMe ? ico('heart', 13, '❤') + ' 取消' : ico('heart', 13, '🤍') + ' 赞')
+assets/xt-moments.js:188  '<span class="xtm-act" onclick="XTM.panel(' + m.id + ')">' + ico('message-circle', 13, '💬') + ' 评论</span>' +
+assets/xt-moments.js:213  '<div class="xtm-sheet-hd"><span id="xtmPanelTitle">互动</span><span class="xtm-sheet-x" onclick="XTM.closePanel()">' + ico('close', 18, '✕') + '</span></div>' +
+assets/xt-moments.js:344  el.innerHTML = '<span class="xtm-viewer-x" onclick="XTM.closeViewer()">' + ico('close', 20, '✕') + '</span>' +
+assets/xt-moments.js:380  '<div class="xtm-sheet-hd"><span>' + esc(title) + '</span><span class="xtm-sheet-x" onclick="XTM.closeInput()">' + ico('close', 18, '✕') + '</span></div>' +
+assets/xt-moments.js:408  '<div class="xtm-sheet-hd"><span>互动通知</span><span class="xtm-sheet-x" onclick="XTM.closeNotif()">' + ico('close', 18, '✕') + '</span></div>' +
+assets/xt-moments.js:440  '<div class="xtm-sheet-hd"><span>' + esc(title) + '</span><span class="xtm-sheet-x" onclick="XTM.closePicker()">' + ico('close', 18, '✕') + '</span></div>' +
+assets/xt-moments.js:712  '<div class="xtm-sheet-hd"><span>视频</span><span class="xtm-sheet-x" onclick="XTM.closeVideoSheet()">' + ico('close', 18, '✕') + '</span></div>' +
+assets/xt-moments.js:714  '<div class="xtm-picker-row" id="xtmVidFromLocal"><div class="xtm-picker-nm">' + ico('upload', 16, '⬆') + ' 从本机选择视频</div><div class="xtm-picker-ck"></div></div>' +
+assets/xt-moments.js:715  '<div class="xtm-picker-row" id="xtmVidFromLink"><div class="xtm-picker-nm">' + ico('file', 16, '🔗') + ' 粘贴视频链接</div><div class="xtm-picker-ck"></div></div>' +
+assets/xt-moments.js:775  '<div class="xtm-pub-cell-del" onclick="XTM.removePicked(' + i + ')">' + ico('close', 16, '✕') + '</div>' +
+assets/xt-moments.js:780  '<div class="xtm-pub-cell-del" onclick="XTM.removeVideo()">' + ico('close', 16, '✕') + '</div></div>';
+assets/xt-moments.js:831  '<div class="xtm-sheet-hd"><span>谁可以看</span><span class="xtm-sheet-x" onclick="XTM.closeVis()">' + ico('close', 18, '✕') + '</span></div>' +
+assets/xt-update.js:679  '<div class="xt-up-arrow">→</div>' +
+关于.html:161  <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='更多.html'}" title="返回" aria-label="返回">←</button>
+好友申请.html:112  if (u.isFriend) act = '<button class="af-btn" onclick="afOpenChat(' + u.id + ')">💬 发消息</button>';
+好友申请.html:114  else act = '<button class="af-btn" onclick="addFriend(' + u.id + ',' + i + ')" id="addBtn' + i + '">➕ 添加好友</button>';
+学习概括.html:205  <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='更多.html'}" title="返回" aria-label="返回">←</button>
+学途.html:276  '<span class="t-btn' + (dn ? ' on' : '') + '">' + (dn ? '✅ 完成' : '开始 →') + '</span></div>';
+学途.html:293  '<div style="margin-top:12px"><button class="xt-btn sm" onclick="goStudy(\'vocab\',\'' + MODULE_URLS.vocab + '\')">🚀 开始背词</button>' +
+学途.html:294  '<button class="xt-btn sm ghost" style="margin-left:8px" onclick="location.href=\'' + MODULE_URLS.vocab + '\'">📖 词汇详情</button></div>' +
+学途.html:302  '<div class="xt-q" onclick="goStudy(\'vocab\',\'' + MODULE_URLS.vocab + '\')"><div class="qi">📖</div><div class="qn">背单词</div></div>' +
+学途.html:303  '<div class="xt-q" onclick="xtListen()"><div class="qi">🎧</div><div class="qn">听力</div></div>' +
+学途.html:304  '<div class="xt-q" onclick="goStudy(\'exam\',\'' + MODULE_URLS.exam + '\')"><div class="qi">📝</div><div class="qn">刷题</div></div>' +
+学途.html:305  '<div class="xt-q" onclick="location.href=\'' + MODULE_URLS.blog + '\'"><div class="qi">✍️</div><div class="qn">写笔记</div></div>' +
+学途.html:339  '<span class="m-ar" style="color:var(--danger)" onclick="event.stopPropagation();xtDelSubject(' + i + ')">✕</span></div>';
+学途.html:349  '<button class="xt-btn sm" onclick="goStudy(\'vocab\',\'' + MODULE_URLS.vocab + '\')">📖 顺序背词</button>' +
+学途.html:350  '<button class="xt-btn sm ghost" onclick="location.href=\'' + MODULE_URLS.vocab + '\'">🔄 艾宾浩斯复习</button>' +
+学途.html:351  '<button class="xt-btn sm ghost" onclick="location.href=\'' + MODULE_URLS.vocab + '\'">🔊 听音辨词</button>' +
+学途.html:444  '<div class="xt-card-title">🔴 ' + wq + ' 道错题' + (due > 0 ? ' · ' + due + ' 道待复习' : '') + '<span class="more" onclick="goStudy(\'exam\',\'' + MODULE_URLS.exam + '\')">去刷题 
+学途.html:493  '<div class="xt-card"><div class="xt-card-title">📁 我的笔记本</div><div class="xt-chip-row">' + chipHtml + '</div></div>' +
+学途.html:496  '<button class="xt-btn" style="width:100%;margin-top:10px" onclick="location.href=\'社区.html\'">✍️ 写笔记</button>' +
+学途.html:533  '<button class="g-del" onclick="xtSetGoal(' + gi + ')">✏️</button>' +
+学途.html:534  '<button class="g-del" onclick="xtDelGoal(' + gi + ')">🗑</button></div>';
+学途.html:546  '<button class="xt-btn sm ghost" onclick="location.href=\'个人中心.html\'">👤 个人中心</button>' +
+学途.html:547  '<button class="xt-btn sm ghost" onclick="location.href=\'设置.html\'">⚙️ 设置</button>' +
+学途.html:550  '<div class="xt-card"><div class="xt-card-title">📊 学习统计</div><div class="xt-stat-row">' +
+学途.html:557  '<div class="xt-card"><div class="xt-card-title">🎯 我的目标<button class="xt-btn sm ghost" onclick="xtAddGoal()">＋</button></div>' + goalHtml + '</div>' +
+我的动态.html:41  <button class="xtm-nav-btn" id="xtmCam" type="button" title="发表朋友圈" aria-label="发表">📷</button>
+我的动态.html:47  <div class="xtm-bell" id="xtmBell" title="互动通知" role="button" aria-label="互动通知">🔔<span class="xtm-bell-dot" id="xtmBellDot" style="display:none"></span></div>
+我的动态.html:56  <div class="xtm-album-btn" id="xtmAlbumBtn">🖼 相册（灰度）</div>
+更多.html:110  <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='学习工作台.html'}" title="返回" aria-label="返回">←</button>
+更多.html:283  <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录">🧹</div>
+更多.html:284  <div class="ai-close" onclick="toggleAiPanel()" title="收起面板">✕</div>
+更多.html:289  <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()">➤</div>
+更新.html:193  <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='设置.html'}" title="返回设置" aria-label="返回设置">←</button>
+登录.html:161  <button type="button" class="eye" id="eyePass" onclick="togglePw('loginPass',this)" title="显示/隐藏密码" aria-label="显示或隐藏密码">👁</button>
+登录.html:172  <button type="button" class="eye" onclick="togglePw('loginConfirm',this)" aria-label="显示或隐藏密码">👁</button>
+私聊.html:109  <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0">🌙</div>
+私聊.html:150  <button class="im-icon" id="imBack" onclick="imBackList()" style="display:none" title="返回会话列表">←</button>
+私聊.html:197  <button class="im-icon" onclick="imCloseGroupSettings()" title="返回会话">←</button>
+私聊.html:199  <div style="cursor:pointer;color:#999;font-size:var(--xt-font-2xl)" onclick="imCloseGroupSettings()" title="返回会话">✕</div>
+私聊.html:216  <button class="ac-close" onclick="acClose()" title="返回" aria-label="返回">✕</button>
+私聊.html:312  <div class="im-modal-head"><div style="font-size:var(--xt-font-md);font-weight:700">发起群聊</div><div style="cursor:pointer;color:#999;font-size:var(--xt-font-2xl)" onclick=
+私聊.html:352  <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录">🧹</div>
+私聊.html:353  <div class="ai-close" onclick="toggleAiPanel()" title="收起面板">✕</div>
+私聊.html:358  <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()">➤</div>
+管理员.html:118  <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='学习工作台.html'}" title="返回" aria-label="返回">←</button>
+管理员.html:119  <div class="morepage-title"><span class="nav-icon" data-icon="shield" data-icon-size="18">🛡️</span> 管理后台</div>
+管理员.html:284  <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录">🧹</div>
+管理员.html:285  <div class="ai-close" onclick="toggleAiPanel()" title="收起面板">✕</div>
+管理员.html:290  <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()">➤</div>
+表达.html:314  <button class="gq-view-back" onclick="closeGqCasesView()">← 返回</button>
+表达.html:324  <button class="gq-view-back" onclick="closeGqIpartnerView()">← 返回</button>
+赞助.html:161  <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='更多.html'}" title="返回" aria-label="返回">←</button>
+
+===== UNSURE(存疑) (806) =====
+AI.html:758  <span class="ai-mp-add-ic">⚙</span>
+AI.html:918  <b>🤖 自动选模型</b>：默认「自动（推荐）」会按问题类型挑最合适的模型——数学/推理题走 DeepSeek-R1，英语翻译走混元 MT，发图提问走视觉模型，其余走快速通用模型。你也可以手动指定任一模型。
+AI.html:921  <b>📊 倍率</b>：每个模型右侧的倍率是本次消耗相对基准的系数（如 2x 表示消耗约两倍）。倍率越高，能力通常越强、额度消耗也越快。
+AI.html:924  <b>🚀 MAX 模式</b>：把单次回答的输出上限提到 4000 tokens，写长文、批改申论、详细讲题时开启；日常问答关闭即可省额度。
+AI.html:927  <b>🧠 深度思考</b>：开启后强制走推理模型，会先展开推导再给结论，适合数量关系、资料分析这类题；它与手动选模型互斥（选模型会自动退出深度思考）。
+AI.html:930  <b>🖼️ 拍题</b>：点回形针上传题目照片，自动走视觉模型识别并解答。
+AI.html:933  <b>💬 对话与历史</b>：左侧是历史对话，随时切回继续问；顶部「＋」直接开新对话，旧对话自动保存。回答底部会标注「由 XXX 回答」，方便你确认实际用的是哪个模型。
+AI.html:936  <b>🔑 Key 说明</b>：不填 Key 也能直接用（内置公共额度）；填了自己的 Key 会优先使用，Key 只存在你本机浏览器里。
+AI模拟面试.html:732  → submitting（提交）→ reviewing（点评）→ 终态 eval（评定报告）
+ai-settings.html:819  → 弹出「当前环境不支持连通性检测」。补上底座引用即可。 -->
+assets/ai-config.js:913  fast: { label: "⚡快速模式", chain: ["ark-v4-flash", "ark-doubao-mini", "ark-lite-260428", "glm-4.7", "qf-ernie-32k", "gm-flash-lite", "or-auto"] },
+assets/ai-config.js:914  balanced: { label: "⚖均衡模式", chain: ["ark-v4-pro", "ark-turbo-260628", "glm-4.7", "qf-ernie-128k", "gm-flash", "or-nemotron-super"] },
+assets/ai-config.js:915  ultimate: { label: "🏆极致模式", chain: ["ark-doubao-pro", "ark-evolving", "or-nemotron-ultra", "ark-v4-pro", "ark-glm-5.2", "gm-flash", "qf-ernie-128k"] }
+assets/ai-page.js:79  'ark-v4-flash': { platform: "火山方舟", params: "", type: "通用对话", stars: '★★★', speed: "快", advantage: "响应快，额度每天 200 万 token", applicable: "日常问答、快速解题" },
+assets/ai-page.js:80  'ark-doubao-mini': { platform: "火山方舟", params: "", type: "通用对话", stars: '★★★', speed: "快", advantage: "豆包轻量模型，响应快，额度每天 200 万 token", applicable: "日常问答、快速解题" },
+assets/ai-page.js:81  'ark-v4-1-flash': { platform: "火山方舟", params: "", type: "通用对话（推理型）", stars: '★★★★', speed: "快", advantage: "推理型，maxTokens 需 ≥2000；额度每天 200 万 token", applicable: "需要推理的问答、
+assets/ai-page.js:82  'ark-v4-pro': { platform: "火山方舟", params: "", type: "推理增强", stars: '★★★★★', speed: "中", advantage: "推理能力更强，额度每天 200 万 token", applicable: "复杂推理、长链思考" },
+assets/ai-page.js:83  'ark-doubao-pro': { platform: "火山方舟", params: "", type: "通用对话（创作/长文本）", stars: '★★★★★', speed: "中", advantage: "创作与长文本能力较强，额度每天 200 万 token", applicable: "文案创作、长文本处理" },
+assets/ai-page.js:84  'ark-glm-flash': { platform: "火山方舟", params: "", type: "通用对话", stars: '★★★★', speed: "中", advantage: "GLM 最新代免费模型，额度每天 200 万 token", applicable: "日常问答" },
+assets/ai-page.js:85  'ark-turbo-260628': { platform: "火山方舟", params: "", type: "通用对话（turbo）", stars: '★★★★', speed: "快", advantage: "速度与质量兼顾的 turbo 版；额度每天 200 万 token", applicable: "日常问答、均衡场景
+assets/ai-page.js:86  'ark-lite-260428': { platform: "火山方舟", params: "", type: "轻量对话（新版）", stars: '★★★', speed: "快", advantage: "最新轻量模型，响应极快；额度每天 200 万 token", applicable: "极简单问答、快速分类" },
+assets/ai-page.js:87  'ark-evolving': { platform: "火山方舟", params: "", type: "通用对话（持续进化）", stars: '★★★★★', speed: "中", advantage: "持续进化的最新模型，能力随版本增强；额度每天 200 万 token", applicable: "复杂问答、长链思考" }
+assets/ai-page.js:88  'ark-glm-5.2': { platform: "火山方舟", params: "", type: "通用对话", stars: '★★★★', speed: "中", advantage: "智谱 GLM-5.2（火山方舟免费通道），中文能力强；额度每天 200 万 token", applicable: "日常问答" },
+assets/ai-page.js:89  'ark-character-260628': { platform: "火山方舟", params: "", type: "角色扮演（新版）", stars: '★★★★', speed: "中", advantage: "角色扮演与人设对话优化；额度每天 200 万 token", applicable: "角色扮演、情景对话、面试模
+assets/ai-page.js:90  'ark-character-251128': { platform: "火山方舟", params: "", type: "角色扮演（旧版）", stars: '★★★', speed: "中", advantage: "旧版角色模型；建议优先使用新版", applicable: "角色扮演（旧版兼容）" },
+assets/ai-page.js:91  'ark-code-preview': { platform: "火山方舟", params: "", type: "代码专用（预览版）", stars: '★★★★', speed: "中", advantage: "代码理解与生成专用预览版；额度每天 200 万 token", applicable: "编程、代码解释、纠错" },
+assets/ai-page.js:92  'ark-v4-pro-260425': { platform: "火山方舟", params: "", type: "推理增强（旧版）", stars: '★★★★', speed: "中", advantage: "旧版 V4 Pro；建议优先使用新版 DeepSeek-V4-Pro", applicable: "复杂推理（旧版兼容）
+assets/ai-page.js:93  'ark-lite-260215': { platform: "火山方舟", params: "", type: "轻量对话（旧版）", stars: '★★', speed: "快", advantage: "旧版轻量模型；建议优先使用新版 Doubao-Lite", applicable: "极简单问答（旧版兼容）" },
+assets/ai-page.js:94  'glm-4.7': { platform: "智谱AI", params: "30B", type: "通用文本", stars: '★★★★★', speed: "中", recommend: "日常问答首选", advantage: "智谱免费模型，中文理解能力强，实测约 5.5 秒", applicable: "日常学习问答、方法
+assets/ai-page.js:95  'glm-4v-flash': { platform: "智谱AI", params: "", type: "视觉理解", stars: '★★★★', speed: "快", advantage: "免费视觉模型，实测约 1 秒，适合拍题", applicable: "拍题识图、题目与课件截图解读" },
+assets/ai-page.js:96  'glm-4.6v-flash': { platform: "智谱AI", params: "", type: "多模态（图片+文本）", stars: '★★★★', speed: "限流中", advantage: "免费支持图片理解；当前访问量过大被限流，失败自动降级 GLM-4V-Flash", applicable: "图片理解
+assets/ai-page.js:97  'qf-ernie-32k': { platform: "百度千帆", params: "", type: "通用对话", stars: '★★★', speed: "快", advantage: "百度文心 ERNIE 系列，实测约 2 秒", applicable: "通用中文问答" },
+assets/ai-page.js:98  'qf-ernie-128k': { platform: "百度千帆", params: "", type: "通用对话（大上下文）", stars: '★★★', speed: "快", advantage: "百度文心 ERNIE 系列，128K 大上下文，实测约 1.8 秒", applicable: "长文本、长上下文问答" },
+assets/ai-page.js:99  'or-auto': { platform: "OpenRouter", params: "", type: "自动路由", stars: '★★★★', speed: "快", advantage: "自动选择合适的免费模型，实测约 1.8 秒；免费额度 50 次/天、20 次/分钟；需自备网络", applicable: "不确定用哪
+assets/ai-page.js:100  'or-nemotron-super': { platform: "OpenRouter", params: "", type: "通用对话", stars: '★★★★', speed: "快", advantage: "实测约 1.2 秒；免费额度 50 次/天、20 次/分钟；需自备网络", applicable: "日常问答" }
+assets/ai-page.js:101  'or-nemotron-ultra': { platform: "OpenRouter", params: "", type: "深度推理", stars: '★★★★★', speed: "中", advantage: "深度推理（实测约 3.3 秒）；免费额度 50 次/天、20 次/分钟；需自备网络", applicable: "
+assets/ai-page.js:102  'gm-flash-lite': { platform: "Google Gemini", params: "", type: "通用对话（轻量）", stars: '★★★', speed: "快", advantage: "超快轻量（实测约 1 秒）；需自备网络", applicable: "日常轻量问答" },
+assets/ai-page.js:103  'gm-flash': { platform: "Google Gemini", params: "", type: "通用对话（推理）", stars: '★★★★', speed: "中", advantage: "通用能力强（实测约 2.9 秒）；需自备网络", applicable: "日常问答、推理" },
+assets/ai-page.js:104  'ark-seedream-4-0415': { platform: "火山方舟·图片生成", params: "", type: "图片生成", stars: '★★★★', speed: "中", advantage: "文生图；走 images/generations 接口，调用链路待评估", applicable: "文生图（v4
+assets/ai-page.js:105  'ark-seedream-4-0828': { platform: "火山方舟·图片生成", params: "", type: "图片生成（最快）", stars: '★★★★', speed: "快", advantage: "文生图最快版（实测 4.2 秒）；走 images/generations 接口，调用链路待评估", ap
+assets/ai-page.js:108  'sf-hunyuan-mt-7b': { platform: "硅基流动", params: "7B", type: "翻译对话", stars: '★★★★', speed: "快", advantage: "腾讯混元翻译模型，多语种互译，中文语境准确；免费额度", applicable: "翻译、外语学习、双语对照阅读" },
+assets/ai-page.js:109  'sf-paddleocr-vl-1.5': { platform: "硅基流动", params: "", type: "视觉理解（文档/公式）", stars: '★★★★', speed: "快", advantage: "PaddleOCR-VL 版面与公式识别强，走 chat/completions 可正常对话；免费额度", a
+assets/ai-page.js:110  'sf-kolors': { platform: "硅基流动", params: "", type: "图片生成", stars: '★★★★', speed: "中", advantage: "快手 Kolors 文生图，中文提示词友好；免费额度", applicable: "文生图、学习配图生成" },
+assets/ai-page.js:111  'sf-sensevoice': { platform: "硅基流动", params: "", type: "语音识别", stars: '★★★★', speed: "快", advantage: "SenseVoiceSmall，多语种识别 + 情绪/事件标签；免费额度", applicable: "录音转文字、口述笔记整理" },
+assets/ai-page.js:112  'sf-asr-v32': { platform: "硅基流动", params: "", type: "语音识别", stars: '★★★★', speed: "快", advantage: "星辰 ASR V3.2，中文长句识别稳定；免费额度", applicable: "录音转文字、课堂口述转写" },
+assets/ai-page.js:113  'sf-asr-ultra': { platform: "硅基流动", params: "", type: "语音识别（高精度）", stars: '★★★★★', speed: "中", advantage: "星辰 ASR V3.2-Ultra，识别精度更高的增强版；免费额度", applicable: "嘈杂环境录音、高精度转写" 
+assets/ai-page.js:114  'sf-asr-diarize': { platform: "硅基流动", params: "", type: "语音识别（说话人分离）", stars: '★★★★', speed: "中", advantage: "星辰 Diarize，能区分不同说话人；免费额度", applicable: "多人对话转写、小组讨论记录" },
+assets/ai-page.js:115  'sf-qwen-asr': { platform: "硅基流动", params: "1.7B", type: "语音识别", stars: '★★★★', speed: "快", advantage: "Qwen3-ASR-1.7B，中英文识别均衡；免费额度", applicable: "录音转文字、口语练习复核" },
+assets/ai-page.js:116  'sf-bge-m3': { platform: "硅基流动", params: "", type: "向量嵌入", stars: '★★★★', speed: "快", advantage: "BAAI/bge-m3，多语言 + 多功能向量；免费额度", applicable: "知识库向量化、语义检索（需由程序调用）" },
+assets/ai-page.js:117  'sf-bge-zh': { platform: "硅基流动", params: "", type: "向量嵌入（中文）", stars: '★★★★', speed: "快", advantage: "bge-large-zh-v1.5，中文语义表征效果好；免费额度", applicable: "中文资料向量化、相似度检索（需由程序调用
+assets/ai-page.js:118  'sf-bge-en': { platform: "硅基流动", params: "", type: "向量嵌入（英文）", stars: '★★★★', speed: "快", advantage: "bge-large-en-v1.5，英文语义表征效果好；免费额度", applicable: "英文资料向量化、相似度检索（需由程序调用
+assets/ai-page.js:119  'sf-bge-reranker': { platform: "硅基流动", params: "", type: "结果重排", stars: '★★★★', speed: "快", advantage: "bge-reranker-v2-m3，对检索结果做精排；免费额度", applicable: "检索结果重排、提高命中率（需由程序调
+assets/ai-page.js:1538  for (var i = 0; i < 5; i++) s += (i < n) ? '★' : '☆';
+assets/ai-service.js:1279  if (full.indexOf("⚠️【中转错误】") === 0) {
+assets/ai-service.js:1292  if (full.indexOf("⚠️【中转错误】") === 0) {
+assets/ai-service.js:1306  if (text.indexOf("⚠️【中转错误】") === 0) {
+assets/api.js:75  兜底值未传 → '未设置昵称'；显式传 '' → 返回 ''（保留调用方原有的空串语义）。
+assets/api.js:187  if (typeof showToast === 'function') showToast('💬 好友私信是在线功能：请先启动后端并用账号在线登录');
+assets/api.js:284  <div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">✅ 多用户在线版：资料保存在服务器数据库；头像为文件上传（不再 base64 入库）。</div>
+assets/api.js:306  catch (e) { box.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:var(--text-secondary)">⚠️ ' + esc(e.message) + '</div>'; return; }
+assets/api.js:344  (u.createdAt ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:6px">📅 加入于 ' + esc(String(u.createdAt).slice(0, 10)) + '</div>' : '') +
+assets/api.js:349  '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">🔒 出于隐私保护：性别 / 生日不对外展示；草稿、私密、归档发贴不可见。</div>' +
+assets/api.js:364  '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🌱</div><div style="font-size:12px;margin-top:4px">初学者</div></div>' +
+assets/api.js:365  ((s.published || 0) >= 1 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">✍️</div><div style="font-size:12px;margin-top:4p
+assets/api.js:366  ((s.published || 0) >= 5 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">📚</div><div style="font-size:12px;margin-top:4px
+assets/api.js:367  ((s.likes || 0) >= 10 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">👍</div><div style="font-size:12px;margin-top:4px">人
+assets/api.js:378  showToast('📨 好友请求已发送');
+assets/api.js:379  } catch(e) { showToast('⚠️ ' + e.message); }
+assets/api.js:385  showToast('🗑 已删除好友');
+assets/api.js:387  } catch(e) { showToast('⚠️ ' + e.message); }
+assets/api.js:417  if (!/^image\//.test(file.type)) { showToast('⚠️ 请选择图片文件'); input.value = ''; return; }
+assets/api.js:418  if (file.size > 8 * 1024 * 1024) { showToast('⚠️ 图片超过 8MB'); input.value = ''; return; }
+assets/api.js:419  showToast('📷 上传中…');
+assets/api.js:425  showToast('📷 头像已上传，点「保存」更新资料');
+assets/api.js:426  } catch (e) { showToast('⚠️ 上传失败：' + e.message); }
+assets/api.js:430  try { await api('/api/users/me/avatar', { method: 'DELETE' }); } catch (e) { showToast('⚠️ ' + e.message); return; }
+assets/api.js:433  showToast('↩️ 已恢复默认头像');
+assets/api.js:443  showToast('👤 个人资料已更新');
+assets/api.js:444  } catch (e) { showToast('⚠️ 保存失败：' + e.message); }
+assets/api.js:534  showToast('⚠️ 社区加载失败：' + e.message);
+assets/api.js:581  } catch (e) { showToast('⚠️ 我的文章加载失败：' + e.message); }
+assets/api.js:599  try { await api('/api/notes/' + id + '/restore', { method: 'POST' }); showToast('♻️ 已从回收站恢复'); renderBlogMine(); }
+assets/api.js:600  catch (e) { showToast('⚠️ ' + e.message); }
+assets/api.js:604  try { await api('/api/notes/trash/' + id, { method: 'DELETE' }); showToast('🗑️ 已彻底删除'); renderBlogMine(); }
+assets/api.js:605  catch (e) { showToast('⚠️ ' + e.message); }
+assets/api.js:617  } catch (e) { showToast('⚠️ ' + e.message); }
+assets/api.js:697  '<span class="pg-label">' + (dir === 'prev' ? '← 上一篇' : '下一篇 →') + '</span><span class="pg-title">' + (nd ? esc(nd.title) : '已到尽头') + '</span></button>';
+assets/api.js:753  showToast(r.liked ? '👍 已点赞' : '已取消点赞');
+assets/api.js:755  } catch (e) { showToast('⚠️ ' + e.message); }
+assets/api.js:761  showToast(r.favorited ? '🔖 已收藏' : '已取消收藏');
+assets/api.js:763  } catch (e) { showToast('⚠️ ' + e.message); }
+assets/api.js:788  showToast('💬 评论已发布');
+assets/api.js:791  } catch (e) { showToast('⚠️ ' + e.message); }
+assets/api.js:799  } catch (e) { showToast('⚠️ ' + e.message); }
+assets/api.js:816  } catch (e) { showToast('⚠️ ' + e.message); }
+assets/api.js:825  if (!title) { showToast('⚠️ 请先填写标题'); document.getElementById('beTitle').focus(); return; }
+assets/api.js:826  if (!content.trim()) { showToast('⚠️ 正文不能为空'); return; }
+assets/api.js:831  showToast(status === 'draft' ? '💾 草稿已更新' : '📤 已发布');
+assets/api.js:834  showToast(status === 'draft' ? '💾 已存为草稿' : '📤 已发布');
+assets/api.js:838  } catch (e) { showToast('⚠️ 保存失败：' + e.message); }
+assets/api.js:841  try { await api('/api/notes/' + id, { method: 'PATCH', body: { status: 'archived' } }); renderBlogMine(); showToast('📁 已归档到「归档箱」'); }
+assets/api.js:842  catch (e) { showToast('⚠️ ' + e.message); }
+assets/api.js:845  try { await api('/api/notes/' + id, { method: 'PATCH', body: { status: 'published' } }); renderBlogMine(); showToast('📤 已恢复为发布状态'); }
+assets/api.js:846  catch (e) { showToast('⚠️ ' + e.message); }
+assets/api.js:855  showToast('🗑️ 已移入回收站');
+assets/api.js:856  } catch (e) { showToast('⚠️ ' + e.message); }
+assets/api.js:908  showToast('📄 已导出 Markdown');
+assets/api.js:917  showToast('📄 已导出全部发贴');
+assets/api.js:918  } catch (e) { showToast('⚠️ ' + e.message); }
+assets/api.js:924  if (!/^image\//.test(file.type)) { showToast('⚠️ 请选择图片文件'); event.target.value = ''; return; }
+assets/api.js:925  if (file.size > 8 * 1024 * 1024) { showToast('⚠️ 图片超过 8MB'); event.target.value = ''; return; }
+assets/api.js:926  showToast('🖼 上传中…');
+assets/api.js:935  showToast('🖼 已插入图片（存服务器）');
+assets/api.js:936  } catch (e) { showToast('⚠️ 上传失败：' + e.message); }
+assets/api.js:1030  finishStreaming('ai', '⚠️ AI 服务连接失败：' + e.message + '\n\n请确认：① 后端已启动（uvicorn main:app --port 8000）② server/.env 里已配置对应模型的 API Key。');
+assets/api.js:1050  showToast('🤖 AI 生成中…');
+assets/api.js:1075  showToast('🤖 AI 已生成复习提纲');
+assets/api.js:1079  showToast('⚠️ AI 生成失败');
+assets/api.js:1109  showToast('✅ 已选择 ' + modelId + '，请填写API Key');
+assets/api.js:1112  showToast('✅ 已选择 ' + modelId + '，请填写接口地址和API Key');
+assets/api.js:1131  showToast('✅ 直连配置已保存');
+assets/api.js:1137  showToast('✅ 已选择模型：' + (sel && sel.value));
+assets/api.js:1142  showToast(r.models.length ? '🔌 后端正常，可用模型 ' + r.models.length + ' 个' : '🔌 后端正常，但未配置密钥');
+assets/api.js:1143  } catch (e) { showToast('⚠️ 后端连接失败：' + e.message); }
+assets/api.js:1148  showToast('↺ 已恢复默认模型');
+assets/api.js:1219  try { await api('/api/notifications/read-all', { method: 'POST' }); await loadNotifications(true); showToast('✅ 已全部标记为已读'); }
+assets/api.js:1220  catch (e) { showToast('⚠️ ' + e.message); }
+assets/api.js:1305  showToast('📥 迁移完成：导入 ' + r.imported + ' 篇，跳过 ' + r.skipped + ' 篇');
+assets/api.js:1308  } catch (e) { showToast('⚠️ 迁移失败：' + e.message); }
+assets/api.js:1342  function _genderSym(g) { return g === 'male' ? '♂ 男' : (g === 'female' ? '♀ 女' : ''); }
+assets/api.js:1423  '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.8">📱 当前为本地单机模式，资料保存在本机浏览器。在线登录后资料/发贴会存到服务器并可多端同步。</div>' +
+assets/api.js:1474  '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🌱</div><div style="font-size:12px;margin-top:4px">初学者</div></div>' +
+assets/api.js:1475  ((d.streakDays || 0) >= 7 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🔥</div><div style="font-size:12px;margin-top:4p
+assets/api.js:1476  ((d.totalQuestions || 0) >= 100 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🧮</div><div style="font-size:12px;margin-
+assets/api.js:1477  ((d.totalQuestions || 0) >= 500 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">💪</div><div style="font-size:12px;margin-
+assets/api.js:1562  '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🌱</div><div style="font-size:12px;margin-top:4px">初学者</div></div>' +
+assets/api.js:1563  ((d.streakDays || 0) >= 7 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🔥</div><div style="font-size:12px;margin-top:4p
+assets/api.js:1564  ((d.totalQuestions || 0) >= 100 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">🧮</div><div style="font-size:12px;margin-
+assets/api.js:1565  ((d.totalQuestions || 0) >= 500 ? '<div style="padding:12px;background:var(--bg);border-radius:10px"><div style="font-size:24px">💪</div><div style="font-size:12px;margin-
+assets/api.js:1623  if (!/^image\//.test(file.type)) { showToast('⚠️ 请选择图片文件'); input.value = ''; return; }
+assets/api.js:1624  if (file.size > 8 * 1024 * 1024) { showToast('⚠️ 图片超过 8MB'); input.value = ''; return; }
+assets/api.js:1628  showToast('📷 上传中…');
+assets/api.js:1632  showToast('📷 头像已上传，点「保存」更新资料');
+assets/api.js:1633  }).catch(function (e) { showToast('⚠️ 上传失败：' + e.message); });
+assets/api.js:1639  apiAvatarTemp = dataUrl; renderPeAvatarPreview(); showToast('📷 已选择头像，点「保存」生效');
+assets/api.js:1641  } else { apiAvatarTemp = e2.target.result; renderPeAvatarPreview(); showToast('📷 已选择头像，点「保存」生效'); }
+assets/api.js:1652  apiAvatarTemp = null; renderPeAvatarPreview(); showToast('↩️ 已恢复默认头像，点「保存」更新');
+assets/api.js:1653  }).catch(function (e) { showToast('⚠️ ' + e.message); });
+assets/api.js:1655  apiAvatarTemp = null; renderPeAvatarPreview(); showToast('↩️ 已恢复默认头像，点「保存」生效');
+assets/api.js:1674  if (!name) { showToast('⚠️ 昵称不能为空'); return; }
+assets/api.js:1677  .then(function () { finish('👤 个人资料已更新'); if (typeof renderHomeOnlineNav === 'function') renderHomeOnlineNav(); })
+assets/api.js:1678  .catch(function (e) { showToast('⚠️ 保存失败：' + e.message); });
+assets/api.js:1690  finish('👤 个人资料已更新');
+assets/api.js:1704  showToast('📄 已导出全部发贴');
+assets/api.js:1705  }).catch(function (e) { showToast('⚠️ 导出失败：' + e.message); });
+assets/api.js:1715  showToast('📄 已导出本机全部发贴');
+assets/app.js:222  toast('🔄 AI头像已回到默认位置');
+assets/app.js:303  aiAvatar: '🤖',        // AI助手头像（存储值兼容旧 emoji；渲染统一走 data-icon，见 aiAvatarHtml）
+assets/app.js:307  var AI_AVATAR_ICON_MAP = { '🤖': 'bot', '🧠': 'brain', '💡': 'lightbulb', '📚': 'book' };
+assets/app.js:730  notifyDataLoadFailed('题库扩展', url, '⚠️ 题库扩展加载失败，当前仅显示内置题目');
+assets/app.js:740  notifyDataLoadFailed('题库扩展', url, '⚠️ 题库扩展加载失败，当前仅显示内置题目');
+assets/app.js:755  notifyDataLoadFailed('题库扩展', EXAM_BANK_EXT_INDEX, '⚠️ 题库扩展加载失败，当前仅显示内置题目');
+assets/app.js:779  notifyDataLoadFailed('题库扩展', EXAM_BANK_EXT_INDEX, '⚠️ 题库扩展加载失败，当前仅显示内置题目');
+assets/app.js:861  try { showToast(msg || ('⚠️ ' + name + ' 加载失败，当前仅显示内置内容')); } catch (e) { /* 静默 */ }
+assets/app.js:866  notifyDataLoadFailed('词库扩展', VOCAB_EXT_INDEX, '⚠️ 词库扩展加载失败，当前仅显示内置词表');
+assets/app.js:1658  <div class="task-checkbox">✓</div>
+assets/app.js:1686  showToast('✅ 任务完成，太棒了！');
+assets/app.js:1704  if (cta) cta.textContent = '🎉 今日任务全部完成！';
+assets/app.js:1705  showToast('🎉 今日任务全部完成！');
+assets/app.js:2538  <div class="weak-action" onclick="navigateTo('${wp.module}')">去练习 →</div>
+assets/app.js:2851  showToast('📤 已导出到下载目录：' + filename);
+assets/app.js:2865  showToast('📤 数据已导出为 JSON 文件');
+assets/app.js:2896  showToast('📥 导入成功，已恢复 ' + count + ' 项数据，页面即将刷新');
+assets/app.js:2905  showToast('📥 导入成功（旧格式），页面即将刷新');
+assets/app.js:2910  showToast('⚠️ 文件格式不对，请选择本应用导出的备份文件');
+assets/app.js:2945  showToast('🧪 高级设置为预留模块，逻辑待实现');
+assets/app.js:2955  showToast('☁️ 云同步为预留模块，逻辑待实现');
+assets/app.js:2966  showToast('🧰 工具 ' + toolId + ' 为预留模块，逻辑待实现');
+assets/app.js:3084  finishStreaming('ai', '⚠️ AI 服务商连接失败：' + e.message + '\n\n请检查：① API Key 是否有效 ② 接口地址/模型名是否正确 ③ 本地网络能否访问该服务商。\n\n也可以到「设置 → AI 服务商配置」清除配置，回到本地演示模式。');
+assets/app.js:3105  { id: 'assistant', name: '小助手', icon: 'sparkles', emoji: '✨', tag: '全能学习助手', color: '#2F6BFF', bg: '#EDF3FF',
+assets/app.js:3110  { id: 'warm', name: '暖心学伴', icon: 'sprout', emoji: '🌱', tag: '陪伴打气', color: '#12B886', bg: '#E8F8F2',
+assets/app.js:3119  { id: 'plan', name: '生成学习计划', emoji: '📅', desc: '根据你的情况生成个性化学习计划',
+assets/app.js:3121  { id: 'analyze_wrong', name: '分析错题', emoji: '❌', desc: '把错题发给AI，帮你分析错因',
+assets/app.js:3123  { id: 'essay', name: '批改英语作文', emoji: '✍️', desc: '把作文发给AI，帮你批改打分',
+assets/app.js:3125  { id: 'explain', name: '讲解知识点', emoji: '💡', desc: '不懂的知识点让AI用大白话讲清楚',
+assets/app.js:3127  { id: 'review', name: '复习提纲', emoji: '📝', desc: '根据发贴自动生成复习提纲和重点',
+assets/app.js:3129  { id: 'mock_interview', name: '模拟面试', emoji: '🎤', desc: 'AI当面试官，模拟真实面试场景',
+assets/app.js:3142  showToast('⚡ 选一个快捷功能，补充具体内容后发送');
+assets/app.js:3362  '<div class="ai-partner-card-emoji" style="background:#EDF3FF">' + aiPartnerIconHtml({ icon: 'sparkles', emoji: '✨' }, 18) + '</div>' +
+assets/app.js:3367  (active ? '<div class="ai-partner-card-check" style="color:#2F6BFF">✓ 使用中</div>' : '<div class="ai-partner-card-use" style="color:#2F6BFF">使用</div>') +
+assets/app.js:3556  (active ? '<div class="ai-partner-card-check" style="color:' + p.color + '">✓ 使用中</div>' : '<div class="ai-partner-card-use" style="color:' + p.color + '">使用</div>') +
+assets/app.js:3823  finishStreaming('ai', '⚠️ 后端连接失败：' + e.message + '\n\n请确认 ai-server 已启动（node server.js），或把 APP_AI_DEMO_CONFIG.apiUrl 置空回到演示模式。');
+assets/app.js:4254  div.innerHTML = '<div class="ai-msg-avatar">' + (m.role === 'user' ? '🙋' : aiPartnerIconHtml(getAiPartner(), 16)) + '</div><div class="ai-msg-bubble"></div>';
+assets/app.js:4296  showToast('✅ 已发布到留言板');
+assets/app.js:4297  } catch (e) { showToast('⚠️ 发布失败：' + e.message); }
+assets/app.js:4319  btn.querySelector('.bd-like-icon').textContent = r.liked ? '❤️' : '🤍';
+assets/app.js:4320  } catch (e) { showToast('⚠️ ' + e.message); }
+assets/app.js:4370  showToast('✅ 回复成功');
+assets/app.js:4371  } catch (e) { showToast('⚠️ 回复失败：' + e.message); }
+assets/app.js:4413  const likeIcon = m.liked ? '❤️' : '🤍';
+assets/app.js:4422  + '💬 ' + (m.replies || 0) + ' 回复</span>'
+assets/app.js:4437  renderBoardFallback(list, '⚠️ 加载失败：' + ((e && e.message) || '未知错误'));
+assets/app.js:4504  btn.innerHTML = '🔴 正在录音... 点击结束';
+assets/app.js:4518  btn.innerHTML = '🎤 点击说话回答';
+assets/app.js:4545  <div style="font-weight:700;margin-bottom:6px">💡 改进建议：</div>
+assets/app.js:4562  btn.innerHTML = '🎤 点击说话回答';
+assets/app.js:4635  btn.innerHTML = '🔴 正在听...';
+assets/app.js:4645  btn.innerHTML = '🎤 语音输入';
+assets/app.js:4654  btn.innerHTML = '🎤 语音输入';
+assets/app.js:4713  btn.innerHTML = '🔴 正在听...';
+assets/app.js:4723  btn.innerHTML = '🎤 语音回答';
+assets/app.js:4732  btn.innerHTML = '🎤 语音回答';
+assets/app.js:4771  id: 1, category: '形象礼仪', icon: '👔', title: '男士商务着装',
+assets/app.js:4777  id: 2, category: '形象礼仪', icon: '👗', title: '女士商务着装',
+assets/app.js:4783  id: 3, category: '见面礼仪', icon: '🤝', title: '握手礼仪',
+assets/app.js:4789  id: 4, category: '见面礼仪', icon: '💬', title: '介绍礼仪',
+assets/app.js:4795  id: 5, category: '办公礼仪', icon: '💼', title: '办公室礼仪',
+assets/app.js:4801  id: 6, category: '餐饮礼仪', icon: '🍽️', title: '商务宴请礼仪',
+assets/app.js:4807  id: 7, category: '会议礼仪', icon: '📊', title: '会议礼仪',
+assets/app.js:4813  id: 8, category: '通讯礼仪', icon: '📱', title: '电话/邮件礼仪',
+assets/app.js:4836  id: 1, name: '封面页', category: '结构页', icon: '📕',
+assets/app.js:4842  id: 2, name: '目录页', category: '结构页', icon: '📋',
+assets/app.js:4848  id: 3, name: '过渡页', category: '结构页', icon: '🔄',
+assets/app.js:4854  id: 4, name: '左文右图', category: '内容页', icon: '📝',
+assets/app.js:4860  id: 5, name: '上图下文', category: '内容页', icon: '🖼️',
+assets/app.js:4866  id: 6, name: '三栏并列', category: '内容页', icon: '📊',
+assets/app.js:4872  id: 7, name: '四宫格', category: '内容页', icon: '🔲',
+assets/app.js:4884  id: 9, name: '循环图', category: '内容页', icon: '🔁',
+assets/app.js:4890  id: 10, name: '金字塔', category: '内容页', icon: '🔺',
+assets/app.js:4896  id: 11, name: '对比页', category: '内容页', icon: '⚖️',
+assets/app.js:4902  id: 12, name: '数据图表页', category: '内容页', icon: '📈',
+assets/app.js:4908  id: 13, name: '引用页', category: '内容页', icon: '💬',
+assets/app.js:4914  id: 14, name: '团队介绍', category: '内容页', icon: '👥',
+assets/app.js:4920  id: 15, name: '结尾页', category: '结构页', icon: '🎯',
+assets/app.js:4931  '📕': 'book-open',        // 封面页
+assets/app.js:4932  '📋': 'clipboard',        // 目录页
+assets/app.js:4933  '🔄': 'arrow-right',      // 过渡页
+assets/app.js:4934  '📝': 'file-text',        // 左文右图
+assets/app.js:4935  '🖼️': 'image',            // 上图下文
+assets/app.js:4936  '🖼': 'image',
+assets/app.js:4937  '📊': 'chart-bar',        // 三栏并列
+assets/app.js:4938  '🔲': 'puzzle',           // 四宫格
+assets/app.js:4941  '🔁': 'rotate-ccw',       // 循环图
+assets/app.js:4942  '🔺': 'award',            // 金字塔
+assets/app.js:4943  '⚖️': 'arrow-left-right', // 对比页
+assets/app.js:4944  '⚖': 'arrow-left-right',
+assets/app.js:4945  '📈': 'chart',            // 数据图表页
+assets/app.js:4946  '💬': 'message-square',   // 引用页
+assets/app.js:4947  '👥': 'users',            // 团队介绍
+assets/app.js:4948  '🎯': 'target'            // 结尾页
+assets/app.js:4954  id: 1, name: '麦肯锡咨询报告风格', icon: '🏢',
+assets/app.js:4963  id: 2, name: '苹果发布会风格', icon: '🍎',
+assets/app.js:4971  id: 3, name: '毕业答辩PPT风格', icon: '🎓',
+assets/app.js:4983  id: 1, category: '拒绝', icon: '🙅', title: '同事让你帮忙做他的工作',
+assets/app.js:4992  id: 2, category: '向上沟通', icon: '📢', title: '向领导汇报坏消息/项目延期',
+assets/app.js:5001  id: 3, category: '反馈', icon: '💬', title: '给同事提负面反馈/指出问题',
+assets/app.js:5010  id: 4, category: '会议发言', icon: '🎤', title: '会议上突然被领导点名发言',
+assets/app.js:5019  id: 5, category: '冲突处理', icon: '🔥', title: '被客户/同事当众指责或质疑',
+assets/app.js:5028  id: 6, category: '争取资源', icon: '💰', title: '向领导争取资源/加薪/晋升',
+assets/app.js:5037  id: 7, category: '拒绝应酬', icon: '🍷', title: '不想参加酒局/团建，如何婉拒',
+assets/app.js:5046  id: 8, category: '被甩锅', icon: '🎯', title: '出问题时被别人甩锅，如何回应',
+assets/app.js:5064  id: 10, category: '表达不同意见', icon: '🤔', title: '不同意别人的观点，如何表达',
+assets/app.js:5073  id: 11, category: '自我介绍', icon: '👋', title: '面试/聚会时如何做自我介绍',
+assets/app.js:5082  id: 12, category: 'i人专属', icon: '🦋', title: 'i人如何在社交场合不尴尬',
+assets/app.js:5095  { id: 1, category: '拒绝', icon: '🙅', quote: '我理解你的处境，不过我目前确实腾不出手，你看这样行不行——', scene: '别人请你帮忙，但你没时间/不想帮', example: '同事："这个报表帮我做一下呗？" 你："我理解你今天确实很忙，不过我目前确实腾不出手，你看这样行不行——我教你怎么
+assets/app.js:5096  { id: 2, category: '拒绝', icon: '🙅', quote: '这个我可能真的不太擅长，怕做不好反而耽误你，建议你找XX更合适。', scene: '别人让你做你不擅长/不想做的事', example: '同事："这个设计图你帮我弄一下吧。" 你："这个我可能真的不太擅长，怕做不好反而耽误你，建议你找设计部的小王更
+assets/app.js:5097  { id: 3, category: '赞美', icon: '👏', quote: '你这个XX做得太赞了，特别是XX细节，能教教我你是怎么想到的吗？', scene: '想赞美别人，又不想显得敷衍', example: '同事做完一个方案，你："你这个方案做得太赞了，特别是第三页的数据可视化，能教教我你是怎么想到用这个图表的吗？"',
+assets/app.js:5098  { id: 4, category: '赞美', icon: '👏', quote: '有你在我就放心多了，这个事交给你肯定没问题。', scene: '想表达对别人的信任和认可', example: '把任务交给同事时："有你在我就放心多了，这个项目交给你肯定没问题，有什么需要我支持的随时说。"', why: '表达信任是最高级的赞美，
+assets/app.js:5099  { id: 5, category: '道歉', icon: '🙇', quote: '这件事是我考虑不周，给你添麻烦了，我马上这样处理，你看可以吗？', scene: '自己犯错了，需要道歉并补救', example: '你把数据搞错了，影响了同事："这件事是我考虑不周，给你添麻烦了，我马上重新核对数据，半小时内发给你，你看可以吗？"'
+assets/app.js:5100  { id: 6, category: '道歉', icon: '🙇', quote: '抱歉让你等这么久，我这边刚处理完一个紧急的事，我们现在开始吧。', scene: '迟到了/让对方等了', example: '开会迟到了："抱歉让大家等这么久，我这边刚处理完一个紧急的客户问题，我们现在开始吧，下次我一定提前安排好时间。"', why
+assets/app.js:5101  { id: 7, category: '表达不同意见', icon: '🤔', quote: '你说得很有道理，不过我有一个不同的角度想补充一下——', scene: '不同意别人的观点，但不想直接反驳', example: '同事提出一个方案，你有不同想法："你说得很有道理，特别是成本控制这块考虑得很周到。不过我有一个不同的角度想补充一
+assets/app.js:5102  { id: 8, category: '表达不同意见', icon: '🤔', quote: '我理解你的想法，不过我有点担心XX方面，你觉得呢？', scene: '对方案有顾虑，想提出来', example: '领导提出一个想法，你觉得有风险："我理解您的想法，这个方向确实很有创新性。不过我有点担心执行成本方面，可能会超出预算，您觉得
+assets/app.js:5105  { id: 11, category: '安慰人', icon: '🤗', quote: '我理解你现在的感受，换作是我也会很难过，想聊聊吗？我在。', scene: '朋友/同事遇到挫折，需要安慰', example: '同事项目失败了很沮丧："我理解你现在的感受，换作是我也会很难过，毕竟付出了这么多。想聊聊吗？我在，随时听你说。"',
+assets/app.js:5106  { id: 12, category: '安慰人', icon: '🤗', quote: '你已经做得很好了，这种情况换谁都很难处理，不是你的问题。', scene: '对方自责/自我怀疑时', example: '同事因为失误被批评，很自责："你已经做得很好了，这种情况换谁都很难处理，而且你之前已经预判到了风险，真的不是你的问题。走，我
+assets/app.js:5107  { id: 13, category: '向上沟通', icon: '📢', quote: '领导，跟您汇报一下，目前遇到了一个问题，我想了两个方案，您看哪个更合适？', scene: '向领导汇报问题/坏消息', example: '项目出问题了："领导，跟您汇报一下项目进展。目前遇到了一个问题：XX环节比预期复杂，可能延期2天。我想了
+assets/app.js:5108  { id: 14, category: '向上沟通', icon: '📢', quote: '谢谢领导的指导，我按这个方向调整一下，有问题再向您请教。', scene: '领导给了反馈/指导后', example: '领导给你的方案提了修改意见："谢谢领导的指导，您说的XX点我之前确实没考虑到，我按这个方向调整一下，改完再给您过目，有问题
+assets/app.js:5109  { id: 15, category: '被甩锅', icon: '🎯', quote: '关于这个问题，我想补充一下事实：当时的情况是...，我们会后一起对一下，避免下次再出现。', scene: '被别人甩锅/当众指责时', example: '开会时同事说问题是你造成的："关于这个问题，我想补充一下事实：我是在周二收到需求的，周四就
+assets/app.js:5110  { id: 16, category: 'i人专属', icon: '🦋', quote: '我先整理一下思路，稍后回复你可以吗？', scene: 'i人被突然提问，需要时间思考', example: '会议上突然被点名："这个问题我需要想一下，我先整理一下思路，稍后在群里回复大家可以吗？"', why: 'i人不需要逼自己立刻回答，坦
+assets/app.js:5111  { id: 17, category: 'i人专属', icon: '🦋', quote: '我在群里说一下我的想法吧，这样大家都能看到。', scene: 'i人不想在会上发言，想用文字表达', example: '开会讨论时，你不想当众发言："这个问题我有一些想法，我在群里整理一下发出来吧，这样大家都能看到，也方便后续讨论。"', w
+assets/app.js:5112  { id: 18, category: '万能开场', icon: '✨', quote: '耽误你两分钟，有个事想跟你商量一下。', scene: '想找别人谈话，但不知道怎么开场', example: '找同事谈事："小王，耽误你两分钟，有个事想跟你商量一下，现在方便吗？"', why: '开场先说明需要多长时间，让对方有心理准备，也
+assets/app.js:5597  '<div style="font-size:15px;font-weight:700">🧘 专注学习</div>' +
+assets/app.js:5613  function tick() { if (paused) return; remain--; render(); if (remain <= 0) { clearInterval(timer); if (typeof showToast === 'function') showToast('🎉 专注完成，起来活动一下吧'); clean
+assets/app.js:5929  <span style="font-size:13px;color:#1565C0"><strong>📅 今日待学：${queue.ids.length}个</strong> | 已学：${stats.totalViewed}/${stats.total} | 剩余：${stats.remaining}个</span>
+assets/app.js:5936  itemsHtml += `<div style="font-size:12px;color:#1565C0;margin-bottom:8px;padding-left:8px;border-left:3px solid #5B8DEF;font-weight:700">📅 今日学习（${todayItems.length}个）</di
+assets/app.js:5939  itemsHtml += `<div style="padding:30px;text-align:center;color:var(--text-muted);background:var(--bg);border-radius:10px;margin-bottom:16px">🎉 今日礼仪已学完！明天再来学新的吧~</div>`;
+assets/app.js:5962  const viewedTag = viewed ? '<span class="tag" style="background:#E8F5E9;color:#2E7D32">✓ 已查看</span>' : '';
+assets/app.js:5977  <div style="font-size:13px;font-weight:700;color:var(--success);margin-bottom:6px">✅ 正确做法</div>
+assets/app.js:5981  <span style="font-weight:700">❌ 常见错误：</span>${e.wrong}
+assets/app.js:5996  <span style="font-size:13px;color:#E65100"><strong>📅 今日待学：${queue.ids.length}道</strong> | 已学：${stats.totalViewed}/${stats.total} | 剩余：${stats.remaining}道</span>
+assets/app.js:6003  itemsHtml += `<div style="font-size:12px;color:#E65100;margin-bottom:8px;padding-left:8px;border-left:3px solid #FF9800;font-weight:700">📅 今日学习（${todayItems.length}道）</di
+assets/app.js:6006  itemsHtml += `<div style="padding:30px;text-align:center;color:var(--text-muted);background:var(--bg);border-radius:10px;margin-bottom:16px">🎉 今日面试题已学完！明天再来学新的吧~</div>`;
+assets/app.js:6029  const viewedTag = viewed ? '<span class="tag" style="background:#E8F5E9;color:#2E7D32">✓ 已查看</span>' : '';
+assets/app.js:6042  <div style="font-size:13px;font-weight:700;color:#1565C0;margin-bottom:4px">📐 答题框架</div>
+assets/app.js:6046  <div style="font-size:13px;font-weight:700;color:var(--warning);margin-bottom:6px">💡 答题要点</div>
+assets/app.js:6050  <div style="font-size:13px;font-weight:700;color:#2E7D32;margin-bottom:6px">📝 参考回答</div>
+assets/app.js:6191  const viewedTag = viewed ? '<span class="tag" style="background:#E8F5E9;color:#2E7D32;font-size:10px">✓</span>' : '';
+assets/app.js:6228  <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px">📄 第${i+1}页：${p.title}</div>
+assets/app.js:6302  '🙅': 'ban',            // 拒绝
+assets/app.js:6303  '📢': 'megaphone',      // 向上沟通
+assets/app.js:6304  '💬': 'message-circle', // 反馈/沟通
+assets/app.js:6305  '🎤': 'mic',            // 会议发言
+assets/app.js:6306  '🔥': 'fire',           // 冲突处理
+assets/app.js:6307  '💰': 'banknote',       // 争取资源/加薪
+assets/app.js:6308  '🍷': 'wine',           // 拒绝应酬
+assets/app.js:6309  '🎯': 'target',         // 被甩锅/回应
+assets/app.js:6311  '🤔': 'help-circle',    // 表达不同意见/思考
+assets/app.js:6312  '👋': 'hand',           // 自我介绍
+assets/app.js:6313  '👏': 'thumbs-up',      // 赞美
+assets/app.js:6314  '🙇': 'bow',            // 道歉
+assets/app.js:6315  '🤗': 'heart',          // 安慰人
+assets/app.js:6316  '✨': 'sparkles',       // 万能开场
+assets/app.js:6317  '🦋': ''                // i人专属：无合适图标，保留 emoji
+assets/app.js:6331  const viewedTag = viewed ? '<span class="tag" style="background:#E8F5E9;color:#2E7D32">✓ 已查看</span>' : '';
+assets/app.js:6425  const viewedTag = viewed ? '<span class="tag" style="background:#E8F5E9;color:#2E7D32">✓ 已查看</span>' : '';
+assets/app.js:6504  showToast('✅ 已加入已学列表，明天会有新内容');
+assets/app.js:6650  showToast('🎉 所有题目都做完了！切换到复习模式吧');
+assets/app.js:6657  showToast('✅ 今天没有需要复习的题目');
+assets/app.js:6689  showToast('🔀 已随机打乱题目顺序');
+assets/app.js:6792  document.getElementById('ecFavBtn').textContent = isFav ? '★ 已收藏' : '☆ 收藏';
+assets/app.js:6854  resultEl.textContent = '✅ 回答正确！';
+assets/app.js:6862  document.getElementById('ecTipText').innerHTML = xtRenderQText('💡 ' + q.tip);
+assets/app.js:7027  showToast('🎉 所有单词都学完了！切换到复习模式吧');
+assets/app.js:7057  showToast('🔀 已随机打乱词汇顺序');
+assets/app.js:7086  document.getElementById('vocabExample1').textContent = '📝 ' + v.example;
+assets/app.js:7089  document.getElementById('vocabExample2').textContent = '📝 ' + v.example2;
+assets/app.js:7210  showToast('🎉 新词学完了！可以切换到复习模式');
+assets/app.js:7212  showToast('🎉 复习完成！');
+assets/app.js:7239  showToast(vocabMode === 'new' ? '🎉 新词全部学完！' : '✅ 复习全部完成！');
+assets/app.js:7254  { k: 'plaza', ic: '🌍', dc: 'globe', t: '社区', d: '看大家的', url: '社区.html' },
+assets/app.js:7255  { k: 'cet', ic: '📖', dc: 'book-open', t: '英语', d: '词汇听力阅读', url: '英语.html' },
+assets/app.js:7256  { k: 'exam', ic: '📝', dc: 'pencil', t: '行测', d: '行测刷题', url: '行测.html' },
+assets/app.js:7257  { k: 'comm', ic: '💬', dc: 'message-square', t: '表达', d: '场景话术', url: '表达.html' },
+assets/app.js:7258  { k: 'interview', ic: '🤝', dc: 'handshake', t: '面测', d: '面试题库', url: '面测.html' },
+assets/app.js:7259  { k: 'ppt', ic: '📁', dc: 'folder', t: '我的文件', d: '题库/作品归档', url: '我的文件.html' }
+assets/app.js:7283  ? '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px"><span style="font-size:12px;color:var(--text-secondary);flex-shrink:0">🕘 最近打开</span
+assets/app.js:7384  { id: 'cet', name: '英语', icon: '📖', dc: 'book-open' },
+assets/app.js:7385  { id: 'exam', name: '行测', icon: '📝', dc: 'pencil' },
+assets/app.js:7386  { id: 'comm', name: '表达', icon: '💬', dc: 'message-square' },
+assets/app.js:7387  { id: 'interview', name: '面测', icon: '🤝', dc: 'handshake' },
+assets/app.js:7388  { id: 'ppt', name: '演示', icon: '🎨', dc: 'palette' },
+assets/app.js:7389  { id: 'other', name: '其他', icon: '📚', dc: 'globe' }
+assets/app.js:7451  if (task) { if (listOpen !== 'ul') { close(); out += '<ul class="blog-tasklist">'; listOpen = 'ul'; } out += '<li>' + (task[2] === 'x' ? '✅ ' : '⬜ ') + inlineMd(task[3]) 
+assets/app.js:7482  const priv = `<span class="nc-privacy">${n.privacy === 'private' ? '🔒私密' : icSpan('globe', 12) + '公开'}</span>`;
+assets/app.js:7572  if (blogTagFilter) chips += `<span class="chip active" onclick="clearBlogTagFilter()">${icSpan('tag', 12)} #${esc(blogTagFilter)} ✕</span>`;
+assets/app.js:7764  <span>${n.privacy === 'private' ? '🔒 私密' : icSpan('globe', 12) + ' 公开'}</span>
+assets/app.js:7796  <span class="pg-label">${dir === 'prev' ? '← 上一篇' : '下一篇 →'}</span><span class="pg-title">${nd ? esc(nd.title) : '已到尽头'}</span></button>`;
+assets/app.js:7803  saveData(); renderBlogDetail(); renderBlogList(); renderBlogMine(); showToast(n.liked ? '👍 已点赞' : '已取消点赞');
+assets/app.js:7810  saveData(); renderBlogDetail(); renderBlogMine(); showToast(!has ? '🔖 已收藏' : '已取消收藏');
+assets/app.js:7818  saveData(); renderBlogDetail(); showToast('💬 评论已添加');
+assets/app.js:7834  showToast('📄 已导出 Markdown');
+assets/app.js:7842  showToast('📄 已导出全部发贴');
+assets/app.js:7856  function archiveNote(id) { const n = appData.notes.find(x => x.id === id); if (!n) return; n.status = 'archived'; saveData(); renderBlogMine(); showToast('📁 已归档到「归档箱」'); 
+assets/app.js:7857  function unarchiveNote(id) { const n = appData.notes.find(x => x.id === id); if (!n) return; n.status = 'published'; saveData(); renderBlogMine(); showToast('📤 已恢复为发布状态')
+assets/app.js:7891  _prv.innerHTML = v.trim() ? reactMarkdown(v) : '<span style="color:var(--text-secondary)">👁 实时预览：在左侧输入，这里会即时渲染效果（支持 Markdown）</span>';
+assets/app.js:7923  if (file.size > 1024 * 1024 * 1.5) { showToast('⚠️ 图片过大（>1.5MB），可能占满本地存储，建议用较小截图'); }
+assets/app.js:7932  showToast('🖼 已插入本地截图（存为 base64）');
+assets/app.js:7945  if (!title) { showToast('⚠️ 请先填写标题'); document.getElementById('beTitle').focus(); return; }
+assets/app.js:7946  if (!content.trim()) { showToast('⚠️ 正文不能为空'); return; }
+assets/app.js:7990  document.getElementById('blogEditStatus').textContent = '✏️ 正在编辑：' + n.title + '（创建于 ' + fmtTime(n.createdAt) + '）';
+assets/app.js:8022  showToast('🤖 AI 生成中…');
+assets/app.js:8038  showToast('🤖 AI 已生成复习提纲');
+assets/app.js:8042  showToast('⚠️ AI 生成失败');
+assets/app.js:8045  showToast('🤖 AI 生成中…');
+assets/app.js:8060  showToast('🤖 AI 已生成复习提纲');
+assets/app.js:8064  showToast('⚠️ AI 生成失败');
+assets/app.js:8069  showToast('🤖 已生成复习提纲（演示模式；接后端可得真实 AI）');
+assets/app.js:8143  if ((d.streakDays || 0) >= 7) badges.push({ icon: '🔥', name: '坚持一周', desc: '连续学习7天' });
+assets/app.js:8144  if ((d.totalQuestions || 0) >= 100) badges.push({ icon: '🧮', name: '百题斩', desc: '完成100道题' });
+assets/app.js:8145  if ((d.totalQuestions || 0) >= 500) badges.push({ icon: '💪', name: '刷题达人', desc: '完成500道题' });
+assets/app.js:8146  if (totalNotes >= 5) badges.push({ icon: '✍️', name: '勤于笔耕', desc: '发布5篇发贴' });
+assets/app.js:8147  if (totalLikes >= 10) badges.push({ icon: '👍', name: '人气博主', desc: '获得10个赞' });
+assets/app.js:8148  badges.push({ icon: '🌱', name: '初学者', desc: '开始学习之旅' });
+assets/app.js:8398  if (!/^image\//.test(file.type)) { showToast('⚠️ 请选择图片文件'); input.value = ''; return; }
+assets/app.js:8399  if (file.size > 8 * 1024 * 1024) { showToast('⚠️ 图片超过 8MB，请换一张'); input.value = ''; return; }
+assets/app.js:8405  showToast('📷 已选择头像，点“保存”生效');
+assets/app.js:8426  img.onerror = function () { showToast('⚠️ 图片读取失败，换一张试试'); };
+assets/app.js:8442  showToast('👤 个人资料已更新');
+assets/app.js:8498  { page: 'home',           icon: '🏠', dc: 'home',            title: '首页',                 desc: '倒计时 · 今日任务 · 学习数据', kw: '首页 主页 倒计时 任务 统计' },
+assets/app.js:8499  { page: 'cet',            icon: '📖', dc: 'book-open',       title: '英语',             desc: '词汇速记 · 听力 · 阅读 · 写作翻译', kw: '四级 英语 词汇 单词 听力 阅读 写作 翻译 cet' },
+assets/app.js:8500  { page: 'exam',           icon: '📝', dc: 'pencil',          title: '行测',           desc: '行测全题型刷题', kw: '笔试 行测 图形推理 定义判断 类比推理 逻辑 言语 数量关系 资料分析 国企' },
+assets/app.js:8501  { page: 'comm',           icon: '💬', dc: 'message-square',  title: '表达',           desc: '场景话术 · 金句库 · 角色扮演', kw: '高情商 表达 话术 沟通 金句 情商' },
+assets/app.js:8502  { page: 'interview',      icon: '🤝', dc: 'handshake',       title: '面测',         desc: '商务礼仪 · 模拟面试', kw: '面试 礼仪 自我介绍 简历 offer' },
+assets/app.js:8503  { page: 'ppt',            icon: '📁', dc: 'folder',          title: '我的文件',         desc: '题库 · 作品 · 笔记归档', kw: '我的文件 文件 题库 作品 笔记 归档' },
+assets/app.js:8504  { page: 'blog',           icon: '🗒️', dc: 'globe',           title: '社区',             desc: '社区 · 写发贴 · 统计', kw: '博客 发贴 写作 草稿 日记' },
+assets/app.js:8505  { page: 'exam-center',    icon: '🧮', dc: 'pencil',          title: '行测刷题',             desc: '分题型专项刷题中心', kw: '行测 刷题 专项 刷题中心' },
+assets/app.js:8506  { page: 'wrong-book',     icon: '📒', dc: 'book',            title: '错题本',               desc: '错题收录与复盘', kw: '错题 错题本 复盘 收录' },
+assets/app.js:8507  { page: 'cet-vocab',      icon: '📖', dc: 'book-open',       title: '四级词汇',             desc: '间隔重复背单词', kw: '四级 词汇 单词 背单词 间隔重复' },
+assets/app.js:8508  { page: 'etiquette',      icon: '🎩', dc: 'briefcase',       title: '商务礼仪',           desc: '礼仪知识点速查', kw: '礼仪 商务 着装 餐桌 会议' },
+assets/app.js:8509  { page: 'iv-questions',   icon: '🗂️', dc: 'help-circle',     title: '面试题库',             desc: '高频面试题与解析', kw: '面试 题库 面试题 高频' },
+assets/app.js:8510  { page: 'ppt-layouts',    icon: '🧱', dc: 'ruler',           title: 'PPT版式库',           desc: '常用版式模板', kw: 'PPT 版式 模板 排版' },
+assets/app.js:8511  { page: 'ppt-cases',      icon: '🏷️', dc: 'tag',             title: 'PPT案例拆解',         desc: '真实报告案例拆解', kw: 'PPT 案例 拆解 麦肯锡 报告' },
+assets/app.js:8512  { page: 'comm-scenes',    icon: '🎭', dc: 'messages-square', title: '场景话术库',           desc: '职场沟通场景话术', kw: '话术 场景 沟通 拒绝 汇报' },
+assets/app.js:8513  { page: 'comm-quotes',    icon: '💬', dc: 'sparkles',        title: '万能金句库',           desc: '面试/汇报金句', kw: '金句 万能金句 名言 句子' },
+assets/app.js:8514  { page: 'settings',       icon: '⚙️', dc: 'settings',        title: '设置',                 desc: '主题 · 数据管理 · AI配置', kw: '设置 主题 深色 导出 导入 清空 AI 密钥' },
+assets/app.js:8515  { page: 'profile',        icon: '👤', dc: 'user',            title: '个人中心',             desc: '资料 · 发贴统计 · 导出', kw: '个人中心 资料 头像 昵称 统计 退出' }
+assets/app.js:8553  if (noteCount > 0) html += '<div class="gs-group">📚 发贴（' + noteCount + '）</div>';
+assets/app.js:8556  if (shown.length > noteCount) html += '<div class="gs-group">🧭 学习模块</div>';
+assets/app.js:8590  ? '<span style="color:#67c23a;font-size:12px">✅ 已直连服务商</span>'
+assets/app.js:8592  ? '<span style="color:#409eff;font-size:12px">☁️ 服务端中转</span>'
+assets/app.js:8593  : '<span style="color:#e6a23c;font-size:12px">⚠️ 演示模式（不联网）</span>';
+assets/app.js:8655  <select class="form-input" id="stAiWidth" onchange="setSetting('aiPanelWidth',this.value);showToast('✅ 已保存')">
+assets/app.js:8802  showToast('✅ 助手头像已更新');
+assets/app.js:8868  showToast(cfg.apiKey ? '✅ AI 服务商配置已保存（仅存本机）' : '已清除 AI 直连配置');
+assets/app.js:8896  showToast('✅ 连接成功！模型回复：' + (reply || '').slice(0, 20));
+assets/app.js:8898  showToast('⚠️ 连接失败：' + e.message.slice(0, 60));
+assets/app.js:8905  console.log('📚 星途已启动');
+assets/app.js:8906  console.log('💡 提示：所有数据保存在本地浏览器中');
+assets/app.js:9138  if (lbl && num && lbl.textContent === '连续打卡') num.textContent = '🔥 ' + v;
+assets/app.js:9365  if (typeof showToast === 'function') showToast('✅ 今日学习时长已重置');
+assets/app.js:9570  也可能是纯字符（emoji / 单字，如 AI 搭子的 '⭐'）。旧实现无条件塞进 <img src>，导致 emoji 变裂图、
+assets/cet-read.js:160  ★ cr-has-topbar：当页面顶部还有一条 sticky 工具条时，左栏吸顶位置下移 52px 让位，
+assets/chat-local.js:115  '<span class="im-tn-close" title="关闭" aria-label="关闭">✕</span>';
+assets/chat-local.js:199  return '<span>' + (nickname ? esc(nickname.slice(0, 1)) : '👤') + '</span>';
+assets/chat-local.js:213  - 'color:#RRGGBB'              → 纯色块（不想传图时的低成本方案）
+assets/chat-local.js:226  return '<span>👥</span>';
+assets/chat-local.js:256  id: 1, nickname: '学习搭子·小星', avatar: '⭐', motto: '一起学习，共同进步！', personality: 'encouraging',
+assets/chat-local.js:260  id: 8, nickname: 'AI助手·星途', avatar: '🤖', motto: '有什么我可以帮你的？', personality: 'ai',
+assets/chat-local.js:267  { id: 101, nickname: '室友·阿杰', avatar: '🎮', motto: '今晚开黑吗？', personality: 'casual',
+assets/chat-local.js:269  { id: 102, nickname: '班长·小雨', avatar: '📋', motto: '有通知我会第一时间说', personality: 'formal',
+assets/chat-local.js:271  { id: 103, nickname: '社团好友·小美', avatar: '🎨', motto: '周末一起去看展吧', personality: 'friendly',
+assets/chat-local.js:273  { id: 104, nickname: '实习同事·老王', avatar: '💼', motto: '有问题随时问我', personality: 'professional',
+assets/chat-local.js:275  { id: 105, nickname: '高中同学·大刘', avatar: '🏀', motto: '兄弟最近咋样', personality: 'bro',
+assets/chat-local.js:277  { id: 106, nickname: '图书馆偶遇·小雅', avatar: '📚', motto: '这本书推荐给你', personality: 'gentle',
+assets/chat-local.js:1060  ? '<div class="im-group-title">👥 全部群聊 (' + groups.length + ') <span style="font-size:11px;color:#999;font-weight:400">（管理员视图 · 只读）</span></div>'
+assets/chat-local.js:1061  : '<div class="im-group-title">👥 我的群聊 (' + groups.length + ')</div>';
+assets/chat-local.js:1102  (gp.muted ? '<div class="im-mute-tag" title="免打扰">🔕</div>' : '') +
+assets/chat-local.js:1137  '<div class="im-si"><div class="im-n">' + esc(imFriendNameOf(c)) + (c.pinned ? ' <span class="im-pin-tag" title="已置顶">📌</span>' : '') + '</div><div class="im-sub">' + esc
+assets/chat-local.js:1138  (c.muted ? '<div class="im-mute-tag" title="免打扰">🔕</div>' : '') +
+assets/chat-local.js:1213  toast(cur.pinned ? '已取消置顶' : '📌 已置顶该会话');
+assets/chat-local.js:1216  toast(cur.muted ? '已取消免打扰' : '🔕 已免打扰（不计入未读角标）');
+assets/chat-local.js:1433  return '<div class="im-group-title">👥 全部用户 (' + (items || []).length + ')</div>' + rows;
+assets/chat-local.js:1441  return '<div class="im-group-title">👥 我的通讯录 (0)</div>' +
+assets/chat-local.js:1459  return '<div class="im-group-title">👥 我的通讯录 (' + list.length + ')</div>' + rows;
+assets/chat-local.js:1493  box.innerHTML = aiHtml + '<div class="im-group-title">👥 我的通讯录</div><div class="im-empty2">登录后可添加注册用户为好友</div>';
+assets/chat-local.js:1504  box.innerHTML = aiHtml + '<div class="im-group-title">👥 我的通讯录</div><div class="im-empty2">加载中…</div>';
+assets/chat-local.js:1593  toast('🗑 已删除好友');
+assets/chat-local.js:1702  : '<span style="font-size:11px;color:#409eff">📩 待处理</span>';
+assets/chat-local.js:1703  if (st === 'accepted') return '<span style="font-size:11px;color:#67c23a">✅ 已同意</span>';
+assets/chat-local.js:1704  if (st === 'declined') return '<span style="font-size:11px;color:#909399">❌ 已拒绝</span>';
+assets/chat-local.js:1763  .then(function () { toast('✅ 已加为好友'); renderRequests($id('imList')); loadChats(); })
+assets/chat-local.js:1891  btn.textContent = '✎';
+assets/chat-local.js:1995  readTag = '<div class="im-read' + (m.read ? ' ok' : '') + '">' + (m.read ? '✓✓ 已读' : '✓ 已发送') + '</div>';
+assets/chat-local.js:2029  ❗不读文件内容（不落 base64），仅存 name/size/type 元数据，避免撑爆 localStorage。 */
+assets/chat-local.js:2075  → 私聊 POST /api/chat/{serverId}/messages {content:url, kind:'image'}
+assets/chat-local.js:2076  → 群聊 POST /api/groups/{gid}/messages      {content:url, kind:'image'}
+assets/chat-local.js:2303  if (!f) { toast('⚠️ 读取剪贴板图片失败，请改用图片按钮上传'); return; }
+assets/chat-local.js:2341  toast('🎤 录音中…再次点击结束（最长 60 秒）');
+assets/chat-local.js:2611  ❗绝不把 lat/lng 放进消息体（设计 §7-7）。未选会话时沿用既有守卫 toast 并 return。 */
+assets/chat-local.js:2672  ❗设计取舍：本批不动服务端，无通用文件上传接口（仅有 /api/uploads/image|voice），
+assets/chat-local.js:2771  box.innerHTML = html + '<div class="im-empty2">🔍 正在搜索注册用户…</div>';
+assets/chat-local.js:2790  (serverUsers.length ? '<div style="font-size:11px;color:#999;padding:8px 0 4px">👥 注册用户</div>' + serverHtml : '');
+assets/chat-local.js:2813  toast('✅ 你们已是好友，可以聊天了');
+assets/chat-local.js:2815  toast('✅ 好友申请已发送，等待对方同意');
+assets/chat-local.js:2901  if (d.autoAccepted) toast('✅ 你们已是好友，可以聊天了');
+assets/chat-local.js:2902  else if (d.ok) toast('✅ 好友申请已发送，等待对方同意');
+assets/chat-local.js:2908  if (btn) { btn.disabled = false; btn.textContent = '➕ 添加好友'; }
+assets/chat-local.js:2962  ⚠️ 必须显式 mark_read=0：chat.py 的 mark_read 默认为 1（拉取即已读），
+assets/chat-local.js:3220  '<div class="im-gcheck' + (idx >= 0 ? ' on' : '') + '">' + (idx >= 0 ? '✓' : '') + '</div></div>';
+assets/chat-local.js:3256  '<div class="im-gcheck' + (idx >= 0 ? ' on' : '') + '">' + (idx >= 0 ? '✓' : '') + '</div></div>';
+assets/chat-local.js:3296  toast('✅ 群聊已创建');
+assets/chat-local.js:3543  toast(remark ? '✅ 备注已保存' : '✅ 已清除备注');
+assets/chat-local.js:3701  .then(function () { toast('✅ 已移出该成员'); imReloadGroupDetail(); })
+assets/chat-local.js:3709  toast(checked ? '🔕 已开启免打扰（不计入未读角标）' : '已关闭免打扰');
+assets/chat-local.js:3731  toast((d && d.dissolved) ? '✅ 群聊已解散' : '✅ 已退出群聊');
+assets/chat-local.js:3756  toast('✅ 群名与公告已更新');
+assets/chat-local.js:3784  toast(saved ? '✅ 群昵称已更新' : '✅ 已清除群名片');
+assets/chat-local.js:3792  var GS_AV_EMOJI = ['🎉', '📚', '🚀', '💡', '🎯', '🏆', '🍀', '🎨', '🐱', '🌟'];
+assets/chat-local.js:3855  toast('✅ 群头像已更新');
+assets/chat-local.js:3884  toast('✅ 群主已转让');
+assets/company-lib.js:17  ★ 键命名空间（重要，勿改）
+assets/company-lib.js:330  '" onclick="CompanyLib.toggleLearned(\'' + it.id + '\')">' + (learned ? '已学 ✓' : '标记已学') + '</button>';
+assets/emoji/manifest.js:18  { code: 'e001', char: '😊', name: '微笑' },
+assets/emoji/manifest.js:19  { code: 'e002', char: '😂', name: '破涕为笑' },
+assets/emoji/manifest.js:20  { code: 'e003', char: '🥰', name: '喜欢' },
+assets/emoji/manifest.js:21  { code: 'e004', char: '😎', name: '得意' },
+assets/emoji/manifest.js:22  { code: 'e005', char: '😭', name: '大哭' },
+assets/emoji/manifest.js:23  { code: 'e006', char: '🤔', name: '思考' },
+assets/emoji/manifest.js:24  { code: 'e007', char: '😤', name: '奋斗' },
+assets/emoji/manifest.js:25  { code: 'e008', char: '😴', name: '困了' },
+assets/emoji/manifest.js:26  { code: 'e009', char: '👍', name: '点赞' },
+assets/emoji/manifest.js:27  { code: 'e010', char: '💪', name: '加油' },
+assets/emoji/manifest.js:28  { code: 'e011', char: '🔥', name: '打卡' },
+assets/emoji/manifest.js:29  { code: 'e012', char: '📚', name: '学习' },
+assets/emoji/manifest.js:30  { code: 'e013', char: '✍️', name: '刷题' },
+assets/emoji/manifest.js:31  { code: 'e014', char: '🎯', name: '目标' },
+assets/emoji/manifest.js:33  { code: 'e016', char: '🏆', name: '胜利' },
+assets/emoji/manifest.js:34  { code: 'e017', char: '🙏', name: '感谢' },
+assets/emoji/manifest.js:35  { code: 'e018', char: '🤝', name: '合作' },
+assets/emoji/manifest.js:36  { code: 'e019', char: '🎉', name: '庆祝' },
+assets/emoji/manifest.js:37  { code: 'e020', char: '❤️', name: '爱心' },
+assets/emoji/manifest.js:38  { code: 'e021', char: '😅', name: '尴尬' },
+assets/emoji/manifest.js:39  { code: 'e022', char: '😭', name: '累哭' },
+assets/emoji/manifest.js:40  { code: 'e023', char: '🚀', name: '起飞' },
+assets/emoji/manifest.js:41  { code: 'e024', char: '🌟', name: '闪耀' }
+assets/group-discussion.js:14  icon: '🏝️',
+assets/group-discussion.js:16  items: ['🔦 手电筒', '🧭 指南针', '📻 收音机', '🔪 刀具', '🧥 防寒外套', '💊 急救药品', '📦 压缩饼干', '💧 净水器', '🧵 绳索', '📖 求生手册'],
+assets/group-discussion.js:22  icon: '💰',
+assets/group-discussion.js:24  items: ['📚 员工培训', '🎉 团队建设', '💻 设备升级', '📢 市场推广', '🔬 研发创新'],
+assets/group-discussion.js:30  icon: '🚑',
+assets/group-discussion.js:32  items: ['🔬 科学家', '🤰 孕妇', '👶 儿童', '👴 老人', '💼 企业家', '⚕️ 医生'],
+assets/group-discussion.js:38  icon: '🏆',
+assets/group-discussion.js:40  items: ['🥇 业绩王A', '🐂 老黄牛B', '💡 创新者C', '🤝 凝聚者D', '🎓 资深者E'],
+assets/group-discussion.js:47  { id: 'leader', name: '领导者', avatar: '🦁', color: '#E53935', style: '主动引导讨论，善于总结观点，推动进程', firstSpeak: '好，我们开始讨论吧。这个问题的核心是要确定一个标准，然后按照标准来选择。大家怎么看？' },
+assets/group-discussion.js:48  { id: 'analyst', name: '分析者', avatar: '🦉', color: '#7B68EE', style: '理性分析，善于拆解问题，用数据和逻辑说话', firstSpeak: '我觉得我们应该先建立一个评估框架，比如从重要性、紧迫性、可行性三个维度来分析。' },
+assets/group-discussion.js:49  { id: 'creative', name: '创意者', avatar: '🦊', color: '#FF8C42', style: '思维活跃，经常提出新角度，但有时跑题', firstSpeak: '诶，我有个不一样的想法！我们能不能换个角度看这个问题？比如从长期价值来考虑...' },
+assets/group-discussion.js:50  { id: 'harmonizer', name: '协调者', avatar: '🐰', color: '#FFB6C1', style: '注重团队和谐，善于调和矛盾，照顾每个人感受', firstSpeak: '我觉得大家说的都有道理，我们可以把大家的观点整合一下，找到一个平衡点。' }
+assets/group-discussion.js:121  <div class="gd-title">👥 无领导小组讨论</div>
+assets/group-discussion.js:130  💡 小提示：讨论中可以随时输入你的观点，角色会根据你的发言回应。结束后会有总结评定。
+assets/group-discussion.js:143  <div class="gd-msg-avatar">🧑</div>
+assets/group-discussion.js:207  if (userMessages.length === 0) tips.push('⚠️ 本次讨论你没有发言，建议下次主动参与，群面中发言很重要');
+assets/group-discussion.js:208  if (userMessages.length < 3) tips.push('💡 可以更积极地表达观点，至少发言3次以上才能让面试官记住你');
+assets/group-discussion.js:209  if (userRatio < 20) tips.push('💡 你的发言占比偏低，建议在讨论中更主动地引导话题或总结观点');
+assets/group-discussion.js:210  tips.push('💡 群面技巧：① 首次发言要亮明观点 ② 中间可以做协调者或总结者 ③ 最后争取做总结陈词');
+assets/group-discussion.js:211  tips.push('💡 注意倾听他人观点，在别人基础上补充，比单纯反对更有说服力');
+assets/group-discussion.js:215  <div class="gd-summary-title">📊 讨论总结</div>
+assets/group-discussion.js:238  <div class="gd-section-title">💬 你的发言记录</div>
+assets/group-discussion.js:247  <div class="gd-section-title">💡 改进建议</div>
+assets/group-discussion.js:320  toast('🎲 抽到了：' + TOPICS[idx].title);
+assets/group-discussion.js:396  <div class="gd-msg-avatar">🧑</div>
+assets/group-discussion.js:539  console.log('✅ 无领导小组讨论已加载');
+assets/i-partner.js:33  avatar: '🐰',
+assets/i-partner.js:45  avatar: '🦊',
+assets/i-partner.js:57  avatar: '🦉',
+assets/i-partner.js:69  avatar: '🐱',
+assets/i-partner.js:81  avatar: '🐻',
+assets/i-partner.js:1542  console.log('✅ i人伙伴团已加载');
+assets/importer.js:5  → 按目标格式解析 → 入库(经由 qbank 的 __qbImportRaw，存本机并合入对应题库)。
+assets/importer.js:339  { k: 'cet', ic: '📖', nm: '四级词汇', ds: '每行：单词、音标(可选)、释义' },
+assets/importer.js:340  { k: 'exam', ic: '🧮', nm: '行测刷题', ds: '题干 + A/B/C/D 选项 + 答案 + 解析' },
+assets/importer.js:341  { k: 'iv', ic: '🤝', nm: '面试题库', ds: '每题一段文字（问题/要点/参考）' },
+assets/importer.js:342  { k: 'quotes', ic: '💬', nm: '万能金句', ds: '每行一条金句/话术文字' },
+assets/importer.js:343  { k: 'scenes', ic: '🎭', nm: '场景话术', ds: '每行一条场景话术文字' },
+assets/importer.js:344  { k: 'etiquet', ic: '🎩', nm: '商务礼仪', ds: '每行一条礼仪要点文字' },
+assets/importer.js:345  { k: 'layouts', ic: '🧱', nm: 'PPT版式', ds: '每行一条版式/技巧文字' }
+assets/importer.js:355  return { k: n, ic: '📦', nm: n, ds: '自定义题库 · ' + ((banks[n].items || []).length) + ' 条（点它作为导入目标）' };
+assets/importer.js:357  if (banks[curName] == null) customCards.unshift({ k: curName, ic: '➕', nm: curName, ds: '为本次文件新建自定义题库（点它作为导入目标）' });
+assets/importer.js:365  : '<div class="imp-note">⚠️ 内置题库组件未加载（qbank.js），请刷新本页后重试；你仍可选择下方“自定义题库”完成导入。</div>') +
+assets/importer.js:406  if (parsed.length) { doBtn.disabled = false; doBtn.textContent = '✅ 导入 ' + parsed.length + ' 条到「' + labelOf(key) + '」'; }
+assets/importer.js:419  if (f.size === 0) { toast('⚠️ 文件为空（0 字节），请选择有效的文档文件'); return; }
+assets/importer.js:420  if (f.size > 20 * 1024 * 1024) { toast('⚠️ 文件过大（超过 20MB），请选择较小的文档'); return; }
+assets/importer.js:425  if (ext === 'doc') { if (nameEl) nameEl.textContent = f.name; toast('⚠️ 不支持 .doc 老格式：请用 Word 打开后「另存为 .docx」，或把内容复制到 .txt 再导入', 'warning'); return; }
+assets/importer.js:426  if (ext === 'ppt') { if (nameEl) nameEl.textContent = f.name; toast('⚠️ 不支持 .ppt 老格式：请用 PowerPoint 另存为 .pptx 后再导入', 'warning'); return; }
+assets/importer.js:429  if (ext === 'docx') { res = await readDocxText(f); if (!res.ok) { if (nameEl) nameEl.textContent = f.name; toast('⚠️ 第 1 步：' + res.msg, 'error'); return; } S.text = res.t
+assets/importer.js:430  else if (ext === 'xlsx') { res = await readXlsxText(f); if (!res.ok) { if (nameEl) nameEl.textContent = f.name; toast('⚠️ 第 1 步：' + res.msg, 'error'); return; } S.text = 
+assets/importer.js:431  else if (ext === 'pptx') { res = await readPptxText(f); if (!res.ok) { if (nameEl) nameEl.textContent = f.name; toast('⚠️ 第 1 步：' + res.msg, 'error'); return; } S.text = 
+assets/importer.js:435  else { if (nameEl) nameEl.textContent = f.name; toast('⚠️ 暂不支持 .' + (ext || '未知') + ' 格式：请提供 .docx / .pptx / .txt / .csv / .xlsx 文件', 'warning'); return; }
+assets/importer.js:438  toast('⚠️ 第 1 步读取文件失败：' + (err && err.message ? err.message : err) + '。若为 .docx/.xlsx/.pptx，请确认文件未损坏、未被加密', 'error');
+assets/importer.js:443  toast('⚠️ 第 1 步：文件里没有读到任何文字。若是扫描件/纯图片 PDF 转成的 Word，请先做文字识别；也可把内容复制到 .txt 再导入', 'error');
+assets/importer.js:452  } catch (e) { toast('⚠️ 导入向导出错：' + (e && e.message ? e.message : e), 'error'); }
+assets/importer.js:463  if (!S) { toast('⚠️ 向导未打开，请从「工具 → 导入题库」重新进入', 'warning'); return; }
+assets/importer.js:464  if (!String(S.text || '').trim()) { toast('⚠️ 第 1 步：还没读到文件内容，请先选择文件', 'warning'); return; }
+assets/importer.js:465  if (!S.target) { toast('⚠️ 第 2 步：请先点一个题库卡片（内置题库或自定义题库）', 'warning'); return; }
+assets/importer.js:469  toast('⚠️ 第 2 步：解析出 0 条内容，请检查文件是否为 .txt/.csv/.docx/.xlsx/.pptx，且每行/每段含题干与选项', 'warning');
+assets/importer.js:484  toast('⚠️ 内置题库组件（qbank.js）未加载，无法写入「' + labelOf(S.target) + '」。请刷新页面后重试，或改选下方「自定义题库」', 'error');
+assets/importer.js:485  if (btn) { btn.disabled = false; btn.textContent = '✅ 导入 ' + items.length + ' 条到「' + labelOf(S.target) + '」'; }
+assets/importer.js:490  toast('⚠️ 第 3 步：写入「' + labelOf(S.target) + '」失败：' + (r.msg || '未知原因') + '。请改选下方「自定义题库」完成导入', 'error');
+assets/importer.js:491  if (btn) { btn.disabled = false; btn.textContent = '✅ 导入 ' + items.length + ' 条到「' + labelOf(S.target) + '」'; }
+assets/importer.js:495  toast('⚠️ 第 3 步：' + items.length + ' 条全部未通过「' + labelOf(S.target) + '」的格式校验' + (r.skip ? '（跳过 ' + r.skip + ' 条）' : '') + '。内容已存为自定义题库「' + curName + '」，也可换一个题库再试', 'warnin
+assets/importer.js:520  var tip = '✅ 已导入 ' + items.length + ' 条' + (extra || ('到「' + labelOf(S.target) + '」')) +
+assets/importer.js:551  if (btn) { btn.disabled = false; btn.textContent = '✅ 导入 ' + items.length + ' 条'; }
+assets/importer.js:552  toast('⚠️ 第 3 步导入失败：' + (e && e.message ? e.message : e), 'error');
+assets/mini.js:122  xp.innerHTML = '<b>' + (i === q.a ? '✅ 回答正确' : '❌ 回答错误，正确答案是 ' + 'ABCD'[q.a]) + '</b><br>' + esc(q.x || '');
+assets/mini.js:128  : '<button class="mz-btn primary" onclick="openMiniQuiz.__next()">下一题 →</button>';
+assets/mini.js:145  (pct >= 80 ? '<div class="mz-tip">🎉 掌握得不错！</div>' : pct >= 60 ? '<div class="mz-tip">还可以，把错题解析再看一遍~</div>' : '<div class="mz-tip">建议把解析都看一遍再练一次</div>');
+assets/mini.js:155  (it.icon || '📌') + ' ' + esc(it.title) + '<span style="margin-left:auto;opacity:.7">▼</span></div>' +
+assets/mock-engine.js:584  '<span class="mc-mark">' + (sel ? '✓' : '') + '</span>' +
+assets/mock-engine.js:610  if (mark) mark.textContent = btn.classList.contains('mc-picked') ? '✓' : '';
+assets/mock-engine.js:631  var labels = ['✓ 正确', '✗ 错误'];
+assets/mock-result.js:170  ' <span class="rb-q-mark ' + (isRight ? 'rb-mark-ok' : 'rb-mark-bad') + '">' + (isRight ? '✓ 正确' : '✗ 错误') + '</span>' +
+assets/mock-result.js:187  var letter = (q.type === 'true_false') ? ['✓正确', '✗错误'][v] : 'ABCD'[v];
+assets/mock-result.js:228  var arrow = delta > 0 ? '↑' : (delta < 0 ? '↓' : '=');
+assets/qbank.js:193  '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px">🧩 我的自定义</div>' +
+assets/qbank.js:241  if (addItem(item)) { toast('✅ 已添加并进入刷题列表'); renderList(); }
+assets/qbank.js:278  toast('📤 已导出 JSON');
+assets/tpl-preview.js:744  var CAT_FAV = '⭐ 我的收藏';
+assets/voiceplayer.js:480  { k: 'intensive', t: '📖 精听模式', tip: '可慢速 / 看原文 / 看中文' },
+assets/voiceplayer.js:481  { k: 'challenge', t: '🎯 挑战模式', tip: '隐藏原文中文慢速，只听' }
+assets/voiceplayer.js:603  h += '<span class="' + cls + '">' + (flags[i] ? '✓' : (i + 1)) + '</span>';
+assets/voiceplayer.js:642  stageHtml += '🎧 请认真听这一句（可重复播放）';
+assets/voiceplayer.js:651  '<button class="y solid" onclick="openVoiceTrain.__toCheck()">听完了，去判断 →</button></div>';
+assets/voiceplayer.js:660  '<button class="y" onclick="openVoiceTrain.__next()">下一句 →</button>' +
+assets/xt-aiusage.js:894  '<button type="button" class="xt-us-chip active" data-quota-sort="remaining">剩余可用量（少 → 多）</button>' +
+assets/xt-aiusage.js:895  '<button type="button" class="xt-us-chip" data-quota-sort="remainingDesc">剩余可用量（多 → 少）</button>' +
+assets/xt-aiusage.js:896  '<button type="button" class="xt-us-chip" data-quota-sort="used">已使用量（多 → 少）</button>' +
+assets/xt-aiusage.js:897  '<button type="button" class="xt-us-chip" data-quota-sort="quota">资源配额（大 → 小）</button>' +
+assets/xt-content.js:13  ★ API 签名清单（T10/T11/T12 三条并行线请严格按此调用，变更需走 T00 冻结流程）
+assets/xt-moments.js:135  if (m.location) out += '<span class="xtm-loc">📍' + esc(m.location) + '</span>';
+assets/xt-moments.js:161  return '<div class="xtm-likes">' + ico('heart', 12, '❤') + ' ' + esc(arr.join('、')) + '</div>';
+assets/xt-moments.js:239  var html = '<div class="xtm-sec"><div class="xtm-sec-t">' + ico('heart', 12, '❤') + ' 点赞（' + likes.length + '）</div>';
+assets/xt-moments.js:243  html += '</div><div class="xtm-sec"><div class="xtm-sec-t">' + ico('message-circle', 12, '💬') + ' 评论（' + cmts.length + '）</div>';
+assets/xt-moments.js:792  if (P.location) parts.push(ico('map-pin', 14, '📍') + ' ' + esc(P.location));
+assets/xt-moments.js:793  if (P.visScope) { parts.push(ico('eye', 12, '👁') + ' ' + esc(VIS_TEXT[P.visScope] || '公开') + (P.visNames.length ? '（' + esc(P.visNames.join('、')) + '）' : '')); }
+assets/xt-moments.js:795  if (P.linkUrl) parts.push('🔗 ' + esc(P.linkTitle || P.linkUrl));
+assets/xt-moments.js:815  toast('✅ 已发表');
+assets/xt-moments.js:892  if (open) { albGrid.style.display = 'none'; alb.textContent = '🖼 相册（灰度）'; }
+assets/xt-moments.js:893  else { buildAlbum(); albGrid.style.display = 'grid'; alb.textContent = '🖼 收起相册'; }
+assets/xt-moments.js:1057  toast('✅ 背景已更新');
+assets/xt-settings.js:26  aiAvatar: '🤖', aiPanelWidth: 'normal'
+assets/xt-update.js:32  ★★★ 当前版本号：每次发包必须同步修改这里 ★★★
+blog_wechat.html:22  ⚠️ 本页保留 <div class="app"> 外壳 → 具备「固定外壳 + 内部滚动」模型，滚动锁成立。 -->
+blog_wechat.html:172  <option value="public">🌍 公开（所有人可见）</option>
+blog_wechat.html:173  <option value="private">🔒 私密（仅自己可见）</option>
+blog_wechat.html:178  <input type="text" id="beCover" placeholder="📚 或 https://…">
+mock_exam.html:276  <a href="javascript:void(0)" id="guideLink">考试结构与时间分配 → 打开指南</a>
+mock_exam.html:421  '<h4><span>' + escHtml(it.icon || '📌') + '</span>' + escHtml(it.title) + '</h4>' +
+mock_exam_result.html:324  → 'cet4' → 'cet-mock'，'exam' → 'exam-mock'；取不到兜底 'cet-mock'。
+mock_exam_run.html:879  → 映射为 URL 的 cat：'cet4' → 'cet-mock'，'exam' → 'exam-mock'
+个人中心.html:675  if (arr.length >= 8) { showToast('⚠️ 最多 8 个标签'); return; }
+个人中心.html:683  if (!t) { showToast('⚠️ 先输入标签内容'); return; }
+个人中心.html:685  if (arr.indexOf(t) >= 0) { showToast('⚠️ 标签已存在'); inp.value = ''; return; }
+个人中心.html:686  if (arr.length >= 8) { showToast('⚠️ 最多 8 个标签'); return; }
+个人中心.html:692  var label = (on ? '✓ ' : '') + t + (extra ? ' ✕' : '');
+个人中心.html:727  else if (raw.length === 11) hint.textContent = raw.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') + ' ✓';
+个人中心.html:748  if ($('pePctTip')) $('pePctTip').textContent = pct >= 100 ? '🎉 太棒了！资料已全部完善' : ('还可以完善：' + miss.slice(0, 3).join('、'));
+个人中心.html:817  '<div style="font-size:var(--xt-font-xs);color:var(--text-secondary);margin-top:2px">❤ ' + (m.likes || []).length + ' · 💬 ' + (m.comments || []).length + (imgCount ? ' · 
+个人中心.html:911  约定（沿用项目既有）：他人视角 ?user=<uid> → 文案「查看 TA 的动态」；
+个人中心.html:1217  if (!r.ok && !r.empty) { xtBdFlag(true); xtBdMsg(r.msg, true); toast('⚠️ ' + r.msg); return; }
+个人中心.html:1243  toast('⚠️ ' + r.msg);
+个人中心.html:1348  ? ('🔒 ' + (LOCK_LABEL[cfg.f] || cfg.f) + '每月仅可修改一次，下次可改时间：' + (lk.nextAvailableAt || '—') + '。其他信息仍可正常修改。')
+个人中心.html:1443  toast('⚠️ ' + r.msg);
+个人中心.html:1456  toast('🔒 ' + lb + '每月仅可修改一次，下次可改时间：' + (lk.nextAvailableAt || '—'));
+个人中心.html:1507  toast('📍 已选择地区：' + pendingRegion + '，确认后点「保存」');
+动态空间.html:61  <button class="xtm-nav-btn" id="xtmCam" type="button" title="点击发图文/视频，长按发纯文字" aria-label="发表">📷</button>
+四级经验分享.html:258  icon: '📅',
+四级经验分享.html:279  <strong>💡 最后一周：</strong>用近2年真题进行全真模拟，严格按考试时间（上午9:00-11:25），培养考试状态，熟悉时间分配。
+四级经验分享.html:285  icon: '🔥',
+四级经验分享.html:313  <strong>💡 提分关键：</strong>根据分数性价比，优先突破听力和阅读两大板块，这两块占70%分值。
+四级经验分享.html:319  icon: '📝',
+四级经验分享.html:334  <strong>💡 冲击高分：</strong>在关键位置适当插入高级句式，如倒装句（Only in this way can we...）、强调句（It is...that...）、虚拟语气（If I were you, I would...）。
+四级经验分享.html:347  icon: '🎧',
+四级经验分享.html:366  <strong>💡 小技巧：</strong>也可以通过最简单的方式就是"听到什么就选什么"，四级听力答案通常就是原文的同义替换。
+四级经验分享.html:375  icon: '📖',
+四级经验分享.html:398  <strong>💡 时间分配建议：</strong>听力30分钟（边听边涂卡），阅读40分钟（仔细阅读25分钟+匹配10分钟+词汇5分钟），写作30分钟，翻译30分钟。
+四级经验分享.html:404  icon: '✍️',
+四级经验分享.html:429  <strong>💡 注意：</strong>不要死背模板，要学会灵活运用，把模板句改成自己的话，避免千篇一律。
+四级经验分享.html:435  icon: '🎯',
+四级经验分享.html:459  <strong>💡 零基础建议：</strong>先背高频词汇（前1000个），再练听力和阅读，写作翻译最后突击模板。不要一开始就做整套真题，会打击信心。
+四级经验分享.html:465  icon: '🏆',
+四级经验分享.html:484  <strong>💡 冲击高分：</strong>在关键位置适当插入高级句式，如倒装句、强调句、虚拟语气、非谓语动词等，让文章更有亮点。
+四级经验分享.html:498  icon: '📚',
+四级经验分享.html:515  <strong>💡 最后一个月小目标：</strong>先把四级高频词汇（约2000个）背完，不需要会拼写，看到认识就行。听力和阅读中反复出现的词重点记。
+四级经验分享.html:529  icon: '⭐',
+四级经验分享.html:550  <strong>💡 学霸忠告：</strong>不要追求完美，四级是通过性考试，425分就过了。把会做的题都做对，不会的题蒙一个，就够了。
+四级经验分享.html:581  '<span class="article-date">📅 ' + a.date + '</span>' +
+四级经验分享.html:592  '<a class="view-original" onclick="event.stopPropagation();window.open(\'' + a.url + '\',\'_blank\')">查看原文 →</a>' +
+地区选择.html:183  : (isCur(text) ? '<span class="xtr-tick">✓ 当前</span>' : '');
+好友申请.html:124  toast(r.autoAccepted ? '✅ 你们已经是好友啦，去私聊吧' : '✅ 好友申请已发送，等待对方同意');
+好友申请.html:128  .catch(function (e) { toast('⚠️ ' + e.message); });
+好友申请.html:133  if (!tok()) { box.innerHTML = '<div class="af-empty">🔒 请先<a href="登录.html" style="color:var(--primary)">登录</a>后使用添加好友功能</div>'; return; }
+好友申请.html:149  .then(function () { toast(accept ? '✅ 已同意，现在可以私聊了' : '已拒绝'); loadRequests(); })
+好友申请.html:150  .catch(function (e) { toast('⚠️ ' + e.message); });
+学习工作台.html:101  <div class="home-greeting" data-page-node-id="3E0il9sLclj5oIRliAi6D0"><span class="wave" data-page-node-id="VA4kKvjdFAyXikFFUeOh8M">👋</span> <span id="greetingText" data-
+学习工作台.html:734  + '<div class="task-checkbox">✓</div>'
+学习工作台.html:739  + '<div class="xt-task-del" title="删除该任务">✕</div>'
+学习工作台.html:778  if (hit && hit.done) toast('✅ 自定义任务完成！');
+学途.html:217  { key: 'vocab', name: '背单词 50 个', icon: '📖', type: 'vocab', url: MODULE_URLS.vocab },
+学途.html:218  { key: 'reading', name: '四级阅读 1 篇', icon: '📚', type: 'reading', url: MODULE_URLS.reading },
+学途.html:219  { key: 'listen', name: '听力 15 分钟', icon: '🎧', type: 'listen', url: '' },
+学途.html:220  { key: 'exam', name: '行测 20 题', icon: '📝', type: 'exam', url: MODULE_URLS.exam }
+学途.html:281  '<div><div class="xt-greet">👋 ' + greet() + '</div><div class="xt-date">' + fmtDate() + ' · 今天也要加油，一步一步来</div></div>' +
+学途.html:286  '<div class="xt-stat"><div class="n">🔥 ' + streak + '</div><div class="l">连续学习(天)</div></div>' +
+学途.html:290  '<div class="xt-card"><div class="xt-card-title">📖 今日词汇<span class="more">四级核心词库 · 共 ' + vt.total + ' 词</span></div>' +
+学途.html:296  '<div class="xt-card"><div class="xt-card-title">🚀 继续学习<span class="more">' + (last ? '上次 ' + last.date + ' · ' + last.minutes + ' 分钟' : '今天还没开始') + '</span></div>' +
+学途.html:297  (last ? '<button class="xt-btn" style="width:100%" onclick="xtContinue()">继续学习 →</button>' : '<div class="xt-empty">点击下方任务开始今天的学习吧</div>') +
+学途.html:299  '<div class="xt-card"><div class="xt-card-title">📚 今日任务<span class="more">学完自动记录</span></div>' + taskHtml + '</div>' +
+学途.html:300  '<div class="xt-card"><div class="xt-card-title">⚡ 快速开始</div>' +
+学途.html:309  '<div style="font-size:15px;font-weight:800">🤖 AI 学习助手</div>' +
+学途.html:338  (subs[i].url ? '<span class="m-ar" onclick="event.stopPropagation();location.href=\'' + esc(subs[i].url) + '\'">进入 →</span>' : '') +
+学途.html:343  '<div class="xt-group-title">📚 英语</div>' +
+学途.html:345  '<div class="xt-card-title">📖 四级词汇<span class="more">已掌握 ' + vt.mastered + ' · 待复习 ' + vt.review + ' · 总 ' + vt.total + '</span></div>' +
+学途.html:359  '<div class="xt-group-title">🎯 公考</div>' +
+学途.html:363  '<div class="xt-group-title">📖 自定义学科</div>' + subHtml +
+学途.html:395  wrongHtml = '<div class="xt-empty">🎉 错题本是空的，继续保持！</div>';
+学途.html:401  opts += '<div style="font-size:12px;color:var(--text-secondary);margin-top:3px">' + esc(String.fromCharCode(65 + oi)) + '. ' + esc(w.options[oi]) + (oi === w.answer ? ' ✅
+学途.html:410  '<div class="w-a">✅ 正确答案：' + esc(String.fromCharCode(65 + w.answer)) + '. ' + esc((w.options || [])[w.answer] || '') + '</div>' +
+学途.html:411  (w.exp ? '<div class="w-e">📖 解析：' + esc(w.exp) + '</div>' : '') +
+学途.html:430  var cats = [['数量关系', '🧮'], ['判断推理', '🧠'], ['资料分析', '📊'], ['言语理解', '📖'], ['常识判断', '🌍']];
+学途.html:437  '<div style="font-size:15px;font-weight:800">🎯 今日推荐</div>' +
+学途.html:439  '<button class="xt-btn sm" style="background:#fff;color:var(--primary)" onclick="goStudy(\'exam\',\'' + MODULE_URLS.exam + '\')">开始 →</button>' +
+学途.html:441  '<div class="xt-group-title">📚 我的题库</div>' + catHtml +
+学途.html:442  '<div class="xt-group-title">📒 错题本（自动收录）</div>' +
+学途.html:456  showToast('✅ 错因已记录：' + reason);
+学途.html:464  var cats = [['all', '全部', '📚']].concat((typeof BLOG_CATS !== 'undefined' ? BLOG_CATS : []).map(function (c) { return [c.id, c.name, c.icon]; }));
+学途.html:473  var rc = (typeof noteCat === 'function') ? noteCat(rn.category) : { icon: '📝', name: '其他' };
+学途.html:485  var lc = (typeof noteCat === 'function') ? noteCat(n.category) : { icon: '📝', name: '其他' };
+学途.html:494  '<div class="xt-card"><div class="xt-card-title">📌 最近使用</div>' + recentHtml + '</div>' +
+学途.html:495  '<div class="xt-card"><div class="xt-card-title">🗂 笔记列表<span class="more">' + list.length + ' 篇</span></div>' + listHtml +
+学途.html:505  var p = (appData && appData.profile) || { name: '同学', avatar: '🎓' };
+学途.html:530  goalHtml += '<div class="xt-goal"><span class="g-name">🎯 ' + esc(g.name) + '</span>' +
+学途.html:541  '<div class="xt-me-avatar">' + (p.avatarImg && /^data:image\//.test(p.avatarImg) ? '<img src="' + p.avatarImg + '" alt="头像">' : esc(p.avatar || '🎓')) + '</div>' +
+学途.html:556  '<div class="xt-card"><div class="xt-card-title">📅 学习日历<span class="more">近 7 天</span></div><div class="xt-cal">' + calHtml + '</div></div>' +
+学途.html:589  if (s && s.type) showToast('✅ 已记录 ' + s.type + ' 学习，继续加油！');
+导入题库.html:362  '<span class="imp-lib-n">📦 ' + escImp(n) + '</span>' +
+工具.html:141  ⚠️ 图标统一用 span.nav-icon 嵌套写法（icon-map.js 扫描 data-icon 属性自动注入 svg）；
+工具.html:206  ⚠️ 不可逆关联：assets/app.js 的倒计时弹窗与渲染函数在顶层无守卫地监听它需要的共用节点，
+工具.html:284  '<span class="imp-lib-n">📦 ' + escImp(n) + '</span>' +
+我的文件.html:784  favBtn.textContent = on ? '★ 已收藏' : '☆ 收藏';
+更多.html:83  <div class="user-streak">🔥 连续打卡 0 天</div>
+更多.html:111  <div class="morepage-title">☰ 更多功能</div>
+更多.html:220  <div class="bottom-more-title">🧰 更多工具</div>
+更多.html:274  🤖<span class="ai-mode-badge" id="aiModeBadge">演示</span>
+更多.html:278  <div class="ai-avatar">🤖</div>
+演示.html:116  <div class="ppt-offline-ic">🎨</div>
+登录.html:184  <div class="login-notice" id="loginNotice">💡 正在检测运行模式……</div>
+登录.html:310  if (n) n.innerHTML = '📱 <b>单机离线模式</b>：未检测到后端服务器，数据保存在本机。<br>如需多人博客 / 在线 AI，请启动 <b>server/</b> 后端后重新打开。';
+登录.html:332  box.innerHTML = '⚠️ ' + escHtml(msg);
+登录.html:342  btn.textContent = show ? '🙈' : '👁';
+登录.html:398  if (p === c) { tip.innerHTML = '<div class="match-ok">✓ 两次密码一致</div>'; return true; }
+登录.html:399  tip.innerHTML = '<div class="match-bad">✗ 两次密码不一致</div>'; return false;
+登录.html:450  document.getElementById('loginSubmitBtn').textContent = mode === 'login' ? '登录' : '✨ 注 册 并 进 入';
+登录.html:609  function showFindErr(msg) { var b = document.getElementById('findErr'); b.innerHTML = '⚠️ ' + escHtml(msg); b.classList.add('show'); }
+登录.html:675  var html = '<div class="find-result">✅ 找回成功！<br>账号：<b>' + escHtml(r.data.username) + '</b>';
+社区.html:542  if (typeof showToast === 'function') showToast('↺ 已恢复上次未完成的草稿');
+社区.html:548  if (typeof showToast === 'function') showToast('🗑️ 已丢弃本地草稿');
+社区.html:671  toast(ok ? '🔗 帖子链接已复制，粘贴给同学吧～' : '⚠️ 复制失败，请手动复制地址栏链接');
+社区.html:680  toast('📨 已带上《' + (t || '这篇发贴') + '》卡片，去选好友 / 群发送');
+私聊.html:23  5 个 tab 五等分后每格仅几十 px（320px 屏约 60px），"💬 会话" 这类 emoji+空格+双字中文被整体截成空白。
+私聊.html:92  <div class="nav-item" data-page="comm"> <span class="nav-icon" data-icon="message-square"></span><span>表达</span> </div> <div class="nav-item" data-page="interview"> <span
+私聊.html:147  <div class="im-empty" id="imEmpty">👈 选择左侧好友开始私聊</div>
+私聊.html:166  → chat-local.js：在线 POST /api/uploads/image + 发 kind='image' 消息；离线回落 dataURL。 -->
+私聊.html:211  <div class="ac-avatar">🛡️</div>
+私聊.html:343  🤖<span class="ai-mode-badge" id="aiModeBadge">演示</span>
+私聊.html:347  <div class="ai-avatar">🤖</div>
+私聊.html:452  overflow:hidden + text-overflow:ellipsis，"💬 会话 / 👥 好友 / 📩 申请" 这类
+私聊.html:745  '<div class="im-forward-tag">🔗 转发自帖子</div>' +
+管理员.html:91  <div class="user-streak">🔥 连续打卡 0 天</div>
+管理员.html:218  <div class="bottom-more-title">🧰 更多工具</div>
+管理员.html:275  🤖<span class="ai-mode-badge" id="aiModeBadge">演示</span>
+管理员.html:279  <div class="ai-avatar">🤖</div>
+英语.html:638  ★ 时序（对齐 演示.html T00 的 F12 修正，两条硬约束）：
+英语.html:644  ★ mountMask 判定结论（20260914e，实测依据）：
+行测.html:175  <span style="position:absolute;top:8px;left:8px;font-size:20px">🔴</span>
+行测.html:178  <span style="position:absolute;top:8px;right:8px;font-size:20px">🔴</span>
+行测.html:181  <span style="position:absolute;bottom:8px;right:8px;font-size:20px">🔴</span>
+行测.html:184  <span style="position:absolute;bottom:8px;left:8px;font-size:20px">🔴</span>
+行测.html:191  <span style="position:absolute;bottom:8px;left:8px;font-size:20px">🔴</span>
+行测.html:195  <span style="position:absolute;top:8px;right:8px;font-size:20px">🔵</span>
+行测.html:199  <span style="position:absolute;top:8px;left:8px;font-size:20px">🔴</span>
+行测.html:203  <span style="position:absolute;bottom:8px;right:8px;font-size:20px">🔴</span>
+行测.html:216  <span>→</span>
+行测.html:218  <span>→</span>
+行测.html:220  <span>→</span>
+行测.html:222  <span>→</span>
+表达.html:178  <div class="user-streak">🔥 连续打卡 0 天</div>
+表达.html:356  🤖<span class="ai-mode-badge" id="aiModeBadge">演示</span>
+表达.html:360  <div class="ai-avatar">🤖</div>
+设置.html:261  <select class="form-input" id="stBlogCat" style="min-width:170px" onchange="setSetting('blogCat',this.value);showToast('✅ 默认分类已保存')" data-page-node-id="aIQe6ArUHnVYqVRnvG
+设置.html:270  <select class="form-input" id="stBlogPrivacy" onchange="setSetting('blogPrivacy',this.value);showToast('✅ 默认可见范围已保存')" data-page-node-id="BG8iY2N63kc1MLQOMHA01e">
+设置.html:300  <select class="form-input" id="stDailyNew" onchange="setSetting('dailyNew',+this.value);showToast('✅ 每日新增条数已保存')" data-page-node-id="Wvc8niwC5Z2N4sXNt0Yz9t">
+设置.html:313  <select class="form-input" id="stDailyReview" onchange="setSetting('dailyReview',+this.value);showToast('✅ 每日复习量已保存')">
+设置.html:344  <input type="checkbox" id="stLimitOn" onchange="setSetting('studyLimitOn',this.checked);syncStudyLimitUI();showToast(this.checked?'✅ 已开启每日时长上限':'已关闭时长上限')">
+设置.html:347  <select class="form-input" id="stLimitHours" style="width:110px" onchange="setSetting('studyLimitHours',+this.value);syncStudyLimitUI();showToast('✅ 每日上限已设为 '+this.value+
+设置.html:445  <input type="time" class="form-input" id="stRemindTime" value="20:00" onchange="setSetting('remindTime',this.value);applyStudyReminder();showToast('✅ 提醒时间已保存')" data-page
+设置.html:461  <div class="setting-desc" data-page-node-id="pR9C9f7PaBDRVvkGS0NNeC">把文档里的单词、行测题、面试题等内容，选择导入到对应模块的题库（四级词汇 / 行测 / 面试），支持手动加题与 JSON 备份在“各题库→<span class="nav-icon" data-icon
+设置.html:619  <select class="form-input" id="stAiTemp" onchange="setSetting('aiTemp',this.value);showToast('✅ 已保存')" data-page-node-id="fac9wns6LfIoChyFXCuAPC">
+设置.html:631  <select class="form-input" id="stAiMax" onchange="setSetting('aiMax',this.value);showToast('✅ 已保存')" data-page-node-id="LE3w9SyRN79mpOz799vcA9">
+设置.html:646  <div class="card-action" data-page-node-id="YBA1cblAYYhHBCEmsQb2JY">旧数据 → 服务器</div>
+设置.html:1006  <div class="ai-avatar" data-page-node-id="DZDUmN0pqNI1nPBUbRY95k">🤖</div>
+设置.html:1134  showToast('✅ 设置已保存');
+设置.html:1186  showToast('✅ 已保存');
+设置.html:1220  showToast('✅ 常用标签已保存');
+设置.html:1267  if (notify) showToast('📊 数据总览已刷新');
+设置.html:1272  if (typeof Notification === 'undefined') { showToast('⚠️ 当前环境不支持网页通知'); return; }
+设置.html:1273  if (Notification.permission === 'granted') { showToast('✅ 通知权限已开启'); return; }
+设置.html:1274  if (Notification.permission === 'denied') { showToast('⚠️ 通知权限被拒绝，请在浏览器/系统设置中允许'); return; }
+设置.html:1277  showToast(p === 'granted' ? '✅ 通知权限已开启' : '⚠️ 未获得通知权限');
+设置.html:1279  } catch (e) { showToast('⚠️ 通知授权失败'); }
+设置.html:1293  new Notification('🚀 星途 · 学习提醒', { body: '该打卡学习啦，今天的任务完成了吗？' });
+设置.html:1374  if (mode) mode.textContent = online ? '🌐 在线模式（服务器）' : '📱 本地单机模式';
+设置.html:1420  if (!pwStrongEnough(np)) { showToast('⚠️ 密码强度不足：需至少 8 位，且同时包含字母和数字'); return false; }
+设置.html:1421  if (pwTooCommon(np)) { showToast('⚠️ 该密码过于常见，请更换为更复杂的密码'); return false; }
+设置.html:1434  if (!acct) { showToast('⚠️ 未获取到当前账号'); return; }
+设置.html:1437  if (!users[acct]) { showToast('⚠️ 本机未找到该账号记录'); return; }
+设置.html:1460  if (!stIsOnline()) { showToast('⚠️ 当前未登录在线账号'); return; }
+设置.html:1479  if (!oldP) { showToast('⚠️ 请输入当前密码'); return; }
+设置.html:1481  if (np !== np2) { showToast('⚠️ 两次输入的新密码不一致'); return; }
+设置.html:1482  if (np === oldP) { showToast('⚠️ 新密码不能与当前密码相同'); return; }
+设置.html:1490  showToast('✅ 密码已修改，其他设备需重新登录');
+设置.html:1492  showToast('❌ ' + ((e && e.message) || '修改失败，请稍后重试'));
+设置.html:1500  if (!acct) { showToast('⚠️ 未获取到当前账号'); return; }
+设置.html:1775  if (ch !== 'phone' && ch !== 'email') { showToast('⚠️ 当前渠道无需验证码'); return; }
+设置.html:1779  showToast(ch === 'phone' ? '⚠️ 请输入正确的 11 位手机号' : '⚠️ 请输入正确的邮箱地址');
+设置.html:1787  showToast('📱 验证码已发送（本地模拟，任意 6 位数字均可通过）');
+设置.html:1798  showToast('✅ 验证码已发送至 ' + target + '，请查收（10 分钟内有效）');
+设置.html:1803  showToast('❌ ' + ((e && e.message) ? String(e.message) : '验证码发送失败，请稍后重试'));
+设置.html:1811  showToast('⚠️ 手机号绑定暂未开放（后端未提供短信接口），请改用邮箱绑定');
+设置.html:1821  if (!ch) { showToast('⚠️ 请先选择要绑定的项目'); return; }
+设置.html:1825  if (ch === 'phone') showToast('⚠️ 请输入正确的 11 位手机号（1 开头）');
+设置.html:1826  else if (ch === 'email') showToast('⚠️ 请输入正确的邮箱地址');
+设置.html:1827  else showToast('⚠️ 微信号需以字母开头，6-20 位，可含字母/数字/下划线/短横线');
+设置.html:1834  if (!code) { showToast('⚠️ 请先输入验证码'); return; }
+设置.html:1837  if (!/^\d{6}$/.test(code)) { showToast('⚠️ 验证码应为 6 位数字'); return; }
+设置.html:1847  if (!saved) { showToast('❌ 本机保存失败，请检查浏览器存储权限'); }
+设置.html:1851  showToast(saved ? ('✅ ' + ST_BIND_META[channel].name + '已绑定') : '⚠️ 已提交但未能保存');
+设置.html:1856  showToast('❌ ' + (msg || '绑定失败，请稍后重试'));
+设置.html:1881  showToast('⚠️ ' + ST_BIND_META[ch].name + '绑定暂未开放（后端未提供接口），请改用邮箱绑定');
+设置.html:1896  showToast(saved ? ('已解绑' + meta.name) : '⚠️ 解绑未能保存，请重试');
+设置.html:1907  showToast('❌ 解绑失败：' + ((e && e.message) ? String(e.message) : '网络错误'));
+设置.html:1971  if (typeof showToast === 'function') showToast('✅ 已移出黑名单');
+设置.html:2015  if (hint) { hint.textContent = '🔌 需登录后在线使用；当前为单机模式'; hint.style.display = 'block'; }
+设置.html:2035  if (hint) { hint.textContent = '🔌 隐私设置需登录后在线使用'; hint.style.display = 'block'; }
+设置.html:2062  if (typeof showToast === 'function') showToast('✅ 已保存');
+设置.html:2067  if (typeof showToast === 'function') showToast('⚠️ 保存失败：' + ((e && e.message) || '网络错误'));
+设置.html:2202  if (typeof showToast === 'function') showToast('✅ 已收到，编号 #' + d.id);
+赞助.html:178  <span class="sp-zoom" aria-hidden="true">🔍</span>
+赞助.html:182  <span class="sp-zoom" aria-hidden="true">🔍</span>
+
+===== DECORATIVE(计数) =====
+444

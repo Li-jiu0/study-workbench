@@ -1,0 +1,31 @@
+root html count = 42
+S_AFTER stamp dist = {'20260916O': 462, '20260916R': 35, '20260916S': 109}  (total=606)
+
+-- 7 目标资产 独立复核 --
+app.js           {'20260916S': 37}        -> PASS(全 S)
+api.js           {'20260916S': 33}        -> PASS(全 S)
+chat-local.js    {'20260916S': 1}         -> PASS(全 S)
+importer.js      {'20260916S': 3}         -> PASS(全 S)
+notify.js        NO-REFS                  -> PASS(应无引用)
+ai-service.js    {'20260916S': 34}        -> PASS(全 S)
+ai-settings.js   {'20260916S': 1}         -> PASS(全 S)
+asset-level bad = NONE
+
+accidental .js.js?v=/.css.css?v= count = 0
+raw-regex bare assets count = 0
+tag-parse bare assets count = 0
+non-assets stamped refs (data/ 等) = 3
+   mock_exam.html  data/mock-papers.js?v=20260916O
+   mock_exam_result.html  data/mock-papers.js?v=20260916O
+   mock_exam_run.html  data/mock-papers.js?v=20260916O
+
+-- 行尾 profile --
+files with loneLF != 0 : 1
+   ai-settings.html           CRLF=0 loneLF=638
+
+-- ai-settings.html 行尾溯源（与 pre-r72 备份对比）--
+current : bytes=33025 CRLF=0 loneLF=638
+backup  : bytes=30266 CRLF=0 loneLF=596
+
+-- 幂等性（真实变更应为 0）--
+real content changes on re-run = 0 (期望 0)

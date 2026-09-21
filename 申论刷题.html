@@ -1,0 +1,1873 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#5B8DEF">
+<title>申论学习 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260923c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260916O">
+<link rel="stylesheet" href="assets/states.css?v=20260916O">
+<link rel="stylesheet" href="assets/polish.css?v=20260916O">
+<style>
+/* ===== 申论刷题页专用样式（复用 common.css 变量，不新增色板） ===== */
+.sl-tabs { display: flex; gap: 8px; padding: 14px 24px 0; }
+.sl-tab { display: flex; align-items: center; gap: 8px; padding: 9px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; color: var(--text-secondary); background: var(--card); border: 1px solid var(--border); cursor: pointer; transition: var(--transition); }
+.sl-tab:hover { color: var(--primary); border-color: var(--primary); }
+.sl-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.sl-body { padding: 14px 24px 32px; }
+.sl-filter-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+.sl-lab { font-size: 13px; color: var(--text-secondary); }
+.sl-select { width: auto; min-width: 132px; padding: 6px 10px; font-size: 13px; border-radius: 10px; }
+.sl-meta { font-size: 13px; color: var(--text-secondary); margin: 2px 0 12px; }
+.sl-qcard { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 12px; background: var(--card); transition: var(--transition); }
+.sl-qcard:hover { box-shadow: var(--shadow-hover); }
+.sl-qtitle { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.sl-qreq { font-size: 13px; color: var(--text-secondary); line-height: 1.7; margin: 8px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.sl-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.sl-status { font-size: 13px; margin: 8px 0 0; }
+.sl-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 10px; }
+.sl-head { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.sl-htitle { font-size: 16px; font-weight: 700; color: var(--text); flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.sl-back { display: inline-flex; align-items: center; cursor: pointer; color: var(--text-secondary); }
+.sl-back:hover { color: var(--primary); }
+.sl-split { display: flex; gap: 16px; padding: 16px; min-height: 520px; }
+.sl-col { display: flex; flex-direction: column; min-width: 0; }
+.sl-mat { flex: 1 1 50%; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; transition: var(--transition); }
+.sl-mat.collapsed { flex: 0 0 60px; }
+.sl-mat.collapsed .sl-mat-body { display: none; }
+.sl-mat.collapsed .sl-mat-head { writing-mode: vertical-rl; height: 100%; justify-content: flex-start; padding: 14px 8px; }
+.sl-mat-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--primary-light); font-size: 14px; font-weight: 600; color: var(--primary); }
+.sl-mat-head .sl-sp { flex: 1; }
+.sl-mini-btn { font-size: 12px; font-weight: 600; color: var(--primary); cursor: pointer; padding: 2px 8px; border: 1px solid var(--primary); border-radius: 8px; white-space: nowrap; }
+.sl-mat-body { padding: 14px 16px; font-size: 16px; line-height: 1.8; color: var(--text); overflow-y: auto; flex: 1; max-height: calc(100vh - 270px); max-height: calc(100dvh - 270px); }
+.sl-mat-body p { margin-bottom: 12px; }
+.sl-ans { flex: 1 1 50%; display: flex; flex-direction: column; gap: 10px; }
+.sl-box { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 14px; line-height: 1.7; color: var(--text-secondary); background: var(--bg); }
+.sl-box b { color: var(--text); }
+.sl-ta, .sl-note { width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 15px; line-height: 1.8; color: var(--text); background: var(--card); resize: vertical; }
+.sl-ta { min-height: 240px; flex: 1; }
+.sl-note { min-height: 90px; font-size: 14px; }
+.sl-count { font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 10px; }
+.sl-saved { font-size: 12px; color: var(--success); opacity: 0; transition: opacity .3s; }
+.sl-saved.on { opacity: 1; }
+/* ===== C12 申论 AI 批改（本页新增；复用 common.css 变量，不引入新库） ===== */
+.sl-ai-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.sl-ai-hint { font-size: 12px; color: var(--text-muted); flex: 1; min-width: 120px; }
+.sl-aibox { display: none; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; margin-top: 12px; background: var(--card); }
+.sl-aibox.on { display: block; }
+.sl-ai-head { font-size: 14px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.sl-ai-head .sl-sp { flex: 1; }
+.sl-ai-body { font-size: 14px; line-height: 1.8; color: var(--text); white-space: pre-wrap; word-break: break-word; }
+.sl-ai-body ol, .sl-ai-body ul { margin: 8px 0 8px 20px; }
+.sl-ai-body li { margin-bottom: 4px; }
+.sl-ai-body b, .sl-ai-body strong { color: var(--text); }
+.sl-ai-err { border-color: var(--danger); }
+.sl-ai-err .sl-ai-head { color: var(--danger); }
+.sl-ai-thinking { font-size: 14px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+.sl-ai-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); animation: sl-ai-blink 1s infinite ease-in-out; }
+.sl-ai-dot:nth-child(2) { animation-delay: .2s; }
+.sl-ai-dot:nth-child(3) { animation-delay: .4s; }
+@keyframes sl-ai-blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+.sl-ai-meta { font-size: 12px; color: var(--text-muted); margin-top: 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+mark.sl-hl { background: #FFE9A8; color: inherit; }
+.sl-ke { background: linear-gradient(transparent 58%, #FFE08A 58%); cursor: pointer; font-weight: 600; }
+.sl-ke:hover { background: #FFD24D; }
+.sl-ansview { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 15px; line-height: 1.8; color: var(--text); background: var(--card); white-space: pre-wrap; overflow-y: auto; min-height: 200px; max-height: calc(100vh - 300px); max-height: calc(100dvh - 300px); }
+.sl-foot { display: flex; gap: 10px; flex-wrap: wrap; padding: 14px 16px; border-top: 1px solid var(--border); }
+.sl-block { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px 18px; margin-bottom: 14px; background: var(--card); cursor: pointer; transition: var(--transition); }
+.sl-block:hover { box-shadow: var(--shadow-hover); }
+.sl-block h4 { font-size: 15px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.sl-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+.sl-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.sl-expr { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; background: var(--card); display: flex; flex-direction: column; gap: 8px; }
+.sl-econtent { font-size: 14px; line-height: 1.7; color: var(--text); flex: 1; word-break: break-word; }
+.sl-esrc { font-size: 12px; color: var(--text-muted); }
+.sl-expr-acts { display: flex; gap: 8px; justify-content: flex-end; }
+.sl-mini { font-size: 12px; padding: 3px 10px; border-radius: 8px; border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; background: transparent; }
+.sl-mini:hover { border-color: var(--primary); color: var(--primary); }
+.sl-chip { padding: 5px 12px; border-radius: 20px; font-size: 13px; border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+.sl-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.sl-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 12px; }
+.sl-article { max-width: 700px; margin: 0 auto; padding: 8px 4px; font-size: 16px; line-height: 1.8; color: var(--text); }
+.sl-article p { margin-bottom: 14px; }
+.sl-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.45); z-index: 1500; align-items: center; justify-content: center; }
+.sl-overlay.on { display: flex; }
+.sl-confirm { background: var(--card); border-radius: var(--radius); padding: 22px; width: 90%; max-width: 380px; box-shadow: var(--shadow-hover); }
+.sl-confirm-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+.sl-confirm-msg { font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 18px; }
+.sl-confirm-actions { display: flex; gap: 10px; }
+.sl-confirm-actions .btn { flex: 1; }
+.sl-sheet { background: var(--card); border-radius: var(--radius); padding: 22px; width: 92%; max-width: 480px; max-height: 78vh; display: flex; flex-direction: column; }
+.sl-sheet-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+.sl-sheet-list { overflow-y: auto; flex: 1; margin-bottom: 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.sl-ck { display: flex; gap: 8px; align-items: flex-start; padding: 9px 12px; font-size: 14px; line-height: 1.6; border-bottom: 1px solid var(--border); }
+.sl-ck:last-child { border-bottom: none; }
+.sl-sheet-actions { display: flex; gap: 10px; }
+.sl-sheet-actions .btn { flex: 1; }
+.sl-selbar { display: none; position: fixed; z-index: 1600; gap: 6px; background: var(--text); padding: 6px; border-radius: 10px; box-shadow: var(--shadow-hover); }
+.sl-selbar.on { display: flex; }
+.sl-selbar button { background: transparent; color: #fff; font-size: 13px; padding: 5px 10px; border-radius: 8px; }
+.sl-selbar button:hover { background: rgba(255,255,255,.18); }
+.sl-empty { text-align: center; padding: 46px 16px; color: var(--text-muted); }
+.sl-ei { margin-bottom: 12px; opacity: .45; }
+.sl-et { font-size: 15px; color: var(--text); font-weight: 600; margin-bottom: 6px; }
+.sl-res { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 8px; font-size: 14px; cursor: pointer; background: var(--card); }
+.sl-res:hover { background: var(--primary-light); }
+.sl-res .sl-rk { font-size: 12px; color: var(--text-muted); }
+.sl-fav { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; background: var(--card); }
+.sl-ft { flex: 1; font-size: 14px; color: var(--text); }
+.sl-sub { font-size: 13px; font-weight: 700; color: var(--text); margin: 16px 0 8px; display: flex; align-items: center; gap: 8px; }
+.sl-divider { height: 1px; background: var(--border); margin: 16px 0; }
+.sl-addform { border: 1px dashed var(--primary); border-radius: var(--radius-sm); padding: 14px 16px; margin-top: 12px; background: var(--primary-light); }
+.sl-inline { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+@media (max-width: 900px) {
+  .sl-split { flex-direction: column; }
+  .sl-grid2 { grid-template-columns: 1fr; }
+  .sl-body, .sl-tabs { padding-left: 12px; padding-right: 12px; }
+}
+/* ===== R73 需求20-B 移动端适配（≤768px）=====
+   仅作用于窄屏；桌面端(>768px)渲染零影响（本块整体位于媒体查询内）。
+   1) 内嵌媒体兜底 max-width，防 JS 注入内容/未来素材撑破窄屏；
+   2) 宽表格窄屏内横向滚动，避免整页横向溢出（需求20-B #2）；
+   3) 字号下限兜底：common.css 的 .bn-label(10px)/.ai-mode-badge(9px)/
+      .study-stats-bar b(9px) 低于 A7 辅助≥11px，页内窄屏提升到 11px（不改共享 common.css）。 */
+@media (max-width: 768px) {
+  img, video, canvas, iframe { max-width: 100%; height: auto; }
+  table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bottom-nav-item .bn-label, .ai-mode-badge, .study-stats-bar b { font-size: 11px; }
+  /* 芯片/迷你按钮：窄屏允许换行，避免 nowrap 撑破（#4 定点收敛） */
+  .sl-chips { flex-wrap: wrap; }
+  .sl-chip, .sl-mini-btn { white-space: normal; }
+}
+</style>
+<script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script>window.__XT_PROD__=true;</script>
+</head>
+<body class="theme-home">
+
+<div class="app">
+<nav class="sidebar">
+    <div class="logo">
+      <div class="logo-icon" data-icon="book-open"></div>
+      <div>
+        <div class="logo-text">星途</div>
+        <div class="logo-sub">致追梦的人->修身</div>
+      </div>
+    </div>
+    <div class="nav-list">
+      <div class="nav-item" data-page="home">
+        <span class="nav-icon" data-icon="home"></span><span>首页</span>
+      </div>
+      <div class="nav-item" onclick="location.href='AI.html'">
+        <span class="nav-icon" data-icon="sparkles"></span><span>AI</span>
+      </div>
+      <div class="nav-section">学习模块</div>
+      <div class="nav-item" data-page="cet">
+        <span class="nav-icon" data-icon="book-open"></span><span>英语</span>
+      </div>
+      <div class="nav-item" data-page="exam">
+        <span class="nav-icon" data-icon="pencil"></span><span>行测</span>
+      </div>
+      <div class="nav-item" data-page="comm">
+        <span class="nav-icon" data-icon="message-square"></span><span>表达</span>
+      </div>
+      <div class="nav-item" data-page="interview">
+        <span class="nav-icon" data-icon="handshake"></span><span>面测</span>
+      </div>
+      <div class="nav-item" data-page="files">
+        <span class="nav-icon" data-icon="folder"></span><span>我的文件</span>
+      </div>
+      <div class="nav-section">创作</div>
+      <div class="nav-item" data-page="blog">
+        <span class="nav-icon" data-icon="globe"></span><span>社区</span>
+      </div>
+      <div class="nav-item" data-page="moments">
+        <span class="nav-icon" data-icon="rss"></span><span>动态空间</span>
+      </div>
+      <div class="nav-section">互动</div>
+      <div class="nav-item" data-external="1" onclick="gotoChat()" title="通讯录 · 添加好友（需在线模式）">
+        <span class="nav-icon" data-icon="users"></span><span>通讯录</span>
+      </div>
+      <div class="nav-section">中心</div>
+      <div class="nav-item" data-page="wrong-book">
+        <span class="nav-icon" data-icon="book"></span><span>错题本</span>
+      </div>
+      <div class="nav-item" data-page="profile">
+        <span class="nav-icon" data-icon="user"></span><span>个人中心</span>
+      </div>
+      <div class="nav-section">系统</div>
+      <div class="nav-item" data-page="settings">
+        <span class="nav-icon" data-icon="settings"></span><span>设置</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-card" onclick="openBlogProfile()" title="点击进入个人中心">
+        <div class="user-avatar">学</div>
+        <div class="user-info">
+          <div class="user-name">同学</div>
+          <div class="user-streak"><span data-icon="fire" data-icon-size="14" style="vertical-align:-2px"></span> 连续打卡 0 天</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+<header class="topbar">
+      <div class="topbar-title" id="topbarTitle">申论学习</div>
+      <!-- 全局搜索（检索范围与逻辑见 assets/app.js 的 globalSearch()） -->
+      <div class="gs-wrap" id="gsWrap">
+        <input type="text" class="gs-input" id="gsInput" placeholder="搜索发贴 / 模块…" autocomplete="off" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)">
+        <div class="gs-dropdown" id="gsDropdown"></div>
+      </div>
+      <div class="topbar-stats">
+        <div class="stat-item"><span class="stat-icon" data-icon="fire"></span><span>连续 <span class="stat-value" id="streakDays">0</span> 天</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="clock"></span><span>今日 <span class="stat-value" id="todayMinutes">0</span> 分钟</span></div>
+        <div class="stat-item"><span class="stat-icon" data-icon="check"></span><span>完成 <span class="stat-value" id="todayTasks">0</span>/<span id="totalTasks">5</span></span></div>
+      </div>
+      <div class="topbar-date" id="topbarDate"></div>
+      <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="16"></span></div>
+    </header>
+
+<div class="page active" id="page-shenlun">
+  <div class="sl-tabs">
+    <div class="sl-tab active" id="slTab1Btn"><span class="nav-icon" data-icon="pencil" data-icon-size="16"></span>题目精练</div>
+    <div class="sl-tab" id="slTab2Btn"><span class="nav-icon" data-icon="book-open" data-icon-size="16"></span>阅读积累</div>
+  </div>
+
+  <!-- ==================== Tab1 题目精练 ==================== -->
+  <div class="sl-body" id="slTab1Body">
+    <div class="card" id="slViewList"></div>
+    <div class="card" id="slViewAnswer" style="display:none"></div>
+    <div class="card" id="slViewReview" style="display:none"></div>
+  </div>
+
+  <!-- ==================== Tab2 阅读积累 ==================== -->
+  <div class="sl-body" id="slTab2Body" style="display:none">
+    <div id="slViewReadHome"></div>
+    <div class="card" id="slViewMatList" style="display:none"></div>
+    <div class="card" id="slViewMatDetail" style="display:none"></div>
+    <div class="card" id="slViewExpr" style="display:none"></div>
+  </div>
+</div>
+  </div>
+
+  <!-- 底部导航（手机端） -->
+    <nav class="bottom-nav">
+    <div class="bottom-nav-list">
+      <div class="bottom-nav-item" data-page="home">
+        <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
+      </div>
+      <div class="bottom-nav-item" onclick="gotoChat()"><div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div></div>
+      <div class="bottom-nav-item" onclick="openBlogProfile()"><div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div></div>
+            <div class="bottom-nav-item" onclick="location.href='AI.html'"><div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div></div>
+            <div class="bottom-nav-item" onclick="location.href='更多.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 更多面板遮罩 -->
+    <div class="more-overlay" onclick="toggleMorePanel()"></div>
+
+  <!-- 更多面板 -->
+  <div class="bottom-more-panel" id="morePanel">
+    <div class="bottom-more-title">更多功能</div>
+    <div class="bottom-more-grid">
+      <div class="bottom-more-item" onclick="navigateTo('moments');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="rss" data-icon-size="20"></span></div><div class="bm-label">动态空间</div>
+      </div>
+      <div class="bottom-more-item" onclick="openBlogStats()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="chart-bar" data-icon-size="20"></span></div><div class="bm-label">学习统计</div>
+      </div>
+      <div class="bottom-more-item" onclick="if(window.gotoBlogMine){gotoBlogMine()}else{location.href='社区.html#mine'}">
+        <div class="bm-icon"><span class="nav-icon" data-icon="inbox" data-icon-size="20"></span></div><div class="bm-label">互动广场</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('wrong-book');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></div><div class="bm-label">错题本</div>
+      </div>
+      <div class="bottom-more-item" onclick="navigateTo('settings');toggleMorePanel()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="settings" data-icon-size="20"></span></div><div class="bm-label">设置</div>
+      </div>
+      <div class="bottom-more-item" onclick="showAbout()">
+        <div class="bm-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div><div class="bm-label">关于</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加倒计时弹窗（外壳与行测保持一致，避免 app.js 初始化缺元素） -->
+  <div class="modal-overlay" id="countdownModal">    <div class="modal">
+      <div class="modal-title" id="countdownModalTitle">添加倒计时</div>
+      <div class="form-group">
+        <div class="form-label">名称</div>
+        <input type="text" class="form-input" id="cdName" placeholder="如：四级考试、秋招截止">
+      </div>
+      <div class="form-group">
+        <div class="form-label">日期</div>
+        <input type="date" class="form-input" id="cdDate">
+      </div>
+      <div class="form-group">
+        <div class="form-label">颜色</div>
+        <div class="color-picker" id="cdColorPicker">
+          <div class="color-dot active" style="background:#5B8DEF" data-color="#5B8DEF"></div>
+          <div class="color-dot" style="background:#E05040" data-color="#E05040"></div>
+          <div class="color-dot" style="background:#9B6BD9" data-color="#9B6BD9"></div>
+          <div class="color-dot" style="background:#D4A056" data-color="#D4A056"></div>
+          <div class="color-dot" style="background:#36CFC9" data-color="#36CFC9"></div>
+          <div class="color-dot" style="background:#FF9F68" data-color="#FF9F68"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--xt-font-base);color:var(--text-secondary)">
+          <input type="checkbox" id="cdPinned"> 置顶显示
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeCountdownModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveCountdown()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast提示 -->
+  <div id="toast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:2000;transition:transform 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:90%;text-align:center"></div>
+
+  <!-- 悬浮 AI 助手（外壳与行测一致，逻辑见 assets/app.js） -->
+  <div class="ai-fab" id="aiFab" title="AI学习助手（点按打开 · 拖拽移动 · 双击复位）">
+    <span class="nav-icon" data-icon="bot" data-icon-size="22"></span><span class="ai-mode-badge" id="aiModeBadge">演示</span>
+  </div>
+  <div class="ai-panel" id="aiPanel">
+    <div class="ai-panel-header">
+      <div class="ai-avatar"><span class="nav-icon" data-icon="bot" data-icon-size="20"></span></div>
+      <div style="flex:1">
+        <div class="ai-title">AI学习助手</div>
+        <div class="ai-subtitle" id="aiSubtitle">本地演示模式 · 历史已保存</div>
+      </div>
+      <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录"><span class="nav-icon" data-icon="delete" data-icon-size="16"></span></div>
+      <div class="ai-close" onclick="toggleAiPanel()" title="收起面板"><span class="nav-icon" data-icon="close" data-icon-size="16"></span></div>
+    </div>
+    <div class="ai-messages" id="aiMessages"></div>
+    <div class="ai-input-row">
+      <textarea id="aiInput" rows="1" placeholder="问我学习问题，例如：申论怎么练？" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMsg()}"></textarea>
+      <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()"><span data-icon="arrow-right" data-icon-size="18"></span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 选中文字工具条（只有两个操作：高亮 / 加入积累本） -->
+<div class="sl-selbar" id="slSelBar">
+  <button type="button" data-act="sel-hl">高亮</button>
+  <button type="button" data-act="sel-add">加入积累本</button>
+</div>
+
+<!-- 二次确认轻弹层（删除 / 交卷 / 重新开始） -->
+<div class="sl-overlay" id="slConfirmOv">
+  <div class="sl-confirm">
+    <div class="sl-confirm-title" id="slConfirmTitle">提示</div>
+    <div class="sl-confirm-msg" id="slConfirmMsg"></div>
+    <div class="sl-confirm-actions">
+      <button class="btn btn-outline" type="button" data-act="confirm-cancel">取消</button>
+      <button class="btn btn-primary" type="button" id="slConfirmOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 加入积累本勾选层 -->
+<div class="sl-overlay" id="slSheetOv">
+  <div class="sl-sheet">
+    <div class="sl-sheet-title">选择要加入积累本的表达</div>
+    <div class="sl-sheet-list" id="slSheetList"></div>
+    <div class="sl-sheet-actions">
+      <button class="btn btn-outline" type="button" data-act="sheet-cancel">取消</button>
+      <button class="btn btn-primary" type="button" data-act="sheet-ok">加入积累本</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/xt-toast.js?v=20260923a" defer></script>
+<script src="assets/layer-stack.js?v=20260923a" defer></script>
+<script src="assets/error-boundary.js?v=20260924a" defer></script>
+<script src="assets/app.js?v=20260923a" defer></script>
+  <script src="assets/data/shenlun-inline.js?v=20260916O"></script>
+<script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260924a" defer></script>
+<script src="assets/qbank.js?v=20260916O" defer></script>
+
+<script>
+/* =====================================================================
+   申论刷题.html · 页面内逻辑（全部内联，不新增任何库）
+   存储键：shenlun_answers / shenlun_read_progress / shenlun_expressions / shenlun_favorites
+   数据源：全局题库中 type==='申论' 的题（兼容 INLINE_SHENLUN_BANK / JSON 文件 / localStorage）
+   ===================================================================== */
+var SL = {
+  data: [], tab: 1, v1: 'list', v2: 'home',
+  qid: null, mid: null, list: [],
+  fType: '全部', fSub: '全部', fTopic: '全部',
+  matMode: 'topic', matTopic: '全部', matType: '全部',
+  exprTopic: '全部', exprCat: '全部', exprKw: '', homeKw: '',
+  addForm: false, showFav: false,
+  saveTimer: null, savedTimer: null, confirmCb: null
+};
+
+var K_ANS = 'shenlun_answers', K_READ = 'shenlun_read_progress',
+    K_EXPR = 'shenlun_expressions', K_FAV = 'shenlun_favorites';
+
+var MAIN_TYPES = ['单一题', '综合题', '公文题'];
+var TOPICS = ['乡村振兴', '社会治理', '政府职能', '民生保障', '城市建设', '人才建设', '文化建设', '创新创业', '时代精神', '互联网', '生态建设', '其他'];
+var SUB_MAP = {
+  '单一题': ['问题类', '影响类', '对策类', '原因类', '特殊要素'],
+  '综合题': ['概括主要内容', '词句解释', '观点现象分析', '其他题型'],
+  '公文题': ['方案类', '宣传类', '总结类', '评论类']
+};
+
+/* ---------------- 工具 ---------------- */
+function slEsc(s) {
+  return String(s === null || s === undefined ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function slCount(t) { return String(t || '').replace(/\s/g, '').length; }
+function slIcons() {
+  try { if (typeof window.lucideAutoRender === 'function') window.lucideAutoRender(); } catch (e) { /* 忽略 */ }
+}
+function slToast(msg) {
+  try { if (typeof window.xtToast === 'function') { window.xtToast('info', msg); return; } } catch (e) { /* 继续兜底 */ }
+  try { if (typeof window.showToast === 'function') { window.showToast(msg); return; } } catch (e) { /* 继续兜底 */ }
+  try { if (typeof window.toast === 'function') { window.toast(msg); return; } } catch (e) { /* 继续兜底 */ }
+  var t = document.getElementById('toast');
+  if (t) {
+    t.textContent = msg;
+    t.style.transform = 'translateX(-50%) translateY(0)';
+    setTimeout(function () { t.style.transform = 'translateX(-50%) translateY(-100px)'; }, 2000);
+  }
+}
+function slUid(p) { return (p || 'e') + '_' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36); }
+
+/* ---------------- localStorage ---------------- */
+function slGet(key, def) {
+  try { var v = localStorage.getItem(key); return v === null || v === undefined ? def : JSON.parse(v); } catch (e) { return def; }
+}
+function slSet(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); return true; } catch (e) { return false; }
+}
+function slAns(id) { var m = slGet(K_ANS, {}); return (m && m[id]) || null; }
+function slSetAns(id, obj) {
+  var m = slGet(K_ANS, {}) || {};
+  var old = m[id] || {};
+  for (var k in obj) { if (Object.prototype.hasOwnProperty.call(obj, k)) old[k] = obj[k]; }
+  m[id] = old; slSet(K_ANS, m);
+}
+function slDelAns(id) { var m = slGet(K_ANS, {}) || {}; delete m[id]; slSet(K_ANS, m); }
+function slReadRec(id) {
+  var m = slGet(K_READ, {}) || {};
+  var r = m[id];
+  if (!r) return { highlights: [], note: '', read: false };
+  return { highlights: r.highlights || [], note: r.note || '', read: !!r.read };
+}
+function slSetRead(id, obj) {
+  var m = slGet(K_READ, {}) || {};
+  var old = slReadRec(id);
+  for (var k in obj) { if (Object.prototype.hasOwnProperty.call(obj, k)) old[k] = obj[k]; }
+  m[id] = old; slSet(K_READ, m);
+}
+function slExprs() { var a = slGet(K_EXPR, []); return Object.prototype.toString.call(a) === '[object Array]' ? a : []; }
+function slSaveExprs(a) { slSet(K_EXPR, a); }
+function slFavs() { var a = slGet(K_FAV, []); return Object.prototype.toString.call(a) === '[object Array]' ? a : []; }
+function slSaveFavs(a) { slSet(K_FAV, a); }
+function slIsFav(id) { return slFavs().indexOf(id) >= 0; }
+function slToggleFav(id) {
+  var a = slFavs(), i = a.indexOf(id);
+  if (i >= 0) { a.splice(i, 1); } else { a.unshift(id); }
+  slSaveFavs(a);
+  return i < 0;
+}
+
+/* ---------------- 题库读取与容错 ---------------- */
+function slIsShenlun(q) {
+  if (!q || typeof q !== 'object') return false;
+  if (q.type === '申论') return true;
+  var cands = [q.type, q.subType, q.qType, q.category];
+  for (var i = 0; i < cands.length; i++) {
+    if (cands[i] && MAIN_TYPES.indexOf(cands[i]) >= 0) return true;
+  }
+  return !!(q.material || q.referenceAnswer) && !!(q.subType || q.questionNo || q.requirement);
+}
+function slTypeOf(q) {
+  var cands = [q.type, q.subType, q.qType, q.category];
+  for (var i = 0; i < cands.length; i++) {
+    if (cands[i] && MAIN_TYPES.indexOf(cands[i]) >= 0) return cands[i];
+  }
+  return '单一题';
+}
+function slSubOf(q) {
+  var t = slTypeOf(q);
+  var cands = [q.subType, q.qType, q.type];
+  for (var i = 0; i < cands.length; i++) {
+    var v = cands[i];
+    if (v && v !== t && MAIN_TYPES.indexOf(v) < 0 && v !== '申论') return v;
+  }
+  return '';
+}
+function slNorm(q, idx) {
+  var kes = q.keyExpressions || q.key_expressions;
+  return {
+    id: String(q.id || q.qid || ('sl_auto_' + idx)),
+    source: q.source || q.from || '',
+    questionNo: q.questionNo || q.no || '',
+    type: slTypeOf(q),
+    subType: slSubOf(q),
+    topic: q.topic || '其他',
+    score: Number(q.score) || 0,
+    wordLimit: Number(q.wordLimit || q.word_limit) || 0,
+    requirement: q.requirement || q.q || '',
+    materialTitle: q.materialTitle || q.material_title || '给定资料',
+    material: q.material || '',
+    referenceAnswer: q.referenceAnswer || q.reference_answer || '',
+    solution: q.solution || q.analysis || '',
+    keyExpressions: (Object.prototype.toString.call(kes) === '[object Array]' ? kes : []).slice(0, 60)
+  };
+}
+function slCollect() {
+  var pools = [], i;
+  var names = ['INLINE_SHENLUN_BANK', 'SHENLUN_BANK', 'SL_QUESTIONS', 'SHENLUN_QUESTIONS', 'shenlun_questions'];
+  for (i = 0; i < names.length; i++) {
+    try { if (window[names[i]] && window[names[i]].length) pools.push(window[names[i]]); } catch (e) { /* 忽略 */ }
+  }
+  try { if (typeof EXAM_BANK !== 'undefined' && EXAM_BANK && EXAM_BANK.length) pools.push(EXAM_BANK); } catch (e) { /* 忽略 */ }
+  try { if (window.EXAM_BANK && window.EXAM_BANK.length && pools.indexOf(window.EXAM_BANK) < 0) pools.push(window.EXAM_BANK); } catch (e) { /* 忽略 */ }
+  var lsKeys = ['shenlun_questions', 'shenlun-questions', 'SHENLUN_BANK'];
+  for (i = 0; i < lsKeys.length; i++) {
+    try {
+      var raw = localStorage.getItem(lsKeys[i]);
+      if (raw) { var p = JSON.parse(raw); if (p && p.length) pools.push(p); }
+    } catch (e) { /* 忽略 */ }
+  }
+  var out = [], seen = {};
+  for (i = 0; i < pools.length; i++) {
+    var arr = pools[i] || [];
+    for (var j = 0; j < arr.length; j++) {
+      var q = arr[j];
+      if (!slIsShenlun(q)) continue;
+      var id = String(q.id || q.qid || '');
+      if (!id) id = 'sl_auto_' + i + '_' + j;
+      if (seen[id]) continue;
+      seen[id] = 1;
+      out.push(slNorm(q, i + '_' + j));
+    }
+  }
+  return out;
+}
+function slLoadData() {
+  var d = slCollect();
+  var changed = (d.length !== SL.data.length);
+  SL.data = d;
+  if (SL.data.length) {
+    if (!slCur() && SL.data[0]) { SL.qid = SL.data[0].id; SL.mid = SL.data[0].id; }
+    changed = true;
+  }
+  return changed;
+}
+function slBootstrap() {
+  slLoadData();
+  slRenderAll();
+  // 题库可能由 app.js 异步注入，做几次兜底重试
+  var delays = [400, 1200, 2600, 5000];
+  delays.forEach(function (ms) {
+    setTimeout(function () {
+      if (!SL.data.length) {
+        if (slLoadData()) slRenderAll();
+      }
+    }, ms);
+  });
+  // 结构化的 JSON 文件（若数据线已产出）
+  try {
+    if (typeof fetch === 'function') {
+      fetch('assets/data/shenlun-questions.json').then(function (r) {
+        if (!r || !r.ok) return null;
+        return r.json();
+      }).then(function (j) {
+        if (j && j.length && !SL.data.length) {
+          window.SL_QUESTIONS = j;
+          if (slLoadData()) slRenderAll();
+        }
+      }).catch(function () { /* 无此文件时静默 */ });
+    }
+  } catch (e) { /* 忽略 */ }
+}
+function slCur() {
+  for (var i = 0; i < SL.data.length; i++) if (SL.data[i].id === SL.qid) return SL.data[i];
+  return null;
+}
+function slById(id) {
+  for (var i = 0; i < SL.data.length; i++) if (SL.data[i].id === id) return SL.data[i];
+  return null;
+}
+function slStatus(q) {
+  var a = slAns(q.id);
+  if (!a || !a.answer) return '未开始';
+  return a.status === '已完成' ? '已完成' : '作答中';
+}
+function slTopicOf(q) { return (q && q.topic) ? q.topic : '其他'; }
+
+/* ---------------- 视图切换 ---------------- */
+function slSwitchTab(n) {
+  SL.tab = n;
+  var b1 = document.getElementById('slTab1Btn'), b2 = document.getElementById('slTab2Btn');
+  if (b1) b1.classList.toggle('active', n === 1);
+  if (b2) b2.classList.toggle('active', n === 2);
+  var t1 = document.getElementById('slTab1Body'), t2 = document.getElementById('slTab2Body');
+  if (t1) t1.style.display = n === 1 ? '' : 'none';
+  if (t2) t2.style.display = n === 2 ? '' : 'none';
+  if (n === 1) slShow1(SL.v1); else slShow2(SL.v2);
+}
+function slShow1(v) {
+  SL.v1 = v;
+  var ids = ['slViewList', 'slViewAnswer', 'slViewReview'];
+  for (var i = 0; i < ids.length; i++) {
+    var el = document.getElementById(ids[i]);
+    if (el) el.style.display = (ids[i] === 'slView' + v.charAt(0).toUpperCase() + v.slice(1)) ? '' : 'none';
+  }
+  if (v === 'list') slRenderList();
+  else if (v === 'answer') slRenderAnswer();
+  else slRenderReview();
+}
+function slShow2(v) {
+  SL.v2 = v;
+  var map = { home: 'slViewReadHome', list: 'slViewMatList', detail: 'slViewMatDetail', expr: 'slViewExpr' };
+  for (var k in map) {
+    var el = document.getElementById(map[k]);
+    if (el) el.style.display = (k === v) ? '' : 'none';
+  }
+  if (v === 'home') slRenderReadHome();
+  else if (v === 'list') slRenderMatList();
+  else if (v === 'detail') slRenderMatDetail();
+  else slRenderExpr();
+}
+function slRenderAll() {
+  if (SL.tab === 1) slShow1(SL.v1); else slShow2(SL.v2);
+}
+
+/* ---------------- Tab1 · 题目列表页 ---------------- */
+function slFiltered() {
+  var out = [];
+  for (var i = 0; i < SL.data.length; i++) {
+    var q = SL.data[i];
+    if (SL.fType !== '全部' && q.type !== SL.fType) continue;
+    if (SL.fSub !== '全部' && q.subType !== SL.fSub) continue;
+    if (SL.fTopic !== '全部' && slTopicOf(q) !== SL.fTopic) continue;
+    out.push(q);
+  }
+  return out;
+}
+function slSubOptions() {
+  if (SL.fType !== '全部' && SUB_MAP[SL.fType]) return SUB_MAP[SL.fType];
+  return SUB_MAP['单一题'].concat(SUB_MAP['综合题'], SUB_MAP['公文题']);
+}
+function slRenderList() {
+  var box = document.getElementById('slViewList');
+  if (!box) return;
+  if (!SL.data.length) {
+    box.innerHTML =
+      '<div class="sl-empty">' +
+      '<div class="sl-ei"><span class="nav-icon" data-icon="file-text" data-icon-size="44"></span></div>' +
+      '<div class="sl-et">暂无题目，题库导入中</div>' +
+      '<div class="sl-desc">申论题库结构化完成后会自动出现在这里，可稍后点下方按钮重新检测。</div>' +
+      '<button class="btn btn-primary btn-sm" type="button" data-act="reload">重新检测题库</button>' +
+      '</div>';
+    slIcons();
+    return;
+  }
+  var list = slFiltered();
+  SL.list = list;
+  var done = 0;
+  for (var i = 0; i < list.length; i++) if (slStatus(list[i]) === '已完成') done++;
+
+  var types = ['全部'].concat(MAIN_TYPES);
+  var typeChips = '';
+  for (i = 0; i < types.length; i++) {
+    typeChips += '<span class="type-filter' + (SL.fType === types[i] ? ' active' : '') + '" data-act="f-type" data-v="' + slEsc(types[i]) + '">' + slEsc(types[i]) + '</span>';
+  }
+  var subs = slSubOptions();
+  var subOpts = '<option value="全部">全部子题型</option>';
+  for (i = 0; i < subs.length; i++) {
+    subOpts += '<option value="' + slEsc(subs[i]) + '"' + (SL.fSub === subs[i] ? ' selected' : '') + '>' + slEsc(subs[i]) + '</option>';
+  }
+  if (SL.fSub !== '全部' && subs.indexOf(SL.fSub) < 0) {
+    subOpts += '<option value="' + slEsc(SL.fSub) + '" selected>' + slEsc(SL.fSub) + '</option>';
+  }
+  var topicOpts = '<option value="全部">全部主题</option>';
+  for (i = 0; i < TOPICS.length; i++) {
+    topicOpts += '<option value="' + slEsc(TOPICS[i]) + '"' + (SL.fTopic === TOPICS[i] ? ' selected' : '') + '>' + slEsc(TOPICS[i]) + '</option>';
+  }
+
+  var cards = '';
+  for (i = 0; i < list.length; i++) {
+    var q = list[i], st = slStatus(q), a = slAns(q.id) || {};
+    var badge = st === '已完成' ? '<span class="tag tag-success">已完成</span>'
+      : (st === '作答中' ? '<span class="tag tag-warning">作答中</span>' : '<span class="tag">未开始</span>');
+    var btns = '';
+    if (st === '未开始') {
+      btns = '<button class="btn btn-primary btn-sm" type="button" data-act="start" data-id="' + slEsc(q.id) + '">开始作答</button>';
+    } else if (st === '作答中') {
+      btns = '<button class="btn btn-primary btn-sm" type="button" data-act="start" data-id="' + slEsc(q.id) + '">继续作答</button>' +
+        '<button class="btn btn-outline btn-sm" type="button" data-act="reset" data-id="' + slEsc(q.id) + '">重新开始</button>';
+    } else {
+      btns = '<button class="btn btn-secondary btn-sm" type="button" data-act="review" data-id="' + slEsc(q.id) + '">查看复盘</button>' +
+        '<button class="btn btn-outline btn-sm" type="button" data-act="reset" data-id="' + slEsc(q.id) + '">重新开始</button>';
+    }
+    var favTxt = slIsFav(q.id) ? '已收藏' : '收藏';
+    cards +=
+      '<div class="sl-qcard">' +
+      '<div class="sl-qtitle">' + slEsc((q.source || '真题') + ' · ' + (q.questionNo || '题目')) + '</div>' +
+      '<div class="sl-tags">' +
+      '<span class="tag tag-primary">' + slEsc(q.type) + (q.subType ? '·' + slEsc(q.subType) : '') + '</span>' +
+      '<span class="tag">' + slEsc(slTopicOf(q)) + '</span>' +
+      (q.score ? '<span class="tag tag-warning">' + slEsc(q.score) + '分</span>' : '') +
+      (q.wordLimit ? '<span class="tag">≤' + slEsc(q.wordLimit) + '字</span>' : '') +
+      '</div>' +
+      (q.requirement ? '<div class="sl-qreq">' + slEsc(q.requirement) + '</div>' : '') +
+      '<div class="sl-status">状态：' + badge +
+      (a.chars ? '<span style="margin-left:8px;color:var(--text-muted)">已写 ' + slEsc(a.chars) + ' 字</span>' : '') +
+      '</div>' +
+      '<div class="sl-actions">' +
+      '<button class="sl-mini" type="button" data-act="favq" data-id="' + slEsc(q.id) + '">' + favTxt + '</button>' +
+      btns + '</div>' +
+      '</div>';
+  }
+  if (!cards) {
+    cards = '<div class="sl-empty"><div class="sl-ei"><span class="nav-icon" data-icon="search" data-icon-size="40"></span></div>' +
+      '<div class="sl-et">没有符合条件的题目</div><div class="sl-desc">换个题型或主题试试</div></div>';
+  }
+
+  box.innerHTML =
+    '<div class="card-header"><div class="card-title"><span class="title-icon" data-icon="pencil"></span>题目精练</div>' +
+    '<div><span class="tag tag-primary">共 ' + SL.data.length + ' 题</span></div></div>' +
+    '<div style="padding:0 16px 16px">' +
+    '<div class="sl-filter-row" style="margin-top:12px">' + typeChips + '</div>' +
+    '<div class="sl-filter-row">' +
+    '<select class="form-input sl-select" data-act="f-sub">' + subOpts + '</select>' +
+    '<span class="sl-lab">主题</span>' +
+    '<select class="form-input sl-select" data-act="f-topic">' + topicOpts + '</select>' +
+    '</div>' +
+    '<div class="sl-meta">共 ' + list.length + ' 题 · 已完成 ' + done + ' 题</div>' +
+    cards +
+    '</div>';
+  slIcons();
+}
+
+/* ---------------- Tab1 · 作答页 ---------------- */
+function slParas(text) {
+  var parts = String(text || '').split(/\n+/);
+  var html = '';
+  for (var i = 0; i < parts.length; i++) {
+    var t = parts[i].trim();
+    if (t) html += '<p>' + slEsc(t) + '</p>';
+  }
+  return html || '<p style="color:var(--text-muted)">（本题暂无给定材料）</p>';
+}
+function slRenderAnswer() {
+  var q = slCur();
+  var box = document.getElementById('slViewAnswer');
+  if (!box) return;
+  if (!q) {
+    box.innerHTML = '<div class="sl-empty"><div class="sl-et">暂无题目，题库导入中</div>' +
+      '<button class="btn btn-outline btn-sm" type="button" data-act="back-list">返回列表</button></div>';
+    slIcons();
+    return;
+  }
+  var a = slAns(q.id) || {};
+  var title = (q.source || '真题') + ' · ' + (q.questionNo || '题目');
+  box.innerHTML =
+    '<div class="sl-head">' +
+    '<span class="sl-back" data-act="back-list" title="返回列表（作答自动保存）"><span class="nav-icon" data-icon="arrow-left" data-icon-size="18"></span> 返回列表</span>' +
+    '<div class="sl-htitle">' + slEsc(title) + '</div>' +
+    (q.score ? '<span class="tag tag-warning">' + slEsc(q.score) + '分</span>' : '') +
+    (q.wordLimit ? '<span class="tag tag-primary">≤' + slEsc(q.wordLimit) + '字</span>' : '') +
+    '<button class="btn btn-primary btn-sm" type="button" data-act="a-submit">交卷</button>' +
+    '</div>' +
+    '<div class="sl-split">' +
+    '<div class="sl-col sl-mat" id="slMatCol">' +
+    '<div class="sl-mat-head"><span class="nav-icon" data-icon="file-text" data-icon-size="16"></span>' +
+    '<span>' + slEsc(q.materialTitle) + '</span><span class="sl-sp"></span>' +
+    '<span class="sl-mini-btn" data-act="a-collapse" id="slCollapseBtn">收起</span></div>' +
+    '<div class="sl-mat-body" id="slMatBody" data-slmaterial="1" data-qid="' + slEsc(q.id) + '">' + slParas(q.material) + '</div>' +
+    '</div>' +
+    '<div class="sl-col sl-ans">' +
+    '<div class="sl-tags">' +
+    '<span class="tag tag-primary">' + slEsc(q.type) + (q.subType ? '·' + slEsc(q.subType) : '') + '</span>' +
+    '<span class="tag">' + slEsc(slTopicOf(q)) + '</span>' +
+    '</div>' +
+    '<div class="sl-box"><b>作答要求</b><br>' + slEsc(q.requirement || '（暂无作答要求）') + '</div>' +
+    '<textarea class="sl-ta" id="slAnswerBox" placeholder="在此作答，输入后 2 秒自动保存…" data-act="answer-input">' + slEsc(a.answer || '') + '</textarea>' +
+    '<div class="sl-count" id="slCountWrap">字数：<span id="slCount">0</span>' + (q.wordLimit ? ' / ' + slEsc(q.wordLimit) : '') +
+    '<span class="sl-saved" id="slSavedTip">已保存</span></div>' +
+    '<div class="sl-ai-bar">' +
+    '<button class="btn btn-primary btn-sm" type="button" data-act="a-submit">交卷查看答案</button>' +
+    '<button class="btn btn-secondary btn-sm" type="button" data-act="a-ai" id="slAiBtn">' +
+    '<span class="nav-icon" data-icon="sparkles" data-icon-size="14" style="vertical-align:-2px"></span> AI 批改</button>' +
+    '<span class="sl-ai-hint">写完点「AI 批改」，AI 会按采分点给分并指出漏点（每次点击调用一次）</span>' +
+    '</div>' +
+    '<div class="sl-aibox" id="slAiBox"></div>' +
+    '</div>' +
+    '</div>';
+  slApplyHL(document.getElementById('slMatBody'), slReadRec(q.id + '_material').highlights);
+  slUpdateCount(a.answer || '', q);
+  slResetAiBox();
+  slIcons();
+}
+function slUpdateCount(txt, q) {
+  var n = slCount(txt);
+  var el = document.getElementById('slCount'), wrap = document.getElementById('slCountWrap');
+  if (el) el.textContent = n;
+  if (!wrap) return;
+  var lim = Number(q && q.wordLimit) || 0;
+  if (lim && n > lim) wrap.style.color = 'var(--danger)';
+  else if (lim && n >= lim * 0.8) wrap.style.color = 'var(--warning)';
+  else wrap.style.color = 'var(--text-secondary)';
+}
+function slFlush() {
+  var q = slCur();
+  var ta = document.getElementById('slAnswerBox');
+  if (!q || !ta) return '';
+  clearTimeout(SL.saveTimer);
+  var txt = ta.value;
+  slSetAns(q.id, { answer: txt, status: slAns(q.id) && slAns(q.id).status === '已完成' ? '已完成' : '作答中', chars: slCount(txt), updated: new Date().toISOString() });
+  return txt;
+}
+function slOnAnswerInput() {
+  var q = slCur();
+  var ta = document.getElementById('slAnswerBox');
+  if (!q || !ta) return;
+  slUpdateCount(ta.value, q);
+  clearTimeout(SL.saveTimer);
+  SL.saveTimer = setTimeout(function () {
+    slSetAns(q.id, { answer: ta.value, status: slAns(q.id) && slAns(q.id).status === '已完成' ? '已完成' : '作答中', chars: slCount(ta.value), updated: new Date().toISOString() });
+    var tip = document.getElementById('slSavedTip');
+    if (tip) {
+      tip.classList.add('on');
+      clearTimeout(SL.savedTimer);
+      SL.savedTimer = setTimeout(function () { tip.classList.remove('on'); }, 2000);
+    }
+  }, 2000);
+}
+function slSubmit() {
+  var q = slCur();
+  var ta = document.getElementById('slAnswerBox');
+  if (!q) return;
+  var txt = ta ? ta.value : '';
+  if (!slCount(txt)) { slToast('请先写点答案再交卷'); return; }
+  slConfirm('确认交卷？', '交卷后可查看参考答案与规范表达，作答内容将保留在复盘页。', '确认交卷', function () {
+    slSetAns(q.id, { answer: txt, status: '已完成', chars: slCount(txt), updated: new Date().toISOString() });
+    slToast('已交卷');
+    slShow1('review');
+  });
+}
+
+/* ---------------- Tab1 · 复盘页 ---------------- */
+function slKeHtml(text, kes) {
+  var html = slEsc(text || '');
+  var arr = (kes || []).slice();
+  arr.sort(function (a, b) { return String(b).length - String(a).length; });
+  for (var i = 0; i < arr.length; i++) {
+    var k = String(arr[i] || '').trim();
+    if (!k) continue;
+    var e = slEsc(k);
+    if (html.indexOf(e) >= 0) {
+      html = html.split(e).join('<span class="sl-ke" data-act="ke">' + e + '</span>');
+    }
+  }
+  return html.replace(/\n/g, '<br>');
+}
+function slRenderReview() {
+  var q = slCur();
+  var box = document.getElementById('slViewReview');
+  if (!box) return;
+  if (!q) {
+    box.innerHTML = '<div class="sl-empty"><div class="sl-et">暂无题目，题库导入中</div>' +
+      '<button class="btn btn-outline btn-sm" type="button" data-act="back-list">返回列表</button></div>';
+    slIcons();
+    return;
+  }
+  var a = slAns(q.id) || {};
+  var idx = -1, list = (SL.list && SL.list.length) ? SL.list : SL.data;
+  for (var i = 0; i < list.length; i++) if (list[i].id === q.id) idx = i;
+  var my = a.answer || '（还没有作答内容）';
+  var fav = slIsFav(q.id);
+  box.innerHTML =
+    '<div class="sl-head">' +
+    '<span class="sl-back" data-act="back-list"><span class="nav-icon" data-icon="arrow-left" data-icon-size="18"></span> 返回列表</span>' +
+    '<div class="sl-htitle">复盘 · ' + slEsc((q.source || '真题') + ' · ' + (q.questionNo || '题目')) + '</div>' +
+    '</div>' +
+    '<div style="padding:12px 16px">' +
+    '<div class="sl-box"><b>作答要求</b> ' + slEsc(q.requirement || '（暂无）') +
+    (q.score ? ' <span class="tag tag-warning">' + slEsc(q.score) + '分</span>' : '') +
+    (q.wordLimit ? ' <span class="tag tag-primary">≤' + slEsc(q.wordLimit) + '字</span>' : '') +
+    (idx >= 0 ? ' <span class="tag">第 ' + (idx + 1) + ' / ' + list.length + ' 题</span>' : '') +
+    '</div></div>' +
+    '<div class="sl-split">' +
+    '<div class="sl-col" style="flex:1 1 50%">' +
+    '<div class="sl-sub"><span class="nav-icon" data-icon="pencil" data-icon-size="16"></span>我的作答（' + slCount(my) + ' 字）</div>' +
+    '<div class="sl-ansview">' + slEsc(my) + '</div>' +
+    '</div>' +
+    '<div class="sl-col" style="flex:1 1 50%">' +
+    '<div class="sl-sub"><span class="nav-icon" data-icon="book-open" data-icon-size="16"></span>参考答案（金色为规范表达，点击可加入积累本）</div>' +
+    '<div class="sl-ansview" id="slRefBox">' + slKeHtml(q.referenceAnswer || '（本题暂无参考答案）', q.keyExpressions) + '</div>' +
+    (q.solution ? '<div class="sl-sub"><span class="nav-icon" data-icon="lightbulb" data-icon-size="16"></span>解题思路</div>' +
+      '<div class="sl-box">' + slEsc(q.solution) + '</div>' : '') +
+    '</div>' +
+    '</div>' +
+    '<div style="padding:0 16px 8px">' +
+    '<div class="sl-sub"><span class="nav-icon" data-icon="notebook" data-icon-size="16"></span>复盘笔记</div>' +
+    '<textarea class="sl-note" id="slNoteBox" data-act="note-input" placeholder="这道题漏了什么、表达怎么改、下次注意什么…">' + slEsc(a.note || '') + '</textarea>' +
+    '<div style="margin-top:8px"><button class="btn btn-primary btn-sm" type="button" data-act="save-note">保存笔记</button></div>' +
+    '</div>' +
+    '<div class="sl-foot">' +
+    '<button class="btn btn-outline btn-sm" type="button" data-act="prev-q">上一题</button>' +
+    '<button class="btn btn-outline btn-sm" type="button" data-act="next-q">下一题</button>' +
+    '<button class="btn btn-secondary btn-sm" type="button" data-act="add-expr">加入积累本</button>' +
+    '<button class="btn btn-outline btn-sm" type="button" data-act="favq-here">' + (fav ? '取消收藏' : '收藏此题') + '</button>' +
+    '<button class="btn btn-outline btn-sm" type="button" data-act="back-list">返回列表</button>' +
+    '</div>';
+  slIcons();
+}
+function slSaveNote() {
+  var q = slCur(), box = document.getElementById('slNoteBox');
+  if (!q || !box) return;
+  slSetAns(q.id, { note: box.value, updated: new Date().toISOString() });
+  slToast('笔记已保存');
+}
+function slNeighbor(step) {
+  var list = (SL.list && SL.list.length) ? SL.list : SL.data;
+  if (!list.length) return;
+  var idx = -1;
+  for (var i = 0; i < list.length; i++) if (list[i].id === SL.qid) idx = i;
+  if (idx < 0) idx = 0; else idx = idx + step;
+  if (idx < 0) { slToast('已经是第一题'); return; }
+  if (idx >= list.length) { slToast('已经是最后一题'); return; }
+  SL.qid = list[idx].id;
+  slShow1('review');
+}
+
+/* ---------------- Tab2 · 阅读积累首页 ---------------- */
+function slReadCount() {
+  var m = slGet(K_READ, {}) || {}, n = 0;
+  for (var k in m) if (m[k] && m[k].read) n++;
+  return n;
+}
+function slRenderReadHome() {
+  var box = document.getElementById('slViewReadHome');
+  if (!box) return;
+  var total = SL.data.length, read = slReadCount(), ex = slExprs().length;
+  box.innerHTML =
+    '<div class="card" style="margin-bottom:14px"><div style="padding:14px 16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">' +
+    '<input class="form-input" style="flex:1;min-width:200px" id="slHomeSearch" placeholder="搜索材料 / 表达…" data-act="home-search" value="' + slEsc(SL.homeKw) + '">' +
+    '<button class="btn ' + (SL.showFav ? 'btn-secondary' : 'btn-outline') + ' btn-sm" type="button" data-act="toggle-fav">' +
+    '<span class="nav-icon" data-icon="star" data-icon-size="14" style="vertical-align:-2px"></span> 我的收藏</button>' +
+    '</div>' +
+    '<div id="slHomeFav"></div>' +
+    '<div id="slHomeResults" style="padding:0 16px 12px"></div>' +
+    '</div>' +
+    '<div class="card">' +
+    '<div class="sl-block" data-act="go-matlist" data-mode="topic" style="margin:16px">' +
+    '<h4><span class="nav-icon" data-icon="file-text" data-icon-size="18"></span>真题材料阅读</h4>' +
+    '<div class="sl-desc">从真题中提取的给定材料，按主题分类。纯阅读，不做题，读材料学规范表达。</div>' +
+    '<div class="sl-meta" style="margin-top:8px">共 ' + total + ' 篇 · 已读 ' + read + ' 篇</div>' +
+    '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">' +
+    '<button class="btn btn-primary btn-sm" type="button" data-act="go-matlist" data-mode="topic">按主题浏览</button>' +
+    '<button class="btn btn-outline btn-sm" type="button" data-act="go-matlist" data-mode="type">按题型浏览</button>' +
+    '</div></div>' +
+    '<div class="sl-block" data-act="go-expr" style="margin:16px">' +
+    '<h4><span class="nav-icon" data-icon="sparkles" data-icon-size="18"></span>规范表达积累本</h4>' +
+    '<div class="sl-desc">从材料和参考答案中积累的规范词、金句，按主题分类，可搜索、可复制。</div>' +
+    '<div class="sl-meta" style="margin-top:8px">共 ' + ex + ' 条</div>' +
+    '<div style="margin-top:10px"><button class="btn btn-primary btn-sm" type="button" data-act="go-expr">进入积累本</button></div>' +
+    '</div>' +
+    '</div>';
+  slRenderHomeFav();
+  slRenderHomeResults();
+  slIcons();
+}
+function slRenderHomeFav() {
+  var box = document.getElementById('slHomeFav');
+  if (!box) return;
+  if (!SL.showFav) { box.innerHTML = ''; return; }
+  var favs = slFavs(), html = '', i, q;
+  if (!favs.length) {
+    html = '<div style="padding:0 16px 16px"><div class="sl-empty" style="padding:24px"><div class="sl-et">还没有收藏</div>' +
+      '<div class="sl-desc">在题目列表或材料详情页点「收藏」即可加入</div></div></div>';
+  } else {
+    html = '<div style="padding:0 16px 8px"><div class="sl-sub"><span class="nav-icon" data-icon="star" data-icon-size="16"></span>我的收藏（' + favs.length + '）</div>';
+    for (i = 0; i < favs.length; i++) {
+      var id = favs[i];
+      if (id.indexOf('m_') === 0) {
+        q = slById(id.slice(2));
+        if (!q) continue;
+        html += '<div class="sl-fav"><div class="sl-ft">材料 · ' + slEsc((q.source || '真题') + ' · ' + q.materialTitle) + '</div>' +
+          '<button class="sl-mini" type="button" data-act="open-mat" data-id="' + slEsc(q.id) + '">去阅读</button></div>';
+      } else {
+        q = slById(id);
+        if (!q) continue;
+        html += '<div class="sl-fav"><div class="sl-ft">题目 · ' + slEsc((q.source || '真题') + ' · ' + (q.questionNo || '题目')) + '</div>' +
+          '<button class="sl-mini" type="button" data-act="go-do" data-id="' + slEsc(q.id) + '">去作答</button>' +
+          '<button class="sl-mini" type="button" data-act="review" data-id="' + slEsc(q.id) + '">看复盘</button></div>';
+      }
+    }
+    html += '</div>';
+  }
+  box.innerHTML = html;
+  slIcons();
+}
+function slRenderHomeResults() {
+  var box = document.getElementById('slHomeResults');
+  if (!box) return;
+  var kw = String(SL.homeKw || '').trim();
+  if (!kw) { box.innerHTML = ''; return; }
+  var html = '<div class="sl-sub">搜索「' + slEsc(kw) + '」的结果</div>', n = 0, i;
+  for (i = 0; i < SL.data.length; i++) {
+    var q = SL.data[i];
+    var hay = (q.source + q.materialTitle + q.topic + q.material + q.requirement);
+    if (hay.indexOf(kw) >= 0) {
+      n++;
+      html += '<div class="sl-res" data-act="open-mat" data-id="' + slEsc(q.id) + '">' +
+        '<div>材料 · ' + slEsc((q.source || '真题') + ' · ' + q.materialTitle) + '</div>' +
+        '<div class="sl-rk">' + slEsc(q.topic) + ' · 约 ' + slCount(q.material) + ' 字</div></div>';
+    }
+  }
+  var ex = slExprs();
+  for (i = 0; i < ex.length; i++) {
+    if (String(ex[i].content || '').indexOf(kw) >= 0) {
+      n++;
+      html += '<div class="sl-res" data-act="go-expr">' +
+        '<div>表达 · ' + slEsc(ex[i].content) + '</div>' +
+        '<div class="sl-rk">' + slEsc(ex[i].category || '规范词') + ' · ' + slEsc(ex[i].source || '') + '</div></div>';
+    }
+  }
+  if (!n) html += '<div class="sl-desc">没有找到相关内容，换个关键词试试。</div>';
+  box.innerHTML = html;
+}
+
+/* ---------------- Tab2 · 材料列表页 ---------------- */
+function slMatFiltered() {
+  var out = [];
+  for (var i = 0; i < SL.data.length; i++) {
+    var q = SL.data[i];
+    if (SL.matMode === 'topic') {
+      if (SL.matTopic !== '全部' && slTopicOf(q) !== SL.matTopic) continue;
+    } else {
+      if (SL.matType !== '全部' && q.type !== SL.matType) continue;
+    }
+    out.push(q);
+  }
+  return out;
+}
+function slRenderMatList() {
+  var box = document.getElementById('slViewMatList');
+  if (!box) return;
+  if (!SL.data.length) {
+    box.innerHTML = '<div class="sl-empty"><div class="sl-et">暂无题目，题库导入中</div>' +
+      '<button class="btn btn-outline btn-sm" type="button" data-act="back-home">返回阅读积累</button></div>';
+    slIcons();
+    return;
+  }
+  var chips = '', i;
+  if (SL.matMode === 'topic') {
+    var tops = ['全部'].concat(TOPICS);
+    for (i = 0; i < tops.length; i++) {
+      chips += '<span class="sl-chip' + (SL.matTopic === tops[i] ? ' active' : '') + '" data-act="m-topic" data-v="' + slEsc(tops[i]) + '">' + slEsc(tops[i]) + '</span>';
+    }
+  } else {
+    var tps = ['全部'].concat(MAIN_TYPES);
+    for (i = 0; i < tps.length; i++) {
+      chips += '<span class="sl-chip' + (SL.matType === tps[i] ? ' active' : '') + '" data-act="m-type" data-v="' + slEsc(tps[i]) + '">' + slEsc(tps[i]) + '</span>';
+    }
+  }
+  var list = slMatFiltered(), cards = '';
+  for (i = 0; i < list.length; i++) {
+    var q = list[i];
+    var rec = slReadRec(q.id + '_material');
+    var abs = String(q.material || '').replace(/\s+/g, ' ').slice(0, 60);
+    cards += '<div class="sl-qcard">' +
+      '<div class="sl-qtitle">' + slEsc((q.source || '真题') + ' · ' + q.materialTitle) + '</div>' +
+      '<div class="sl-tags"><span class="tag">' + slEsc(slTopicOf(q)) + '</span>' +
+      '<span class="tag tag-primary">' + slEsc(q.type) + (q.subType ? '·' + slEsc(q.subType) : '') + '</span>' +
+      '<span class="tag">约 ' + slCount(q.material) + ' 字</span></div>' +
+      '<div class="sl-qreq">摘要：' + slEsc(abs || '（暂无材料内容）') + '…</div>' +
+      '<div class="sl-status">状态：' + (rec.read ? '<span class="tag tag-success">已读</span>' : '<span class="tag">未读</span>') + '</div>' +
+      '<div class="sl-actions">' +
+      '<button class="btn btn-primary btn-sm" type="button" data-act="open-mat" data-id="' + slEsc(q.id) + '">阅读全文</button>' +
+      '<button class="btn btn-outline btn-sm" type="button" data-act="go-do" data-id="' + slEsc(q.id) + '">去做这道题</button>' +
+      '</div></div>';
+  }
+  if (!cards) cards = '<div class="sl-empty"><div class="sl-et">没有符合条件的材料</div></div>';
+  box.innerHTML =
+    '<div class="sl-head">' +
+    '<span class="sl-back" data-act="back-home"><span class="nav-icon" data-icon="arrow-left" data-icon-size="18"></span> 返回</span>' +
+    '<div class="sl-htitle"><span class="nav-icon" data-icon="file-text" data-icon-size="18"></span>真题材料阅读</div>' +
+    '<span class="sl-mini' + (SL.matMode === 'topic' ? ' sl-chip active' : '') + '" data-act="m-mode" data-v="topic" style="' + (SL.matMode === 'topic' ? 'color:#fff' : '') + '">按主题</span>' +
+    '<span class="sl-mini' + (SL.matMode === 'type' ? ' sl-chip active' : '') + '" data-act="m-mode" data-v="type" style="' + (SL.matMode === 'type' ? 'color:#fff' : '') + '">按题型</span>' +
+    '</div>' +
+    '<div style="padding:12px 16px 16px">' +
+    '<div class="sl-chips">' + chips + '</div>' +
+    '<div class="sl-meta">共 ' + list.length + ' 篇材料</div>' +
+    cards + '</div>';
+  slIcons();
+}
+
+/* ---------------- Tab2 · 材料阅读详情页 ---------------- */
+function slRenderMatDetail() {
+  var q = slById(SL.mid);
+  var box = document.getElementById('slViewMatDetail');
+  if (!box) return;
+  if (!q) {
+    box.innerHTML = '<div class="sl-empty"><div class="sl-et">暂无题目，题库导入中</div>' +
+      '<button class="btn btn-outline btn-sm" type="button" data-act="back-matlist">返回材料列表</button></div>';
+    slIcons();
+    return;
+  }
+  var rec = slReadRec(q.id + '_material');
+  var fav = slIsFav('m_' + q.id);
+  box.innerHTML =
+    '<div class="sl-head">' +
+    '<span class="sl-back" data-act="back-matlist"><span class="nav-icon" data-icon="arrow-left" data-icon-size="18"></span> 返回</span>' +
+    '<div class="sl-htitle">' + slEsc((q.source || '真题') + ' · ' + q.materialTitle) + '</div>' +
+    '<button class="btn btn-outline btn-sm" type="button" data-act="fav-mat" data-id="' + slEsc(q.id) + '">' + (fav ? '取消收藏' : '收藏') + '</button>' +
+    '</div>' +
+    '<div style="padding:16px">' +
+    '<div class="sl-article" id="slMatArticle" data-slmaterial="1" data-qid="' + slEsc(q.id) + '">' + slParas(q.material) + '</div>' +
+    '</div>' +
+    '<div style="padding:0 16px 8px">' +
+    '<div class="sl-sub"><span class="nav-icon" data-icon="notebook" data-icon-size="16"></span>阅读笔记</div>' +
+    '<textarea class="sl-note" id="slMatNote" data-act="matnote-input" placeholder="对这篇材料的理解、可用于哪些题的素材…">' + slEsc(rec.note || '') + '</textarea>' +
+    '<div style="margin-top:8px"><button class="btn btn-primary btn-sm" type="button" data-act="save-matnote">保存笔记</button></div>' +
+    '</div>' +
+    '<div class="sl-foot">' +
+    '<div style="flex:1;font-size:14px;color:var(--text-secondary)">相关题目：' + slEsc((q.source || '真题') + ' · ' + (q.questionNo || '题目')) + '</div>' +
+    '<button class="btn btn-primary btn-sm" type="button" data-act="go-do" data-id="' + slEsc(q.id) + '">去做这道题</button>' +
+    '</div>';
+  slApplyHL(document.getElementById('slMatArticle'), rec.highlights);
+  slSetRead(q.id + '_material', { read: true });
+  slIcons();
+}
+function slSaveMatNote() {
+  var q = slById(SL.mid), box = document.getElementById('slMatNote');
+  if (!q || !box) return;
+  slSetRead(q.id + '_material', { note: box.value, read: true });
+  slToast('笔记已保存');
+}
+
+/* ---------------- Tab2 · 规范表达积累本 ---------------- */
+function slAddExpr(item) {
+  var arr = slExprs();
+  for (var i = 0; i < arr.length; i++) {
+    if (arr[i].content === item.content && arr[i].topic === item.topic) { slToast('积累本里已经有了'); return false; }
+  }
+  item.id = slUid('e');
+  item.createdAt = new Date().toISOString();
+  arr.unshift(item);
+  slSaveExprs(arr);
+  slToast('已加入积累本');
+  return true;
+}
+function slExprFiltered() {
+  var arr = slExprs(), out = [];
+  for (var i = 0; i < arr.length; i++) {
+    var e = arr[i] || {};
+    if (SL.exprTopic !== '全部' && e.topic !== SL.exprTopic) continue;
+    if (SL.exprCat !== '全部' && e.category !== SL.exprCat) continue;
+    if (SL.exprKw && String(e.content || '').indexOf(SL.exprKw) < 0 && String(e.source || '').indexOf(SL.exprKw) < 0) continue;
+    out.push(e);
+  }
+  return out;
+}
+function slRenderExpr() {
+  var box = document.getElementById('slViewExpr');
+  if (!box) return;
+  var all = slExprs();
+  var topicChips = '', i;
+  var tops = ['全部'].concat(TOPICS);
+  for (i = 0; i < tops.length; i++) {
+    topicChips += '<span class="sl-chip' + (SL.exprTopic === tops[i] ? ' active' : '') + '" data-act="e-topic" data-v="' + slEsc(tops[i]) + '">' + slEsc(tops[i]) + '</span>';
+  }
+  var cats = ['全部', '规范词', '金句'];
+  var catChips = '';
+  for (i = 0; i < cats.length; i++) {
+    catChips += '<span class="sl-chip' + (SL.exprCat === cats[i] ? ' active' : '') + '" data-act="e-cat" data-v="' + slEsc(cats[i]) + '">' + slEsc(cats[i]) + '</span>';
+  }
+  var topicOpts = '';
+  for (i = 0; i < TOPICS.length; i++) topicOpts += '<option value="' + slEsc(TOPICS[i]) + '">' + slEsc(TOPICS[i]) + '</option>';
+  box.innerHTML =
+    '<div class="sl-head">' +
+    '<span class="sl-back" data-act="back-home"><span class="nav-icon" data-icon="arrow-left" data-icon-size="18"></span> 返回</span>' +
+    '<div class="sl-htitle"><span class="nav-icon" data-icon="sparkles" data-icon-size="18"></span>规范表达积累本</div>' +
+    '<span class="tag tag-primary">共 ' + all.length + ' 条</span>' +
+    '</div>' +
+    '<div style="padding:12px 16px 16px">' +
+    '<input class="form-input" id="slExprSearch" placeholder="搜索表达内容或来源…" data-act="e-search" value="' + slEsc(SL.exprKw) + '">' +
+    '<div class="sl-chips" style="margin-top:12px">' + topicChips + '</div>' +
+    '<div class="sl-chips">' + catChips + '</div>' +
+    '<div id="slExprGrid"></div>' +
+    (SL.addForm ?
+      '<div class="sl-addform">' +
+      '<div class="form-group"><div class="form-label">表达内容</div>' +
+      '<textarea class="sl-note" id="slNewExpr" placeholder="如：构建长效机制、打通最后一公里"></textarea></div>' +
+      '<div class="sl-inline">' +
+      '<select class="form-input sl-select" id="slNewTopic">' + topicOpts + '</select>' +
+      '<select class="form-input sl-select" id="slNewCat"><option value="规范词">规范词</option><option value="金句">金句</option></select>' +
+      '<input class="form-input sl-select" id="slNewSrc" placeholder="来源（选填）">' +
+      '</div>' +
+      '<div style="margin-top:10px;display:flex;gap:8px">' +
+      '<button class="btn btn-primary btn-sm" type="button" data-act="add-expr-save">保存</button>' +
+      '<button class="btn btn-outline btn-sm" type="button" data-act="add-expr-cancel">取消</button>' +
+      '</div></div>'
+      : '<div style="margin-top:12px"><button class="btn btn-primary btn-sm" type="button" data-act="add-expr-toggle">+ 添加新表达</button></div>') +
+    '</div>';
+  slRenderExprGrid();
+  slIcons();
+}
+function slRenderExprGrid() {
+  var box = document.getElementById('slExprGrid');
+  if (!box) return;
+  var list = slExprFiltered();
+  if (!list.length) {
+    box.innerHTML = '<div class="sl-empty" style="padding:32px"><div class="sl-ei"><span class="nav-icon" data-icon="sparkles" data-icon-size="40"></span></div>' +
+      '<div class="sl-et">' + (slExprs().length ? '没有符合筛选条件的表达' : '积累本还是空的') + '</div>' +
+      '<div class="sl-desc">在阅读材料和参考答案时选中文字，点「加入积累本」即可沉淀</div></div>';
+    slIcons();
+    return;
+  }
+  var html = '<div class="sl-grid2">';
+  for (var i = 0; i < list.length; i++) {
+    var e = list[i];
+    html += '<div class="sl-expr">' +
+      '<div class="sl-tags"><span class="tag ' + (e.category === '金句' ? 'tag-warning' : 'tag-primary') + '">' + slEsc(e.category || '规范词') + '</span>' +
+      '<span class="tag">' + slEsc(e.topic || '其他') + '</span></div>' +
+      '<div class="sl-econtent">' + slEsc(e.content || '') + '</div>' +
+      '<div class="sl-esrc">来源：' + slEsc(e.source || '手动添加') + '</div>' +
+      '<div class="sl-expr-acts">' +
+      '<button class="sl-mini" type="button" data-act="copy-expr" data-id="' + slEsc(e.id || '') + '">复制</button>' +
+      '<button class="sl-mini" type="button" data-act="del-expr" data-id="' + slEsc(e.id || '') + '">删除</button>' +
+      '</div></div>';
+  }
+  html += '</div>';
+  box.innerHTML = html;
+}
+function slCopy(text) {
+  try {
+    if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { slToast('已复制'); }, function () { slCopyFallback(text); });
+      return;
+    }
+  } catch (e) { /* 继续兜底 */ }
+  slCopyFallback(text);
+}
+function slCopyFallback(text) {
+  try {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    slToast(ok ? '已复制' : '复制失败，请手动选择文本');
+  } catch (e) { slToast('复制失败，请手动选择文本'); }
+}
+
+/* ---------------- 高亮 ---------------- */
+function slApplyHL(root, list) {
+  if (!root || !list || !list.length) return;
+  for (var i = 0; i < list.length; i++) {
+    var t = String(list[i] || '').trim();
+    if (!t) continue;
+    try { slWrapFirst(root, t); } catch (e) { /* 单条高亮失败不影响其它 */ }
+  }
+}
+function slWrapFirst(root, t) {
+  if (!document.createTreeWalker || !NodeFilter) return;
+  var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+  var node;
+  while ((node = walker.nextNode())) {
+    if (node.parentNode && node.parentNode.className === 'sl-hl') continue;
+    var idx = node.nodeValue.indexOf(t);
+    if (idx >= 0) {
+      var range = document.createRange();
+      range.setStart(node, idx);
+      range.setEnd(node, idx + t.length);
+      var mark = document.createElement('mark');
+      mark.className = 'sl-hl';
+      try { range.surroundContents(mark); }
+      catch (err) { var frag = range.extractContents(); mark.appendChild(frag); range.insertNode(mark); }
+      return;
+    }
+  }
+}
+function slCollectHL(root) {
+  if (!root) return [];
+  var marks = root.getElementsByTagName('mark'), out = [];
+  for (var i = 0; i < marks.length; i++) {
+    var t = String(marks[i].textContent || '').trim();
+    if (t && out.indexOf(t) < 0) out.push(t);
+  }
+  return out;
+}
+function slSelText() {
+  try {
+    var s = window.getSelection();
+    if (!s || !s.rangeCount) return '';
+    return String(s).trim();
+  } catch (e) { return ''; }
+}
+function slDoHighlight() {
+  var txt = slSelText();
+  var bar = document.getElementById('slSelBar');
+  var host = bar && bar.getAttribute('data-host');
+  var root = host ? document.getElementById(host) : null;
+  if (!txt || !root) { slToast('请先选中材料中的文字'); return; }
+  var sel = window.getSelection();
+  if (!sel.rangeCount) return;
+  var range = sel.getRangeAt(0);
+  var mark = document.createElement('mark');
+  mark.className = 'sl-hl';
+  try { range.surroundContents(mark); }
+  catch (e) {
+    try { var frag = range.extractContents(); mark.appendChild(frag); range.insertNode(mark); }
+    catch (e2) { slToast('这段选区无法高亮，请少选一些文字'); return; }
+  }
+  sel.removeAllRanges();
+  if (bar) bar.classList.remove('on');
+  var qid = root.getAttribute('data-qid');
+  if (qid) slSetRead(qid + '_material', { highlights: slCollectHL(root) });
+  slToast('已高亮');
+}
+function slSelAddExpr() {
+  var txt = slSelText();
+  var bar = document.getElementById('slSelBar');
+  if (!txt) { slToast('请先选中要积累的文字'); return; }
+  var qid = bar ? bar.getAttribute('data-qid') : '';
+  var q = slById(qid);
+  slAddExpr({
+    topic: q ? slTopicOf(q) : '其他',
+    category: txt.length > 18 ? '金句' : '规范词',
+    content: txt,
+    source: q ? ((q.source || '真题') + ' · ' + q.materialTitle) : '材料阅读'
+  });
+  if (bar) bar.classList.remove('on');
+  try { window.getSelection().removeAllRanges(); } catch (e) { /* 忽略 */ }
+}
+
+/* ---------------- 轻弹层：确认 / 勾选 ---------------- */
+function slConfirm(title, msg, okText, cb) {
+  SL.confirmCb = cb;
+  var ov = document.getElementById('slConfirmOv');
+  var t = document.getElementById('slConfirmTitle');
+  var m = document.getElementById('slConfirmMsg');
+  var ok = document.getElementById('slConfirmOk');
+  if (t) t.textContent = title;
+  if (m) m.textContent = msg;
+  if (ok) ok.textContent = okText || '确定';
+  if (ov) ov.classList.add('on');
+  // R4-C：确认层压栈（返回键可关）
+  if (window.xtLayerPush && ov) {
+    if (window.xtLayerRegister) window.xtLayerRegister('slConfirmOv', slConfirm, slCloseConfirm);
+    window.xtLayerPush('slConfirmOv');
+  }
+}
+function slCloseConfirm() {
+  var ov = document.getElementById('slConfirmOv');
+  if (ov) ov.classList.remove('on');
+  SL.confirmCb = null;
+  if (window.xtLayerPop) window.xtLayerPop('slConfirmOv');
+}
+function slOpenSheet() {
+  var q = slCur();
+  if (!q) return;
+  var cands = [], i;
+  var kes = q.keyExpressions || [];
+  for (i = 0; i < kes.length; i++) if (kes[i] && cands.indexOf(kes[i]) < 0) cands.push(kes[i]);
+  var sents = String(q.referenceAnswer || '').split(/[。；\n！？]/);
+  for (i = 0; i < sents.length; i++) {
+    var s = String(sents[i] || '').trim();
+    if (s.length >= 6 && s.length <= 40 && cands.indexOf(s) < 0) cands.push(s);
+  }
+  cands = cands.slice(0, 40);
+  if (!cands.length) { slToast('这道题还没有可提取的规范表达'); return; }
+  var html = '';
+  for (i = 0; i < cands.length; i++) {
+    html += '<label class="sl-ck"><input type="checkbox" value="' + slEsc(cands[i]) + '" checked><span>' + slEsc(cands[i]) + '</span></label>';
+  }
+  var list = document.getElementById('slSheetList');
+  var ov = document.getElementById('slSheetOv');
+  if (list) list.innerHTML = html;
+  if (ov) ov.classList.add('on');
+  // R4-C：勾选层压栈（返回键可关）
+  if (window.xtLayerPush && ov) {
+    if (window.xtLayerRegister) window.xtLayerRegister('slSheetOv', slOpenSheet, slCloseSheet);
+    window.xtLayerPush('slSheetOv');
+  }
+}
+function slCloseSheet() {
+  var ov = document.getElementById('slSheetOv');
+  if (ov) ov.classList.remove('on');
+  if (window.xtLayerPop) window.xtLayerPop('slSheetOv');
+}
+function slSheetOk() {
+  var q = slCur();
+  var list = document.getElementById('slSheetList');
+  var ov = document.getElementById('slSheetOv');
+  if (!q || !list) return;
+  var boxes = list.getElementsByTagName('input'), n = 0;
+  for (var i = 0; i < boxes.length; i++) {
+    if (boxes[i].checked) {
+      slAddExpr({
+        topic: slTopicOf(q),
+        category: boxes[i].value.length > 18 ? '金句' : '规范词',
+        content: boxes[i].value,
+        source: (q.source || '真题') + ' · ' + (q.questionNo || '题目')
+      });
+      n++;
+    }
+  }
+  if (ov) slCloseSheet(); else if (window.xtLayerPop) window.xtLayerPop('slSheetOv');
+  slToast(n ? '已加入 ' + n + ' 条表达' : '没有选择任何表达');
+}
+
+/* ---------------- C12 · AI 批改（接 assets/ai-service.js 的 window.callAI 底座） ----------------
+   口径：window.callAI(funcType, messages, opts)，前端直连；
+   funcType='longtext'（ai-config.js 中该档 desc 即「申论批改、面试报告」）。
+   限频：公共 Key 10 次/分钟 → 只在用户点击「AI 批改」时调用，绝不自动发问。
+   老 WebView（Chrome 50~58 / ES2017）：无可选链、无空值合并、无对象展开、无 replaceAll、无 Array.at。
+   ------------------------------------------------------------------------------------------ */
+var SL_AI = { running: false, timer: null };
+
+function slAiBox() { return document.getElementById('slAiBox'); }
+function slAiBtn() { return document.getElementById('slAiBtn'); }
+function slResetAiBox() {
+  clearTimeout(SL_AI.timer);
+  SL_AI.running = false;
+  var box = slAiBox();
+  if (box) { box.classList.remove('on', 'sl-ai-err'); box.innerHTML = ''; }
+  var btn = slAiBtn();
+  if (btn) { btn.disabled = false; btn.textContent = 'AI 批改'; }
+}
+function slAiSetRunning(on) {
+  SL_AI.running = !!on;
+  var btn = slAiBtn();
+  if (!btn) return;
+  btn.disabled = !!on;
+  btn.textContent = on ? 'AI 正在批改…' : 'AI 批改';
+}
+/* 组 prompt：题干（材料首段 + 作答要求）+ 用户作答 + 评分维度 */
+function slAiPrompt(q, answer) {
+  var mat = String(q.material || '');
+  if (mat.length > 1200) mat = mat.slice(0, 1200) + '…（材料较长已截断）';
+  var s = '';
+  s += '你是公务员考试申论阅卷老师，请批改下面这份作答。\n\n';
+  s += '【题目】' + String(q.source || '真题') + ' · ' + String(q.questionNo || '题目') + '\n';
+  s += '【题型】' + String(q.type || '') + (q.subType ? '·' + String(q.subType) : '') + '\n';
+  if (q.score) s += '【分值】' + String(q.score) + ' 分\n';
+  if (q.wordLimit) s += '【字数要求】不超过 ' + String(q.wordLimit) + ' 字\n';
+  if (mat) s += '【给定材料（节选）】\n' + mat + '\n';
+  s += '【作答要求】' + String(q.requirement || '（无）') + '\n\n';
+  s += '【考生作答】\n' + String(answer || '（空白）') + '\n\n';
+  s += '请按以下结构输出，简体中文，不要客套话：\n';
+  s += '1. 总分：给出 x/满分（分值未知则按 20 分制估分）与一句话定性。\n';
+  s += '2. 采分点对照：逐条列出「应写得分的要点 → 考生是否写到（写到/部分写到/漏掉）」，漏掉的要点用「漏：」标注。\n';
+  s += '3. 主要问题：最多 3 条，每条一句话，指出是「要点缺失 / 表述不规范 / 结构混乱 / 超字数」中的哪一类。\n';
+  s += '4. 提分建议：针对最该改的 2 条，各给一句可直接照做的改法。\n';
+  s += '总输出控制在 500 字以内。';
+  return s;
+}
+/* 极简 markdown → HTML（老内核，不用正则后行断言） */
+function slAiMd(text) {
+  var h = slEsc(text || '');
+  h = h.replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>');
+  h = h.replace(/^###?\s*(.+)$/gm, '<b>$1</b>');
+  return h;
+}
+function slAiRenderHtml(text) {
+  var lines = String(text || '').split('\n');
+  var out = [], i, ln, m;
+  for (i = 0; i < lines.length; i++) {
+    ln = lines[i];
+    m = ln.match(/^\s*(\d+)[\.、)]\s*(.+)$/);
+    if (m) { out.push((out.length ? '<br>' : '') + '<b>' + m[1] + '.</b> ' + slAiMd(m[2])); continue; }
+    m = ln.match(/^\s*[-*·]\s*(.+)$/);
+    if (m) { out.push((out.length ? '<br>' : '') + '· ' + slAiMd(m[1])); continue; }
+    if (!ln.replace(/\s/g, '')) { out.push('<br>'); continue; }
+    out.push((out.length ? '<br>' : '') + slAiMd(ln));
+  }
+  return out.join('');
+}
+function slAiFail(reason, tip) {
+  var box = slAiBox();
+  if (!box) return;
+  box.className = 'sl-aibox on sl-ai-err';
+  box.innerHTML =
+    '<div class="sl-ai-head"><span class="nav-icon" data-icon="alert-triangle" data-icon-size="16"></span>AI 暂时不可用<span class="sl-sp"></span>' +
+    '<span class="sl-mini-btn" data-act="a-ai">重试</span></div>' +
+    '<div class="sl-ai-body">' + slEsc(reason || '网络异常或 AI 服务不可用') + '</div>' +
+    '<div class="sl-ai-meta">' + slEsc(tip || '可以先自查：对照参考答案，把漏掉的要点标出来，再重新写一遍。') + '</div>';
+  slAiSetRunning(false);
+  slIcons();
+}
+function slAiGo() {
+  var q = slCur();
+  if (!q) { slToast('当前没有打开的题目'); return; }
+  var box = slAiBox();
+  if (!box) { slToast('批改区域未就绪，请刷新页面'); return; }
+  if (SL_AI.running) return;
+  var ta = document.getElementById('slAnswerBox');
+  var answer = ta ? String(ta.value || '') : String((slAns(q.id) || {}).answer || '');
+  if (!slCount(answer)) { slToast('先写点答案，再让 AI 批改'); return; }
+  if (typeof window.callAI !== 'function') {
+    slAiFail('AI 底座（assets/ai-service.js）尚未就绪', '请刷新页面后重试；页面其它功能不受影响。');
+    slToast('AI 暂时不可用，已给出本地提示');
+    return;
+  }
+  slAiSetRunning(true);
+  box.className = 'sl-aibox on';
+  box.innerHTML = '<div class="sl-ai-head"><span class="nav-icon" data-icon="sparkles" data-icon-size="16"></span>AI 批改<span class="sl-sp"></span></div>' +
+    '<div class="sl-ai-thinking"><span class="sl-ai-dot"></span><span class="sl-ai-dot"></span><span class="sl-ai-dot"></span> AI 正在批改…</div>';
+  slIcons();
+  var settled = false;
+  var buf = '';
+  // 软看门狗：25 秒还没结果就提示（不取消请求，用户可重试）
+  clearTimeout(SL_AI.timer);
+  SL_AI.timer = setTimeout(function () {
+    if (!settled) {
+      var b = slAiBox();
+      if (b) b.innerHTML = '<div class="sl-ai-head"><span class="nav-icon" data-icon="sparkles" data-icon-size="16"></span>AI 批改</div>' +
+        '<div class="sl-ai-thinking">响应较慢，仍在等待…（可稍后点「重试」）</div>';
+    }
+  }, 25000);
+  var opts = {};
+  if (typeof ReadableStream !== 'undefined' && typeof TextDecoder !== 'undefined') {
+    opts.onChunk = function (piece, full) {
+      var b = slAiBox();
+      if (!b) return;
+      if (full !== null && full !== undefined && full !== '') buf = String(full);
+      else buf += String(piece === null || piece === undefined ? '' : piece);
+      b.innerHTML = '<div class="sl-ai-head"><span class="nav-icon" data-icon="sparkles" data-icon-size="16"></span>AI 批改<span class="sl-sp"></span></div>' +
+        '<div class="sl-ai-body">' + slAiRenderHtml(buf) + '</div>';
+    };
+  }
+  var p = null;
+  try {
+    p = window.callAI('longtext', [{ role: 'user', content: slAiPrompt(q, answer) }], opts);
+  } catch (e) {
+    clearTimeout(SL_AI.timer);
+    settled = true;
+    slAiFail(e && e.message ? e.message : '调用失败', '页面其它功能不受影响，可稍后重试。');
+    return;
+  }
+  Promise.resolve(p).then(function (res) {
+    clearTimeout(SL_AI.timer);
+    if (settled) return;
+    settled = true;
+    var text = (res && (res.text || res.content)) ? String(res.text || res.content) : buf;
+    if (!text) { slAiFail('AI 返回了空内容', '可稍后重试，或先对照参考答案自查。'); return; }
+    var b = slAiBox();
+    if (!b) return;
+    var meta = '';
+    if (res && res.degraded) meta = '网络不佳或未配置 Key，以下为本地参考';
+    else if (res && res.modelUsedName) meta = '由 ' + String(res.modelUsedName) + ' 生成';
+    b.className = 'sl-aibox on';
+    b.innerHTML = '<div class="sl-ai-head"><span class="nav-icon" data-icon="sparkles" data-icon-size="16"></span>AI 批改结果<span class="sl-sp"></span>' +
+      '<span class="sl-mini-btn" data-act="a-ai">重新批改</span></div>' +
+      '<div class="sl-ai-body">' + slAiRenderHtml(text) + '</div>' +
+      (meta ? '<div class="sl-ai-meta">' + slEsc(meta) + ' · 仅供参考，以官方评分为准</div>' : '<div class="sl-ai-meta">仅供参考，以官方评分为准</div>');
+    slAiSetRunning(false);
+    slIcons();
+  }).catch(function (err) {
+    clearTimeout(SL_AI.timer);
+    if (settled) return;
+    settled = true;
+    var reason = '网络异常或 AI 服务不可用';
+    if (err && err.rateLimited) reason = '提问太频繁了（公共 Key 限 10 次/分钟），请休息 1 分钟再试';
+    else if (err && err.message) reason = String(err.message);
+    slAiFail(reason, '页面其它功能不受影响，可稍后重试。');
+  });
+}
+
+/* ---------------- 交互入口 ---------------- */
+function slGoQuestion(id) {
+  SL.qid = id;
+  SL.tab = 1;
+  var b1 = document.getElementById('slTab1Btn'), b2 = document.getElementById('slTab2Btn');
+  if (b1) b1.classList.add('active');
+  if (b2) b2.classList.remove('active');
+  var t1 = document.getElementById('slTab1Body'), t2 = document.getElementById('slTab2Body');
+  if (t1) t1.style.display = '';
+  if (t2) t2.style.display = 'none';
+  slShow1('answer');
+}
+function slBackList() {
+  var ta = document.getElementById('slAnswerBox');
+  if (ta) slFlush();
+  slShow1('list');
+}
+function slBackMatList() {
+  var box = document.getElementById('slMatNote');
+  if (box) slSaveMatNote();
+  slShow2('list');
+}
+
+// 事件委托：从 e.target 向上找到最近的可操作元素（SVG 内部也可能成为 target）
+function slResolve(e) {
+  var node = e.target, el = null, act = null;
+  while (node && node !== document) {
+    if (node.getAttribute) {
+      var a = node.getAttribute('data-act');
+      if (a) { el = node; act = a; break; }
+      if (!el && (node.id === 'slTab1Btn' || node.id === 'slTab2Btn')) { el = node; }
+    }
+    node = node.parentNode;
+  }
+  return { el: el, act: act };
+}
+function slResolveAct(e) {
+  var node = e.target;
+  while (node && node !== document) {
+    if (node.getAttribute) {
+      var a = node.getAttribute('data-act');
+      if (a) return { el: node, act: a };
+    }
+    node = node.parentNode;
+  }
+  return { el: null, act: null };
+}
+document.addEventListener('click', function (e) {
+  var r = slResolve(e);
+  var el = r.el, act = r.act;
+  if (!el) return;
+  if (!act) {
+    // Tab 切换（整块可点，含内部图标）
+    if (el.id === 'slTab1Btn') { slSwitchTab(1); return; }
+    if (el.id === 'slTab2Btn') { slSwitchTab(2); return; }
+    return;
+  }
+  var id = el.getAttribute('data-id') || '';
+  var v = el.getAttribute('data-v') || '';
+  switch (act) {
+    case 'f-type':
+      SL.fType = v; SL.fSub = '全部'; slRenderList(); break;
+    case 'reload':
+      if (slLoadData()) { slToast('题库已更新'); } else { slToast('暂无题目，题库导入中'); }
+      slRenderAll(); break;
+    case 'start':
+      SL.qid = id; slShow1('answer'); break;
+    case 'review':
+      SL.qid = id; slShow1('review'); break;
+    case 'reset':
+      slConfirm('重新开始？', '将清空本题的作答内容与笔记，重新开始作答。', '清空重做', function () {
+        slDelAns(id);
+        SL.qid = id;
+        slToast('已清空，重新开始');
+        slShow1('answer');
+      });
+      break;
+    case 'favq':
+      slToggleFav(id); slToast(slIsFav(id) ? '已收藏' : '已取消收藏'); slRenderList(); break;
+    case 'favq-here':
+      SL.qid = SL.qid; slToggleFav(SL.qid); slToast(slIsFav(SL.qid) ? '已收藏' : '已取消收藏'); slRenderReview(); break;
+    case 'back-list':
+      slBackList(); break;
+    case 'a-submit':
+      slSubmit(); break;
+    case 'a-ai':
+      slAiGo(); break;
+    case 'a-collapse':
+      var col = document.getElementById('slMatCol'), btn = document.getElementById('slCollapseBtn');
+      if (col) {
+        col.classList.toggle('collapsed');
+        if (btn) btn.textContent = col.classList.contains('collapsed') ? '展开' : '收起';
+      }
+      break;
+    case 'save-note':
+      slSaveNote(); break;
+    case 'prev-q':
+      slNeighbor(-1); break;
+    case 'next-q':
+      slNeighbor(1); break;
+    case 'add-expr':
+      slOpenSheet(); break;
+    case 'sheet-cancel':
+      slCloseSheet(); break;
+    case 'sheet-ok':
+      slSheetOk(); break;
+    case 'confirm-cancel':
+      slCloseConfirm(); break;
+    case 'ke':
+      var q = slCur();
+      slAddExpr({
+        topic: q ? slTopicOf(q) : '其他',
+        category: String(el.textContent || '').length > 18 ? '金句' : '规范词',
+        content: String(el.textContent || '').trim(),
+        source: q ? ((q.source || '真题') + ' · ' + (q.questionNo || '题目')) : '参考答案'
+      });
+      break;
+    case 'go-matlist':
+      SL.matMode = v || 'topic'; slShow2('list'); break;
+    case 'go-expr':
+      slShow2('expr'); break;
+    case 'back-home':
+      slShow2('home'); break;
+    case 'm-mode':
+      SL.matMode = v; slRenderMatList(); break;
+    case 'm-topic':
+      SL.matTopic = v; slRenderMatList(); break;
+    case 'm-type':
+      SL.matType = v; slRenderMatList(); break;
+    case 'open-mat':
+      SL.mid = id; slShow2('detail'); break;
+    case 'go-do':
+      slGoQuestion(id); break;
+    case 'back-matlist':
+      slBackMatList(); break;
+    case 'fav-mat':
+      slToggleFav('m_' + id); slToast(slIsFav('m_' + id) ? '已收藏' : '已取消收藏'); slRenderMatDetail(); break;
+    case 'save-matnote':
+      slSaveMatNote(); break;
+    case 'e-topic':
+      SL.exprTopic = v; slRenderExpr(); break;
+    case 'e-cat':
+      SL.exprCat = v; slRenderExpr(); break;
+    case 'copy-expr':
+      var arr = slExprs();
+      for (var i = 0; i < arr.length; i++) if (arr[i].id === id) { slCopy(arr[i].content || ''); break; }
+      break;
+    case 'del-expr':
+      slConfirm('删除这条表达？', '删除后不可恢复。', '删除', function () {
+        var a = slExprs();
+        for (var j = 0; j < a.length; j++) {
+          if (a[j].id === id) { a.splice(j, 1); break; }
+        }
+        slSaveExprs(a);
+        slToast('已删除');
+        slRenderExpr();
+      });
+      break;
+    case 'add-expr-toggle':
+      SL.addForm = true; slRenderExpr(); break;
+    case 'add-expr-cancel':
+      SL.addForm = false; slRenderExpr(); break;
+    case 'add-expr-save':
+      var c = document.getElementById('slNewExpr');
+      var tp = document.getElementById('slNewTopic');
+      var ct = document.getElementById('slNewCat');
+      var sc = document.getElementById('slNewSrc');
+      var content = c ? String(c.value || '').trim() : '';
+      if (!content) { slToast('请输入表达内容'); break; }
+      slAddExpr({
+        topic: tp ? tp.value : '其他',
+        category: ct ? ct.value : '规范词',
+        content: content,
+        source: sc ? String(sc.value || '').trim() : '手动添加'
+      });
+      SL.addForm = false;
+      slRenderExpr();
+      break;
+    case 'toggle-fav':
+      SL.showFav = !SL.showFav; slRenderReadHome(); break;
+    case 'sel-hl':
+      slDoHighlight(); break;
+    case 'sel-add':
+      slSelAddExpr(); break;
+    default:
+      break;
+  }
+});
+
+document.addEventListener('input', function (e) {
+  var r = slResolveAct(e);
+  var el = r.el, act = r.act;
+  if (!el || !act) return;
+  if (act === 'answer-input') slOnAnswerInput();
+  else if (act === 'home-search') { SL.homeKw = el.value; slRenderHomeResults(); }
+  else if (act === 'e-search') { SL.exprKw = el.value; slRenderExprGrid(); }
+  else if (act === 'matnote-input') { /* 笔记失焦或点保存时写入 */ }
+});
+
+document.addEventListener('change', function (e) {
+  var r = slResolveAct(e);
+  var el = r.el, act = r.act;
+  if (!el || !act) return;
+  if (act === 'f-sub') { SL.fSub = el.value; slRenderList(); }
+  else if (act === 'f-topic') { SL.fTopic = el.value; slRenderList(); }
+});
+
+/* 选中文字工具条：只有「高亮」和「加入积累本」两个操作 */
+document.addEventListener('mouseup', function (e) {
+  setTimeout(function () {
+    var bar = document.getElementById('slSelBar');
+    if (!bar) return;
+    var txt = slSelText();
+    if (!txt || txt.length < 2) { bar.classList.remove('on'); return; }
+    var node = e.target, host = null;
+    while (node && node !== document) {
+      if (node.getAttribute && node.getAttribute('data-slmaterial')) { host = node; break; }
+      node = node.parentNode;
+    }
+    if (!host) { bar.classList.remove('on'); return; }
+    if (!host.getAttribute('id')) host.setAttribute('id', 'slMatHost');
+    var sel = window.getSelection();
+    if (!sel.rangeCount) { bar.classList.remove('on'); return; }
+    var left = window.innerWidth / 2 - 80, top = 80;
+    try {
+      var r = sel.getRangeAt(0).getBoundingClientRect();
+      if (r && (r.left || r.top || r.width)) { left = r.left + r.width / 2 - 80; top = r.top - 46; }
+    } catch (err) { /* 取不到位置时用默认位置 */ }
+    bar.setAttribute('data-host', host.getAttribute('id'));
+    bar.setAttribute('data-qid', host.getAttribute('data-qid') || (SL.v1 === 'answer' ? SL.qid : SL.mid) || '');
+    bar.style.left = Math.max(8, Math.min(window.innerWidth - 180, left)) + 'px';
+    bar.style.top = Math.max(8, top) + 'px';
+    bar.classList.add('on');
+  }, 0);
+});
+document.addEventListener('mousedown', function (e) {
+  var bar = document.getElementById('slSelBar');
+  if (!bar) return;
+  if (bar.contains && e.target && bar.contains(e.target)) return;
+  bar.classList.remove('on');
+});
+
+/* 确认弹层的确定按钮 */
+document.addEventListener('DOMContentLoaded', function () {
+  var ok = document.getElementById('slConfirmOk');
+  if (ok) {
+    ok.addEventListener('click', function () {
+      var cb = SL.confirmCb;
+      slCloseConfirm();
+      if (typeof cb === 'function') cb();
+    });
+  }
+  var ovC = document.getElementById('slConfirmOv');
+  if (ovC) ovC.addEventListener('click', function (e) { if (e.target === ovC) slCloseConfirm(); });
+  var ovS = document.getElementById('slSheetOv');
+  if (ovS) ovS.addEventListener('click', function (e) { if (e.target === ovS) slCloseSheet(); });
+
+  slBootstrap();
+  // 顶部标题
+  var tt = document.getElementById('topbarTitle');
+  if (tt) tt.textContent = '申论学习';
+});
+window.addEventListener('load', function () {
+  if (!SL.data.length && slLoadData()) slRenderAll();
+});
+</script>
+<script src="assets/ai-config.js?v=20260920c"></script>
+<script src="assets/ai-presets.js?v=20260916O"></script>
+<script src="assets/ai-service.js?v=20260920e"></script>
+<script src="assets/ai-cap-registry.js?v=20260918c"></script>
+<script src="assets/ai-cap-image.js?v=20260920c"></script>
+<script src="assets/ai-cap-vision.js?v=20260920c"></script>
+<script src="assets/ai-cap-audio.js?v=20260920c"></script>
+<script src="assets/ai-cap-embed.js?v=20260920c"></script>
+<script src="assets/ai-cap-translate.js?v=20260920c"></script>
+<script src="assets/ai-cap-video.js?v=20260920c"></script>
+<script src="assets/ai-cap-3d.js?v=20260922a"></script>
+</body>
+</html>

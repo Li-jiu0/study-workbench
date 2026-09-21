@@ -1,0 +1,50 @@
+R73 jsdom 验证 — 2026-09-17T09:22:22.230Z
+HTTP 服务已起于 127.0.0.1:8137
+  [PASS] chat-local.js 加载并导出 __IM_TEST__  -> 2×100ms
+  [PASS] #imMsgs 存在
+
+== 需求3 ①：点击图片气泡 → 打开查看器；点 ✕ 关闭 ==
+  [PASS] img.im-img 已渲染  -> http://127.0.0.1/x/a.png
+  [PASS] 点击前无 .im-img-preview
+  [PASS] 点击图片后出现 .im-img-preview（全屏浮层）
+  [PASS] 查看器含 ✕ 关闭按钮(.im-iv-btn[data-act=close])
+  [PASS] 查看器含 ＋/－ 缩放按钮
+  [PASS] 点击 ✕ 后 .im-img-preview 消失
+  [PASS] 查看器为单例（两次打开同一节点）
+  [PASS] 长按图片不弹出消息菜单（需求3 次因）  -> menuBefore=false
+
+== 需求19 ②：renderMsgs 重建保 scrollTop ==
+  [PASS] 非贴底时重建：scrollTop 保持 500（证伪「重建即回顶」）  -> scrollTop=500
+  [PASS] 贴底时重建：scrollTop 仍贴底 =1000（原行为不变）  -> scrollTop=1000
+  [PASS] 翻到顶时重建：scrollTop 保持 0  -> scrollTop=0
+
+== 需求19 ③：向上加载更多（mark_read=0）==
+  [PASS] 「加载更多」请求 URL 带 before_id=51  -> /api/chat/12345/messages?before_id=51&limit=30&mark_read=0
+  [PASS] 「加载更多」请求 URL 带 mark_read=0（关键：不推进已读水位线）  -> /api/chat/12345/messages?before_id=51&limit=30&mark_read=0
+  [PASS] URL 带 limit=30  -> /api/chat/12345/messages?before_id=51&limit=30&mark_read=0
+  [PASS] S.msgs 增加 10 条更早消息（50 -> 60）  -> len=60 (before=50)
+  [PASS] 更早消息 prepend 到最前（首条 id=41）  -> first.id=41
+  [PASS] 原最新消息仍在末尾（末条 id=100）  -> last.id=100
+  [PASS] 重建后 scrollTop 按高度差补偿（20 -> 220，视口不跳动）  -> scrollTop=220
+
+== 需求19 ④：轮询内容不变 → 不整表重建（签名早退）==
+  [PASS] 相同列表签名一致
+  [PASS] 列表变化（少一条）签名不同
+
+== 需求19-孪生 ⑤：快速切换会话，丢弃 A 的迟到响应 ==
+  [PASS] A 的响应确实返回了（用例非空跑）
+  [PASS] A 的迟到响应未回写 S.msgs（peer 守卫生效）  -> msgs[0].id=B1
+  [PASS] S.peer 仍为 B（未被串改）
+  [PASS] 群会话迟到响应被丢弃（group 守卫生效）  -> msgs[0].id=B2
+
+== 需求18③ ⑥：头部 ✎ 备注入口 + 保存后刷新头部/列表 ==
+  [PASS] 私聊头部出现「设置备注」按钮 #imRemarkBtn（普通用户可达）  -> <button id="imRemarkBtn" class="im-icon" type="button" title="设置备注" style="display: block;
+  [PASS] 头部初始显示昵称 Nick  -> Nick
+  [PASS] 备注弹窗复用既有 imOpenRemarkEditor（#imRemarkInput 存在）
+  [PASS] 保存后头部标题反映备注（老师）  -> 老师（Nick）
+  [PASS] 保存后会话列表条目反映备注（老师）  -> N老师（Nick）hi置顶免打扰删除⭐学习搭子·小星一起学习，共同进步！置顶免打扰删除🤖AI助手·星途有什么我可以帮你的？置顶免打扰删除
+  [PASS] S.chats 本地备注已更新  -> 老师
+  [PASS] 群聊头部不显示备注入口
+
+== 汇总: PASS=33 FAIL=0 ==
+jsdom 载入异常数: 0

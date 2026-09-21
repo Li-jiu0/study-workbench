@@ -1,0 +1,1964 @@
+=== FILE SIZE / EOL ===
+assets/xt-profile.js             size=143050   crlf=2829    loneLF=0      loneCR=0      CRLF
+assets/xt-profile.css            size=39598    crlf=1237    loneLF=0      loneCR=0      CRLF
+私聊.html                          size=77268    crlf=1169    loneLF=0      loneCR=0      CRLF
+assets/xt-region.js              size=46800    crlf=0       loneLF=924    loneCR=0      LF
+assets/xt-moments.js             size=58946    crlf=1182    loneLF=0      loneCR=0      CRLF
+朋友圈发布.html                       size=12612    crlf=170     loneLF=0      loneCR=0      CRLF
+assets/xt-aiusage.js             size=75529    crlf=0       loneLF=1747   loneCR=0      LF
+AI.html                          size=56608    crlf=975     loneLF=0      loneCR=0      CRLF
+assets/common.css                size=127605   crlf=2915    loneLF=0      loneCR=0      CRLF
+个人资料.html                        size=2959     crlf=52      loneLF=0      loneCR=0      CRLF
+地区选择.html                        size=19110    crlf=409     loneLF=0      loneCR=0      CRLF
+个人中心.html                        size=95502    crlf=1524    loneLF=0      loneCR=0      CRLF
+server/routers/ai.py             size=17773    crlf=336     loneLF=0      loneCR=0      CRLF
+
+=== tools/qa listing ===
+  BATCH_J_BRIEF.md                         7144
+  BATCH_K_BRIEF.md                         12905
+  FEEDBACK_API_NOTES.md                    3348
+  _PREAMBLE_TEAM_BATCH3PLUS.md             6550
+  __pycache__                              -1
+  _a1_final_selfcheck.js                   6498
+  _a1_final_selfcheck.txt                  1238
+  _a1_runtime2_out.txt                     3547
+  _a1_runtime_check.js                     24068
+  _a1_runtime_check2.js                    14617
+  _a1_runtime_out.txt                      4357
+  _a2_out                                  -1
+  _a2_shot.js                              6484
+  _a4_grep.py                              1663
+  _a4_grep_out.txt                         573
+  _a4_mtime.py                             1588
+  _a4_mtime_out.txt                        795
+  _a4_pairs.py                             3266
+  _a4_pairs_out.txt                        6718
+  _a4_probe.py                             1502
+  _a4_probe_out.txt                        19059
+  _a4_selfcheck.py                         6279
+  _a4_selfcheck_out.txt                    2226
+  _a4_stage_walk.js                        12469
+  _a4_stage_walk_out.txt                   7017
+  _a4_tops.py                              2374
+  _a4_tops_out.txt                         1821
+  _a6_ai_service.txt                       194
+  _a6_authproof.txt                        244
+  _a6_escheck.txt                          7
+  _a6_guard.txt                            3314
+  _a6_locsrc.txt                           5571
+  _a6_nav.txt                              652
+  _a6_navsrc.txt                           884
+  _a6_selfcheck.py                         3062
+  _a6_selfcheck.txt                        1736
+  _a6_static.txt                           707
+  _a6_wb_jsdom.js                          10302
+  _a6_wb_jsdom2.js                         11894
+  _a6_wb_out.txt                           7100
+  _a6_wb_out2.txt                          8430
+  _a7_persist_test.js                      26099
+  _apk_assets_check.txt                    4292
+  _apk_layout_check.txt                    1805
+  _apk_preflight.txt                       157
+  _apk_tracked.txt                         23
+  _appjs_diff.txt                          634
+  _apply_patch_to_shards.py                3664
+  _b3_ai_assert.js                         10670
+  _b5_hdr_diag.py                          1552
+  _b5_postdeploy.py                        3708
+  _b5_purge_nginx.py                       4853
+  _b5_recon.py                             2933
+  _b5_snapshot.py                          996
+  _b5f_verify.py                           2790
+  _b5g_verify.py                           2268
+  _backbtn_survey.txt                      2821
+  _backup_check.txt                        104
+  _backup_log.txt                          104
+  _bump_0912d_check.txt                    264
+  _bump_0912d_out.txt                      291
+  _bump_0913n.txt                          1416
+  _bump_check.txt                          1029
+  _bump_out.txt                            613
+  _cfix_backup.py                          325
+  _check.txt                               799
+  _cleanup_apply.txt                       3945
+  _cleanup_check.txt                       3944
+  _cmp_manual.txt                          109
+  _cmt_p0b_1_t01.txt                       1035
+  _cmt_p0b_2_t02.txt                       928
+  _cmt_p0b_3_t04_00.txt                    2059
+  _cmt_p0b_4_t03.txt                       3154
+  _cmt_p0b_5_t04.txt                       2092
+  _cmt_p0b_6_t05_docs.txt                  1809
+  _commit_g_out.txt                        1388
+  _commit_out.txt                          4278
+  _d_e_node_check.txt                      303
+  _d_r35_regression.js                     8305
+  _d_r35_regression.txt                    1492
+  _deploy_0913h_manifest.txt               4714
+  _deploy_0913i_manifest.txt               4769
+  _deploy_0913j_manifest.txt               5111
+  _deploy_0913k_manifest.txt               5111
+  _deploy_0913l_manifest.txt               5111
+  _deploy_0913m_manifest.txt               5111
+  _deploy_0913n_dryrun.txt                 726
+  _deploy_0913n_manifest.txt               4894
+  _deploy_0913n_real.txt                   3654
+  _deploy_0913n_real2.txt                  2254
+  _deploy_0913o_manifest.txt               4894
+  _deploy_0914b_dryrun.txt                 728
+  _deploy_0914b_manifest.txt               5031
+  _deploy_0914b_run.txt                    2904
+  _deploy_0914c_manifest.txt               2068
+  _deploy_0914d_manifest.txt               5077
+  _deploy_0914e_manifest.txt               6048
+  _deploy_0914f_manifest.txt               6784
+  _deploy_20260914f_report.txt             2335
+  _diff_html.py                            789
+  _diff_out.txt                            8232
+  _diff_shared.py                          725
+  _diff_shared.txt                         34311
+  _diffcheck.txt                           1943
+  _e_deploy_stdout.txt                     2489
+  _e_diff_ppt.txt                          8761
+  _e_diff_ppt_err.txt                      107
+  _e_diff_yang.txt                         1411
+  _e_dryrun.txt                            878
+  _e_req28_regression.js                   10383
+  _e_req28_regression.txt                  1951
+  _ed_avatar_test.js                       11547
+  _ed_deep_check.js                        6427
+  _ed_local_ball.js                        4650
+  _ed_local_page_check.js                  4782
+  _ed_local_regression.js                  6371
+  _ed_remote_probe.js                      1442
+  _explore2_out.txt                        169015
+  _explore_out.txt                         189500
+  _final.txt                               1191
+  _final2_escheck.txt                      7
+  _final2_l1.txt                           4264
+  _final2_r66.txt                          2415
+  _final_check.txt                         2136
+  _final_cleanup.txt                       1344
+  _final_cleanup2.txt                      578
+  _final_diffstat.txt                      2087
+  _final_escheck.txt                       7
+  _final_l1.txt                            4264
+  _final_l2.txt                            60
+  _final_l3.txt                            1210
+  _final_qa.py                             4539
+  _final_qa_out.txt                        7313
+  _final_r66.txt                           2415
+  _final_status.txt                        1559
+  _find_img.py                             1371
+  _find_shot.py                            1568
+  _find_shot_out.txt                       3336
+  _fix_log2.txt                            119
+  _fix_ref_b5.py                           420
+  _g1.txt                                  35
+  _g1e.txt                                 0
+  _g2.txt                                  841
+  _g2e.txt                                 0
+  _g3.txt                                  2787
+  _g3e.txt                                 0
+  _git_diff_head.txt                       336
+  _git_extract_info.txt                    208
+  _git_probe.txt                           6643
+  _gitstatus.py                            867
+  _gitstatus.txt                           5336
+  _globals_in.json                         10722
+  _globals_out.json                        45583
+  _globals_scan.js                         11135
+  _home_cards.txt                          2003
+  _hotfix1_out.txt                         534
+  _icons.txt                               538
+  _icons_apply_check.txt                   2628
+  _icons_apply_out.txt                     2515
+  _icons_bak.txt                           51
+  _icons_check.txt                         41
+  _icons_commit.txt                        207
+  _icons_emoji.txt                         4940
+  _icons_emoji2.txt                        36371
+  _icons_final.txt                         1281
+  _icons_missing.txt                       1160
+  _icons_msg.txt                           745
+  _idem.txt                                2765
+  _ipartner_commit.js                      40940
+  _ipartner_diff.txt                       31477
+  _ipartner_prev.js                        24180
+  _k_cet_assert.js                         4945
+  _k_check1.txt                            0
+  _k_check2.txt                            0
+  _k_check3.txt                            0
+  _k_scan_baseline.txt                     3274
+  _k_scan_final.txt                        2967
+  _l1_bumplist.out.txt                     1826
+  _l1_bumplist.py                          1266
+  _l1_dupcheck.out.txt                     2001
+  _l1_dupcheck.py                          2918
+  _l1_panelcheck.out.txt                   1749
+  _l1_panelcheck.py                        1487
+  _l1_verify.out.txt                       1776
+  _l1_verify.py                            2898
+  _l6_probe.txt                            117
+  _l6_sayhi.txt                            2
+  _l6_scan.py                              1092
+  _l6_scan.txt                             51593
+  _l_cet_check.js                          5471
+  _l_cet_check.log                         1980
+  _l_commit.log                            299
+  _l_commit_msg.txt                        129
+  _l_deploy_real.log                       2368
+  _l_dryrun.log                            922
+  _l_home_check.js                         3112
+  _l_home_check.log                        584
+  _l_home_scan.log                         1739
+  _l_iconscan.log                          1739
+  _l_ppt_scan.log                          1242
+  _l_push.log                              111
+  _l_regression.log                        3855
+  _l_tools_scan.log                        1795
+  _ls.txt                                  25121
+  _m2_accept.js                            7247
+  _m2_accept.json                          2777
+  _m2_accept_final.txt                     3685
+  _m2_accept_report.json                   2777
+  _m2_edit_more.py                         2626
+  _m2_edit_setting.py                      1743
+  _m2_edit_update_js.py                    8938
+  _m2_edit_update_js2.py                   2040
+  _m2_escheck.txt                          7
+  _m2_escheck_final.txt                    7
+  _m2_final_bytes.txt                      184
+  _m2_find_bad.py                          264
+  _m2_find_jsdom.txt                       4
+  _m2_find_jsdom2.txt                      274
+  _m2_fix_bad.py                           784
+  _m2_gp.txt                               201
+  _m2_jsdom_order.js                       2619
+  _m2_jsdom_order.py                       3251
+  _m2_ls.txt                               104
+  _m2_mech.js                              2579
+  _m2_mech.json                            1018
+  _m2_mech2.js                             2504
+  _m2_mech2.json                           966
+  _m2_np.txt                               21
+  _m2_npm.txt                              33
+  _m2_order_check.py                       718
+  _m2_order_final.txt                      180
+  _m2_out.txt                              173
+  _m2_probe.py                             336
+  _m2_probe2.py                            64
+  _m2_readyState_test.js                   863
+  _m2_resolve.txt                          808
+  _m2_rs.json                              119
+  _m2_sim.js                               2826
+  _m4_jsdom.js                             12310
+  _m_commit.log                            438
+  _m_commit_msg.txt                        223
+  _m_deploy_real.log                       2368
+  _m_dryrun.log                            922
+  _m_iconscan.log                          1739
+  _m_p0b.log                               4313
+  _m_push.log                              111
+  _m_push2.log                             111
+  _m_push3.log                             111
+  _m_push4.log                             84
+  _m_q21.log                               69
+  _m_regression.log                        3855
+  _measure_out.txt                         2560
+  _measure_raw.txt                         1399
+  _merge_patch.py                          2797
+  _minibank_diff.txt                       7604
+  _minicomm_prev.js                        4521
+  _miniexam_prev.js                        15456
+  _misc.py                                 1777
+  _misc_out.txt                            1633
+  _mk_o_script.txt                         78
+  _mk_selftest_fixture.py                  2637
+  _more_v2.txt                             537
+  _more_verify.txt                         764
+  _n91_probe.out.txt                       2997
+  _n91_probe.py                            3660
+  _n91_probe2.out.txt                      18351
+  _n91_probe2.py                           1783
+  _n925_log.txt                            104
+  _n_commit_log.txt                        1034
+  _nav_blocks.js                           1060
+  _nav_blocks.txt                          29117
+  _nav_fix2.js                             1763
+  _nav_fix2_report.txt                     62
+  _nav_patch.js                            4693
+  _nav_patch_report.txt                    2149
+  _nav_scan.js                             1644
+  _nav_scan.txt                            2999
+  _nav_verify.js                           1496
+  _nav_verify.txt                          1421
+  _nav_verify2.js                          1695
+  _nav_verify2.txt                         1962
+  _nav_verify3.js                          1458
+  _nav_verify3.txt                         1928
+  _new_verify_out.txt                      2580
+  _ocr_shot.py                             2273
+  _ocr_shot_out.txt                        190
+  _old_verify_out.txt                      1246
+  _origin_main_log.txt                     323
+  _origin_main_sha.txt                     204
+  _out_backup.txt                          112
+  _p0b_diff.txt                            1447
+  _p0b_inspect.txt                         2417
+  _p0b_report.txt                          2036
+  _p0b_status.txt                          6279
+  _p3probe.txt                             466
+  _p5probe.txt                             232
+  _p5probe2.txt                            101
+  _pb1.json                                6524
+  _pb10.json                               3330
+  _pb11.json                               21568
+  _pb12.json                               13592
+  _pb13.json                               14618
+  _pb14.json                               13505
+  _pb15.json                               13906
+  _pb16.json                               15280
+  _pb17.json                               12191
+  _pb2.json                                10134
+  _pb3.json                                11886
+  _pb4.json                                10131
+  _pb5.json                                7846
+  _pb6.json                                8139
+  _pb7.json                                9062
+  _pb8.json                                12159
+  _pb9.json                                12700
+  _pending_jz_export.py                    1429
+  _ppt_conflict.py                         2112
+  _ppt_conflict.txt                        5494
+  _push_f_out.txt                          425
+  _qa_apk_out.txt                          747
+  _qa_apk_src.txt                          20151
+  _qa_batch_summary.json                   4279
+  _qa_cssdiff.txt                          6216
+  _qa_explore.py                           612
+  _qa_explore2.py                          697
+  _qa_int_out.txt                          1803
+  _qa_origin.js                            6874
+  _qa_probe10.txt                          3253
+  _qa_probe11.txt                          1379
+  _qa_probe12.txt                          1674
+  _qa_probe2_out.txt                       9023
+  _qa_probe3.txt                           2031
+  _qa_probe4.txt                           2586
+  _qa_probe5.txt                           1096
+  _qa_probe6.txt                           3460
+  _qa_probe7.txt                           676
+  _qa_probe8.txt                           1776
+  _qa_probe9.txt                           2556
+  _qa_probe_out.txt                        5046
+  _qa_reg_out.txt                          1046
+  _qa_render_out.txt                       2317
+  _qa_smoke_out.txt                        1846
+  _qa_t01_report.txt                       2567
+  _qa_t02_report.txt                       1621
+  _qa_ver_out.txt                          968
+  _qaled_list.py                           1101
+  _qaled_list.txt                          3840
+  _qs.txt                                  1684
+  _r35o_bak.txt                            28
+  _r35o_check.txt                          36
+  _r35o_commit.txt                         1039
+  _r35o_msg.txt                            643
+  _r35o_status.txt                         440
+  _r35o_stdout.txt                         3838
+  _r35o_verify.txt                         469
+  _r37_qa_edge.js                          4994
+  _r37_qa_edge.txt                         676
+  _r37_recheck_fixpoints.txt               367
+  _r37_stdout.txt                          1200
+  _r37_syntax.txt                          14
+  _r37_verify.txt                          189
+  _r3943_REPORT.md                         6020
+  _r3943_admin_contact.js                  7681
+  _r3943_admin_contact.txt                 332
+  _r3943_admin_contact_run.log             371
+  _r3943_admin_diff.txt                    4144
+  _r3943_chat_diff.txt                     15369
+  _r3943_chat_regression.js                15745
+  _r3943_chat_regression.txt               732
+  _r3943_chat_run.log                      1363
+  _r3943_diff_size.txt                     60
+  _r3943_e2e_probe.py                      5488
+  _r3943_e2e_probe.txt                     2330
+  _r3943_e2e_run.log                       2526
+  _r3943_env_probe.txt                     427
+  _r3943_scripts.txt                       10433
+  _r3943_survey.txt                        785
+  _r41_verify.txt                          758
+  _r44_admin_pwd_check.txt                 169
+  _r44_frontend_check.js                   13237
+  _r44_frontend_check.log                  3940
+  _r44_git_admin.txt                       210
+  _r44_git_admin_dates.txt                 234
+  _r44_git_auth_dates.txt                  751
+  _r44_git_auth_isadmin.txt                114
+  _r44_git_chat.txt                        442
+  _r44_git_chat_canmsg.txt                 114
+  _r44_git_chat_dates.txt                  490
+  _r44_git_db_isadmin.txt                  114
+  _r44_git_fb_dates.txt                    241
+  _r44_git_head.txt                        515
+  _r44_git_main.txt                        814
+  _r44_git_main_dates.txt                  618
+  _r44_lines.txt                           2182
+  _r44_lines2.txt                          162
+  _r44_msgs.txt                            746
+  _r44_probe.txt                           985
+  _r44_qa_batch_run1.txt                   3959
+  _r44_qa_c1_run1.txt                      352
+  _r44_qa_contrast.js                      3804
+  _r44_qa_contrast_head.js                 15747
+  _r44_qa_contrast_out.txt                 1712
+  _r44_qa_contrast_stdout.txt              1713
+  _r44_qa_contrast_worktree.js             15751
+  _r44_qa_fecheck_run1.txt                 0
+  _r44_qa_githist.txt                      1961
+  _r44_qa_gitstatus.txt                    2466
+  _r44_qa_imtabadd_hist.txt                756
+  _r44_qa_order.txt                        2916
+  _r44_qa_private_html_diff.txt            4216
+  _r44_qa_r3943_run1.txt                   950
+  _r44_qa_sandbox.js                       3119
+  _r44_qa_sandbox_out.txt                  755
+  _r44_qa_sandbox_page.js                  9504
+  _r44_qa_sandbox_stdout.txt               755
+  _r44_r3943_stdout.txt                    1055
+  _r44_remote_probe.txt                    142
+  _r44_remote_probe2.txt                   238
+  _r44_remote_probe3.txt                   382
+  _r44_remote_probe4.txt                   169
+  _r44_remote_probe5.txt                   188
+  _r44_remote_probe6.txt                   558
+  _r44_run_out.txt                         63
+  _r44_server_rootcause.md                 11747
+  _r44_status.js                           848
+  _r44_status.log                          2303
+  _r44_status2.log                         3413
+  _r44_status3.js                          1317
+  _r44_status3.log                         958
+  _r44c_deploy_out.txt                     3018
+  _r44c_deploy_stderr.txt                  0
+  _r44c_deploy_stdout.txt                  3540
+  _r44c_dryrun_out.txt                     764
+  _r44c_env_admin_username.py              6258
+  _r44c_env_username_out.txt               617
+  _r44c_env_username_stdout.txt            1077
+  _r44c_git_status.txt                     1780
+  _r44c_git_status_server.txt              296
+  _r44c_preflight.py                       4430
+  _r44c_preflight_out.txt                  6029
+  _r44c_preflight_stderr.txt               0
+  _r44c_preflight_stdout.txt               6086
+  _r44c_verify.py                          5224
+  _r44c_verify_out.txt                     1383
+  _r44c_verify_stdout.txt                  1437
+  _r44d_c1_probe.txt                       177
+  _r44d_check_tail.txt                     2691
+  _r44d_dryrun_out.txt                     799
+  _r44d_frontend_check_out.txt             7
+  _r44d_git_status.txt                     2021
+  _r44d_head_siliao.html                   36590
+  _r44d_page_delta.txt                     105
+  _r44d_regression_gate_out.txt            3966
+  _r44d_stdout_test.txt                    9
+  _r48_batch1_result.txt                   5117
+  _r48_e_deploy_out.txt                    1996
+  _r67_escheck_out.txt                     7
+  _r67_static_out.txt                      1242
+  _r73_ai_exc_check.js                     5855
+  _r73_ai_exc_out.txt                      761
+  _r73_miance_dryrun.txt                   232
+  _r73_miance_patch.py                     5877
+  _r73_req_apply.py                        7687
+  _r73b_text_apply.py                      5109
+  _r86e2_check.py                          5683
+  _r86e2_smoke.js                          17195
+  _r86e_verify.js                          13278
+  _r88f_probe_out.txt                      4959
+  _r88f_probe_stdout.txt                   273
+  _r88f_qa_probe.py                        1256
+  _r88f_rl_out.txt                         1334
+  _r88f_space_probe.txt                    1386
+  _release_f_out.txt                       1355
+  _release_g_out.txt                       1438
+  _repro_run.txt                           295
+  _repro_task_click.txt                    241
+  _restore_check.txt                       1028
+  _rl_probe.txt                            105
+  _rlout.txt                               273
+  _scan_0913.js                            1617
+  _scan_emoji.py                           1711
+  _scan_emoji2.py                          1906
+  _scan_icons.py                           2123
+  _scan_tmp.log                            13370
+  _se5_check.txt                           51
+  _se5_commit2.txt                         456
+  _se5_commit3.txt                         2778
+  _se5_commitmsg.txt                       2065
+  _se5_commitmsg2.txt                      1375
+  _se5_commitmsg3.txt                      1843
+  _se5_diffstat.txt                        1689
+  _se5_git.txt                             2208
+  _se5_gq_check.js                         6392
+  _se5_gq_check.txt                        1342
+  _se5_gq_check_out.txt                    1349
+  _se5_gqlog.txt                           2162
+  _se5_smoke.js                            4587
+  _se5_smoke.txt                           2081
+  _se5_smoke_out.txt                       2115
+  _se5_stage.txt                           681
+  _se5_verify_head.txt                     1878
+  _selftest                                -1
+  _sf4_check.txt                           28
+  _sidebar_head.js                         1105
+  _sidebar_head.txt                        33588
+  _sigcheck.txt                            2520
+  _smoke_exit.txt                          44
+  _smoke_final.txt                         5319
+  _sp_out.txt                              273
+  _stamp_assets_meta.txt                   4465
+  _stamp_bak_list.txt                      1923
+  _stamp_build_plan.py                     4225
+  _stamp_build_plan_out.txt                20
+  _stamp_check_bs.txt                      372
+  _stamp_diffcheck.txt                     330
+  _stamp_diffcheck_all.txt                 64
+  _stamp_edit_plan.json                    14634
+  _stamp_edit_plan.txt                     455
+  _stamp_exec.py                           4137
+  _stamp_exec_out.txt                      39
+  _stamp_exec_report.json                  24459
+  _stamp_exec_report.txt                   2334
+  _stamp_files.json                        6460
+  _stamp_files.txt                         1922
+  _stamp_final.json                        28093
+  _stamp_final.py                          4534
+  _stamp_final.txt                         16988
+  _stamp_final_out.txt                     26
+  _stamp_hist.py                           1803
+  _stamp_hist.txt                          1899
+  _stamp_html_edit_list.txt                957
+  _stamp_perstamp_pretty.txt               49143
+  _stamp_plan.json                         8125
+  _stamp_plan.py                           2076
+  _stamp_plan.txt                          2651
+  _stamp_plan_check.txt                    375
+  _stamp_plan_out.txt                      11
+  _stamp_probe.py                          2914
+  _stamp_probe_out.txt                     21
+  _stamp_refs.json                         41648
+  _stamp_refs.txt                          2602
+  _stamp_refs2.json                        55025
+  _stamp_refs2.txt                         2712
+  _stamp_remeasure.py                      2020
+  _stamp_remeasure.txt                     1895
+  _stamp_remeasure_out.txt                 14
+  _stamp_report.txt                        2520
+  _stamp_samples.txt                       1894
+  _stamp_scan.py                           6636
+  _stamp_scan2.py                          4218
+  _stamp_scan2_out.txt                     11
+  _stamp_scan3.py                          1973
+  _stamp_scan3_out.txt                     19
+  _stamp_scan_out.txt                      19
+  _stamp_step1_report.md                   7378
+  _stamp_step2_report.md                   6703
+  _stamp_verify.json                       34178
+  _stamp_verify.py                         4378
+  _stamp_verify.txt                        871
+  _stamp_verify_out.txt                    18
+  _status.py                               962
+  _status_out.txt                          4855
+  _status_read_0914.js                     990
+  _status_read_0914.log                    3545
+  _stdout.txt                              6660
+  _summary_tmp.txt                         94
+  _sweep_run1.txt                          27002
+  _sweep_run2.txt                          9649
+  _sweep_run3.txt                          3454
+  _t02_commit_msg.txt                      2805
+  _t03_commit_msg.txt                      1606
+  _t03_commit_out.txt                      182
+  _t03_exit.txt                            8
+  _t03_report.txt                          2315
+  _t04_00_check.txt                        2993
+  _t04_full.txt                            15814
+  _t04_syntax.txt                          0
+  _t04t05_check.txt                        50
+  _t05_smoke.txt                           89
+  _t3_verify.txt                           1270
+  _tmpchk                                  -1
+  _v.txt                                   216
+  _verifier_ls.txt                         990
+  _verify_0913b.js                         2494
+  _verify_head.log                         273
+  _verify_mock_exam_deleted.log            104
+  _verify_t03.log                          1035
+  _verify_t04.log                          1748
+  _verify_t04_13_24.log                    725
+  _verify_t04_commits.log                  1470
+  _verify_t04_status.log                   6207
+  _verify_t05_progress.log                 1348
+  _version_keep_list_0913d.md              11261
+  _w1_closeout.txt                         1324
+  _w1_closeout2.txt                        972
+  _w1_hotfix_probe.txt                     1039
+  _w2_bump.py                              3027
+  _w2_qa.py                                5734
+  _w2_qa_out.txt                           3126
+  _w2t2_audit.py                           2741
+  _w2t2_audit.txt                          1554
+  _wave_acorn.js                           2009
+  _wave_check_out.txt                      12246
+  _wechat_stamp_fix.py                     2238
+  _wechat_stamp_out.txt                    669
+  _widebtn_scan.txt                        489
+  a3_cetread_probe.js                      9766
+  a3_empty_probe.js                        3429
+  ai_jsdom_check.js                        4235
+  aiinterview_todo_locate.log              561
+  appjs_followup_check.log                 126
+  arkquota_apply_config.py                 3370
+  arkquota_apply_patch.py                  12729
+  arkquota_verify.py                       13960
+  arkquota_verify_r88f.py                  10815
+  b12_detail.log                           392
+  b2_pptlib_probe.js                       11912
+  ball_verify.js                           4285
+  blog_stats_todo_locate.log               69
+  blog_write_todo_locate.log               443
+  bump_0913j.log                           645
+  cet_reading_translate_locate.log         177
+  check_apk_assets_0912.js                 17705
+  check_icons_0912.js                      2322
+  check_t04t05_0912.js                     10440
+  check_version_consistency.py             6771
+  crossline_conflict_20260916m.py          3588
+  crossline_conflict_out_20260916m.txt     1148
+  demo_robot_locate.log                    682
+  deploy_0913i_run.log                     1731
+  deploy_i_dryrun.log                      558
+  deploy_j_dryrun.log                      922
+  dual_copy_check.log                      497
+  e1_smoke_log.txt                         4439
+  e1r_main_check.log                       166
+  ed_apk_layout_0912.js                    9598
+  ed_backend_contract.py                   16789
+  ed_independent_0911h.js                  31645
+  ed_run_smoke.py                          3314
+  ed_scan_versions.py                      2037
+  ed_smoke_t03_0911.py                     26453
+  ed_smoke_t04_0911.py                     15757
+  ed_t01_home_0912.js                      5884
+  ed_t01_privacy_0911.js                   9285
+  ed_t02_groupsettings_0911.js             14878
+  ed_t02_subpage_0912.js                   14282
+  ed_t03_im_0912.js                        15786
+  ed_t04_icons_0912.js                     13631
+  ed_t05_smoke_0912.js                     8428
+  ed_t05_wiring_0911.js                    17021
+  escheck_es2017.js                        2209
+  exam_topics_locate.log                   131
+  fetch_srv_files.py                       1095
+  for_pics.txt                             0
+  for_pics2.txt                            5398
+  for_pics3.txt                            0
+  four_pages_check.log                     375
+  funccenter_check.log                     296
+  gate_0913i_run1.log                      3852
+  gate_0913i_run2.log                      3852
+  gate_0913j_run1.log                      7396
+  gate_0913j_run2.log                      7296
+  gate_0913j_summary.log                   3096
+  git_commit_0913i.log                     273
+  git_commit_0913i_b.log                   298
+  git_commit_0913j.log                     965
+  git_log_check.log                        1274
+  global_name_out_20260916m.txt            8684
+  global_name_scan_20260916m.py            10257
+  icon_audit_0913j.js                      19086
+  icon_audit_0913j.log                     1739
+  importquiz_todo_locate.log               90
+  inject_settings.py                       854
+  inspect_data.js                          1190
+  j_kou_ai.log                             2038
+  j_kou_ai_check.js                        5395
+  j_kou_appjs.log                          2828
+  j_kou_appjs_check.js                     10765
+  j_kou_backend.log                        516
+  j_kou_backend_selftest.py                4881
+  j_kou_blog.log                           1160
+  j_kou_blog_check.js                      5553
+  j_kou_cet.log                            3446
+  j_kou_cet_check.js                       3325
+  j_kou_cet_raw.txt                        38
+  j_kou_chat.log                           3456
+  j_kou_chatjs.log                         375
+  j_kou_chatjs_check.js                    1339
+  j_kou_exam.log                           1625
+  j_kou_exam_check.js                      4857
+  j_kou_home.log                           2008
+  j_kou_misc.js                            5168
+  j_kou_misc.log                           1335
+  j_kou_ppt.log                            2606
+  j_kou_ppt_check.js                       6572
+  j_kou_settings.log                       586
+  j_kou_settings_check.js                  3496
+  j_kou_shangwu.log                        941
+  j_kou_sweep.log                          4600
+  k_b12.log                                414
+  k_batch_locate.log                       635
+  k_bump.log                               598
+  k_commit.log                             652
+  k_commit_msg.txt                         1729
+  k_deploy_gen.log                         15
+  k_deploy_real.log                        2377
+  k_deploy_verify.log                      133
+  k_dryrun.log                             929
+  k_final_scan.log                         1746
+  k_final_scan2.log                        1746
+  k_iconcheck.log                          22
+  k_kou-k-api.log                          3245
+  k_kou-k-api_assert.js                    5256
+  k_kou-k-api_scan.js                      463
+  k_kou-k-appjs.log                        3170
+  k_kou-k-appjs_assert.js                  6543
+  k_kou-k-blog.log                         1836
+  k_kou-k-cet.log                          2042
+  k_kou-k-gq.log                           1510
+  k_kou-k-gq_check.js                      5058
+  k_kou-k-misc.log                         6095
+  k_kou-k-personal.log                     2335
+  k_kou-k-personal_check.js                7383
+  k_kou-k-ppt.log                          5763
+  k_kou-k-settings.log                     4451
+  k_kou-k-sw.log                           1960
+  k_kou-k-vocab.log                        1918
+  k_push.log                               91
+  k_regression.log                         4004
+  k_regression2.log                        3862
+  k_regression2_tail.log                   1213
+  k_regression_tail.log                    2274
+  k_remote.log                             1055
+  leaderless_locate.log                    151
+  migrate_i.log                            24
+  multi_check.js                           3212
+  n9_25_probe.txt                          7521
+  n9_25_probe2.txt                         4862
+  node_modules                             -1
+  p1_main_check.log                        263
+  page_check.js                            4108
+  pic_paths.txt                            1588
+  ppt_del_locate.log                       81
+  profile_tools_todo_locate.log            192
+  qa_a2a3a4_final_0913.js                  21944
+  qa_appjs_impact.js                       3374
+  qa_b12_trim_0913h.js                     6828
+  qa_b3_b4_smoke.js                        7551
+  qa_batch_0913h_final.js                  12775
+  qa_blogwechat_quest_0913.js              5713
+  qa_bug1_profiles.js                      7199
+  qa_bug2_goback.js                        7384
+  qa_c1_0913h.js                           7615
+  qa_c23_0913h.js                          8902
+  qa_data_pipeline_0912e.js                12292
+  qa_e1_icon_smoke.js                      7487
+  qa_global_pageload.js                    5147
+  qa_p1_vocab_0913i.js                     8545
+  qa_p5_xingce_judge.js                    15477
+  qa_r48_batch1.js                         48721
+  qa_t01_password.js                       16848
+  qa_t02_figures.js                        13200
+  qa_t04_00_foundation.js                  6747
+  qa_t04t05_0912_apk.js                    9064
+  qa_t04t05_0912_integrity.js              14423
+  qa_t04t05_0912_probe.js                  4052
+  qa_t04t05_0912_probe2.js                 1398
+  qa_t04t05_0912_regression.js             17136
+  qa_t04t05_0912_render.js                 12961
+  qa_t04t05_0912_smoke.js                  6116
+  qa_t04t05_0912_versions.js               8968
+  qa_verify_t03t04_0911.py                 50411
+  r44_chat_diff.txt                        1554
+  r44_contact_src.txt                      4042
+  r44_diff.js                              2196
+  r44_diff_admin_contact_0914b.txt         3463
+  r44_diff_chat_local_0914b.txt            13911
+  r44_live_out.txt                         8690
+  r44_live_probe.py                        7051
+  r44_probe10.py                           6054
+  r44_probe10_out.txt                      1556
+  r44_probe11.py                           4633
+  r44_probe11_out.txt                      4032
+  r44_probe12.py                           2730
+  r44_probe12_out.txt                      2345
+  r44_probe2.py                            4364
+  r44_probe2_out.txt                       5322
+  r44_probe3.py                            2715
+  r44_probe4.py                            3130
+  r44_probe4_out.txt                       1326
+  r44_probe5.py                            3878
+  r44_probe5_out.txt                       2793
+  r44_probe6.py                            2602
+  r44_probe7.py                            3737
+  r44_probe8.py                            3854
+  r44_probe8_out.txt                       1007
+  r44_probe9.py                            4597
+  r44_probe9_out.txt                       1732
+  r44_pwd_check.txt                        56
+  r44_remote_chat.py                       6825
+  r44_remote_paths.txt                     2730
+  r44_server_diff.txt                      1855
+  r66_qa_behavior.js                       11151
+  r66_qa_behavior_result.txt               1947
+  r66_qa_behavior_stdout.txt               2415
+  r66_qa_globals.js                        5260
+  r66_qa_globals_result.txt                6840
+  r66_qa_globals_stdout.txt                6901
+  r66_qa_static.py                         9402
+  r66_qa_static_result.txt                 55606
+  r66_qa_stdout.txt                        54158
+  r67_icon_patch.py                        16029
+  r67_icon_qa_result.txt                   1660
+  r67_icon_scan.py                         1533
+  r67_icon_scan_result.txt                 225
+  r67_l1_patch.py                          24530
+  r67_l1_qa_behavior.js                    17746
+  r67_l1_qa_behavior_result.txt            4196
+  r67_l1_qa_icon.js                        9340
+  r67_l1_static_check.py                   2853
+  r67_l2_final_check.py                    3229
+  r67_l2_final_check.txt                   1100
+  r67_l2_final_diff.py                     1917
+  r67_l2_final_diff.txt                    1019
+  r67_l2_patch.py                          6989
+  r67_l2_patch2.py                         11244
+  r67_l2_patch2_check.py                   1838
+  r67_l2_patch2_check.txt                  564
+  r67_l2_patch3.py                         4329
+  r67_l2_patch3_check.txt                  652
+  r67_l2_patch4.py                         5193
+  r67_l2_patch4_check.txt                  47
+  r67_l2_probe.js                          1645
+  r67_l2_qa_run.log                        92
+  r67_l2_qa_usage.js                       18043
+  r67_l2_qa_usage.txt                      1005
+  r67_l2_selftest.txt                      14
+  r67_star_cleanup.py                      1766
+  r68_l3_patch.py                          2218
+  r68_l3_qa.js                             5721
+  r68_l3_qa_result.txt                     1210
+  r68_l3_static_check.py                   3438
+  r68_l3_static_result.txt                 1941
+  r72                                      -1
+  r73                                      -1
+  r73_import_link_test.js                  8256
+  r73_page_profile.json                    10006
+  r88f_qa_probe.py                         16876
+  r88f_rl_probe.py                         6886
+  r88f_space_probe.py                      2159
+  r89_leadcheck_r89a.js                    6012
+  r89_qa_a1_anc.js                         1723
+  r89_qa_a1_layout.js                      3298
+  r89_qa_a1_menu_probe.js                  1983
+  r89_qa_a1_open.js                        1307
+  r89_qa_a1_regress.js                     2195
+  r89_qa_a1_slim.js                        2595
+  r89_qa_a1_transform.js                   1828
+  r89_qa_a2_clear.js                       4936
+  r89_qa_a2_del.js                         2316
+  r89_qa_b1_causal.js                      1764
+  r89_qa_b1_layout.js                      3273
+  r89_qa_b2_leak.js                        1816
+  r89_qa_b2_picker.js                      4744
+  r89_qa_b3_fallback.js                    4171
+  r89_qa_b3_writeback.js                   3158
+  r89_qa_c.py                              5052
+  r89_qa_c_out.txt                         3057
+  r89_qa_cdp.js                            4861
+  r89_qa_cdp_out.json                      1170
+  r89_qa_diag.js                           1024
+  r89_qa_drive.py                          998
+  r89_qa_final.py                          4630
+  r89_qa_final_out.txt                     14359
+  r89_qa_measure.js                        2718
+  r89_qa_measure_dummy.js                  829
+  r89_qa_measure_run.py                    2021
+  r89_qa_preload.js                        2103
+  r89_qa_static.py                         13451
+  r89_qa_static_out.txt                    10060
+  r89a_assert_out.txt                      129
+  r89a_html_check.py                       580
+  r89b_assert.js                           12209
+  r89b_assert_output.txt                   2144
+  r89b_selfcheck_output.txt                1830
+  r89c_apply.py                            3994
+  r89c_check_title.py                      383
+  r89c_final.py                            886
+  r89c_fix.py                              1742
+  r89c_jsdom.js                            4538
+  r89c_jsdom_out.txt                       40
+  r89c_probe.py                            1009
+  r89c_probe2.py                           479
+  r89c_verify.py                           985
+  r90_qa_recon.py                          2167
+  scan_question_leak.py                    4146
+  scan_version_candidates_0913d.js         32120
+  settings_hero_count.log                  114
+  settings_todo_locate.log                 2089
+  t5_apply.py                              7328
+  t5_apply_report.txt                      2968
+  t5_bakdiff.py                            1719
+  t5_bakdiff.txt                           9391
+  t5_check2.py                             1466
+  t5_check2.txt                            1161
+  t5_hits.txt                              356196
+  t5_preview.py                            2673
+  t5_preview.txt                           18194
+  t5_probe.py                              3330
+  t5_probe.txt                             7908
+  t5_probe2.py                             2656
+  t5_probe2.txt                            6089
+  t5_probe3.py                             3086
+  t5_probe3.txt                            10723
+  t5_probe4.py                             2024
+  t5_probe4.txt                            2745
+  t5_probe5.py                             1981
+  t5_probe5.txt                            5649
+  t5_recentmap_fix.py                      1990
+  t5_recentmap_fix.txt                     466
+  t5_scan.py                               2800
+  t5_selfcheck.py                          5336
+  t5_selfcheck.txt                         3137
+  t5_verify.py                             6261
+  t5_verify.txt                            2706
+  tmp_k_vocab_check.js                     3556
+  verify_t06_bugfix_0912d.js               13814
+  w1_predeploy.txt                         1298
+  wave_check_20260916m.py                  22178
+  wrap_settings_t02.js                     4295
+
+=== git status (porcelain) ===
+ M .gitignore
+ M AI.html
+ M AI模拟面试.html
+ M Gemini连接问题排查与处理方案.md
+ M PPT案例拆解.html
+ M PPT版式库.html
+ M ai-settings.html
+ M android/AndroidManifest.xml
+ M assets/ai-config.js
+ M assets/ai-page.js
+ M assets/ai-service.js
+ M assets/ai-settings.js
+ M assets/api.js
+ M assets/app.js
+ M assets/chat-local.js
+ M assets/common.css
+ M assets/icon-map.js
+ M assets/xt-moments.js
+ M assets/xt-profile.css
+ M assets/xt-profile.js
+ M assets/xt-settings.js
+ M blog_wechat.html
+ M docs/class-diagram.mermaid
+ M docs/sequence-diagram.mermaid
+ M mock_exam.html
+ M mock_exam_result.html
+ M mock_exam_run.html
+ M server/config.py
+ M server/filecheck.py
+ M server/main.py
+ M server/rate_limit.py
+ M server/routers/ai.py
+ M server/routers/uploads.py
+ M server/routers/users.py
+ M server/schemas.py
+ M tools/bump_versions_safe.py
+ M tools/qa/j_kou_appjs_check.js
+ M tools/qa/r66_qa_behavior_result.txt
+ M 万能金句库.html
+ M 个人中心.html
+ M 个人资料.html
+ M 企业定向库.html
+ M 关于.html
+ M 动态空间.html
+ M 商务礼仪.html
+ M 四级词汇.html
+ M 场景话术库.html
+ M 好友申请.html
+ M 学习工作台.html
+ M 学习概括.html
+ M 学途.html
+ M 导入题库.html
+ M 工具.html
+ M 我的动态.html
+ M 我的文件.html
+ M 时政热点.html
+ M 更多.html
+ M 朋友圈发布.html
+ M 演示.html
+ M 申论刷题.html
+ M 登录.html
+ M 社区.html
+ M 私聊.html
+ M 管理员.html
+ M 英语.html
+ M 行测.html
+ M 行测刷题.html
+ M 表达.html
+ M 设置.html
+ M 赞助.html
+ M 错题本.html
+ M 需求文档-各平台模型状态更新.md
+ M 面测.html
+ M 面试题库.html
+?? .page
+?? .tmp_r74b/
+?? AI402问题根因分析与服务器配置清单.md
+?? AI模型对接文档.md
+?? _a8_checks.py
+?? _a8_checks.txt
+?? _a8_conv.py
+?? _a8_conv.txt
+?? _a8_final.py
+?? _a8_final.txt
+?? _a8_icons.py
+?? _a8_icons.txt
+?? _a8_mtime.py
+?? _a8_mtime.txt
+?? _a8_post.py
+?? _a8_post.txt
+?? _a8_probe.py
+?? _a8_probe.txt
+?? _a8_refpages.py
+?? _a8_refpages.txt
+?? _a8_scope.py
+?? _a8_scope.txt
+?? _a8_scope2.py
+?? _a8_scope2.txt
+?? _b2_backup.txt
+?? _b2_env.txt
+?? _b2_final.txt
+?? _b2_lastcheck.txt
+?? _b2_lskey.txt
+?? _b2_qa_run.txt
+?? _b2_selfcheck.txt
+?? _b3_ai_assert.txt
+?? _b3_ai_stdout.txt
+?? _b3_cleanup.txt
+?? _b3_es.txt
+?? _b3_page.txt
+?? _b3_selfcheck.txt
+?? _b5t13_backup.txt
+?? _b5t13_checks.txt
+?? _b5t13_diff.txt
+?? _b5t13_scope.txt
+?? _b5t13b_chk.txt
+?? _b5t13b_es.txt
+?? _b5t13b_final.txt
+?? _b5t13b_grep.txt
+?? _b5t13b_rep.txt
+?? _backbtn_survey.py
+?? _bak-pre-b5-subst/
+?? _diffcheck.py
+?? _fix2.py
+?? _inline_check.js
+?? _nav_scan.py
+?? _nav_scan2.py
+?? _nav_scan3.py
+?? _nav_scan4.py
+?? _navscan.txt
+?? _navscan2.txt
+?? _navscan3.txt
+?? _navscan4.txt
+?? _probe5.py
+?? _probe5_out.txt
+?? _probe5_out2.txt
+?? _probe5b.py
+?? _qa_assets.txt
+?? _qa_root.txt
+?? _qa_server.txt
+?? _r71_ledger_append.py
+?? _r71_verify_out.txt
+?? _r72_commit_msg.txt
+?? _r72_git_commit_out.txt
+?? _r72_git_fix.py
+?? _r72_git_fix_out.txt
+?? _r72_push.py
+?? _r72_push_out.txt
+?? _r73b_apply_log.txt
+?? _r73b_cleanup.txt
+?? _r74a_merge.py
+?? _r74a_readback.py
+?? _r74a_verify.py
+?? _r76_integrate.py
+?? _r76_out.txt
+?? _r78_out.txt
+?? _r78a_mutate.py
+?? _r78b_mutate_js.py
+?? _r78c_verify.py
+?? _r78d_touchup.py
+?? _r78e_jsdom_smoke.js
+?? _r78f_readback.py
+?? _r81_test_out.txt
+?? _r82_out.txt
+?? _r82a_mutate.py
+?? _r82b_mutate_js.py
+?? _r82c_verify.py
+?? _r82d_patch.py
+?? _r82e_jsdom_smoke.js
+?? _r83_gemini_out.txt
+?? _r83b_fix.py
+?? _r83b_run.txt
+?? _r84_out.txt
+?? _r84a_mutate.py
+?? _r84b_verify.py
+?? _r84c_check.py
+?? _r84e_jsdom_smoke.js
+?? _r85_out.txt
+?? _r85a_mutate.py
+?? _r85b_verify.py
+?? _r86a_inline.js
+?? _r86a_mutate.js
+?? _r86a_verify.js
+?? _r89_probe.py
+?? _r89_probe2.py
+?? _r89_probe2_out.txt
+?? _r89_probe3.py
+?? _r89_probe3_out.txt
+?? _r89_probe4.py
+?? _r89_probe4_out.txt
+?? _r89_probe5.py
+?? _r89_probe5_out.txt
+?? _r89_probe6.py
+?? _r89_probe6_out.txt
+?? _r89_probe7.py
+?? _r89_probe7_out.txt
+?? _r89_probe8.py
+?? _r89_probe8_out.txt
+?? _r89_probe_out.txt
+?? _r90_probe.py
+?? _r90_probe2.py
+?? _r90_probe2_out.txt
+?? _r90_probe3.py
+?? _r90_probe3_out.txt
+?? _r90_probe4.py
+?? _r90_probe4_out.txt
+?? _r90_probe5.py
+?? _r90_probe5_out.txt
+?? _r90_probe_out.txt
+?? _restore_chk.py
+?? _scan_names.py
+?? _scan_out.txt
+?? _sigcheck.py
+?? _sl_patch.py
+?? _sl_tmp_head.txt
+?? _sl_tmp_types.json
+?? _stamp.py
+?? _t3_verify.py
+?? _t5_out.txt
+?? _t5_verify.js
+?? _tmp_a7_jsdom_out.txt
+?? _tmp_a7_selfcheck_out.txt
+?? _tmp_l3_qa/
+?? _tmp_l7_final.txt
+?? _vp_check.js
+?? _w2t1_bak.txt
+?? _w2t1_check.txt
+?? _w2t1_checkjs.js
+?? _w2t1_compose.py
+?? _w2t1_design.pdf
+?? _w2t1_dl.txt
+?? _w2t1_dom.txt
+?? _w2t1_final.txt
+?? _w2t1_fonts.py
+?? _w2t1_fonts.txt
+?? _w2t1_img/
+?? _w2t1_ls.txt
+?? _w2t1_ok.txt
+?? _w2t1_paren.txt
+?? _w2t1_parenscan.js
+?? _w2t1_pdfextract.py
+?? _w2t1_pdfimg.py
+?? _w2t1_pdfimg.txt
+?? _w2t1_pdfimg2.txt
+?? _w2t1_pdfjpg.py
+?? _w2t1_pdfjpg.txt
+?? _w2t1_pdfjpg2.py
+?? _w2t1_pdflib.txt
+?? _w2t1_pdftext.txt
+?? _w2t1_pil.txt
+?? _w2t1_selfcheck.js
+?? _w2t1_shot.txt
+?? _widebtn.py
+?? _wire_apply.js
+?? _wire_apply.txt
+?? _wire_scan.js
+?? _wire_scan.txt
+?? _wire_verify.js
+?? _wire_verify.txt
+?? _zz_jsdom.txt
+?? _zz_probe.txt
+?? _zz_stat.txt
+?? _zz_tmp_html.txt
+?? _zz_verify.txt
+?? assets/ai-cap-3d.js
+?? assets/ai-cap-audio.js
+?? assets/ai-cap-embed.js
+?? assets/ai-cap-image.js
+?? assets/ai-cap-registry.js
+?? assets/ai-cap-translate.js
+?? assets/ai-cap-video.js
+?? assets/ai-cap-vision.js
+?? assets/xt-aiusage.js
+?? assets/xt-region.js
+?? assets/xt-update.js
+?? assets/赞助收款码2.jpg
+?? conflict.png
+?? deliverables/software-company/ai-models-incremental-PRD-20260918.md
+?? deliverables/software-company/ai-models-incremental-design-20260918.md
+?? deliverables/software-company/class-diagram.mermaid
+?? deliverables/software-company/sequence-diagram.mermaid
+?? docs/audit-r88b-展示即真可用.md
+?? docs/class-diagram-r88b-media.mermaid
+?? docs/design-r88-hi-位置定位与私聊加号菜单.md
+?? docs/design-r88b-服务端中转端点与真可用修复.md
+?? docs/prd-r88-hi-位置定位与私聊加号菜单.md
+?? docs/qa-report-r88-hi.md
+?? docs/review-r88f-服务端用量审查与修复.md
+?? docs/sequence-diagram-r88b-media.mermaid
+?? page_review.png
+?? q.png
+?? review1.png
+?? review2.png
+?? review3.png
+?? review4.png
+?? server/_r73_blacklist_test.db
+?? server/data/
+?? server/quota_ledger.py
+?? server/routers/update.py
+?? server/routers/version.json
+?? swstep1.py
+?? three_models.png
+?? tools/_appinfo.txt
+?? tools/_apptime.txt
+?? tools/_apptime2.txt
+?? tools/_check_c_state.py
+?? tools/_chk_tar.py
+?? tools/_dirs.txt
+?? tools/_gemini_probe.py
+?? tools/_hasrep.txt
+?? tools/_inspect_nav.py
+?? tools/_keys.txt
+?? tools/_l13_icons.py
+?? tools/_live_check.py
+?? tools/_live_check2.py
+?? tools/_nav_prod_verify.py
+?? tools/_preview_fetch.html
+?? tools/_probe73q.py
+?? tools/_probe73q_raw.json
+?? tools/_probe_hubcamera.py
+?? tools/_probe_hubcamera2.py
+?? tools/_prod_pos_check.py
+?? tools/_qa_batch.py
+?? tools/_qa_fix_ch.py
+?? tools/_qa_nodecheck.bat
+?? tools/_qa_regression_static.py
+?? tools/_qa_smoke_jsdom.js
+?? tools/_r73_api_check.py
+?? tools/_r73_apk_nobak.py
+?? tools/_r73_apk_nobak2.py
+?? tools/_r73_apk_prep.py
+?? tools/_r73_apk_prep2.py
+?? tools/_r73_apk_verify.py
+?? tools/_r73_apk_verify2.py
+?? tools/_r73_apk_verify3.py
+?? tools/_r73_conflict_check.py
+?? tools/_r73_findreq.py
+?? tools/_r73_findshot.py
+?? tools/_r73_findshot2.py
+?? tools/_r73_git_commit_apk.py
+?? tools/_r73_git_push.py
+?? tools/_r73_git_push2.py
+?? tools/_r73_git_stage.py
+?? tools/_r73_git_stage2.py
+?? tools/_r73_git_stage3.py
+?? tools/_r73_groundtruth.py
+?? tools/_r73_inventory.py
+?? tools/_r73_kw_ctx.py
+?? tools/_r73_ledger_append2.py
+?? tools/_r73_ledger_fix20.py
+?? tools/_r73_ledger_tail.py
+?? tools/_r73_mem.py
+?? tools/_r73_mem2.py
+?? tools/_r73_mem3.py
+?? tools/_r73_mem4.py
+?? tools/_r73_moments_wire.py
+?? tools/_r73_probe.py
+?? tools/_r73_probe2.py
+?? tools/_r73_profile_recon.py
+?? tools/_r73_qa23_baseline.json
+?? tools/_r73_qa23_cfg.json
+?? tools/_r73_qa23_jsdom_check.js
+?? tools/_r73_qa23_jsdom_dbg.js
+?? tools/_r73_qa23_jsdom_dbg2.js
+?? tools/_r73_qa23_jsdom_probe.js
+?? tools/_r73_qa23_jsdom_probe2.js
+?? tools/_r73_qa23_jsdom_probe3.js
+?? tools/_r73_qa23_ls.js
+?? tools/_r73_qa23_pages.json
+?? tools/_r73_qa23_t.py
+?? tools/_r73_qa23_t2.py
+?? tools/_r73_qa23_t3.py
+?? tools/_r73_qa23_t4.py
+?? tools/_r73_qa23_tdir.js
+?? tools/_r73_qa23_tlit.js
+?? tools/_r73_qa23_tls.js
+?? tools/_r73_qa23_verify.js
+?? tools/_r73_qa23_verify.py
+?? tools/_r73_qa27_dbg.cjs
+?? tools/_r73_qa27_probe.js
+?? tools/_r73_qa27_probe2.js
+?? tools/_r73_qa27_static.py
+?? tools/_r73_qa27_verify.cjs
+?? tools/_r73_recon3.py
+?? tools/_r73_rename2.py
+?? tools/_r73_rename_scan.py
+?? tools/_r73_residual.py
+?? tools/_r73_secret_fix.py
+?? tools/_r73_secret_fix2.py
+?? tools/_r73_secret_peek.py
+?? tools/_r73_secret_peek2.py
+?? tools/_r73_spec_patch.py
+?? tools/_r73_status.py
+?? tools/_r73_t20_final.py
+?? tools/_r73_t20_final2.py
+?? tools/_r73_t20_fix_verify.py
+?? tools/_r73_t20_v3_verify.py
+?? tools/_r73_t20_verify.py
+?? tools/_r73_t21_hunt.py
+?? tools/_r73_t21_verify.py
+?? tools/_r73_t21_verify2.py
+?? tools/_r73_t21_verify3.py
+?? tools/_r73_t8_final.py
+?? tools/_r73_t8_final2.py
+?? tools/_r73_t8_verify.py
+?? tools/_r73_userhome_recon.py
+?? tools/_r73_v2_ruling.py
+?? tools/_r73_wrongbadge.py
+?? tools/_r73c_final_probe.py
+?? tools/_r73c_precheck.py
+?? tools/_r73c_precheck2.py
+?? tools/_r73c_precheck3.py
+?? tools/_r73c_smtp_local.py
+?? tools/_r73c_smtp_remote.py
+?? tools/_r73c_vis_cmp.py
+?? tools/_r73d_bind_trim.py
+?? tools/_r73e_login_label.py
+?? tools/_r73f_hotfix_login.py
+?? tools/_r73f_login_opensource.py
+?? tools/_r73g_login_motto.py
+?? tools/_r73h_ver22.py
+?? tools/_r73i_rename_xingtu.py
+?? tools/_r73j_ai402.py
+?? tools/_r73j_ai402_v2.py
+?? tools/_r73j_hotfix.py
+?? tools/_r73k_ai_chain_fix.py
+?? tools/_r74_record.py
+?? tools/_r74a_lead_verify.py
+?? tools/_r74b_lead_verify.py
+?? tools/_r75_lead_verify.py
+?? tools/_r76_lead_check2.py
+?? tools/_r76_lead_check3.py
+?? tools/_r87_assetrefs.py
+?? tools/_r87_cfg_models.py
+?? tools/_r87_gatecheck.py
+?? tools/_r87_handoff_facts2.py
+?? tools/_r87_handoff_probe.py
+?? tools/_r87_health_wiring.py
+?? tools/_r87_rate_tag.py
+?? tools/_r87_scriptrefs.py
+?? tools/_r87_stamp_probe.py
+?? tools/_r87_struct_diff.py
+?? tools/_r87_t01_patch.py
+?? tools/_r87_t01_patch2.py
+?? tools/_r87_t01_verify.py
+?? tools/_r87_t03_probe.py
+?? tools/_r87_tag_render.py
+?? tools/_r87_translate_probe_test.js
+?? tools/_r88f_selftest.py
+?? tools/_restore_base.py
+?? tools/_scan1.py
+?? tools/_sent.txt
+?? tools/_sizes.txt
+?? tools/_stamp_20260917b.py
+?? tools/_stamp_20260918a.py
+?? tools/_survey_comment.py
+?? tools/_survey_stamp.py
+?? tools/_t02_backup.py
+?? tools/_t02_debug.js
+?? tools/_t02_health_verify.js
+?? tools/_t02_precheck.js
+?? tools/_t02_rebuild_bak.py
+?? tools/_t02_scan.py
+?? tools/_t03_backup.py
+?? tools/_t03_batch_out.json
+?? tools/_t03_batch_test.js
+?? tools/_t03_dup.py
+?? tools/_t03_dup_out.json
+?? tools/_t03_es2017.py
+?? tools/_t03_es2017_out.json
+?? tools/_t03_map_out.json
+?? tools/_t03_map_test.js
+?? tools/_t03_migrate_out.json
+?? tools/_t03_migrate_test.js
+?? tools/_t03_probe.py
+?? tools/_t03_probe_out.json
+?? tools/_t03_ui_out.json
+?? tools/_t03_ui_test.js
+?? tools/_t03_verify.py
+?? tools/_t03_verify_out.json
+?? tools/_t04_es2017_check.py
+?? tools/_t04_final.py
+?? tools/_t04_jsdom_test.js
+?? tools/_t04_patch.py
+?? tools/_t04_patch2.py
+?? tools/_t04_patch3.py
+?? tools/_t04_recon.py
+?? tools/_t04_recon2.py
+?? tools/_t05_bridge_scan.py
+?? tools/_t05_dump.py
+?? tools/_t05_inject_caps.py
+?? tools/_t05_jsdom_smoke.js
+?? tools/_t05_prep_ls.py
+?? tools/_t05_recon.py
+?? tools/_t05_smoke.py
+?? tools/_t05_symmap.py
+?? tools/_t11_apply.py
+?? tools/_t11_eol.py
+?? tools/_t11_extract.py
+?? tools/_t11_out/
+?? tools/_t7_ai_flow.js
+?? tools/_t7_make_about.py
+?? tools/_t7_patch_appjs.py
+?? tools/_t7_selfcheck.py
+?? tools/_t7_smoke.js
+?? tools/_tmp_lineend.py
+?? tools/_verify_stamp.py
+?? tools/bump_stamp_20260916L.py
+?? tools/chk_profile.txt
+?? tools/chk_region.txt
+?? tools/click_audit_20260916.txt
+?? tools/click_audit_boot.txt
+?? tools/click_audit_syntax.txt
+?? tools/commit_20260915f.py
+?? tools/commit_20260915g.py
+?? tools/deploy_backend_ai_20260916e.py
+?? tools/deploy_backend_ai_20260916g.py
+?? tools/deploy_update_20260915f.py
+?? tools/deploy_update_20260915g.py
+?? tools/deploy_update_20260916a.py
+?? tools/deploy_update_20260916b.py
+?? tools/deploy_update_20260916c.py
+?? tools/deploy_update_20260916d.py
+?? tools/deploy_update_20260916f.py
+?? tools/deploy_update_20260916g.py
+?? tools/deploy_update_20260916h.py
+?? tools/deploy_update_20260916i.py
+?? tools/deploy_update_20260916j.py
+?? tools/deploy_update_20260916k.py
+?? tools/deploy_update_20260916m.py
+?? tools/deploy_update_20260916n.py
+?? tools/deploy_update_20260916o.py
+?? tools/deploy_update_20260918r87.py
+?? tools/frontend_20260915d.tar.gz
+?? tools/frontend_20260915e.tar.gz
+?? tools/frontend_20260915f-hotfix1.tar.gz
+?? tools/frontend_20260915f.tar.gz
+?? tools/frontend_20260915g.tar.gz
+?? tools/frontend_20260916M.tar.gz
+?? tools/frontend_20260916N.tar.gz
+?? tools/frontend_20260916O.tar.gz
+?? tools/frontend_20260916R.tar.gz
+?? tools/frontend_20260916a.tar.gz
+?? tools/frontend_20260916b.tar.gz
+?? tools/frontend_20260916c.tar.gz
+?? tools/frontend_20260916d.tar.gz
+?? tools/frontend_20260916f.tar.gz
+?? tools/frontend_20260916g.tar.gz
+?? tools/frontend_20260916h.tar.gz
+?? tools/frontend_20260916i.tar.gz
+?? tools/frontend_20260916j.tar.gz
+?? tools/frontend_20260916k.tar.gz
+?? tools/frontend_r72_20260917.tar.gz
+?? tools/frontend_r87_20260918.tar.gz
+?? tools/jx_patch/_align_tmp.json
+?? tools/jx_patch/_app2tb.json
+?? tools/jx_patch/_evidence.json
+?? tools/jx_patch/_merged.json
+?? tools/jx_patch/_s0_probe.py
+?? tools/jx_patch/_s10_dp_align.py
+?? tools/jx_patch/_s11_struct.py
+?? tools/jx_patch/_s12_inspect_dis.py
+?? tools/jx_patch/_s13_nw.py
+?? tools/jx_patch/_s14_quote_feature.py
+?? tools/jx_patch/_s15_final_align.py
+?? tools/jx_patch/_s16_conflict.py
+?? tools/jx_patch/_s17_akey.py
+?? tools/jx_patch/_s18_conflict2.py
+?? tools/jx_patch/_s19_detail.py
+?? tools/jx_patch/_s1_probe2.py
+?? tools/jx_patch/_s20_build_patch.py
+?? tools/jx_patch/_s21_evidence.py
+?? tools/jx_patch/_s22_fill579.py
+?? tools/jx_patch/_s23_check579.py
+?? tools/jx_patch/_s24_neigh.py
+?? tools/jx_patch/_s25_final_v2.py
+?? tools/jx_patch/_s26_refine.py
+?? tools/jx_patch/_s27_stats.py
+?? tools/jx_patch/_s2_probe3.py
+?? tools/jx_patch/_s3_blocks.py
+?? tools/jx_patch/_s4_align_app_tb.py
+?? tools/jx_patch/_s5_align_app_tb2.py
+?? tools/jx_patch/_s6_align_tb_jx.py
+?? tools/jx_patch/_s7_offset.py
+?? tools/jx_patch/_s8_diverge.py
+?? tools/jx_patch/_s9_cov_matrix.py
+?? tools/jx_patch/_stats.json
+?? tools/jx_patch/_tb2jx.json
+?? tools/jx_patch/_tb2jx_v1.json
+?? tools/jx_patch/_work/
+?? tools/m5_eol.py
+?? tools/m5_eol.txt
+?? tools/m5_es_final.txt
+?? tools/m5_escheck.txt
+?? tools/m5_fix_bind.py
+?? tools/m5_out.txt
+?? tools/m5_patch_css.py
+?? tools/m5_patch_js.py
+?? tools/m5_patch_wire.py
+?? tools/m5_probe.py
+?? tools/m5_syntax.txt
+?? tools/m5_test.js
+?? tools/m5_test_result.txt
+?? tools/m6_escheck.txt
+?? tools/m6_final.txt
+?? tools/m6_jsdom.txt
+?? tools/m6_jsdom_run.txt
+?? tools/m6_jsdom_test.js
+?? tools/m6_patch_commoncss.py
+?? tools/m6_patch_profilecss.py
+?? tools/m6_patch_siliao.py
+?? tools/m6_profilecss_verify.txt
+?? tools/m6_v1.txt
+?? tools/m6_v2.txt
+?? tools/m6b3.txt
+?? tools/m6b3_counts.txt
+?? tools/m6b_counts.py
+?? tools/m6b_func_only.txt
+?? tools/m6b_hits.json
+?? tools/m6b_scan.py
+?? tools/m6b_scan2.py
+?? tools/m6b_scan3.py
+?? tools/m6b_summary.txt
+?? tools/m6c_probe.py
+?? tools/m6c_probe.txt
+?? tools/m6c_prog.txt
+?? tools/m6c_progtail.txt
+?? tools/m6c_run.txt
+?? tools/m6c_scan.py
+?? tools/migrate_cards_20260916L.py
+?? tools/nav_prod_patch_20260916.py
+?? tools/push_20260915f.py
+?? tools/qa/_PREAMBLE_TEAM_BATCH3PLUS.md
+?? tools/qa/_a1_final_selfcheck.js
+?? tools/qa/_a1_runtime_check.js
+?? tools/qa/_a1_runtime_check2.js
+?? tools/qa/_a2_out/
+?? tools/qa/_a2_shot.js
+?? tools/qa/_a4_grep.py
+?? tools/qa/_a4_mtime.py
+?? tools/qa/_a4_pairs.py
+?? tools/qa/_a4_probe.py
+?? tools/qa/_a4_selfcheck.py
+?? tools/qa/_a4_stage_walk.js
+?? tools/qa/_a4_tops.py
+?? tools/qa/_a6_selfcheck.py
+?? tools/qa/_a6_wb_jsdom.js
+?? tools/qa/_a6_wb_jsdom2.js
+?? tools/qa/_a7_persist_test.js
+?? tools/qa/_b3_ai_assert.js
+?? tools/qa/_cfix_backup.py
+?? tools/qa/_diff_html.py
+?? tools/qa/_diff_shared.py
+?? tools/qa/_ed_avatar_test.js
+?? tools/qa/_ed_deep_check.js
+?? tools/qa/_ed_local_ball.js
+?? tools/qa/_ed_local_page_check.js
+?? tools/qa/_ed_local_regression.js
+?? tools/qa/_ed_remote_probe.js
+?? tools/qa/_final_qa.py
+?? tools/qa/_find_img.py
+?? tools/qa/_find_shot.py
+?? tools/qa/_gitstatus.py
+?? tools/qa/_globals_in.json
+?? tools/qa/_globals_out.json
+?? tools/qa/_globals_scan.js
+?? tools/qa/_l1_bumplist.py
+?? tools/qa/_l1_dupcheck.py
+?? tools/qa/_l1_panelcheck.py
+?? tools/qa/_l1_verify.py
+?? tools/qa/_l6_scan.py
+?? tools/qa/_m2_accept.js
+?? tools/qa/_m2_accept.json
+?? tools/qa/_m2_accept_report.json
+?? tools/qa/_m2_edit_more.py
+?? tools/qa/_m2_edit_setting.py
+?? tools/qa/_m2_edit_update_js.py
+?? tools/qa/_m2_edit_update_js2.py
+?? tools/qa/_m2_find_bad.py
+?? tools/qa/_m2_fix_bad.py
+?? tools/qa/_m2_jsdom_order.js
+?? tools/qa/_m2_jsdom_order.py
+?? tools/qa/_m2_mech.js
+?? tools/qa/_m2_mech.json
+?? tools/qa/_m2_mech2.js
+?? tools/qa/_m2_mech2.json
+?? tools/qa/_m2_order_check.py
+?? tools/qa/_m2_probe.py
+?? tools/qa/_m2_probe2.py
+?? tools/qa/_m2_readyState_test.js
+?? tools/qa/_m2_rs.json
+?? tools/qa/_m2_sim.js
+?? tools/qa/_m4_jsdom.js
+?? tools/qa/_misc.py
+?? tools/qa/_mk_selftest_fixture.py
+?? tools/qa/_n91_probe.py
+?? tools/qa/_n91_probe2.py
+?? tools/qa/_nav_blocks.js
+?? tools/qa/_nav_fix2.js
+?? tools/qa/_nav_patch.js
+?? tools/qa/_nav_scan.js
+?? tools/qa/_nav_verify.js
+?? tools/qa/_nav_verify2.js
+?? tools/qa/_nav_verify3.js
+?? tools/qa/_ocr_shot.py
+?? tools/qa/_ppt_conflict.py
+?? tools/qa/_qa_explore.py
+?? tools/qa/_qa_explore2.py
+?? tools/qa/_qa_origin.js
+?? tools/qa/_qaled_list.py
+?? tools/qa/_r73_ai_exc_check.js
+?? tools/qa/_r73_miance_patch.py
+?? tools/qa/_r73_req_apply.py
+?? tools/qa/_r73b_text_apply.py
+?? tools/qa/_r86e2_check.py
+?? tools/qa/_r86e2_smoke.js
+?? tools/qa/_r86e_verify.js
+?? tools/qa/_r88f_qa_probe.py
+?? tools/qa/_selftest/
+?? tools/qa/_sidebar_head.js
+?? tools/qa/_stamp_build_plan.py
+?? tools/qa/_stamp_edit_plan.json
+?? tools/qa/_stamp_exec.py
+?? tools/qa/_stamp_exec_report.json
+?? tools/qa/_stamp_files.json
+?? tools/qa/_stamp_final.json
+?? tools/qa/_stamp_final.py
+?? tools/qa/_stamp_hist.py
+?? tools/qa/_stamp_plan.json
+?? tools/qa/_stamp_plan.py
+?? tools/qa/_stamp_probe.py
+?? tools/qa/_stamp_refs.json
+?? tools/qa/_stamp_refs2.json
+?? tools/qa/_stamp_remeasure.py
+?? tools/qa/_stamp_scan.py
+?? tools/qa/_stamp_scan2.py
+?? tools/qa/_stamp_scan3.py
+?? tools/qa/_stamp_step1_report.md
+?? tools/qa/_stamp_step2_report.md
+?? tools/qa/_stamp_verify.json
+?? tools/qa/_stamp_verify.py
+?? tools/qa/_status.py
+?? tools/qa/_tmpchk/
+?? tools/qa/_w2_bump.py
+?? tools/qa/_w2_qa.py
+?? tools/qa/_w2t2_audit.py
+?? tools/qa/_wave_acorn.js
+?? tools/qa/_wechat_stamp_fix.py
+?? tools/qa/a3_cetread_probe.js
+?? tools/qa/a3_empty_probe.js
+?? tools/qa/ai_jsdom_check.js
+?? tools/qa/arkquota_apply_config.py
+?? tools/qa/arkquota_apply_patch.py
+?? tools/qa/arkquota_verify.py
+?? tools/qa/arkquota_verify_r88f.py
+?? tools/qa/b2_pptlib_probe.js
+?? tools/qa/ball_verify.js
+?? tools/qa/crossline_conflict_20260916m.py
+?? tools/qa/crossline_conflict_out_20260916m.txt
+?? tools/qa/escheck_es2017.js
+?? tools/qa/fetch_srv_files.py
+?? tools/qa/for_pics.txt
+?? tools/qa/for_pics2.txt
+?? tools/qa/for_pics3.txt
+?? tools/qa/global_name_out_20260916m.txt
+?? tools/qa/global_name_scan_20260916m.py
+?? tools/qa/inject_settings.py
+?? tools/qa/multi_check.js
+?? tools/qa/n9_25_probe.txt
+?? tools/qa/n9_25_probe2.txt
+?? tools/qa/page_check.js
+?? tools/qa/pic_paths.txt
+?? tools/qa/r66_qa_behavior_stdout.txt
+?? tools/qa/r66_qa_globals_stdout.txt
+?? tools/qa/r66_qa_stdout.txt
+?? tools/qa/r67_icon_scan_result.txt
+?? tools/qa/r67_l2_final_check.txt
+?? tools/qa/r67_l2_final_diff.txt
+?? tools/qa/r67_l2_patch2_check.txt
+?? tools/qa/r67_l2_patch3_check.txt
+?? tools/qa/r67_l2_patch4_check.txt
+?? tools/qa/r67_l2_selftest.txt
+?? tools/qa/r73/
+?? tools/qa/r73_import_link_test.js
+?? tools/qa/r73_page_profile.json
+?? tools/qa/r88f_qa_probe.py
+?? tools/qa/r88f_rl_probe.py
+?? tools/qa/r88f_space_probe.py
+?? tools/qa/r89_leadcheck_r89a.js
+?? tools/qa/r89_qa_a1_anc.js
+?? tools/qa/r89_qa_a1_layout.js
+?? tools/qa/r89_qa_a1_menu_probe.js
+?? tools/qa/r89_qa_a1_open.js
+?? tools/qa/r89_qa_a1_regress.js
+?? tools/qa/r89_qa_a1_slim.js
+?? tools/qa/r89_qa_a1_transform.js
+?? tools/qa/r89_qa_a2_clear.js
+?? tools/qa/r89_qa_a2_del.js
+?? tools/qa/r89_qa_b1_causal.js
+?? tools/qa/r89_qa_b1_layout.js
+?? tools/qa/r89_qa_b2_leak.js
+?? tools/qa/r89_qa_b2_picker.js
+?? tools/qa/r89_qa_b3_fallback.js
+?? tools/qa/r89_qa_b3_writeback.js
+?? tools/qa/r89_qa_c.py
+?? tools/qa/r89_qa_c_out.txt
+?? tools/qa/r89_qa_cdp.js
+?? tools/qa/r89_qa_cdp_out.json
+?? tools/qa/r89_qa_diag.js
+?? tools/qa/r89_qa_drive.py
+?? tools/qa/r89_qa_final.py
+?? tools/qa/r89_qa_final_out.txt
+?? tools/qa/r89_qa_measure.js
+?? tools/qa/r89_qa_measure_dummy.js
+?? tools/qa/r89_qa_measure_run.py
+?? tools/qa/r89_qa_preload.js
+?? tools/qa/r89_qa_static.py
+?? tools/qa/r89_qa_static_out.txt
+?? tools/qa/r89a_assert_out.txt
+?? tools/qa/r89a_html_check.py
+?? tools/qa/r89b_assert.js
+?? tools/qa/r89b_assert_output.txt
+?? tools/qa/r89b_selfcheck_output.txt
+?? tools/qa/r89c_apply.py
+?? tools/qa/r89c_check_title.py
+?? tools/qa/r89c_final.py
+?? tools/qa/r89c_fix.py
+?? tools/qa/r89c_jsdom.js
+?? tools/qa/r89c_jsdom_out.txt
+?? tools/qa/r89c_probe.py
+?? tools/qa/r89c_probe2.py
+?? tools/qa/r89c_verify.py
+?? tools/qa/r90_qa_recon.py
+?? tools/qa/t5_apply.py
+?? tools/qa/t5_apply_report.txt
+?? tools/qa/t5_bakdiff.py
+?? tools/qa/t5_bakdiff.txt
+?? tools/qa/t5_check2.py
+?? tools/qa/t5_check2.txt
+?? tools/qa/t5_hits.txt
+?? tools/qa/t5_preview.py
+?? tools/qa/t5_preview.txt
+?? tools/qa/t5_probe.py
+?? tools/qa/t5_probe.txt
+?? tools/qa/t5_probe2.py
+?? tools/qa/t5_probe2.txt
+?? tools/qa/t5_probe3.py
+?? tools/qa/t5_probe3.txt
+?? tools/qa/t5_probe4.py
+?? tools/qa/t5_probe4.txt
+?? tools/qa/t5_probe5.py
+?? tools/qa/t5_probe5.txt
+?? tools/qa/t5_recentmap_fix.py
+?? tools/qa/t5_recentmap_fix.txt
+?? tools/qa/t5_scan.py
+?? tools/qa/t5_selfcheck.py
+?? tools/qa/t5_selfcheck.txt
+?? tools/qa/t5_verify.py
+?? tools/qa/t5_verify.txt
+?? tools/qa/w1_predeploy.txt
+?? tools/qa/wave_check_20260916m.py
+?? tools/qa_ball_check.js
+?? tools/qd_hotfix_countdown.py
+?? tools/qd_hotfix_verify.py
+?? tools/r72_appjs.py
+?? tools/r72_appjs2.py
+?? tools/r72_backup.py
+?? tools/r72_bump_apply.py
+?? tools/r72_bump_assetmap.py
+?? tools/r72_bump_recon.py
+?? tools/r72_bump_verify.py
+?? tools/r72_deploy_presnap.py
+?? tools/r72_deploy_recon.py
+?? tools/r72_dom_test.js
+?? tools/r72_fix2.py
+?? tools/r72_icon_apply.py
+?? tools/r72_importer.py
+?? tools/r72_login_diff.py
+?? tools/r72_nav_apply.py
+?? tools/r72_nav_dryrun.py
+?? tools/r72_norm2.py
+?? tools/r72_norm_new.py
+?? tools/r72_pages.py
+?? tools/r72_probe_ppt.py
+?? tools/r72_prod_recon.py
+?? tools/r72_selftest_static.py
+?? tools/r72_symbol_preflight.py
+?? tools/r73m_commit.py
+?? tools/r73m_dbg.py
+?? tools/r73m_deploy.py
+?? tools/r73m_deploy_driver.py
+?? tools/r73m_driver.py
+?? tools/r73m_fetch_env.py
+?? tools/r73m_git_status.py
+?? tools/r73m_local_check.py
+?? tools/r73n_apk_verify.py
+?? tools/r73n_apk_verify2.py
+?? tools/r73n_apk_verify2_driver.py
+?? tools/r73n_apk_verify3.py
+?? tools/r73n_apk_verify3_driver.py
+?? tools/r73n_apk_verify_driver.py
+?? tools/r73n_commit.py
+?? tools/r73n_deploy.py
+?? tools/r73n_deploy_driver.py
+?? tools/r73n_probe2.py
+?? tools/r73n_push.py
+?? tools/r73n_push2.py
+?? tools/r73n_push3.py
+?? tools/r73n_push_verify.py
+?? tools/r73n_qa.py
+?? tools/r73n_verify.py
+?? tools/r73o_commit.py
+?? tools/r73o_push.py
+?? tools/r73p_commit.py
+?? tools/r73p_lead_verify.py
+?? tools/r86j_changes.txt
+?? tools/r86j_final.txt
+?? tools/r86j_probe.py
+?? tools/r86j_probe.txt
+?? tools/r86j_replace.py
+?? tools/r86j_scan.py
+?? tools/r86j_scan.txt
+?? tools/r86j_verify.py
+?? tools/r87_deploy_out.txt
+?? tools/r87_stamp_apply.py
+?? tools/r87_stamp_apply_out.txt
+?? tools/r88a_patch_aiusage.py
+?? tools/r88a_patch_css.py
+?? tools/r88a_patch_fmtdays.py
+?? tools/r88a_probe_eol.py
+?? tools/r88a_verify.js
+?? tools/r88f_patch_p0.py
+?? tools/r88j_apply1.txt
+?? tools/r88j_chat2_apply.txt
+?? tools/r88j_chat2_dry.txt
+?? tools/r88j_chat_apply.txt
+?? tools/r88j_chat_dry.txt
+?? tools/r88j_dist_apply.txt
+?? tools/r88j_dist_dry.txt
+?? tools/r88j_dryrun.txt
+?? tools/r88j_eol.txt
+?? tools/r88j_eol_out.txt
+?? tools/r88j_es.txt
+?? tools/r88j_escheck_out.txt
+?? tools/r88j_final_eol.py
+?? tools/r88j_line.txt
+?? tools/r88j_line2.txt
+?? tools/r88j_patch_chat.py
+?? tools/r88j_patch_chat2.py
+?? tools/r88j_patch_district.py
+?? tools/r88j_patch_moments.py
+?? tools/r88j_patch_profile.py
+?? tools/r88j_patch_region.py
+?? tools/r88j_probe.py
+?? tools/r88j_probe_out.txt
+?? tools/r88j_prof_apply.txt
+?? tools/r88j_prof_dry.txt
+?? tools/r88j_region_apply.txt
+?? tools/r88j_region_dry.txt
+?? tools/r88j_reprobe.txt
+?? tools/r88j_syn.txt
+?? tools/r88j_test.js
+?? tools/r88j_test_out.txt
+?? tools/r88m1_cfg.py
+?? tools/r88m1_check.py
+?? tools/r88m1_dbg.py
+?? tools/r88m1_eol.py
+?? tools/r88m1_jsdom_out.txt
+?? tools/r88m1_jsdom_test.js
+?? tools/r88m1_match.py
+?? tools/r88m1_patch_ai.py
+?? tools/r88m1_patch_css.py
+?? tools/r88m1_patch_main.py
+?? tools/r88m1_patch_server.py
+?? tools/r88m1_patch_settings.py
+?? tools/r88m1_patch_svc.py
+?? tools/r88m1_probe.py
+?? tools/r88m1_prov.py
+?? tools/r88m1_prov2.py
+?? tools/r88m1_reg.py
+?? tools/release_20260915f.py
+?? tools/release_20260915g.py
+?? tools/reorder_nav_20260916L.py
+?? tools/t02_patch_chatlocal.py
+?? tools/t02_patch_chatlocal_css.py
+?? tools/t02_patch_siliao.py
+?? tools/t02b_parse.js
+?? tools/t02b_patch_chatlocal.py
+?? tools/t02b_patch_iconmap.py
+?? tools/t02b_patch_siliao.py
+?? tools/t04_patch_loc.py
+?? tools/t04_patch_render.py
+?? tools/t04_smoke_apijs.js
+?? tools/t04_smoke_appjs.js
+?? tools/tmp_l12_html.txt
+?? tools/tmp_l12_list.py
+?? tools/tmp_l12_list.txt
+?? tools/tmp_l12_probe.py
+?? tools/tmp_l12_probe.txt
+?? tools/tools_md5_r73c.txt
+?? tools/verifier/_r72t1_debug.js
+?? web/
+?? zhipu_page.png
+?? 交接文档-20260918h-第六批执行现状与对接.md
+?? 地区选择.html
+?? 学习工作台-安卓App.apk
+?? 星途-安卓App.apk
+?? 更新.html
+?? 更新日志-20260918-第六批-R87.md
+?? 给接手AI的开场指令-20260918h.txt
+
+rc=0
+
+=== git log -3 ===
+823ef1e R73p：生图链路接通 + 失败文案停止谎报
+e34fb3c chore(APK): versionCode 23/1.22 —— 同步 R73n 检测超时修复与 R73k/m 402 修复
+1672605 R73n：海外平台连通性检测修复——超时误报「需要梯子」

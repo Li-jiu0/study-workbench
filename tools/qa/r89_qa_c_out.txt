@@ -1,0 +1,71 @@
+======================================================================
+工线 C 独立复核（更新.html / 更多.html）
+======================================================================
+
+### C1 回归：.morepage-title / 「检测更新」
+  .morepage-title 计数 = 1 (期望 1)
+  「检测更新」计数 = 4 (期望 4)
+  data-icon="download" data-icon-size="18" = True
+  含 class="morepage-title" 的行: 215
+    原文 = <div class="morepage-title"><span class="nav-icon" data-icon="download" data-icon-size="18"></span> 检测更新</div>
+      <div class="morepage-title">       -> IN
+      nav-icon                           -> IN
+      data-icon="download"               -> IN
+      data-icon-size="18"                -> IN
+      检测更新                               -> IN
+      </div>                             -> IN
+
+### C1b 与备份逐字节比对 .morepage-title 行
+  找到备份: ['更新.html.bak-pre-r87-20260918']
+  备份 更新.html.bak-pre-r87-20260918 的该行 = <div class="morepage-title"><span class="nav-icon" data-icon="download" data-icon-size="18"></span> 检测更新</div>
+  >>> 与当前行完全一致: True
+
+### C2 品牌块位置：在 #page-update 内、.xt-up-wrap 之前
+  L219: <div class="xt-up-brand">
+  L220: <div class="xt-up-brand-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="28"></span></div>
+  L221: <div class="xt-up-brand-info">
+  L222: <div class="xt-up-brand-name">星途</div>
+  L223: <div class="xt-up-brand-sub">致追梦的人 · 修身</div>
+  #page-update 行=211  .xt-up-brand 行=219  .xt-up-wrap 行=227
+  brand 在 page-update 之后: True | brand 在 wrap 之前: True
+
+### C3 无外链资源（file:// 下外链必挂）
+  http/protocol-relative 外链: NONE
+  图片文件引用: NONE
+  data-icon 使用数 = 42
+
+### C4 样式不外溢：新增规则前缀
+  本页 <style> 内选择器总数 = 54
+  非 .xt-up-* 前缀的选择器:
+
+### C5 品牌块内容纯 data-icon（无 svg 内联/文件）
+  品牌块片段:
+      <div class="xt-up-brand">
+      <div class="xt-up-brand-icon"><span class="nav-icon" data-icon="book-open" data-icon-size="28"></span></div>
+      <div class="xt-up-brand-info">
+      <div class="xt-up-brand-name">星途</div>
+      <div class="xt-up-brand-sub">致追梦的人 · 修身</div>
+      </div>
+      </div>
+      
+      <div class="xt-up-wrap">
+  片段含 <svg: False | 含 <img: False
+
+### C6 更多.html 未改
+  字节 = 18875 (期望 18875)
+  morepageUpdateCard             计数=1
+  xtMoreUpdateVer                计数=2
+  XTUpdate.openUpdatePage()      计数=1
+
+### C7 更新.html 结构配对
+  <!--      =12  -->       =12  OK
+  <div      =145  </div     =145  OK
+  <style    =1  </style   =1  OK
+  <script   =8  </script  =8  OK
+  <head=1 </head>=1
+
+### C8 更新.html 媒体查询 / 禁 CSS 数学函数
+  @media (max-width:360px) 存在 = True
+  clamp/min/max = False
+      @media (max-width:640px){
+      @media (max-width:360px){

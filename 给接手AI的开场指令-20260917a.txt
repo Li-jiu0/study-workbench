@@ -1,0 +1,87 @@
+════════════════════════════════════════════════════════════
+星途（原「学习工作台」）· 接手 AI 开场指令 · 2026-09-17a
+════════════════════════════════════════════════════════════
+
+你是本项目的新一任执行 AI（主理人）。上一轮已于 2026-09-17 凌晨收尾，当前状态：
+R66 独立回归、R67 线1/线2、R68（移动端 AI 对话框布局）、打戳 20260916R、部署上线均已完成；
+另完成 R70 两项修复——设置页连通性检测恢复可用 + APK 从"静态空壳"重打为 87.3MB 联网完整包
+（commit 1abfc88 / f34939d）。**代码层面没有欠账，剩余是验收与两个小项。**
+
+【第一步 · 先读这三份文件，不要凭记忆开工】
+1. D:\下载的文件\学习工作台\交接文档-20260916f-第四批执行现状与对接.md   ← 主入口，**先读 §0.5（2026-09-17 收尾增补）**，§1~§9 是 22:25 时点快照（其中"未做"类结论已过时）
+2. D:\下载的文件\学习工作台\更新日志-20260916-第四批-R64至R67.md         ← §五 契约表、§六 踩坑、**§八 收尾实录（R70 根因/修复/验证全记录）**
+3. D:\下载的文件\学习工作台\用户需求与决策总账.md                         ← R64~R67 备忘（R68/R70 备忘待你补记，见任务 3）
+
+【项目铁律（违反＝返工，逐条照办）】
+· 唯一可写代码树 = D:\下载的文件\学习工作台。⛔ 绝不改 C:\Users\ATM\WorkBuddy\Worktrees\学习工作台\main-*（废弃副本）。
+· 行尾：ai-settings.html / assets/ai-settings.js / assets/ai-page.js / assets/ai-service.js 是 LF；
+  AI.html / assets/ai-config.js / 39 个根 HTML / app.js / common.css 是 CRLF。改文件一律二进制读写
+  （open(p,'rb') → 替换 → open(p,'wb')），改完自测：CRLF 文件 loneLF=0，LF 文件 CRLF=0。
+· ES2017 语法上限（安卓老 WebView）：禁 ?. ?? 对象展开 {...obj} 对象剩余解构 .replaceAll(
+  Object.fromEntries .at( 正则后行断言 (?<= (?<! 指数 ** 可选 catch 绑定。node --check 抓不到，
+  必须 Grep 逐项自查 0 命中。
+· 顶层禁重复声明已有全局名（本项目「AI 功能集体失效」的历史元凶）；新增全局写 typeof 守卫。
+· 禁原生 alert/confirm/prompt（用 uiConfirm / toast）；不删现有功能、保留既有 DOM id 与全局函数名。
+· 改文件先备份：xxx.bak-pre-rNN-日期。
+· 本机 bash 缺 coreutils（ls/grep/tail/head/cp/env 全没有）→ 一律 Write 落盘 .py/.js 再执行；
+  含中文/反引号的代码绝不内联给 bash（会被吞）。统计结果写 UTF-8 文件再 Read。
+  python = C:/Users/ATM/.workbuddy/binaries/python/versions/3.13.12/python.exe
+  node   = C:/Users/ATM/.workbuddy/binaries/node/versions/22.22.2-3/node.exe
+  jsdom  = NODE_PATH=C:/Users/ATM/node_modules
+· 版本戳：全部验证通过后才打；当前已服务到 **20260916R**，下一版用 **20260916S**（不得复用旧戳）。
+  打戳必须 ① 锚定 src=/href= 属性 ② 只 bump 内容真改过的资产 ③ 捕获组不得带后缀（曾产出 xxx.js.js）
+  ④ 二进制读写保行尾 ⑤ 用与替换不同的独立 pattern 做终态复验 ⑥ 显式扫 \.js\.js\?v= 必须 0。
+· git：HEAD 已在 f34939d。工作树 vs HEAD 有 ~44 M + 6 D 的更早批次未提交漂移（含 server/ 3 个文件），
+  **属常态——判断"改了什么"用 mtime/内容对照备份，不要用 git status**。
+  ⚠️ APK 提交红线：学习工作台-安卓App.apk（87MB）已进 .gitignore 但仍被 git 跟踪；
+  下次提交代码前先 git rm --cached 学习工作台-安卓App.apk，勿把二进制推上远端。
+  git push 需走动态代理（第一优先读环境变量 HTTP_PROXY/HTTPS_PROXY，备选 127.0.0.1:7897）。
+· 生产操作（删用户数据 / 改 nginx / 部署上线）必须先问用户。
+
+【第二步 · 当前待办（按优先级）】
+1. 🔴 **APK 真机验收（唯一硬性遗留）**：versionCode 18 / versionName 1.17 的 87.3MB 新包已交付
+   （D:\下载的文件\学习工作台\学习工作台-安卓App.apk，09-17 01:32 打包，apksigner 验证通过），
+   等用户手机安装（可覆盖升级）后验证：连接服务器、好友私信、留言板、社区互动、语音、题库加载。
+   服务器侧已实测 110.42.134.62 的 80/8000 外网均可达；manifest 已开 INTERNET + usesCleartextTraffic
+   + allowUniversalAccessFromFileURLs；api.js/config.js 已确认在包内。
+   如真机异常：先查 android/build_apk.py 的打包断言与资源白名单，再按交接文档 §6 口径排查，
+   不要瞎猜网络问题。
+2. 🟡 R67 遗留小项：AI_CONFIG.providerGroups 第二层厂商模型展示名与设置页下拉文案对齐。
+3. 🟡 台账补记：把 R68（移动端布局 4 个 commit）与 R70（连通性检测 + APK）备忘补进
+   用户需求与决策总账.md（现止于 R67/638 行；CRLF 文件，二进制读写，先备份 .bak-pre-r68-20260917）。
+4. ⚪ 后续新需求：按用户桌面需求 txt 走既有流程（独立 QA → 多线并行 → 全站 escheck → 打戳 → 用户点头部署）。
+
+【R70 已修内容（背景知识，别重复修）】
+· 连通性检测「当前环境不支持」：根因是 ai-settings.html 从未加载 assets/ai-service.js
+  （window.aiHealthCheck 只在该底座导出），不是浏览器/环境问题。已补 script 引用，
+  真浏览器改前/改后对照验证通过（改前点击无反应，改后「检测成功，接口可用」）。
+  ⚠️ 新坑：往 <script> 清单插标签漏写 </script> 会吞掉后续脚本 → 页面静默全空白且无报错；
+  改完必须核对 count(<script) == count(</script>)（ai-settings.html 现 9/9）。
+· APK 静态壳：根因是 android/build_apk.py 曾用正则剔除每页 <script src="assets/api.js">，
+  导致失去全部联网能力（673KB 空壳）。已改二进制整页复制 + 白名单补全（api.js + AI 五件等）
+  + 打包期硬断言（入口页必须含 api.js+config.js，否则中止）。改打包脚本不得绕过断言。
+
+【派活口径（本项目验证有效，照抄）】
+· 多线并行，派活前先列**独占文件清单**保证零重叠；共享文件（app.js/api.js/common.css）同一时刻只许一条线改。
+· 子代理类型：工程师线用 software-engineer（**有 Bash**）；**QA 线必须用 general-purpose**
+  （software-qa-engineer 类型没有 Bash，拉起 6 秒即挂），name 仍可写 software-qa-engineer。
+  上一次同名成员死过的话系统会自动改名（如 software-qa-engineer-2），后续用新名字 SendMessage。
+· 429/配额耗尽时 spawn 指定 model: "lite" 可立刻恢复（UI 切模型对子代理无效）。
+· 每份任务书必须自带：唯一可写树 + 独占文件 + 逐文件行尾要求 + ES2017 禁令清单 + 全局名守卫 +
+  不 bump 戳 + 备份命名 + 跨线契约（结构/签名一字不改）+ 自测清单（node --check / 行尾 / ES2017 Grep /
+  全局名交集 / jsdom 行为断言）+「直接给结论、不反复验证」的工作风格。
+· 成员自述 ≠ 事实：收工前务必实测落盘状态（mtime + 内容签名 + 计数对照备份）。
+
+【禁止事项】
+· 不要把「开发自测通过」写成「已验证通过」； APK 目前只有打包侧验证，**真机功能验收未做**。
+· 不要把平台密钥说成"已保密"——6 个平台的 Key 明文硬编码在 assets/ai-config.js 里，前端直连架构下无法真保密；
+  已交付的只是「UI 不回填 + 不复制进 localStorage + 清洗存量副本」。
+· 不要顺手刷新未改动资源的版本戳（项目审计靠 mtime，无谓改动会被误判）。
+· 不要清理 .bak-pre-r64/r66/r67 备份（回滚要用）。
+
+【完成标准】
+· 每件活的汇报格式：TL;DR 一句 → 交付文件与行号 → 逐项自测/验证结果（X/X PASS）→ 已知遗留 → 是否可打戳。
+· 打戳后必须给：戳值、改动页数/处数、裸路径 0、旧戳残留 0、行尾零变化、escheck DONE 0。
+
+一句话：**代码、戳、部署、APK 全部就绪；先陪用户跑 APK 真机验收，再补 providerGroups 展示名对齐与 R68/R70 台账。**
+════════════════════════════════════════════════════════════

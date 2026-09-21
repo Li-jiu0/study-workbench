@@ -1,0 +1,3 @@
+[xt-profile] AI对话记录：未登录或 api.js 未就绪，跳过 GET /api/ai/history，仅展示本机兜底
+PASS 20/20
+rc=0

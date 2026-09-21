@@ -1,0 +1,118 @@
+AI.html:725  <button type="button" class="ai-img-remove" id="aiImgRemove" aria-label="移除图片">✕</button>
+assets/ai-page.js:386  '<button type="button" data-mem-del="' + i + '" title="删除" style="flex:none;border:none;background:none;color:#e5484d;cursor:pointer;font-size:12px;padding:0 2px;">✕</but
+assets/ai-page.js:877  '<button type="button" id="aiAudioRemove" title="移除" style="border:none;background:none;color:#e5484d;cursor:pointer;font-size:12px;padding:0 2px;">✕</button>';
+assets/ai-page.js:1305  '<button class="ai-hist-del" title="删除">✕</button>';
+assets/api.js:321  var actionBtns = '<button class="btn btn-outline" onclick="location.href=' + "'个人中心.html'" + '">← 回我的主页</button>';
+assets/api.js:713  <button class="ni-btn ${fav ? 'active' : ''}" onclick="toggleNoteFavorite()">${fav ? '★ 已收藏' : '☆ 收藏'}</button>
+assets/app.js:3320  '<div class="ai-partner-picker-head"><div class="ai-partner-picker-title">选择模型（与 AI 页同步）</div><div class="ai-close" onclick="closeAiModelPicker()">✕</div></div>' +
+assets/app.js:3536  '<div class="ai-partner-picker-head"><div class="ai-partner-picker-title">换个伙伴</div><div class="ai-close" onclick="closeAiPartnerPicker()">✕</div></div>' +
+assets/app.js:4431  + (m.isMine ? '<div class="bd-del" title="删除" onclick="event.stopPropagation();deleteBoardMsg(' + m.id + ')">✕</div>' : '');
+assets/app.js:5602  '<button class="btn btn-outline" onclick="window.__focusClose&&window.__focusClose()">✕ 关闭</button></div></div>';
+assets/app.js:5930  <button class="btn btn-outline btn-sm" style="margin-left:auto;padding:4px 12px;font-size:12px" onclick="resetViewedProgress('etiquette');appData.dailyQueues.etiquette={d
+assets/app.js:5997  <button class="btn btn-outline btn-sm" style="margin-left:auto;padding:4px 12px;font-size:12px" onclick="resetViewedProgress('ivQuestions');appData.dailyQueues.ivQuestion
+assets/app.js:7288  '<div class="card-action" style="font-size:12px" onclick="toggleHomeEdit()">' + (window.__homeEdit ? '✓ 完成' : '✎ 自选/排序') + '</div></div>' +
+assets/app.js:7768  <button class="ni-btn ${fav ? 'active' : ''}" onclick="toggleNoteFavorite()">${fav ? '★ 已收藏' : '☆ 收藏'}</button>
+assets/chat-local.js:1557  '<div style="cursor:pointer;color:#999;font-size:18px" onclick="this.closest(\'.im-overlay\').remove()">✕</div></div>' +
+assets/chat-local.js:1563  '<button class="btn btn-danger" id="imDelConfirmBtn">🗑 删除</button></div>' +
+assets/chat-local.js:1627  '<div style="font-size:20px;cursor:pointer;color:#999" onclick="this.closest(\'div[style*=fixed]\').remove()">✕</div></div>' +
+assets/chat-local.js:2219  '<span class="im-iv-btn" data-act="close">✕</span>' +
+assets/chat-local.js:2836  act = '<button class="im-af-btn" onclick="window.imAfOpenChat(' + u.id + ')">💬 发消息</button>';
+assets/chat-local.js:2842  act = '<button class="im-af-btn" onclick="window.imAfSendRequest(' + u.id + ',this)">➕ 添加好友</button>';
+assets/chat-local.js:3226  return '<div class="im-gsel">' + renderAvatar(f.avatarUrl || f.avatar, imFriendNameOf(f, '')) + '<span onclick="window.imToggleGroupMember(' + uid + ')">✕</span></div>';
+assets/chat-local.js:3381  '<div style="cursor:pointer;color:#999;font-size:var(--xt-font-2xl)" onclick="imCloseUserProfile()">✕</div></div>' +
+assets/chat-local.js:3510  '<div style="cursor:pointer;color:#999;font-size:18px" onclick="imCloseRemarkEditor()">✕</div></div>' +
+assets/chat-local.js:3679  '<button class="btn im-gs-danger" onclick="imQuitGroup()">' + (isOwner ? '🗑️ 解散群聊' : '🚪 退出群聊') + '</button>' +
+assets/chat-local.js:3928  '<span class="im-emoji-fav' + (fav ? ' on' : '') + '" onclick="event.stopPropagation();window.imFavEmoji(\'' + code + '\')">🌟</span></div>';
+assets/group-discussion.js:115  <div class="gd-arrow">→</div>
+assets/group-discussion.js:125  <button class="gd-btn gd-btn-primary" onclick="GroupDiscussion.random()">🎲 随机抽题</button>
+assets/group-discussion.js:164  <button class="gd-back" onclick="GroupDiscussion.back()">← 换题</button>
+assets/group-discussion.js:180  <span class="gd-char-chip-avatar">🧑</span>
+assets/group-discussion.js:191  <button class="gd-btn gd-btn-outline" onclick="GroupDiscussion.nextRound()">➡️ 下一轮</button>
+assets/group-discussion.js:192  <button class="gd-btn gd-btn-warn" onclick="GroupDiscussion.endDiscussion()">🏁 结束讨论</button>
+assets/group-discussion.js:254  <button class="gd-btn gd-btn-outline" onclick="GroupDiscussion.select('${currentTopic.id}')">🔄 再练一次</button>
+assets/group-discussion.js:255  <button class="gd-btn gd-btn-primary" onclick="GroupDiscussion.random()">🎲 下一个题目</button>
+assets/group-discussion.js:256  <button class="gd-btn gd-btn-outline" onclick="GroupDiscussion.back()">📋 返回题目</button>
+assets/group-discussion.js:281  <button class="gd-close" onclick="GroupDiscussion.close()">✕</button>
+assets/i-partner.js:1046  <button class="ip-back" onclick="IPartner.back()">← 换个伙伴</button>
+assets/i-partner.js:1091  <button class="ip-close" onclick="IPartner.close()">✕</button>
+assets/importer.js:327  '<button class="btn btn-primary" onclick="document.getElementById(\'impFile\').click()">📄 选择文件</button>' +
+assets/importer.js:369  '<button class="btn btn-outline" onclick="__impBackFile()">← 换文件</button>' +
+assets/importer.js:570  m.innerHTML = '<div class="imp-box"><div class="imp-head"><b>📥 导入题库</b><button class="imp-x" onclick="__impClose()">✕</button></div><div class="imp-body" id="impBody"></d
+assets/mini.js:90  m.innerHTML = '<div class="mz-box"><div class="mz-head"><b>' + esc(S.cat.t) + '</b><button class="mz-x" onclick="openMiniQuiz.__close()">✕</button></div>' +
+assets/mini.js:127  acts.innerHTML = last ? '<button class="mz-btn ghost" onclick="openMiniQuiz.__again()">↺ 再来一组</button><button class="mz-btn primary" onclick="openMiniQuiz.__finish()">查看成
+assets/mini.js:147  acts.innerHTML = '<button class="mz-btn ghost" onclick="openMiniQuiz.__again()">↺ 再来一组</button><button class="mz-btn primary" onclick="openMiniQuiz.__close()">完成</button>
+assets/qbank.js:165  m.innerHTML = '<div class="qb-box"><div class="qb-head"><b>' + esc(cfg.label) + ' · 我的题库</b><button class="qb-x" onclick="window.__qbClose()">✕</button></div>' +
+assets/qbank.js:178  var spk = (cur.key === 'cet' && it.word) ? '<button class="btn btn-outline btn-sm" style="margin-right:6px" onclick="event.stopPropagation();' + (typeof window.speakWordN
+assets/qbank.js:187  '<button class="btn btn-outline btn-sm" onclick="window.__qbImport()">📥 导入 JSON</button>' +
+assets/qbank.js:188  '<button class="btn btn-outline btn-sm" onclick="window.__qbExport(1)">📤 导出(自定义)</button>' +
+assets/qbank.js:189  '<button class="btn btn-outline btn-sm" onclick="window.__qbExport(0)">📤 导出(完整题库)</button>' +
+assets/qbank.js:202  '<button class="btn btn-outline btn-sm" onclick="window.__qbBack()">← 返回</button>' +
+assets/tpl-preview.js:1213  '<button type="button" class="xtpl-btn" data-act="close"><em>← 返回</em></button>' +
+assets/voiceplayer.js:654  '<button class="y" onclick="openVoiceTrain.__mark(0)">😕 没听懂</button>' +
+assets/voiceplayer.js:655  '<button class="y solid" onclick="openVoiceTrain.__mark(1)">😊 听懂了</button>' +
+assets/voiceplayer.js:715  '<button class="vp-back" onclick="openVoiceTrain.__close()">← 返回</button>' +
+assets/xt-moments.js:187  '<span class="xtm-act' + (m.likedByMe ? ' on' : '') + '" onclick="XTM.like(' + m.id + ')">' + (m.likedByMe ? ico('heart', 13, '❤') + ' 取消' : ico('heart', 13, '🤍') + ' 赞')
+assets/xt-moments.js:188  '<span class="xtm-act" onclick="XTM.panel(' + m.id + ')">' + ico('message-circle', 13, '💬') + ' 评论</span>' +
+assets/xt-moments.js:213  '<div class="xtm-sheet-hd"><span id="xtmPanelTitle">互动</span><span class="xtm-sheet-x" onclick="XTM.closePanel()">' + ico('close', 18, '✕') + '</span></div>' +
+assets/xt-moments.js:344  el.innerHTML = '<span class="xtm-viewer-x" onclick="XTM.closeViewer()">' + ico('close', 20, '✕') + '</span>' +
+assets/xt-moments.js:380  '<div class="xtm-sheet-hd"><span>' + esc(title) + '</span><span class="xtm-sheet-x" onclick="XTM.closeInput()">' + ico('close', 18, '✕') + '</span></div>' +
+assets/xt-moments.js:408  '<div class="xtm-sheet-hd"><span>互动通知</span><span class="xtm-sheet-x" onclick="XTM.closeNotif()">' + ico('close', 18, '✕') + '</span></div>' +
+assets/xt-moments.js:440  '<div class="xtm-sheet-hd"><span>' + esc(title) + '</span><span class="xtm-sheet-x" onclick="XTM.closePicker()">' + ico('close', 18, '✕') + '</span></div>' +
+assets/xt-moments.js:712  '<div class="xtm-sheet-hd"><span>视频</span><span class="xtm-sheet-x" onclick="XTM.closeVideoSheet()">' + ico('close', 18, '✕') + '</span></div>' +
+assets/xt-moments.js:714  '<div class="xtm-picker-row" id="xtmVidFromLocal"><div class="xtm-picker-nm">' + ico('upload', 16, '⬆') + ' 从本机选择视频</div><div class="xtm-picker-ck"></div></div>' +
+assets/xt-moments.js:715  '<div class="xtm-picker-row" id="xtmVidFromLink"><div class="xtm-picker-nm">' + ico('file', 16, '🔗') + ' 粘贴视频链接</div><div class="xtm-picker-ck"></div></div>' +
+assets/xt-moments.js:775  '<div class="xtm-pub-cell-del" onclick="XTM.removePicked(' + i + ')">' + ico('close', 16, '✕') + '</div>' +
+assets/xt-moments.js:780  '<div class="xtm-pub-cell-del" onclick="XTM.removeVideo()">' + ico('close', 16, '✕') + '</div></div>';
+assets/xt-moments.js:831  '<div class="xtm-sheet-hd"><span>谁可以看</span><span class="xtm-sheet-x" onclick="XTM.closeVis()">' + ico('close', 18, '✕') + '</span></div>' +
+assets/xt-update.js:679  '<div class="xt-up-arrow">→</div>' +
+关于.html:161  <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='更多.html'}" title="返回" aria-label="返回">←</button>
+好友申请.html:112  if (u.isFriend) act = '<button class="af-btn" onclick="afOpenChat(' + u.id + ')">💬 发消息</button>';
+好友申请.html:114  else act = '<button class="af-btn" onclick="addFriend(' + u.id + ',' + i + ')" id="addBtn' + i + '">➕ 添加好友</button>';
+学习概括.html:205  <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='更多.html'}" title="返回" aria-label="返回">←</button>
+学途.html:276  '<span class="t-btn' + (dn ? ' on' : '') + '">' + (dn ? '✅ 完成' : '开始 →') + '</span></div>';
+学途.html:293  '<div style="margin-top:12px"><button class="xt-btn sm" onclick="goStudy(\'vocab\',\'' + MODULE_URLS.vocab + '\')">🚀 开始背词</button>' +
+学途.html:294  '<button class="xt-btn sm ghost" style="margin-left:8px" onclick="location.href=\'' + MODULE_URLS.vocab + '\'">📖 词汇详情</button></div>' +
+学途.html:302  '<div class="xt-q" onclick="goStudy(\'vocab\',\'' + MODULE_URLS.vocab + '\')"><div class="qi">📖</div><div class="qn">背单词</div></div>' +
+学途.html:303  '<div class="xt-q" onclick="xtListen()"><div class="qi">🎧</div><div class="qn">听力</div></div>' +
+学途.html:304  '<div class="xt-q" onclick="goStudy(\'exam\',\'' + MODULE_URLS.exam + '\')"><div class="qi">📝</div><div class="qn">刷题</div></div>' +
+学途.html:305  '<div class="xt-q" onclick="location.href=\'' + MODULE_URLS.blog + '\'"><div class="qi">✍️</div><div class="qn">写笔记</div></div>' +
+学途.html:339  '<span class="m-ar" style="color:var(--danger)" onclick="event.stopPropagation();xtDelSubject(' + i + ')">✕</span></div>';
+学途.html:349  '<button class="xt-btn sm" onclick="goStudy(\'vocab\',\'' + MODULE_URLS.vocab + '\')">📖 顺序背词</button>' +
+学途.html:350  '<button class="xt-btn sm ghost" onclick="location.href=\'' + MODULE_URLS.vocab + '\'">🔄 艾宾浩斯复习</button>' +
+学途.html:351  '<button class="xt-btn sm ghost" onclick="location.href=\'' + MODULE_URLS.vocab + '\'">🔊 听音辨词</button>' +
+学途.html:444  '<div class="xt-card-title">🔴 ' + wq + ' 道错题' + (due > 0 ? ' · ' + due + ' 道待复习' : '') + '<span class="more" onclick="goStudy(\'exam\',\'' + MODULE_URLS.exam + '\')">去刷题 
+学途.html:493  '<div class="xt-card"><div class="xt-card-title">📁 我的笔记本</div><div class="xt-chip-row">' + chipHtml + '</div></div>' +
+学途.html:496  '<button class="xt-btn" style="width:100%;margin-top:10px" onclick="location.href=\'社区.html\'">✍️ 写笔记</button>' +
+学途.html:533  '<button class="g-del" onclick="xtSetGoal(' + gi + ')">✏️</button>' +
+学途.html:534  '<button class="g-del" onclick="xtDelGoal(' + gi + ')">🗑</button></div>';
+学途.html:546  '<button class="xt-btn sm ghost" onclick="location.href=\'个人中心.html\'">👤 个人中心</button>' +
+学途.html:547  '<button class="xt-btn sm ghost" onclick="location.href=\'设置.html\'">⚙️ 设置</button>' +
+学途.html:550  '<div class="xt-card"><div class="xt-card-title">📊 学习统计</div><div class="xt-stat-row">' +
+学途.html:557  '<div class="xt-card"><div class="xt-card-title">🎯 我的目标<button class="xt-btn sm ghost" onclick="xtAddGoal()">＋</button></div>' + goalHtml + '</div>' +
+我的动态.html:41  <button class="xtm-nav-btn" id="xtmCam" type="button" title="发表朋友圈" aria-label="发表">📷</button>
+我的动态.html:47  <div class="xtm-bell" id="xtmBell" title="互动通知" role="button" aria-label="互动通知">🔔<span class="xtm-bell-dot" id="xtmBellDot" style="display:none"></span></div>
+我的动态.html:56  <div class="xtm-album-btn" id="xtmAlbumBtn">🖼 相册（灰度）</div>
+更多.html:110  <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='学习工作台.html'}" title="返回" aria-label="返回">←</button>
+更多.html:283  <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录">🧹</div>
+更多.html:284  <div class="ai-close" onclick="toggleAiPanel()" title="收起面板">✕</div>
+更多.html:289  <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()">➤</div>
+更新.html:193  <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='设置.html'}" title="返回设置" aria-label="返回设置">←</button>
+登录.html:161  <button type="button" class="eye" id="eyePass" onclick="togglePw('loginPass',this)" title="显示/隐藏密码" aria-label="显示或隐藏密码">👁</button>
+登录.html:172  <button type="button" class="eye" onclick="togglePw('loginConfirm',this)" aria-label="显示或隐藏密码">👁</button>
+私聊.html:109  <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0">🌙</div>
+私聊.html:150  <button class="im-icon" id="imBack" onclick="imBackList()" style="display:none" title="返回会话列表">←</button>
+私聊.html:197  <button class="im-icon" onclick="imCloseGroupSettings()" title="返回会话">←</button>
+私聊.html:199  <div style="cursor:pointer;color:#999;font-size:var(--xt-font-2xl)" onclick="imCloseGroupSettings()" title="返回会话">✕</div>
+私聊.html:216  <button class="ac-close" onclick="acClose()" title="返回" aria-label="返回">✕</button>
+私聊.html:312  <div class="im-modal-head"><div style="font-size:var(--xt-font-md);font-weight:700">发起群聊</div><div style="cursor:pointer;color:#999;font-size:var(--xt-font-2xl)" onclick=
+私聊.html:352  <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录">🧹</div>
+私聊.html:353  <div class="ai-close" onclick="toggleAiPanel()" title="收起面板">✕</div>
+私聊.html:358  <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()">➤</div>
+管理员.html:118  <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='学习工作台.html'}" title="返回" aria-label="返回">←</button>
+管理员.html:119  <div class="morepage-title"><span class="nav-icon" data-icon="shield" data-icon-size="18">🛡️</span> 管理后台</div>
+管理员.html:284  <div class="ai-close" onclick="clearAiChat()" title="清空聊天记录">🧹</div>
+管理员.html:285  <div class="ai-close" onclick="toggleAiPanel()" title="收起面板">✕</div>
+管理员.html:290  <div class="ai-send-btn" id="aiSendBtn" onclick="sendAiMsg()">➤</div>
+表达.html:314  <button class="gq-view-back" onclick="closeGqCasesView()">← 返回</button>
+表达.html:324  <button class="gq-view-back" onclick="closeGqIpartnerView()">← 返回</button>
+赞助.html:161  <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='更多.html'}" title="返回" aria-label="返回">←</button>

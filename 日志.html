@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#5B8DEF">
+<title>日志 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260923c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260922a">
+<link rel="stylesheet" href="assets/states.css?v=20260922a">
+<link rel="stylesheet" href="assets/polish.css?v=20260922a">
+<script src="assets/xt-polyfill.js?v=20260922a"></script>
+<script>window.__XT_PROD__=true;</script>
+<!-- 统一日志门面：非 defer 尽早加载，先于 app.js/api.js 挂钩 -->
+<script src="assets/xt-log.js?v=20260924a"></script>
+<style>
+/* ==================== 日志页局部样式（R9 · 2026-09-21） ====================
+   结构：统计卡 → 筛选卡（来源/级别/关键字/清空）→ 日志列表（四状态）→ 操作条（导出/上报）。
+   样式走 common.css 既有令牌，深浅色由 body.dark 自动适配；移动优先，桌面 max-width 480px 居中。 */
+.lg-wrap{max-width:480px;margin:0 auto;padding-bottom:28px}
+.lg-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-top:14px}
+/* 统计区 */
+.lg-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.lg-stat{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px 6px;text-align:center}
+.lg-stat b{display:block;font-size:18px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums}
+.lg-stat span{font-size:11px;color:var(--text-secondary)}
+.lg-stat.err b{color:#E74C3C}
+.lg-stat.warn b{color:#F39C12}
+.lg-meta{font-size:11.5px;color:var(--text-muted);margin-top:10px;line-height:1.7;word-break:break-all}
+/* 筛选区 */
+.lg-tabs{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.lg-tabs+.lg-tabs{margin-top:8px}
+.lg-tab{border:1px solid var(--border);background:transparent;padding:6px 12px;border-radius:9px;
+  font-size:12.5px;font-weight:600;color:var(--text-secondary);cursor:pointer;white-space:nowrap;flex:0 0 auto}
+.lg-tab.on{background:var(--primary);border-color:var(--primary);color:#fff}
+.lg-search{display:flex;gap:8px;margin-top:10px}
+.lg-search input{flex:1;min-width:0;padding:8px 12px;border-radius:10px;border:1px solid var(--border);
+  background:var(--bg);color:var(--text);font-size:13px;outline:none}
+.lg-search input:focus{border-color:var(--primary)}
+/* 日志条目 */
+.lg-item{border-bottom:1px solid var(--border);padding:9px 2px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.lg-item:last-child{border-bottom:none}
+.lg-item-top{display:flex;align-items:center;gap:8px}
+.lg-lv{font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;flex:0 0 auto;letter-spacing:.5px}
+.lg-lv.error{background:rgba(231,76,60,.14);color:#E74C3C}
+.lg-lv.warn{background:rgba(243,156,18,.14);color:#F39C12}
+.lg-lv.info{background:rgba(91,141,239,.14);color:#5B8DEF}
+.lg-lv.debug{background:rgba(120,120,120,.14);color:var(--text-secondary)}
+.lg-mod{font-size:11.5px;font-weight:700;color:var(--text);flex:0 0 auto;max-width:34%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lg-time{font-size:11px;color:var(--text-muted);margin-left:auto;flex:0 0 auto;font-variant-numeric:tabular-nums}
+.lg-msg{font-size:12.5px;color:var(--text-secondary);line-height:1.55;margin-top:4px;word-break:break-all;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lg-item.open .lg-msg{display:block;-webkit-line-clamp:unset}
+.lg-more{display:none;margin-top:6px;font-size:11.5px;color:var(--text-muted);line-height:1.7;word-break:break-all}
+.lg-item.open .lg-more{display:block}
+.lg-more b{color:var(--text-secondary);font-weight:600}
+/* 设备日志 */
+.lg-dev-pre{max-height:46vh;overflow:auto;background:var(--bg);border:1px solid var(--border);border-radius:10px;
+  padding:10px;font-size:11.5px;line-height:1.6;color:var(--text-secondary);white-space:pre-wrap;word-break:break-all;margin:0}
+/* 四状态（states.css 同语义，局部补齐） */
+.lg-state{padding:26px 12px;text-align:center;font-size:13px;color:var(--text-muted);line-height:1.8}
+.lg-state .nav-icon{opacity:.5}
+/* 底部操作条 */
+.lg-actions{display:flex;gap:10px;margin-top:16px}
+.lg-actions .btn{flex:1}
+@media (max-width:380px){
+  .lg-card{padding:12px 11px}
+  .lg-stats{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body class="theme-home">
+
+<div class="app">
+<nav class="sidebar">
+    <div class="logo">
+      <div class="logo-icon" data-icon="book-open"></div>
+      <div>
+        <div class="logo-text">星途</div>
+        <div class="logo-sub">致追梦的人->修身</div>
+      </div>
+    </div>
+</nav>
+
+  <div class="main">
+<header class="topbar">
+      <div class="topbar-title">日志</div>
+      <div class="topbar-date"></div>
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="18"></span></div>
+    </header>
+    <div class="content">
+      <div class="page active" id="page-logs">
+        <!-- 返回：显式回上级页（项目约定不用 history.back 乒乓） -->
+        <div class="morepage-head">
+          <button class="morepage-back" onclick="location.href='数据管理.html'" title="返回" aria-label="返回">←</button>
+          <div class="morepage-title"><span class="nav-icon" data-icon="file-text" data-icon-size="18"></span> 日志</div>
+        </div>
+
+        <div class="lg-wrap">
+          <!-- ① 统计卡 -->
+          <div class="lg-card" id="lgStatCard">
+            <div class="lg-stats">
+              <div class="lg-stat"><b id="lgStTotal">–</b><span>总计</span></div>
+              <div class="lg-stat err"><b id="lgStError">–</b><span>错误</span></div>
+              <div class="lg-stat warn"><b id="lgStWarn">–</b><span>警告</span></div>
+              <div class="lg-stat"><b id="lgStInfo">–</b><span>信息</span></div>
+            </div>
+            <div class="lg-meta" id="lgMeta">正在读取…</div>
+          </div>
+
+          <!-- ② 筛选卡 -->
+          <div class="lg-card">
+            <div class="lg-tabs" id="lgSrcTabs" role="tablist" aria-label="日志来源">
+              <button type="button" class="lg-tab on" data-src="app" onclick="lgSetSrc('app')">应用日志</button>
+              <button type="button" class="lg-tab" data-src="device" onclick="lgSetSrc('device')">设备日志</button>
+            </div>
+            <div style="height:10px"></div>
+            <div class="lg-tabs" id="lgLvTabs" role="tablist" aria-label="日志级别">
+              <button type="button" class="lg-tab on" data-lv="" onclick="lgSetLv('')">全部</button>
+              <button type="button" class="lg-tab" data-lv="error" onclick="lgSetLv('error')">错误</button>
+              <button type="button" class="lg-tab" data-lv="warn" onclick="lgSetLv('warn')">警告</button>
+              <button type="button" class="lg-tab" data-lv="info" onclick="lgSetLv('info')">信息</button>
+              <button type="button" class="lg-tab" data-lv="debug" onclick="lgSetLv('debug')">调试</button>
+            </div>
+            <div class="lg-search">
+              <input type="text" id="lgQ" placeholder="搜索关键字（模块 / 内容 / 页面）" oninput="lgDebounceRender()">
+              <button class="btn btn-outline btn-sm" onclick="lgAskClear()"><span class="nav-icon" data-icon="eraser" data-icon-size="14"></span> 清空</button>
+            </div>
+          </div>
+
+          <!-- ③ 日志列表（四状态：加载/空/错误/正常） -->
+          <div class="lg-card" style="padding:4px 14px">
+            <div id="lgList" class="lg-state"><span class="nav-icon" data-icon="loader" data-icon-size="18"></span><br>正在读取日志…</div>
+          </div>
+
+          <!-- ④ 说明 + 操作 -->
+          <div class="lg-actions">
+            <button class="btn btn-outline" onclick="lgExport()"><span class="nav-icon" data-icon="upload" data-icon-size="14"></span> 导出日志</button>
+            <button class="btn btn-primary" onclick="lgReport()"><span class="nav-icon" data-icon="send" data-icon-size="14"></span> 上报错误</button>
+          </div>
+          <div class="lg-meta" style="margin-top:10px">
+            敏感信息（密钥 / 手机号 / 证件号 / 邮箱）已自动打码后才入库与导出；应用日志仅保留最近 200 条、设备日志保留 7 天。
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/xt-toast.js?v=20260923a" defer></script>
+<script src="assets/error-boundary.js?v=20260924a" defer></script>
+<script src="assets/app.js?v=20260923a" defer></script>
+<script src="assets/config.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260924a" defer></script>
+<script>
+/* ==================== 日志页逻辑（R9 · 2026-09-21） ====================
+   应用日志：assets/xt-log.js 的前端缓存（本页打开期间的 console/边界/接口告警都在内）。
+   设备日志：App 内经 XTAppBridge.readLogs(maxBytes) 读取原生日志文件尾部（logs/*.log）。
+   导出：App 走 exportLogs() 系统分享；浏览器生成 .txt 下载。
+   上报：POST /api/feedbacks（type=bug，走 api.js 自动带 token；限频 10 分钟 1 条由后端把关）。 */
+(function () {
+  var state = { src: 'app', lv: '', deviceText: '', deviceDir: '', deviceOk: null };
+
+  function $(id) { return document.getElementById(id); }
+  function toast(msg) { if (typeof window.showToast === 'function') window.showToast(msg); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function fmtT(iso) {
+    try { return String(iso || '').replace('T', ' ').replace(/\.\d+Z$/, ''); } catch (e) { return String(iso || ''); }
+  }
+  function nativeBridge() { return window.XTAppBridge || window.AndroidBridge || null; }
+  function isNative() {
+    var b = nativeBridge();
+    return !!(b && typeof b.readLogs === 'function');
+  }
+
+  /* ---------- 筛选交互 ---------- */
+  window.lgSetSrc = function (s) {
+    state.src = s;
+    var tabs = $('lgSrcTabs').children;
+    for (var i = 0; i < tabs.length; i++) tabs[i].className = 'lg-tab' + (tabs[i].getAttribute('data-src') === s ? ' on' : '');
+    render();
+  };
+  window.lgSetLv = function (lv) {
+    state.lv = lv;
+    var tabs = $('lgLvTabs').children;
+    for (var i = 0; i < tabs.length; i++) tabs[i].className = 'lg-tab' + (tabs[i].getAttribute('data-lv') === lv ? ' on' : '');
+    render();
+  };
+  var lgDebounceTimer = null;
+  window.lgDebounceRender = function () {
+    if (lgDebounceTimer) clearTimeout(lgDebounceTimer);
+    lgDebounceTimer = setTimeout(render, 250);
+  };
+
+  /* ---------- 统计卡 ---------- */
+  function renderStats() {
+    try {
+      var s = window.XTLog.stats();
+      $('lgStTotal').textContent = s.total;
+      $('lgStError').textContent = s.error;
+      $('lgStWarn').textContent = s.warn;
+      $('lgStInfo').textContent = (s.info + s.debug);
+      $('lgMeta').textContent = '范围 ' + (s.firstTs ? fmtT(s.firstTs) : '–') + ' ~ ' + (s.lastTs ? fmtT(s.lastTs) : '–') +
+        '　·　级别≥' + String(window.XTLog.getMinLevel()).toUpperCase() +
+        '　·　版本 ' + (String(window.CURRENT_VERSION || '未知')) +
+        (isNative() ? '　·　App 内（含设备日志）' : '　·　浏览器');
+    } catch (e) { $('lgMeta').textContent = '统计读取失败：' + e; }
+  }
+
+  /* ---------- 应用日志列表 ---------- */
+  function renderAppLogs() {
+    var box = $('lgList');
+    var items = window.XTLog.get({ level: state.lv, q: $('lgQ').value.trim(), limit: 200 });
+    if (!items.length) {
+      box.className = 'lg-state';
+      box.innerHTML = '<span class="nav-icon" data-icon="inbox" data-icon-size="18"></span><br>暂无匹配日志<br><span style="font-size:11.5px">正常流程不产生日志；出错 / 警告时才会记录在这里</span>';
+      return;
+    }
+    box.className = '';
+    var html = '';
+    for (var i = 0; i < items.length; i++) {
+      var e = items[i];
+      html += '<div class="lg-item" onclick="this.classList.toggle(\'open\')">' +
+        '<div class="lg-item-top">' +
+          '<span class="lg-lv ' + esc(e.level) + '">' + esc(String(e.level).toUpperCase()) + '</span>' +
+          '<span class="lg-mod">' + esc(e.module) + '</span>' +
+          '<span class="lg-time">' + esc(fmtT(e.t)) + '</span>' +
+        '</div>' +
+        '<div class="lg-msg">' + esc(e.msg) + '</div>' +
+        '<div class="lg-more">' +
+          (e.ctx ? ('<b>上下文：</b>' + esc(e.ctx) + '<br>') : '') +
+          (e.req ? ('<b>请求ID：</b>' + esc(e.req) + '<br>') : '') +
+          (e.page ? ('<b>页面：</b>' + esc(e.page) + '<br>') : '') +
+          (e.ver ? ('<b>版本：</b>' + esc(e.ver)) : '') +
+        '</div>' +
+      '</div>';
+    }
+    box.innerHTML = html;
+  }
+
+  /* ---------- 设备日志（App 内） ---------- */
+  function loadDeviceLogs() {
+    var b = nativeBridge();
+    if (!b || typeof b.readLogs !== 'function') {
+      state.deviceOk = false;
+      state.deviceText = '';
+      return;
+    }
+    try {
+      var raw = b.readLogs(256 * 1024);
+      var obj = JSON.parse(String(raw || '{}'));
+      state.deviceOk = !!obj.ok;
+      state.deviceText = String(obj.text || '');
+      state.deviceDir = String(obj.dir || '');
+    } catch (e) {
+      state.deviceOk = false;
+      state.deviceText = '';
+    }
+  }
+  function renderDeviceLogs() {
+    var box = $('lgList');
+    if (state.deviceOk === false) {
+      box.className = 'lg-state';
+      box.innerHTML = '<span class="nav-icon" data-icon="smartphone" data-icon-size="18"></span><br>设备日志仅星途 App 内可用<br><span style="font-size:11.5px">浏览器打开时无原生日志文件</span>';
+      return;
+    }
+    var text = state.deviceText || '';
+    if (state.lv || $('lgQ').value.trim()) {
+      // 设备日志为纯文本：按行做级别/关键字过滤（级别按行内 [ERROR]/[WARN] 标记近似匹配）
+      var lvs = { error: ['ERROR', 'FATAL', 'AndroidRuntime'], warn: ['WARN'] };
+      var marks = state.lv ? (lvs[state.lv] || null) : null;
+      var q = $('lgQ').value.trim().toLowerCase();
+      var lines = text.split('\n'), out = [];
+      for (var i = 0; i < lines.length; i++) {
+        var ln = lines[i];
+        if (marks) {
+          var hit = false;
+          for (var k = 0; k < marks.length; k++) { if (ln.indexOf(marks[k]) !== -1) { hit = true; break; } }
+          if (!hit) continue;
+        }
+        if (q && ln.toLowerCase().indexOf(q) === -1) continue;
+        out.push(ln);
+      }
+      text = out.join('\n');
+    }
+    if (!text) {
+      box.className = 'lg-state';
+      box.innerHTML = '<span class="nav-icon" data-icon="inbox" data-icon-size="18"></span><br>设备日志为空<br><span style="font-size:11.5px">出现崩溃 / 页面错误后这里会有记录（保留 7 天）</span>';
+      return;
+    }
+    box.className = '';
+    box.innerHTML = '<pre class="lg-dev-pre">' + esc(text) + '</pre>' +
+      (state.deviceDir ? ('<div class="lg-meta" style="padding:8px 2px">日志目录：' + esc(state.deviceDir) + '</div>') : '');
+  }
+
+  /* ---------- 渲染入口 ---------- */
+  function render() {
+    renderStats();
+    if (state.src === 'device') renderDeviceLogs();
+    else renderAppLogs();
+  }
+
+  /* ---------- 导出 ---------- */
+  window.lgExport = function () {
+    var b = nativeBridge();
+    if (b && typeof b.exportLogs === 'function') { try { b.exportLogs(); return; } catch (e) { } }
+    // 浏览器：生成 .txt 下载（Blob + a[download]，老 WebView 用 execCommand 兜底）
+    try {
+      var parts = [window.XTLog.exportText()];
+      if (state.deviceText) parts.push('\n\n==== 设备日志（原生日志文件尾部） ====\n' + state.deviceText);
+      var blob = new Blob([parts.join('\n')], { type: 'text/plain;charset=utf-8' });
+      var d = new Date();
+      var name = 'xingtu-log-' + d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2) + '.txt';
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () {
+        try { URL.revokeObjectURL(a.href); a.remove(); } catch (e) { }
+      }, 800);
+      toast('日志已导出为 ' + name);
+    } catch (e2) {
+      toast('导出失败：' + e2);
+    }
+  };
+
+  /* ---------- 上报错误（POST /api/feedbacks type=bug） ---------- */
+  window.lgReport = function () {
+    try {
+      var tk = '';
+      try { tk = localStorage.getItem('study_workbench_token') || ''; } catch (e0) { }
+      if (!tk) { toast('上报需要登录，请先登录后再试'); return; }
+      if (typeof window.api !== 'function') { toast('上报组件未就绪，请刷新页面重试'); return; }
+      toast('正在上报…');
+      window.XTLog.report(function () {
+        window.XTLog.info('log-page', '错误日志已上报');
+        toast('已上报，感谢反馈！可在「帮助与反馈-我的反馈」查看进度');
+      }, function (status, resp) {
+        var detail = '';
+        try { detail = (JSON.parse(resp) || {}).detail || ''; } catch (e1) { }
+        if (status === 401) toast('登录已过期，请重新登录后再上报');
+        else toast('上报失败' + (detail ? ('：' + detail) : ('（HTTP ' + status + '）')));
+      });
+    } catch (e) { toast('上报异常：' + e); }
+  };
+
+  /* ---------- 清空（确认后执行） ---------- */
+  window.lgAskClear = function () {
+    var doClear = function () {
+      try { window.XTLog.clear(); } catch (e) { }
+      state.deviceText = ''; state.deviceOk = null;
+      loadDeviceLogs();
+      render();
+      toast('日志已清空');
+    };
+    if (typeof window.uiConfirm === 'function') {
+      try { window.uiConfirm('确定清空全部应用日志？此操作不可恢复。', doClear); return; } catch (e) { }
+    }
+    if (window.confirm) { if (window.confirm('确定清空全部应用日志？此操作不可恢复。')) doClear(); }
+  };
+
+  /* ---------- 启动 ---------- */
+  function boot() {
+    loadDeviceLogs();
+    render();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+</script>
+</body>
+</html>

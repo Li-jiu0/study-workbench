@@ -1,0 +1,56 @@
+[
+ {
+  "file": "assets\\ai-settings.js",
+  "pattern": "optional_chain",
+  "count": 0,
+  "hits": []
+ },
+ {
+  "file": "assets\\ai-settings.js",
+  "pattern": "nullish",
+  "count": 0,
+  "hits": []
+ },
+ {
+  "file": "assets\\ai-settings.js",
+  "pattern": "spread_rest",
+  "count": 0,
+  "hits": []
+ },
+ {
+  "file": "assets\\ai-settings.js",
+  "pattern": "replaceAll",
+  "count": 0,
+  "hits": []
+ },
+ {
+  "file": "assets\\ai-settings.js",
+  "pattern": "fromEntries",
+  "count": 0,
+  "hits": []
+ },
+ {
+  "file": "assets\\ai-settings.js",
+  "pattern": "arr_at",
+  "count": 0,
+  "hits": []
+ },
+ {
+  "file": "assets\\ai-settings.js",
+  "pattern": "lookbehind",
+  "count": 0,
+  "hits": []
+ },
+ {
+  "file": "assets\\ai-settings.js",
+  "pattern": "exponent",
+  "count": 0,
+  "hits": []
+ },
+ {
+  "file": "assets\\ai-settings.js",
+  "pattern": "catch_optional",
+  "count": 0,
+  "hits": []
+ }
+]

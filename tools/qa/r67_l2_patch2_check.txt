@@ -1,0 +1,15 @@
+ai-page.js bytes: 86980
+  CTX_RING_C: 3 (期望 3：定义+2 使用)
+  plainModeLabel: 4 (期望 5：定义+4 调用)
+  ai-ctx-ring JS: 3 (期望 >=3)
+  stroke-dasharray: 1 (期望 1)
+  旧长文本格式残留: False (期望 False)
+  escHtml(info.label) 残留: 0 (期望 0)
+AI.html bytes: 54429
+  ai-ctx-ring css: 5 (期望 >=5)
+  ai-ctx-pct css: 4 (期望 >=5)
+  旧 span 文案残留: False (期望 False)
+  新 span 初始: True (期望 True)
+  cursor:help: True (期望 True)
+EOL ai-page.js CRLF=0 loneLF=1752 loneCR=0
+EOL AI.html CRLF=939 loneLF=0 loneCR=0

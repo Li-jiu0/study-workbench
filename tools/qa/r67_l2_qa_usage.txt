@@ -1,0 +1,37 @@
+PASS S1_html_initial_ring
+PASS S2_html_ring_css
+PASS S3_html_hover_and_layout
+PASS S4_js_ring_impl
+PASS S5_old_long_text_gone
+PASS S6_html_ring_left_of_model_btn
+PASS S7_no_emoji_in_sources
+PASS B1_boot_no_throw
+PASS B2_init_ran
+PASS P1_ring_adjacent_left_of_model_btn
+PASS F1_zero_default
+PASS F2_45_5_percent
+PASS F3_81_percent_warn
+PASS F4_96_percent_hot
+PASS F5_boundary_80_no_warn
+PASS F6_boundary_95_warn_not_hot
+PASS F7_limit_8192
+PASS F8_limit_1000000_half
+PASS F9_overlimit_full_ring
+PASS L1_max_mode_8000
+PASS L2_mode_chain_first_model
+PASS L3_mode_priority_over_max
+PASS L4_selected_model_dynamic
+PASS H1_title_progress_only
+PASS H2_title_kept_after_rerender
+PASS M1_mode_rows_plain_text
+PASS M2_click_mode_persist_and_label
+PASS M3_toast_plain_text
+PASS M4_click_auto_row_back_to_default
+PASS R1_ids_preserved
+PASS R2_send_button_state
+PASS R3_memory_section_injected
+PASS R4_deep_think_chip_toggle
+PASS R5_compact_no_long_text
+PASS P2_position_survives_rerenders
+
+TOTAL 35 | PASS 35 | FAIL 0

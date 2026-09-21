@@ -1,0 +1,14 @@
+批次 20260913K：K1~K17 需求全清（11 线并行）
+
+- 四级备考：听力训练+情景式口语弹窗改页内面板并合并（voiceplayer.js 重构，9 场景台词各扩至 9 句）
+- 高情商表达：案例拆解库/i人伙伴团弹窗改页面，i人沟通专区删除并入，角色扮演重构
+- 商务礼仪面试：面试准备/面试后弹窗改面板（对齐高频问题库），无领导复核 0 弹窗
+- PPT训练：设计基础/实战模板库/技巧提升弹窗改面板（对齐版式库），删除学习路径卡
+- 广场：评论头像 bug 修复（avatarUrl 未渲染）、回复嵌套、评论折叠；我的文章筛选改列表导航；分类筛选改同行下拉；删除写发贴冗余标题行
+- 个人中心：学习偏好页内直设（setSetting 同源）、发贴统计入口拆盒修复、JS 渲染区图标升级
+- 设置页：FAQ/数据管理/维护/外观/提醒/AI 面板按钮 emoji 清零，皮肤 chips 改 CSS 色块
+- 顶栏全站：🔔💬🌙🧠等注入位图标升级（api.js/qbank.js），搜索框去 emoji
+- icon-map.js 注册 70→95（K 批新增 25：sun/moon/bell/pin/trash/save/eraser/rotate-ccw/monitor/ban/download/calculator/calendar-days/award/notebook/file-text/plug/chevron-down/chevron-up/archive/volume-2/pointer/shuffle/sprout/arrow-left-right）
+- 版本戳 bump 20260913k（27 文件 315 处）；关于面板更新日志重写为 K 批摘要
+- 验证：扫描器严格模式 PASS（残留 0/1066 引用全注册）；回归门 qa_batch_0913h_final --with-c1 ALL PASS（B12 断言同步：情景式口语菜单移除、study-stats 动态图标补 autoRender）
+- 部署未执行（待用户点头；与挂起的 20260913j 合并或分开部署待定）

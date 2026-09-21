@@ -1,0 +1,65 @@
+=== DIFF (OLD=admin-contact.js.bak-0914b) vs (NEW=admin-contact.js) ===
+  ...after new line 164...
+  + new[165]   /* ---------------- R43（2026-09-14）：联系管理员入口未读角标 ----------------
+  + new[166]      普通用户收到的「管理员来信」未读角标应显示在会话列表的「联系管理员」入口（.ac-entry）上。
+  + new[167]      数据源 GET /api/chat/unread，取 peerId === 管理员 id（S.adminId）的 count。
+  + new[168]      管理员 id 走 resolveAdminId()（已缓存到 localStorage，键名与 chat-local.js 共用 xt_admin_user_id）。 */
+  + new[169]   var badgeTimer = null;
+  + new[170] 
+  + new[171]   function renderEntryBadge(n) {
+  + new[172]     var entry = document.querySelector('.ac-entry');
+  + new[173]     if (!entry) return;
+  + new[174]     var b = document.getElementById('acEntryBadge');
+  + new[175]     if (!b) {
+  + new[176]       b = document.createElement('span');
+  + new[177]       b.className = 'ac-badge';
+  + new[178]       b.id = 'acEntryBadge';
+  + new[179]       entry.appendChild(b);
+  + new[180]     }
+  + new[181]     var cnt = Number(n) || 0;
+  + new[182]     if (cnt > 0) {
+  + new[183]       b.textContent = cnt > 99 ? '99+' : String(cnt);
+  + new[184]       b.style.display = '';
+  + new[185]     } else {
+  + new[186]       b.textContent = '';
+  + new[187]       b.style.display = 'none';
+  + new[188]     }
+  + new[189]   }
+  + new[190] 
+  + new[191]   function refreshEntryBadge() {
+  + new[192]     if (!tok()) { renderEntryBadge(0); return Promise.resolve(0); }
+  + new[193]     return resolveAdminId().then(function (id) {
+  + new[194]       if (id) S.adminId = id;
+  + new[195]       if (!S.adminId) { renderEntryBadge(0); return 0; }
+  + new[196]       return fetch(base() + '/api/chat/unread', { headers: { 'Authorization': 'Bearer ' + tok() } })
+  + new[197]         .then(function (r) { return r.ok ? r.json() : { items: [] }; })
+  + new[198]         .then(function (d) {
+  + new[199]           var items = (d && d.items) || [];
+  + new[200]           var hit = 0;
+  + new[201]           for (var i = 0; i < items.length; i++) {
+  + new[202]             if (Number(items[i].peerId) === Number(S.adminId)) { hit = Number(items[i].count) || 0; break; }
+  + new[203]           }
+  + new[204]           renderEntryBadge(hit);
+  + new[205]           return hit;
+  + new[206]         })
+  + new[207]         .catch(function () { return 0; });
+  + new[208]     }).catch(function () { return 0; });
+  + new[209]   }
+  + new[210] 
+  + new[211]   function startBadgePoll() {
+  + new[212]     if (badgeTimer) return;
+  + new[213]     badgeTimer = setInterval(function () {
+  + new[214]       try { if (document.hidden) return; } catch (e) { /* 忽略 */ }
+  + new[215]       refreshEntryBadge();
+  + new[216]     }, 5000);
+  + new[217]   }
+  + new[218] 
+  ...after new line 233...
+  - old[180]       return loadMsgs();
+  + new[234]       return loadMsgs().then(function () { refreshEntryBadge(); }); // 打开即已读 → 角标清零
+  ...after new line 259...
+  + new[260]     // R43：进入页面即拉一次角标并每 5 秒轮询（无需先打开面板，入口角标也能显示）
+  + new[261]     function bootBadge() { refreshEntryBadge(); startBadgePoll(); }
+  + new[262]     if (document.readyState !== 'loading') bootBadge();
+  + new[263]     else document.addEventListener('DOMContentLoaded', bootBadge);
+=== END (old 208 lines, new 266 lines) ===

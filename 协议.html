@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#5B8DEF">
+<title>协议 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260923c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260922a">
+<link rel="stylesheet" href="assets/states.css?v=20260922a">
+<link rel="stylesheet" href="assets/polish.css?v=20260922a">
+<script src="assets/xt-polyfill.js?v=20260922a"></script>
+<script>window.__XT_PROD__=true;</script>
+<style>
+/* ==================== 协议页局部样式（需求 2 · 协议重写） ====================
+   纯静态排版页：?tab=ua|privacy 双 tab（缺省 ua）；?from=login 时显示「同意并继续」，
+   点击回写已同意键并 history.back() 返回登录页（兼容登录页 R105 流程）。
+   样式全部走 common.css 既有令牌（--card/--border/--text/--primary…），
+   深浅色由 body.dark 变量体系自动适配；移动优先，桌面 max-width 480px 居中。 */
+.agr-wrap{max-width:480px;margin:0 auto;padding-bottom:28px;}
+/* 双 tab 分段切换（沿用全站 seg 观感，独立 .agr- 前缀不外溢） */
+.agr-tabs{display:flex;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:4px;gap:4px;margin-top:14px}
+.agr-tab{flex:1;border:none;background:transparent;color:var(--text-secondary);font-size:14px;font-weight:600;
+  padding:9px 6px;border-radius:9px;cursor:pointer;transition:background .15s,color .15s;font-family:inherit}
+.agr-tab.active{background:var(--primary);color:#fff}
+/* 同意并继续（仅 ?from=login 显示） */
+.agr-agree-bar{margin-top:14px}
+.agr-agree-bar .btn{width:100%;justify-content:center}
+/* 正文文档排版 */
+.agr-doc{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 16px;margin-top:14px}
+.agr-doc-version{font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.agr-doc h2{font-size:15px;font-weight:700;color:var(--text);margin:18px 0 6px;line-height:1.5}
+.agr-doc h2:first-of-type{margin-top:4px}
+.agr-doc p{font-size:13px;color:var(--text-secondary);line-height:1.85;margin:0 0 6px;overflow-wrap:break-word;word-break:break-word;text-align:justify}
+.agr-doc p b{color:var(--text)}
+.agr-panel{display:none}
+.agr-panel.active{display:block}
+@media (max-width:380px){
+  .agr-doc{padding:14px 12px}
+  .agr-doc p{font-size:12.5px}
+}
+</style>
+</head>
+<body class="theme-home">
+
+<div class="app">
+<nav class="sidebar">
+    <div class="logo">
+      <div class="logo-icon" data-icon="book-open"></div>
+      <div>
+        <div class="logo-text">星途</div>
+        <div class="logo-sub">致追梦的人->修身</div>
+      </div>
+    </div>
+</nav>
+
+  <div class="main">
+<header class="topbar">
+      <div class="topbar-title">协议</div>
+      <div class="topbar-date"></div>
+      <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="18"></span></div>
+    </header>
+    <div class="content">
+      <div class="page active" id="page-agreement">
+        <!-- 顶部返回（独立页，history.back 回上一页；无历史时回设置页） -->
+        <div class="morepage-head">
+          <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='设置.html'}" title="返回" aria-label="返回">←</button>
+          <div class="morepage-title"><span class="nav-icon" data-icon="file-text" data-icon-size="18"></span> 协议</div>
+        </div>
+
+        <div class="agr-wrap">
+          <!-- 双 tab 分段切换 -->
+          <div class="agr-tabs" id="agrTabs">
+            <button class="agr-tab active" id="agrTabUa" type="button" onclick="agrSwitch('ua')">用户服务协议</button>
+            <button class="agr-tab" id="agrTabPrivacy" type="button" onclick="agrSwitch('privacy')">隐私政策</button>
+          </div>
+
+          <!-- ?from=login：登录页勾选行跳转过来，提供「同意并继续」闭环（R105 流程兼容） -->
+          <div class="agr-agree-bar" id="agrAgreeBar" style="display:none">
+            <button class="btn btn-primary" type="button" onclick="agrAgreeAndBack()"><span class="nav-icon" data-icon="check" data-icon-size="14"></span> 同意并继续</button>
+          </div>
+
+          <!-- ==================== 《星途用户服务协议》全文（设计稿定稿文本，逐字采用） ==================== -->
+          <div class="agr-panel active" id="agrPanelUa">
+            <div class="agr-doc">
+              <h2 style="margin-top:0">星途用户服务协议</h2>
+              <div class="agr-doc-version">版本：V1.0 · 生效日期：2026-XX-XX</div>
+
+              <h2>一、协议的接受与修订</h2>
+              <p>1.1 本协议是你（以下简称「用户」）与星途学习平台（以下简称「本平台」）之间就使用本平台全部功能所订立的有效契约。你注册、登录或实际使用本平台任一功能，即视为已阅读、理解并同意接受本协议全部条款。</p>
+              <p>1.2 本平台可根据法律法规变化及运营需要对协议进行修订，修订后的协议将通过应用内公告或页面提示方式发布。若你在修订生效后继续使用本平台，视为接受修订后的协议；若有重大变更，本平台将以显著方式提示。</p>
+
+              <h2>二、服务内容与账号</h2>
+              <p>2.1 本平台面向备考学习用户，提供学习训练（词汇、行测、申论、听力、时政、错题本等）、AI 辅助（问答、批改、模拟面试、翻译、图片/视频/3D 生成等）、社区互动（发贴、评论、动态、私聊、群聊、实时位置共享）及数据管理等功能。具体功能以实际提供为准。</p>
+              <p>2.2 账号仅限本人使用。你应妥善保管账号与密码，并对该账号下的全部行为负责；发现被盗用应立即修改密码。</p>
+              <p>2.3 你应提供真实、合法的注册信息。账号注销后，本平台将依法删除或匿名化处理相关个人信息。</p>
+
+              <h2>三、用户行为规范</h2>
+              <p>3.1 你承诺不利用本平台制作、上传、发布、传播含有以下内容的信息：（一）违反宪法确定的基本原则、危害国家安全、泄露国家秘密、颠覆国家政权、破坏国家统一的；（二）侵害他人名誉权、肖像权、隐私权、知识产权等合法权益的；（三）散布谣言、扰乱社会秩序、破坏社会稳定的；（四）淫秽、色情、暴力、赌博、迷信、恐怖或教唆犯罪的；（五）侮辱或诽谤他人、骚扰他人的；（六）其他法律法规禁止的内容。</p>
+              <p>3.2 私聊、群聊、发贴、评论、动态等社区功能仅用于学习交流。你不得发布广告、拉人引流、恶意刷屏，不得冒充他人，不得未经同意发布他人个人信息。</p>
+              <p>3.3 实时位置共享功能仅限好友之间自愿开启，你可随时停止共享。你不得利用该功能跟踪、骚扰他人；开启共享即表示你同意对方向你共享其位置，反之亦然。</p>
+              <p>3.4 你不得以任何技术手段干扰本平台正常运行，或以任何形式将本平台内容用于商业用途。</p>
+              <p>3.5 若你违反上述规范，本平台有权视情节采取删除内容、限制功能、暂停或终止账号等措施，并保留追究法律责任的权利。</p>
+
+              <h2>四、用户内容（UGC）</h2>
+              <p>4.1 你在本平台发布的内容（含发贴、评论、动态、图片等）的著作权由你依法享有。你授予本平台为提供、展示、维护服务所必需的免费使用许可（含存储、复制、展示）。</p>
+              <p>4.2 你应确保所发布内容拥有合法权利。因你发布的内容引起的纠纷，由你自行承担责任。</p>
+              <p>4.3 对于你与 AI 交互产生的对话内容，你保留个人使用权利；本平台不将其用于训练或对外提供（详见《隐私政策》）。</p>
+
+              <h2>五、AI 生成内容</h2>
+              <p>5.1 本平台 AI 功能由第三方大模型服务提供技术支持（供应商清单见《隐私政策》）。AI 生成内容可能存在错误、遗漏或过时信息，<b>不构成专业建议</b>；涉及报考条件、政策法规、成绩录取等关键事项，请以官方发布为准。</p>
+              <p>5.2 你不应将 AI 输出直接作为考试作答、法律、医疗、投资等重大决策的唯一依据。</p>
+
+              <h2>六、免责与责任限制</h2>
+              <p>6.1 本平台按「现状」和「现有」基础提供服务，不对服务的及时性、安全性、准确性作出明示或默示的保证，不对学习效果、考试结果作任何承诺。</p>
+              <p>6.2 因不可抗力、基础电信故障、系统维护、第三方服务（含 AI 供应商）中断或异常等原因导致服务暂停或数据丢失的，本平台在法律允许范围内不承担责任，但将尽力减少对你的影响。</p>
+              <p>6.3 你应对自身数据（含本地学习记录）自行备份；因你未备份导致的数据损失，本平台不承担责任。</p>
+              <p>6.4 在任何情况下，本平台对你承担的责任总额不超过你为使用本平台服务而支付的费用（如有）；本平台目前为免费服务。</p>
+
+              <h2>七、服务的变更与终止</h2>
+              <p>7.1 本平台有权基于运营需要对功能进行调整、暂停或终止。对重大变更将提前通过应用内公告告知。</p>
+              <p>7.2 你可随时停止使用并注销账号。你的账号被注销或本协议终止后，本平台将依法处理你的个人信息。</p>
+
+              <h2>八、未成年人保护</h2>
+              <p>8.1 本平台面向备考学习的成年用户设计。若你是未满 14 周岁的未成年人，请在监护人陪同下阅读本协议，并在征得监护人同意后使用本平台。</p>
+              <p>8.2 监护人应引导未成年人合理使用学习类应用，避免过度使用。</p>
+
+              <h2>九、法律适用与争议解决</h2>
+              <p>9.1 本协议的订立、履行、解释均适用中华人民共和国法律（不含港澳台地区法律及冲突法规范）。</p>
+              <p>9.2 因本协议产生的争议，双方应友好协商解决；协商不成的，任何一方可向本平台运营者所在地有管辖权的人民法院提起诉讼。</p>
+              <p>9.3 本协议任一条款被认定无效的，不影响其余条款的效力。</p>
+            </div>
+          </div>
+
+          <!-- ==================== 《星途隐私政策》全文（设计稿定稿文本，逐字采用） ==================== -->
+          <div class="agr-panel" id="agrPanelPrivacy">
+            <div class="agr-doc">
+              <h2 style="margin-top:0">星途隐私政策</h2>
+              <div class="agr-doc-version">版本：V1.0 · 生效日期：2026-XX-XX · 本平台服务器位于中华人民共和国境内</div>
+
+              <h2>一、我们收集的信息</h2>
+              <p>1.1 <b>账号信息</b>：注册时提供的账号名、密码（加密存储）、昵称、头像及你自愿填写的个人资料（签名、性别、生日、城市、备考目标等）。</p>
+              <p>1.2 <b>设备基础信息</b>：设备品牌、型号、操作系统版本、App 版本、匿名设备标识、屏幕尺寸、系统语言——用于页面与功能适配及消息通知。<b>我们不收集</b> IMEI、通讯录、短信、通话记录、精确地理位置（除非你主动开启实时位置共享）、相册、传感器等敏感信息。</p>
+              <p>1.2.1 <b>已安装应用列表（仅用于账号与设备安全风控）</b>：在你<b>同意本隐私政策</b>后，且「设置 → 隐私与安全 → 设备安全」开关处于开启状态时，我们会读取你设备上<b>手动安装的第三方应用</b>（不含系统应用），并仅上传这些应用<b>包名的加盐不可逆哈希值</b>——<b>不上传、不存储任何明文包名</b>，也不读取应用名称、图标或版本。该信息<b>仅用于识别多开、模拟器、异常设备等账号安全风险</b>，<b>不用于广告投放或用户画像，不对外公开</b>。你可在设置中<b>随时关闭</b>该功能，关闭后我们不再读取与上传。</p>
+              <p>1.3 <b>内容与行为数据</b>：你主动发布的内容（发贴、评论、动态、图片）、私聊与群聊消息、好友关系、实时位置共享期间上报的即时坐标（仅保留最近一点，不保存历史轨迹）、学习记录与练习数据。</p>
+              <p>1.4 <b>本地数据</b>：你的学习进度、错题、词汇进度、界面偏好等保存在你设备本地（浏览器 localStorage），不经我们服务器处理（导出/同步除外）。</p>
+
+              <h2>二、信息的使用</h2>
+              <p>2.1 用于提供与维护本平台功能（身份识别、消息收发、社区展示、学习记录、通知推送）。</p>
+              <p>2.2 用于 AI 功能：<b>你与 AI 交互时发送的文本（及图片提问中的图片）将通过本平台服务器转发给第三方大模型服务供应商处理以生成回答</b>。供应商包括：火山方舟（豆包/DeepSeek 系列）、DeepSeek 开放平台、通义千问（阿里）、Kimi（月之暗面）、智谱 GLM、硅基流动，以及你自行配置的其他 OpenAI 兼容接口。我们与供应商的调用不附加你的身份标识；供应商对请求内容的处理受其自身隐私政策约束。</p>
+              <p>2.3 用于安全与合规：身份验证、防刷限流、违法违规内容处置。</p>
+              <p>2.4 我们<b>不会</b>：向任何第三方出售你的个人信息；将你的信息用于广告投放；将你的私聊/群聊内容用于 AI 模型训练或人工审阅（依法配合有权机关的除外）。</p>
+
+              <h2>三、信息的存储</h2>
+              <p>3.1 存储地点：中华人民共和国境内的服务器。</p>
+              <p>3.2 存储期限：（一）账号与社区数据：账号有效期内保留；（二）实时位置坐标：仅存于内存及「最近一次心跳」字段，共享结束或 60 分钟到期后不再可用；（三）学习记录本地数据：存于你的设备直至你清除；（四）注销账号后：依法删除或匿名化，法律法规另有规定的从其规定。</p>
+
+              <h2>四、信息安全</h2>
+              <p>4.1 传输加密：密码经不可逆散列存储；接口采用令牌（JWT）鉴权与 HTTPS 传输。</p>
+              <p>4.2 权限最小化：坐标不落轨迹、日志不含坐标明文；AI 密钥仅存于服务端，不下发前端。</p>
+              <p>4.3 突发安全事件的应急处置与告知按法律法规执行。</p>
+
+              <h2>五、你的权利</h2>
+              <p>5.1 <b>查阅与更正</b>：你可在「个人中心/个人资料」查看并更正昵称、头像、签名等资料；昵称等资料变更受每月一次的频率限制（防滥用）。</p>
+              <p>5.2 <b>删除</b>：你可删除自己发布的发贴、评论、动态及本地学习数据（设置 → 数据管理 → 清空/清理）。</p>
+              <p>5.3 <b>退出共享</b>：实时位置共享可随时单方停止，对方随即将看不到你的坐标。</p>
+              <p>5.4 <b>注销</b>：你可通过「设置 → 账号与安全」申请注销。注销后我们将停止为你提供服务，并依法删除或匿名化你的个人信息。</p>
+              <p>5.5 <b>撤回同意</b>：你可以关闭设备基础信息上报、关闭消息通知、拒绝定位权限；你还可以在「设置 → 隐私与安全 → 设备安全」中随时<b>关闭「读取已安装应用列表」</b>，关闭后我们即停止读取与上传该哈希列表。相应功能将降级但其他功能不受影响。</p>
+
+              <h2>六、未成年人保护</h2>
+              <p>6.1 我们非常重视未成年人个人信息保护。本平台不面向未满 14 周岁儿童主动收集个人信息；若发现误收集，将尽快删除。</p>
+              <p>6.2 未成年用户应在监护人同意与指导下使用本平台。</p>
+
+              <h2>七、政策的变更</h2>
+              <p>7.1 本政策修订后将通过应用内公告或页面提示发布；重大变更以显著方式提示并再次征求同意（如适用）。</p>
+
+              <h2>八、争议解决与联系</h2>
+              <p>8.1 因个人信息处理产生的争议，适用中华人民共和国法律，通过应用内反馈渠道或法定途径解决。</p>
+              <p>8.2 联系方式：应用内「设置 → 帮助与反馈」提交，或通过「关于」页公示的渠道联系运营者。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部导航（手机端）：首页 → 互动 → 我的 → AI → 更多 -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-list">
+      <div class="bottom-nav-item" onclick="location.href='学习工作台.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
+      </div>
+      <div class="bottom-nav-item" onclick="gotoChat()">
+        <div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div>
+      </div>
+      <div class="bottom-nav-item" onclick="location.href='个人中心.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div>
+      </div>
+      <div class="bottom-nav-item" onclick="location.href='AI.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div>
+      </div>
+      <div class="bottom-nav-item" onclick="location.href='更多.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
+      </div>
+    </div>
+  </nav>
+</div>
+
+<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/xt-toast.js?v=20260923a" defer></script>
+<script src="assets/error-boundary.js?v=20260924a" defer></script>
+<script src="assets/app.js?v=20260923a" defer></script>
+<script>
+/* ==================== 协议页脚本（需求 2） ====================
+   ① ?tab=ua|privacy 双 tab 切换（缺省 ua）；
+   ② ?from=login：显示「同意并继续」，点击回写已同意键并 history.back() 返回登录页。
+   键名说明：设计稿写 study_workbench_agreed，实读 登录.html:650 实际消费键为
+   xt_privacy_agreed（R105，值 '1'）——两键同时写入，兼容设计稿约定与登录页真实判定，
+   不改 登录.html（其改动归协议线其他文件负责）。全部 try/catch，无痕模式静默降级。 */
+var AGR_AGREED_KEYS = ['xt_privacy_agreed', 'study_workbench_agreed'];
+
+/* 双 tab 切换：active 类切换面板与按钮，切换后滚动回顶部 */
+function agrSwitch(tab) {
+  var isUa = tab !== 'privacy';
+  var uaPanel = document.getElementById('agrPanelUa');
+  var prPanel = document.getElementById('agrPanelPrivacy');
+  var uaTab = document.getElementById('agrTabUa');
+  var prTab = document.getElementById('agrTabPrivacy');
+  if (uaPanel) uaPanel.classList.toggle('active', isUa);
+  if (prPanel) prPanel.classList.toggle('active', !isUa);
+  if (uaTab) uaTab.classList.toggle('active', isUa);
+  if (prTab) prTab.classList.toggle('active', !isUa);
+  try { window.scrollTo(0, 0); } catch (e) { }
+}
+/* 「同意并继续」：写两个已同意键（'1'）→ 返回上一页（登录页）；
+   无历史栈（直接打开本页）时兜底跳登录页，避免把用户困在协议页。 */
+function agrAgreeAndBack() {
+  var saved = true;
+  try {
+    for (var i = 0; i < AGR_AGREED_KEYS.length; i++) {
+      localStorage.setItem(AGR_AGREED_KEYS[i], '1');
+    }
+  } catch (e) { saved = false; /* 无痕模式：不阻塞返回，登录页勾选仍可手动勾选 */ }
+  if (history.length > 1) {
+    history.back();
+  } else {
+    location.replace('登录.html');
+  }
+}
+(function agrInit() {
+  /* tab 初始化：?tab=privacy → 隐私政策；其余（含缺省）→ 用户协议 */
+  var tab = 'ua';
+  try { tab = (location.search.match(/[?&]tab=(ua|privacy)/) || [])[1] || 'ua'; } catch (e) { }
+  if (tab === 'privacy') agrSwitch('privacy');
+  /* from=login：显示「同意并继续」栏 */
+  var fromLogin = false;
+  try { fromLogin = location.search.indexOf('from=login') >= 0; } catch (e2) { }
+  var bar = document.getElementById('agrAgreeBar');
+  if (bar && fromLogin) bar.style.display = '';
+})();
+</script>
+</body>
+</html>

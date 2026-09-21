@@ -1,0 +1,73 @@
+== 全站 live assets/*.js 风险面计数（57 文件）==
+fetch(                     70
+.then(                     196
+.catch(                    79
+JSON.parse(                92
+JSON.stringify(            99
+parseInt(                  55
+parseInt_no_radix          0
+localStorage.setItem(      81
+localStorage.getItem(      111
+setInterval(               17
+clearInterval(             9
+setTimeout(                89
+clearTimeout(              28
+addEventListener(          189
+removeEventListener(       12
+innerHTML                  448
+eval(                      0
+new Function(              1
+document.write(            0
+setInterval_leak?          17
+
+== 每文件明细（fetch/JSON.parse/parseInt/setInterval/setTimeout/innerHTML/eval）==
+file                       fetch( | JSON.parse( | parseInt( | parseInt_no_radix | setInterval( | setTimeout( | innerHTML | eval( | new Function( | localStorage.setItem(
+admin-contact.js           4 | 0 | 0 | 0 | 2 | 1 | 4 | 0 | 0 | 1
+admin.js                   0 | 2 | 0 | 0 | 1 | 3 | 8 | 0 | 0 | 1
+ai-page.js                 1 | 3 | 5 | 0 | 0 | 3 | 29 | 0 | 0 | 2
+ai-service.js              4 | 4 | 0 | 0 | 0 | 5 | 0 | 0 | 0 | 3
+ai-settings.js             0 | 3 | 7 | 0 | 0 | 5 | 22 | 0 | 0 | 6
+api.js                     4 | 1 | 0 | 0 | 2 | 4 | 27 | 0 | 0 | 7
+app.js                     8 | 34 | 1 | 0 | 4 | 21 | 89 | 0 | 0 | 31
+cet-read.js                0 | 0 | 3 | 0 | 1 | 0 | 23 | 0 | 0 | 0
+cet-translate.js           0 | 0 | 0 | 0 | 0 | 1 | 15 | 0 | 0 | 0
+chat-local.js              43 | 5 | 0 | 0 | 3 | 16 | 59 | 0 | 0 | 5
+comm-cases.js              0 | 1 | 0 | 0 | 0 | 0 | 9 | 0 | 0 | 1
+company-lib.js             0 | 1 | 0 | 0 | 0 | 0 | 10 | 0 | 0 | 1
+data-comm-cases.js         0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+design-class.js            0 | 1 | 6 | 0 | 0 | 1 | 5 | 0 | 0 | 1
+group-discussion.js        0 | 0 | 0 | 0 | 0 | 6 | 6 | 0 | 0 | 0
+hotnews.js                 2 | 6 | 0 | 0 | 0 | 1 | 7 | 0 | 0 | 2
+i-partner.js               0 | 2 | 0 | 0 | 0 | 5 | 7 | 0 | 0 | 1
+icon-map.js                0 | 0 | 2 | 0 | 0 | 0 | 1 | 0 | 0 | 0
+importer.js                0 | 1 | 3 | 0 | 0 | 1 | 3 | 0 | 0 | 1
+iv-after.js                0 | 1 | 0 | 0 | 0 | 1 | 9 | 0 | 0 | 1
+iv-prep.js                 0 | 1 | 2 | 0 | 0 | 0 | 8 | 0 | 0 | 1
+mini.js                    0 | 1 | 0 | 0 | 0 | 0 | 8 | 0 | 0 | 1
+mock-engine.js             0 | 3 | 0 | 0 | 0 | 2 | 13 | 0 | 0 | 3
+mock-result.js             0 | 1 | 0 | 0 | 0 | 0 | 6 | 0 | 0 | 0
+net-compat.js              1 | 2 | 0 | 0 | 0 | 1 | 1 | 0 | 1 | 0
+notify.js                  1 | 1 | 0 | 0 | 1 | 3 | 0 | 0 | 0 | 0
+ppt-tips.js                0 | 1 | 6 | 0 | 0 | 0 | 16 | 0 | 0 | 1
+ppt-works.js               0 | 3 | 2 | 0 | 0 | 0 | 8 | 0 | 0 | 1
+qbank.js                   0 | 3 | 0 | 0 | 0 | 1 | 4 | 0 | 0 | 1
+quest.js                   0 | 1 | 0 | 0 | 0 | 0 | 4 | 0 | 0 | 1
+roleplay.js                0 | 0 | 0 | 0 | 0 | 1 | 5 | 0 | 0 | 0
+study-stats.js             1 | 4 | 0 | 0 | 1 | 1 | 1 | 0 | 0 | 3
+subpage-router.js          0 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 0 | 0
+topic-express.js           0 | 0 | 0 | 0 | 1 | 1 | 4 | 0 | 0 | 0
+tpl-preview.js             0 | 2 | 12 | 0 | 0 | 2 | 17 | 0 | 0 | 2
+voiceplayer.js             1 | 1 | 0 | 0 | 1 | 1 | 8 | 0 | 0 | 1
+xt-content.js              0 | 1 | 5 | 0 | 0 | 0 | 10 | 0 | 0 | 1
+xt-polyfill.js             0 | 1 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0
+xt-settings.js             0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1
+xt-toast.js                0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0
+
+== 样例: parseInt_no_radix (最多30) ==
+
+== 样例: eval( (最多30) ==
+
+== 样例: new Function( (最多30) ==
+   net-compat.js:44 | new Function(src);
+
+== 样例: document.write( (最多30) ==

@@ -1,0 +1,29 @@
+R93-5 v2（口径变更）交付报告 —— 视频带声音开关移至设置页模型列表
+工程师：寇豆码  状态：✅ 完成（escheck 3 文件全 DONE 0；jsdom 压缩口径 13/13 PASS）
+
+【回退清单】（ai-page.js 142430→140633 B，纯 LF 回读）
+- 删 composer 注入按钮 aiVideoAudioBtn（ensure/sync/refresh 三函数 + init/updateModelLabel 两处挂点）
+- 删旧全局开关 key ai_video_audio_v1 与 videoAudioOn/setVideoAudioOn
+- 消费端改读 map：videoAudioOnFor(id)（ai_audio_models_v1，{modelId:true}）
+- 进度/结果回显「（带声音）」保留（随 map 状态）；AI.html ai-page.js 保持 v=20260918g
+
+【新改动】
+1. assets/ai-settings.js（137022→139717 B，纯 LF 回读）：
+   - audioCapableOf：types 含 video 且模型条目 audio:true 才渲染开关
+   - audioToggleHtml：16px 小药丸开关（inline-flex，margin-left:6px，含 11px「有声」字样），
+     插在模型行 .xt-set-row-sub 内 healthBoxHtml（检测状态）之后
+   - onModelListClick 委托新增 data-vidaudio 分支（先于 data-model-id，点开关不误选模型）
+   - 状态存 localStorage ai_audio_models_v1（{modelId:true}），默认关，删除模型残留 id 无害
+2. assets/ai-config.js（44754→44994 B，CRLF 1066 回读）：仅给
+   ark-seedance-1-0-pro / ark-seedance-1-0-pro-fast 两条目加 audio:true
+   （依据：火山 Seedance 1.0 pro 家族支持 generate_audio；config/对接文档此前无该字段）
+3. ai-settings.html：ai-settings.js v=20260918e→f。未动 ai-service.js。
+
+【验证】
+- escheck：ai-page.js / ai-settings.js / ai-config.js 全 DONE 0
+- 行尾回读：两 JS 纯 LF、ai-config 纯 CRLF 保持；全部锚点 old_count=1 才落盘
+- jsdom 13/13：①仅两个 Seedance 行有开关（16px 小药丸、紧贴检测状态），3D/文本模型无
+  ②点开关 → map 持久 {'ark-seedance-1-0-pro':true}，重载脚本后 on 态记忆
+  ③map 开 → xtRunCapability input.audio===true；map 关 → !==true
+  ④composer 无 #aiVideoAudioBtn、无「带声音」残留、旧 key 不存在
+- 真机窄屏视觉（不换行错位）建议设备上扫一眼，DOM 结构为行内 flex 不会撑行

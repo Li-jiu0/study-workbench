@@ -1,0 +1,100 @@
+ 1611|       while (item && !/(^|\s)xt-us-item(\s|$)/.test(String(item.className || ""))) {
+ 1612|         item = item.parentNode;
+ 1613|       }
+ 1614|       if (!item) return;
+ 1615|       var open = String(item.className).indexOf("open") !== -1;
+ 1616|       var label = head.getElementsByTagName("span")[0];
+ 1617|       if (open) {
+ 1618|         item.className = "xt-us-item";
+ 1619|         head.setAttribute("aria-expanded", "false");
+ 1620|         if (label) label.textContent = "展开回复";
+ 1621|       } else {
+ 1622|         item.className = "xt-us-item open";
+ 1623|         head.setAttribute("aria-expanded", "true");
+ 1624|         if (label) label.textContent = "收起回复";
+ 1625|       }
+ 1626|     });
+ 1627|   }
+ 1628| 
+ 1629|   function disarmClear() {
+ 1630|     state.clearArmed = false;
+ 1631|     if (clearTimer) { clearTimeout(clearTimer); clearTimer = null; }
+ 1632|     if (el.clearBtn) {
+ 1633|       el.clearBtn.className = "xt-us-btn danger";
+ 1634|       setText("UsageClearTxt", "清空用量数据");
+ 1635|     }
+ 1636|   }
+ 1637| 
+ 1638|   function bindClear() {
+ 1639|     if (!el.clearBtn || !el.clearBtn.addEventListener) return;
+ 1640|     el.clearBtn.addEventListener("click", function () {
+ 1641|       var s = store();
+ 1642|       if (!s || typeof s.clear !== "function") { toast("统计模块未就绪"); return; }
+ 1643|       if (!state.clearArmed) {
+ 1644|         state.clearArmed = true;
+ 1645|         el.clearBtn.className = "xt-us-btn danger armed";
+ 1646|         setText("UsageClearTxt", "再点一次确认清空");
+ 1647|         clearTimer = setTimeout(disarmClear, CLEAR_ARM_MS);
+ 1648|         return;
+ 1649|       }
+ 1650|       var okDone = false;
+ 1651|       try { okDone = s.clear(); } catch (e) { okDone = false; }
+ 1652|       disarmClear();
+ 1653|       state.limit = DETAIL_STEP;
+ 1654|       hideExportFallback();
+ 1655|       toast(okDone ? "已清空用量数据" : "清空失败，请刷新页面重试");
+ 1656|       renderAll();
+ 1657|     });
+ 1658|   }
+ 1659| 
+ 1660|   /* R90：清空按钮改为「展开收缩」样式 —— 默认收起，点标题行才展开真正的清空按钮，
+ 1661|      与明细行 .xt-us-fold / .xt-us-item.open 同一交互口径（箭头旋转 + 显示 body）。
+ 1662|      危险操作默认折叠，可有效避免误触；#UsageClearBtn / #UsageClearTxt 依旧在展开体内，bindClear() 不受影响。 */
+ 1663|   function bindClearFold() {
+ 1664|     var row = byId("UsageClearRow");
+ 1665|     var head = byId("UsageClearHead");
+ 1666|     if (!row || !head || !head.addEventListener) return;
+ 1667|     head.addEventListener("click", function () {
+ 1668|       var open = String(row.className).indexOf("open") !== -1;
+ 1669|       if (open) {
+ 1670|         row.className = "xt-us-clear-row";
+ 1671|         head.setAttribute("aria-expanded", "false");
+ 1672|       } else {
+ 1673|         row.className = "xt-us-clear-row open";
+ 1674|         head.setAttribute("aria-expanded", "true");
+ 1675|       }
+ 1676|     });
+ 1677|   }
+ 1678| 
+ 1679|   function bindQuotaFilterFold() {
+ 1680|     var tog = byId("UsageQuotaFilterToggle");
+ 1681|     var fold = byId("UsageQuotaFilterFold");
+ 1682|     if (!tog || !fold || !tog.addEventListener) return;
+ 1683|     tog.addEventListener("click", function () {
+ 1684|       var open = String(tog.className).indexOf("open") !== -1;
+ 1685|       if (open) {
+ 1686|         tog.className = "xt-us-foldrow";
+ 1687|         fold.className = "xt-us-foldbody";
+ 1688|         tog.setAttribute("aria-expanded", "false");
+ 1689|       } else {
+ 1690|         tog.className = "xt-us-foldrow open";
+ 1691|         fold.className = "xt-us-foldbody open";
+ 1692|         tog.setAttribute("aria-expanded", "true");
+ 1693|       }
+ 1694|     });
+ 1695|   }
+ 1696| 
+ 1697|   function bindMore() {
+ 1698|     if (!el.moreBtn || !el.moreBtn.addEventListener) return;
+ 1699|     el.moreBtn.addEventListener("click", function () {
+ 1700|       state.limit += DETAIL_STEP;
+ 1701|       renderAll();
+ 1702|     });
+ 1703|   }
+ 1704| 
+ 1705|   function bind() {
+ 1706|     bindChips("UsageRangeBar", "data-range", function (v) {
+ 1707|       state.range = v;
+ 1708|       state.limit = DETAIL_STEP;
+ 1709|       renderAll();
+ 1710|     });

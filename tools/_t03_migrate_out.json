@@ -1,0 +1,32 @@
+{
+ "errs_r1": [],
+ "errs_r2": [],
+ "errs_r3": [],
+ "r1_catModels": {
+  "general": [
+   "glm-4.7",
+   "sf-hunyuan-mt-7b"
+  ],
+  "translate": [
+   "sf-hunyuan-mt-7b"
+  ],
+  "embedding": [
+   "sf-bge-m3"
+  ],
+  "video": [
+   "ark-seedance-1-0-pro",
+   "ark-seedance-1-5-pro"
+  ],
+  "vision": [
+   "glm-4v-flash"
+  ]
+ },
+ "r1_catSchema": 2,
+ "r2_eq_r3_stored": true,
+ "r1_eq_r2_stored": true,
+ "r2_stored": "{\"disabled\":{},\"order\":[],\"overrides\":{},\"categories\":[],\"health\":{},\"stars\":{},\"catModels\":{\"general\":[\"glm-4.7\",\"sf-hunyuan-mt-7b\",\"sf-bge-m3\",\"ark-seedance-1-0-pro\",\"glm-4v-flash\",\"ark-seedance-1-5-pro\"],\"translate\":[\"sf-hunyuan-mt-7b\"]}}",
+ "r3_stored": "{\"disabled\":{},\"order\":[],\"overrides\":{},\"categories\":[],\"health\":{},\"stars\":{},\"catModels\":{\"general\":[\"glm-4.7\",\"sf-hunyuan-mt-7b\",\"sf-bge-m3\",\"ark-seedance-1-0-pro\",\"glm-4v-flash\",\"ark-seedance-1-5-pro\"],\"translate\":[\"sf-hunyuan-mt-7b\"]}}",
+ "hideUnavailable_r1": true,
+ "has_lastSort": true,
+ "usageRoot_first": false
+}

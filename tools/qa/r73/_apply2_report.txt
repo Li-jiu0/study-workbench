@@ -1,0 +1,10 @@
+EDIT#0 fetchPeerMsgs 会话切换守卫 → 命中 1 次 ✓
+EDIT#1 fetchGroupMsgs 会话切换守卫 → 命中 1 次 ✓
+EDIT#2 backToList 退出会话重置分页状态 → 命中 1 次 ✓
+EDIT#3 新增 imEnsureRemarkBtn / imOpenRemarkForCurrentChat → 命中 1 次 ✓
+EDIT#4 renderChatHeader 群分支隐藏备注入口 → 命中 1 次 ✓
+EDIT#5 renderChatHeader 私聊标题用备注名 + 显示备注入口 → 命中 1 次 ✓
+EDIT#6 imSaveRemark.done 保存后刷新头部 + 列表 → 命中 1 次 ✓
+EDIT#7 __IM_TEST__ 追加守卫/备注 钩子 → 命中 1 次 ✓
+LINEEND chat-local.js CR=4141 LF=4141 ✓
+DONE

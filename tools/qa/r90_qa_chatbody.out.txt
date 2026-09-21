@@ -1,0 +1,125 @@
+ 1496|         (g.items.length > 1 ? '<span class="xtp-chat-cnt">' + g.items.length + ' 条</span>' : '') +
+ 1497|         '</div>';
+ 1498|     } else {
+ 1499|       head = '<div class="xtp-chat-group">时间未知</div>';
+ 1500|     }
+ 1501|     for (i = 0; i < g.items.length; i++) { s += chatMsgRow(g.items[i]); }
+ 1502|     return head + s;
+ 1503|   }
+ 1504|   /** 本机会话兜底区块（ai_chat_history 真实结构是会话数组，按会话展示） */
+ 1505|   function chatLocalHtml(title, note) {
+ 1506|     var gs = AI_CHAT.localGroups || [];
+ 1507|     if (!gs.length) { return ''; }
+ 1508|     var i, j, shown = 0;
+ 1509|     var s = '<div class="xtp-chat-sub">' + esc(title) + (note ? '<span>' + esc(note) + '</span>' : '') + '</div>' +
+ 1510|       '<section class="xtp-sec"><div class="xtp-list">';
+ 1511|     for (i = gs.length - 1; i >= 0 && shown < 10; i--) {
+ 1512|       var g = gs[i], items = g.items || [], cnt = 0, body = '';
+ 1513|       for (j = 0; j < items.length && cnt < 2; j++) {
+ 1514|         var t = String(items[j].text || '').replace(/\s+/g, ' ').trim();
+ 1515|         if (!t) { continue; }
+ 1516|         if (t.length > 60) { t = t.slice(0, 60) + '…'; }
+ 1517|         body += '<div>' + esc((items[j].role === 'user' ? '我：' : 'AI：') + t) + '</div>';
+ 1518|         cnt++;
+ 1519|       }
+ 1520|       if (!cnt) { body = '<div>（无文本内容）</div>'; }
+ 1521|       s += '<div class="xtp-li">' +
+ 1522|         '<div class="xtp-li-title">' + esc(g.title || (g.hasTime ? tsText(g.startTs) : '本机对话')) +
+ 1523|           '<span class="xtp-li-meta" style="margin-left:6px">' + esc(String(items.length)) + ' 条</span></div>' +
+ 1524|         '<div class="xtp-li-body">' + body + '</div>' +
+ 1525|         '</div>';
+ 1526|       shown++;
+ 1527|     }
+ 1528|     s += '</div></section><div class="xtp-tip">以上为本机 localStorage.ai_chat_history 的会话记录（未上传服务端）。</div>';
+ 1529|     return s;
+ 1530|   }
+ 1531|   /** 服务端记录区块（扁平消息按自然间隔分段，最新一段排在最上） */
+ 1532|   function chatServerHtml() {
+ 1533|     var gs = AI_CHAT.groups || [], i, s = '';
+ 1534|     for (i = gs.length - 1; i >= 0; i--) { s += chatGroupHtml(gs[i]); }
+ 1535|     return '<div class="xtp-m5-srvnote">服务端记录共 ' + AI_CHAT.total +
+ 1536|         ' 条，本页暂不支持删除（仅供查看）；如需删除请联系管理员或等待后续版本。</div>' +
+ 1537|       '<div class="xtp-chat-list">' + s + '</div>' +
+ 1538|       '<div class="xtp-tip">共 ' + AI_CHAT.total + ' 条服务端记录，按时间自然间隔分为 ' + gs.length +
+ 1539|       ' 段（来源：GET /api/ai/history）。</div>';
+ 1540|   }
+ 1541|   /** 三态 + 数据态：loading / err / guest / 空 / 有数据 */
+ 1542|   function chatBodyHtml() {
+ 1543|     var ph = AI_CHAT.phase;
+ 1544|     if (ph === 'idle' || ph === 'loading') {
+ 1545|       return '<div class="xtp-chat-state">' +
+ 1546|         '<span class="xtp-spinner"></span>' +
+ 1547|         '<div class="xtp-chat-state-t">正在加载 AI 对话记录…</div></div>';
+ 1548|     }
+ 1549|     if (ph === 'guest') {
+ 1550|       return '<div class="xtp-chat-state">' +
+ 1551|         '<div class="xtp-chat-state-t">未登录，无法读取服务端 AI 对话记录</div>' +
+ 1552|         '<div class="xtp-chat-state-d">在 AI 问答页的对话会在登录后同步到本页</div></div>' +
+ 1553|         m5PanelHtml();
+ 1554|     }
+ 1555|     if (ph === 'err') {
+ 1556|       return '<div class="xtp-chat-state err">' +
+ 1557|         '<div class="xtp-chat-state-t">加载失败</div>' +
+ 1558|         '<div class="xtp-chat-state-d">' + esc(AI_CHAT.err) + '</div>' +
+ 1559|         '<button type="button" class="xtp-retry-btn" id="xtpChatRetry">重试</button>' +
+ 1560|         '</div>' + m5PanelHtml();
+ 1561|     }
+ 1562|     if (!AI_CHAT.total) {
+ 1563|       return '<div class="xtp-chat-state">' +
+ 1564|         '<div class="xtp-chat-state-t">暂无 AI 对话记录</div>' +
+ 1565|         '<div class="xtp-chat-state-d">在 AI 问答页对话后会自动出现在这里</div></div>' +
+ 1566|         m5PanelHtml();
+ 1567|     }
+ 1568|     return chatServerHtml() + m5PanelHtml();
+ 1569|   }
+ 1570|   /** 子视图 body：外壳固定，内容由 paintChat() 就地重绘（三态切换不重建视图） */
+ 1571|   function chatBody() { return '<div id="xtpChatBody">' + chatBodyHtml() + '</div>'; }
+ 1572|   /** 打开子视图后：先出 loading，再异步拉服务端并重绘 */
+ 1573|   function bindChatView(el) {
+ 1574|     var box = el.querySelector('#xtpChatBody');
+ 1575|     if (!box) { return; }
+ 1576|     paintChat(box);
+ 1577|     fetchAiChat(false).then(function () {
+ 1578|       var b = $('xtpChatBody');
+ 1579|       if (b) { paintChat(b); }
+ 1580|       renderPage();   // 同步刷新主页「AI对话记录」角标
+ 1581|     });
+ 1582|   }
+ 1583|   function paintChat(box) {
+ 1584|     box.innerHTML = chatBodyHtml();
+ 1585|     m5Bind(box);
+ 1586|     var retry = box.querySelector('#xtpChatRetry');
+ 1587|     if (retry) {
+ 1588|       retry.addEventListener('click', function () {
+ 1589|         box.innerHTML = '<div class="xtp-chat-state"><span class="xtp-spinner"></span>' +
+ 1590|           '<div class="xtp-chat-state-t">正在加载 AI 对话记录…</div></div>';
+ 1591|         fetchAiChat(true).then(function () {
+ 1592|           var b = $('xtpChatBody');
+ 1593|           if (b) { paintChat(b); }
+ 1594|           renderPage();
+ 1595|         });
+ 1596|       });
+ 1597|     }
+ 1598|   }
+ 1599|   /** 主页角标预热：在线时静默拉一次，拿到真实条数后刷新角标（失败不影响首屏） */
+ 1600|   function prefetchAiChat() {
+ 1601|     try {
+ 1602|       if (isOtherMode()) { return; }
+ 1603|       if (!aiApiReady()) { return; }
+ 1604|       fetchAiChat(false).then(function () {
+ 1605|         if (AI_CHAT.phase === 'ok') { renderPage(); }
+ 1606|       });
+ 1607|     } catch (e) { /* 静默：预热失败不影响页面可用 */ }
+ 1608|   }
+ 1609|   /* ==================================================================== R88-M5
+ 1610|    * 个人资料页「AI 对话记录管理」（清空全部 / 分类标签 / 关键字搜索 / 单条删除 /
+ 1611|    * 批量删除 / 时间范围筛选 / 一键导出 / 本地备份与恢复 / 标记收藏）。
+ 1612|    * ---------------------------------------------------------------------------
+ 1613|    * 数据源与边界（调研结论，务必先读）：
+ 1614|    *   ① 本机 localStorage.ai_chat_history = 会话数组
+ 1615|    *      [{id:'chat_...', title, createdAt(ms), updatedAt(ms), messages:[{role,content,hasImage?}]}]
+ 1616|    *      （写入方 assets/ai-page.js:1286；最多 50 会话）。**有稳定 id** → 可单条删/打标/批量/导出/备份。
+ 1617|    *   ② 服务端 GET /api/ai/history 只返回**扁平消息**（无 id / 无标题 / 无标签），且服务端
+ 1618|    *      **只有 GET + POST(chat)，没有 DELETE/PATCH** → 前端无法删除/打标服务端记录。
+ 1619|    *      故本页「管理」作用于【本机会话】；服务端记录保持只读展示（chatServerHtml）。
+ 1620|    *   ③ 标签 / 收藏等扩展信息写入本页自有键 xt_ai_chat_meta_v1（按会话 id 索引），

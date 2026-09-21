@@ -1,0 +1,43 @@
+--- xt-region.js 中 .xtlp ---
+  688|       '.xtlp{position:fixed;inset:0;z-index:1200;background:#f5f7fb;overflow:hidden}'+
+  689|       '.xtlp-body{position:absolute;inset:0;display:flex;flex-direction:column}'+
+  690|       '.xtlp *{box-sizing:border-box}'+
+  691|       '.xtlp-head{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#fff;border-bottom:1px solid #e6e9f0}'+
+  692|       '.xtlp-back{border:1px solid #e6e9f0;background:transparent;border-radius:10px;padding:6px 10px;font-size:13px;color:#6b7280;cursor:pointer}'+
+  693|       '.xtlp-title{font-size:16px;font-weight:700;color:#1f2937}'+
+  694|       '.xtlp-ok{margin-left:auto;border:none;border-radius:10px;padding:8px 16px;font-size:14px;font-weight:700;color:#fff;background:#5B8DEF;cursor:pointer}'+
+  695|       '.xtlp-ok[disabled]{opacity:.45;cursor:default}'+
+  696|       '.xtlp-search{display:flex;align-items:center;gap:8px;margin:10px 12px;padding:9px 12px;border-radius:12px;background:#fff;border:1px solid #e6e9f0}'+
+  697|       '.xtlp-search input{flex:1;border:none;outline:none;background:transparent;font-size:14px;color:#1f2937}'+
+  698|       '.xtlp-map{position:relative;height:168px;margin:0 12px;border-radius:14px;overflow:hidden;'+
+  700|       '.xtlp-map::before{content:"";position:absolute;left:-10%;top:38%;width:120%;height:10px;background:rgba(255,255,255,.75);'+
+  702|       '.xtlp-map::after{content:"";position:absolute;left:30%;top:-10%;width:10px;height:120%;background:rgba(255,255,255,.55);'+
+  704|       '.xtlp-pin{position:absolute;left:50%;top:46%;transform:translate(-50%,-100%);width:40px;height:40px;border-radius:50%;'+
+  706|       '.xtlp-pin::after{content:"";position:absolute;left:50%;bottom:-6px;transform:translateX(-50%) rotate(45deg);width:14px;height:14px;'+
+  708|       '.xtlp-pin svg{position:relative;z-index:1}'+
+  709|       '.xtlp-curline{position:absolute;left:12px;right:12px;bottom:10px;background:rgba(31,41,55,.82);color:#fff;border-radius:10px;'+
+  712|       '.xtlp-list{flex:1 1 auto;min-height:180px;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:10px 12px 0;background:#fff;border-radius:14px;border:1px solid #e6e9f0}'+
+  713|       '.xtlp-sec{padding:10px 14px 4px;font-size:12px;font-weight:700;color:#9aa3b2;letter-spacing:.5px}'+
+  714|       '.xtlp-item{display:flex;align-items:center;gap:10px;padding:12px 14px;font-size:14px;color:#1f2937;cursor:pointer;border-top:1px solid #eef1f6}'+
+  715|       '.xtlp-item:active{background:#f5f7fb}'+
+  716|       '.xtlp-item.on{color:#5B8DEF;font-weight:700}'+
+  717|       '.xtlp-item .xtlp-tick{margin-left:auto;color:#5B8DEF;flex:none}'+
+  718|       '.xtlp-sub{color:#9aa3b2;font-size:12px}'+
+  719|       '.xtlp-empty{padding:26px 14px;text-align:center;color:#9aa3b2;font-size:13px}'+
+  720|       '.xtlp-foot{padding:10px 12px 16px;display:flex;gap:10px;background:#fff;border-top:1px solid #e6e9f0}'+
+  721|       '.xtlp-loc{flex:1;border:1px solid #5B8DEF;background:transparent;color:#5B8DEF;border-radius:10px;padding:10px;font-size:14px;cursor:pointer}'+
+  722|       '.xtlp-cancel{flex:none;border:1px solid #e6e9f0;background:transparent;color:#6b7280;border-radius:10px;padding:10px 18px;font-size:14px;cursor:pointer}'+
+  726|         '.xtlp-head{padding:7px 10px}'+
+  727|         '.xtlp-search{margin:7px 12px;padding:6px 10px}'+
+  728|         '.xtlp-map{height:110px}'+
+  729|         '.xtlp-list{margin:7px 12px 0}'+
+  730|         '.xtlp-foot{padding:8px 12px 10px}'+
+  749|     /* R89-B: \u4e0d\u518d\u5305\u4e00\u5c42\u65e0\u6837\u5f0f\u7684 .xtlp-body \u4e2d\u95f4 div\uff08\u4f1a\u6253\u65ad .xtlp \u7684 flex
+  750|        \u5e03\u5c40\uff0c\u5bfc\u81f4 .xtlp-list \u7684 flex/overflow-y \u5931\u6548\u3001\u5217\u8868\u65e0\u6cd5\u6eda\u52a8\uff09\uff1b\u76f4\u63a5\u628a\u5185\u5bb9\u88c5\u8fdb root\uff0c
+  751|        \u5e76\u7528 CSS \u91cc\u7684 .xtlp-body{position:absolute;inset:0;display:flex;flex-direction:column}
+  759|     var inputEl = root.querySelector('.xtlp-input');
+  760|     var listEl = root.querySelector('.xtlp-list');
+  761|     var curlineEl = root.querySelector('.xtlp-curline');
+  762|     var okEl = root.querySelector('.xtlp-ok');
+  776|       var items = listEl.querySelectorAll('.xtlp-item');
+  901|        CSS \u5f39\u6027\u5e03\u5c40\uff08.xtlp-body flex + .xtlp-list flex/overflow-y\uff09\u5df2\u4fdd\u8bc1\u5217\u8868\u81ea\u8eab\u53ef\u6eda\uff1b

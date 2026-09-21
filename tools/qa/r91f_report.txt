@@ -1,0 +1,100 @@
+================================================================================
+R91-F 修复报告：更新.html「检测失败」状态卡补软件图标
+工程师：software-engineer-任务二
+日期：2026-09-19（R91）
+================================================================================
+
+一、现状结构（排查）
+
+  更新.html（23107 B，纯 CRLF）：
+  - L217-224 顶部品牌块 .xt-up-brand（R89-C 加的，静态 HTML）：
+    L220 <div class="xt-up-brand-icon"><span class="nav-icon" data-icon="book-open"
+    data-icon-size="28"></span></div> —— 正常显示（静态节点，首渲染覆盖）。
+  - L228-235 状态卡 #xtUpdateRoot 初始为 loading 态（.xt-up-spin），
+    实际三态由 assets/xt-update.js 动态渲染：
+    * renderLoading   L661-669（.xt-up-spin，无图标）
+    * renderNew       L672-693（版本对比 + 动作按钮，按钮含 data-icon）
+    * renderLatest    L695-713（.xt-up-icon.xt-up-icon-ok 圆圈内
+                       <span class="nav-icon" data-icon="check-circle" data-icon-size="26">）
+    * renderStarting  L715-733（.xt-up-spin + 按钮）
+    * renderError     L735-751（.xt-up-icon.xt-up-icon-bad 圆圈内
+                       <span class="nav-icon" data-icon="alert-triangle" data-icon-size="26">）
+  - 更新.html 的 CSS 早已备好 .xt-up-icon（52px 圆形）/ -ok / -bad 配色 / 
+    .xt-up-icon svg{display:block}（L29-33），DOM 也有 data-icon 节点——
+    缺的只是「没人把 data-icon 渲染成 svg」。
+
+  图标渲染机制（assets/icon-map.js L792-828）：
+  - window.lucideIcon(name,size) → 返回 <svg> 字符串；
+  - autoRender() 扫 [data-icon] 节点替换 innerHTML，暴露为 window.lucideAutoRender；
+  - autoRender 只在 DOMContentLoaded 跑一次（body 末尾加载时立即一次）。
+  根因：xt-update.js 的三态/按钮全部是运行时 innerHTML 注入，注入时
+  DOMContentLoaded 早已过去，没有任何代码对后注入节点再跑一次渲染 → 
+  圆圈里只有一个空的 <span class="nav-icon">，呈现为浅蓝圆形占位。
+  品牌块是静态 HTML 所以不受影响——这正是截图「顶部有图标、圆圈没图标」的原因。
+
+二、改动点（最小改动，仅 assets/xt-update.js，纯 LF 1094 行 → 1114 行）
+
+  工具：tools/qa/_r91f_patch.py（字节级替换，行尾自适应，本文件为纯 LF）。
+
+  1. 新增 helper（紧跟 var rootId = 'xtUpdateRoot'; 之后）：
+     function paintIcons() {
+       if (typeof window.lucideAutoRender === 'function') {
+         try { window.lucideAutoRender(); } catch (e) {}
+       }
+     }
+     —— 复用品牌块同一条 data-icon → lucideIcon 管线，配色/尺寸仍由
+        既有 .xt-up-icon / .nav-icon CSS 体系管理，未新增任何样式类。
+
+  2. 在 10 处动态注入 data-icon 的 innerHTML 之后补调 paintIcons()：
+     * renderNew            （「去更新/下载更新」按钮 rotate-ccw/download 图标）
+     * renderLatest         （check-circle 圆圈 ✔ 本次报障成功态同结构覆盖）
+     * renderStarting       （「重新检测」按钮）
+     * renderError          （alert-triangle 圆圈 ✔ 本次报障失败态）
+     * applySettingsState   ×4（设置页 #xtUpdateBtn 动态 innerHTML，
+                              同根因一并修：设置页检测按钮此前同样无图标）
+     * startDownload        （「下载中…」按钮）
+     * restoreBtn           （「下载更新」按钮恢复）
+     改动行号（改后文件）：helper 约 L544-555；paintIcons() 调用分布在
+     renderNew/renderLatest/renderStarting/renderError 结尾及上述各 innerHTML 后
+     （命中核验见第四节，共 10 处调用 + 1 处定义）。
+
+  更新.html 本体：零改动（DOM/CSS 均已就绪，无需动）。
+
+三、前后字节/行尾（assets/xt-update.js）
+
+  改前：38340 字节，CRLF=0，LF_total=1094，pure_LF=1094（纯 LF）
+  改后：39089 字节，CRLF=0，LF_total=1114，pure_LF=1114（纯 LF，零污染）
+  差值 +749 字节 = helper(12 行) + 10 处调用行 + 注释。
+  注：更新.html 为 CRLF、xt-update.js 为 LF，两文件行尾本就不同，
+  本次只改 xt-update.js，各自原样保持。
+
+四、命中核验（改后回读）
+
+  paintIcons(); 调用点 = 10（预期 10）✅
+  function paintIcons() 定义 = 1 ✅
+  11 个替换锚点全部 old occurrence=1、逐一替换成功（tools/qa/r91f_patch_log.txt）。
+
+五、验证结果
+
+  1. ES2017：node tools/qa/escheck_es2017.js → tools/qa/r91f_escheck.txt = DONE 0 ✅
+  2. 真实 Chrome CDP 实测（tools/qa/_r91f_cdp.js，headless + HTTP serve 项目根 + 种登录态），
+     输出 tools/qa/r91f_cdp_out.txt：
+     - Phase 1 失败态（无后端自然 404 触发）：
+       S1b 状态卡标题=「检测失败」；S1c .xt-up-icon-bad 内 svg=1（width=26，
+       圆圈 52x52）→ 红框处图标已渲染 ✅；S1d 品牌块 svg=1（width=28）不回归 ✅
+     - Phase 2 成功态（fetch stub 返回同版本 v1.24 → XTUpdate.recheck()）：
+       S2b 标题=「已是最新版本」；S2c .xt-up-icon-ok 内 svg=1（width=26）✅；
+       S2d 品牌块不回归 ✅
+     - Phase 3 新版本态（stub v9.9.9）：S3b 动作按钮内 svg=1（width=14）✅；
+       S3c 品牌块不回归 ✅
+     汇总：pass=11 fail=0 → R91F_CDP_PASS。验证级别：真实 Chrome CDP 布局实测。
+
+六、合规确认
+
+  - 未动：xt-profile.js / ai.py / 私聊.html / 个人中心.html / xt-aiusage.js /
+    ai-settings.html / common.css / 更新.html 本体 / server/**
+  - 无 prompt/alert/confirm；ES2017（无 ?. ?? .replaceAll( .at( ** catch { 无绑定）；
+    helper 为 ES5 级语法（var/function/try-catch(e)）
+  - 无并行 Edit；字节读写 + 回读校验行尾
+================================================================================
+报告完

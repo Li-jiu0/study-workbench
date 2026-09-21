@@ -1,0 +1,73 @@
+sequenceDiagram
+    autonumber
+    participant U as 用户
+    participant IM as 私聊.html
+    participant CL as chat-local.js
+    participant LOC as XT_LOC_PICK(xt-region.js)
+    participant GEO as XT_REGION
+
+    note over U,GEO: ① 私聊点加号 → 菜单 → 三条分支
+    U->>IM: 点击「+」(#imPlusBtn)
+    IM->>IM: imTogglePlusMenu() 显示 #imPlusMenu
+    Note over IM: 菜单项 = 图片 / 位置
+
+    alt 分支1：图片
+        U->>IM: 点「图片」(data-icon=image)
+        IM->>CL: imPickImage()
+        CL->>CL: 校验 S.group||S.peer，否则 toast 并 return
+        CL->>IM: 触发 #imImgInput
+        U->>IM: 选图
+        IM->>CL: onchange=imSendImage(this)
+        CL->>CL: 上传/离线 dataURL → 追加 kind='image' 消息
+    else 分支2：拍摄（复用图片链路，accept=image/*）
+        U->>IM: 点「拍摄」(data-icon=camera)
+        IM->>CL: imPickImage()（同一链路，WebView 弹相机/相册）
+        CL->>IM: 触发 #imImgInput → imSendImage(this)
+    else 分支3：位置
+        U->>IM: 点「位置」(data-icon=map-pin)
+        IM->>LOC: pick({onManual: IM 页内 sheet}, cb)
+        LOC->>GEO: locate(cb)
+        alt 定位成功
+            GEO-->>LOC: {ok:true, lat, lng}
+            LOC->>GEO: reverseGeocode(lat,lng,cb)
+            GEO-->>LOC: {text,province,city,district} 或 null
+        else 失败/超时/拒绝/不支持
+            GEO-->>LOC: {ok:false, reason}
+        end
+        Note over LOC: 失败或编码为空 → onManual 手动输入
+        LOC-->>IM: cb(LocObj|null)
+        IM->>CL: imSendLocation(text)
+        CL->>CL: 追加 kind='location' 消息（仅文字，无坐标）
+    end
+    IM->>IM: 收起菜单 imTogglePlusMenu()
+
+    note over U,GEO: ② 发布时选位置（含三个降级分支）
+    U->>LOC: 点「所在位置」(xtmAtBtn / blogLocBtn)
+    LOC->>LOC: toast('正在定位…')，入口 loading
+    LOC->>GEO: locate(cb)
+
+    alt 降级1：授权被拒 / 超时 / 无 geolocation
+        GEO-->>LOC: {ok:false, reason:'denied'|'timeout'|'unsupported'}
+        LOC->>LOC: toast('定位失败，请手动填写')
+        LOC->>U: onManual('所在位置','如：图书馆 / 自习室')
+        alt 输入非空
+            U-->>LOC: LocObj{text:v, source:'manual'}
+        else 输入为空
+            LOC-->>U: cb(null) → 不写位置，chip 隐藏
+        end
+    else 定位成功
+        GEO-->>LOC: {ok:true, lat, lng}
+        LOC->>GEO: reverseGeocode(lat, lng, cb)
+        alt 降级2：逆编码失败/空
+            GEO-->>LOC: null
+            LOC->>LOC: toast('定位失败，请手动填写')
+            LOC->>U: onManual(...) 同上手动兜底
+        else 编码成功
+            GEO-->>LOC: {text:'武汉市·洪山区', province, city, district}
+            LOC->>LOC: 写 xt_loc_last
+        end
+    end
+
+    LOC-->>U: cb(LocObj)。只取 text 渲染文字 chip
+    U->>U: 点「发布 / 存草稿」→ 持久化 location(String)
+    Note over U,LOC: 断言：DOM 与载荷均无 /\d+\.\d{3},/ 坐标

@@ -1,0 +1,58 @@
+R72 任务三 · 自测汇总（页面与功能调整）
+生成时间：2026-09-17  唯一代码树：D:\下载的文件\学习工作台
+语法上限：ES2017（老 Android WebView）
+
+=== ① 行尾（CRLF，loneLF==0）===
+逐文件结果见 tools/r72_selftest_static_out.txt 的「① 行尾」段：
+  34 个触达文件（含 2 个新页）全部 loneLF==0，PASS。
+  批量改名 25 文件、图标统一 25 文件写回后亦复核 loneLF==0（r72_nav_apply_out.txt / r72_icon_out.txt）。
+
+=== ② 语法 ===
+node --check assets/app.js      → OK
+node --check assets/importer.js → OK
+新页内联脚本：jsdom 加载 我的文件.html / 导入题库.html / 演示.html 无报错（见 ⑤）。
+
+=== ③ ES2017 禁令 10 项（在去注释/去字符串后的代码上判定）===
+全部触达文件逐项 0 命中（r72_selftest_static_out.txt「③」段全 PASS）。
+透明化说明：以下「命中」仅出现在注释/字符串字面中，非真实语法（既有代码，非本次引入）——
+  assets/app.js:3061 注释 "data: {...}"
+  设置.html:1526 注释示例 {...}
+  错题本.html:281 注释 "无 Object.fromEntries"
+
+=== ④ 全局名交集 ===
+xtFiles* 仅出现在 我的文件.html 与 assets/importer.js（无重复声明）。
+xtFilesRender/Filter/Open/Del/Add/Register/Remove 全部 `typeof window.X !== 'function'` 守卫，PASS。
+
+=== ⑤ jsdom 行为断言（FAIL_COUNT=0，24/24 PASS，详见 r72_dom_test_out.txt）===
+a) 我的文件.html：预置 study_workbench_imports(1库) + xtc:lib:pf:folio:works(2作品) → 列表 3 条；
+   模块下拉含 all/题库/PPT作品；筛选「题库」→ 1 条；xtFilesDel 删除题库 3→2。全局 7 个函数齐备。
+b) 导入题库.html：含 assets/qbank.js + assets/importer.js 引用；注入后 window.openImporter/__impBanks 存在。
+c) 更多.html：无「穿越英语」；导入题库卡 onclick=导入题库.html；importer-view DOM/逻辑已移除。
+d) 个人中心.html：xtFolio* 0 命中；新入口卡 onclick=我的文件.html。
+e) 演示.html：pptStatsCard/pptWorkList/pptHub/pptPanel 均无；存在跳转按钮与 3 秒跳转提示。
+
+=== ⑥ 批量改名计数断言 ===
+r72_nav_apply_out.txt：25 文件逐个 replaced==预期（blog_wechat 2 处），不符即中止，PASS。
+残留：除 演示.html 外，全站无 data-page="ppt"；全站无 location.href='演示.html'。
+
+=== ⑦ 关于.html ===
+版本号 v2.3 共 3 处（HTML span + 脚本 textContent + 更新日志条目），app.js showAboutDialog 亦为 v2.3（无 v2.2）。
+chips：无「演示」，有「我的文件」。
+
+=== ⑧ 静态引用完整性 ===
+演示.html 不再引用 ppt-works/ppt-tips/tpl-preview/design-class/mini-ppt/data-ppt 系列/xt-content/mini；
+上述 JS 及其他 data-ppt-* 均仍在磁盘（android/build_apk.py 白名单要求）。
+
+=== 证据锚点（file:line）===
+学习工作台.html:46           侧栏 data-page="files"（保留 node-id）
+assets/app.js:1461           PAGE_FILES files: '我的文件.html'
+assets/app.js:1462           PAGE_FILES ppt: '我的文件.html'（防死链）
+assets/app.js:7260           HOME_DEF 快捷卡 t/url/ic/dc
+assets/app.js:8495           MODULE_INDEX
+assets/app.js:40,57          migrateLegacyKeys R72-1 修复（copyOne 不清源 + 删 removeItem）
+assets/app.js:9522,9527      AndroidBridge.notify 原生桥钩子
+assets/app.js:9166           showAboutDialog v2.3
+assets/importer.js:513-520   __impDo 成功收尾调用 xtFilesRegister
+更多.html:141                导入题库卡 → 导入题库.html
+更多.html:44                 侧栏 data-page="files"
+演示.html:120,123,270        跳转按钮 / 3 秒提示 / 自动 location.href

@@ -1,0 +1,44 @@
+
+== T1 地区选择.html 滚动上下文 ==
+  PASS  本页 <style> 含 html{height:auto;overflow-y:auto} 覆盖规则
+  PASS  本页 <style> 含 body.theme-home{height:auto;min-height:100%;overflow-y:auto} 覆盖规则
+  PASS  复核真因：assets/common.css 存在 html, body { height:100%; overflow:hidden; }
+  PASS  本页覆盖用高特异性选择器 body.theme-home（> html,body 元素选择器）
+  PASS  .xtr-head 仍保留 position:sticky;top:0（吸顶未破坏）
+  PASS  本页 CSS 未使用 clamp()/min()/max()
+
+== T2 XT_LOC_PICK.openPicker 列表滚动 ==
+  PASS  window.XT_LOC_PICK 存在
+  PASS  openPicker 生成根容器 .xtlp
+  PASS  存在 .xtlp-body 内容容器
+  PASS  注入 <style> 存在
+  PASS  .xtlp-list 规则存在于注入样式
+  PASS  .xtlp-list 含 flex:1 1 0%（可伸缩）
+  PASS  .xtlp-list 含 min-height:0（flex 溢出滚动关键）
+  PASS  .xtlp-list 含 overflow-y:auto
+  PASS  .xtlp-body 规则存在且为 flex 列容器（position:absolute + display:flex + column）
+  PASS  .xtlp-body 作为真实 DOM 容器存在（类名已挂载）
+  PASS  openPicker CSS 未使用 clamp()/min()/max()
+
+== T3/T4 朋友圈发布.html 位置按钮 ==
+  PASS  XTM.boot 可调用
+  PASS  #xtmLocBtn 存在
+  PASS  #xtmAtBtn 存在
+  PASS  #xtmLocBtn 点击触发位置选择（openPicker 被调用）
+  PASS  #xtmAtBtn 点击触发位置选择（openPicker 被调用）
+  PASS  两次调用都传入 confirmText
+  PASS  openPicker 收到回调
+  PASS  选中后写入 #xtmChosen 显示区
+
+== T5 降级（XT_LOC_PICK 缺失） ==
+  PASS  确认 window.XT_LOC_PICK 不存在（降级前提）
+  PASS  底座缺失时点击不抛异常
+  PASS  降级发起整页跳转 地区选择.html
+  PASS  跳转 URL 带 back=朋友圈发布.html
+  PASS  跳转也失败时点击不抛异常（不白屏）
+  PASS  跳转也失败时有可见提示（toast 非静默，走 #toast / window.showToast）
+  PASS  跳转也失败时降级为本页半屏输入（inputSheet 的 .xtm-sheet 出现）
+
+---------------------------------------------
+R89-B jsdom: 32/32 passed, 0 failed
+---------------------------------------------

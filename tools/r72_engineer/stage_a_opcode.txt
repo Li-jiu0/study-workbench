@@ -1,0 +1,35 @@
+==================================================
+FILE database.py
+  [ALL(含注释)] server行=398 local行=411 | opcode: replace段=0 insert段=1 delete段=0
+    ✓ delete 集合为空（无服务器独有内容）
+  [CODE(去整行注释)] server行=367 local行=380 | opcode: replace段=0 insert段=1 delete段=0
+    ✓ delete 集合为空（无服务器独有内容）
+
+==================================================
+FILE schemas.py
+  [ALL(含注释)] server行=210 local行=219 | opcode: replace段=0 insert段=1 delete段=0
+    ✓ delete 集合为空（无服务器独有内容）
+  [CODE(去整行注释)] server行=197 local行=206 | opcode: replace段=0 insert段=1 delete段=0
+    ✓ delete 集合为空（无服务器独有内容）
+
+==================================================
+FILE routers/chat.py
+  [ALL(含注释)] server行=135 local行=223 | opcode: replace段=3 insert段=1 delete段=0
+    ✓ delete 集合为空（无服务器独有内容）
+  [CODE(去整行注释)] server行=130 local行=214 | opcode: replace段=3 insert段=1 delete段=0
+    ✓ delete 集合为空（无服务器独有内容）
+
+==================================================
+FILE routers/friends.py
+  [ALL(含注释)] server行=274 local行=312 | opcode: replace段=3 insert段=2 delete段=0
+    ✓ delete 集合为空（无服务器独有内容）
+  [CODE(去整行注释)] server行=251 local行=288 | opcode: replace段=3 insert段=2 delete段=0
+    ✓ delete 集合为空（无服务器独有内容）
+
+==================================================
+FILE routers/groups.py
+  [ALL(含注释)] server行=312 local行=364 | opcode: replace段=2 insert段=1 delete段=0
+    ✓ delete 集合为空（无服务器独有内容）
+  [CODE(去整行注释)] server行=307 local行=359 | opcode: replace段=2 insert段=1 delete段=0
+    ✓ delete 集合为空（无服务器独有内容）
+

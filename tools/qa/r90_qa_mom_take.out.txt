@@ -1,0 +1,79 @@
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    print('%5d| %s'%(i+1,lines[i].rstrip()))
+                         ~~~~~^^^
+IndexError: list index out of range
+  651| 
+  652|   /* ============================ 发布编辑页 ============================ */
+  653|   var P = null;
+  654|   /* R89-B: 草稿键（跳转「地区选择.html」往返必须不丢内容）。此键与 M3 本地视频草稿约定一致。 */
+  655|   var XTM_DRAFT_KEY = 'study_workbench_moment_draft2';
+  656|   var XTM_REGION_PICK_KEY = 'xt_region_pick';
+  657|   /* R89-B: 地区选择回写值 TTL（同 xt-profile.js / 地区选择.html 协议） */
+  658|   var XTM_REGION_TTL = 10 * 60 * 1000;
+  659|   /** 跳转缝（可被测试覆写：window.xtmNavHook / window.xtpNavHook）。 */
+  660|   function xtmNav(url) {
+  661|     try {
+  662|       if (window.xtmNavHook && typeof window.xtmNavHook === 'function') { window.xtmNavHook(url); return; }
+  663|     } catch (e0) { /* 忽略 hook 异常，回退真实跳转 */ }
+  664|     try {
+  665|       if (window.xtpNavHook && typeof window.xtpNavHook === 'function') { window.xtpNavHook(url); return; }
+  666|     } catch (e1) { /* 忽略 */ }
+  667|     location.href = url;
+  668|   }
+  669|   /** 消费地区选择回写值（一次性 + TTL），返回地址文本或 ''。 */
+  670|   function xtmTakeRegionPick() {
+  671|     var raw = '';
+  672|     try { raw = localStorage.getItem(XTM_REGION_PICK_KEY) || ''; } catch (e) { return ''; }
+  673|     if (!raw) return '';
+  674|     var obj = null;
+  675|     try { obj = JSON.parse(raw); } catch (e2) { obj = null; }
+  676|     try { localStorage.removeItem(XTM_REGION_PICK_KEY); } catch (e3) { /* 忽略 */ }
+  677|     if (!obj || !obj.text) return '';
+  678|     try { if (obj.ts && (Date.now() - obj.ts > XTM_REGION_TTL)) return ''; } catch (e4) { return ''; }
+  679|     return String(obj.text).slice(0, 64);
+  680|   }
+  681|   /** 写入地址到草稿 P.location + 刷新显示（不发送）。坐标绝不进任何字符串。 */
+  682|   function xtmApplyLocation(text) {
+  683|     if (!P) return false;
+  684|     var t = String(text || '').replace(/^\s+|\s+$/g, '');
+  685|     if (!t) return false;
+  686|     P.location = t.slice(0, 64);
+  687|     if (typeof renderChosen === 'function') renderChosen();
+  688|     return true;
+  689|   }
+  690|   function newP() {
+  691|     return { picked: [], video: '', linkUrl: '', linkTitle: '', location: '', visScope: '', visIds: [], visNames: [], mentionIds: [], mentionNames: [], textMode: false };
+  692|   }
+  693|   function imgCompress(dataUrl) {
+  694|     return new Promise(function (resolve) {
+  695|       var img = new Image();
+  696|       img.onload = function () {
+  697|         var max = 1280, w = img.width, h = img.height;
+  698|         if (Math.max(w, h) > max) { var k = max / Math.max(w, h); w = Math.round(w * k); h = Math.round(h * k); }
+  699|         var cv = document.createElement('canvas');
+  700|         cv.width = w; cv.height = h;
+...
+ 1161|       });
+ 1162|     },
+ 1163|     removeVideo: function () { if (P) { P.video = ''; renderPicked(); } },
+ 1164|     closeVideoSheet: closeVideoSheet,
+ 1165|     boot: function () {
+ 1166|       var page = document.body.getAttribute('data-xtm');
+ 1167|       if (page === 'feed') initFeedPage();
+ 1168|       else if (page === 'mine') initMinePage();
+ 1169|       else if (page === 'publish') initPublishPage();
+ 1170|     }
+ 1171|   };
+ 1172|   window.XTM = XTM;
+ 1173| 
+ 1174|   /* R88-J：底座 XT_LOC_PICK 内部 _failToast 只认 window.XT_TOAST / window.toast；
+ 1175|      本页 toast 为私有函数（不在 window），故在此注入全局别名，避免底座失败静默。
+ 1176|      不动 xt-region.js 既有契约。 */
+ 1177|   if (typeof window.toast !== 'function' && typeof window.showToast === 'function') {
+ 1178|     window.toast = window.showToast;
+ 1179|   }
+ 1180|   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', XTM.boot);
+ 1181|   else XTM.boot();
+ 1182| })();
+ 1183| 

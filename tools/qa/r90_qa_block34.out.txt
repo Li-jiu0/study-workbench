@@ -1,0 +1,163 @@
+
+== B3-1 【跳转整页】#xtmLocBtn / #xtmAtBtn 各自点击都发起整页跳转 ==
+注入 xt-moments.js err=""
+typeof window.XTM = object
+[PASS] B3-1.0 xt-moments.js 可在 jsdom 中加载并暴露 XTM || err=
+body[data-xtm] = "publish"
+[PASS] B3-1.1 #xtmLocBtn 存在
+[PASS] B3-1.2 #xtmAtBtn 存在
+#xtmLocBtn 点击后 nav = []
+#xtmAtBtn 点击后 nav = []
+[FAIL] B3-1.3 #xtmLocBtn 发起整页跳转（nav 非空） || []
+[FAIL] B3-1.4 #xtmAtBtn 发起整页跳转（nav 非空） || []
+[FAIL] B3-1.5-loc URL 含 地区选择.html
+[FAIL] B3-1.6-loc URL 含 cur=
+[FAIL] B3-1.7-loc URL 含 back=
+[FAIL] B3-1.8-loc back 值为 朋友圈发布.html
+[FAIL] B3-1.5-at URL 含 地区选择.html
+[FAIL] B3-1.6-at URL 含 cur=
+[FAIL] B3-1.7-at URL 含 back=
+[FAIL] B3-1.8-at back 值为 朋友圈发布.html
+
+== B3-2 back 参数真能跳回：读 地区选择.html goBack() 实现（证明闭环，不只断言参数存在） ==
+默认 back = 个人中心.html
+[PASS] B3-2.1 地区选择.html 默认 back = 个人中心.html || 个人中心.html
+goBack 源码:
+(未匹配)
+[FAIL] B3-2.2 goBack 使用 state.back 跳转
+[FAIL] B3-2.3 goBack 用 location.replace(state.back)
+param('back') 读取存在: true
+state.back = b 赋值存在: true
+[PASS] B3-2.4 从 URL 读 back 并写入 state.back（闭环成立）
+
+== B3-2R 运行时：真开 地区选择.html?back=朋友圈发布.html → goBack() 是否跳回 ==
+typeof rw.XtrPage = object
+XtrPage 键: ["goBack","goLevel","pickProvince","pickCity","pick","locate","renderRecent","recentList","recentPush","onSearch","toast"]
+goBack 后 __REPLACED = null  err=""
+goBack 后 location.href = http://localhost/%E5%9C%B0%E5%8C%BA%E9%80%89%E6%8B%A9.html?back=%E6%9C%8B%E5%8F%8B%E5%9C%88%E5%8F%91%E5%B8%83.html
+[PASS] B3-2R.1 goBack() 真的跳回 朋友圈发布.html（非默认 个人中心.html） || replaced=null href=http://localhost/%E5%9C%B0%E5%8C%BA%E9%80%89%E6%8B%A9.html?back=%E6%9C%8B%E5%8F%8B%E5%9C%88%E5%8F%91%E5%B8%83.html
+[PASS] B3-2R.2 goBack() 未跳向默认的 个人中心.html || replaced=null
+
+== B3-3 降级：跳转不可用 → openPicker（不抛异常）；再不可用 → 本页输入层 ==
+hook 返回 false 后: openPickerCalled=false opts=null err="d.getElementById(...).onclick is not a function"
+[FAIL] B3-3.1 跳转被拒 → 降级到 openPicker
+[FAIL] B3-3.2 降级过程不抛异常 || d.getElementById(...).onclick is not a function
+openPicker 抛异常后: 上层异常="d.getElementById(...).onclick is not a function"
+[FAIL] B3-3.3 openPicker 抛异常被吞掉，未冒泡到调用方 || d.getElementById(...).onclick is not a function
+本页输入层节点: (未找到)
+[FAIL] B3-3.4 降级到本页输入层（出现 sheet 节点或至少不白屏） || 未找到 sheet 节点
+[FAIL] B3-3.5 双降级都不抛异常 || d.getElementById(...).onclick is not a function
+
+== B3-4 回写链路：xt_region_pick 新鲜值被消费 / 二次拒绝 / TTL 拒绝 / 畸形 JSON ==
+新鲜值消费后 localStorage key = "{\"text\":\"R90省R90市\",\"ts\":1789733003209}"
+#xtmLocBtn 文案 = "位置"
+[FAIL] B3-4.1 新鲜回写值被消费后 key 被删除 || "{\"text\":\"R90省R90市\",\"ts\":1789733003209}"
+[FAIL] B3-4.2 值写入位置显示区 || "位置"
+二次（无 key）位置显示 = "位置"
+[PASS] B3-4.3 无 key 时位置显示不残留旧值 || "位置"
+TTL 过期：key="{\"text\":\"R90过期值\",\"ts\":1789732343274}" 显示="位置"
+[PASS] B3-4.4 TTL 过期值被拒绝（不写入显示区） || "位置"
+畸形 JSON：显示="位置" key="{这不是合法JSON"
+[PASS] B3-4.5 畸形 JSON 不抛异常且不写入显示区 || 显示="位置"
+[PASS] B3-4.6 畸形 JSON 加载不抛异常 || null
+
+== B3-5 朋友圈发布.html：字节数 / 6 按钮 / 文件输入 ==
+朋友圈发布.html 实测字节 = 12612  （任务书声称未改=12612）
+button[id^=xtm] = ["xtmCancel","xtmSubmit"]
+span[id^=xtm] = ["xtmLocBtn","xtmVisBtn","xtmMentionBtn","xtmAtBtn","xtmVidBtn","xtmLinkBtn"]
+[PASS] B3-5.1 #xtmFileImg 在位
+[PASS] B3-5.2 #xtmFileVid 在位
+[PASS] B3-5.3 #xtmCancel 与 #xtmSubmit 在位
+[PASS] B3-5.4 #xtmLocBtn 与 #xtmAtBtn 在位
+[PASS] B3-5.5 字节数 == 12612（任务书期望未改） || 实测 12612（差 0）
+
+== B4-1 源码扫描：4 条旧文案 0 命中 / 新文案存在 ==
+[PASS] B4-1.1 旧文案已删除: 本机记录 × 服务端累计 · 按今日次数 /… || 命中=0
+[PASS] B4-1.2 旧文案已删除: 账号级共享额度，非本机… || 命中=0
+[PASS] B4-1.3 旧文案已删除: 逐模型一行，不聚合；排序 / 高亮 / 筛选… || 命中=0
+[PASS] B4-1.4 旧文案已删除: 排序方式（剩余可用量口径）… || 命中=0
+[PASS] B4-1.5 旧文案已删除: 筛选（按剩余可用量）… || 命中=0
+
+== B4-2 「排序方式」出现位置精确统计（防误判 L873 那处） ==
+「排序方式」共 3 处：
+  L870| '<div class="xt-us-sublabel"><span>排序方式</span></div>' +
+  L872| '<select class="xt-us-select" id="UsageSortSel" aria-label="排序方式">' +
+  L890| '<div class="xt-us-sublabel"><span>排序方式</span></div>' +
+[FAIL] B4-2.1 「排序方式」出现 2 处（L870 sublabel + L890 sublabel） || 实测 3
+[PASS] B4-2.2 未被误改：仍有「排序方式」文案
+UsageSortSel 所在行（1-based）= 872
+  内容: '<select class="xt-us-select" id="UsageSortSel" aria-label="排序方式">' +
+[PASS] B4-2.3 UsageSortSel 的 aria-label 仍是「排序方式」（未被误改）
+[PASS] B4-2.4 已无「排序方式（剩余可用量口径）」残留
+「<span>筛选</span>」行 = [899]
+[PASS] B4-2.5 「筛选」文案存在（原「筛选（按剩余可用量）」已改）
+
+== B4-3 skeleton() 返回 HTML 结构闭合（div 配对） ==
+skeleton() 定位: L800
+skeleton 源码中 <div 出现 47 次；</div> 出现 47 次（含字符串内）
+[PASS] B4-3.1 skeleton 源码 div 标签计数不出现「闭合数 < 开标签数」的硬伤 || open=47 close=47
+
+== B4-3R 运行时：渲染后真实 DOM 里 usage 容器配平 + id 齐全 ==
+注入 xt-aiusage.js err = ""
+window 上 XT_AI_USAGE_PAGE / 相关键 = ["XT_AI_USAGE"]
+[PASS] B4-3R.1 xt-aiusage.js 可加载（无语法/立即执行异常）
+全局 USAGE 相关: ["XT_AI_USAGE"]
+rendered = false
+DOM 内 id 数 = 1
+DOM 内 id（前 60）= ["aiUsageMount"]
+
+== B4-4 关键 id 保全（源码级 + 若已渲染则运行时复核） ==
+[PASS] B4-4.UsageClearBtn 源码中存在 || id= 字面出现 1 次
+[PASS] B4-4.UsageClearTxt 源码中存在 || id= 字面出现 1 次
+[PASS] B4-4.UsageEmpty 源码中存在 || id= 字面出现 1 次
+[PASS] B4-4.UsageModelList 源码中存在 || id= 字面出现 1 次
+[PASS] B4-4.UsageQuotaSortBar 源码中存在 || id= 字面出现 1 次
+[PASS] B4-4.UsageQuotaFilterBar 源码中存在 || id= 字面出现 1 次
+[PASS] B4-4.UsageDetailList 源码中存在 || id= 字面出现 1 次
+[PASS] B4-4.UsageExportBtn 源码中存在 || id= 字面出现 1 次
+[PASS] B4-4.UsageRangeBar 源码中存在 || id= 字面出现 1 次
+[PASS] B4-4.UsageClearHead 源码中存在 || id= 字面出现 1 次
+[PASS] B4-4.UsageQuotaFilterToggle 源码中存在 || id= 字面出现 1 次
+[PASS] B4-4.UsageSortSel 源码中存在 || id= 字面出现 1 次
+「UsageSortBar」源码命中 = -1（-1 = 不存在）→ 真实 id 为 UsageSortSel
+[PASS] B4-4.X 任务书所述 UsageSortBar 实际名为 UsageSortSel（排序控件未被删）
+
+== B4-5 清空按钮改展开收缩 —— 功能回归 ==
+bindClear: FOUND | disarmClear: FOUND | bindClearFold: FOUND
+[PASS] B4-5.1 bindClear 存在
+[PASS] B4-5.2 disarmClear 存在（防误触核心）
+[PASS] B4-5.3 清空按钮已改造为折叠（bindClearFold 存在）
+[PASS] B4-5.4 防误触逻辑保留：clearArmed 两段式
+[PASS] B4-5.5 第一次点击只武装（文案变「再点一次确认清空」）
+[PASS] B4-5.6 武装后超时自动解除（disarmClear 被 setTimeout 调用）
+UsageClearHead 开标签: <button type="button" class="xt-us-clear-head" id="UsageClearHead" aria-expanded="false">
+[PASS] B4-5.7 折叠区默认收起（aria-expanded="false"） || <button type="button" class="xt-us-clear-head" id="UsageClearHead" aria-expanded="false">
+[PASS] B4-5.8 UsageClearBtn 在展开体内（.xt-us-clear-body 紧随 head）
+[PASS] B4-5.9 bindClear 仍用 byId 取 #UsageClearBtn（结构改造后不失配）
+[PASS] B4-5.10 折叠切换：className 加/去 open + aria-expanded 同步
+
+== B4-5R 运行时（jsdom）：折叠头点击 → 展开；清空按钮两段式防误触 ==
+【标注】未能触发挂载渲染，B4-5R 运行时折叠断言未执行。
+
+== 汇总 ==
+通过 50 / 70
+  FAIL: B3-1.3 #xtmLocBtn 发起整页跳转（nav 非空） || []
+  FAIL: B3-1.4 #xtmAtBtn 发起整页跳转（nav 非空） || []
+  FAIL: B3-1.5-loc URL 含 地区选择.html || 
+  FAIL: B3-1.6-loc URL 含 cur= || 
+  FAIL: B3-1.7-loc URL 含 back= || 
+  FAIL: B3-1.8-loc back 值为 朋友圈发布.html || 
+  FAIL: B3-1.5-at URL 含 地区选择.html || 
+  FAIL: B3-1.6-at URL 含 cur= || 
+  FAIL: B3-1.7-at URL 含 back= || 
+  FAIL: B3-1.8-at back 值为 朋友圈发布.html || 
+  FAIL: B3-2.2 goBack 使用 state.back 跳转 || 
+  FAIL: B3-2.3 goBack 用 location.replace(state.back) || 
+  FAIL: B3-3.1 跳转被拒 → 降级到 openPicker || 
+  FAIL: B3-3.2 降级过程不抛异常 || d.getElementById(...).onclick is not a function
+  FAIL: B3-3.3 openPicker 抛异常被吞掉，未冒泡到调用方 || d.getElementById(...).onclick is not a function
+  FAIL: B3-3.4 降级到本页输入层（出现 sheet 节点或至少不白屏） || 未找到 sheet 节点
+  FAIL: B3-3.5 双降级都不抛异常 || d.getElementById(...).onclick is not a function
+  FAIL: B3-4.1 新鲜回写值被消费后 key 被删除 || "{\"text\":\"R90省R90市\",\"ts\":1789733003209}"
+  FAIL: B3-4.2 值写入位置显示区 || "位置"
+  FAIL: B4-2.1 「排序方式」出现 2 处（L870 sublabel + L890 sublabel） || 实测 3

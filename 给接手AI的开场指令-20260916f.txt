@@ -1,0 +1,84 @@
+════════════════════════════════════════════════════════════
+⚠️⚠️ 本指令已过期（描述的是 2026-09-16 22:25 的状态）。
+R66 独立回归 / R67 线1线2 / R68 / 打戳 20260916R / 部署 / R70 两项修复均已完成。
+最新开场指令 = D:\下载的文件\学习工作台\给接手AI的开场指令-20260917a.txt
+════════════════════════════════════════════════════════════
+
+════════════════════════════════════════════════════════════
+星途（原「学习工作台」）· 接手 AI 开场指令 · 2026-09-16f
+════════════════════════════════════════════════════════════
+
+你是本项目的新一任执行 AI（主理人）。上一轮在 2026-09-16 22:23 按用户指示停止推进，
+当前状态：R64/R65 已交付并过 QA；R66 三线代码已落盘但**独立验证未做**；
+R67 只有服务商数据落盘，UI 两条线**一行代码未改**。
+
+【第一步 · 先读这三份文件，不要凭记忆开工】
+1. D:\下载的文件\学习工作台\交接文档-20260916f-第四批执行现状与对接.md   ← 主入口（§0 速览 / §1 行尾 / §4 待办 / §5 三步走 / §6 陷阱）
+2. D:\下载的文件\学习工作台\更新日志-20260916-第四批-R64至R67.md         ← 契约表 §五、踩坑 §六、未完成 §七
+3. D:\下载的文件\学习工作台\用户需求与决策总账.md                         ← 尾部 R64~R67 备忘（含全部架构决策与用户拍板口径）
+
+需求原文在用户桌面：模型升级.txt(R64)、AI继续升级.txt(R65)、AI再次优化.txt(R66)、持续升级优化.txt(R67)。
+
+【项目铁律（违反＝返工，逐条照办）】
+· 唯一可写代码树 = D:\下载的文件\学习工作台。⛔ 绝不改 C:\Users\ATM\WorkBuddy\Worktrees\学习工作台\main-*（废弃副本）。
+· 行尾：ai-settings.html / assets/ai-settings.js / assets/ai-page.js / assets/ai-service.js 是 LF；
+  AI.html / assets/ai-config.js / 39 个根 HTML / app.js / common.css 是 CRLF。改文件一律二进制读写
+  （open(p,'rb') → 替换 → open(p,'wb')），改完自测：CRLF 文件 loneLF=0，LF 文件 CRLF=0。
+· ES2017 语法上限（安卓老 WebView）：禁 ?. ?? 对象展开 {...obj} 对象剩余解构 .replaceAll( Object.fromEntries
+  .at( 正则后行断言 (?<= (?<! 指数 ** 可选 catch 绑定。node --check 抓不到，必须 Grep 逐项自查 0 命中。
+· 顶层禁重复声明已有全局名（本项目「AI 功能集体失效」的历史元凶）；新增全局写 typeof 守卫。
+· 禁原生 alert/confirm/prompt（用 uiConfirm / toast）；不删现有功能、保留既有 DOM id 与全局函数名。
+· 改文件先备份：xxx.bak-pre-rNN-20260916。
+· 本机 bash 缺 coreutils（ls/grep/tail/head/cp/env 全没有）→ 一律 Write 落盘 .py/.js 再执行；
+  含中文/反引号的代码绝不内联给 bash（会被吞）。统计结果写 UTF-8 文件再 Read。
+  python = C:/Users/ATM/.workbuddy/binaries/python/versions/3.13.12/python.exe
+  node   = C:/Users/ATM/.workbuddy/binaries/node/versions/22.22.2-3/node.exe
+  jsdom  = NODE_PATH=C:/Users/ATM/node_modules
+· 版本戳：全部验证通过后才打；本批应打 ?v=20260916R（Q 已服务过，不得复用）。打戳必须
+  ① 锚定 src=/href= 属性 ② 只 bump 内容真改过的资产 ③ 捕获组不得带后缀（曾产出 xxx.js.js）
+  ④ 二进制读写保行尾 ⑤ 用与替换不同的独立 pattern 做终态复验 ⑥ 显式扫 \.js\.js\?v= 必须 0。
+· 禁 git 写操作；生产操作（删用户数据 / 改 nginx / 部署上线）必须先问用户。
+
+【第二步 · 三件必做的活（按序）】
+第 1 件（必做）：R66 独立回归。被测 4 文件 = assets/ai-settings.js、ai-settings.html、assets/ai-page.js、AI.html。
+  必验：① 密钥专项——编辑内置模型不回填明文、留空保存不丢已有覆盖 key、清除密钥覆盖可删字段、
+  眼睛按钮切 type、localStorage 全量 dump 不含 6 个平台密钥、底座清洗幂等且 ai_model_settings 8 字段无损；
+  ② **ai-settings.js 曾被全量重写**，必须逐项行为断言 R64/R65 特性未丢（选中/禁用/编辑/删除/排序/恢复默认/
+  星级/分类管理/健康队列/关于页统计）；③ R66 新功能（检测三态与 err→用户可读原因映射、批量检测串行 ≥6.5s、
+  表单【测试连接】用 aiHealthCheck 第二参数且不改已存配置、记忆管理、datalist 预设、AI 页用量与面板限高）；
+  ④ 跨文件集成（设置页写的 disabled/order/overrides/catModels 被 ai-service.js 与 ai-page.js 正确消费）。
+第 2 件：R67 线1 / 线2（R66 QA 通过后放行，保归因）。
+  线1（ai-settings.html + assets/ai-settings.js）：删除模型列表「＋ 添加自定义模型」按钮（ai-settings.html:423）
+  并同步空态文案（ai-settings.js:1065）；模型名称改**服务商分组下拉**（消费已交付的 AI_CONFIG.providerGroups，
+  13 组：已接入 6 家 builtin + 主流公开厂商 6 家 needKey + 自定义）；选服务商自动回填 API 端点；模型 ID 改
+  下拉联动（仅自定义模式开输入框）；切模型 ID 自动预填能力标签；API 格式固定 OpenAI 兼容并默认隐藏（保留
+  「高级设置 ▾」展开以支持 Gemini/自定义协议）；底部「检测连接」按钮复用 R66 的 aiHealthCheck 第二参数。
+  线2（assets/ai-page.js + AI.html）：上下文用量格式改 `0.0% · 0 / 1000.0K 上下文已使用`（百分比 1 位小数、
+  上限 K 单位 1 位小数）、加 hover 悬浮说明、>80% 橙 / >95% 红阈值沿用、排版紧凑不挤输入框。
+第 3 件：最终 QA（R66+R67 全覆盖）→ 打戳 20260916R → 全站 escheck_es2017.js 期望 DONE 0 →
+  （用户点头后）按技能 study-workbench-deploy 部署。
+
+【派活口径（本项目验证有效）】
+· 多线并行，派活前先列**独占文件清单**保证零重叠；共享文件（app.js/api.js/common.css）同一时刻只许一条线改。
+  本轮建议：QA 先跑（独占只读）→ 线1（ai-settings.*）与线2（ai-page.js+AI.html）并行 → 线3 备用。
+· 子代理类型：工程师线用 software-engineer（**有 Bash**）；**QA 线必须用 general-purpose**
+  （software-qa-engineer 类型没有 Bash，拉起 6 秒即挂），name 仍可写 software-qa-engineer。
+· 429 配额耗尽时 spawn 指定 model: "lite" 可立刻恢复（UI 切模型对子代理无效）。
+· 每份任务书必须自带：唯一可写树 + 独占文件 + 逐文件行尾要求 + ES2017 禁令清单 + 全局名守卫 +
+  不 bump 戳 + 备份命名 + 跨线契约（结构/签名一字不改）+ 自测清单（node --check / 行尾 / ES2017 Grep /
+  全局名交集 / jsdom 行为断言）+「直接给结论、不反复验证」的工作风格。
+· 成员自述 ≠ 事实：收工前务必实测落盘状态（mtime + 内容签名 + 计数对照备份）。
+
+【禁止事项】
+· 不要把「开发自测通过」写成「已验证通过」；R66 目前**未独立验证**。
+· 不要把平台密钥说成"已保密"——6 个平台的 Key 明文硬编码在 assets/ai-config.js 里，前端直连架构下无法真保密；
+  本批交付的只是「UI 不回填 + 不复制进 localStorage + 清洗存量副本」。
+· 不要顺手刷新未改动资源的版本戳（项目审计靠 mtime，无谓改动会被误判）。
+· 不要清理本批的 .bak-pre-r64/r66/r67 备份（回滚要用）。
+
+【完成标准】
+· 每件活的汇报格式：TL;DR 一句 → 交付文件与行号 → 逐项自测/验证结果（X/X PASS）→ 已知遗留 → 是否可打戳。
+· 打戳后必须给：戳值、改动页数/处数、裸路径 0、旧戳残留 0、行尾零变化、escheck DONE 0。
+
+一句话：**代码都在，验证/打戳/部署没做完；先把 R66 验了，再放行 R67 线1线2，最后打 20260916R。**
+════════════════════════════════════════════════════════════

@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "<string>", line 25, in <module>
+    t=open(os.path.join(ROOT,f),encoding='utf-8',errors='ignore').read()
+      ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'D:/下载的文件/学习工作台\\商务礼仪面试.html'
+ai-config.js mtime = 2026-09-16 22:14
+ai-service.js mtime = 2026-09-17 13:51
+friend_remarks DDL present = True
+工具.html lines = 437
+工具.html 203-298 含导入题库实现 = True
+quest.js 含穿越英语 = True
+穿越英语 in 英语.html = False
+穿越英语 in AI模拟面试.html = False

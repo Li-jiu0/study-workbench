@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 星途 · 启动闪屏背景（layer-list：品牌蓝底 + 居中白色 Logo）
+     用作启动主题 android:windowBackground。冷启动点开图标后，系统在 Activity
+     首帧渲染前先绘制本 windowBackground，用户「点图标即见品牌蓝底 + 白星」，
+     彻底消除原先 @android:style 主题下先闪一帧纯白/纯黑再进页面的空档。
+
+     层级：① 底层：纯品牌蓝 #5B8DEF（@color/splash_background）；
+           ② 上层：居中 96dp 白色五角星（@drawable/splash_logo，gravity=center）。
+     注：windowBackground 会随 WebView 首帧覆盖，无需手动清除。 -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/splash_background" />
+    <item
+        android:drawable="@drawable/splash_logo"
+        android:gravity="center" />
+</layer-list>

@@ -1,0 +1,10 @@
+assets\xt-profile.js         bytes= 138548  CRLF= 2750 loneLF=0 loneCR=0  lines=2750  EOL=CRLF
+assets\xt-region.js          bytes=  31620  CRLF=    0 loneLF=630 loneCR=0  lines=630  EOL=LF
+地区选择.html                    bytes=  15925  CRLF=  347 loneLF=0 loneCR=0  lines=347  EOL=CRLF
+私聊.html                      bytes=  71537  CRLF= 1068 loneLF=0 loneCR=0  lines=1068  EOL=CRLF
+朋友圈发布.html                   bytes=  12521  CRLF=  169 loneLF=0 loneCR=0  lines=169  EOL=CRLF
+assets\xt-moments.js         bytes=  54595  CRLF= 1107 loneLF=0 loneCR=0  lines=1107  EOL=CRLF
+个人资料.html                    bytes=   2959  CRLF=   52 loneLF=0 loneCR=0  lines=52  EOL=CRLF
+个人中心.html                    bytes=  95502  CRLF= 1524 loneLF=0 loneCR=0  lines=1524  EOL=CRLF
+assets\common.css            bytes= 127605  CRLF= 2915 loneLF=0 loneCR=0  lines=2915  EOL=CRLF
+EXIT=0

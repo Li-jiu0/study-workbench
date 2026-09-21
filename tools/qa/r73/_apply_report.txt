@@ -1,0 +1,17 @@
+EDIT#0 [chat-local.js] renderMsgs 记录 prevTop/prevH/atBottom → 命中 1 次 ✓
+EDIT#1 [chat-local.js] renderMsgs 恢复/补偿 scrollTop（替换无条件回底） → 命中 1 次 ✓
+EDIT#2 [chat-local.js] fetchPeerMsgs/fetchGroupMsgs 签名早退 + 合并历史 + 新增分页加载 → 命中 1 次 ✓
+EDIT#3 [chat-local.js] renderChats 保存/恢复列表 scrollTop → 命中 1 次 ✓
+EDIT#4 [chat-local.js] imRecallPressStart 命中 img 时不启动长按 → 命中 1 次 ✓
+EDIT#5 [chat-local.js] imPreviewImage 重写为单例缩放查看器 → 命中 1 次 ✓
+EDIT#6 [chat-local.js] boot() 注入单例查看器样式 → 命中 1 次 ✓
+EDIT#7 [chat-local.js] boot() 绑定 #imMsgs scroll + click 委托 → 命中 1 次 ✓
+EDIT#8 [chat-local.js] imOpenChat 重置分页状态 → 命中 1 次 ✓
+EDIT#9 [chat-local.js] imOpenChat 首屏拉取记录 hasMore → 命中 1 次 ✓
+EDIT#10 [chat-local.js] imOpenGroup 重置分页状态 → 命中 1 次 ✓
+EDIT#11 [chat-local.js] __IM_TEST__ 新增查看器/分页/签名钩子 → 命中 1 次 ✓
+EDIT#12 [admin-contact.js] admin-contact renderMsgs 保存/恢复 scrollTop → 命中 1 次 ✓
+LINEEND chat-local.js CR=4095 LF=4095 ✓
+LINEEND admin-contact.js CR=323 LF=323 ✓
+
+DONE

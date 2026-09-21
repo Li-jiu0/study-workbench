@@ -1,0 +1,100 @@
+RC=0
+=== 1. service unit ===
+/etc/systemd/system/study-workbench.service
+{ path=/opt/study-workbench/server/.venv/bin/uvicorn ; argv[]=/opt/study-workbench/server/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 ; ignore_errors=no ; start_time=[Sun 2026-09-13 19:44:08 CST] ; stop_time=[n/a] ; pid=1022855 ; code=(null) ; status=0/0 }
+UNIT_FILE:
+WorkingDirectory=/opt/study-workbench/server
+ExecStart=/opt/study-workbench/server/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
+Environment=PYTHONUNBUFFERED=1
+
+=== 2. 端口 ===
+LISTEN 0      511          0.0.0.0:80        0.0.0.0:*    users:(("nginx",pid=829330,fd=5),("nginx",pid=829329,fd=5),("nginx",pid=13474,fd=5))
+LISTEN 0      2048         0.0.0.0:8000      0.0.0.0:*    users:(("uvicorn",pid=1022855,fd=14))                                               
+
+=== 3. server/routers 目录 ===
+total 152
+drwxr-xr-x 3 root root  4096 Sep 13 19:44 .
+drwxr-xr-x 9 root root  4096 Sep 14 02:17 ..
+-rw-rw-rw- 1 root root     0 Sep  8 23:16 __init__.py
+drwxr-xr-x 2 root root  4096 Sep 13 18:55 __pycache__
+-rw-rw-rw- 1 root root  7541 Sep 11 02:38 ai.py
+-rw-rw-rw- 1 root root  5536 Sep 11 22:43 auth.py
+-rw-rw-rw- 1 root root  6670 Sep 11 16:33 chat.py
+-rw-rw-rw- 1 root root  3373 Sep 11 13:15 feedback.py
+-rw-rw-rw- 1 root root  4243 Sep 13 16:32 feedback_public.py
+-rw-rw-rw- 1 root root 13511 Sep 11 23:29 friends.py
+-rw-rw-rw- 1 root root 13251 Sep 11 22:58 groups.py
+-rw-rw-rw- 1 root root  3205 Sep  8 23:16 migrate.py
+-rw-rw-rw- 1 root root 11940 Sep 11 23:28 moments.py
+-rw-rw-rw- 1 root root  7166 Sep 11 18:56 news.py
+-rw-rw-rw- 1 root root  9876 Sep  9 13:16 notes.py
+-rw-rw-rw- 1 root root 14624 Sep 11 17:35 social.py
+-rw-rw-rw- 1 root root  3900 Sep 11 13:25 study.py
+-rw-rw-rw- 1 root root  2104 Sep 11 16:33 uploads.py
+-rw-rw-rw- 1 root root  8442 Sep 11 22:43 users.py
+
+=== 4. grep admin/contact（远端 server 代码）===
+GREP_CONTACT_RC=0
+
+=== 5. grep is_admin / ensure_admin_user（远端 server 代码）===
+
+=== 6. 已注册路由清单（远端 main.py）===
+32:app.include_router(auth.router)
+33:app.include_router(users.router)
+34:app.include_router(notes.router)
+35:app.include_router(social.router)
+36:app.include_router(friends.router)
+37:app.include_router(chat.router)
+38:app.include_router(groups.router)
+39:app.include_router(moments.router)
+40:app.include_router(feedback.router)
+41:app.include_router(feedback_public.router)  # 20260913j：免登录创作者反馈（POST/GET /api/feedback）
+42:app.include_router(study.router)
+43:app.include_router(news.router)   # 需求10：时政新闻聚合（免登录公开接口）
+44:app.include_router(ai.router)
+45:app.include_router(uploads.router)
+46:app.include_router(migrate.router)
+47:app.include_router(ws.router)
+
+=== 7. 远端代码/包时间戳 ===
+2026-09-13 16:37:42.593153200 +0800  /opt/study-workbench/server/main.py
+2026-09-11 02:38:35.268704115 +0800  /opt/study-workbench/server/routers/ai.py
+2026-09-11 22:43:30.361414000 +0800  /opt/study-workbench/server/routers/auth.py
+2026-09-11 16:33:46.604443000 +0800  /opt/study-workbench/server/routers/chat.py
+2026-09-13 16:32:51.978680400 +0800  /opt/study-workbench/server/routers/feedback_public.py
+2026-09-11 13:15:03.528561400 +0800  /opt/study-workbench/server/routers/feedback.py
+2026-09-11 23:29:06.008833400 +0800  /opt/study-workbench/server/routers/friends.py
+2026-09-11 22:58:32.298184600 +0800  /opt/study-workbench/server/routers/groups.py
+2026-09-08 23:16:24.358467800 +0800  /opt/study-workbench/server/routers/__init__.py
+2026-09-08 23:16:01.676585000 +0800  /opt/study-workbench/server/routers/migrate.py
+2026-09-11 23:28:55.095382700 +0800  /opt/study-workbench/server/routers/moments.py
+2026-09-11 18:56:11.053060000 +0800  /opt/study-workbench/server/routers/news.py
+2026-09-09 13:16:47.439880000 +0800  /opt/study-workbench/server/routers/notes.py
+2026-09-11 17:35:34.161817000 +0800  /opt/study-workbench/server/routers/social.py
+2026-09-11 13:25:31.475908800 +0800  /opt/study-workbench/server/routers/study.py
+2026-09-11 16:33:12.813505600 +0800  /opt/study-workbench/server/routers/uploads.py
+2026-09-11 22:43:39.993807300 +0800  /opt/study-workbench/server/routers/users.py
+
+=== 8. 进程启动时间 ===
+Sun 2026-09-13 19:44:08 CST
+    PID                  STARTED     ELAPSED CMD
+1022855 Sun Sep 13 19:44:07 2026    06:35:23 /opt/study-workbench/server/.venv/bin/python3 /opt/study-workbench/server/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
+
+=== 9. OpenAPI 里有没有 /api/admin/* ===
+TOTAL_PATHS: 71
+ADMIN_PATHS: NONE
+AUTH_PATHS: /api/auth/change-password,/api/auth/login,/api/auth/me,/api/auth/refresh,/api/auth/register
+CONTACT_IN_OPENAPI: NO
+
+=== 10. 各 admin 端点真实状态码（区分 404 vs 401/403）===
+/api/admin/contact -> 404
+/api/admin/overview -> 404
+/api/admin/users -> 404
+/api/admin/online -> 404
+/api/admin/feedback -> 404
+/api/health -> 200
+
+=== 11. 进程实际加载的 main.py（cwd + 文件）===
+MainPID=1022855
+/opt/study-workbench/server/.venv/bin/python3 /opt/study-workbench/server/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 
+lrwxrwxrwx 1 root root 0 Sep 13 19:44 /proc/1022855/cwd -> /opt/study-workbench/server

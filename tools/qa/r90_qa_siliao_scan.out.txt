@@ -1,0 +1,47 @@
+   72|   /* R90 item3：输入栏新增「定位」图标后，窄屏（≤360px）压缩图标与间距，保证整排不换行、不溢出。固定值 + @media，禁 clamp/min/max。 */
+  174|             <!-- R88-I（2026-09-18）：发图按钮改「+」浮层菜单入口（相册发图 / 拍摄 / 位置定位）。
+  176|             <button class="im-icon" id="imPlusBtn" title="更多" onclick="imTogglePlusMenu()"><span class="nav-icon" data-icon="plus" data-icon-size="20"></span></button>
+  177|             <!-- R90 item3：把「定位」从加号菜单移到这里（输入栏图标排），紧邻「所在位置」语义入口。
+  179|             <button class="im-icon" id="imLocBtn" title="定位" onclick="imPlusPickLocation()"><span class="nav-icon" data-icon="map-pin" data-icon-size="20"></span></button>
+  186|             <!-- R90 item3：原第 4 项「定位」按用户诉求移出加号菜单，改为输入栏独立图标按钮（见 #imLocBtn，仍走 imPlusPickLocation）。加号菜单现为 3 项。 -->
+  187|             <div class="im-plus-mask" id="imPlusMask" onclick="imClosePlusMenu()"></div>
+  188|             <!-- R88-M6 方案B（2026-09-18）：每项 = 彩色圆角方底色块(.im-plus-ico) + 白色图标 + 文字。
+  189|                  配色由 #imPlusCss 的 .im-plus-ico--i1..--i3 统一管理（成体系，非各写各的）。
+  190|                  R90 item3：--i4 随「定位」项一同停用（DOM 已移除，样式规则保留待复用，见 injectCss 注释）。 -->
+  191|             <div class="im-plus-menu" id="imPlusMenu">
+  192|               <div class="im-plus-item" onclick="imPlusPickImage()"><span class="im-plus-ico im-plus-ico--i1"><span class="nav-icon" data-icon="image" data-icon-size="22"></span></span><span class="im
+  193|               <div class="im-plus-item" onclick="imPlusPickCamera()"><span class="im-plus-ico im-plus-ico--i2"><span class="nav-icon" data-icon="camera" data-icon-size="22"></span></span><span class="
+  194|               <div class="im-plus-item" onclick="imPlusPickFile()"><span class="im-plus-ico im-plus-ico--i3"><span class="nav-icon" data-icon="file" data-icon-size="22"></span></span><span class="im-p
+  410|   /* C1 20260913k：「群聊」「添加好友」tab 页面视图——弹窗节点搬入侧栏面板宿主后取消浮层定位，随 tab 显隐 */
+  468|      【必须保留】position:relative —— .im-tab-badge/.tab-badge 未读红点依赖它为定位锚点。
+  883|    R88-I（2026-09-18）：私聊输入栏「+」浮层菜单（相册发图 / 拍摄 / 位置定位）
+  886|    - 位置定位复用 window.XT_LOC_PICK.pick，手动兜底用本页自建轻量输入弹层（❗禁用 window.prompt）
+  895|     var m = $id('imPlusMenu');
+  902|     var m = $id('imPlusMenu');
+  910|     var m = $id('imPlusMenu');
+  948|     var t = (title || '所在位置');
+  989|   /* ---------- 分支3：位置定位（XT_LOC_PICK 主入口 + 手动兜底） ---------- */
+  990|   /* R88-J item8：加号菜单「定位」—— 打开微信式位置选择层（XT_LOC_PICK.openPicker）。
+  991|      两条路径都在：①「用当前位置」= 直接发当前定位；②「搜索地址」= 搜索选择后发送。
+  998|       onLoc('所在位置');
+ 1011|   /* 旧链路（一键定位 → 逆地理 → 文字；失败手动兜底）。保留作 openPicker 缺失时的兜底。 */
+ 1014|       imShowLocInput(fallbackTitle || '所在位置', '如：图书馆 / 自习室', function (v) {
+ 1021|       fallbackTitle: fallbackTitle || '所在位置',
+ 1028|   window.imPickLocation = function () { onLoc('所在位置'); };
+ 1039|       '.im-plus-mask{position:fixed;inset:0;background:rgba(0,0,0,.35);opacity:0;visibility:hidden;transition:opacity .2s ease;z-index:60}' +
+ 1040|       '.im-plus-mask.open{opacity:1;visibility:visible}' +
+ 1041|       '.im-plus-menu{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:16px 16px 0 0;padding:10px 0 16px;box-shadow:0 -6px 24px rgba(0,0,0,.12);transform:translateY(110%);transition
+ 1042|       '.im-plus-menu.open{transform:translateY(0)}' +
+ 1043|       '.im-plus-item{display:flex;align-items:center;gap:12px;padding:12px 22px;font-size:15px;color:var(--text,#1f2328);cursor:pointer}' +
+ 1044|       '.im-plus-item:active{background:#f2f3f5}' +
+ 1046|       '.im-plus-ico{flex:0 0 auto;width:44px;height:44px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;color:#fff}' +
+ 1047|       '.im-plus-ico .nav-icon{display:inline-flex;align-items:center;justify-content:center;color:#fff}' +
+ 1048|       '.im-plus-ico .nav-icon svg{stroke:#fff}' +
+ 1049|       '.im-plus-ico--i1{background:linear-gradient(135deg,#22c07a,#12a86a)}' +
+ 1050|       '.im-plus-ico--i2{background:linear-gradient(135deg,#5b8def,#3f6fd8)}' +
+ 1051|       '.im-plus-ico--i3{background:linear-gradient(135deg,#f2a93b,#e08a1e)}' +
+ 1052|       /* R90 item3：.im-plus-ico--i4 原为「定位」项配色；该项已移出加号菜单（改到输入栏 #imLocBtn），
+ 1054|       '.im-plus-ico--i4{background:linear-gradient(135deg,#eb5757,#d13b3b)}' +
+ 1055|       '.im-plus-txt{flex:1;min-width:0}' +
+ 1056|       '@media (max-width:360px){.im-plus-ico{width:40px;height:40px;border-radius:10px}}' +
+ 1057|       '@media (max-height:520px){.im-plus-item{padding:8px 20px}.im-plus-ico{width:36px;height:36px;border-radius:9px}.im-plus-menu{padding:6px 0 10px;max-height:88vh}}' +

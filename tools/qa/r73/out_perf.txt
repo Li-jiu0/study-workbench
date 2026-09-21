@@ -1,0 +1,13 @@
+assets/app.js            raw=  7081581  gzip= 2145653  lines=   9627  maxLineLen=  701869
+assets/chat-local.js     raw=   209022  gzip=   59833  lines=   3866  maxLineLen=     406
+assets/api.js            raw=   111979  gzip=   28193  lines=   1668  maxLineLen=     478
+assets/ai-settings.js    raw=    99573  gzip=   27270  lines=   2584  maxLineLen=     146
+assets/ai-page.js        raw=    86839  gzip=   26657  lines=   1752  maxLineLen=     333
+assets/i-partner.js      raw=    81112  gzip=   25995  lines=   1544  maxLineLen=     190
+assets/quest.js          raw=    80543  gzip=   26422  lines=   1075  maxLineLen=     261
+assets/tpl-preview.js    raw=    70754  gzip=   19340  lines=   1526  maxLineLen=     302
+assets/voiceplayer.js    raw=    68697  gzip=   22189  lines=   1030  maxLineLen=     323
+assets/ai-service.js     raw=    72186  gzip=   23023  lines=   1655  maxLineLen=     143
+
+合计(10 文件) raw=7962286  (7.6 MB)
+单页 app.js 占全部业务脚本体积比例估算：app.js=7081581

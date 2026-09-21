@@ -1,0 +1,418 @@
+{
+  "version": "20260913b",
+  "comment": "批次四（R3-7）：听力三题型补篇至各 4 篇。保留原有 news/longconv/passage 三篇，新增 news_1~news_3 / longconv_1~longconv_3 / passage_1~passage_3 共 9 篇。结构沿用 voiceplayer.js 的 SCENES：t + lines[{en,zh}]。新增 key 采用 _N 后缀，避免与内置 news/longconv/passage 离线兜底场景冲突（loadListeningExt 对已存在 key 不覆盖）。",
+  "scenes": {
+    "news": {
+      "t": "短篇新闻 · 校园节能倡议",
+      "lines": [
+        {
+          "en": "A new green-energy plan was launched at the university this week.",
+          "zh": "本周这所大学启动了一项新的绿色能源计划。"
+        },
+        {
+          "en": "The school will replace old lights with smart LEDs in all classrooms.",
+          "zh": "学校将把所有教室的旧灯具更换为智能 LED 灯。"
+        },
+        {
+          "en": "Students are asked to turn off unused devices before leaving the lab.",
+          "zh": "学校呼吁学生在离开实验室前关闭未使用的设备。"
+        },
+        {
+          "en": "Officials say the change may cut electricity use by about twenty percent.",
+          "zh": "校方表示，这一改变可使用电量降低约百分之二十。"
+        },
+        {
+          "en": "A student club will check the results and share a monthly report.",
+          "zh": "一个学生社团将核查成效并发布月度报告。"
+        },
+        {
+          "en": "The plan will run for one term as a trial before a wider rollout.",
+          "zh": "该计划先试行一个学期，之后再考虑全面推广。"
+        }
+      ]
+    },
+    "longconv": {
+      "t": "长对话 · 求职面试约时间",
+      "lines": [
+        {
+          "en": "A: Hello, this is the hiring team. May I speak with Miss Lin?",
+          "zh": "A：您好，这里是招聘组，请问能找林女士听电话吗？"
+        },
+        {
+          "en": "B: Speaking. Thanks for calling me about the interview.",
+          "zh": "B：我就是。谢谢您打来通知我面试的事。"
+        },
+        {
+          "en": "A: We would like to meet you next Tuesday at ten in the morning.",
+          "zh": "A：我们想约您下周二上午十点见面。"
+        },
+        {
+          "en": "B: Tuesday at ten works for me. Where should I go?",
+          "zh": "B：周二上午十点可以，我该去哪里？"
+        },
+        {
+          "en": "A: Please come to Room 305 on the third floor of the office building.",
+          "zh": "A：请到办公楼三楼 305 室。"
+        },
+        {
+          "en": "B: Got it. Should I bring my resume and a notebook?",
+          "zh": "B：明白了。我需要带简历和笔记本吗？"
+        },
+        {
+          "en": "A: Yes, and a copy of your certificate would be helpful too.",
+          "zh": "A：要的，另外带上一份证书复印件也会有帮助。"
+        },
+        {
+          "en": "B: Sure, I will arrive ten minutes early. See you then.",
+          "zh": "B：好的，我会提前十分钟到，到时见。"
+        }
+      ]
+    },
+    "passage": {
+      "t": "篇章理解 · 时间管理的两个习惯",
+      "lines": [
+        {
+          "en": "Good time management is not about doing more, but doing what matters.",
+          "zh": "良好的时间管理不在于做更多事，而在于做重要的事。"
+        },
+        {
+          "en": "First, write down the three most important tasks the night before.",
+          "zh": "首先，在前一晚写下三件最重要的事。"
+        },
+        {
+          "en": "This helps your brain focus before the busy day begins.",
+          "zh": "这能让大脑在忙碌的一天开始前就聚焦重点。"
+        },
+        {
+          "en": "Second, group small jobs together and finish them in one short block.",
+          "zh": "其次，把零碎的小事集中起来，用一小段时间一并处理。"
+        },
+        {
+          "en": "Checking email only twice a day can save a lot of lost attention.",
+          "zh": "每天只在两个固定时段查邮件，能省下大量被分散的注意力。"
+        },
+        {
+          "en": "Many students find they feel calmer and finish earlier with this method.",
+          "zh": "许多学生发现，用这个方法后他们更从容，也能更早完成任务。"
+        },
+        {
+          "en": "The key is to plan, then protect your focus from small interruptions.",
+          "zh": "关键在于先规划，再保护自己的专注不被小事打断。"
+        },
+        {
+          "en": "Try it for one week and see if your week feels more in your control.",
+          "zh": "试上一个星期，看看这一周是否更在你的掌控之中。"
+        }
+      ]
+    },
+    "news_1": {
+      "t": "短篇新闻 · 科技简讯：校园学习助手",
+      "lines": [
+        {
+          "en": "A new study app was introduced at the city college on Monday.",
+          "zh": "本市学院于周一上线了一款新的学习应用。"
+        },
+        {
+          "en": "The app uses simple AI to answer questions about course materials.",
+          "zh": "该应用借助简易人工智能，回答与课程材料相关的问题。"
+        },
+        {
+          "en": "Students can ask it for summaries, examples and short quizzes.",
+          "zh": "学生可以向它索要摘要、例句和简短测验。"
+        },
+        {
+          "en": "Developers say it was built by a team of six students and two teachers.",
+          "zh": "开发者称，它由一个六名学生和两名教师组成的团队打造。"
+        },
+        {
+          "en": "The service is free and runs on both phones and laptops.",
+          "zh": "该服务免费，手机和笔记本电脑都能使用。"
+        },
+        {
+          "en": "Testers report that it saves them about one hour of study each day.",
+          "zh": "试用者反映，它每天能为他们节省约一小时的学习时间。"
+        },
+        {
+          "en": "The team plans to add a voice function later this term.",
+          "zh": "团队计划在本学期晚些时候加入语音功能。"
+        }
+      ]
+    },
+    "news_2": {
+      "t": "短篇新闻 · 交通：城市夜间公交",
+      "lines": [
+        {
+          "en": "The city opened two new night bus lines last weekend.",
+          "zh": "本市上周末新开通了两条夜间公交线路。"
+        },
+        {
+          "en": "The buses run every twenty minutes from ten at night to five in the morning.",
+          "zh": "这些公交车从晚上十点到凌晨五点，每隔二十分钟一班。"
+        },
+        {
+          "en": "They connect the train station with the main university campus.",
+          "zh": "它们把火车站与大学主校区连接起来。"
+        },
+        {
+          "en": "Officials hope the service will make late travel safer and cheaper.",
+          "zh": "有关部门希望这项服务能让夜间出行更安全、更省钱。"
+        },
+        {
+          "en": "Tickets cost just two yuan, and students pay half price.",
+          "zh": "车票仅需两元，学生还可享受半价。"
+        },
+        {
+          "en": "More than three thousand people used the lines on the first night.",
+          "zh": "开通首晚就有三千多人乘坐了这些线路。"
+        },
+        {
+          "en": "If it proves popular, four more lines may open next year.",
+          "zh": "如果反响良好，明年可能会再开四条线路。"
+        }
+      ]
+    },
+    "news_3": {
+      "t": "短篇新闻 · 招聘：春季校园招聘会",
+      "lines": [
+        {
+          "en": "The university will hold its spring job fair this Thursday.",
+          "zh": "这所大学将于本周四举办春季招聘会。"
+        },
+        {
+          "en": "More than one hundred companies will take part in the event.",
+          "zh": "超过一百家公司将参加此次活动。"
+        },
+        {
+          "en": "They are looking for students in engineering, business and design.",
+          "zh": "他们正在招募工程、商科和设计专业的学生。"
+        },
+        {
+          "en": "Some firms offer summer internships as well as full-time jobs.",
+          "zh": "一些公司既提供暑期实习，也提供全职岗位。"
+        },
+        {
+          "en": "Students should bring printed resumes and their student cards.",
+          "zh": "学生应携带纸质简历和学生证。"
+        },
+        {
+          "en": "A short talk on interview skills will start at nine in the morning.",
+          "zh": "上午九点将有一场关于面试技巧的简短讲座。"
+        },
+        {
+          "en": "The fair lasts until four in the afternoon in the sports hall.",
+          "zh": "招聘会将在体育馆持续到下午四点。"
+        }
+      ]
+    },
+    "longconv_1": {
+      "t": "长对话 · 选课咨询",
+      "lines": [
+        {
+          "en": "A: Excuse me, may I ask you about choosing courses for next term?",
+          "zh": "A：打扰一下，我能请教一下下学期选课的事吗？"
+        },
+        {
+          "en": "B: Of course. What are you thinking about?",
+          "zh": "B：当然可以，你有什么想法？"
+        },
+        {
+          "en": "A: I am not sure whether to take the advanced writing course.",
+          "zh": "A：我不确定要不要选高级写作课。"
+        },
+        {
+          "en": "B: That course is useful, but it needs a lot of reading each week.",
+          "zh": "B：那门课很有用，但每周需要大量阅读。"
+        },
+        {
+          "en": "A: Really? How many hours should I expect to spend on it?",
+          "zh": "A：真的吗？那预计每周要花多少小时？"
+        },
+        {
+          "en": "B: About six to eight hours, including the weekly essay.",
+          "zh": "B：大约六到八小时，还包括每周一篇作文。"
+        },
+        {
+          "en": "A: Then maybe I should take it in my senior year instead.",
+          "zh": "A：那也许我该把它放到大四再修。"
+        },
+        {
+          "en": "B: That is a wise choice. You will write better with more experience.",
+          "zh": "B：这个选择很明智，经验更丰富时你会写得更好。"
+        }
+      ]
+    },
+    "longconv_2": {
+      "t": "长对话 · 租房咨询",
+      "lines": [
+        {
+          "en": "A: Good morning. I saw your ad for a room near the campus.",
+          "zh": "A：早上好，我看到了你们校园附近那间房的招租广告。"
+        },
+        {
+          "en": "B: Yes, it is still available. It is a small but bright room.",
+          "zh": "B：是的，房子还在。房间不大，但采光很好。"
+        },
+        {
+          "en": "A: How much is the rent, and does it include the bills?",
+          "zh": "A：租金是多少？包含水电等费用吗？"
+        },
+        {
+          "en": "B: Eight hundred a month, and water and heating are included.",
+          "zh": "B：每月八百，水电和取暖费包含在内。"
+        },
+        {
+          "en": "A: That sounds fair. Is the internet fast enough for online classes?",
+          "zh": "A：听起来挺合理。网速够上线上课用吗？"
+        },
+        {
+          "en": "B: Yes, many students here take online lessons without problems.",
+          "zh": "B：够的，这里很多学生上网课都没问题。"
+        },
+        {
+          "en": "A: Great. Could I visit the room this Saturday afternoon?",
+          "zh": "A：太好了。我周六下午能来看房吗？"
+        },
+        {
+          "en": "B: Sure, come after two, and I will show you around.",
+          "zh": "B：可以，两点以后来，我带你看看。"
+        }
+      ]
+    },
+    "longconv_3": {
+      "t": "长对话 · 假期旅行计划",
+      "lines": [
+        {
+          "en": "A: Have you decided where to go for the long holiday?",
+          "zh": "A：长假你决定去哪儿了吗？"
+        },
+        {
+          "en": "B: Not yet. I want somewhere quiet, not too far or too costly.",
+          "zh": "B：还没有。我想找个清静的地方，不太远也不太贵。"
+        },
+        {
+          "en": "A: How about the old town by the lake? The scenery is lovely in spring.",
+          "zh": "A：去湖边那座古镇怎么样？春天风景很美。"
+        },
+        {
+          "en": "B: That sounds nice. How do we get there?",
+          "zh": "B：听起来不错，我们怎么去呢？"
+        },
+        {
+          "en": "A: We can take the morning train and arrive before noon.",
+          "zh": "A：我们可以坐早班火车，中午之前就能到。"
+        },
+        {
+          "en": "B: And where can we stay? I prefer a small guesthouse.",
+          "zh": "B：那住哪儿？我更喜欢小旅馆。"
+        },
+        {
+          "en": "A: I know one near the river. It is cheap and the host is friendly.",
+          "zh": "A：我知道河边有一家，价格实惠，老板也很热情。"
+        },
+        {
+          "en": "B: Perfect. Let us book the train and the room tonight.",
+          "zh": "B：完美。今晚我们就把火车票和房间订了吧。"
+        }
+      ]
+    },
+    "passage_1": {
+      "t": "篇章理解 · 一位乡村教师",
+      "lines": [
+        {
+          "en": "Mrs. Wang has taught in a small village school for almost thirty years.",
+          "zh": "王老师在一所乡村小学教书已将近三十年。"
+        },
+        {
+          "en": "When she arrived, the school had only two rooms and no library.",
+          "zh": "她刚来时，学校只有两间教室，也没有图书馆。"
+        },
+        {
+          "en": "Over the years, she raised money to build a reading room for the children.",
+          "zh": "多年来，她筹款为孩子们建起了一间阅览室。"
+        },
+        {
+          "en": "Many of her students went on to study at good universities.",
+          "zh": "她的许多学生后来都考上了名牌大学。"
+        },
+        {
+          "en": "She often says that every child can shine if given a real chance.",
+          "zh": "她常说，只要给予真正的机会，每个孩子都能发光。"
+        },
+        {
+          "en": "Even now, she walks to school early and greets each student by name.",
+          "zh": "时至今日，她仍早早步行到校，叫得出每个学生的名字。"
+        },
+        {
+          "en": "Her quiet work has changed a whole village.",
+          "zh": "她默默的工作改变了一整个村庄。"
+        }
+      ]
+    },
+    "passage_2": {
+      "t": "篇章理解 · 睡眠与记忆",
+      "lines": [
+        {
+          "en": "Sleep is not just a time for your body to rest.",
+          "zh": "睡眠不只是身体休息的时间。"
+        },
+        {
+          "en": "During deep sleep, the brain sorts and stores what you learned that day.",
+          "zh": "在深度睡眠中，大脑会整理并储存你当天的所学。"
+        },
+        {
+          "en": "That is why a good night's sleep helps you remember new words.",
+          "zh": "正因如此，睡个好觉能帮你记住新单词。"
+        },
+        {
+          "en": "Scientists found that students who slept well scored higher in tests.",
+          "zh": "科学家发现，睡眠好的学生在考试中得分更高。"
+        },
+        {
+          "en": "To sleep better, avoid bright screens an hour before bed.",
+          "zh": "想睡得更好，睡前一小时应避开明亮的屏幕。"
+        },
+        {
+          "en": "Keeping a regular bedtime also makes falling asleep easier.",
+          "zh": "保持固定的就寝时间也有助于入睡。"
+        },
+        {
+          "en": "So study hard, but do not trade your sleep for extra hours.",
+          "zh": "所以努力学习，但别用睡眠去换那几小时。"
+        }
+      ]
+    },
+    "passage_3": {
+      "t": "篇章理解 · 中秋节的团圆",
+      "lines": [
+        {
+          "en": "The Mid-Autumn Festival is one of the most important holidays in China.",
+          "zh": "中秋节是中国最重要的节日之一。"
+        },
+        {
+          "en": "It falls on the fifteenth day of the eighth lunar month.",
+          "zh": "它在农历八月十五这一天。"
+        },
+        {
+          "en": "On that night, the moon is at its fullest and brightest.",
+          "zh": "那天夜里，月亮最圆最亮。"
+        },
+        {
+          "en": "Families gather to share a meal and eat mooncakes together.",
+          "zh": "家人团聚，一起吃饭、吃月饼。"
+        },
+        {
+          "en": "Mooncakes are round, a symbol of reunion and completeness.",
+          "zh": "月饼是圆的，象征团圆和圆满。"
+        },
+        {
+          "en": "Children love to hear the old story of Chang'e and the moon.",
+          "zh": "孩子们喜欢听嫦娥奔月的古老故事。"
+        },
+        {
+          "en": "No matter how far people live, they try to come home for this day.",
+          "zh": "无论人们住得多远，都会尽量在这一天回家。"
+        }
+      ]
+    }
+  }
+}

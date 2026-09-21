@@ -1,0 +1,4 @@
+APPLY=True
+xt-region.js before=31620 after=44387 delta=+12767
+  [js-after] bytes=44387 CRLF=0 loneLF=886 loneCR=0
+EXIT=0

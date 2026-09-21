@@ -1,0 +1,92 @@
+===== 1) fetch( 调用点，其后 12 行内是否有 .catch =====
+   admin-contact.js:50 | return fetch(base() + '/api/admin/contact', {
+   admin-contact.js:159 | return fetch(base() + '/api/chat/' + S.adminId + '/messages?limit=50&markRead=1', {
+   admin-contact.js:188 | fetch(base() + '/api/chat/' + S.adminId + '/messages', {
+   ai-page.js:1435 | var req = fetch(url, {
+   ai-service.js:748 | fetch(relayBase() + "/api/ai/models", { headers: hdrs }),
+   ai-service.js:757 | resp = await fetch(relayBase() + "/api/ai/models", { headers: h2 });
+   ai-service.js:956 | fetch(relayBase() + "/api/ai/chat", {
+   api.js:74 | return fetch(window.API_BASE + '/api/auth/refresh', {
+   api.js:100 | var res = await fetch(window.API_BASE + path, {
+   api.js:124 | var res = await fetch(window.API_BASE + path, init);
+   api.js:128 | return fetch(window.API_BASE + path, init);
+   app.js:3043 | const res = await fetch(cfg.baseUrl, {
+   app.js:9585 | fetch(xtApiBase() + '/api/chat/unread', { headers: { 'Authorization': 'Bearer ' + token } })
+   chat-local.js:1246 | fetch(apiBase() + '/api/friends', { headers: { 'Authorization': 'Bearer ' + token } })
+   chat-local.js:1522 | fetch(apiBase() + '/api/friends/' + serverId, {
+   chat-local.js:1629 | fetch(API_BASE + '/api/friends/requests', {
+   chat-local.js:1751 | fetch(apiBase() + '/api/chat/' + S.peer.serverId + '/messages?limit=50', {
+   chat-local.js:1954 | fetch(apiBase() + '/api/uploads/image', {
+   chat-local.js:1973 | fetch(apiBase() + '/api/groups/' + S.group.id + '/messages', {
+   chat-local.js:1989 | fetch(apiBase() + '/api/chat/' + S.peer.serverId + '/messages', {
+   chat-local.js:2171 | fetch(apiBase() + '/api/chat/' + S.peer.serverId + '/messages', {
+   chat-local.js:2368 | fetch(apiBase() + '/api/chat/' + S.peer.serverId + '/messages', {
+   chat-local.js:2436 | fetch(API_BASE + '/api/friends/search?q=' + encodeURIComponent(keyword), {
+   chat-local.js:2468 | fetch(API_BASE + '/api/friends/requests', {
+   chat-local.js:2556 | fetch(apiBase() + '/api/friends/requests', {
+   chat-local.js:2591 | fetch(apiBase() + '/api/chat/' + S.peer.serverId + '/messages?limit=50&markRead=1', {
+   chat-local.js:2611 | fetch(apiBase() + '/api/groups/' + S.group.id + '/messages?limit=50&markRead=1', {
+   chat-local.js:2630 | fetch(apiBase() + '/api/groups', { headers: { 'Authorization': 'Bearer ' + token } })
+   chat-local.js:2714 | fetch(apiBase() + '/api/groups/' + S.group.id + '/messages', {
+   chat-local.js:2856 | fetch(apiBase() + '/api/groups', {
+   chat-local.js:2961 | fetch(apiBase() + '/api/admin/users/' + uid, { headers: { 'Authorization': 'Bearer ' + getToken() } })
+   chat-local.js:3289 | fetch(apiBase() + '/api/groups/' + gid, {
+   chat-local.js:3315 | fetch(apiBase() + '/api/groups/' + gid + '/me', {
+   chat-local.js:3382 | fetch(apiBase() + '/api/groups/' + gid, {
+   chat-local.js:3417 | fetch(apiBase() + '/api/groups/' + GS.gid + '/transfer', {
+   chat-local.js:3532 | fetch(apiBase() + '/api/users/presence?ids=' + ids.join(','), {
+   chat-local.js:3672 | fetch(apiBase() + '/api/chat/unread', { headers: { 'Authorization': 'Bearer ' + token } })
+   hotnews.js:61 | return fetch(url, { cache: 'no-store' });
+   net-compat.js:12 | 一旦缺失，页面里的 fetch(...) 直接抛异常，表现为「连不上服务器 / 单机静态」。
+   study-stats.js:105 | fetch(base + '/api/study/logs', {
+   小计: 40
+
+===== 2) JSON.parse(localStorage...) 且前 40 行无 try =====
+   admin.js:62 try=True | var auth = JSON.parse(localStorage.getItem(AUTH_KEY) || '{}');
+   ai-page.js:148 try=True | function lsGet(key, def) { try { var v = localStorage.getItem(key); if (v === null) return def; return JSON.pa
+   api.js:1247 try=True | var d = JSON.parse(localStorage.getItem('study_workbench_data') || '{}');
+   app.js:11 try=True | try { var a = JSON.parse(localStorage.getItem('study_workbench_auth')); if (a && a.account) acct = a.account; 
+   app.js:100 try=True | try { saved = JSON.parse(localStorage.getItem(POS_KEY) || 'null'); } catch (e) { saved = null; }
+   app.js:314 try=True | try { return Object.assign({}, DEFAULT_SETTINGS, JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}); }
+   app.js:320 try=True | const o = Object.assign({}, DEFAULT_SETTINGS, JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {});
+   app.js:399 try=True | try { return JSON.parse(localStorage.getItem(AUTH_KEY)); } catch (e) { return null; }
+   app.js:407 try=True | var arr = JSON.parse(localStorage.getItem(KEY)) || [];
+   app.js:417 try=True | window.__errorLog = function () { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { retu
+   app.js:3008 try=True | try { return JSON.parse(localStorage.getItem(AI_CFG_KEY)) || {}; } catch (e) { return {}; }
+   app.js:3233 try=True | try { list = JSON.parse(localStorage.getItem(XT_AI_HISTORY_KEY)) || []; } catch (e2) { list = []; }
+   app.js:3257 try=True | var list = JSON.parse(localStorage.getItem(XT_AI_HISTORY_KEY)) || [];
+   app.js:3277 try=True | var list = JSON.parse(localStorage.getItem(XT_AI_HISTORY_KEY)) || [];
+   app.js:3477 try=True | try { h = JSON.parse(localStorage.getItem(getAiChatKey())) || []; } catch (e) { h = []; }
+   app.js:4280 try=True | aiChatHistory = JSON.parse(localStorage.getItem(getAiChatKey())) || [];
+   app.js:4281 try=True | if (!aiChatHistory.length) { aiChatHistory = JSON.parse(localStorage.getItem(lsKey(AI_CHAT_KEY))) || []; }
+   app.js:7263 try=True | function homePrefs() { try { return JSON.parse(localStorage.getItem(HOME_SHOW_KEY)) || {}; } catch (e) { retur
+   app.js:7268 try=True | var arr = JSON.parse(localStorage.getItem(lsKey('study_workbench_recent')) || '[]');
+   app.js:7282 try=True | try { recent = JSON.parse(localStorage.getItem(lsKey('study_workbench_recent')) || '[]'); } catch (e) { recent
+   app.js:8700 try=False | var history = JSON.parse(localStorage.getItem('ai_chat_history') || '[]');
+   app.js:8875 try=True | try { return JSON.parse(localStorage.getItem(STUDY_RECORDS_KEY)) || {}; } catch (e) { return {}; }
+   app.js:8955 try=True | try { s = JSON.parse(localStorage.getItem(STREAK_KEY) || 'null'); } catch (e) { s = null; }
+   app.js:8983 try=True | try { s = JSON.parse(localStorage.getItem(STREAK_KEY) || 'null') || s; } catch (e) { /* 静默 */ }
+   app.js:9063 try=True | try { return JSON.parse(localStorage.getItem(WRONG_REASON_KEY)) || {}; } catch (e) { return {}; }
+   app.js:9104 try=True | try { return JSON.parse(localStorage.getItem(SUBJECTS_KEY)) || []; } catch (e) { return []; }
+   app.js:9121 try=True | try { return JSON.parse(localStorage.getItem(GOALS_KEY)) || []; } catch (e) { return []; }
+   app.js:9204 try=True | try { return JSON.parse(localStorage.getItem(STUDY_TIME_KEY)) || {}; }
+   chat-local.js:3438 try=True | var v = JSON.parse(localStorage.getItem(key) || '[]');
+   hotnews.js:231 try=True | try { var v = localStorage.getItem(k); return (v === null || v === undefined) ? def : JSON.parse(v); }
+   importer.js:52 try=True | function loadImportBanks() { try { return JSON.parse(localStorage.getItem(IMPORTS_KEY)) || {}; } catch (e) { r
+   mini.js:18 try=True | function loadStat() { try { return JSON.parse(localStorage.getItem(LK(ST))) || {}; } catch (e) { return {}; } 
+   mock-engine.js:150 try=True | try { list = JSON.parse(localStorage.getItem(key) || '[]') || []; } catch (e) { list = []; }
+   ppt-works.js:148 try=True | try { list = JSON.parse(localStorage.getItem(rawKey(KEY)) || 'null'); } catch (e) { list = null; }
+   ppt-works.js:165 try=True | try { old = JSON.parse(localStorage.getItem(rawKey(LEGACY_KEY)) || 'null'); } catch (e) { old = null; }
+   ppt-works.js:167 try=True | try { old = JSON.parse(localStorage.getItem(LEGACY_KEY) || 'null'); } catch (e2) { old = null; }
+   qbank.js:20 try=True | function readMap() { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch (e) { return {}; } }
+   quest.js:529 try=True | try { return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {}; } catch (e) { return {}; }
+   study-stats.js:86 try=True | var q = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
+   study-stats.js:231 try=True | var detail = JSON.parse(localStorage.getItem(LK('study_workbench_tool_' + tool)) || 'null');
+   study-stats.js:239 try=True | var detail = JSON.parse(localStorage.getItem(LK('study_workbench_tool_' + tool)) || '{"count":0,"lastTs":0}');
+   小计: 41（其中无 try 的: 1）
+
+===== 3) 跨文件顶层 var/let/const 同名（潜在 SyntaxError）=====
+   (无)
+
+===== 4) innerHTML 行内含 变量 且无 esc/escHtml 转义（候选 XSS）=====
+   小计候选: 0

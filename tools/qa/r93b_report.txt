@@ -1,0 +1,48 @@
+================================================================================
+R93-2 修复报告：更新页 xt-update.js 缓存强刷版本号
+工程师：software-engineer-任务二
+日期：2026-09-19（R93）
+================================================================================
+
+一、根因核实（先核实再动手）
+
+  1. R91-F 产出复核（读码）：assets/xt-update.js 现状 ——
+     paintIcons() 定义 L552；10 处调用在位：applySettingsState ×4（L510/521/530/540）、
+     renderNew L707、renderLatest L728、renderStarting L749、renderError L768、
+     startDownload L917、restoreBtn L1026。
+     renderError 分支的 paintIcons 确实在 → 排除「修复没生效」的可能 ✅
+  2. 更新.html L384 当前引用：assets/xt-update.js?v=20260918d
+     —— R91-F 当时「更新.html 本体零改动」，版本号未升，用户浏览器命中旧缓存。
+  结论：纯缓存问题，仅升版本号即可。
+
+二、改动点（仅 1 处）
+
+  更新.html（23107 B，纯 CRLF）L384：
+    assets/xt-update.js?v=20260918d  →  assets/xt-update.js?v=20260918e
+  工具：tools/qa/_r93b_patch.py（字节级等长替换，CRLF 保持）。
+  xt-update.js 本体：零改动（复核确认无需补改）。
+
+三、前后字节/行尾
+
+  改前：23107 字节，CRLF=386，LF=386，pureLF=0（纯 CRLF）
+  改后：23107 字节，CRLF=386，LF=386，pureLF=0（等长替换 d→e，零污染）
+
+四、命中核验
+
+  旧值 v=20260918d 命中 = 0 ✅
+  新值 v=20260918e 命中 = 1 ✅
+
+五、验证结果
+
+  ES2017：node tools/qa/escheck_es2017.js → tools/qa/r93b_escheck.txt = DONE 0 ✅
+  验证级别说明：本次为资源引用版本号升级，R91-F 的图标渲染已由
+  tools/qa/_r91f_cdp.js 真机 CDP 11/11 实测通过（报告 tools/qa/r91f_report.txt），
+  本次改动不触任何 JS/CSS 逻辑，无需重复 CDP。
+
+六、合规确认
+
+  - 仅改 更新.html 一处；未动 xt-update.js 及其他任何文件
+  - 无 prompt/alert/confirm；无 JS 改动，escheck DONE 0
+  - 二进制读写 + 行尾回读（纯 CRLF 保持）
+================================================================================
+报告完

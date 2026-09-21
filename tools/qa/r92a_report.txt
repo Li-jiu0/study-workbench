@@ -1,0 +1,95 @@
+================================================================================
+R92-A 报告 —— 视频模型路由修复（AI 对话页接通视频/3D 能力直连链路）
+执行人：software-engineer-任务一｜代码树：D:\下载的文件\学习工作台
+================================================================================
+
+一、根因核实（独立复核，与报障分析一致并有两点补充）
+--------------------------------------------------------------------------------
+1. ai-page.js askAI()（原 L1140）→ predictFuncType(text, hasImage)（L1125）按输入
+   文字猜功能（图→vision、深想→reasoning、数学词→reasoning、翻译词→translate、
+   其余 general），完全不知道用户选中的模型 → callAI('general',...) →
+   chat/completions 不支持视频生成 → 报错/无反应。属实。
+2. 补充核实 ①：ai-cap-video.js 的视频是**分钟级异步任务**（创建→轮询≤10 分钟），
+   模块自带 run(ctx, onProgress) 并在注释里明确「调用层只需判断 cap.run 是否存在」；
+   但 ai-service.js 的 xtCallCapability 是**单发请求**链路（build→fetch→parse），
+   从未调用过 cap.run —— 即使把 video 塞进 xtRunCapability 也会只拿到 taskId 拿不到
+   视频。即「能力分发 + 对话页接线」两处都没接。
+3. 补充核实 ②：ai-service.js 的 xtRunCapability(modelId, input, opts) 是 IIFE 内部
+   函数，此前**未导出**（window/AI_SERVICE 均无）；而 ai-page.js L940-950 已预留
+   capRunner() 解析器（AI_SERVICE.xtRunCapability 优先、window 兜底），等的就是底座
+   挂载——本次按该预留契约完成接线。
+4. ai-page.js / ai-service.js 实测为**纯 LF**（非任务描述猜测的 CRLF），AI.html 为
+   CRLF；均按实测处理。
+
+二、改动明细（二进制编辑、逐条唯一命中断言、写后回读校验；行号为改前行号）
+--------------------------------------------------------------------------------
+A) assets/ai-service.js（148942 → 150566 B，纯 LF 回读一致，+1624 B）
+   S1 xtRunCapability（L1972 起的 try 块）：新增 cap.run 分发——
+      typeof cap.run === 'function' 时：
+        capCfg=getConfig(); capProvider=按 mc.provider 解析；
+        runRes = await cap.run({modelCfg: mc, provider: capProvider, input: capInput},
+                               o.onProgress 或 null);
+        runRes.ok===false → makeError(带 modelId/modelName, code='CAP_RUN') 上抛；
+        成功 → result=runRes.result；sink.capUsage=runRes.usage（页面账本口径统一）。
+      否则维持原 xtCallCapability 单发链路（同步能力零改动）。
+      注：cap.run 内部（ai-cap-video/3d）自己上报模型平台用量，这里只同步页面账本，
+      不会双记。
+   S2 导出：window.callAI = callAI 之后守卫式挂 window.xtRunCapability（R87 风格）；
+      AI_SERVICE 对象内补 xtRunCapability: xtRunCapability（capRunner 首选来源，
+      与 L940 预留注释「一旦底座把它挂到 AI_SERVICE 上」对齐）。
+
+B) assets/ai-page.js（133571 → 138586 B，纯 LF 回读一致，+5015 B）
+   P1 askAI（L1140）前新增能力路由块：
+      - CAP_MODEL_TYPES = ['video', '3d']；isCapabilityModel(m) 按 m.types 判定；
+        capModelKind(m) 返回 'video' | '3d' | ''；
+      - routeCapabilityModel(aiB, text, image)：
+        · 选中模型 = getSelectedModelId()（'auto' 或找不到 → false 走原路由）；
+        · 命中能力型 → run = capRunner()（复用既有解析器）；未加载则如实提示
+          「能力模块未加载」并收尾（不留挂起的 typing 态）；
+        · input = {prompt: 文本}；有图时 input.imageUrl=图、mode='i2v'（视频）/
+          'i23d'（3D，与 ai-cap-3d.js modes id 一致）；
+        · onProgress 回显「正在生成…（第 x/y 次查询）」到气泡；
+        · 成功：视频用 DOM 插 <video controls>（renderMarkdown 无链接语法，
+          富媒体走 DOM 更可靠），3D 插 <a> 下载 .zip；文案如实标注视频 URL
+          约 24 小时有效；state.messages / setSendBusy(false) / saveCurrentChat()
+          收尾与普通路径完全同构；
+        · 失败：气泡如实显示 err.message + toast；同样完整收尾。
+   P2 askAI 内：predictFuncType 之后一行钩子
+      if (routeCapabilityModel(aiB, text, image)) { return; }
+      未命中（普通对话/翻译/推理/生图/批改）零影响。
+   设计取舍：按 team-lead 口径在 askAI 侧路由（不改动 callAI 内部），改动面最小；
+   '3d' 与 'video' 接口对称（同为 cap.run 异步），顺手接上零额外成本。
+
+C) AI.html（CRLF 回读一致，±0 B）：ai-service.js / ai-page.js 引用版本号
+   v=20260918d → v=20260918e（AI.html 是对话页所在，仅此页需要强刷；未动其他页）。
+
+三、未动文件
+--------------------------------------------------------------------------------
+ai-config.js（3 个 seedance 下线型号由另一条线删除，本路由按 types 判断，删后自然
+消失）、common.css、server/**、xt-profile.js / 私聊.html / 个人中心.html（QA 验证中）。
+
+四、验证（一次跑完）
+--------------------------------------------------------------------------------
+1. escheck_es2017.js → DONE 0（PASS）。
+2. 行尾/字节回读：ai-page.js 纯 LF（+5015 B）、ai-service.js 纯 LF（+1624 B）、
+   AI.html CRLF loneCR=0（±0）。
+3. 命中核验全 PASS（r92a_edit_result.txt 含首轮谓词笔误的修正记录；产品文件编辑
+   本体一次到位，收尾轮仅两处小改：route 内改用 capRunner() 复用既有解析器 +
+   AI_SERVICE 导出对齐预留契约）。
+4. jsdom 端到端（真实 AI.html 全量脚本加载，r92a_jsdom_report.txt）：
+   - CASE1：选中 ark-seedance-1-0-pro（types:['video']），输入「生成一段视频」
+     点击发送 → xtRunCapability 被调用 1 次（id=ark-seedance-1-0-pro，prompt 逐字
+     正确），callAI 0 次调用 → PASS；
+   - CASE2：改选 ark-doubao-mini（普通对话模型），输入「你好」发送 → callAI 调用
+     1 次（ft='general'），xtRunCapability 不再被调（计数保持 1）→ PASS；
+   - 全程 qaErrors / jsdomErrors / consoleErrors 均为空。
+   说明：真机 CDP 需真实 API Key 才能跑通方舟视频任务（创建→轮询），未实测上游；
+   jsdom 已验证路由分派与回显收尾逻辑，上游协议由 ai-cap-video.js 既有实现承接。
+5. ES2017：新增代码仅 var/function/Promise/数组，无 ?. ?? replaceAll at ** catch{}。
+
+五、遗留
+--------------------------------------------------------------------------------
+- 视频结果 URL 24h 过期：当前按团队既有口径如实标注并给下载入口，未做落盘持久化
+  （如需本地 Blob 化可参照 ai-page.js R86 生图 persistGeneratedImages 的方案后续加）。
+- 同步能力（imagegen 等）路由不动；模型 'auto' 模式不进能力路由（保持自动按文字猜）。
+================================================================================
