@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 from config import AI_DAILY_LIMIT, AI_PROVIDERS, configured_providers
 from database import (AiLog, AiUsage, Note, SessionLocal, User, get_db,
                       now_iso)
-from quota_ledger import (check_quota, force_exhaust, known_model_ids,
+from quota_ledger import (check_quota, force_exhaust, get_quota, known_model_ids,
                           ledger_snapshot, record_usage, reset_usage,
                           resolve_model_name, resolve_model_name_lenient,
                           tokens_from_usage)
@@ -119,6 +119,35 @@ def _record_usage(db: Session, user_id: int) -> int:
     row.count += 1
     db.commit()
     return row.count
+
+
+def _align_amount(model_id: str, amount) -> int:
+    """R156：按模型 quotaType 对齐账本记账单位（根治「token 量记进按次额度」）。
+
+    R151 线上实锤：视频直连上报把 usage.total_tokens（≈100000）记进了
+    ark-seedance-1-0-pro 只有 20 次的视频额度（quotaType=videos），3D 同理，
+    导致「实际还有额度却标已耗尽」。规则：
+      - videos / tasks 型：一律记 1（每次操作 = 1 个视频 / 1 个 3D 任务），
+        绝不让 token 数 / 字节数进入按次口径；
+      - images 型：amount 本就是张数（len(items)），原样记账；
+      - tokens 型：amount 本就是 token 数，原样记账；
+      - quotaType 查不到（模型不在额度表 / freeQuota=null 且无类型）：保守按 1
+        计并 print 留痕（此类模型不参与额度拦截，used 仅作展示参考）。
+    """
+    try:
+        amt = int(amount)
+    except (TypeError, ValueError):
+        amt = 1
+    amt = max(amt, 0)
+    _free, qtype = get_quota(model_id)
+    if qtype in ("videos", "tasks"):
+        if amt != 1:
+            print(f"[R156] 记账单位对齐：{model_id} quotaType={qtype}，原始量 {amt} -> 1")
+        return 1
+    if not qtype:
+        print(f"[R156] 记账单位缺省：{model_id} 无 quotaType，原始量 {amt} -> 1（保守口径）")
+        return 1
+    return amt
 
 
 def _note_system(note: Note) -> str:
@@ -269,7 +298,7 @@ async def _serve_special(body: "_ChatIn", cfg: dict, quota_key: str,
             used_tokens = int(u.get("prompt_tokens") or u.get("input_tokens") or 0) or 0
         except (TypeError, ValueError):
             used_tokens = 0
-    record_usage(quota_key, used_tokens if used_tokens > 0 else 1,
+    record_usage(quota_key, _align_amount(quota_key, used_tokens if used_tokens > 0 else 1),
                  ok=(resp.status_code == 200))
 
     # 响应头带「实际执行的模型名」，前端记账口径与 chat 路径一致（ASCII 安全）
@@ -670,6 +699,9 @@ def ai_usage_consume(body: dict, _rl: None = Depends(rate_limit("consume"))):
     amount = min(max(amount, 0), _MAX_CONSUME_AMOUNT)
     ok = body.get("ok", True)
     ok = True if ok is None else bool(ok)
+    # R156：直连上报先过记账单位对齐——视频/3D 等按次口径模型绝不让前端上报的
+    # usage.total_tokens（万级）进入只有 20/60 次的额度（R151 实锤的误标源头）。
+    amount = _align_amount(model_id, amount)
     status = record_usage(model_id, amount, ok=ok)
     return {"ok": True, "used": status["used"], "status": status["status"]}
 
@@ -866,7 +898,8 @@ async def _gemini_stream(cfg: dict, model_name: str, fallback: bool, messages: l
         acc.append(msg)
         yield msg.encode("utf-8")
     finally:
-        record_usage(quota_key, used_tokens if used_tokens > 0 else 1, ok=upstream_ok)
+        record_usage(quota_key, _align_amount(quota_key, used_tokens if used_tokens > 0 else 1),
+                     ok=upstream_ok)
         if user:
             reply = "".join(acc)
             db2 = SessionLocal()
@@ -1097,7 +1130,8 @@ async def chat(body: _ChatIn, request: Request, user: User = Depends(get_current
                 yield b"data: [DONE]\n\n"
         finally:
             # 服务端账本：成功累加真实 token（拿不到就按 1 次计），失败只记 failCalls
-            record_usage(quota_key, used_tokens if used_tokens > 0 else 1,
+            # （R156：amount 先过 _align_amount——tokens 型按 token，videos/tasks 型按次）
+            record_usage(quota_key, _align_amount(quota_key, used_tokens if used_tokens > 0 else 1),
                          ok=upstream_ok)
             # 保存完整回答到数据库（登录用户才落库，游客不入库；失败不影响已输出的内容）
             if user:
@@ -1303,7 +1337,7 @@ async def _gemini_image_generate(info: dict, prompt: str, n: int) -> JSONRespons
     if not items:
         return _err("provider_error", "生图服务未返回图片地址，请稍后再试",
                     code=502, detail=_upstream_msg("；".join(texts)))
-    record_usage(info["modelId"], len(items), ok=True)   # 按张计
+    record_usage(info["modelId"], _align_amount(info["modelId"], len(items)), ok=True)   # 按张计
     return {"ok": True, "data": items, "modelUsed": info["model"]}
 
 
@@ -1370,7 +1404,7 @@ async def image_generate(body: dict, request: Request,
     if not items:
         return _err("provider_error", "生图服务未返回图片地址，请稍后再试", code=502,
                     detail=_upstream_msg(resp))
-    record_usage(info["modelId"], len(items), ok=True)   # 按张计
+    record_usage(info["modelId"], _align_amount(info["modelId"], len(items)), ok=True)   # 按张计
     return {"ok": True, "data": items, "modelUsed": info["model"]}
 
 
@@ -1432,7 +1466,7 @@ async def audio_transcribe(request: Request,
     if not text:
         return _err("provider_error", "语音转写未返回文本，请稍后再试", code=502,
                     detail=_upstream_msg(resp))
-    record_usage(info["modelId"], 1, ok=True)   # 按次计
+    record_usage(info["modelId"], _align_amount(info["modelId"], 1), ok=True)   # 按次计（R156：过单位对齐）
     return {"ok": True, "text": text, "modelUsed": info["model"]}
 
 
@@ -1499,7 +1533,7 @@ async def video_generate(body: dict, request: Request,
     if not task_id:
         return _err("provider_error", "视频服务未返回任务 ID，请稍后再试", code=502,
                     detail=_upstream_msg(resp))
-    record_usage(info["modelId"], 1, ok=True)   # 按次计
+    record_usage(info["modelId"], _align_amount(info["modelId"], 1), ok=True)   # 按次计（R156：过单位对齐）
     return {"ok": True, "taskId": task_id, "modelUsed": info["model"]}
 
 
@@ -1584,7 +1618,7 @@ async def model3d_generate(body: dict, request: Request,
     if not task_id:
         return _err("provider_error", "3D 服务未返回任务 ID，请稍后再试", code=502,
                     detail=_upstream_msg(resp))
-    record_usage(info["modelId"], 1, ok=True)   # 按次计
+    record_usage(info["modelId"], _align_amount(info["modelId"], 1), ok=True)   # 按次计（R156：过单位对齐）
     return {"ok": True, "taskId": task_id, "modelUsed": info["model"]}
 
 

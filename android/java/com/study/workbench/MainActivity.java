@@ -657,45 +657,63 @@ public class MainActivity extends Activity {
                 }
             }
 
-            /** 【需求D】应用白名单：返回本机已安装应用列表（明文应用名 + 包名 + 是否系统应用）。
+            /** 【需求D/R152】应用白名单：返回本机「有启动入口（CATEGORY_LAUNCHER）」的应用列表
+             *  （明文应用名 + 包名 + 是否系统应用）。
              *  前端契约（assets/xt-applist.js 按此解析，任一侧变更需同步）：
              *    · 成功 {"ok":true,"apps":[{"label":"微信","pkg":"com.tencent.mm","sys":false}, ...]}
              *    · 失败 {"ok":false,"reason":"error"}
-             *    · apps 按 label 升序；已排除本 App 自身；最多 500 条。
+             *    · 仅列桌面可见（ACTION_MAIN + CATEGORY_LAUNCHER）应用；按 pkg 去重；
+             *      apps 按 label 升序（label 同则 pkg 兜底，排序稳定）；已排除本 App 自身；
+             *      最多 500 条，超出截断并在结果追加 "truncated":true（前端忽略未知字段，安全）。
              *  隐私：本方法只把列表交给页面做本机展示与勾选（页面只写 localStorage、零网络请求），
              *        不上传服务器、不落库、不打日志；日志里也绝不打印完整包名列表。
-             *  权限：依赖 Manifest 已声明的 QUERY_ALL_PACKAGES（targetSdk33 包可见性），无需运行时授权。 */
+             *  权限：依赖 Manifest 已声明的 QUERY_ALL_PACKAGES + <queries> MAIN/LAUNCHER
+             *        （targetSdk33 包可见性），无需运行时授权。
+             *  线程：JavascriptInterface 回调线程内只读 PackageManager，无 IO/联网。 */
             @JavascriptInterface
             public String getInstalledAppsForWhitelist() {
                 try {
                     android.content.pm.PackageManager pm = getPackageManager();
                     if (pm == null) return "{\"ok\":false,\"reason\":\"error\"}";
-                    java.util.List<android.content.pm.ApplicationInfo> apps;
+                    // R152：只列「有桌面启动入口」的应用 —— 用 queryIntentActivities(MAIN/LAUNCHER)
+                    // 而非 getInstalledApplications（后者会混入无入口的库/服务进程）
+                    android.content.Intent launchIntent =
+                            new android.content.Intent(android.content.Intent.ACTION_MAIN);
+                    launchIntent.addCategory(android.content.Intent.CATEGORY_LAUNCHER);
+                    java.util.List<android.content.pm.ResolveInfo> ris;
                     try {
-                        apps = pm.getInstalledApplications(0);
+                        ris = pm.queryIntentActivities(launchIntent, 0);
                     } catch (Throwable t) {
                         return "{\"ok\":false,\"reason\":\"error\"}";
                     }
-                    if (apps == null) return "{\"ok\":false,\"reason\":\"error\"}";
+                    if (ris == null) return "{\"ok\":false,\"reason\":\"error\"}";
                     final String self = getPackageName();
+                    java.util.HashSet<String> seen = new java.util.HashSet<String>(); // 按 pkg 去重
                     java.util.List<org.json.JSONObject> items = new java.util.ArrayList<org.json.JSONObject>();
-                    for (int i = 0; i < apps.size(); i++) {
-                        android.content.pm.ApplicationInfo ai = apps.get(i);
-                        if (ai == null || ai.packageName == null) continue;
+                    for (int i = 0; i < ris.size(); i++) {
+                        android.content.pm.ResolveInfo ri = ris.get(i);
+                        if (ri == null || ri.activityInfo == null) continue;
+                        String pkg = ri.activityInfo.packageName;
+                        if (pkg == null || pkg.length() == 0) continue;
                         // 排除本 App 自身
-                        if (ai.packageName.equals(self)) continue;
+                        if (pkg.equals(self)) continue;
+                        // 同一应用可能有多个入口 Activity → 只保留首个
+                        if (!seen.add(pkg)) continue;
+                        boolean sys = false;
+                        android.content.pm.ApplicationInfo ai = ri.activityInfo.applicationInfo;
+                        if (ai != null) sys = (ai.flags & android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0;
                         String label = "";
                         try {
-                            CharSequence lc = pm.getApplicationLabel(ai);
+                            CharSequence lc = ri.loadLabel(pm);
                             if (lc != null) label = String.valueOf(lc);
                         } catch (Throwable t2) {
                             label = "";
                         }
-                        if (label.length() == 0) label = ai.packageName; // 取不到应用名 → 回落包名
+                        if (label.length() == 0) label = pkg; // 取不到应用名 → 回落包名
                         org.json.JSONObject it = new org.json.JSONObject();
                         it.put("label", label);
-                        it.put("pkg", ai.packageName);
-                        it.put("sys", (ai.flags & android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0);
+                        it.put("pkg", pkg);
+                        it.put("sys", sys);
                         items.add(it);
                     }
                     // 按 label 升序；label 相同用 pkg 兜底比较，保证排序稳定
@@ -711,13 +729,16 @@ public class MainActivity extends Activity {
                             return pa.compareTo(pb);
                         }
                     });
-                    // 上限 500 条
-                    if (items.size() > 500) items = items.subList(0, 500);
+                    // 上限 500 条；超出截断并置 truncated:true（R152 前端契约：忽略未知字段，安全）
+                    boolean truncated = false;
                     org.json.JSONArray arr = new org.json.JSONArray();
-                    for (int i = 0; i < items.size(); i++) arr.put(items.get(i));
+                    int cap = items.size() > 500 ? 500 : items.size();
+                    if (items.size() > 500) truncated = true;
+                    for (int i = 0; i < cap; i++) arr.put(items.get(i));
                     org.json.JSONObject o = new org.json.JSONObject();
                     o.put("ok", true);
                     o.put("apps", arr);
+                    if (truncated) o.put("truncated", true);
                     return o.toString();
                 } catch (Throwable e) {
                     return "{\"ok\":false,\"reason\":\"error\"}"; // 任何异常都不得抛进 WebView
@@ -1130,6 +1151,9 @@ public class MainActivity extends Activity {
                 injectStatusBarInset(view);
                 // 【R147】补发键盘避让契约：新文档丢失 data-xt-kb 标记与 --xt-vh，需重设
                 injectKeyboardBridge(view);
+                // 【R150】键盘露区垫色：onPageFinished 后（闪屏已被 WebView 覆盖）把 content
+                //   背景垫成页面中性底色，消除键盘弹起时露出的品牌蓝「蓝色阴影」
+                neutralizeContentBackground(view);
                 // 【R3b-A / B2】页面加载成功：隐藏顶部进度条 + 清掉失败占位（若上次判过失败）
                 mainFrameFailed = false;
                 mainFrameErrorView = null;
@@ -1158,6 +1182,12 @@ public class MainActivity extends Activity {
                     web = nw;
                     setContentView(nw);
                     // 重建后状态栏 inset listener 仍挂在 decorView 上（未随 WebView 销毁），无需重装
+                    // 【P1/R152 键盘避让】重置 IME/视口高度缓存：新建 WebView 的 bottomMargin 为 0、
+                    // 页面也是全新的，若键盘此前已弹出且 ime inset 之后无数值变化，
+                    // 缓存不为 -1 会导致 lastImeBottomPx 判等短路、跳过 applyImeInsetToWeb，
+                    // 键盘避让在崩溃重建后失效。重置后即使 inset 无新变化也会重新下发一次。
+                    lastImeBottomPx = -1;
+                    lastViewportHeightPx = -1;
                     attachBridgesAndLoad(nw);
                     webPageReady = false;   // 新页面尚未加载完成，等 onPageFinished 再置 true
                     toast("页面已自动恢复");
@@ -2261,6 +2291,9 @@ public class MainActivity extends Activity {
                             if (imeBottom != lastImeBottomPx) {
                                 lastImeBottomPx = imeBottom;
                                 applyImeInsetToWeb(imeBottom);
+                                // 【R150】把真实键盘高度同步给 H5（--xt-sakb + __onXtKbChange），
+                                //   供 ➕/表情面板把自身高度对齐到键盘高度，消除切换跳动。
+                                pushKeyboardHeightToWeb(imeBottom, getResources().getDisplayMetrics().density);
                             }
                             // 【R147】消费 IME inset：不再下发到 WebView，避免 Chromium 依据 IME inset
                             //   再缩一次视口 → 二次补偿（会比不处理更糟）。仅清零 Type.ime()；
@@ -2417,6 +2450,49 @@ public class MainActivity extends Activity {
                     final int h = view.getHeight();
                     if (h > 0) {
                         pushViewportHeightToWeb(view, h, getResources().getDisplayMetrics().density);
+                    }
+                    // 【R150】新文档也补发一次键盘高度（若此刻键盘已弹起）
+                    pushKeyboardHeightToWeb(lastImeBottomPx < 0 ? 0 : lastImeBottomPx,
+                            getResources().getDisplayMetrics().density);
+                } catch (Throwable t) { /* 静默 */ }
+            }
+        });
+    }
+
+    /* ================= 【R150】键盘高度契约 + 键盘露区垫色 ================= */
+
+    /** 【R150】把真实键盘高度(px→dp)同步给 H5。契约（assets 侧消费，任一侧变更需同步）：
+     *    · CSS 变量 --xt-sakb = 当前键盘高度（如 "0px"/"278px"；键盘收起时为 "0px"）
+     *      → H5 面板可用 height:var(--xt-sakb,300px) 对齐键盘高度（变量缺失自动回落 300px）
+     *    · window.__onXtKbChange(kbDp) —— JS 事件通道（H5 需自行 feature-detect 该函数是否存在）
+     *  语义边界：本方法只表达「键盘高度」，【不】承担「原生已接管键盘避让」语义（那由 data-xt-kb 承担），
+     *  且**没有 API 门槛**——即便 API<30（原生不做 IME 补偿）也如实上报键盘高度，供面板对齐用。
+     *  幂等：重复调用只覆盖同名变量/重入回调；异常静默。Float.toString 恒用 '.'，与 locale 无关。 */
+    private void pushKeyboardHeightToWeb(final int imeBottomPx, final float density) {
+        final WebView w = web;
+        if (w == null) return;
+        final float kbDp = (density > 0f) ? (imeBottomPx / density) : 0f;
+        final String js = "(function(){try{var d=document.documentElement;if(!d)return;"
+                + "d.style.setProperty('--xt-sakb','" + kbDp + "px');"
+                + "if(typeof window.__onXtKbChange==='function'){try{window.__onXtKbChange(" + kbDp + ");}catch(e1){}}"
+                + "}catch(e){}})();";
+        uiHandler.post(new Runnable() { @Override public void run() { evalJs(w, js); } });
+    }
+
+    /** 【R150】键盘弹起时 WebView 因 bottomMargin 变矮，底部空出的 ime 高度区域会露出
+     *  windowBackground（品牌蓝 #5B8DEF，见 styles.xml / splash_background）→ 真机上表现为
+     *  「键盘升起时有蓝色阴影」。修法：首帧渲染后（onPageFinished，此时闪屏早已被 WebView 覆盖）
+     *  把 WebView 父容器 android.R.id.content 的背景垫成与页面底色一致的中性色（--bg = #F5F7FA）。
+     *  ⚠️ 不能改 windowBackground：那会吃掉品牌蓝启动闪屏（S2 需求）。
+     *  ⚠️ 深色主题下该露区仍是浅色（原生无主题通道，见报告遗留项）。幂等、失败静默。 */
+    private void neutralizeContentBackground(final WebView view) {
+        if (view == null) return;
+        uiHandler.post(new Runnable() {
+            @Override public void run() {
+                try {
+                    final android.view.ViewParent p = view.getParent();
+                    if (p instanceof View) {
+                        ((View) p).setBackgroundColor(0xFFF5F7FA);
                     }
                 } catch (Throwable t) { /* 静默 */ }
             }

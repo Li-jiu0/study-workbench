@@ -7,4 +7,7 @@
     <color name="ic_launcher_background">#5B8DEF</color>
     <color name="splash_background">#5B8DEF</color>
     <color name="ic_launcher_foreground_tint">#FFFFFFFF</color>
+    <!-- R150：overscroll 辉光（EdgeEffect）中性灰 —— 见 styles.xml 的 AppTheme.android:colorEdgeEffect。
+         取中性灰而非品牌蓝：避免键盘/滚动瞬间闪出的蓝色辉光被误认为「蓝色阴影」bug。 -->
+    <color name="xt_edge_effect">#FFBDBDBD</color>
 </resources>

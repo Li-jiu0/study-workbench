@@ -16,7 +16,7 @@ html { height: auto; overflow-y: auto; overflow-x: hidden; }
 body.theme-home { height: auto; min-height: 100%; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
 .xtr-page { max-width: 720px; margin: 0 auto; padding: 0 0 40px; }
 .xtr-head { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 10px;
-  padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px; background: var(--card, #fff); border-bottom: 1px solid var(--border, #e6e9f0); }
+  padding: calc(12px + var(--xt-satop, env(safe-area-inset-top, 0px))) 16px 12px; background: var(--card, #fff); border-bottom: 1px solid var(--border, #e6e9f0); }
 .xtr-back { display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 10px;
   border: 1px solid var(--border, #e6e9f0); background: transparent; color: var(--text-secondary, #6b7280);
   font-size: 13px; cursor: pointer; flex: 0 0 auto; }
@@ -128,8 +128,9 @@ body.theme-home { height: auto; min-height: 100%; overflow-y: auto; overflow-x: 
 
 <div class="xtr-toast" id="xtrToast"></div>
 
+<script src="assets/xt-log.js?v=20260928d"></script>
 <script src="assets/xt-region.js?v=20260919j"></script>
-<script src="assets/icon-map.js?v=20260923a"></script>
+<script src="assets/icon-map.js?v=20260929a"></script>
 <script>
 /* ==================== R86-B：地区选择页交互（ES5，老 WebView 兼容） ====================
    ① 搜索：省 / 市 / 区 三级关键词匹配，最多 60 条；

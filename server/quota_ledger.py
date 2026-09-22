@@ -5,11 +5,11 @@
 在服务端累计到同一个账本，达到额度上限后自动停用该模型。
 
 对外能力：
-    check_quota(model_id)               -> (allowed, reason)  转发前额度检查
-    record_usage(model_id, amount, ok)  -> dict               累计一次消耗
+    check_quota(model_id)               -> (allowed, reason)  转发前额度检查（只拦未过期的 402 标记）
+    record_usage(model_id, amount, ok)  -> dict               累计一次消耗（成功调用自愈/校准）
     ledger_snapshot()                   -> dict               GET /api/ai/usage 数据
     reset_usage(model_id, reset_all)    -> dict               充值后重置
-    force_exhaust(model_id)             -> dict               上游 402 时强制标记耗尽
+    force_exhaust(model_id)             -> dict               上游 402 时打 24h 临时耗尽标记（自愈式）
     resolve_model_name(provider, mid)   -> str                modelId -> 真实模型名
 
 持久化：server/data/model_usage.json
@@ -42,6 +42,9 @@ FLUSH_INTERVAL = 5.0
 MAX_AMOUNT = 100000
 # 剩余比例 <= 20% 视为 low，= 0 视为 exhausted
 LOW_RATIO = 0.2
+# R151：上游 402 打的 blocked 标记有效期（秒）。超过即自动过期进入自愈重试窗口，
+# 真耗尽会被上游再次 402 重新打标（闭环）；误报 / 已充值则靠成功调用或超时自愈。
+BLOCK_TTL_SECONDS = 86400
 
 _lock = threading.RLock()
 
@@ -160,8 +163,35 @@ def _expire_info(model_id: str) -> tuple:
     return expire_at, datetime.now().date() >= day
 
 
+def _blocked_active(rec: dict) -> bool:
+    """rec 里的上游欠费标记（blocked）是否仍有效（未过 24h 自愈窗口）。
+
+    - 无 blocked / 空 rec → False；
+    - 有 blocked 但无 blockedAt（旧版账本遗留）→ 视为已过期：放行一次试探，
+      真耗尽会被上游 402 重新打上带时间戳的标记，闭环自洽；
+    - blockedAt 解析失败 → 同上按已过期处理（绝不因坏数据把模型永久锁死）。
+    """
+    if not isinstance(rec, dict) or not rec.get("blocked"):
+        return False
+    at = rec.get("blockedAt")
+    if not isinstance(at, str) or not at.strip():
+        return False
+    try:
+        t = datetime.strptime(at[:19], "%Y-%m-%dT%H:%M:%S")
+    except ValueError:
+        return False
+    return (datetime.now() - t).total_seconds() < BLOCK_TTL_SECONDS
+
+
 def model_status(model_id: str) -> dict:
-    """单个模型的用量 + 额度 + 状态，供 /api/ai/usage 与 consume 返回复用。"""
+    """单个模型的用量 + 额度 + 状态，供 /api/ai/usage 与 consume 返回复用。
+
+    R151 自愈式判定（修复「平台实际还有额度却标已耗尽」）：
+      - blocked 且未过 24h → exhausted（唯一硬耗尽口径：上游真实欠费信号）；
+      - blocked 超过 24h（或旧账本无 blockedAt）→ 视为未 block，进入自愈重试；
+      - remaining<=0 但无 blocked → "low"（口径存疑：账本口径可能低估平台实际
+        可用额度），不再判 exhausted，放行试探由上游 402 闭环兜底。
+    """
     ensure_loaded()
     free, qtype = get_quota(model_id)
     expire_at, expired = _expire_info(model_id)
@@ -170,11 +200,11 @@ def model_status(model_id: str) -> dict:
     calls = int(rec.get("calls") or 0)
     fail_calls = int(rec.get("failCalls") or 0)
     updated_at = rec.get("updatedAt") or ""
-    blocked = bool(rec.get("blocked"))
+    hard_exhausted = _blocked_active(rec)
 
     if free is None:
-        # 额度表里没有 → 不限量放行；但被上游 402 强制标记过的仍算耗尽
-        status = "exhausted" if blocked else "unknown"
+        # 额度表里没有 → 不限量放行；仅「未过期的上游欠费标记」算耗尽
+        status = "exhausted" if hard_exhausted else "unknown"
         return {
             "used": used,
             "calls": calls,
@@ -193,9 +223,11 @@ def model_status(model_id: str) -> dict:
     remaining = max(free - used, 0)
     # 用超了也只显示 100%，避免前端进度条溢出
     percent = round(min(used * 100.0 / free, 100.0), 1)
-    if remaining <= 0:
+    if hard_exhausted:
+        # 上游真实欠费信号，优先级最高（即便 remaining 还算得出正数）
         status = "exhausted"
     elif remaining <= free * LOW_RATIO:
+        # 含 remaining<=0 的情形：账本口径存疑，给 low 而非 exhausted（R151 自愈式）
         status = "low"
     else:
         status = "ok"
@@ -249,6 +281,20 @@ def record_usage(model_id: str, amount: int = 1, ok: bool = True) -> dict:
             if amt <= 0:
                 amt = 1
             rec["used"] = int(rec.get("used") or 0) + amt
+            # R151 自愈 1：一次成功调用即清除上游欠费标记（账号充值 / 402 误报后自愈）
+            if rec.get("blocked"):
+                rec["blocked"] = False
+                rec.pop("blockedAt", None)
+                rec["selfHeals"] = int(rec.get("selfHeals") or 0) + 1
+            # R151 自愈 2：口径校准 —— 无欠费标记却 used>=free，说明账本口径低估了
+            # 平台实际可用额度（如方舟免费额度外每天另有协作奖励），从本次消耗重新起算。
+            # 能成功调用本身就证明平台侧还有额度，校准不会引入真实超耗。
+            free_now, _qt = get_quota(model_id)
+            if free_now and int(rec.get("used") or 0) >= free_now:
+                rec["lastCalibrationFrom"] = int(rec.get("used") or 0)
+                rec["used"] = amt
+                rec["calibrations"] = int(rec.get("calibrations") or 0) + 1
+                rec["lastCalibrationAt"] = _now()
         else:
             rec["failCalls"] = int(rec.get("failCalls") or 0) + 1
         rec["updatedAt"] = _now()
@@ -259,6 +305,10 @@ def record_usage(model_id: str, amount: int = 1, ok: bool = True) -> dict:
 def check_quota(model_id: str) -> tuple:
     """转发前的额度前置检查。
 
+    R151 自愈式：只拦「blocked 且未过 24h 自愈窗口」的硬耗尽；remaining<=0
+    不再硬拦——账本口径可能低估平台实际额度（方舟每天另有 200 万协作奖励），
+    放行试探，真耗尽会被上游 402 回来重新打标，闭环拦截。
+
     :return: (allowed: bool, reason: str)。allowed=False 时不要转发，避免产生真实费用。
     """
     status = model_status(model_id)
@@ -268,18 +318,23 @@ def check_quota(model_id: str) -> tuple:
 
 
 def force_exhaust(model_id: str) -> dict:
-    """上游返回 402（账户欠费 / 额度耗尽）时，强制把该模型标记为耗尽。
+    """上游返回 402（账户欠费 / 额度耗尽）时，给该模型打临时耗尽标记。
 
-    额度表里没有该模型时，打一个 blocked 标记，同样让 check_quota 返回 False。
+    R151 自愈式：不再把 used 拉满到 freeQuota（旧做法把账本永久钉死在
+    「已耗尽」，账号充值 / 平台口径变化后永远无法恢复——用户投诉的误标根因）。
+    现只打 blocked=True + blockedAt 时间戳：
+      - 24h 内 model_status / check_quota 按耗尽处理（真实欠费信号）；
+      - 超过 24h 自动过期，放行试探；真耗尽会被上游再次 402 重新打标（闭环）；
+      - 期间出现一次成功调用（record_usage ok=True）即清除标记。
+    额度表里没有该模型时同样生效（free=None 分支按 blocked 判 exhausted）。
+    返回值结构不变（仍为该模型最新 model_status）。
     """
     ensure_loaded()
     with _lock:
         rec = _usage["models"].setdefault(
             model_id, {"used": 0, "calls": 0, "failCalls": 0, "updatedAt": ""})
-        free, _qtype = get_quota(model_id)
-        if free:
-            rec["used"] = max(int(rec.get("used") or 0), free)
         rec["blocked"] = True
+        rec["blockedAt"] = _now()
         rec["updatedAt"] = _now()
         _mark_dirty()
     return model_status(model_id)

@@ -800,6 +800,18 @@
     "camera": svg(
       '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>' +
       '<circle cx="12" cy="13" r="3"/>'
+    ),
+    /* ===========================================================
+       R157（20260929）补齐：folder 文件夹图标
+       我的文件.html 侧栏「我的文件」与页标题引用 data-icon="folder"，
+       此前字典未注册 → 空白图标（用户反馈「我的文件页图标缺失」根因之一）。
+       lucide v0.462 官方 folder 路径，仅 path 基础图元，
+       复用 SVG_TPL（fill=none / stroke=currentColor / stroke-width=2 /
+       linecap=round / linejoin=round / viewBox 24x24），
+       禁 mask/filter/symbol/use —— 老 WebView 可渲染。
+       =========================================================== */
+    "folder": svg(
+      '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>'
     )
   };
 
@@ -858,6 +870,29 @@
 
   // 暴露给 HTML 调用方：手动触发（如动态插入新元素后）
   window.lucideAutoRender = autoRender;
+
+  /* R157（20260929）：兼容别名（renderIcons）。
+     数据管理.html（:451/:469/:1066）、设置.html、assets/xt-applist.js 都在动态注入 DOM 后
+     调用 window.renderIcons(root)，但本文件此前只暴露 lucideAutoRender ——
+     renderIcons 一直是 undefined，typeof 守卫静默跳过 → 动态 [data-icon] 永不渲染
+     （用户反馈「数据管理 7 个分类图标空白」的根因）。
+     这里补同义别名：传 Element 则只渲染该子树；未传/非元素则全文档扫描（与 autoRender 同效、幂等）。 */
+  window.renderIcons = function (root) {
+    if (root && typeof root.querySelectorAll === "function") {
+      try {
+        var nodes = root.querySelectorAll("[data-icon]");
+        for (var i = 0; i < nodes.length; i++) {
+          var el = nodes[i];
+          var n = el.getAttribute("data-icon");
+          if (!n || !window.LUCIDE_ICONS[n]) continue;
+          var sz = parseInt(el.getAttribute("data-icon-size") || "20", 10);
+          el.innerHTML = window.lucideIcon(n, sz);
+        }
+      } catch (eRi) { /* 单次渲染失败不影响页面本身 */ }
+      return;
+    }
+    autoRender();
+  };
 
   if (typeof document !== "undefined") {
     if (document.readyState === "loading") {

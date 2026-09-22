@@ -24,7 +24,7 @@ body.theme-interview { --primary: #1A73E8; --primary-light: #E8F0FE; --primary-d
 .header {
   background: rgba(255,255,255,0.96);
   backdrop-filter: blur(10px);
-  padding: calc(12px + env(safe-area-inset-top, 0px)) 20px 12px;
+  padding: calc(12px + var(--xt-satop, env(safe-area-inset-top, 0px))) 20px 12px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -589,6 +589,7 @@ body.theme-interview { --primary: #1A73E8; --primary-light: #E8F0FE; --primary-d
 }
 </style>
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script src="assets/xt-log.js?v=20260928d"></script>
 <script>window.__XT_PROD__=true;</script>
 </head>
 <body class="theme-interview">
@@ -722,7 +723,7 @@ body.theme-interview { --primary: #1A73E8; --primary-light: #E8F0FE; --primary-d
 </div>
 
 <script src="assets/config.js?v=20260916O"></script>
-<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/icon-map.js?v=20260929a" defer></script>
 <script>
 /* =====================================================================
    N9-19（20260916w3）：六阶段状态机 + 五段状态条

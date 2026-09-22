@@ -37,8 +37,8 @@ body.dark{
 /* 整体布局：复用主站 .app / .sidebar / .main */
 .ai-main{display:flex;flex-direction:column;height:100%;min-width:0;background:var(--ai-bg);}
 .ai-topbar{
-  height:calc(56px + env(safe-area-inset-top, 0px));flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
-  padding:env(safe-area-inset-top, 0px) 16px 0;background:var(--ai-card);border-bottom:1px solid var(--ai-border);
+  height:calc(56px + var(--xt-satop, env(safe-area-inset-top, 0px)));flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
+  padding:var(--xt-satop, env(safe-area-inset-top, 0px)) 16px 0;background:var(--ai-card);border-bottom:1px solid var(--ai-border);
 }
 .ai-topbar-left,.ai-topbar-right{display:flex;align-items:center;gap:8px;}
 .ai-topbar-btn{
@@ -532,6 +532,9 @@ body.dark .ai-warn-bar{background:rgba(250,173,20,.1);border-color:rgba(250,173,
   .ai-history{
     position:fixed;top:0;left:0;bottom:0;z-index:260;transform:translateX(-100%);width:85%;
     box-shadow:0 0 30px rgba(0,0,0,.2);
+    /* R152：沉浸式状态栏下抽屉顶到屏幕最上沿，会被系统状态栏压住一截 ——
+       自接原生注入的 --xt-satop 垫高（老内核无 env()，由 MainActivity 注入真实高度） */
+    padding-top:var(--xt-satop, env(safe-area-inset-top, 0px));
   }
   .ai-history.open{transform:translateX(0);}
   .ai-history.collapsed{width:85%;}
@@ -605,6 +608,7 @@ body.dark .ai-warn-bar{background:rgba(250,173,20,.1);border-color:rgba(250,173,
 }
 </style>
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script src="assets/xt-log.js?v=20260928d"></script>
 <script>window.__XT_PROD__=true;</script>
 </head>
 <body class="theme-home">
@@ -971,7 +975,7 @@ body.dark .ai-warn-bar{background:rgba(250,173,20,.1);border-color:rgba(250,173,
 <div id="aiToast" style="position:fixed;left:50%;bottom:80px;transform:translateX(-50%);z-index:400;background:rgba(0,0,0,.82);color:#fff;font-size:13.5px;padding:10px 18px;border-radius:10px;display:none;max-width:80vw;text-align:center;"></div>
 
 <!-- ===== 脚本（新文件引用先不带 ?v=，主理人波末统一打戳） ===== -->
-<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/layer-stack.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>

@@ -14,7 +14,7 @@
   /* ===== 私信页（嵌在应用外壳内）===== */
   .im-side{width:300px;min-width:240px;border-right:1px solid var(--border);background:var(--card);display:flex;flex-direction:column}
   .im-head{padding:14px 14px 8px;border-bottom:1px solid var(--border)}
-  .im-title{font-size:16px;font-weight:700;margin:0 0 8px}
+  /* R150 子项1（20260928b）：.im-title 随「私聊」标题行一并删除（原第17行规则作废） */
   .im-tabs{display:flex;gap:6px}
   /* 【本轮修复·收敛定义】.im-tab 原本散落 4 处（本行 + 第25行 + 第355行 + 第371行），层叠混乱，
      最终生效的是第371行 R33 规则：flex:1 1 0 + white-space:nowrap + overflow:hidden + text-overflow:ellipsis。
@@ -143,6 +143,7 @@
 
 </style>
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script src="assets/xt-log.js?v=20260928d"></script>
 <script>window.__XT_PROD__=true;</script>
 </head>
 <body class="theme-home">
@@ -171,7 +172,8 @@
 <div class="page active" id="page-im" style="display:flex;overflow:hidden">
       <aside class="im-side">
         <div class="im-head">
-          <div class="im-title">私聊</div>
+          <!-- R150 子项1（20260928b）：「私聊」标题行已删除（用户要求红框区域整行移除），
+               五个 tab 按钮上移补位；.im-head / .im-tabs 容器保留，旧 .im-title CSS 已一并收敛。 -->
           <div class="im-tabs">
             <!-- C1 20260913k：五 tab 顺序不变（会话→好友→群聊→申请→添加好友）；「群聊」「添加好友」由弹窗改为 tab 页面视图（onclick 改 imSwitchTab，原弹窗函数保留供面板复用） -->
             <button class="im-tab active" data-tab="chats" onclick="imSwitchTab('chats')">会话</button>
@@ -465,7 +467,7 @@
 
 </div>
 
-<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
 <script src="assets/app.js?v=20260925a" defer></script>
@@ -477,7 +479,7 @@
 <script src="assets/img-viewer.js?v=20260922c" defer></script>
 <script src="assets/layer-stack.js?v=20260923a" defer></script>
 <script src="assets/layer-stack.js?v=20260923a" defer></script>
-<script src="assets/chat-local.js?v=20260928a" defer></script>
+<script src="assets/chat-local.js?v=20260928c" defer></script>
 <script src="assets/admin-contact.js?v=20260917b" defer></script>
 <style>
   /* R33（20260913r）：tab 视觉统一——去掉 .im-tab-add 的特殊填充/加粗与专属 hover，添加好友与其余 4 个 tab 同享 .im-tab/.im-tab.active；“im-tab-add” 类保留在 DOM 仅作语义标记，无样式副作用 */
@@ -491,8 +493,8 @@
      ② tab 五等分、等高 36px、间距 8，激活态沿用全站主色 .im-tab.active；
      ③ 顶栏：标题收为自适应宽、全局搜索框 flex:1，两者同高对齐；间距统一 8/12/16。 */
   .im-head{padding:12px}
-  /* 【需求C】顶部「搜用户名/昵称找人」搜索行已移除：标题下方间距由原工具行的 margin-bottom:12px 迁移至 .im-title，避免标题与 tab 贴合 */
-  .im-title{flex:0 0 auto;margin:0 0 12px;font-size:16px;font-weight:700;line-height:36px;white-space:nowrap}
+  /* 【R150 子项1】顶部「私聊」标题行已删除（原需求C 注释与本 .im-title 规则一并作废）：
+     tab 行直接贴 .im-head 顶 padding 上移补位，容器 .im-head/.im-tabs 保留。 */
   .im-tabs{display:flex;gap:8px}
   /* .im-tab 的 flex/height/font-size 等已收敛到文件末尾唯一权威定义区（本轮修复：原第371行 R33 规则会造成 5 等分文字截断） */
   .topbar-title{flex:0 0 auto;max-width:38vw;font-size:17px;line-height:36px}
@@ -574,6 +576,41 @@
        这正是本次想要的效果：文案长的多得、短的少得，且都不被压缩。
        min-width:56px 保底可读宽度不动；overflow-x:auto 仍留作更极端窄屏的兜底。 */
     .im-tab{flex:1 0 auto;min-width:56px;padding:0 6px;line-height:32px;height:34px;font-size:12px}
+  }
+
+  /* ============================================================
+     R150（20260928b）：私聊页交互打磨（页内覆盖，不改 common.css）
+     ============================================================ */
+  /* —— 子项2+3：两个底部面板高度统一变量（表情面板 + ➕菜单共用）——
+     默认 300px，矮屏（≤520px 视口高）220px；chat-local.js 开面板时若读到
+     安卓壳注入的 --xt-sakb（软键盘高度，>200px 才可信）会用内联样式覆盖本变量。 */
+  :root{--xt-im-panel-h:300px}
+  @media (max-height:520px){ :root{--xt-im-panel-h:220px} }
+  /* 表情面板开态高度走统一变量（覆盖 common.css:2169 的 300px / common.css:2199 的 220px） */
+  .im-emoji-panel.open{height:var(--xt-im-panel-h)}
+  /* 瞬时收起标记：面板因「点输入框」关闭 / 面板间互斥切换时，由 JS 挂 .xt-no-anim
+     禁掉 height 过渡（微信式：键盘直接接管同一块空间，输入栏不产生下落-回弹跳变） */
+  .im-emoji-panel.xt-no-anim,.im-plus-menu.xt-no-anim{transition:none!important}
+
+  /* —— 子项4：蓝色阴影防御（安卓 WebView 聚焦高亮 / tap-highlight 全部压掉）——
+     原生侧另有诊断，本块为 H5 侧候选修复；聚焦视觉仍由 border-color:var(--primary) 提供。 */
+  #imInput,#acInput{-webkit-tap-highlight-color:rgba(0,0,0,0);outline:none}
+  #imInput:focus,#acInput:focus{outline:none!important;box-shadow:none!important}
+  .im-composer,.im-input-wrap,.im-composer textarea{-webkit-tap-highlight-color:rgba(0,0,0,0)}
+  .im-composer textarea:focus{box-shadow:none}
+
+  /* —— R150 追加（20260928c）：面板微信式一体平面（页内覆盖，不改 common.css）——
+     ① 面板与输入栏统一同底色 var(--card)，去圆角、去投影；
+     ② 拖拽条 .im-emoji-handle 仅 CSS 隐藏（DOM 保留，返回键/测试契约不变）；
+     ③ 开态负 margin 抵消 .im-composer 的 padding:10px 12px 贴边（仅 .open 挂，
+        避免关态 0 高度时负 margin 吃掉输入栏底 padding）；面板与输入行之间
+        仅留一条 1px solid var(--border) 分隔线；
+     ④ 窄屏（≤360px）composer padding 变为 8px 8px（本页 :113），负 margin 同步收窄。 */
+  .im-emoji-handle{display:none}
+  .im-emoji-panel{border-radius:0;box-shadow:none;background:var(--card)}
+  .im-emoji-panel.open{margin:0 -12px -10px;border-top:1px solid var(--border)}
+  @media (max-width:360px){
+    .im-emoji-panel.open{margin:0 -8px -8px}
   }
 </style>
 <script>
@@ -1036,23 +1073,38 @@
     var m = $id('imPlusMenu');
     var mask = $id('imPlusMask');
     if (!m) return;
-    /* R6：与表情面板互斥（微信式同高面板，切换时输入框不跳） */
-    try { if (window.imCloseEmojiPanel) window.imCloseEmojiPanel(); } catch (e0) { /* 静默 */ }
+    /* R6/R150：与表情面板互斥（微信式同高面板）。对方开着时瞬时关（instant=true 禁收起
+       过渡）→ 本帧只发生一次高度变化，面板「原位换内容」不闪不跳。 */
+    try { if (window.imCloseEmojiPanel) window.imCloseEmojiPanel(true); } catch (e0) { /* 静默 */ }
     /* R143-2（微信式切换）：开面板 → 失焦输入框收起软键盘，面板接管键盘占位；
-       点输入框（focus/click/touchstart）→ 关面板 + 键盘回弹，自如切换。 */
+       点输入框（focus/click/touchstart）→ 关面板 + 键盘回弹，自如切换。
+       R150：blur 与 addClass('open') 同帧同步执行，避免输入栏「先落再升」。 */
     try {
       var ae = document.activeElement;
       if (ae && ae.id === 'imInput' && typeof ae.blur === 'function') ae.blur();
     } catch (eB) { /* 静默 */ }
+    /* R150：软键盘高度对齐（--xt-sakb 由安卓壳注入；缺失/不合理时回落页内 CSS 默认 300px） */
+    try { if (window.imPanelSyncKbHeight) window.imPanelSyncKbHeight(); } catch (eK) { /* 静默 */ }
     m.classList.add('open');
     if (mask) mask.classList.add('open');
     imPlusKeepBottom();
   }
-  function imClosePlusMenu() {
+  function imClosePlusMenu(instant) {
     var m = $id('imPlusMenu');
     var mask = $id('imPlusMask');
+    /* R150：instant=true → 本帧禁用高度过渡（.xt-no-anim 置 transition:none + 强制回流），
+       瞬时收起让软键盘直接接管同一块空间，根除「对话框先落下再被键盘顶回」的跳变。
+       正常关闭（点菜单项/再点「+」）不传 instant，保留 0.24s 收起动画。
+       MN-1：仅「open → 瞬时收起」需要禁动画；对已关菜单不再挂 .xt-no-anim，
+       避免用户 80ms 内立刻再点开「+」菜单时开启动画被残留标记抑制。 */
+    var wasOpen = !!(m && m.classList.contains('open'));
+    if (m && instant && wasOpen) m.classList.add('xt-no-anim');
     if (m) m.classList.remove('open');
     if (mask) mask.classList.remove('open');
+    if (m && instant && wasOpen) {
+      try { void m.offsetHeight; } catch (eR0) { /* 强制回流失败不影响 */ }
+      setTimeout(function () { m.classList.remove('xt-no-anim'); }, 80);
+    }
     imPlusKeepBottom();
   }
   window.imOpenPlusMenu = imOpenPlusMenu;
@@ -1230,8 +1282,8 @@
          输入栏随菜单一起升/降；与表情面板同高互斥 → 切换不跳。遮罩弃用。
          关态 padding 上下必须为 0（否则 height:0 仍漏出 padding 一条）。 */
       '.im-plus-mask{display:none}' +
-      '.im-plus-menu{flex:0 0 100%;order:10;background:#fff;border-radius:16px 16px 0 0;display:grid;grid-template-columns:repeat(4,1fr);gap:14px 8px;box-shadow:0 -6px 24px rgba(0,0,0,.12);height:0;overflow:hidden;padding:0 10px;transition:height .24s ease,padding .24s ease;box-sizing:border-box}' +
-      '.im-plus-menu.open{height:300px;padding:16px 10px calc(16px + env(safe-area-inset-bottom));overflow-y:auto;-webkit-overflow-scrolling:touch}' +
+      '.im-plus-menu{flex:0 0 100%;order:10;background:var(--card,#fff);border-radius:0;display:grid;grid-template-columns:repeat(4,1fr);gap:14px 8px;box-shadow:none;height:0;overflow:hidden;padding:0 10px;transition:height .24s ease,padding .24s ease;box-sizing:border-box}' +
+      '.im-plus-menu.open{height:var(--xt-im-panel-h,300px);padding:16px 10px calc(16px + env(safe-area-inset-bottom));overflow-y:auto;-webkit-overflow-scrolling:touch;margin:0 -12px -10px;border-top:1px solid var(--border)}' +
       '.im-plus-item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 2px;font-size:12px;text-align:center;color:var(--text,#1f2328);cursor:pointer}' +
       '.im-plus-item:active{background:#f2f3f5;border-radius:12px}' +
       /* R88-M6 方案B：彩色圆角方底色块 + 白色图标（对齐微信「+」菜单）。 */
@@ -1250,8 +1302,8 @@
       /* R104e 批5（2026-09-19）：--i6 = 「实时位置」项配色（青，勿与 i1 绿 / i4 红重复）。 */
       '.im-plus-ico--i6{background:rgba(11,124,123,.13);color:#0b7c7b}' +
       '.im-plus-txt{width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;text-align:center}' +
-      '@media (max-width:360px){.im-plus-ico{width:40px;height:40px;border-radius:10px}.im-plus-menu{gap:10px 4px}.im-plus-menu.open{padding:12px 6px calc(16px + env(safe-area-inset-bottom))}}' +
-      '@media (max-height:520px){.im-plus-item{padding:6px 4px;gap:6px}.im-plus-ico{width:36px;height:36px;border-radius:9px}.im-plus-menu.open{height:220px;padding:6px 6px calc(10px + env(safe-area-inset-bottom))}}' +
+      '@media (max-width:360px){.im-plus-ico{width:40px;height:40px;border-radius:10px}.im-plus-menu{gap:10px 4px}.im-plus-menu.open{margin:0 -8px -8px;padding:12px 6px calc(16px + env(safe-area-inset-bottom))}}' +
+      '@media (max-height:520px){.im-plus-item{padding:6px 4px;gap:6px}.im-plus-ico{width:36px;height:36px;border-radius:9px}.im-plus-menu.open{padding:6px 6px calc(10px + env(safe-area-inset-bottom))}}' +
 
       '.im-loc-sheet{position:fixed;inset:0;z-index:215}' +
       '.im-loc-sheet-mask{position:absolute;inset:0;background:rgba(0,0,0,.35)}' +

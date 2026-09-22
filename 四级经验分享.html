@@ -13,7 +13,7 @@ body {
 }
 .header {
   background: linear-gradient(135deg, #5B8DEF 0%, #7B61FF 100%);
-  padding: calc(16px + env(safe-area-inset-top, 0px)) 20px 16px;
+  padding: calc(16px + var(--xt-satop, env(safe-area-inset-top, 0px))) 20px 16px;
   color: white;
   display: flex;
   align-items: center;
@@ -224,6 +224,7 @@ body {
 }
 </style>
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script src="assets/xt-log.js?v=20260928d"></script>
 <script>window.__XT_PROD__=true;</script>
 </head>
 <body>

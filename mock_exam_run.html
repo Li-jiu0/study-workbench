@@ -9,8 +9,9 @@
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script src="assets/xt-log.js?v=20260928d"></script>
 <script>window.__XT_PROD__=true;</script>
-<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/layer-stack.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
@@ -36,7 +37,7 @@ body { height: auto; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scro
   background: var(--xt-bg-card);
   border-bottom: 1px solid var(--xt-border);
   box-shadow: var(--xt-shadow-sm);
-  padding: calc(var(--xt-space-3) + env(safe-area-inset-top, 0px)) var(--xt-space-4) var(--xt-space-3);
+  padding: calc(var(--xt-space-3) + var(--xt-satop, env(safe-area-inset-top, 0px))) var(--xt-space-4) var(--xt-space-3);
   display: flex;
   align-items: center;
   gap: var(--xt-space-3);
@@ -74,7 +75,7 @@ body { height: auto; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scro
 
 /* 阶段进度条 */
 .mock-stages {
-  margin-top: calc(var(--xt-space-9) + 12px + env(safe-area-inset-top, 0px));
+  margin-top: calc(var(--xt-space-9) + 12px + var(--xt-satop, env(safe-area-inset-top, 0px)));
   padding: var(--xt-space-3) var(--xt-space-4);
   background: var(--xt-bg-card);
   border-bottom: 1px solid var(--xt-border);

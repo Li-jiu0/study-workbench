@@ -24,7 +24,7 @@
     background:radial-gradient(1200px 800px at 20% -10%,#2b3a8f 0%,transparent 55%),
                radial-gradient(1000px 700px at 110% 20%,#5b3a9f 0%,transparent 50%),
                linear-gradient(160deg,#0b1026 0%,#141a3e 55%,#1c1440 100%);
-    color:var(--text);display:flex;align-items:center;justify-content:center;padding:calc(20px + env(safe-area-inset-top, 0px)) 20px 20px;overflow-x:hidden;
+    color:var(--text);display:flex;align-items:center;justify-content:center;padding:calc(20px + var(--xt-satop, env(safe-area-inset-top, 0px))) 20px 20px;overflow-x:hidden;
   }
   /* 星空背景 */
   .stars{position:fixed;inset:0;pointer-events:none;z-index:0}
@@ -263,7 +263,8 @@
 </div>
 
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
-<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/xt-log.js?v=20260928d"></script>
+<script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>

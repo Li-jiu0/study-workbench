@@ -66,7 +66,7 @@ html, body{
 }
 .xt-set-top{
   position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;
-  min-height:calc(56px + env(safe-area-inset-top, 0px));padding:env(safe-area-inset-top, 0px) 10px 0;background:var(--ai-card);border-bottom:1px solid var(--ai-border);
+  min-height:calc(56px + var(--xt-satop, env(safe-area-inset-top, 0px)));padding:var(--xt-satop, env(safe-area-inset-top, 0px)) 10px 0;background:var(--ai-card);border-bottom:1px solid var(--ai-border);
 }
 .xt-set-back{
   display:inline-flex;align-items:center;justify-content:center;gap:4px;height:38px;padding:0 12px;
@@ -78,7 +78,7 @@ html, body{
 .xt-set-title{font-size:17px;font-weight:700;color:var(--ai-text);margin-left:2px;}
 
 .xt-set-tabs{
-  position:sticky;top:calc(56px + env(safe-area-inset-top, 0px));z-index:19;display:flex;gap:8px;padding:10px 12px;
+  position:sticky;top:calc(56px + var(--xt-satop, env(safe-area-inset-top, 0px)));z-index:19;display:flex;gap:8px;padding:10px 12px;
   background:var(--ai-card);border-bottom:1px solid var(--ai-border);
   overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
 }
@@ -847,7 +847,8 @@ body.dark .xt-stars{color:#4a4f58;}
 <div id="setToast"></div>
 
 <!-- ===== 脚本（引用保持既有版本戳不变，主理人波末统一处理） ===== -->
-<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/xt-log.js?v=20260928d"></script>
+<script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/layer-stack.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
@@ -868,7 +869,7 @@ body.dark .xt-stars{color:#4a4f58;}
   <script src="assets/ai-cap-video.js?v=20260920c" defer></script>
   <script src="assets/ai-cap-3d.js?v=20260922a" defer></script>
 <script src="assets/ai-settings.js?v=20260923c" defer></script>
-<script src="assets/xt-aiusage.js?v=20260918f" defer></script>
+<script src="assets/xt-aiusage.js?v=20260928d" defer></script>
 
 <!-- ===== R4-C / P2-3：返回键压栈桥（页面弹层逻辑在外部 js，用轻量观察器对接，不改外部 js） ===== -->
 <script>

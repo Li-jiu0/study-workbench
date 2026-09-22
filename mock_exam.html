@@ -9,8 +9,9 @@
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
+<script src="assets/xt-log.js?v=20260928d"></script>
 <script>window.__XT_PROD__=true;</script>
-<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
 <script src="assets/app.js?v=20260925a" defer></script>
@@ -29,7 +30,7 @@ body { background: var(--xt-bg); margin: 0; color: var(--xt-text); }
 html { height: auto; overflow: auto; }
 body { height: auto; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 /* 顶部安全区：透明状态栏下 .xt-page-head（page-head.css，文档流内）整体下移补偿 */
-.xt-page-head { padding-top: calc(var(--xt-space-4) + env(safe-area-inset-top, 0px)); }
+.xt-page-head { padding-top: calc(var(--xt-space-4) + var(--xt-satop, env(safe-area-inset-top, 0px))); }
 .mock-shell { max-width: 880px; margin: 0 auto; padding: 0 var(--xt-space-4) var(--xt-space-8); }
 .mock-cd-row {
   background: var(--xt-bg-card);

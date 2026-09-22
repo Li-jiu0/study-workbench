@@ -14,6 +14,11 @@
 
     <style name="AppTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@drawable/splash_background</item>
+        <!-- R150：overscroll 辉光（EdgeEffect）在 Material.Light 下默认取蓝色系，WebView 高度
+             瞬时变化（R147 IME 补偿）时易闪出蓝色辉光，与 windowBackground 的品牌蓝叠加
+             造成「键盘升起时有蓝色阴影」观感。改为中性灰，消除蓝色 tint。
+             该属性 API21+ 可用（本工程 minSdk 21），零 androidx 依赖。 -->
+        <item name="android:colorEdgeEffect">@color/xt_edge_effect</item>
     </style>
 
 </resources>

@@ -1,6 +1,7 @@
 {
-  "version": "20260913b",
+  "version": "20260929b",
   "comment": "批次四（R3-7）：听力三题型补篇至各 4 篇。保留原有 news/longconv/passage 三篇，新增 news_1~news_3 / longconv_1~longconv_3 / passage_1~passage_3 共 9 篇。结构沿用 voiceplayer.js 的 SCENES：t + lines[{en,zh}]。新增 key 采用 _N 后缀，避免与内置 news/longconv/passage 离线兜底场景冲突（loadListeningExt 对已存在 key 不覆盖）。",
+  "r162_comment": "R162 扩充（2026-09-29）：新增 9 个独立场景 key（life_doctor/life_gym/travel_taxi/travel_sights/campus_library/campus_class/work_interview/work_office/news_tech），共 58 句，全带中文翻译；条目新增可选 g 字段标场景大类（life/travel/campus/work/news），由 voiceplayer.js mergeScene 合并进 SCENE_GROUP_OF（无 g 落 life，向后兼容）。纯文本素材走 TTS 朗读链路，无音频文件。同场景内容同步内嵌于 voiceplayer.js EXT_FALLBACK（file:// 下 fetch 被 CORS 拦时兜底），双保险。",
   "scenes": {
     "news": {
       "t": "短篇新闻 · 校园节能倡议",
@@ -412,6 +413,119 @@
           "en": "No matter how far people live, they try to come home for this day.",
           "zh": "无论人们住得多远，都会尽量在这一天回家。"
         }
+      ]
+    },
+
+    "life_doctor": {
+      "t": "看病问诊",
+      "g": "life",
+      "lines": [
+        { "en": "Good morning, what seems to be the problem?", "zh": "早上好，你哪里不舒服？" },
+        { "en": "I have had a sore throat and a mild fever since yesterday.", "zh": "从昨天开始我喉咙痛，还有点低烧。" },
+        { "en": "Let me take a look. Say 'ah', please.", "zh": "让我看看，请说'啊'。" },
+        { "en": "It looks like a throat infection, nothing serious.", "zh": "看起来是咽喉感染，不严重。" },
+        { "en": "Take this medicine twice a day after meals and rest well.", "zh": "这药每天饭后吃两次，好好休息。" },
+        { "en": "Thank you, doctor. Do I need to come back for a follow-up?", "zh": "谢谢医生，我需要回来复诊吗？" }
+      ]
+    },
+    "life_gym": {
+      "t": "健身房办卡",
+      "g": "life",
+      "lines": [
+        { "en": "Hi, I would like to sign up for a membership.", "zh": "你好，我想办一张会员卡。" },
+        { "en": "Sure. We have monthly, quarterly and yearly plans.", "zh": "好的，我们有月卡、季卡和年卡。" },
+        { "en": "What is included in the monthly plan?", "zh": "月卡包含哪些项目？" },
+        { "en": "You get full access to the gym, pool and group classes.", "zh": "可以不限次使用健身房、泳池和团体课。" },
+        { "en": "Are there any trainers available for beginners?", "zh": "有面向初学者的教练吗？" },
+        { "en": "Yes, a free introductory session comes with the membership.", "zh": "有，办会员赠一节免费体验课。" }
+      ]
+    },
+    "travel_taxi": {
+      "t": "打车出行",
+      "g": "travel",
+      "lines": [
+        { "en": "Hello, could you take me to the railway station?", "zh": "你好，能送我去火车站吗？" },
+        { "en": "Sure, get in. It is about a twenty-minute drive.", "zh": "可以，上车吧。大约二十分钟车程。" },
+        { "en": "Could you drive a little slower? I am not in a hurry.", "zh": "能开慢一点吗？我不赶时间。" },
+        { "en": "No problem. The traffic is light at this hour.", "zh": "没问题。这个时段车不多。" },
+        { "en": "Stop here, please. How much do I owe you?", "zh": "请在这儿停。车费多少？" },
+        { "en": "That is thirty-six yuan. Thank you for taking my cab.", "zh": "一共 36 元。感谢乘坐。" }
+      ]
+    },
+    "travel_sights": {
+      "t": "景点游览",
+      "g": "travel",
+      "lines": [
+        { "en": "Excuse me, what time does the museum open?", "zh": "打扰一下，博物馆几点开门？" },
+        { "en": "It opens at nine and the last entry is at four in the afternoon.", "zh": "九点开门，下午四点停止入场。" },
+        { "en": "Is there a student discount for the ticket?", "zh": "门票有学生优惠吗？" },
+        { "en": "Yes, students pay half price with a valid student card.", "zh": "有，凭有效学生证半价。" },
+        { "en": "Which exhibition would you recommend I see first?", "zh": "你推荐我先看哪个展览？" },
+        { "en": "The ancient bronzes on the second floor are a must-see.", "zh": "二楼的古代青铜器展不容错过。" }
+      ]
+    },
+    "campus_library": {
+      "t": "图书馆借书",
+      "g": "campus",
+      "lines": [
+        { "en": "I would like to borrow these two books, please.", "zh": "我想借这两本书。" },
+        { "en": "Do you have your library card with you?", "zh": "你带图书证了吗？" },
+        { "en": "Here it is. How long can I keep them?", "zh": "在这。最多能借多久？" },
+        { "en": "Two weeks, and you can renew them once online.", "zh": "两周，可以在网上续借一次。" },
+        { "en": "What happens if I return them late?", "zh": "如果迟还会怎么样？" },
+        { "en": "There is a small fine of fifty cents per day per book.", "zh": "每本书每天收五毛钱的少量滞纳金。" }
+      ]
+    },
+    "campus_class": {
+      "t": "课堂问答",
+      "g": "campus",
+      "lines": [
+        { "en": "Professor, could you explain that grammar rule again?", "zh": "教授，您能再讲一遍那个语法规则吗？" },
+        { "en": "Of course. Which part do you find confusing?", "zh": "当然。你觉得哪部分不好理解？" },
+        { "en": "I am not sure when to use the present perfect tense.", "zh": "我不清楚什么时候用现在完成时。" },
+        { "en": "Use it for actions connected to the present moment.", "zh": "表示与当下有关联的动作时就用它。" },
+        { "en": "Could you give us a couple of examples?", "zh": "能给我们举几个例子吗？" },
+        { "en": "Sure, for example: I have finished my homework.", "zh": "当然，比如：我已经写完作业了。" }
+      ]
+    },
+    "work_interview": {
+      "t": "求职面试",
+      "g": "work",
+      "lines": [
+        { "en": "Tell me a little about yourself, please.", "zh": "请简单介绍一下你自己。" },
+        { "en": "I recently graduated with a degree in business English.", "zh": "我最近毕业，专业是商务英语。" },
+        { "en": "Why do you want to work with our company?", "zh": "你为什么想加入我们公司？" },
+        { "en": "I admire your company culture and its focus on innovation.", "zh": "我欣赏贵公司的文化以及对创新的重视。" },
+        { "en": "What do you consider your greatest strength?", "zh": "你认为你最大的优势是什么？" },
+        { "en": "I am a fast learner and I work well under pressure.", "zh": "我学东西快，并且抗压能力强。" }
+      ]
+    },
+    "work_office": {
+      "t": "办公室日常",
+      "g": "work",
+      "lines": [
+        { "en": "Could you send me the report before the meeting?", "zh": "开会前能把报告发给我吗？" },
+        { "en": "Sure, I will email it to you within the hour.", "zh": "好的，我一小时内发邮件给你。" },
+        { "en": "Has the client confirmed the delivery date?", "zh": "客户确认交货日期了吗？" },
+        { "en": "Not yet. They promised to reply by tomorrow morning.", "zh": "还没有。他们说明早之前答复。" },
+        { "en": "Should we book a meeting room for the review?", "zh": "评审会要订一间会议室吗？" },
+        { "en": "Yes, please book the one on the third floor for two o'clock.", "zh": "好，请订三楼那间，下午两点。" }
+      ]
+    },
+    "news_tech": {
+      "t": "短文朗读 · 脑机输入新技术",
+      "g": "news",
+      "lines": [
+        { "en": "Scientists have developed a new tool that turns thoughts into text.", "zh": "科学家研发出一种能把想法转化为文字的新工具。" },
+        { "en": "Users only need to imagine speaking, and the words appear on screen.", "zh": "使用者只需想象自己在说话，文字就会出现在屏幕上。" },
+        { "en": "In early tests, the tool reached about eighty percent accuracy.", "zh": "在早期测试中，该工具的准确率约为百分之八十。" },
+        { "en": "Researchers say it could one day help patients who cannot speak.", "zh": "研究人员表示，它未来或能帮助无法说话的患者。" },
+        { "en": "The team plans to run larger trials in hospitals next year.", "zh": "团队计划明年在医院开展更大规模的试验。" },
+        { "en": "Experts warn that privacy rules must keep up with the technology.", "zh": "专家提醒，隐私法规必须跟上技术发展的步伐。" },
+        { "en": "A demonstration was held at the national technology fair last week.", "zh": "上周在国家科技博览会上进行了现场演示。" },
+        { "en": "Volunteers described the experience as strange but exciting.", "zh": "志愿者形容这种体验神奇又令人兴奋。" },
+        { "en": "The device currently looks like a small cap with soft sensors.", "zh": "该设备目前看起来像一顶带有柔性传感器的帽子。" },
+        { "en": "A lighter wearable version is expected within two years.", "zh": "更轻便的可穿戴版本预计两年内面世。" }
       ]
     }
   }

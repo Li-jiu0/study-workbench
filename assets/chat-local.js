@@ -459,6 +459,28 @@
   function $id(x) { return document.getElementById(x); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
+  /* ==================== R160：占位式媒体清理（数据管理页清图片/语音后的渲染兼容） ====================
+     占位标记：[XT_MEDIA_CLEARED:image] / [XT_MEDIA_CLEARED:voice]（由数据管理页 dmClearChatMedia 写入）。
+     渲染约定：占位消息渲染为灰调内联提示气泡（im-media-cleared），绝不把标记字符串当 src 去加载；
+     操作降级：复制 / 收藏表情遇到占位消息 → toast「媒体已清理」，标记字符串永不外发、永不入库到新消息。 */
+  /* ==== R160 MEDIA-PLACEHOLDER HELPERS BEGIN（jsdom 验收据此切片单测，勿改标记行） ==== */
+  var XT_MEDIA_CLEARED_PREFIX = '[XT_MEDIA_CLEARED:';
+  function imIsMediaCleared(m) {
+    return !!(m && typeof m.content === 'string' && m.content.indexOf(XT_MEDIA_CLEARED_PREFIX) === 0);
+  }
+  function imMediaClearedHtml(kind) {
+    /* R160b：五类占位标签（文字块走条目移除、不经此渲染） */
+    var label = kind === 'voice' ? '[语音已清理]'
+      : kind === 'file' ? '[文件已清理]'
+      : kind === 'video' ? '[视频已清理]'
+      : (kind !== 'image' && kind !== 'voice') ? '[内容已清理]'
+      : '[图片已清理]';
+    return '<div class="im-media-cleared">' + esc(label) + '</div>';
+  }
+  window.imIsMediaCleared = imIsMediaCleared;
+  window.imMediaClearedHtml = imMediaClearedHtml;
+  /* ==== R160 MEDIA-PLACEHOLDER HELPERS END ==== */
+
   function getAiConfig() {
     /* Bug4（R72）：真实 AI 配置写在 lsKey(AI_CFG_KEY)（app.js），裸键已被迁移删除，
        旧实现只读裸键 → 恒为 null → AI 好友永远走演示兜底。改为前缀优先、裸键回退。 */
@@ -846,6 +868,11 @@
     /* R3b-C U9：引用项 —— 本人 / 对方消息都显示（与「撤回」的仅本人判定互不影响）。 */
     html += '<div class="im-menu-item" onclick="imMenuQuote(\'' + esc(m.id) + '\')">引用</div>';
     if (canRecall) html += '<div class="im-menu-item" onclick="imMenuRecall(\'' + esc(m.id) + '\')">撤回</div>';
+    /* R150E-2：图片消息（他人发的 sticker / 任意图片）→「收藏表情」——存入我的自定义表情。
+       仅 image 类别显示，文本消息菜单（撤回/复制/删除）零改动，两类互不干扰。 */
+    if (m.kind === 'image' && (m.content || '') && !imIsMediaCleared(m)) {   // R160：占位消息不出「收藏表情」入口
+      html += '<div class="im-menu-item" onclick="imMenuFavSticker(\'' + esc(m.id) + '\')">收藏表情</div>';
+    }
     if (txt) html += '<div class="im-menu-item" onclick="imMenuCopy(\'' + esc(m.id) + '\')">复制</div>';
     html += '<div class="im-menu-item im-menu-danger" onclick="imMenuDelete(\'' + esc(m.id) + '\')">删除本端</div>';
     var box = document.createElement('div');
@@ -908,9 +935,23 @@
     imCloseMsgMenu();
     var m = imFindMsg(id);
     if (!m) return;
+    if (imIsMediaCleared(m)) { toast('媒体已清理，无可复制内容'); return; }   // R160：占位消息降级，标记不外发
     var txt = (m.kind === 'image' || m.kind === 'voice' || m.kind === 'location' || m.kind === 'file') ? '' : (m.content || '');
     if (!txt) { toast('这条消息没有可复制的文字'); return; }
     imCopyText(txt, function (ok) { toast(ok ? '已复制' : '复制失败'); });
+  };
+
+  /* R150E-2：菜单「收藏表情」——把图片消息（他人发的 sticker / 任意图片）存为我的自定义表情。
+     实际抓取/压缩/入库全在 imAddStickerFromUrl（emoji 段内，含 toast 反馈）。 */
+  window.imMenuFavSticker = function (id) {
+    imCloseMsgMenu();
+    var m = imFindMsg(id);
+    if (!m || m.kind !== 'image') return;
+    if (imIsMediaCleared(m)) { toast('媒体已清理，无法收藏'); return; }   // R160：占位消息降级
+    var url = (m.content == null ? '' : String(m.content));
+    if (!url) { toast('收藏失败，请稍后再试'); return; }
+    if (typeof window.imAddStickerFromUrl === 'function') window.imAddStickerFromUrl(url);
+    else toast('收藏失败，请稍后再试');
   };
 
   window.imMenuDelete = function (id) {
@@ -2325,13 +2366,26 @@
         return '<div class="im-live-sys">' + esc(m.content || '') + '</div>';
       }
       var inner;
-      if (m.kind === 'image') {
-        var src = /^(https?:|data:)/.test(m.content) ? m.content : apiBase() + m.content;
-        /* R51（2026-09-14）：图片气泡 —— 限宽 200px + 圆角，点击全屏预览（imPreviewImage）。
-           收到（他人）与发出（自己）走同一分支，服务端消息与离线 dataURL 都能渲染。 */
-        inner = '<img class="im-img" src="' + esc(src) + '" alt="[图片]" onclick="imPreviewImage(this.getAttribute(\'src\'))">' +
-          '<div class="im-mt">' + timeStr + '</div>' + readTag;
+      /* R160b：占位消息全局守卫（先于一切 kind 分支）—— file/video/其他类型的占位消息
+         也渲染为灰调提示气泡，标记字符串绝不进 src / 当正文展示。image/voice 分支内的守卫保留为双保险。 */
+      if (imIsMediaCleared(m)) {
+        inner = imMediaClearedHtml(m.kind) + '<div class="im-mt">' + timeStr + '</div>' + readTag;
+      } else if (m.kind === 'image') {
+        /* R160：占位消息（媒体已清理）→ 灰调提示气泡，绝不把标记当 src 加载 */
+        if (imIsMediaCleared(m)) {
+          inner = imMediaClearedHtml('image') + '<div class="im-mt">' + timeStr + '</div>' + readTag;
+        } else {
+          var src = /^(https?:|data:)/.test(m.content) ? m.content : apiBase() + m.content;
+          /* R51（2026-09-14）：图片气泡 —— 限宽 200px + 圆角，点击全屏预览（imPreviewImage）。
+             收到（他人）与发出（自己）走同一分支，服务端消息与离线 dataURL 都能渲染。 */
+          inner = '<img class="im-img" src="' + esc(src) + '" alt="[图片]" onclick="imPreviewImage(this.getAttribute(\'src\'))">' +
+            '<div class="im-mt">' + timeStr + '</div>' + readTag;
+        }
       } else if (m.kind === 'voice') {
+        /* R160：占位消息（媒体已清理）→ 灰调提示气泡，不构建播放条（无 data-src，不可点播） */
+        if (imIsMediaCleared(m)) {
+          inner = imMediaClearedHtml('voice') + '<div class="im-mt">' + timeStr + '</div>' + readTag;
+        } else {
         /* R130（2026-09-20）：微信式语音条 —— 补回时长显示链路（旧版发送时请求体没带 duration、
            服务端映射也没读 duration，重拉后秒数丢失只剩「语音」占位）：
            ① 有 duration → 显「N″」，宽度随时长伸缩（80 + 6×N px，封顶 244）；
@@ -2358,6 +2412,7 @@
           '</div>' +
           imVoiceTranscriptHtml(m) +
           '<div class="im-mt">' + timeStr + '</div>' + readTag;
+        }
       } else if (m.kind === 'location') {
         /* R104 批2（2026-09-19）：位置卡交互 —— 有坐标走微信式地图卡：
            ① 主体可点 → imLocOpen（腾讯地图 marker URI，免 Key、零额度）；
@@ -5089,6 +5144,8 @@
   var EMOJI_FAV_KEY = 'study_workbench_emoji_fav';
   var EMOJI_RECENT_KEY = 'study_workbench_emoji_recent';
   var EMOJI_CUSTOM_KEY = 'study_workbench_emoji_custom'; // 自定义表情（dataURL 数组）
+  var EMOJI_FAV_STICKER_KEY = 'study_workbench_emoji_fav_sticker'; // R150：收藏的自定义表情（dataURL 数组）
+  var EMOJI_FAV_STICKER_MAX = 12;   // R150：收藏 sticker 上限（个）
   var EMOJI_CUSTOM_MAX = 24;        // 自定义表情上限（张）
   var EMOJI_STICKER_MAX_EDGE = 240; // 自定义表情最长边压缩目标（px）
   var EMOJI_STICKER_MAX_BYTES = 80 * 1024; // 压缩后体积上限（80KB，超出拒绝）
@@ -5129,6 +5186,57 @@
     }
   }
 
+  // 读取收藏 sticker 数组（string[] dataURL，最多 EMOJI_FAV_STICKER_MAX）。（R150）
+  function emojiFavStickerArr() {
+    try {
+      var v = JSON.parse(localStorage.getItem(EMOJI_FAV_STICKER_KEY) || '[]');
+      if (!Array.isArray(v)) return [];
+      return v.filter(function (s) { return typeof s === 'string' && s.indexOf('data:image/') === 0; }).slice(0, EMOJI_FAV_STICKER_MAX);
+    } catch (e) { return []; }
+  }
+
+  // 写收藏 sticker；配额异常 catch 并 toast（不抛）。（R150，与 emojiSaveCustom 同款范式）
+  function emojiSaveFavSticker(arr) {
+    try {
+      localStorage.setItem(EMOJI_FAV_STICKER_KEY, JSON.stringify(arr));
+      return true;
+    } catch (e) {
+      emojiToast('error', '存储空间不足，收藏表情失败');
+      return false;
+    }
+  }
+
+  // R150：读安卓壳注入的原生键盘高度变量 --xt-sakb（原生实测注入 '<kb>px'）。
+  // 防御性取值：缺失/解析失败/不在合理区间（>200 且 < 视口 70%）→ 返回 0，调用方回落 CSS 默认 300px。
+  function imPanelKbPx() {
+    try {
+      var v = getComputedStyle(document.documentElement).getPropertyValue('--xt-sakb');
+      if (!v) return 0;
+      // R150b：原生注入为 px 数值（dp 时代旧文案已废弃）——全仓已核查 0 处 var(--xt-sakb)
+      // CSS 直消费，只经本函数 parseFloat 取数后写 --xt-im-panel-h。
+      // 解析对 '352px' / '352' / 兼容期残留 '352dp' 一律健壮（parseFloat 忽略单位后缀），
+      // 数值直接采信（px 即 WebView CSS px）。
+      var m = String(v).match(/(-?\d+(?:\.\d+)?)/);
+      var px = m ? parseFloat(m[1]) : 0;
+      if (!isFinite(px) || px <= 0) return 0;
+      var wh = window.innerHeight || 640;
+      if (px > 200 && px < wh * 0.7) return Math.round(px);
+    } catch (e) { /* 静默 */ }
+    return 0;
+  }
+  window.imPanelKbPx = imPanelKbPx;
+
+  // R150：面板升起前把面板高度对齐到软键盘高度（微信式）。
+  // 无键盘高度可用时移除内联覆盖，回落页内 CSS 变量 --xt-im-panel-h（默认 300px / 矮屏 220px）。
+  function imPanelSyncKbHeight() {
+    var px = imPanelKbPx();
+    try {
+      if (px > 0) document.documentElement.style.setProperty('--xt-im-panel-h', px + 'px');
+      else document.documentElement.style.removeProperty('--xt-im-panel-h');
+    } catch (e) { /* 静默 */ }
+  }
+  window.imPanelSyncKbHeight = imPanelSyncKbHeight;
+
   // 当前面板激活的 tab（从 DOM 读，避免遗留全局状态）。
   function emojiCurrentTab() {
     var panel = $id('imEmojiPanel');
@@ -5160,15 +5268,20 @@
     var panel = $id('imEmojiPanel');
     var mask = $id('imEmojiMask');
     if (!panel) return;
-    // R6：与加号菜单互斥（微信式同高面板，切换时输入框不跳）
-    try { if (window.imClosePlusMenu) window.imClosePlusMenu(); } catch (e0) { /* 静默 */ }
+    // R6/R150：与加号菜单互斥（微信式同高面板）。对方开着时瞬时关（instant=true 禁收起
+    // 过渡）→ 本帧只发生一次高度变化，面板「原位换内容」不闪不跳。
+    try { if (window.imClosePlusMenu) window.imClosePlusMenu(true); } catch (e0) { /* 静默 */ }
     // R143-2（微信式切换）：开面板 → 失焦输入框收起软键盘，面板接管键盘占位；
     // 之后点输入框 → focus/click/touchstart（R141 已绑 focus+click，R143 补 touchstart）
     // → 关面板 + 键盘回弹，实现「面板 ⇄ 输入框」自如切换。
+    // R150：blur 与 addClass('open') 同帧同步执行（下方连续同步代码，无异步缝隙），
+    // 避免输入栏「先落再升」。
     try {
       var ae = document.activeElement;
       if (ae && ae.id === 'imInput' && typeof ae.blur === 'function') ae.blur();
     } catch (eB) { /* 静默 */ }
+    // R150：软键盘高度对齐（--xt-sakb 由安卓壳注入；缺失/不合理时回落页内 CSS 默认 300px）
+    try { imPanelSyncKbHeight(); } catch (eK) { /* 静默 */ }
     renderEmojiPanel(tab || 'recent');
     panel.classList.add('open');
     if (mask) mask.classList.add('open');
@@ -5176,11 +5289,22 @@
     // 返回键压栈（layer-stack 未加载时静默跳过）
     try { if (window.xtLayerPush) window.xtLayerPush(EMOJI_LAYER_ID); } catch (e) { /* 静默 */ }
   }
-  function imCloseEmojiPanel() {
+  function imCloseEmojiPanel(instant) {
     var panel = $id('imEmojiPanel');
     var mask = $id('imEmojiMask');
+    // R150：instant=true → 本帧禁用高度过渡（.xt-no-anim 置 transition:none + 强制回流），
+    // 瞬时收起让软键盘直接接管同一块空间，根除「对话框先落下再被键盘顶回」的跳变。
+    // 正常关闭（点收起/再点按钮/发送后）不传 instant，保留 0.24s 收起动画。
+    // MN-1：仅「open → 瞬时收起」需要禁动画；对已关面板不再挂 .xt-no-anim，
+    // 避免用户 80ms 内立刻再点开表情面板时开启动画被残留标记抑制。
+    var wasOpen = !!(panel && panel.classList.contains('open'));
+    if (panel && instant && wasOpen) panel.classList.add('xt-no-anim');
     if (panel) panel.classList.remove('open');
     if (mask) mask.classList.remove('open');
+    if (panel && instant && wasOpen) {
+      try { void panel.offsetHeight; } catch (eR0) { /* 强制回流失败不影响 */ }
+      setTimeout(function () { panel.classList.remove('xt-no-anim'); }, 80);
+    }
     emojiCloseStickerMenu();
     emojiKeepBottom();
     // 弹栈收尾（layer-stack 未加载时静默跳过）
@@ -5208,13 +5332,15 @@
     var grid = '';
     if (t === 'custom') {
       grid = emojiRenderCustomGrid();
+    } else if (t === 'fav') {
+      // R150 子项5：收藏 tab 混排内置收藏（data-code）+ 收藏 sticker（data-sticker-fav）
+      grid = emojiRenderFavGrid();
     } else {
       var codes;
       if (t === 'recent') codes = emojiArr(EMOJI_RECENT_KEY, 24);
-      else if (t === 'fav') codes = emojiArr(EMOJI_FAV_KEY, 24);
       else codes = window.STUDY_EMOJI.list.map(function (e) { return e.code; });
       if (codes.length === 0) {
-        grid = '<div class="im-emoji-empty">' + (t === 'fav' ? '还没有收藏表情，长按表情即可收藏' : '暂无最近使用') + '</div>';
+        grid = '<div class="im-emoji-empty">暂无最近使用</div>';
       } else {
         var favSet = emojiArr(EMOJI_FAV_KEY, 24);
         grid = codes.map(function (code) {
@@ -5237,6 +5363,26 @@
       '<span class="im-emoji-tab" onclick="window.imCloseEmojiPanel()">收起</span></div>' +
       '<div class="im-emoji-grid" id="imEmojiGrid">' + grid + '</div>';
     emojiBindGrid(panel);
+  }
+
+  // R150 子项5：收藏 tab 网格 —— 内置收藏（data-code，长按取消收藏）+ 收藏 sticker
+  // （data-sticker-fav，点按发送 / 长按菜单「发送/取消收藏」）混排；两者皆空时才出空态。
+  function emojiRenderFavGrid() {
+    var codes = emojiArr(EMOJI_FAV_KEY, 24);
+    var sfav = emojiFavStickerArr();
+    if (codes.length === 0 && sfav.length === 0) {
+      return '<div class="im-emoji-empty">还没有收藏表情，长按表情即可收藏</div>';
+    }
+    var html = codes.map(function (code) {
+      var e = window.STUDY_EMOJI.map[code];
+      if (!e) return '';
+      return '<div class="im-emoji-item" data-code="' + esc(code) + '" title="' + esc(e.name) + '（长按取消收藏）">' + e.char +
+        '<span class="im-emoji-fav on">🌟</span></div>';
+    }).join('');
+    html += sfav.map(function (src, j) {
+      return '<div class="im-emoji-item" data-sticker-fav="' + j + '" title="点按发送 · 长按管理"><img src="' + esc(src) + '" alt="收藏表情"></div>';
+    }).join('');
+    return html;
   }
 
   // 自定义 tab 网格：已有 sticker + 末尾「+」添加格（最多 EMOJI_CUSTOM_MAX）。
@@ -5298,7 +5444,11 @@
       pressTimer = setTimeout(function () {
         longFired = true;
         if (it.id === 'imEmojiAdd') return; // 「+」格不长按
-        if (it.getAttribute('data-sticker') !== null && it.getAttribute('data-sticker') !== undefined) {
+        // R150 子项5：收藏 tab 的 sticker（data-sticker-fav）长按 → 菜单（发送/取消收藏）
+        var sfavAttr = it.getAttribute('data-sticker-fav');
+        if (sfavAttr !== null && sfavAttr !== undefined) {
+          emojiOpenStickerFavMenu(parseInt(sfavAttr, 10), it);
+        } else if (it.getAttribute('data-sticker') !== null && it.getAttribute('data-sticker') !== undefined) {
           var idx = parseInt(it.getAttribute('data-sticker'), 10);
           emojiOpenStickerMenu(idx, it);
         } else {
@@ -5326,6 +5476,12 @@
       var it = target(e);
       if (!it) return;
       if (it.id === 'imEmojiAdd') { window.imStickerPick(); return; }
+      // R150 子项5：收藏 sticker 点按 → 直接发送
+      var sfavAttr = it.getAttribute('data-sticker-fav');
+      if (sfavAttr !== null && sfavAttr !== undefined) {
+        window.imSendStickerFav(parseInt(sfavAttr, 10));
+        return;
+      }
       if (it.getAttribute('data-sticker') !== null && it.getAttribute('data-sticker') !== undefined) {
         window.imSendSticker(parseInt(it.getAttribute('data-sticker'), 10));
         return;
@@ -5348,7 +5504,11 @@
       if (!it) return;
       if (e.cancelable) { try { e.preventDefault(); } catch (er) { /* 静默 */ } }
       if (it.id === 'imEmojiAdd') return;
-      if (it.getAttribute('data-sticker') !== null && it.getAttribute('data-sticker') !== undefined) {
+      // R150 子项5：收藏 sticker 右键 → 菜单（发送/取消收藏）
+      var sfavAttr = it.getAttribute('data-sticker-fav');
+      if (sfavAttr !== null && sfavAttr !== undefined) {
+        emojiOpenStickerFavMenu(parseInt(sfavAttr, 10), it);
+      } else if (it.getAttribute('data-sticker') !== null && it.getAttribute('data-sticker') !== undefined) {
         emojiOpenStickerMenu(parseInt(it.getAttribute('data-sticker'), 10), it);
       } else {
         var code = it.getAttribute('data-code');
@@ -5408,43 +5568,124 @@
     });
   };
 
+  // R150E-2：压缩后的 dataURL 入库 —— 压缩后与既有条目逐字节比对去重 → 上限守卫 → 写库。
+  function emojiAddStickerFromDataUrl(dataUrl) {
+    if (!dataUrl || String(dataUrl).indexOf('data:image/') !== 0) { emojiToast('error', '收藏失败，请稍后再试'); return; }
+    emojiCompressDataUrl(dataUrl, function (out, err) {
+      if (!out) { emojiToast('error', err || '收藏失败，请稍后再试'); return; }
+      var arr = emojiCustomArr();
+      for (var i = 0; i < arr.length; i++) {
+        if (arr[i] === out) { emojiToast('info', '已在自定义表情中'); return; }
+      }
+      if (arr.length >= EMOJI_CUSTOM_MAX) { emojiToast('warning', '自定义表情已满（最多 ' + EMOJI_CUSTOM_MAX + ' 张）'); return; }
+      arr.push(out);
+      if (!emojiSaveCustom(arr)) return; // 配额异常已 toast
+      emojiToast('success', '已添加到自定义表情');
+      emojiRefreshIfOpen();
+    });
+  }
+
+  // R150E-2：把聊天里收到的图片（他人发的 sticker / 任意图片消息）收藏为我的自定义表情。
+  // App 页面跑在 file:///android_asset/ 下，<img src=http…> 直接画 canvas 会被 taint 抛
+  // SecurityError → 必须 fetch(url)→blob→FileReader.readAsDataURL 拿 dataURL（dataURL 图
+  // 不 taint canvas）再走压缩；老 WebView 无 fetch / 网络差 → toast 失败。浏览器同源两路皆通。
+  // 离线回落的本端 dataURL 图片消息（content 即 data:image/…）直接走压缩，无需 fetch。
+  // R150E-2b（真机修复）：file:// 场景下相对路径（/uploads/…）会被 fetch 解析成
+  // file:///uploads/… 必然失败 → 先按本页其余 fetch 的同一套 API_BASE 规则绝对化；
+  // 无 fetch 的老 WebView 再降级 XHR(responseType=blob) 兜底（线上已验证 ACAO:*，file:// 可跨）。
+  function emojiStickerAbsUrl(u) {
+    if (/^(https?:|data:|blob:)/i.test(u)) return u;
+    var base = (window.STUDY_API_BASE != null ? window.STUDY_API_BASE
+      : ((location.protocol === 'http:' || location.protocol === 'https:') ? '' : 'http://110.42.134.62:8000'));
+    return base + (u.charAt(0) === '/' ? '' : '/') + u;
+  }
+  function emojiXhrBlob(url, ok, err) {
+    try {
+      var x = new XMLHttpRequest();
+      x.open('GET', url, true);
+      x.responseType = 'blob';
+      x.onload = function () {
+        if (x.status >= 200 && x.status < 300 && x.response) ok(x.response);
+        else err();
+      };
+      x.onerror = function () { err(); };
+      x.send();
+    } catch (eX) { err(); }
+  }
+  function emojiAddStickerFromUrl(url) {
+    var u = String(url || '');
+    if (!u) { emojiToast('error', '收藏失败，请稍后再试'); return; }
+    if (emojiCustomArr().length >= EMOJI_CUSTOM_MAX) { emojiToast('warning', '自定义表情已满（最多 ' + EMOJI_CUSTOM_MAX + ' 张）'); return; }
+    if (u.indexOf('data:image/') === 0) { emojiAddStickerFromDataUrl(u); return; }
+    u = emojiStickerAbsUrl(u);
+    var settled = false;
+    function fail(why) { if (!settled) { settled = true; emojiToast('error', '收藏失败：' + (why || '请稍后再试')); } }
+    function gotBlob(blob) {
+      if (!blob || settled) { fail('图片获取失败'); return; }
+      var fr = new FileReader();
+      fr.onerror = function () { fail('图片读取失败'); };
+      fr.onload = function () {
+        if (settled) return;
+        settled = true;
+        emojiAddStickerFromDataUrl(String(fr.result || ''));
+      };
+      fr.readAsDataURL(blob);
+    }
+    function viaXhr() { emojiXhrBlob(u, gotBlob, function () { fail('网络异常，无法获取图片'); }); }
+    if (typeof window.fetch !== 'function') { viaXhr(); return; }
+    try {
+      window.fetch(u, { method: 'GET' }).then(function (r) {
+        if (!r || !r.ok) throw new Error('http_' + (r ? r.status : 0));
+        return r.blob();
+      }).then(function (blob) {
+        if (!blob) throw new Error('noblob');
+        gotBlob(blob);
+      }).catch(function () { if (!settled) viaXhr(); });   // fetch 失败（老内核/网络/协程异常）→ XHR 再试一次
+    } catch (e0) { viaXhr(); }
+  }
+  window.imAddStickerFromUrl = emojiAddStickerFromUrl;
+
   // canvas 压缩：最长边 ≤ EMOJI_STICKER_MAX_EDGE；体积 ≤ EMOJI_STICKER_MAX_BYTES。
   // 先按 PNG 兜底，再逐档降质量试 JPEG；仍超限则回调错误。
+  // R150E-2：img→canvas 压缩核心抽出（输入任意可解码 src；dataURL 图不 taint canvas），
+  // 供「本地选图」（emojiCompressImage）与「聊天图片收藏为表情」（emojiAddStickerFromUrl）共用。
+  function emojiCompressDataUrl(src, cb) {
+    var img = new Image();
+    img.onerror = function () { if (cb) cb(null, '图片解码失败'); };
+    img.onload = function () {
+      var w = img.width || 0, h = img.height || 0;
+      if (!w || !h) { if (cb) cb(null, '图片尺寸无效'); return; }
+      var scale = Math.min(1, EMOJI_STICKER_MAX_EDGE / Math.max(w, h));
+      var tw = Math.max(1, Math.round(w * scale));
+      var th = Math.max(1, Math.round(h * scale));
+      var cv = document.createElement('canvas');
+      cv.width = tw; cv.height = th;
+      var ctx = cv.getContext('2d');
+      if (!ctx) { if (cb) cb(null, '当前环境不支持图片压缩'); return; }
+      // 透明底铺白（JPEG 不支持透明）
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, tw, th);
+      ctx.drawImage(img, 0, 0, tw, th);
+      var dataUrl = null;
+      try { dataUrl = cv.toDataURL('image/png'); } catch (e0) { dataUrl = null; }
+      var bytes = dataUrl ? emojiDataUrlBytes(dataUrl) : 0;
+      if (dataUrl && bytes <= EMOJI_STICKER_MAX_BYTES) { if (cb) cb(dataUrl, null); return; }
+      // 逐档降质试 JPEG
+      var qs = [0.8, 0.6, 0.45, 0.32];
+      for (var i = 0; i < qs.length; i++) {
+        var dj = null;
+        try { dj = cv.toDataURL('image/jpeg', qs[i]); } catch (e1) { dj = null; }
+        if (dj && emojiDataUrlBytes(dj) <= EMOJI_STICKER_MAX_BYTES) { if (cb) cb(dj, null); return; }
+      }
+      if (cb) cb(null, '图片压缩后仍超过 80KB，请换小一点的图');
+    };
+    img.src = src;
+  }
+
   function emojiCompressImage(file, cb) {
     var reader = new FileReader();
     reader.onerror = function () { if (cb) cb(null, '读取图片失败'); };
-    reader.onload = function (ev) {
-      var img = new Image();
-      img.onerror = function () { if (cb) cb(null, '图片解码失败'); };
-      img.onload = function () {
-        var w = img.width || 0, h = img.height || 0;
-        if (!w || !h) { if (cb) cb(null, '图片尺寸无效'); return; }
-        var scale = Math.min(1, EMOJI_STICKER_MAX_EDGE / Math.max(w, h));
-        var tw = Math.max(1, Math.round(w * scale));
-        var th = Math.max(1, Math.round(h * scale));
-        var cv = document.createElement('canvas');
-        cv.width = tw; cv.height = th;
-        var ctx = cv.getContext('2d');
-        if (!ctx) { if (cb) cb(null, '当前环境不支持图片压缩'); return; }
-        // 透明底铺白（JPEG 不支持透明）
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, tw, th);
-        ctx.drawImage(img, 0, 0, tw, th);
-        var dataUrl = null;
-        try { dataUrl = cv.toDataURL('image/png'); } catch (e0) { dataUrl = null; }
-        var bytes = dataUrl ? emojiDataUrlBytes(dataUrl) : 0;
-        if (dataUrl && bytes <= EMOJI_STICKER_MAX_BYTES) { if (cb) cb(dataUrl, null); return; }
-        // 逐档降质试 JPEG
-        var qs = [0.8, 0.6, 0.45, 0.32];
-        for (var i = 0; i < qs.length; i++) {
-          var dj = null;
-          try { dj = cv.toDataURL('image/jpeg', qs[i]); } catch (e1) { dj = null; }
-          if (dj && emojiDataUrlBytes(dj) <= EMOJI_STICKER_MAX_BYTES) { if (cb) cb(dj, null); return; }
-        }
-        if (cb) cb(null, '图片压缩后仍超过 80KB，请换小一点的图');
-      };
-      img.src = ev.target.result;
-    };
+    reader.onload = function (ev) { emojiCompressDataUrl(ev.target.result, cb); };
     reader.readAsDataURL(file);
   }
 
@@ -5461,9 +5702,8 @@
   }
 
   // —— 发送自定义 sticker：当作图片消息（复用既有发图链路 imSendImageFile） ——
-  window.imSendSticker = function (idx) {
-    var arr = emojiCustomArr();
-    var src = arr[idx];
+  // R150：按 dataURL 源发送的公共实现（自定义 tab 按索引 / 收藏 tab 按收藏序号共用）。
+  function emojiSendStickerSrc(src) {
     if (!src) { emojiToast('error', '表情不存在'); return; }
     // dataURL → Blob → File（复用 imSendImageFile：在线 POST /api/uploads/image，离线回落 dataURL）
     try {
@@ -5486,30 +5726,42 @@
     } catch (e) {
       emojiToast('error', '表情发送失败');
     }
+  }
+  window.imSendSticker = function (idx) {
+    emojiSendStickerSrc(emojiCustomArr()[idx]);
+  };
+  // R150 子项5：发送收藏 tab 里的 sticker（按收藏序号）。
+  window.imSendStickerFav = function (j) {
+    emojiSendStickerSrc(emojiFavStickerArr()[j]);
+  };
+  // R150 子项5：收藏/取消收藏一个 sticker（按 dataURL 值去重切换；上限 EMOJI_FAV_STICKER_MAX）。
+  window.imFavSticker = function (src, withToast) {
+    if (!src || String(src).indexOf('data:image/') !== 0) return;
+    var fav = emojiFavStickerArr();
+    var idx = fav.indexOf(src);
+    var added;
+    if (idx >= 0) { fav.splice(idx, 1); added = false; }
+    else {
+      if (fav.length >= EMOJI_FAV_STICKER_MAX) {
+        if (withToast) emojiToast('warning', '收藏表情已满（最多 ' + EMOJI_FAV_STICKER_MAX + ' 个）');
+        return;
+      }
+      fav.unshift(src);
+      added = true;
+    }
+    if (!emojiSaveFavSticker(fav)) return; // 配额异常已 toast
+    if (withToast) emojiToast('success', added ? '已收藏' : '已取消收藏');
+    emojiRefreshIfOpen();
   };
 
-  // —— 长按 sticker → 小菜单（发送 / 删除） ——
+  // —— 长按 sticker → 小菜单（发送 / 收藏·取消收藏 / 删除；收藏 tab 内为 发送 / 取消收藏） ——
   var _emStickerMenu = null;
   function emojiCloseStickerMenu() {
     if (_emStickerMenu && _emStickerMenu.parentNode) _emStickerMenu.parentNode.removeChild(_emStickerMenu);
     _emStickerMenu = null;
   }
-  function emojiOpenStickerMenu(idx, anchor) {
-    emojiCloseStickerMenu();
-    var menu = document.createElement('div');
-    menu.className = 'im-emoji-sticker-menu';
-    var send = document.createElement('div');
-    send.className = 'im-em-menu-item';
-    send.textContent = '发送';
-    send.onclick = function () { emojiCloseStickerMenu(); window.imSendSticker(idx); };
-    var del = document.createElement('div');
-    del.className = 'im-em-menu-item del';
-    del.textContent = '删除';
-    del.onclick = function () { emojiCloseStickerMenu(); emojiDeleteSticker(idx); };
-    menu.appendChild(send);
-    menu.appendChild(del);
-    document.body.appendChild(menu);
-    // 定位在 anchor 上方居中（超出屏幕则收边）
+  // R150：菜单定位公共实现 —— anchor 上方居中（超出屏幕则收边）。
+  function emojiPlaceMenu(menu, anchor) {
     var r = anchor.getBoundingClientRect();
     var mw = menu.offsetWidth || 120;
     var mh = menu.offsetHeight || 80;
@@ -5520,19 +5772,73 @@
     if (top < 8) top = Math.round(r.bottom + 6);
     menu.style.left = left + 'px';
     menu.style.top = top + 'px';
+  }
+  // R150：菜单挂载公共实现（挂 body + 点别处关闭；延迟绑定避免本次事件立即关闭）。
+  function emojiMountStickerMenu(menu, anchor) {
+    document.body.appendChild(menu);
+    emojiPlaceMenu(menu, anchor);
     _emStickerMenu = menu;
-    // 点别处关闭（延迟绑定避免本次事件立即关闭）
     setTimeout(function () {
       document.addEventListener('click', emojiCloseStickerMenu, { once: true });
     }, 0);
   }
+  function emojiOpenStickerMenu(idx, anchor) {
+    emojiCloseStickerMenu();
+    var src = emojiCustomArr()[idx] || '';
+    var menu = document.createElement('div');
+    menu.className = 'im-emoji-sticker-menu';
+    var send = document.createElement('div');
+    send.className = 'im-em-menu-item';
+    send.textContent = '发送';
+    send.onclick = function () { emojiCloseStickerMenu(); window.imSendSticker(idx); };
+    menu.appendChild(send);
+    // R150 子项5：自定义表情长按可收藏/取消收藏（收藏表为独立 dataURL 数组，上限 12）
+    if (src) {
+      var favItem = document.createElement('div');
+      favItem.className = 'im-em-menu-item';
+      favItem.textContent = emojiFavStickerArr().indexOf(src) >= 0 ? '取消收藏' : '收藏';
+      favItem.onclick = function () { emojiCloseStickerMenu(); window.imFavSticker(src, true); };
+      menu.appendChild(favItem);
+    }
+    var del = document.createElement('div');
+    del.className = 'im-em-menu-item del';
+    del.textContent = '删除';
+    del.onclick = function () { emojiCloseStickerMenu(); emojiDeleteSticker(idx); };
+    menu.appendChild(del);
+    emojiMountStickerMenu(menu, anchor);
+  }
+  // R150 子项5：收藏 tab 内 sticker 的长按菜单（发送 / 取消收藏）。
+  function emojiOpenStickerFavMenu(j, anchor) {
+    emojiCloseStickerMenu();
+    var src = emojiFavStickerArr()[j] || '';
+    if (!src) return;
+    var menu = document.createElement('div');
+    menu.className = 'im-emoji-sticker-menu';
+    var send = document.createElement('div');
+    send.className = 'im-em-menu-item';
+    send.textContent = '发送';
+    send.onclick = function () { emojiCloseStickerMenu(); window.imSendStickerFav(j); };
+    var unfav = document.createElement('div');
+    unfav.className = 'im-em-menu-item del';
+    unfav.textContent = '取消收藏';
+    unfav.onclick = function () { emojiCloseStickerMenu(); window.imFavSticker(src, true); };
+    menu.appendChild(send);
+    menu.appendChild(unfav);
+    emojiMountStickerMenu(menu, anchor);
+  }
   window.emojiOpenStickerMenu = emojiOpenStickerMenu;
+  window.emojiOpenStickerFavMenu = emojiOpenStickerFavMenu;
 
   function emojiDeleteSticker(idx) {
     var arr = emojiCustomArr();
     if (idx < 0 || idx >= arr.length) return;
+    var src = arr[idx];
     arr.splice(idx, 1);
     emojiSaveCustom(arr);
+    // R150：删除自定义表情时同步移除其收藏记录，避免收藏 tab 出现失效 dataURL
+    var fav = emojiFavStickerArr();
+    var fi = fav.indexOf(src);
+    if (fi >= 0) { fav.splice(fi, 1); emojiSaveFavSticker(fav); }
     emojiToast('success', '已删除');
     renderEmojiPanel('custom');
   };
@@ -6106,6 +6412,10 @@
       '.im-voice-transcript{max-width:244px;margin-top:3px;padding:5px 8px;font-size:12px;line-height:1.5;color:var(--text-secondary,#8a8f99);background:var(--bg,#F5F7FA);border-radius:8px;word-break:break-word;white-space:pre-wrap}' +
       /* 降级：手动 reduce-motion 或系统偏好 → 声波动画静止（保留静态 4 根波形） */
       'body.reduce-motion .im-voice-wave i{animation:none}' +
+      /* R160：占位式媒体清理提示气泡（灰调虚线卡，不加载任何 src） */
+      '.im-media-cleared{display:inline-block;min-width:64px;padding:10px 14px;border-radius:12px;' +
+      'background:var(--bg-secondary,#f2f3f7);border:1px dashed var(--border,#d8d8de);' +
+      'color:var(--text-muted,#9a9aa5);font-size:13px;line-height:1.5}' +
       '@media (prefers-reduced-motion: reduce){.im-voice-wave i{animation:none}}';
     document.head.appendChild(style);
 
@@ -6149,8 +6459,11 @@
          无该 id 时不会触发 history.back）。focus 与 click 双绑以覆盖老 WebView
          点击不触发 focus 的边缘情况。 */
       var imCloseFloatPanels = function () {
-        try { if (window.imCloseEmojiPanel) window.imCloseEmojiPanel(); } catch (e1) { /* 静默 */ }
-        try { if (window.imClosePlusMenu) window.imClosePlusMenu(); } catch (e2) { /* 静默 */ }
+        /* R150：面板因「点输入框」而关闭 → 瞬时收起（instant=true 禁 0.24s 高度过渡），
+           让软键盘直接接管面板刚让出的同一块空间，根除「对话框自动落下再被键盘顶回」
+           的跳变。两个关闭函数瞬时路径均幂等，focus/click/touchstart 连发无副作用。 */
+        try { if (window.imCloseEmojiPanel) window.imCloseEmojiPanel(true); } catch (e1) { /* 静默 */ }
+        try { if (window.imClosePlusMenu) window.imClosePlusMenu(true); } catch (e2) { /* 静默 */ }
       };
       inp.addEventListener('focus', imCloseFloatPanels);
       inp.addEventListener('click', imCloseFloatPanels);

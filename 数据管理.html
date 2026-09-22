@@ -10,51 +10,76 @@
 <link rel="stylesheet" href="assets/states.css?v=20260922a">
 <link rel="stylesheet" href="assets/polish.css?v=20260922a">
 <script src="assets/xt-polyfill.js?v=20260922a"></script>
+<script src="assets/xt-log.js?v=20260928d"></script>
 <script>window.__XT_PROD__=true;</script>
 <style>
-/* ==================== 数据管理页局部样式（需求 3 · 数据管理重构） ====================
-   微信「存储空间」风格：顶部总用量 + 分类占用列表（点击展开明细与清理操作）+ 底部维护区。
-   统计口径与原设置页 stRefreshOverview 完全一致（(k.length+v.length)*2，5MB 假设上限）。
+/* ==================== 数据管理页局部样式（需求 3 · 数据管理重构；R155/R155b 全面升级） ====================
+   微信「存储空间」风格（R155b 对齐截图）：顶部居中大号总用量 + 分类列表行（图标+名称+「已用 X」+「›」），
+   点整行进入该分类的**内置子页**（section 切换 + sp-ready 门控，参考 设置.html 隐私子页约定），不再行内展开。
+   R155：统计口径 = localStorage 实测 + IndexedDB（navigator.storage.estimate）真实本机占用，
+   不再假设固定容量上限；备份导出/恢复预览/自动提醒见脚本区。
    样式走 common.css 既有令牌，深浅色由 body.dark 自动适配；移动优先，桌面 max-width 480px 居中。 */
 .dm-wrap{max-width:480px;margin:0 auto;padding-bottom:28px;}
 .dm-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:14px}
-/* 顶部总用量区 */
-.dm-total-num{font-size:26px;font-weight:800;color:var(--text);line-height:1.3}
-.dm-total-num small{font-size:13px;font-weight:600;color:var(--text-secondary);margin-left:6px}
-.dm-total-bar{height:10px;border-radius:6px;background:var(--bg);border:1px solid var(--border);overflow:hidden;margin-top:12px}
-.dm-total-bar i{display:block;height:100%;width:0;background:var(--primary);border-radius:6px;transition:width .4s ease}
-.dm-total-tx{font-size:12px;color:var(--text-muted);line-height:1.7;margin-top:8px}
-/* 分类占用列表：每行 图标+名称+占用值+细进度条；点击展开明细 */
+/* 顶部总用量区（R155b：居中大号数字 + 说明行） */
+.dm-total-num{text-align:center;font-size:30px;font-weight:800;color:var(--text);line-height:1.3;padding-top:6px}
+.dm-total-tx{text-align:center;font-size:12px;color:var(--text-muted);line-height:1.7;margin-top:8px}
+/* 分类占用列表：每行 图标+名称+「已用 X」+「›」箭头；点整行 → 该分类内置子页 */
 .dm-cat{border-bottom:1px solid var(--border)}
 .dm-cat:last-child{border-bottom:none}
-.dm-cat-row{display:flex;align-items:center;gap:12px;padding:13px 2px;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.dm-cat-icon{width:34px;height:34px;border-radius:10px;background:rgba(91,141,239,.12);color:#5B8DEF;
+.dm-cat-row{display:flex;align-items:center;gap:12px;padding:14px 2px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.dm-cat-icon{width:36px;height:36px;border-radius:10px;background:rgba(91,141,239,.12);color:#5B8DEF;
   display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
 .dm-cat-main{flex:1;min-width:0}
-.dm-cat-name{font-size:14px;font-weight:600;color:var(--text)}
+.dm-cat-name{font-size:15px;font-weight:600;color:var(--text)}
 .dm-cat-sub{font-size:11.5px;color:var(--text-secondary);margin-top:2px}
-.dm-cat-val{font-size:12.5px;color:var(--text-secondary);flex-shrink:0;font-variant-numeric:tabular-nums}
-.dm-cat-arrow{color:var(--text-secondary);font-size:14px;flex-shrink:0;transition:transform .2s}
-.dm-cat.open .dm-cat-arrow{transform:rotate(90deg)}
-.dm-cat-bar{height:5px;border-radius:4px;background:var(--bg);overflow:hidden;margin:-4px 0 10px 46px}
-.dm-cat-bar i{display:block;height:100%;width:0;background:var(--primary);border-radius:4px;transition:width .4s ease}
-/* 展开明细区（默认收起） */
-.dm-detail{display:none;padding:2px 2px 14px 46px}
-.dm-cat.open + .dm-detail{display:block}
+.dm-cat-val{font-size:13px;color:var(--text-secondary);flex-shrink:0;font-variant-numeric:tabular-nums}
+.dm-cat-arrow{color:var(--text-muted);font-size:18px;flex-shrink:0;line-height:1}
+/* R155b：内置分类子页（默认隐藏；JS 就绪 sp-ready 后按 .active 切换；显式返回，禁 history.back） */
+body:not(.sp-ready) [data-dm-subpage]{display:none}
+[data-dm-subpage]{display:none}
+[data-dm-subpage].active{display:block}
+.dm-sub-detail{padding:6px 2px 2px}
 .dm-detail-item{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--text-secondary);
-  padding:6px 0;border-bottom:1px dashed var(--border)}
+  padding:7px 0;border-bottom:1px dashed var(--border)}
 .dm-detail-item:last-of-type{border-bottom:none}
 .dm-detail-item b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums;flex-shrink:0}
-.dm-detail-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.dm-detail-actions .btn{padding:6px 14px;font-size:var(--xt-font-sm,13px)}
+/* R155c：未映射键的次行小字（主标题中文兜底「其他数据」，键名灰调单行截断保留） */
+.dm-detail-kmain{flex:1;min-width:0}
+.dm-key-sub{display:block;font-size:10.5px;color:var(--text-muted);margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dm-detail-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;padding-bottom:6px}
+.dm-detail-actions .btn{padding:7px 14px;font-size:var(--xt-font-sm,13px)}
+/* R158：「其他数据」勾选清理行（复选框 + 键中文名 + 大小；深浅色走令牌） */
+.dm-other-row{align-items:center;gap:10px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.dm-other-row input[type="checkbox"]{width:17px;height:17px;accent-color:var(--primary);flex-shrink:0;cursor:pointer}
+.dm-other-row input[type="checkbox"]:disabled{cursor:not-allowed;opacity:.45}
 .dm-empty{font-size:12.5px;color:var(--text-muted);padding:6px 0}
+/* R155：恢复备份差异预览弹层 */
+.dm-modal{position:fixed;top:0;right:0;bottom:0;left:0;z-index:999;display:flex;align-items:center;justify-content:center}
+.dm-modal-mask{position:absolute;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,.45)}
+.dm-modal-card{position:relative;background:var(--card);border:1px solid var(--border);border-radius:14px;
+  width:calc(100% - 32px);max-width:480px;max-height:70vh;display:flex;flex-direction:column;padding:16px;
+  box-shadow:0 12px 40px rgba(0,0,0,.18)}
+.dm-modal-title{font-size:15px;font-weight:700;color:var(--text)}
+.dm-modal-sub{font-size:12px;color:var(--text-secondary);margin:6px 0 10px}
+.dm-modal-list{flex:1;min-height:0;overflow:auto;padding:4px 0;
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.dm-modal-actions{display:flex;gap:10px;margin-top:12px}
+.dm-modal-actions .btn{flex:1}
+.dm-tag{display:inline-block;margin-left:6px;padding:0 6px;border-radius:6px;font-size:10.5px;
+  background:rgba(239,68,68,.10);color:var(--xt-error,var(--text-secondary))}
+.dm-tag.new{background:rgba(91,141,239,.14);color:var(--xt-primary,var(--text-secondary))}
+/* R155：自动备份温和提醒条 */
+.dm-hint{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;padding:10px 12px;
+  border-radius:10px;background:var(--bg);border:1px solid var(--border);
+  font-size:12px;color:var(--text-secondary);line-height:1.6}
+.dm-hint .btn{padding:4px 10px;font-size:12px}
 /* 底部维护区 */
 .dm-maint-title{font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;margin-bottom:4px}
 @media (max-width:380px){
   .dm-card{padding:13px 12px}
-  .dm-detail{padding-left:2px}
-  .dm-cat-bar{margin-left:2px}
-  .dm-total-num{font-size:22px}
+  .dm-total-num{font-size:26px}
 }
 </style>
 </head>
@@ -81,18 +106,21 @@
     <div class="content">
       <div class="page active" id="page-datamanage">
         <!-- R11 顶部返回：显式回上级页（全站禁用 history.back，防历史栈乒乓死循环）。
-             上级页由入口传入 ?from=（设置 / 个人中心），白名单校验，缺省回设置页。 -->
+             上级页由入口传入 ?from=（设置 / 个人中心），白名单校验，缺省回设置页。
+             R155c：主 head 移入 #dmMainView —— 进入分类子页时随主列表一起隐藏，
+             保证任何时刻屏幕上只有一个返回按钮（子页用自己的 morepage-head）。 -->
+        <div class="dm-wrap">
+        <div id="dmMainView">
         <div class="morepage-head">
           <button class="morepage-back" onclick="dmBack()" title="返回" aria-label="返回">←</button>
           <div class="morepage-title"><span class="nav-icon" data-icon="package" data-icon-size="18"></span> 数据管理</div>
         </div>
-
-        <div class="dm-wrap">
-          <!-- ① 顶部总用量区 -->
+          <!-- ① 顶部总用量区（R155b 微信风：居中大号数字+说明行；口径=localStorage 实测+IndexedDB 真实占用，无固定上限） -->
           <div class="dm-card" id="dmTotalCard">
-            <div class="dm-total-num"><span id="dmTotalNum">…</span><small id="dmTotalLimit">/ 约 5 MB</small></div>
-            <div class="dm-total-bar"><i id="dmTotalBar"></i></div>
+            <div class="dm-total-num"><span id="dmTotalNum">…</span></div>
             <div class="dm-total-tx" id="dmTotalTx">正在统计本机数据…</div>
+            <!-- R155：自动备份温和提醒（距上次备份超 7 天时提示一次，24h 内不重复打扰） -->
+            <div id="dmBackupHint" style="display:none"></div>
           </div>
 
           <!-- ② 分类占用列表（点击行展开明细与清理操作） -->
@@ -122,10 +150,21 @@
             <div class="setting-row">
               <div class="setting-info">
                 <div class="setting-name">一键完整备份</div>
-                <div class="setting-desc">把全部本机数据导出为 JSON 备份文件（与「导出数据」一致）</div>
+                <div class="setting-desc">把全部本机数据导出为带时间戳的 JSON 备份文件（xingtu-backup-日期-时间.json），仅保存在你指定的位置</div>
               </div>
               <div class="setting-actions">
                 <button class="btn btn-primary" onclick="dmBackup()"><span class="nav-icon" data-icon="package" data-icon-size="14"></span> 立即备份</button>
+              </div>
+            </div>
+            <!-- R155：恢复备份 —— 先解析并弹出差异预览（覆盖/新增、条数），确认后才写入本机 -->
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-name">恢复备份</div>
+                <div class="setting-desc">选择备份 JSON 文件，先预览将覆盖哪些数据，确认后才写入本机（不上传）</div>
+              </div>
+              <div class="setting-actions">
+                <input type="file" id="dmRestoreFile" accept="application/json,.json" style="display:none" onchange="dmOnRestoreFile(this)">
+                <button class="btn btn-outline" onclick="dmPickRestoreFile()"><span class="nav-icon" data-icon="upload" data-icon-size="14"></span> 选择文件</button>
               </div>
             </div>
             <!-- 【2026-09-21 用户拍板】「检测更新」行删除（入口保留在 关于页/更多页）。
@@ -133,6 +172,36 @@
                  入口迁至「个人中心」页的「日志」卡片（个人中心.html → 日志.html）。
                  日志.html 页本体与其全部功能（查看/检索/导出/上报）保持不变，只是换了入口位置；
                  此处连 DOM 一并去掉，避免同一功能出现两个入口。 -->
+          </div>
+        </div>
+
+        <!-- R155b：分类内置子页（点主列表分类行进入；显式返回主列表，禁 history.back）。
+             sp-ready 门控：JS 未就绪前隐藏，避免子页闪现（参考 设置.html 隐私子页约定）。 -->
+        <section class="dm-subpage" data-dm-subpage="cat" id="dmCatSection" aria-label="分类明细">
+          <div class="dm-wrap">
+            <div class="morepage-head">
+              <button class="morepage-back" onclick="dmBackToMain()" title="返回" aria-label="返回">←</button>
+              <div class="morepage-title" id="dmCatPageTitle">分类明细</div>
+            </div>
+            <div class="dm-card" style="padding:4px 14px 10px">
+              <div class="dm-sub-detail" id="dmCatPageBody"></div>
+            </div>
+            <div class="dm-empty" style="padding:0 2px">清理操作均经二次确认；数据仅保存在本机设备，不会上传。</div>
+          </div>
+        </section>
+
+          <!-- R155：恢复备份差异预览弹层（取消不写入；确认后逐键写回本机 localStorage） -->
+          <div class="dm-modal" id="dmRestoreModal" style="display:none" role="dialog" aria-label="恢复备份预览">
+            <div class="dm-modal-mask" onclick="dmRestoreClose()"></div>
+            <div class="dm-modal-card">
+              <div class="dm-modal-title">恢复备份预览</div>
+              <div class="dm-modal-sub" id="dmRestoreSum"></div>
+              <div class="dm-modal-list" id="dmRestoreList"></div>
+              <div class="dm-modal-actions">
+                <button class="btn btn-outline" onclick="dmRestoreClose()">取消</button>
+                <button class="btn btn-primary" onclick="dmRestoreConfirm()">确认恢复</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -161,7 +230,7 @@
   </nav>
 </div>
 
-<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
 <script src="assets/app.js?v=20260925a" defer></script>
@@ -217,6 +286,14 @@ var DM_AI_KEYS = ['ai_model_settings', 'ai_memory', 'ai_selected_model', 'ai_cus
 var DM_CACHE_KEYS = ['study_workbench_errors', 'study_workbench_editor_draft_v1', 'study_workbench_ai_fab_pos'];
 var DM_PREF_BASES = ['study_workbench_settings', 'study_workbench_theme', 'study_workbench_skin',
   'study_workbench_ai_fab_hidden', 'xt_notify_enabled', 'study_workbench_recent', 'study_workbench_home_show'];
+/* R158：聊天记录分类（chat-local.js 只读调研结论）——消息本体键 study_im_local_data 内容即媒体
+   dataURL（离线/AI 会话），占位替换会破坏渲染，故绝不动本体；可安全清理的只有纯缓存键（表情常用/收藏记录） */
+var DM_CHAT_BODY_BASES = ['study_im_local_data'];
+var DM_CHAT_META_BASES = ['study_workbench_chat_prefs', 'study_workbench_ai_config',
+  'study_workbench_emoji_custom', 'study_workbench_emoji_fav', 'study_workbench_emoji_recent', 'study_workbench_emoji_fav_sticker'];
+var DM_CHAT_CACHE_KEYS = ['study_workbench_emoji_recent', 'study_workbench_emoji_fav'];
+/* 永不可清理的键（登录态 / 备份时间戳）：出现在任何清理列表中都强制跳过 */
+var DM_OTHER_PROTECT = ['study_workbench_token', 'xt_last_backup_at'];
 
 /* 统计某组键（裸键+账号后缀变体）的字节与命中键列表 */
 function dmStatBases(bases) {
@@ -252,6 +329,13 @@ function dmStatOther() {
       var hitAi = false;
       for (var a = 0; a < DM_AI_KEYS.length; a++) { if (dmKeyIs(k, DM_AI_KEYS[a])) { hitAi = true; break; } }
       if (hitAi) continue;
+      /* R158：聊天相关键划归「聊天记录」分类，不再落进「其他数据」 */
+      var hitChat = false;
+      for (var c2 = 0; c2 < DM_CHAT_BODY_BASES.length; c2++) { if (dmKeyIs(k, DM_CHAT_BODY_BASES[c2])) { hitChat = true; break; } }
+      if (!hitChat) {
+        for (var c3 = 0; c3 < DM_CHAT_META_BASES.length; c3++) { if (dmKeyIs(k, DM_CHAT_META_BASES[c3])) { hitChat = true; break; } }
+      }
+      if (hitChat) continue;
       var v = ls.getItem(k) || '';
       items.push({ k: k, bytes: (k.length + v.length) * 2 });
     }
@@ -323,12 +407,123 @@ function dmAiDetail() {
   return out;
 }
 
+/* ---------- R158：聊天记录明细解析（chat-local.js 只读调研后实现） ----------
+   消息本体键 study_im_local_data（裸键 / lsKey 前缀变体）：{ chats:{}, messages:{peerId:[msg]} }，
+   msg.kind ∈ text/image/voice/file/video…；离线与 AI 会话的图片/语音 content 即 dataURL（存消息体内）。
+   分块口径：按 kind 统计条数与 content 字节（(len+字段开销8)*2，与全键口径同源）；
+   会话偏好与表情键（DM_CHAT_META_BASES）整体计入分类字节，分块行只展示本体解析结果。 */
+function dmChatDetail() {
+  var ls = dmSafeStorage();
+  var out = { sessions: 0, msgs: 0, text: 0, textBytes: 0, image: 0, imageBytes: 0,
+    voice: 0, voiceBytes: 0, file: 0, fileBytes: 0, other: 0, otherBytes: 0, bytes: 0,
+    imageClearable: 0, imageClearableBytes: 0, voiceClearable: 0, voiceClearableBytes: 0,
+    fileClearable: 0, fileClearableBytes: 0, videoClearable: 0, videoClearableBytes: 0,
+    otherClearable: 0, otherClearableBytes: 0 };
+  if (!ls) return out;
+  try {
+    for (var i = 0; i < ls.length; i++) {
+      var k = ls.key(i); if (!k || !dmKeyIs(k, 'study_im_local_data')) continue;
+      var raw = ls.getItem(k) || '';
+      out.bytes += (k.length + raw.length) * 2;
+      try {
+        var d = JSON.parse(raw || '{}');
+        var msgs = (d && d.messages) ? d.messages : {};
+        var peerIds = Object.keys(msgs);
+        out.sessions += peerIds.length;
+        for (var a = 0; a < peerIds.length; a++) {
+          var arr = msgs[peerIds[a]] || [];
+          for (var b = 0; b < arr.length; b++) {
+            var m = arr[b] || {};
+            out.msgs++;
+            var kind = m.kind || 'text';
+            var cb = ((m.content == null ? '' : String(m.content)).length + 8) * 2;   // content 实测 + 字段开销
+            if (kind === 'image') { out.image++; out.imageBytes += cb; }
+            else if (kind === 'voice') { out.voice++; out.voiceBytes += cb; }
+            else if (kind === 'file' || kind === 'video') { out.file++; out.fileBytes += cb; }
+            else if (kind === 'text') { out.text++; out.textBytes += cb; }
+            else { out.other++; out.otherBytes += cb; }
+            /* R160：可清理 = content 为 dataURL（本地型，占本机空间）；在线 URL / 已占位不计 */
+            var isLocalMedia = typeof m.content === 'string' && m.content.indexOf('data:') === 0
+              && m.content.indexOf('[XT_MEDIA_CLEARED:') !== 0;
+            if (kind === 'image' && isLocalMedia) { out.imageClearable++; out.imageClearableBytes += cb; }
+            if (kind === 'voice' && isLocalMedia) { out.voiceClearable++; out.voiceClearableBytes += cb; }
+            /* R160b：文件/视频 = 有非空 content 且未占位即可替换占位；其他类型 = 有 content 可占位（纯元数据走条目移除） */
+            var hasContent = typeof m.content === 'string' && m.content.length > 0
+              && m.content.indexOf('[XT_MEDIA_CLEARED:') !== 0;
+            if (kind === 'file' && hasContent) { out.fileClearable++; out.fileClearableBytes += cb; }
+            if (kind === 'video' && hasContent) { out.videoClearable++; out.videoClearableBytes += cb; }
+            if (kind !== 'text' && kind !== 'image' && kind !== 'voice' && kind !== 'file' && kind !== 'video' && hasContent) {
+              out.otherClearable++; out.otherClearableBytes += cb;
+            }
+          }
+        }
+      } catch (e1) { out.otherBytes += raw.length * 2; }   // 解析失败 → 整键计入「其他类型」
+    }
+  } catch (e2) { }
+  try { out.bytes += dmStatBases(DM_CHAT_META_BASES).bytes; } catch (e3) { }
+  return out;
+}
+/* R160c：kind → 中文名（明细行主标题用，杜绝裸英文） */
+function dmChatKindLabel(kind) {
+  if (kind === 'text') return '文字';
+  if (kind === 'image') return '图片';
+  if (kind === 'voice') return '语音';
+  if (kind === 'file') return '文件';
+  if (kind === 'video') return '视频';
+  return '其他';
+}
+/* R160c：逐条消息枚举（行级清理按钮用；peer=会话键，idx=会话内下标，size=content 实测字节） */
+function dmChatMsgList() {
+  var ls = dmSafeStorage();
+  var out = [];
+  if (!ls) return out;
+  try {
+    for (var i = 0; i < ls.length; i++) {
+      var k = ls.key(i); if (!k || !dmKeyIs(k, 'study_im_local_data')) continue;
+      var d;
+      try { d = JSON.parse(ls.getItem(k) || '{}'); } catch (e1) { continue; }
+      var msgs = (d && d.messages) ? d.messages : {};
+      var peers = Object.keys(msgs);
+      for (var a = 0; a < peers.length; a++) {
+        var arr = msgs[peers[a]] || [];
+        for (var b = 0; b < arr.length; b++) {
+          var m = arr[b] || {};
+          var kd = m.kind || 'text';
+          var content = (m.content == null ? '' : String(m.content));
+          out.push({
+            peer: peers[a], idx: b, kind: kd,
+            size: (content.length + 8) * 2,
+            hasContent: content.length > 0 && content.indexOf('[XT_MEDIA_CLEARED:') !== 0,
+            snippet: kd === 'text' ? content : ''
+          });
+        }
+      }
+    }
+  } catch (e2) { }
+  return out;
+}
+
 /* ---------- 渲染 ---------- */
+/* R155：IndexedDB / 本机数据库 真实占用运行态（dmProbeIdb 异步填充）。
+   usage 取自 navigator.storage.estimate()（xtLog 存储接口优先）；dbs 来自 indexedDB.databases() 枚举。 */
+var DM_IDB = { probed: false, ok: false, usage: -1, quota: -1, dbs: [] };
+/* HTML 转义（IndexedDB 库名等外部来源字符串拼 innerHTML 前必用） */
+function dmEsc(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+/* 行值：微信「已用 X」格式，单位自适应（KB/MB）；-1=未计入；0=— */
+function dmValText(b) {
+  if (b < 0) return '未计入';
+  return b > 0 ? ('已用 ' + stFmtSize(b)) : '—';
+}
 var DM_CATS = [
   { id: 'study', name: '学习记录', icon: 'book', stat: function () { return dmStudyDetail().bytes; } },
   { id: 'qbank', name: '自建题库', icon: 'puzzle', stat: function () { return dmQbankDetail().bytes; } },
   { id: 'ai', name: 'AI 数据', icon: 'bot', stat: function () { return dmAiDetail().bytes; } },
+  { id: 'chat', name: '聊天记录', icon: 'message-square', stat: function () { return dmChatDetail().bytes; } },
   { id: 'cache', name: '缓存与临时', icon: 'eraser', stat: function () { return dmStatBases(DM_CACHE_KEYS).bytes; } },
+  { id: 'idb', name: '本机数据库', icon: 'archive', stat: function () { return DM_IDB.ok ? DM_IDB.usage : -1; } },
   { id: 'prefs', name: '设置与偏好', icon: 'settings', stat: function () { return dmStatBases(DM_PREF_BASES).bytes; } },
   { id: 'other', name: '其他数据', icon: 'inbox', stat: function () { return dmStatOther().bytes; } }
 ];
@@ -339,39 +534,164 @@ function dmCatSub(id) {
   }
   if (id === 'qbank') { return '各题型共 ' + dmQbankDetail().total + ' 题'; }
   if (id === 'ai') { var a = dmAiDetail(); return '记忆 ' + a.memory + ' 条 · 自定义模型 ' + a.models + ' 个'; }
+  if (id === 'chat') {
+    var c = dmChatDetail();
+    return c.msgs > 0 ? (c.sessions + ' 个会话 · ' + c.msgs + ' 条消息') : '暂无聊天记录';
+  }
   if (id === 'cache') { return '错误日志 · 编辑草稿 · 临时数据'; }
+  if (id === 'idb') {
+    if (!DM_IDB.probed) return '正在读取本机数据库…';
+    if (!DM_IDB.ok) return '本机数据库（当前环境未计入）';
+    return 'IndexedDB · ' + (DM_IDB.dbs.length ? (DM_IDB.dbs.length + ' 个库') : '未枚举到库');
+  }
   if (id === 'prefs') { return '主题 · 字号 · 偏好设置'; }
-  return '未归类键 ' + dmStatOther().items.length + ' 个（仅展示）';
+  return '未归类键 ' + dmStatOther().items.length + ' 个（可勾选清理）';
 }
 function dmRenderCats(totalBytes) {
   var box = document.getElementById('dmCatCard'); if (!box) return;
   var html = '';
+  var hasData = false;
   DM_CATS.forEach(function (c, idx) {
     var b = c.stat();
-    var pct = totalBytes > 0 ? Math.min(100, Math.round(b / totalBytes * 100)) : 0;
-    html += '<div class="dm-cat' + (idx === 0 ? ' open' : '') + '" id="dmCat_' + c.id + '">'
-      + '<div class="dm-cat-row" onclick="dmToggleCat(\'' + c.id + '\')">'
+    if (b > 0) hasData = true;
+    html += '<div class="dm-cat" id="dmCat_' + c.id + '">'
+      + '<div class="dm-cat-row" onclick="dmOpenCat(\'' + c.id + '\')">'
       + '<div class="dm-cat-icon"><span class="nav-icon" data-icon="' + c.icon + '" data-icon-size="16"></span></div>'
       + '<div class="dm-cat-main"><div class="dm-cat-name">' + c.name + '</div><div class="dm-cat-sub" id="dmSub_' + c.id + '"></div></div>'
-      + '<div class="dm-cat-val">' + stFmtSize(b) + '</div>'
+      + '<div class="dm-cat-val" id="dmVal_' + c.id + '">' + dmValText(b) + '</div>'
       + '<div class="dm-cat-arrow">›</div>'
       + '</div>'
-      + '<div class="dm-cat-bar"><i style="width:' + pct + '%"></i></div>'
-      + '</div>'
-      + '<div class="dm-detail" id="dmDetail_' + c.id + '"></div>';
+      + '</div>';
   });
+  /* R155：全部分类为 0 时的空态卡（不白屏） */
+  if (!hasData) {
+    html += '<div class="dm-empty" style="padding:14px 2px">本机暂无可统计的数据；使用学习功能后，这里会显示各类占用。</div>';
+  }
   box.innerHTML = html;
-  DM_CATS.forEach(function (c) { dmRenderDetail(c.id); });
   if (typeof window.renderIcons === 'function') { try { window.renderIcons(box); } catch (e) { } }
+  dmRefreshSubs();
 }
-function dmToggleCat(id) {
-  var el = document.getElementById('dmCat_' + id); if (!el) return;
-  el.classList.toggle('open');
-  if (el.classList.contains('open')) dmRenderDetail(id);
+
+/* ---------- R155b：分类内置子页切换（显式返回，禁 history.back） ---------- */
+var dmState = { openCat: null, otherSel: {}, otherList: [] };   // openCat=当前分类子页 id；otherSel/otherList=R158「其他数据」勾选态
+function dmCatById(id) {
+  for (var i = 0; i < DM_CATS.length; i++) { if (DM_CATS[i].id === id) return DM_CATS[i]; }
+  return null;
 }
-/* 各分类明细区：分项条数/字节 + 可执行操作（清理一律 uiConfirm） */
-function dmRenderDetail(id) {
-  var box = document.getElementById('dmDetail_' + id); if (!box) return;
+/* 渲染某分类明细到子页正文（含底部清理按钮；清理一律 uiConfirm 二次确认） */
+function dmShowCatDetail(id) {
+  var cat = dmCatById(id); if (!cat) return;
+  var body = document.getElementById('dmCatPageBody');
+  var title = document.getElementById('dmCatPageTitle');
+  if (title) title.textContent = cat.name;
+  if (body) {
+    body.innerHTML = dmDetailHtml(id);
+    if (typeof window.renderIcons === 'function') { try { window.renderIcons(body); } catch (e) { } }
+  }
+  dmState.openCat = id;
+}
+function dmOpenCat(id) {
+  if (!dmCatById(id)) return;
+  var main = document.getElementById('dmMainView');
+  var sub = document.getElementById('dmCatSection');
+  dmShowCatDetail(id);
+  if (main) main.style.display = 'none';
+  if (sub) sub.classList.add('active');
+  try { window.scrollTo(0, 0); } catch (e) { }
+}
+function dmBackToMain() {
+  var main = document.getElementById('dmMainView');
+  var sub = document.getElementById('dmCatSection');
+  dmState.openCat = null;
+  if (sub) sub.classList.remove('active');
+  if (main) main.style.display = '';
+  dmSyncMain();   // 返回主列表时行值/说明均为最新（清理后已局部重算过，这里再兜底刷一次）
+  try { window.scrollTo(0, 0); } catch (e) { }
+}
+/* 主列表行值/副题兜底刷新（不改 DOM 结构，不重绘整卡） */
+function dmSyncMain() {
+  DM_CATS.forEach(function (c) {
+    var b = c.stat();
+    var val = document.getElementById('dmVal_' + c.id);
+    if (val) val.textContent = dmValText(b);
+    var sub = document.getElementById('dmSub_' + c.id);
+    if (sub) sub.textContent = dmCatSub(c.id);
+  });
+  var t = dmTotalBytes();
+  if (t.ok) dmRenderTotal(t.total, t.count);
+}
+/* ---------- R155c：键 → 中文名映射（明细主标题不出现裸英文键名） ---------- */
+var DM_KEY_NAMES = {
+  /* 学习与业务 */
+  'study_workbench_data': '学习数据',
+  'study_workbench_custom': '自建题库',
+  /* 缓存与临时 */
+  'study_workbench_errors': '运行错误日志',
+  'study_workbench_editor_draft_v1': '发贴编辑草稿',
+  'study_workbench_ai_fab_pos': 'AI 悬浮球位置',
+  /* 设置与偏好 */
+  'study_workbench_settings': '应用设置',
+  'study_workbench_theme': '主题外观',
+  'study_workbench_skin': '配色皮肤',
+  'study_workbench_font_size': '字号设置',
+  'study_workbench_reader_font': '阅读字体',
+  'study_workbench_compact': '紧凑模式',
+  'study_workbench_ai_fab_hidden': 'AI 悬浮球隐藏',
+  'study_workbench_recent': '最近使用记录',
+  'study_workbench_home_show': '首页模块显示',
+  'study_workbench_vocab_progress': '词汇学习进度',
+  'xt_notify_enabled': '消息通知开关',
+  /* AI 相关 */
+  'ai_model_settings': 'AI 模型配置',
+  'ai_memory': 'AI 记忆',
+  'ai_selected_model': 'AI 当前模型',
+  'ai_custom_models': 'AI 自定义模型',
+  'study_workbench_ai_chat': 'AI 聊天记录',
+  /* 基础设施 / 其他 */
+  'study_workbench_token': '登录令牌',
+  'study_workbench_emoji_custom': '自定义表情',
+  'xt_app_whitelist_v1': '应用白名单设置',
+  'xt_risk_enabled': '设备安全开关',
+  'xt_last_backup_at': '上次备份时间',
+  'xt_backup_hint_at': '备份提醒记录',
+  'editor_draft_v1': '编辑草稿',
+  /* R158：聊天记录（chat-local.js，只读调研后登记） */
+  'study_im_local_data': '聊天消息数据',
+  'study_workbench_chat_prefs': '聊天会话偏好',
+  'study_workbench_ai_config': 'AI 好友配置',
+  'study_workbench_emoji_fav': '表情收藏',
+  'study_workbench_emoji_recent': '常用表情记录',
+  'study_workbench_emoji_fav_sticker': '收藏贴纸表情'
+};
+/* 查中文名：支持 key / key@账号 后缀变体；未命中返回空串 */
+function dmKeyName(k) {
+  var s = String(k == null ? '' : k);
+  if (Object.prototype.hasOwnProperty.call(DM_KEY_NAMES, s)) return DM_KEY_NAMES[s];
+  var at = s.indexOf('@');
+  if (at > 0) {
+    var base = s.slice(0, at);
+    if (Object.prototype.hasOwnProperty.call(DM_KEY_NAMES, base)) return DM_KEY_NAMES[base];
+  }
+  return '';
+}
+/* 主标题防裸英文：命中 [A-Za-z_][A-Za-z0-9_@.]{5,} 视为未本地化标识，
+   主标题兜底「其他数据」，原文降为次行小字（灰调、单行截断） */
+function dmSafeTitle(title, raw) {
+  if (/^[A-Za-z_][A-Za-z0-9_@.]{5,}$/.test(String(title))) {
+    return '<div class="dm-detail-kmain"><span>其他数据</span>'
+      + '<span class="dm-key-sub">' + dmEsc(raw || title) + '</span></div>';
+  }
+  return '<span>' + dmEsc(title) + '</span>';
+}
+/* 明细键行：键 → 中文名主标题；未命中 → 「其他数据」+ 键名次行小字 */
+function dmDetailKeyRow(k, val) {
+  var zh = dmKeyName(k);
+  if (zh) return '<div class="dm-detail-item">' + dmSafeTitle(zh) + '<b>' + val + '</b></div>';
+  return '<div class="dm-detail-item">' + dmSafeTitle(k) + '<b>' + val + '</b></div>';
+}
+
+/* 各分类明细 HTML（R155b：改为纯函数返回字符串，由 dmShowCatDetail 渲染进子页正文；清理一律 uiConfirm） */
+function dmDetailHtml(id) {
   var html = '';
   if (id === 'study') {
     var d = dmStudyDetail();
@@ -387,7 +707,7 @@ function dmRenderDetail(id) {
   } else if (id === 'qbank') {
     var q = dmQbankDetail();
     html = (q.byType.length
-      ? q.byType.map(function (r) { return '<div class="dm-detail-item"><span>' + r.t + '</span><b>' + r.n + ' 题</b></div>'; }).join('')
+      ? q.byType.map(function (r) { return '<div class="dm-detail-item">' + dmSafeTitle(r.t) + '<b>' + r.n + ' 题</b></div>'; }).join('')
       : '<div class="dm-empty">暂无自建题目</div>')
       + '<div class="dm-detail-actions">'
       + '<button class="btn btn-outline" onclick="dmExportQbank()"><span class="nav-icon" data-icon="upload" data-icon-size="14"></span> 导出</button>'
@@ -400,42 +720,137 @@ function dmRenderDetail(id) {
       + '<div class="dm-detail-actions">'
       + '<button class="btn btn-outline" onclick="dmClearAiMemory()"><span class="nav-icon" data-icon="trash" data-icon-size="14"></span> 清空 AI 记忆</button>'
       + '</div>';
+  } else if (id === 'chat') {
+    /* R158：聊天记录子页 —— 按 kind 分块展示真实占用；文字消息不可清（用户内容）。
+       R160：占位式媒体清理（微信同款）—— 图片/语音的本地 dataURL 内容替换为占位标记，
+       聊天页渲染为「[图片/语音已清理]」灰调气泡；在线 URL 型内容不占本机空间，不做清理。 */
+    var c = dmChatDetail();
+    var blocks = [
+      ['文字消息', c.text, c.textBytes],
+      ['图片', c.image, c.imageBytes],
+      ['语音', c.voice, c.voiceBytes],
+      ['文件 / 视频', c.file, c.fileBytes],
+      ['其他类型', c.other, c.otherBytes]
+    ];
+    html = '<div class="dm-detail-item"><span>会话数</span><b>' + c.sessions + '</b></div>'
+      + '<div class="dm-detail-item"><span>消息总数</span><b>' + c.msgs + '</b></div>'
+      + blocks.map(function (r) {
+          return '<div class="dm-detail-item"><span>' + r[0] + '</span><b>' + r[1] + ' 条 · ' + stFmtSize(r[2]) + '</b></div>';
+        }).join('')
+      + '<div class="dm-detail-actions">'
+      + (c.text > 0
+        ? '<button class="btn btn-outline" onclick="dmClearChatText()"><span class="nav-icon" data-icon="trash" data-icon-size="14"></span> 清理文字消息（' + c.text + ' 条）</button>'
+        : '')
+      + (c.imageClearable > 0
+        ? '<button class="btn btn-outline" onclick="dmClearChatMedia(\'image\')"><span class="nav-icon" data-icon="eraser" data-icon-size="14"></span> 清理图片内容（' + c.imageClearable + ' 条 · ' + stFmtSize(c.imageClearableBytes) + '）</button>'
+        : '')
+      + (c.voiceClearable > 0
+        ? '<button class="btn btn-outline" onclick="dmClearChatMedia(\'voice\')"><span class="nav-icon" data-icon="eraser" data-icon-size="14"></span> 清理语音内容（' + c.voiceClearable + ' 条 · ' + stFmtSize(c.voiceClearableBytes) + '）</button>'
+        : '')
+      + ((c.fileClearable + c.videoClearable) > 0
+        ? '<button class="btn btn-outline" onclick="dmClearChatFileVideo()"><span class="nav-icon" data-icon="eraser" data-icon-size="14"></span> 清理文件/视频内容（' + (c.fileClearable + c.videoClearable) + ' 条 · ' + stFmtSize(c.fileClearableBytes + c.videoClearableBytes) + '）</button>'
+        : '')
+      + (c.other > 0
+        ? '<button class="btn btn-outline" onclick="dmClearChatOther()"><span class="nav-icon" data-icon="eraser" data-icon-size="14"></span> 清理其他内容（' + c.otherClearable + ' 条可占位 · ' + stFmtSize(c.otherClearableBytes) + '）</button>'
+        : '')
+      + '<button class="btn btn-outline" onclick="dmClearChatCache()"><span class="nav-icon" data-icon="eraser" data-icon-size="14"></span> 清理表情缓存</button>'
+      + '</div>'
+      + '<div class="dm-empty">清理图片/语音/文件/视频后，聊天中将显示为「已清理」占位；在线图片不占用本机空间，不做清理。「清理文字消息」将永久删除本机文字内容，不可恢复，需两次确认；「清理其他内容」对有内容的消息留占位、纯元数据消息直接移除。表情使用记录可安全清理。</div>'
+      + (function () {
+          /* R160c：逐条明细行（行尾「清理」按钮只清该条；行上仍保留「全清本类型」按钮兜底） */
+          var list = dmChatMsgList();
+          var MAXR = 60;
+          if (!list.length) return '';
+          var out = '<div class="dm-empty">消息明细（最多显示 ' + MAXR + ' 条，行尾「清理」只作用于该条）</div>';
+          out += list.slice(0, MAXR).map(function (r0) {
+            var lab = dmChatKindLabel(r0.kind);
+            var title = r0.kind === 'text'
+              ? (lab + ' · ' + String(r0.snippet || '').slice(0, 12))
+              : (lab + '消息');
+            return '<div class="dm-detail-item dm-other-row"><div class="dm-detail-kmain"><span>' + dmEsc(title) + '</span>'
+              + '<span class="dm-key-sub">会话 ' + dmEsc(r0.peer) + ' · 类型 ' + dmEsc(r0.kind) + '</span></div>'
+              + '<button class="btn btn-outline" style="padding:4px 10px;flex-shrink:0" onclick="dmClearChatOne(this.getAttribute(\'data-p\'), this.getAttribute(\'data-i\'), this.getAttribute(\'data-k\'))"'
+              + ' data-p="' + dmEsc(r0.peer) + '" data-i="' + r0.idx + '" data-k="' + dmEsc(r0.kind) + '">清理</button>'
+              + '<b>' + stFmtSize(r0.size) + '</b></div>';
+          }).join('');
+          if (list.length > MAXR) out += '<div class="dm-empty">其余 ' + (list.length - MAXR) + ' 条从略，可用上方按钮按类型全清。</div>';
+          return out;
+        })();
   } else if (id === 'cache') {
     var s = dmStatBases(DM_CACHE_KEYS);
     html = (s.keys.length
       ? s.keys.map(function (k) {
           var ls = dmSafeStorage(); var v = ls ? (ls.getItem(k) || '') : '';
-          return '<div class="dm-detail-item"><span>' + k + '</span><b>' + stFmtSize((k.length + v.length) * 2) + '</b></div>';
+          return dmDetailKeyRow(k, stFmtSize((k.length + v.length) * 2));
         }).join('')
       : '<div class="dm-empty">暂无缓存与临时数据</div>')
-      + '<div class="dm-detail-item"><span>sessionStorage（页面会话）</span><b>随页清空</b></div>'
+      + '<div class="dm-detail-item">' + dmSafeTitle('页面会话存储') + '<b>随页清空</b></div>'
       + '<div class="dm-detail-actions">'
-      + '<button class="btn btn-outline" onclick="stClearCache()"><span class="nav-icon" data-icon="eraser" data-icon-size="14"></span> 清理缓存</button>'
-      + '</div>';
+      + '<button class="btn btn-outline" onclick="dmClearCache()"><span class="nav-icon" data-icon="eraser" data-icon-size="14"></span> 清理缓存</button>'
+      + '</div>'
+      + '<div class="dm-empty">清理仅针对上面列出的缓存项；登录令牌、学习记录、聊天记录等数据受到保护，不会被清除。</div>';
   } else if (id === 'prefs') {
     var p = dmStatBases(DM_PREF_BASES);
     html = (p.keys.length
       ? p.keys.map(function (k) {
           var ls2 = dmSafeStorage(); var v2 = ls2 ? (ls2.getItem(k) || '') : '';
-          return '<div class="dm-detail-item"><span>' + k + '</span><b>' + stFmtSize((k.length + v2.length) * 2) + '</b></div>';
+          return dmDetailKeyRow(k, stFmtSize((k.length + v2.length) * 2));
         }).join('')
       : '<div class="dm-empty">暂无设置与偏好数据</div>')
       + '<div class="dm-detail-actions">'
       + '<button class="btn btn-outline" onclick="stResetAppearance()"><span class="nav-icon" data-icon="rotate-ccw" data-icon-size="14"></span> 重置外观</button>'
       + '</div>';
+  } else if (id === 'idb') {
+    /* R155：本机数据库（IndexedDB）明细 —— 占用/配额 + 库清单；由系统统一管理。
+       R155c：标签去 API 英文（主标题纯中文），库名降为次行小字。
+       R161：主位置英文再彻底清一遍（版本号/说明行）；新增「清理普通日志」按钮
+       （feature-detect XTLog.clearNonErrors，接口未就绪时隐藏；debug/info 清理、warn/error 保留）。 */
+    var rows = [];
+    if (DM_IDB.ok) {
+      rows.push(['本机存储占用', stFmtSize(DM_IDB.usage)]);
+      if (DM_IDB.quota > 0) rows.push(['系统配额', stFmtSize(DM_IDB.quota)]);
+    } else {
+      rows.push(['本机数据库占用', '当前环境未计入']);
+    }
+    html = rows.map(function (r) { return '<div class="dm-detail-item"><span>' + r[0] + '</span><b>' + r[1] + '</b></div>'; }).join('');
+    var DB_NAMES = { 'xt_log_db': '日志数据库' };
+    DM_IDB.dbs.forEach(function (db) {
+      var zhDb = DB_NAMES[db.name] || '数据库';
+      html += '<div class="dm-detail-item"><div class="dm-detail-kmain"><span>' + dmEsc(zhDb) + '</span>'
+        + '<span class="dm-key-sub">' + dmEsc(db.name) + '</span></div>'
+        + '<b>' + (db.version ? ('版本 ' + db.version) : '—') + '</b></div>';
+    });
+    html += '<div class="dm-detail-actions">'
+      + ((window.XTLog && typeof window.XTLog.clearNonErrors === 'function')
+        ? '<button class="btn btn-outline" onclick="dmClearNonErrorLogs()"><span class="nav-icon" data-icon="eraser" data-icon-size="14"></span> 清理普通日志</button>'
+        : '')
+      + '</div>'
+      + '<div class="dm-empty">本机数据库由系统统一管理。「清理普通日志」只清调试/信息级日志，警告与错误日志保留，便于排查问题。</div>';
   } else {
-    /* 其他数据：仅展示（不提供盲删，防误删 token / 登录态） */
+    /* R158：其他数据 —— 逐键列出 + 默认全选可勾选清理；受保护键（登录令牌/上次备份时间）禁选；
+       键名中文化沿用 dmKeyName（未映射 → 「其他数据」兜底 + 键名次行小字，不出现裸英文主标题）。 */
     var o = dmStatOther();
+    dmState.otherList = o.items;
+    var rows = o.items.map(function (it, idx) {
+      var prot = dmIsProtectedKey(it.k);
+      var checked = !prot && dmState.otherSel[it.k] !== false;
+      var zh = dmKeyName(it.k) || '其他数据';
+      var main = '<div class="dm-detail-kmain"><span>' + dmEsc(zh) + '</span>'
+        + (zh === it.k ? '' : '<span class="dm-key-sub">' + dmEsc(it.k) + '</span>') + '</div>';
+      var ctrl = prot
+        ? '<input type="checkbox" disabled title="关键数据不可清理">'
+        : '<input type="checkbox" data-i="' + idx + '" onchange="dmOtherSelSet(this.getAttribute(\'data-i\'), this.checked)"' + (checked ? ' checked' : '') + '>';
+      return '<label class="dm-detail-item dm-other-row">' + ctrl + main + '<b>' + stFmtSize(it.bytes) + '</b></label>';
+    });
     html = (o.items.length
-      ? o.items.slice(0, 12).map(function (it) {
-          return '<div class="dm-detail-item"><span>' + it.k + '</span><b>' + stFmtSize(it.bytes) + '</b></div>';
-        }).join('') + (o.items.length > 12 ? '<div class="dm-empty">其余 ' + (o.items.length - 12) + ' 个键从略（仅展示）</div>' : '')
+      ? rows.join('')
       : '<div class="dm-empty">暂无其他数据</div>')
-      + '<div class="dm-empty">为防误删登录态等关键数据，此分类仅展示、不提供清理。</div>';
+      + '<div class="dm-detail-actions">'
+      + '<button class="btn btn-outline" onclick="dmClearOther()"><span class="nav-icon" data-icon="trash" data-icon-size="14"></span> 清理所选（<span id="dmOtherSelCount">' + dmOtherSelectedKeys().length + '</span> 项）</button>'
+      + '</div>'
+      + '<div class="dm-empty">登录令牌、上次备份时间等关键数据不可勾选清理；删除前建议先「立即备份」。</div>';
   }
-  box.innerHTML = html;
-  if (typeof window.renderIcons === 'function') { try { window.renderIcons(box); } catch (e) { } }
-  dmRefreshSubs();
+  return html;
 }
 function dmRefreshSubs() {
   DM_CATS.forEach(function (c) {
@@ -444,25 +859,547 @@ function dmRefreshSubs() {
   });
 }
 
-/* ---------- 总用量刷新（口径与原 stRefreshOverview 一致） ---------- */
+/* ---------- 总用量刷新（R155：localStorage 实测 + IndexedDB 真实占用，不再假设固定容量上限） ---------- */
 function dmRefresh() {
   var t = dmTotalBytes();
-  var num = document.getElementById('dmTotalNum');
-  var bar = document.getElementById('dmTotalBar');
-  var tx = document.getElementById('dmTotalTx');
   if (!t.ok) {
-    if (num) num.textContent = '无法读取本机存储';
-    if (tx) tx.textContent = '浏览器隐私模式或存储被禁用，无法统计与清理。';
+    var num0 = document.getElementById('dmTotalNum');
+    var tx0 = document.getElementById('dmTotalTx');
+    if (num0) num0.textContent = '无法读取本机存储';
+    if (tx0) tx0.textContent = '本机存储不可用或被禁用，无法统计与清理。';
     var card = document.getElementById('dmCatCard'); if (card) card.innerHTML = '<div class="dm-empty" style="padding:14px">无法读取本机存储</div>';
     return;
   }
-  var limit = 5 * 1024 * 1024;   // 浏览器 localStorage 常见上限约 5MB
-  var pct = Math.min(100, Math.round(t.total / limit * 100));
-  if (num) num.textContent = stFmtSize(t.total);
-  if (bar) bar.style.width = pct + '%';
-  if (tx) tx.textContent = '本机存储占用约 ' + stFmtSize(t.total) + ' / 约 5 MB（' + pct + '%，共 ' + t.count + ' 项）。' +
-    '数据只保存在本机浏览器，清理浏览器数据会一并清除，请定期点「立即备份」。';
-  dmRenderCats(t.total);
+  dmRenderTotal(t.total, t.count);
+  dmRenderCats(t.total + (DM_IDB.ok ? DM_IDB.usage : 0));
+}
+
+/* 总用量徽标 + 说明（R155b 微信风：居中大号数字 + 说明行；无占比条，绝不用假设上限） */
+function dmRenderTotal(lsBytes, count) {
+  var num = document.getElementById('dmTotalNum');
+  var tx = document.getElementById('dmTotalTx');
+  if (!num || !tx) return;
+  var total = lsBytes + (DM_IDB.ok ? DM_IDB.usage : 0);
+  num.textContent = stFmtSize(total);
+  tx.textContent = DM_IDB.ok
+    ? ('数据保存在本机设备：键值存储 ' + stFmtSize(lsBytes) + '（' + count + ' 项）+ 本机数据库 ' + stFmtSize(DM_IDB.usage) + '。本机数据库部分由系统统计，略有延迟。请定期点「立即备份」。')
+    : ('数据保存在本机设备：键值存储 ' + stFmtSize(lsBytes) + '（' + count + ' 项）；其余本机数据未计入。请定期点「立即备份」。');
+}
+
+/* ---------- R155：IndexedDB / 本机数据库 探测（xtLog 存储接口优先，否则 storage.estimate） ---------- */
+function dmEnumIdbDbs(done) {
+  try {
+    if (window.indexedDB && typeof indexedDB.databases === 'function') {
+      indexedDB.databases().then(function (list) {
+        var out = [];
+        (list || []).forEach(function (d) {
+          out.push({ name: d && d.name ? String(d.name) : '(未命名)', version: d && d.version ? d.version : 0 });
+        });
+        DM_IDB.dbs = out;
+        if (typeof done === 'function') done();
+      }).catch(function () { if (typeof done === 'function') done(); });
+      return;
+    }
+  } catch (e) { /* 老 WebView 无 databases()：跳过枚举 */ }
+  if (typeof done === 'function') done();
+}
+function dmProbeIdb() {
+  /* ① xtLog 若暴露存储信息接口则优先（任务七 R153 的 xt-log.js 门面，feature-detect） */
+  try {
+    if (window.XTLog && typeof window.XTLog.getStorageInfo === 'function') {
+      var info = window.XTLog.getStorageInfo();
+      if (info && typeof info.usage === 'number') {
+        DM_IDB.probed = true; DM_IDB.ok = true;
+        DM_IDB.usage = info.usage;
+        DM_IDB.quota = (typeof info.quota === 'number') ? info.quota : -1;
+        DM_IDB.dbs = (info.dbs || []);
+        dmApplyIdb();
+        return;
+      }
+    }
+  } catch (e1) { /* 接口异常继续走通用探测 */ }
+  /* ② navigator.storage.estimate()（usage/quota，真实本机占用） */
+  try {
+    if (window.navigator && navigator.storage && typeof navigator.storage.estimate === 'function') {
+      navigator.storage.estimate().then(function (est) {
+        DM_IDB.probed = true;
+        if (est && typeof est.usage === 'number') { DM_IDB.ok = true; DM_IDB.usage = est.usage; }
+        if (est && typeof est.quota === 'number') DM_IDB.quota = est.quota;
+        dmEnumIdbDbs(dmApplyIdb);
+      }).catch(function () { DM_IDB.probed = true; dmEnumIdbDbs(dmApplyIdb); });
+      return;
+    }
+  } catch (e2) { /* 继续 */ }
+  DM_IDB.probed = true;
+  dmApplyIdb();
+}
+/* IDB 探测结果回填：行值/副题 + 总用量重算（子页正打开时同步重渲明细；不整页重绘） */
+function dmApplyIdb() {
+  var val = document.getElementById('dmVal_idb');
+  if (val) val.textContent = dmValText(DM_IDB.ok ? DM_IDB.usage : -1);
+  var sub = document.getElementById('dmSub_idb');
+  if (sub) sub.textContent = dmCatSub('idb');
+  if (dmState.openCat === 'idb') dmShowCatDetail('idb');   // 子页正开着 → 刷新库清单/占用
+  var t = dmTotalBytes();
+  if (t.ok) dmRenderTotal(t.total, t.count);
+}
+
+/* ---------- R155：清理后局部重算（只更新该分类 + 总用量；子页正开着则同步重渲明细，不整页刷新） ---------- */
+function dmUpdateCat(id) {
+  var cat = dmCatById(id);
+  if (!cat) return;
+  var b = cat.stat();
+  var val = document.getElementById('dmVal_' + id);
+  if (val) val.textContent = dmValText(b);
+  var sub = document.getElementById('dmSub_' + id);
+  if (sub) sub.textContent = dmCatSub(id);
+  if (dmState.openCat === id) dmShowCatDetail(id);   // 子页正开着 → 明细数值实时刷新
+  var t = dmTotalBytes();
+  if (t.ok) dmRenderTotal(t.total, t.count);
+}
+
+/* ---------- R158：清理生效运行时自检（真实设备可从日志页看到清理是否生效） ----------
+   清理函数执行后重算该分类字节，与调用方传入的预期值比对；不符则 console.error 并
+   经 xt-log.js 门面落一条 error（feature-detect，缺门面时静默）。 */
+function dmVerifyCleared(catId, label, expectBytes) {
+  try {
+    var cat = dmCatById(catId);
+    var now = cat ? cat.stat() : -1;
+    if (now !== expectBytes) {
+      var msg = '清理后占用与预期不符：' + label + '，预期 ' + expectBytes + ' 字节，实际 ' + now + ' 字节';
+      try { console.error('[数据管理] ' + msg); } catch (e0) { }
+      try {
+        if (window.XTLog && typeof window.XTLog.error === 'function') { window.XTLog.error('数据管理', msg); }
+      } catch (e1) { }
+    }
+  } catch (e2) { /* 自检失败不影响清理结果 */ }
+}
+
+/* ---------- R158：缓存与临时 —— 逐键清理（白名单强制保护；sessionStorage 一并清） ---------- */
+function dmClearCache() {
+  var s = dmStatBases(DM_CACHE_KEYS);
+  var names = s.keys.map(function (k) { return dmKeyName(k) || k; }).join('、');
+  uiConfirm('将清理以下缓存数据（共 ' + s.keys.length + ' 项）：' + names + '，以及页面会话存储。\n\n登录令牌、学习记录、聊天记录等数据不会清除。确定继续吗？', '清理').then(function (ok) {
+    if (!ok) return;
+    var ls = dmSafeStorage(); var n = 0, freed = 0;
+    if (!ls) { showToast('无法读取本机存储'); return; }
+    try {
+      var doomed = [];
+      for (var i = 0; i < ls.length; i++) {
+        var k = ls.key(i); if (!k) continue;
+        for (var j = 0; j < DM_CACHE_KEYS.length; j++) {
+          if (dmKeyIs(k, DM_CACHE_KEYS[j])) {
+            if (!dmIsProtectedKey(k)) doomed.push(k);   // 白名单强制保护（登录令牌等）
+            break;
+          }
+        }
+      }
+      for (var d2 = 0; d2 < doomed.length; d2++) {
+        var kk = doomed[d2];
+        freed += (kk.length + (ls.getItem(kk) || '').length) * 2;
+        ls.removeItem(kk); n++;
+      }
+      try { sessionStorage.clear(); } catch (e3) { }
+    } catch (e) { showToast('⚠️ 清理失败，请重试'); return; }
+    dmUpdateCat('cache');
+    dmSyncMain();
+    dmVerifyCleared('cache', '缓存与临时', 0);
+    showToast(n > 0 ? ('已清理 ' + n + ' 项缓存，释放 ' + stFmtSize(freed)) : '暂无可清理的缓存');
+  });
+}
+
+/* ---------- R158：其他数据 —— 勾选清理（未知键风险高：默认全选 + 逐键列出 + uiConfirm） ---------- */
+function dmOtherSelSet(idxStr, on) {
+  var idx = parseInt(idxStr, 10);
+  var it = dmState.otherList[idx];
+  if (!it) return;
+  dmState.otherSel[it.k] = !!on;
+  var cnt = document.getElementById('dmOtherSelCount');
+  if (cnt) cnt.textContent = String(dmOtherSelectedKeys().length);
+}
+function dmOtherSelectedKeys() {
+  var out = [];
+  for (var i = 0; i < dmState.otherList.length; i++) {
+    var it = dmState.otherList[i];
+    if (it && dmState.otherSel[it.k] !== false) out.push(it.k);   // 默认全选（未勾选过 = true）
+  }
+  return out;
+}
+function dmIsProtectedKey(k) {
+  for (var p = 0; p < DM_OTHER_PROTECT.length; p++) { if (dmKeyIs(k, DM_OTHER_PROTECT[p])) return true; }
+  return false;
+}
+function dmClearOther() {
+  var sel = dmOtherSelectedKeys();
+  if (!sel.length) { showToast('请先勾选要清理的数据'); return; }
+  var ls0 = dmSafeStorage();
+  var names = [], freed = 0;
+  sel.forEach(function (k) {
+    names.push(dmKeyName(k) || '其他数据');
+    if (ls0) freed += (k.length + (ls0.getItem(k) || '').length) * 2;
+  });
+  uiConfirm('将删除以下 ' + sel.length + ' 项本机数据：' + names.join('、') + '，预计释放 ' + stFmtSize(freed) + '。\n\n该操作不可撤销，建议先「立即备份」。确定继续吗？', '删除').then(function (ok) {
+    if (!ok) return;
+    var ls = dmSafeStorage(); var n = 0;
+    if (!ls) { showToast('无法读取本机存储'); return; }
+    /* 预期剩余（删除前计算才有校验意义）= 清理前分类字节 − 实际删除键的字节 */
+    var doomedBytes = 0, pre = 0;
+    try {
+      var preStat = dmStatOther();
+      for (var pr = 0; pr < preStat.items.length; pr++) { pre += preStat.items[pr].bytes; }
+      for (var i = 0; i < sel.length; i++) {
+        var k = sel[i];
+        if (dmIsProtectedKey(k)) continue;   // 白名单强制跳过（登录令牌等）
+        doomedBytes += (k.length + (ls.getItem(k) || '').length) * 2;
+        ls.removeItem(k); n++;
+      }
+    } catch (e) { showToast('⚠️ 清理失败，请重试'); return; }
+    dmState.otherSel = {};
+    dmUpdateCat('other');
+    dmSyncMain();
+    dmVerifyCleared('other', '其他数据（所选键）', pre - doomedBytes);
+    showToast(n > 0 ? ('已删除 ' + n + ' 项，释放 ' + stFmtSize(freed)) : '没有可删除的项');
+  });
+}
+
+/* ---------- R158：聊天记录 —— 只清纯缓存键（表情常用/收藏记录），绝不动消息本体 ---------- */
+function dmClearChatCache() {
+  var s = dmStatBases(DM_CHAT_CACHE_KEYS);
+  uiConfirm('将清理表情使用记录（常用表情、表情收藏，共 ' + s.keys.length + ' 项）。\n\n聊天消息、图片、语音等对话内容不会清除。确定继续吗？', '清理').then(function (ok) {
+    if (!ok) return;
+    var ls = dmSafeStorage(); var n = 0, freed = 0;
+    if (!ls) { showToast('无法读取本机存储'); return; }
+    try {
+      var doomed = [];
+      for (var i = 0; i < ls.length; i++) {
+        var k = ls.key(i); if (!k) continue;
+        for (var j = 0; j < DM_CHAT_CACHE_KEYS.length; j++) {
+          if (dmKeyIs(k, DM_CHAT_CACHE_KEYS[j])) { doomed.push(k); break; }
+        }
+      }
+      for (var d2 = 0; d2 < doomed.length; d2++) {
+        var kk = doomed[d2];
+        freed += (kk.length + (ls.getItem(kk) || '').length) * 2;
+        ls.removeItem(kk); n++;
+      }
+    } catch (e) { showToast('⚠️ 清理失败，请重试'); return; }
+    /* 预期剩余 = 清理前聊天总字节 − 释放字节（消息本体键原样，逐字节守恒） */
+    var expect = dmChatDetail().bytes;
+    dmUpdateCat('chat');
+    dmSyncMain();
+    dmVerifyCleared('chat', '聊天表情缓存', expect);
+    showToast(n > 0 ? ('已清理 ' + n + ' 项表情缓存，释放 ' + stFmtSize(freed)) : '暂无可清理的表情缓存');
+  });
+}
+
+/* ---------- R160：占位式媒体清理（图片/语音的本地 dataURL → 占位标记，微信同款） ----------
+   口径：只替换 content 以 data: 开头的本地媒体（占本机空间的部分）；在线 URL 型内容只有几十字节、
+   不占本机空间，替换反而让有网用户也看不了图，故一律不动。文字/文件/位置消息绝不动。
+   占位标记与 chat-local.js 渲染层约定一致：[XT_MEDIA_CLEARED:image] / [XT_MEDIA_CLEARED:voice]。 */
+function dmClearChatMedia(kind) {
+  var label = kind === 'voice' ? '语音' : '图片';
+  var MARK = '[XT_MEDIA_CLEARED:' + (kind === 'voice' ? 'voice' : 'image') + ']';
+  var pre = dmChatDetail();
+  var clearable = kind === 'voice' ? pre.voiceClearable : pre.imageClearable;
+  var clearBytes = kind === 'voice' ? pre.voiceClearableBytes : pre.imageClearableBytes;
+  if (!clearable) { showToast('没有可清理的' + label + '媒体'); return; }
+  uiConfirm('将把聊天中 ' + clearable + ' 条' + label + '的本地媒体内容替换为「已清理」占位（预计释放 ' + stFmtSize(clearBytes) + '）。\n\n清理后聊天中的' + label + '将显示为已清理，文字与文件消息保留。确定继续吗？', '清理').then(function (ok) {
+    if (!ok) return;
+    var ls = dmSafeStorage(); var n = 0, freed = 0;
+    if (!ls) { showToast('无法读取本机存储'); return; }
+    try {
+      var keys = [];
+      for (var i = 0; i < ls.length; i++) { var k = ls.key(i); if (k && dmKeyIs(k, 'study_im_local_data')) keys.push(k); }
+      for (var a = 0; a < keys.length; a++) {
+        var kk = keys[a];
+        var raw = ls.getItem(kk) || '';
+        var d;
+        try { d = JSON.parse(raw || '{}'); } catch (e1) { continue; }   // 解析失败 → 不碰该键
+        var msgs = (d && d.messages) ? d.messages : {};
+        var peerIds = Object.keys(msgs);
+        var changed = false;
+        for (var b = 0; b < peerIds.length; b++) {
+          var arr = msgs[peerIds[b]] || [];
+          for (var c2 = 0; c2 < arr.length; c2++) {
+            var m = arr[c2] || {};
+            if ((m.kind || 'text') === kind && typeof m.content === 'string' && m.content.indexOf('data:') === 0) {
+              freed += (m.content.length - MARK.length) * 2;
+              m.content = MARK; n++; changed = true;
+            }
+          }
+        }
+        if (changed) ls.setItem(kk, JSON.stringify(d));   // 原键原结构写回（只改 content，不动其余字段）
+      }
+    } catch (e) { showToast('⚠️ 清理失败，请重试'); return; }
+    /* 自检：预期剩余 = 清理前分类字节 − 释放字节（删除前计算才有校验意义） */
+    var expect = pre.bytes - freed;
+    dmUpdateCat('chat');
+    dmSyncMain();
+    dmVerifyCleared('chat', label + '媒体占位清理', expect);
+    showToast(n > 0 ? ('已清理 ' + n + ' 条' + label + '媒体，释放 ' + stFmtSize(freed)) : '没有可清理的' + label + '媒体');
+  });
+}
+
+/* ---------- R160b：清理文字消息（删除用户真实内容 —— 双重确认，直接移除条目，不可恢复） ---------- */
+function dmClearChatText() {
+  var pre = dmChatDetail();
+  if (!pre.text) { showToast('没有文字消息'); return; }
+  uiConfirm('将永久删除本机 ' + pre.text + ' 条文字消息（' + stFmtSize(pre.textBytes) + '），不可恢复。\n\n图片、语音、文件等其他聊天内容不受影响。确定继续吗？', '删除').then(function (ok1) {
+    if (!ok1) return;
+    /* 第二层确认：明确告知后果，防止误触 */
+    uiConfirm('最后确认：本机 ' + pre.text + ' 条文字消息删除后无法找回（如有需要请先「立即备份」）。确认删除？', '确认删除').then(function (ok2) {
+      if (!ok2) return;
+      var ls = dmSafeStorage(); var freed = 0, n = 0;
+      if (!ls) { showToast('无法读取本机存储'); return; }
+      try {
+        var keys = [];
+        for (var i = 0; i < ls.length; i++) { var k = ls.key(i); if (k && dmKeyIs(k, 'study_im_local_data')) keys.push(k); }
+        for (var a = 0; a < keys.length; a++) {
+          var kk = keys[a];
+          var raw = ls.getItem(kk) || '';
+          var d;
+          try { d = JSON.parse(raw || '{}'); } catch (e1) { continue; }
+          var msgs = (d && d.messages) ? d.messages : {};
+          var peerIds = Object.keys(msgs);
+          var changed = false;
+          for (var b = 0; b < peerIds.length; b++) {
+            var arr = msgs[peerIds[b]] || [];
+            var kept = [];
+            for (var c2 = 0; c2 < arr.length; c2++) {
+              var m = arr[c2] || {};
+              if ((m.kind || 'text') === 'text') { n++; }   // 删除：不计入 kept
+              else { kept.push(m); }
+            }
+            if (kept.length !== arr.length) { msgs[peerIds[b]] = kept; changed = true; }
+          }
+          if (changed) {
+            var newRaw = JSON.stringify(d);
+            freed += (raw.length - newRaw.length) * 2;   // 精确字节（JSON 串差）
+            ls.setItem(kk, newRaw);
+          }
+        }
+      } catch (e) { showToast('⚠️ 清理失败，请重试'); return; }
+      var expect = dmChatDetail().bytes;
+      dmUpdateCat('chat');
+      dmSyncMain();
+      dmVerifyCleared('chat', '文字消息删除', expect);
+      showToast(n > 0 ? ('已删除 ' + n + ' 条文字消息，释放 ' + stFmtSize(freed)) : '没有可删除的文字消息');
+    });
+  });
+}
+
+/* ---------- R160b：清理文件/视频内容（占位标记替换，有 content 才替换；纯元数据保留） ---------- */
+function dmClearChatFileVideo() {
+  var pre = dmChatDetail();
+  var n0 = pre.fileClearable + pre.videoClearable;
+  if (!n0) { showToast('没有可清理的文件/视频内容'); return; }
+  uiConfirm('将把聊天中 ' + n0 + ' 条文件/视频的内容替换为「已清理」占位（预计释放 ' + stFmtSize(pre.fileClearableBytes + pre.videoClearableBytes) + '）。\n\n清理后聊天中将显示为已清理，消息条目保留。确定继续吗？', '清理').then(function (ok) {
+    if (!ok) return;
+    var ls = dmSafeStorage(); var n = 0, freed = 0;
+    if (!ls) { showToast('无法读取本机存储'); return; }
+    try {
+      var kinds = ['file', 'video'];
+      var keys = [];
+      for (var i = 0; i < ls.length; i++) { var k = ls.key(i); if (k && dmKeyIs(k, 'study_im_local_data')) keys.push(k); }
+      for (var a = 0; a < keys.length; a++) {
+        var kk = keys[a];
+        var raw = ls.getItem(kk) || '';
+        var d;
+        try { d = JSON.parse(raw || '{}'); } catch (e1) { continue; }
+        var msgs = (d && d.messages) ? d.messages : {};
+        var peerIds = Object.keys(msgs);
+        var changed = false;
+        for (var b = 0; b < peerIds.length; b++) {
+          var arr = msgs[peerIds[b]] || [];
+          for (var c2 = 0; c2 < arr.length; c2++) {
+            var m = arr[c2] || {};
+            var kd = m.kind || 'text';
+            if (kd !== 'file' && kd !== 'video') continue;
+            if (typeof m.content === 'string' && m.content.length > 0 && m.content.indexOf('[XT_MEDIA_CLEARED:') !== 0) {
+              var MARK = '[XT_MEDIA_CLEARED:' + kd + ']';
+              freed += (m.content.length - MARK.length) * 2;
+              m.content = MARK; n++; changed = true;
+            }
+          }
+        }
+        if (changed) ls.setItem(kk, JSON.stringify(d));
+      }
+    } catch (e) { showToast('⚠️ 清理失败，请重试'); return; }
+    var expect = pre.bytes - freed;
+    dmUpdateCat('chat');
+    dmSyncMain();
+    dmVerifyCleared('chat', '文件/视频内容占位清理', expect);
+    showToast(n > 0 ? ('已清理 ' + n + ' 条文件/视频内容，释放 ' + stFmtSize(freed)) : '没有可清理的文件/视频内容');
+  });
+}
+
+/* ---------- R160b：清理其他类型内容（有 content → 留占位；纯元数据 → 直接移除条目） ---------- */
+function dmClearChatOther() {
+  var pre = dmChatDetail();
+  if (!pre.other) { showToast('没有其他类型消息'); return; }
+  uiConfirm('将清理 ' + pre.other + ' 条其他类型的消息（其中 ' + pre.otherClearable + ' 条有内容，将替换为「已清理」占位；纯元数据条目将直接移除，预计释放 ' + stFmtSize(pre.otherClearableBytes) + '）。\n\n文字、图片、语音、文件/视频消息不受影响。确定继续吗？', '清理').then(function (ok) {
+    if (!ok) return;
+    var ls = dmSafeStorage(); var nMark = 0, nDel = 0, freed = 0;
+    if (!ls) { showToast('无法读取本机存储'); return; }
+    try {
+      var keys = [];
+      for (var i = 0; i < ls.length; i++) { var k = ls.key(i); if (k && dmKeyIs(k, 'study_im_local_data')) keys.push(k); }
+      var preBody = 0, postBody = 0;   // R160b：键级字节前后差（精确口径：同时覆盖占位差与移除条目的 JSON 结构差）
+      for (var a = 0; a < keys.length; a++) {
+        var kk = keys[a];
+        var raw = ls.getItem(kk) || '';
+        var d;
+        try { d = JSON.parse(raw || '{}'); } catch (e1) { continue; }
+        var msgs = (d && d.messages) ? d.messages : {};
+        var peerIds = Object.keys(msgs);
+        var changed = false;
+        for (var b = 0; b < peerIds.length; b++) {
+          var arr = msgs[peerIds[b]] || [];
+          var kept = [];
+          for (var c2 = 0; c2 < arr.length; c2++) {
+            var m = arr[c2] || {};
+            var kd = m.kind || 'text';
+            if (kd === 'text' || kd === 'image' || kd === 'voice' || kd === 'file' || kd === 'video') { kept.push(m); continue; }
+            if (typeof m.content === 'string' && m.content.length > 0 && m.content.indexOf('[XT_MEDIA_CLEARED:') !== 0) {
+              m.content = '[XT_MEDIA_CLEARED:other]'; nMark++; changed = true;
+              kept.push(m);   // 有内容 → 清内容留占位，条目保留
+            } else {
+              nDel++; changed = true;   // 纯元数据 / 空内容 / 已占位残留 → 移除条目（不入 kept）
+            }
+          }
+          if (kept.length !== arr.length) { msgs[peerIds[b]] = kept; changed = true; }
+        }
+        if (changed) {
+          var newRaw = JSON.stringify(d);
+          preBody += (kk.length + raw.length) * 2;
+          postBody += (kk.length + newRaw.length) * 2;
+          ls.setItem(kk, newRaw);
+        }
+      }
+      freed = preBody - postBody;
+    } catch (e) { showToast('⚠️ 清理失败，请重试'); return; }
+    var expect = dmChatDetail().bytes;
+    dmUpdateCat('chat');
+    dmSyncMain();
+    dmVerifyCleared('chat', '其他类型内容清理', expect);
+    showToast((nMark + nDel) > 0 ? ('已清理其他类型消息 ' + nMark + ' 条占位 / ' + nDel + ' 条移除') : '没有可清理的其他类型消息');
+  });
+}
+
+/* ---------- R161：清理普通日志（debug/info 级；warn/error 保留） ----------
+   依赖 xt-log.js 的 clearNonErrors(cb)（任务七提供，feature-detect，未就绪时按钮整体隐藏）。
+   自检硬断言：清理后错误日志条数必须等于清理前（stats() 前后对比）；不符 → console.error + XTLog.error 落日志。
+   字节自检仅在接口回传释放字节（res.freed / res.freedBytes）时启用（系统 usage 统计有秒级延迟，不可靠）。 */
+function dmClearNonErrorLogs() {
+  try {
+    if (!(window.XTLog && typeof window.XTLog.clearNonErrors === 'function' && typeof window.XTLog.stats === 'function')) return;
+    uiConfirm('将清理普通日志（调试/信息级）。警告与错误日志会保留，便于排查问题。确定继续吗？', '清理').then(function (ok) {
+      if (!ok) return;
+      var preUsage = DM_IDB.ok ? DM_IDB.usage : 0;
+      window.XTLog.stats(function (preStats) {
+        var preErr = (preStats && typeof preStats.error === 'number') ? preStats.error : -1;
+        window.XTLog.clearNonErrors(function (res) {
+          window.XTLog.stats(function (postStats) {
+            /* 硬断言：warn/error 保留（error 条数前后一致） */
+            var postErr = (postStats && typeof postStats.error === 'number') ? postStats.error : -1;
+            if (preErr >= 0 && postErr !== preErr) {
+              var msg = '清理普通日志后错误日志条数异常：清理前 ' + preErr + ' 条，清理后 ' + postErr + ' 条（应保留不变）';
+              try { console.error('[数据管理] ' + msg); } catch (e0) { }
+              try { if (window.XTLog && typeof window.XTLog.error === 'function') window.XTLog.error('数据管理', msg); } catch (e1) { }
+            }
+            /* 重新探测本机占用（usage 由系统统计，可能有秒级延迟；拿不到就保持原值不编数） */
+            try { dmProbeIdb(); } catch (e2) { }
+            /* 回调值契约（任务七 R161）：true=清理成功且回读验证通过；false=重试一次后仍未通过（如实失败）。
+               res 若为对象且带 freed/freedBytes 则启用字节级自检（向前兼容）；boolean 下自然跳过。 */
+            var freed = -1;
+            if (res && typeof res === 'object' && typeof res.freed === 'number') freed = res.freed;
+            else if (res && typeof res === 'object' && typeof res.freedBytes === 'number') freed = res.freedBytes;
+            if (freed >= 0 && DM_IDB.ok) {
+              dmVerifyCleared('idb', '普通日志清理', Math.max(0, preUsage - freed));
+            }
+            dmUpdateCat('idb');
+            dmSyncMain();
+            showToast((res === false)
+              ? '清理未完全完成，可稍后重试（错误/警告日志已保留）'
+              : ((freed > 0 ? ('已清理普通日志，释放约 ' + stFmtSize(freed)) : '已清理普通日志（错误/警告日志已保留）')));
+          });
+        });
+      });
+    });
+  } catch (e) { /* 接口异常静默（按钮本就 feature-detect 显示） */ }
+}
+
+/* ---------- R160c：行级清理（只清该条：媒体按占位式、文字按移除、其他按 R160b 规则） ---------- */
+function dmClearChatOne(p, idxStr, kind) {
+  var idx = parseInt(idxStr, 10);
+  var label = dmChatKindLabel(kind);
+  var ls = dmSafeStorage();
+  if (!ls) { showToast('无法读取本机存储'); return; }
+  var kk = null, raw = null, d = null, target = null;
+  try {
+    for (var i = 0; i < ls.length; i++) {
+      var k = ls.key(i);
+      if (!(k && dmKeyIs(k, 'study_im_local_data'))) continue;
+      var cand = ls.getItem(k) || '';
+      var dd;
+      try { dd = JSON.parse(cand || '{}'); } catch (e1) { continue; }
+      var arr2 = (dd.messages && dd.messages[p]) ? dd.messages[p] : null;
+      if (arr2 && arr2[idx] && (arr2[idx].kind || 'text') === kind) {
+        kk = k; raw = cand; d = dd; target = arr2[idx]; break;
+      }
+    }
+  } catch (e0) { }
+  if (!target) { showToast('该条消息不存在或已清理'); return; }
+  var content = (target.content == null ? '' : String(target.content));
+  var marked = content.indexOf('[XT_MEDIA_CLEARED:') === 0;
+  var isMedia = (kind === 'image' || kind === 'voice' || kind === 'file' || kind === 'video');
+  var doRemove = false, doMark = false;
+  if (kind === 'text') { doRemove = true; }
+  else if (isMedia) {
+    if (marked || content.length === 0) { showToast('该条无可清理的媒体内容'); return; }
+    doMark = true;
+  } else {
+    if (marked) { showToast('该条已清理过'); return; }
+    if (content.length > 0) { doMark = true; } else { doRemove = true; }
+  }
+  var estFree = doMark ? ((content.length - ('[XT_MEDIA_CLEARED:' + kind + ']').length) * 2) : ((content.length + 8) * 2);
+  var actText = doRemove
+    ? ('将删除该条' + label + '消息（' + stFmtSize(estFree) + '），不可恢复。确定继续吗？')
+    : ('将清理该条' + label + '消息的媒体内容，清理后显示为「已清理」占位（预计释放 ' + stFmtSize(estFree) + '）。确定继续吗？');
+  uiConfirm(actText, doRemove ? '删除' : '清理').then(function (ok) {
+    if (!ok) return;
+    var freed = 0;
+    try {
+      var preBytes = dmChatDetail().bytes;
+      if (doMark) {
+        target.content = '[XT_MEDIA_CLEARED:' + kind + ']';
+      } else {
+        var arr3 = d.messages[p];
+        arr3.splice(idx, 1);   // 条目移除（文字 / 无内容其他类型）
+      }
+      var newRaw = JSON.stringify(d);
+      freed = (raw.length - newRaw.length) * 2;   // 键级精确字节
+      ls.setItem(kk, newRaw);
+      var expect = preBytes - freed;
+      dmUpdateCat('chat');
+      dmSyncMain();
+      dmVerifyCleared('chat', '单条' + label + '清理', expect);
+      showToast(doRemove ? ('已删除该条' + label + '消息，释放 ' + stFmtSize(freed)) : ('已清理该条' + label + '内容，释放 ' + stFmtSize(freed)));
+    } catch (e) { showToast('⚠️ 清理失败，请重试'); return; }
+  });
+}
+
+/* ---------- R155：进页骨架屏（数据就绪前占位，states.css 的 .xt-skeleton） ---------- */
+function dmRenderSkeleton() {
+  var card = document.getElementById('dmCatCard'); if (!card) return;
+  var html = '';
+  for (var i = 0; i < 4; i++) {
+    html += '<div style="padding:13px 2px;border-bottom:1px solid var(--border)">'
+      + '<div class="xt-skeleton lg" style="width:' + (62 - i * 9) + '%"></div>'
+      + '<div class="xt-skeleton" style="width:' + (40 + i * 6) + '%"></div>'
+      + '</div>';
+  }
+  card.innerHTML = html;
 }
 
 /* ---------- 学习记录操作 ---------- */
@@ -476,19 +1413,22 @@ function dmClearDrafts() {
     if (!ok) return;
     var ls = dmSafeStorage(); var n = 0;
     if (!ls) { showToast('无法读取本机存储'); return; }
+    var before = dmStudyDetail().bytes;   // R155：清理前基线，用于计算释放量
     try {
       for (var i = 0; i < ls.length; i++) {
         var k = ls.key(i); if (!k || !dmKeyIs(k, 'study_workbench_data')) continue;
         var d = JSON.parse(ls.getItem(k) || '{}');
         if (!Array.isArray(d.notes)) continue;
-        var before = d.notes.length;
+        var beforeN = d.notes.length;
         d.notes = d.notes.filter(function (nt) { return !(nt.status === 'draft' || nt.status === 'archived'); });
-        n += before - d.notes.length;
+        n += beforeN - d.notes.length;
         ls.setItem(k, JSON.stringify(d));
       }
     } catch (e) { showToast('⚠️ 删除失败，请重试'); return; }
-    dmRefreshSubs();
-    showToast(n > 0 ? ('已删除 ' + n + ' 条草稿/归档') : '没有可删除的草稿/归档');
+    /* R155：局部重算该分类行值与总用量（不整页重绘，保留展开态） */
+    var freed = Math.max(0, before - dmStudyDetail().bytes);
+    dmUpdateCat('study');
+    showToast(n > 0 ? ('已删除 ' + n + ' 条草稿/归档，释放 ' + stFmtSize(freed)) : '没有可删除的草稿/归档');
   });
 }
 
@@ -514,20 +1454,24 @@ function dmExportQbank() {
       Object.keys(q).forEach(function (t) { merged[t] = q[t]; });
     }
   } catch (e) { }
-  showToast(dmDownloadJson('study_workbench_custom_backup.json', merged) ? '✅ 自建题库已导出' : '⚠️ 导出失败');
+  /* R155：导出文件名带时间戳，避免多次导出互相覆盖 */
+  showToast(dmDownloadJson('xingtu-qbank-' + dmStamp() + '.json', merged) ? '✅ 自建题库已导出' : '⚠️ 导出失败');
 }
 function dmClearQbank() {
   uiConfirm('将清空全部自建题库数据（各题型题目全部删除）。该操作不可撤销，建议先「导出」备份。确定继续吗？', '清空').then(function (ok) {
     if (!ok) return;
     var ls = dmSafeStorage(); var n = 0;
     if (!ls) { showToast('无法读取本机存储'); return; }
+    var before = dmStatBases(['study_workbench_custom']).bytes;   // R155：清理前基线
     try {
       var doomed = [];
       for (var i = 0; i < ls.length; i++) { var k = ls.key(i); if (k && dmKeyIs(k, 'study_workbench_custom')) doomed.push(k); }
       doomed.forEach(function (k) { ls.removeItem(k); n++; });
     } catch (e) { showToast('⚠️ 清空失败，请重试'); return; }
-    dmRefresh();
-    showToast(n > 0 ? '自建题库已清空' : '暂无自建题库数据');
+    /* R155：局部重算该分类行值与总用量（不整页重绘，保留展开态） */
+    var freed = Math.max(0, before - dmStatBases(['study_workbench_custom']).bytes);
+    dmUpdateCat('qbank');
+    showToast(n > 0 ? ('自建题库已清空，释放 ' + stFmtSize(freed)) : '暂无自建题库数据');
   });
 }
 
@@ -537,13 +1481,16 @@ function dmClearAiMemory() {
     if (!ok) return;
     var ls = dmSafeStorage(); var n = 0;
     if (!ls) { showToast('无法读取本机存储'); return; }
+    var before = dmStatBases(['ai_memory']).bytes;   // R155：清理前基线
     try {
       var doomed = [];
       for (var i = 0; i < ls.length; i++) { var k = ls.key(i); if (k && dmKeyIs(k, 'ai_memory')) doomed.push(k); }
       doomed.forEach(function (k) { ls.removeItem(k); n++; });
     } catch (e) { showToast('⚠️ 清空失败，请重试'); return; }
-    dmRefresh();
-    showToast(n > 0 ? 'AI 记忆已清空' : '暂无 AI 记忆');
+    /* R155：局部重算该分类行值与总用量（不整页重绘，保留展开态） */
+    var freed = Math.max(0, before - dmStatBases(['ai_memory']).bytes);
+    dmUpdateCat('ai');
+    showToast(n > 0 ? ('AI 记忆已清空，释放 ' + stFmtSize(freed)) : '暂无 AI 记忆');
   });
 }
 
@@ -565,13 +1512,16 @@ function stClearCache() {
     if (!ok) return;
     var keys = ['study_workbench_errors', 'study_workbench_editor_draft_v1', 'study_workbench_ai_fab_pos'];
     var n = 0;
+    var before = dmStatBases(DM_CACHE_KEYS).bytes;   // R155：清理前基线
     keys.forEach(function (k) {
       try { if (localStorage.getItem(k) !== null) { localStorage.removeItem(k); n++; } } catch (e) { }
     });
     try { sessionStorage.clear(); } catch (e) { }
     var bar = document.getElementById('edDraftBar'); if (bar) bar.style.display = 'none';
-    dmRefresh();
-    showToast('已清理 ' + n + ' 项临时数据');
+    /* R155：局部重算该分类行值与总用量（不整页重绘，保留展开态） */
+    var freed = Math.max(0, before - dmStatBases(DM_CACHE_KEYS).bytes);
+    dmUpdateCat('cache');
+    showToast('已清理 ' + n + ' 项临时数据，释放 ' + stFmtSize(freed));
   });
 }
 function stResetAppearance() {
@@ -588,17 +1538,193 @@ function resetAppearanceNow() {
   try { if (typeof setTheme === 'function') setTheme('light'); } catch (e) { }
   showToast('外观与偏好已恢复默认');
 }
-/* 一键完整备份（原设置页维护卡同款，走 app.js exportData 全量导出） */
+/* ===================================================================
+   R155：备份 / 恢复增强
+   -------------------------------------------------------------------
+   ① 导出文件名带时间戳：xingtu-backup-YYYYMMDD-HHMM.json（页内自建全量导出，
+      不再依赖 app.js exportData 的固定文件名）；导出成功记录 xt_last_backup_at。
+   ② 恢复前预览：解析备份 JSON → 弹差异预览（覆盖/新增、各键条数）→ 确认才写入，
+      取消不写入；只写本机 localStorage，零网络请求。
+   ③ 自动备份提醒：距上次备份超 7 天进页温和提示一次（24h 内不重复打扰）。
+   =================================================================== */
+var DM_LAST_BACKUP_KEY = 'xt_last_backup_at';
+var DM_BACKUP_HINT_KEY = 'xt_backup_hint_at';
+var DM_RESTORE_PENDING = null;   // 预览确认前的待写入数据（取消即丢弃）
+
+/* 时间戳：20260922-2130 形式（文件名安全字符） */
+function dmStamp() {
+  function p2(x) { return (x < 10 ? '0' : '') + x; }
+  var d = new Date();
+  return '' + d.getFullYear() + p2(d.getMonth() + 1) + p2(d.getDate()) + '-' + p2(d.getHours()) + p2(d.getMinutes());
+}
+
+/* R155b：备份 payload 超集兼容 —— 字段与 app.js exportData 旧入口完全对齐：
+   {version:'1.0', app:'星途', exportedAt, data:{键:原始字符串}}；
+   data 的值保持字符串（app.js importData 新格式分支对字符串原样写回，对象才 JSON.stringify），
+   旧入口按 imported.data 分支恢复全部键；另附本页扩展字段 type/generator/stamp（多余字段无害）。 */
+function dmBuildBackupPayload(data) {
+  return {
+    version: '1.0',                  // 对齐 app.js exportData（字符串，非数字）
+    app: '星途',                     // 对齐 app.js exportData
+    exportedAt: new Date().toISOString(),
+    data: data,
+    type: 'full-backup',             // 本页扩展：全量备份标记
+    generator: '数据管理页 R155b',   // 本页扩展：产出方标识
+    stamp: dmStamp()                 // 本页扩展：与文件名一致的时间戳回显
+  };
+}
+
+/* 一键完整备份：全量 localStorage 导出为带时间戳的 JSON 文件 */
 function dmBackup() {
-  try { if (typeof exportData === 'function') { exportData(); return; } } catch (e) { }
-  if (typeof showToast === 'function') showToast('⚠️ 备份功能不可用（app.js 未加载）');
+  var ls = dmSafeStorage();
+  var data = {}, n = 0;
+  if (ls) {
+    try {
+      for (var i = 0; i < ls.length; i++) {
+        var k = ls.key(i); if (!k) continue;
+        data[k] = ls.getItem(k) || ''; n++;
+      }
+    } catch (e) { }
+  }
+  var payload = dmBuildBackupPayload(data);
+  var okFile = dmDownloadJson('xingtu-backup-' + dmStamp() + '.json', payload);
+  if (okFile) {
+    try { if (ls) ls.setItem(DM_LAST_BACKUP_KEY, String(Date.now())); } catch (e2) { }
+    var hint = document.getElementById('dmBackupHint'); if (hint) { hint.style.display = 'none'; hint.innerHTML = ''; }
+  }
+  showToast(okFile ? ('✅ 已备份 ' + n + ' 项本机数据到文件（xingtu-backup-' + dmStamp() + '.json）') : '⚠️ 备份失败，请重试');
+}
+
+/* ---------- 恢复备份 ---------- */
+function dmPickRestoreFile() {
+  var input = document.getElementById('dmRestoreFile');
+  if (!input) { showToast('⚠️ 恢复组件缺失'); return; }
+  input.click();
+}
+function dmOnRestoreFile(input) {
+  var file = input && input.files && input.files[0];
+  try { input.value = ''; } catch (e0) { }   // 清空以便可重复选择同一文件
+  if (!file) return;
+  try {
+    var reader = new FileReader();
+    reader.onload = function () {
+      try { dmRestorePreview(String(reader.result || '')); }
+      catch (e) { showToast('⚠️ 无法解析该备份文件'); }
+    };
+    reader.onerror = function () { showToast('⚠️ 读取文件失败'); };
+    reader.readAsText(file);
+  } catch (e2) { showToast('⚠️ 当前环境不支持文件读取'); }
+}
+/* 条数估算：JSON 数组取长度；对象取键数；其余按 1 项 */
+function dmCountItems(v) {
+  try {
+    var p = JSON.parse(v);
+    if (Array.isArray(p)) return p.length;
+    if (p && typeof p === 'object') return Object.keys(p).length;
+  } catch (e) { }
+  return 1;
+}
+function dmRestorePreview(raw) {
+  var obj = null;
+  try { obj = JSON.parse(raw); } catch (e) { showToast('⚠️ 不是有效的备份 JSON'); return; }
+  var data = null;
+  if (obj && obj.data && typeof obj.data === 'object') data = obj.data;       // 本页 full-backup 格式
+  else if (obj && typeof obj === 'object') data = obj;                        // 兼容平铺 {key:value}
+  if (!data) { showToast('⚠️ 备份文件里没有可恢复的数据'); return; }
+  var ls = dmSafeStorage();
+  if (!ls) { showToast('无法读取本机存储'); return; }
+  var rows = [], overwrite = 0, fresh = 0;
+  for (var k in data) {
+    if (!Object.prototype.hasOwnProperty.call(data, k)) continue;
+    if (typeof data[k] !== 'string') continue;
+    var exists = false;
+    try { exists = ls.getItem(k) !== null; } catch (e2) { }
+    rows.push({ k: k, n: dmCountItems(data[k]), exists: exists });
+    if (exists) overwrite++; else fresh++;
+  }
+  if (!rows.length) { showToast('⚠️ 备份文件里没有可恢复的数据'); return; }
+  DM_RESTORE_PENDING = { data: data, rows: rows };
+  dmRestoreRender(rows, overwrite, fresh);
+}
+function dmRestoreRender(rows, overwrite, fresh) {
+  var m = document.getElementById('dmRestoreModal');
+  var list = document.getElementById('dmRestoreList');
+  var sum = document.getElementById('dmRestoreSum');
+  if (!m || !list || !sum) { showToast('⚠️ 恢复预览组件缺失'); return; }
+  var html = '';
+  rows.slice(0, 30).forEach(function (r) {
+    html += '<div class="dm-detail-item"><span>' + dmEsc(r.k)
+      + (r.exists ? '<span class="dm-tag">覆盖</span>' : '<span class="dm-tag new">新增</span>')
+      + '</span><b>' + r.n + ' 项</b></div>';
+  });
+  if (rows.length > 30) html += '<div class="dm-empty">其余 ' + (rows.length - 30) + ' 个键从略</div>';
+  list.innerHTML = html;
+  sum.textContent = '将写入 ' + rows.length + ' 个键（覆盖 ' + overwrite + ' · 新增 ' + fresh + '），确认后才会写入本机。';
+  m.style.display = '';
+}
+function dmRestoreClose() {
+  var m = document.getElementById('dmRestoreModal'); if (m) m.style.display = 'none';
+  DM_RESTORE_PENDING = null;   // 取消：丢弃待写数据，不写入
+}
+function dmRestoreConfirm() {
+  var p = DM_RESTORE_PENDING;
+  if (!p) { dmRestoreClose(); return; }
+  var ls = dmSafeStorage();
+  if (!ls) { showToast('无法读取本机存储'); dmRestoreClose(); return; }
+  var n = 0;
+  try {
+    for (var k in p.data) {
+      if (!Object.prototype.hasOwnProperty.call(p.data, k)) continue;
+      if (typeof p.data[k] !== 'string') continue;
+      ls.setItem(k, p.data[k]); n++;
+    }
+  } catch (e) { showToast('⚠️ 恢复失败，已中止写入'); dmRestoreClose(); return; }
+  dmRestoreClose();
+  dmRefresh();   // 恢复影响全部分类，整表重算一次
+  showToast('✅ 已恢复 ' + n + ' 个键（仅写入本机，不上传）');
+}
+
+/* ---------- 自动备份提醒（距上次备份 >7 天提示一次，24h 内不重复） ---------- */
+function dmMaybeBackupHint() {
+  var ls = dmSafeStorage(); if (!ls) return;
+  var box = document.getElementById('dmBackupHint'); if (!box) return;
+  var last = 0, hinted = 0;
+  try { last = parseInt(ls.getItem(DM_LAST_BACKUP_KEY) || '0', 10) || 0; } catch (e) { }
+  try { hinted = parseInt(ls.getItem(DM_BACKUP_HINT_KEY) || '0', 10) || 0; } catch (e2) { }
+  var now = Date.now();
+  var DAY = 86400000;
+  if (last > 0 && (now - last) <= 7 * DAY) return;   // 7 天内备过：不打扰
+  if (hinted > 0 && (now - hinted) < DAY) return;    // 24h 内提示过：不打扰
+  try { ls.setItem(DM_BACKUP_HINT_KEY, String(now)); } catch (e3) { }
+  box.style.display = '';
+  box.innerHTML = '<div class="dm-hint"><span class="nav-icon" data-icon="package" data-icon-size="14"></span>'
+    + '<span>距离上次备份已超过 7 天，建议把本机数据导出一份保存。</span>'
+    + '<button class="btn btn-outline" onclick="dmBackup()">立即备份</button>'
+    + '<button class="btn btn-outline" onclick="dmHideBackupHint()">知道了</button></div>';
+  if (typeof window.renderIcons === 'function') { try { window.renderIcons(box); } catch (e4) { } }
+}
+function dmHideBackupHint() {
+  var box = document.getElementById('dmBackupHint');
+  if (box) { box.style.display = 'none'; box.innerHTML = ''; }
 }
 /* 【2026-09-21】检测更新行已删（入口在 关于页/更多页）；R142 起「日志」入口整体移出本页
    （改挂个人中心；查看/检索/导出/上报都在日志页完成，本页不再提供跳转）。 */
 
-/* ---------- 初始化：defer 脚本（app.js 的 uiConfirm/showToast）就绪后统计渲染 ---------- */
+/* ---------- 初始化：defer 脚本（app.js 的 uiConfirm/showToast）就绪后统计渲染 ----------
+   R155 顺序：sp-ready 门控（子页防闪现）→ 骨架屏占位 → localStorage 统计渲染
+   → IndexedDB 异步探测回填 → 备份提醒检查 */
 (function dmBoot() {
-  var go = function () { try { dmRefresh(); } catch (e) { /* 统计失败不阻塞页面 */ } };
+  var go = function () {
+    try {
+      if (document.body && (' ' + document.body.className + ' ').indexOf(' sp-ready ') === -1) {
+        document.body.className += ' sp-ready';   // R155b：JS 就绪，允许显示子页 section
+      }
+    } catch (e3) { /* 门控失败不影响主列表 */ }
+    try { dmRenderSkeleton(); } catch (e0) { /* 骨架失败直接进渲染 */ }
+    try { dmRefresh(); } catch (e) { /* 统计失败不阻塞页面 */ }
+    try { dmProbeIdb(); } catch (e1) { /* 探测失败按未计入处理 */ }
+    try { dmMaybeBackupHint(); } catch (e2) { /* 提醒失败不影响页面 */ }
+  };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go);
   else go();
 })();

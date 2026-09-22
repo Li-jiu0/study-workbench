@@ -12,7 +12,7 @@
 <script src="assets/xt-polyfill.js?v=20260922a"></script>
 <script>window.__XT_PROD__=true;</script>
 <!-- 统一日志门面：非 defer 尽早加载，先于 app.js/api.js 挂钩 -->
-<script src="assets/xt-log.js?v=20260925d"></script>
+<script src="assets/xt-log.js?v=20260928d"></script>
 <style>
 /* ==================== 日志页局部样式（R9 · 2026-09-21） ====================
    结构：统计卡 → 筛选卡（来源/级别/关键字/清空）→ 日志列表（四状态 +【R11j】明细收放）→ 操作条（导出/上报）。
@@ -70,6 +70,15 @@
 .lg-fold:active{opacity:.7}
 .lg-card.lg-folded{padding-top:2px;padding-bottom:2px}
 .lg-card.lg-folded #lgList{display:none}
+/* 【R159】筛选行「清空」按钮防御：真机显示异常兜底 —— 与输入框等高（stretch）、
+   不换行、不被 flex 压缩、去点按高亮；清理进行中置 disabled 半透明。 */
+.lg-search .btn{flex:0 0 auto;width:auto;white-space:nowrap;align-self:stretch;-webkit-tap-highlight-color:transparent}
+.lg-search .btn[disabled]{opacity:.55}
+/* 【R159】列表头「刷新」按钮：手动重拉统计与明细（真机看数字实时对得上） */
+.lg-refresh{border:1px solid var(--border);background:var(--bg);color:var(--text-secondary);
+  font-size:12px;font-weight:600;padding:5px 12px;border-radius:9px;cursor:pointer;
+  white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.lg-refresh:active{opacity:.7}
 /* 底部操作条 */
 .lg-actions{display:flex;gap:10px;margin-top:16px}
 .lg-actions .btn{flex:1}
@@ -134,7 +143,7 @@
             </div>
             <div class="lg-search">
               <input type="text" id="lgQ" placeholder="搜索关键字（模块 / 内容 / 页面）" oninput="lgDebounceRender()">
-              <button class="btn btn-outline btn-sm" onclick="lgAskClear()"><span class="nav-icon" data-icon="eraser" data-icon-size="14"></span> 清空</button>
+              <button class="btn btn-outline btn-sm" id="lgClearBtn" onclick="lgAskClear()"><span class="nav-icon" data-icon="eraser" data-icon-size="14"></span> 清空</button>
             </div>
           </div>
 
@@ -142,6 +151,7 @@
           <div class="lg-card" style="padding:4px 14px" id="lgListCard">
             <div class="lg-list-head">
               <span class="lg-list-title">日志明细</span>
+              <button type="button" class="lg-refresh" id="lgRefreshBtn" title="重新读取统计与明细" onclick="lgRefresh()">↻ 刷新</button>
               <button type="button" class="lg-fold" id="lgFoldBtn" aria-expanded="true"
                       title="收起 / 展开日志明细" onclick="lgToggleList()">收起明细 ▴</button>
             </div>
@@ -162,7 +172,7 @@
   </div>
 </div>
 
-<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
 <script src="assets/app.js?v=20260925a" defer></script>
@@ -175,7 +185,7 @@
    导出：App 走 exportLogs() 系统分享；浏览器生成 .txt 下载。
    上报：POST /api/feedbacks（type=bug，走 api.js 自动带 token；限频 10 分钟 1 条由后端把关）。 */
 (function () {
-  var state = { src: 'app', lv: '', deviceText: '', deviceDir: '', deviceOk: null };
+  var state = { src: 'app', lv: '', deviceText: '', deviceDir: '', deviceOk: null, clearing: false };
 
   function $(id) { return document.getElementById(id); }
   /* R142（2026-09-21）：返回键 —— 日志入口已从「数据管理」迁到「个人中心」。
@@ -232,50 +242,88 @@
     lgDebounceTimer = setTimeout(render, 250);
   };
 
-  /* ---------- 统计卡 ---------- */
-  function renderStats() {
+  /* ---------- 统计卡（R159：回调化，统计与列表同渲染 pass = 同一快照口径） ---------- */
+  function renderStats(seq, cb) {
     try {
-      var s = window.XTLog.stats();
-      $('lgStTotal').textContent = s.total;
-      $('lgStError').textContent = s.error;
-      $('lgStWarn').textContent = s.warn;
-      $('lgStInfo').textContent = (s.info + s.debug);
-      $('lgMeta').textContent = '范围 ' + (s.firstTs ? fmtT(s.firstTs) : '–') + ' ~ ' + (s.lastTs ? fmtT(s.lastTs) : '–') +
-        '　·　级别≥' + String(window.XTLog.getMinLevel()).toUpperCase() +
-        '　·　版本 ' + (String(window.CURRENT_VERSION || '未知')) +
-        (isNative() ? '　·　App 内（含设备日志）' : '　·　浏览器');
-    } catch (e) { $('lgMeta').textContent = '统计读取失败：' + e; }
+      window.XTLog.stats(function (s) {
+        if (seq === renderSeq && s) {
+          $('lgStTotal').textContent = s.total;
+          $('lgStError').textContent = s.error;
+          $('lgStWarn').textContent = s.warn;
+          $('lgStInfo').textContent = (s.info + s.debug);
+          $('lgMeta').textContent = '范围 ' + (s.firstTs ? fmtT(s.firstTs) : '–') + ' ~ ' + (s.lastTs ? fmtT(s.lastTs) : '–') +
+            '　·　级别≥' + String(window.XTLog.getMinLevel()).toUpperCase() +
+            '　·　版本 ' + (String(window.CURRENT_VERSION || '未知')) +
+            (isNative() ? '　·　App 内（含设备日志）' : '　·　浏览器');
+        }
+        if (typeof cb === 'function') cb();
+      });
+    } catch (e) { $('lgMeta').textContent = '统计读取失败：' + e; if (typeof cb === 'function') cb(); }
   }
 
-  /* ---------- 应用日志列表 ---------- */
-  function renderAppLogs() {
+  /* ---------- 应用日志列表（R159：序号守卫 + 真实性防御渲染） ---------- */
+  function renderAppLogs(seq) {
     var box = $('lgList');
-    var items = window.XTLog.get({ level: state.lv, q: $('lgQ').value.trim(), limit: 200 });
-    if (!items.length) {
-      box.className = 'lg-state';
-      box.innerHTML = '<span class="nav-icon" data-icon="inbox" data-icon-size="18"></span><br>暂无匹配日志<br><span style="font-size:11.5px">正常流程不产生日志；出错 / 警告时才会记录在这里</span>';
-      return;
-    }
-    box.className = '';
-    var html = '';
-    for (var i = 0; i < items.length; i++) {
-      var e = items[i];
-      html += '<div class="lg-item" onclick="this.classList.toggle(\'open\')">' +
-        '<div class="lg-item-top">' +
-          '<span class="lg-lv ' + esc(e.level) + '">' + esc(String(e.level).toUpperCase()) + '</span>' +
-          '<span class="lg-mod">' + esc(e.module) + '</span>' +
-          '<span class="lg-time">' + esc(fmtT(e.t)) + '</span>' +
-        '</div>' +
-        '<div class="lg-msg">' + esc(e.msg) + '</div>' +
-        '<div class="lg-more">' +
-          (e.ctx ? ('<b>上下文：</b>' + esc(e.ctx) + '<br>') : '') +
-          (e.req ? ('<b>请求ID：</b>' + esc(e.req) + '<br>') : '') +
-          (e.page ? ('<b>页面：</b>' + esc(decPage(e.page)) + '<br>') : '') +
-          (e.ver ? ('<b>版本：</b>' + esc(e.ver)) : '') +
-        '</div>' +
-      '</div>';
-    }
-    box.innerHTML = html;
+    /* R153b：XTLog.get 已异步化（IDB 主库）→ 回调取数 */
+    window.XTLog.get({ level: state.lv, q: $('lgQ').value.trim(), limit: 200 }, function (items) {
+      if (seq !== renderSeq) return;   // 已被更新的一次渲染取代：丢弃旧快照，不串台不闪烁
+      if (!items || !items.length) {
+        box.className = 'lg-state';
+        box.innerHTML = '<span class="nav-icon" data-icon="inbox" data-icon-size="18"></span><br>暂无匹配日志<br><span style="font-size:11.5px">正常流程不产生日志；出错 / 警告时才会记录在这里</span>';
+        return;
+      }
+      box.className = '';
+      /* D4：统一 schema 兼容映射；【R159-C1】真实性防御 ——
+         ① t 非法（非 ISO 形态 / 解析失败 / 未来时间）→ 置空，展示层显示「时间未知」；
+         ② level 非法 → 归入 info 并标注「数据异常」；
+         ③ 绝不编造内容：缺失字段仅取空串或另一字段回退。 */
+      items = (items || []).map(function (e) {
+        e = e || {};
+        var tStr = String(e.t == null ? '' : e.t);
+        var tOk = false;
+        try {
+          var d = new Date(tStr);
+          tOk = /^\d{4}-\d{2}-\d{2}T/.test(tStr) && !isNaN(d.getTime()) && d.getTime() <= (Date.now() + 60000);
+        } catch (eT) { tOk = false; }
+        var lv = String(e.level == null ? '' : e.level).toLowerCase();
+        var lvBad = (lv !== 'error' && lv !== 'warn' && lv !== 'info' && lv !== 'debug');
+        if (lvBad) lv = 'info';
+        return {
+          t: tOk ? tStr : '',
+          level: lv,
+          bad: (lvBad || !tOk),
+          module: e.module || (e.page || '-'),
+          page: e.page || (e.module || ''),
+          msg: e.msg || '',
+          ctx: e.ctx || '',
+          req: e.req || '',
+          ver: e.ver || ''
+        };
+      });
+      var html = '';
+      for (var i = 0; i < items.length; i++) {
+        var e = items[i];
+        /* 【R159-C1】展示层二次截断：列表最多 160 字，点开明细看前 300 字 + 提示（全文走导出） */
+        var msgShort = String(e.msg).slice(0, 160);
+        var ctxShort = String(e.ctx).slice(0, 300);
+        html += '<div class="lg-item" onclick="this.classList.toggle(\'open\')">' +
+          '<div class="lg-item-top">' +
+            '<span class="lg-lv ' + esc(e.level) + '">' + esc(String(e.level).toUpperCase()) + '</span>' +
+            '<span class="lg-mod">' + esc(e.module) + '</span>' +
+            '<span class="lg-time">' + esc(e.t ? fmtT(e.t) : '时间未知') + '</span>' +
+          '</div>' +
+          '<div class="lg-msg">' + esc(msgShort) + (String(e.msg).length > 160 ? '…' : '') + '</div>' +
+          '<div class="lg-more">' +
+            (e.bad ? '<b style="color:#E74C3C">数据异常：</b>时间 / 级别字段非法，已兜底显示<br>' : '') +
+            (e.ctx ? ('<b>上下文：</b>' + esc(ctxShort) + (String(e.ctx).length > 300 ? '…（完整内容见导出）' : '') + '<br>') : '') +
+            (e.req ? ('<b>请求ID：</b>' + esc(e.req) + '<br>') : '') +
+            (e.page ? ('<b>页面：</b>' + esc(decPage(e.page)) + '<br>') : '') +
+            (e.ver ? ('<b>版本：</b>' + esc(e.ver)) : '') +
+          '</div>' +
+        '</div>';
+      }
+      box.innerHTML = html;
+    });
   }
 
   /* ---------- 设备日志（App 内） ---------- */
@@ -333,11 +381,19 @@
       (state.deviceDir ? ('<div class="lg-meta" style="padding:8px 2px">日志目录：' + esc(state.deviceDir) + '</div>') : '');
   }
 
-  /* ---------- 渲染入口 ---------- */
+  /* ---------- 渲染入口（R159：同快照 + 渲染序号防串台） ----------
+     stats 先行（内部强制 flush）→ 回调里再 get，两读之间无写入，等价同一快照；
+     异步回调只认最新 renderSeq：筛选快速切换 / 清空进行中再渲染，旧快照直接丢弃，
+     不串台不闪烁。clear / 筛选 / 上报 / 刷新全部走本入口强制重取。 */
+  var renderSeq = 0;
   function render() {
-    renderStats();
-    if (state.src === 'device') renderDeviceLogs();
-    else renderAppLogs();
+    renderSeq++;
+    var seq = renderSeq;
+    renderStats(seq, function () {
+      if (seq !== renderSeq) return;
+      if (state.src === 'device') renderDeviceLogs();
+      else renderAppLogs(seq);
+    });
   }
 
   /* ---------- 导出 ---------- */
@@ -345,25 +401,28 @@
     var b = nativeBridge();
     if (b && typeof b.exportLogs === 'function') { try { b.exportLogs(); return; } catch (e) { } }
     // 浏览器：生成 .txt 下载（Blob + a[download]，老 WebView 用 execCommand 兜底）
-    try {
-      var parts = [window.XTLog.exportText()];
-      if (state.deviceText) parts.push('\n\n==== 设备日志（原生日志文件尾部） ====\n' + state.deviceText);
-      var blob = new Blob([parts.join('\n')], { type: 'text/plain;charset=utf-8' });
-      var d = new Date();
-      var name = 'xingtu-log-' + d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2) + '.txt';
-      var a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = name;
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(function () {
-        try { URL.revokeObjectURL(a.href); a.remove(); } catch (e) { }
-      }, 800);
-      toast('日志已导出为 ' + name);
-    } catch (e2) {
-      toast('导出失败：' + e2);
-    }
+    /* R153b：XTLog.exportText 已异步化（IDB 主库全量读）→ 回调拿文本后再组装下载 */
+    window.XTLog.exportText(function (appText) {
+      try {
+        var parts = [appText || ''];
+        if (state.deviceText) parts.push('\n\n==== 设备日志（原生日志文件尾部） ====\n' + state.deviceText);
+        var blob = new Blob([parts.join('\n')], { type: 'text/plain;charset=utf-8' });
+        var d = new Date();
+        var name = 'xingtu-log-' + d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2) + '.txt';
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function () {
+          try { URL.revokeObjectURL(a.href); a.remove(); } catch (e) { }
+        }, 800);
+        toast('日志已导出为 ' + name);
+      } catch (e2) {
+        toast('导出失败：' + e2);
+      }
+    });
   };
 
   /* ---------- 上报错误（POST /api/feedbacks type=bug） ----------
@@ -381,6 +440,7 @@
       window.XTLog.report(function () {
         window.XTLog.info('log-page', '错误日志已上报');
         toast('已上报，感谢反馈！可在「帮助与反馈-我的反馈」查看进度');
+        render();   // 【R159-B】上报后强制重取：统计卡与列表不沿用旧值
       }, function (status, resp) {
         var detail = '';
         try { detail = (JSON.parse(resp) || {}).detail || ''; } catch (e1) { }
@@ -391,19 +451,117 @@
     } catch (e) { toast('上报异常：' + e); }
   };
 
-  /* ---------- 清空（确认后执行） ---------- */
-  window.lgAskClear = function () {
-    var doClear = function () {
-      try { window.XTLog.clear(); } catch (e) { }
-      state.deviceText = ''; state.deviceOk = null;
-      loadDeviceLogs();
-      render();
-      toast('日志已清空');
-    };
-    if (typeof window.uiConfirm === 'function') {
-      try { window.uiConfirm('确定清空全部应用日志？此操作不可恢复。', doClear); return; } catch (e) { }
+  /* ---------- 标准确认弹层（R159c）----------
+     首选全站 uiConfirm（app.js，Promise<boolean>，注意第二参是【确认按钮文案】不是回调——
+     此前误传 doClear 函数进去，确认按钮被渲染成函数源码且点击无效，即真机「按钮显示异常/点不掉」）；
+     uiConfirm 未就绪时走页内兜底弹层（遮罩+卡片+「取消/确认」双按钮，样式走 common.css 令牌），
+     绝不退回原生 confirm()（WebView 里样式异常且交互不可控）。 */
+  window.lgConfirm = function (msg, onOk) {
+    try {
+      if (typeof window.uiConfirm === 'function') {
+        window.uiConfirm(msg, '确认').then(function (ok) { if (ok) onOk(); });
+        return;
+      }
+    } catch (e0) { /* uiConfirm 异常 → 页内兜底 */ }
+    try {
+      var old = document.getElementById('lgConfirmMask');
+      if (old && old.parentNode) old.parentNode.removeChild(old);
+      var mask = document.createElement('div');
+      mask.id = 'lgConfirmMask';
+      mask.style.cssText = 'position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center';
+      var card = document.createElement('div');
+      card.style.cssText = 'background:var(--card,#fff);border:1px solid var(--border,#e5e7eb);border-radius:14px;padding:18px;max-width:320px;width:86%;box-sizing:border-box';
+      var txt = document.createElement('div');
+      txt.style.cssText = 'font-size:15px;line-height:1.7;margin-bottom:16px;white-space:pre-line;color:var(--text,#111)';
+      txt.textContent = msg;
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:10px;justify-content:flex-end';
+      var btnCancel = document.createElement('button');
+      btnCancel.type = 'button';
+      btnCancel.className = 'btn btn-outline';
+      btnCancel.textContent = '取消';
+      btnCancel.onclick = function () { if (mask.parentNode) mask.parentNode.removeChild(mask); };
+      var btnOk = document.createElement('button');
+      btnOk.type = 'button';
+      btnOk.className = 'btn btn-primary';
+      btnOk.textContent = '确认';
+      btnOk.onclick = function () { if (mask.parentNode) mask.parentNode.removeChild(mask); onOk(); };
+      row.appendChild(btnCancel);
+      row.appendChild(btnOk);
+      card.appendChild(txt);
+      card.appendChild(row);
+      mask.appendChild(card);
+      document.body.appendChild(mask);
+    } catch (e1) {
+      if (window.confirm && window.confirm(msg)) onOk();   // 极端兜底（理论不可达）
     }
-    if (window.confirm) { if (window.confirm('确定清空全部应用日志？此操作不可恢复。')) doClear(); }
+  };
+
+  /* ---------- 清空（确认后执行；R159：幂等 + 回读验证 + 如实提示） ---------- */
+  window.lgAskClear = function () {
+    if (state.clearing) return;   // 【R159-C2】清空进行中重复点击：幂等忽略，不双清不闪烁
+    var doClear = function () {
+      if (state.clearing) return;
+      state.clearing = true;
+      try { var bb = $('lgClearBtn'); if (bb) bb.disabled = true; } catch (e0) { }
+      var done = false;
+      var attempt = 0;
+      /* 宽限线：仅豁免清空流程进行中新产生的采集条目（确认弹窗点击等，时间在清空开始
+         之后/前后毫秒级）；更早的记录清空后必须全部消失，否则回读验证判失败。
+         【R159 联调修正】最初取 now-2000 太宽——页面刚打开几秒内点清空会把「页面打开」
+         等真实旧记录也豁免掉，假清也判成功；收窄到 300ms。 */
+      var clearBeforeMs = Date.now() - 300;
+      var finish = function (ok) {
+        if (done) return;
+        done = true;
+        state.clearing = false;
+        try { var bb2 = $('lgClearBtn'); if (bb2) bb2.disabled = false; } catch (e1) { }
+        state.deviceText = ''; state.deviceOk = null;
+        loadDeviceLogs();
+        render();   // 强制重取：统计卡与列表同 pass 刷新，不沿用旧值
+        /* 【R159-A2】如实提示 —— 回读验证未过绝不显示虚假的「已清空」；
+           自检 error 走 XTLog 进列表（级别筛选为「全部/错误」时可见）。 */
+        if (ok) toast('日志已清空');
+        else {
+          try { window.XTLog.error('log-page', '清空回读验证未通过：仍存在清空前的旧记录，请重试'); } catch (e2) { }
+          toast('清空未完全生效，请再点一次「清空」重试');
+        }
+      };
+      /* 回读验证：get 全量窗口内，凡时间早于宽限线的记录仍存在 → 视为未清干净 */
+      var verify = function () {
+        try {
+          window.XTLog.get({ limit: 500 }, function (items) {
+            if (done) return;
+            var stale = 0;
+            var arr = items || [];
+            for (var i = 0; i < arr.length; i++) {
+              var d = new Date(String(arr[i] && arr[i].t || '')).getTime();
+              if (!isNaN(d) && d < clearBeforeMs) stale++;
+            }
+            if (stale === 0) { finish(true); return; }
+            if (attempt < 1) { attempt++; run(); return; }   // 重试一次
+            finish(false);
+          });
+        } catch (e3) { finish(false); }
+      };
+      var run = function () {
+        try {
+          window.XTLog.clear(function () { verify(); });
+        } catch (e4) { verify(); }
+      };
+      run();
+      /* 【R159-A2】兜底 1.5s → 5s：真机 IDB 慢时给 clear 事务留足时间；
+         done 幂等保证回调已收口后本兜底无效，绝不会提前显示「已清空」。 */
+      setTimeout(function () { try { verify(); } catch (e5) { } }, 5000);
+    };
+    /* R159c：标准「取消/确认」弹层（uiConfirm 或页内兜底），确认后才执行清空流程 */
+    lgConfirm('确定清空全部应用日志？此操作不可恢复。', doClear);
+  };
+
+  /* ---------- 手动刷新（R159-B） ---------- */
+  window.lgRefresh = function () {
+    if (state.clearing) return;   // 清空进行中忽略，收尾回调会自动 render
+    render();
   };
 
   /* ---------- 日志明细收放（【R11j 2026-09-21 用户需求】） ----------

@@ -37,6 +37,11 @@
   var AUTH_FLAG_KEY = "study_workbench_auth";
   var SETTINGS_LS_KEY = "ai_model_settings";    // 与 ai-settings.js 同键（只读：取 overrides[id].name 用户重命名）
 
+  // R151：用量明细折叠态记忆键（"1"=收起【缺省】 "0"=展开），带 xt- 前缀
+  var DETAIL_FOLD_KEY = "xt_us_detail_fold";
+  // R151-2：按模型累计区折叠态记忆键（同上口径），带 xt- 前缀
+  var MODEL_FOLD_KEY = "xt_us_model_fold";
+
   // 服务端快照状态机：idle | loading | ok | unauthorized | missing | error
   var serverState = {
     phase: "idle",
@@ -364,7 +369,18 @@
     }
     var url = apiBase() + SERVER_USAGE_PATH;
     var ctrl = null;
-    var opts = { method: "GET", headers: { "Accept": "application/json" } };
+    // R151 根因修复：带登录态请求。此前固定只带 Accept 头（无 Authorization），
+    // 服务端按 R88-F 游客脱敏一律返回空 models，导致登录用户的「服务端累计 /
+    // 剩余 / 状态 / 按模型累计（服务端）」永远不更新（用户投诉的「好像没接通」）。
+    // token 缺失时不带头，仍走游客口径（游客空态文案保留，行为不回归）。
+    var reqHeaders = { "Accept": "application/json" };
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        var tok = window.localStorage.getItem(AUTH_TOKEN_KEY);
+        if (tok) reqHeaders["Authorization"] = "Bearer " + tok;
+      }
+    } catch (e) { /* 读不到登录态：按游客口径请求 */ }
+    var opts = { method: "GET", headers: reqHeaders };
     if (typeof AbortController !== "undefined") {
       try { ctrl = new AbortController(); opts.signal = ctrl.signal; } catch (e) { ctrl = null; }
     }
@@ -641,7 +657,12 @@
 
   // 降级分支表（§6 T04 / G4）
   function serverNoteText(st) {
-    if (st.phase === "unauthorized") return "服务端用量需新版后端（当前接口返回 " + (st.http || 401) + "）；此处展示本机口径。";
+    if (st.phase === "unauthorized") {
+      // R151：401 现在只可能出现在「带 token 但已过期」的场景（游客口径本就放行 200），
+      // 文案如实区分，不再误导用户以为是后端版本问题。
+      if (hasLoginToken()) return "登录态已失效，服务端累计暂不可用（HTTP " + (st.http || 401) + "）；此处展示本机口径。";
+      return "服务端用量需新版后端（当前接口返回 " + (st.http || 401) + "）；此处展示本机口径。";
+    }
     if (st.phase === "missing") return "后端未提供用量接口（HTTP 404）；此处展示本机口径。";
     if (st.phase === "error") {
       if (st.reason === "no-fetch") return "当前环境不支持 fetch；服务端用量暂不可用。";
@@ -771,11 +792,14 @@
     renderQuotaModels(buildLocalRows(readLocalRecords()), rows);
   }
 
-  // 拉服务端快照（带 TTL + 单飞保护），完成后渲染
-  function loadServer() {
+  // 拉服务端快照（带 TTL + 单飞保护），完成后渲染。
+  // R151：force=true 时绕过 15s TTL —— 「进入关于 tab / 打开模型设置页」强制重取，
+  // 让刚结束的调用立刻反映到「服务端累计 / 剩余 / 状态」；仍保留单飞保护，
+  // 失败静默降级（phase 落到 error，渲染层如实展示），不加高频轮询。
+  function loadServer(force) {
     if (serverState.loading) return;
     var now = Date.now();
-    if (serverState.at && (now - serverState.at) < SERVER_TTL_MS) { renderServer(); return; }
+    if (!force && serverState.at && (now - serverState.at) < SERVER_TTL_MS) { renderServer(); return; }
     serverState.loading = true;
     serverState.phase = "loading";
     renderServer();
@@ -886,30 +910,39 @@
         "</div>" +
 
         '<div id="UsageModelWrap">' +
-          '<div class="xt-us-sublabel"><span>按模型单独列出</span></div>' +
-          '<div class="xt-us-selectrow">' +
-            '<select class="xt-us-select" id="UsageQuotaSortSel" aria-label="模型排序方式">' +
-              '<option value="remaining">剩余可用量（少 → 多）</option>' +
-              '<option value="remainingDesc">剩余可用量（多 → 少）</option>' +
-              '<option value="used">已使用量（多 → 少）</option>' +
-              '<option value="quota">资源配额（大 → 小）</option>' +
-              '<option value="name">模型名称</option>' +
-            '</select>' +
-          "</div>" +
-          '<button type="button" class="xt-us-foldrow" id="UsageQuotaFilterToggle" aria-expanded="false">' +
-            '<span>筛选</span>' +
-            '<span class="xt-us-foldrow-cur" id="UsageQuotaFilterCur"></span>' +
+          // R151-2：按模型累计区整体折叠（默认收起 + 记忆 localStorage key: xt_us_model_fold），
+          // 标题行常显摘要（模型数 / 已耗尽数，renderQuotaModels 更新），交互同「用量明细」。
+          '<button type="button" class="xt-us-foldrow" id="UsageModelFold" aria-expanded="false">' +
+            '<span>按模型累计</span>' +
+            '<span class="xt-us-foldrow-cur" id="UsageModelFoldCur"></span>' +
             '<svg class="xt-us-arrow" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg>' +
           "</button>" +
-          '<div class="xt-us-foldbody" id="UsageQuotaFilterFold">' +
-            '<div class="xt-us-chips" id="UsageQuotaFilterBar">' +
-              '<button type="button" class="xt-us-chip active" data-quota-filter="all">全部</button>' +
-              '<button type="button" class="xt-us-chip" data-quota-filter="exhausted">已耗尽</button>' +
-              '<button type="button" class="xt-us-chip" data-quota-filter="low">剩余不足 10%</button>' +
-              '<button type="button" class="xt-us-chip" data-quota-filter="unknown">额度未知</button>' +
+          '<div class="xt-us-foldbody" id="UsageModelFoldBody">' +
+            '<div class="xt-us-sublabel"><span>按模型单独列出</span></div>' +
+            '<div class="xt-us-selectrow">' +
+              '<select class="xt-us-select" id="UsageQuotaSortSel" aria-label="模型排序方式">' +
+                '<option value="remaining">剩余可用量（少 → 多）</option>' +
+                '<option value="remainingDesc">剩余可用量（多 → 少）</option>' +
+                '<option value="used">已使用量（多 → 少）</option>' +
+                '<option value="quota">资源配额（大 → 小）</option>' +
+                '<option value="name">模型名称</option>' +
+              '</select>' +
             "</div>" +
+            '<button type="button" class="xt-us-foldrow" id="UsageQuotaFilterToggle" aria-expanded="false">' +
+              '<span>筛选</span>' +
+              '<span class="xt-us-foldrow-cur" id="UsageQuotaFilterCur"></span>' +
+              '<svg class="xt-us-arrow" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg>' +
+            "</button>" +
+            '<div class="xt-us-foldbody" id="UsageQuotaFilterFold">' +
+              '<div class="xt-us-chips" id="UsageQuotaFilterBar">' +
+                '<button type="button" class="xt-us-chip active" data-quota-filter="all">全部</button>' +
+                '<button type="button" class="xt-us-chip" data-quota-filter="exhausted">已耗尽</button>' +
+                '<button type="button" class="xt-us-chip" data-quota-filter="low">剩余不足 10%</button>' +
+                '<button type="button" class="xt-us-chip" data-quota-filter="unknown">额度未知</button>' +
+              "</div>" +
+            "</div>" +
+            '<div id="UsageModelList"></div>' +
           "</div>" +
-          '<div id="UsageModelList"></div>' +
         "</div>" +
 
         '<div id="UsageKindWrap">' +
@@ -918,16 +951,24 @@
         "</div>" +
 
         '<div id="UsageDetailWrap">' +
-          '<div class="xt-us-sublabel"><span>用量明细</span><span class="xt-us-hint" id="UsageDetailCount"></span></div>' +
-          '<div id="UsageDetailList"></div>' +
-          '<button type="button" class="xt-us-more" id="UsageMoreBtn" style="display:none;">加载更多</button>' +
-          '<div class="xt-us-clear-row" id="UsageClearRow">' +
-            '<button type="button" class="xt-us-clear-head" id="UsageClearHead" aria-expanded="false">' +
-              '<span>危险操作 / 清空用量数据</span>' +
-              '<svg class="xt-us-arrow" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg>' +
-            "</button>" +
-            '<div class="xt-us-clear-body">' +
-              '<button type="button" class="xt-us-btn danger" id="UsageClearBtn"><span id="UsageClearTxt">清空用量数据</span></button>' +
+          // R151：用量明细默认收起，标题行改折叠按钮（微信式：箭头随态旋转），
+          // 条数（UsageDetailCount）挂在标题行随态显示，收起也能看到有多少条。
+          '<button type="button" class="xt-us-foldrow" id="UsageDetailFold" aria-expanded="false">' +
+            '<span>用量明细</span>' +
+            '<span class="xt-us-foldrow-cur" id="UsageDetailCount"></span>' +
+            '<svg class="xt-us-arrow" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg>' +
+          "</button>" +
+          '<div class="xt-us-foldbody" id="UsageDetailFoldBody">' +
+            '<div id="UsageDetailList"></div>' +
+            '<button type="button" class="xt-us-more" id="UsageMoreBtn" style="display:none;">加载更多</button>' +
+            '<div class="xt-us-clear-row" id="UsageClearRow">' +
+              '<button type="button" class="xt-us-clear-head" id="UsageClearHead" aria-expanded="false">' +
+                '<span>危险操作 / 清空用量数据</span>' +
+                '<svg class="xt-us-arrow" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg>' +
+              "</button>" +
+              '<div class="xt-us-clear-body">' +
+                '<button type="button" class="xt-us-btn danger" id="UsageClearBtn"><span id="UsageClearTxt">清空用量数据</span></button>' +
+              "</div>" +
             "</div>" +
           "</div>" +
           '<div class="xt-us-status" id="UsageStatus"></div>' +
@@ -1185,6 +1226,13 @@
   function renderQuotaModels(localRows, serverRows) {
     if (!el.modelList) return;
     var all = buildQuotaRows(localRows, serverRows);
+    // R151-2：折叠标题行摘要常显（收起也能看到规模）：共 N 个模型 + 已耗尽数
+    var exhausted = 0;
+    for (var e = 0; e < all.length; e++) {
+      if (riskOfRow(all[e]) === "exhausted") exhausted++;
+    }
+    setText("UsageModelFoldCur", "共 " + fmtNum(all.length) + " 个模型" +
+      (exhausted > 0 ? " · 已耗尽 " + fmtNum(exhausted) : ""));
     if (!all.length) {
       var tip = (state.quotaFilter && state.quotaFilter !== "all")
         ? "按当前筛选条件没有匹配的模型（可切回「全部」查看）"
@@ -1394,7 +1442,9 @@
     if (el.kindList) el.kindList.innerHTML = "";
   }
 
-  function renderAll() {
+  // R151：forceServer=true 时 loadServer 绕过 TTL 强制重取（仅 tab 激活路径传 true，
+  // 筛选 / 排序 / 加载更多等页内交互仍走 TTL，避免打爆接口）。
+  function renderAll(forceServer) {
     if (!mount()) return;
     if (el.sortSel) { el.sortSel.value = state.sortBy; }
     syncQuotaFilterLabel();
@@ -1404,7 +1454,7 @@
     show(el.kindWrap, true);
     show(el.detailWrap, true);
 
-    loadServer();   /* R87/T04：服务端累计口径（与本地口径独立渲染，任一为空都不互相覆盖） */
+    loadServer(forceServer === true);   /* R87/T04：服务端累计口径（与本地口径独立渲染，任一为空都不互相覆盖） */
 
     var s = store();
     if (!s || typeof s.list !== "function") {
@@ -1696,6 +1746,85 @@
     });
   }
 
+  // ---------- R151：用量明细整体折叠 ----------
+  // 默认收起；记住用户上次选择（localStorage key: xt_us_detail_fold，
+  // "1"=收起【缺省】 "0"=展开；读不到 / 坏值一律按收起）。
+  // 收起态标题行仍显示条数（UsageDetailCount 在标题行内，renderDetails 照常更新）。
+  function detailFoldOpen() {
+    var v = "";
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        v = window.localStorage.getItem(DETAIL_FOLD_KEY) || "";
+      }
+    } catch (e) { v = ""; }
+    return v === "0";
+  }
+
+  function applyDetailFold() {
+    var tog = byId("UsageDetailFold");
+    var body = byId("UsageDetailFoldBody");
+    if (!tog || !body) return;
+    var open = detailFoldOpen();
+    tog.className = open ? "xt-us-foldrow open" : "xt-us-foldrow";
+    body.className = open ? "xt-us-foldbody open" : "xt-us-foldbody";
+    tog.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+
+  function bindDetailFold() {
+    var tog = byId("UsageDetailFold");
+    if (!tog || !tog.addEventListener) return;
+    applyDetailFold();   // 挂载即恢复上次选择（缺省收起）
+    tog.addEventListener("click", function () {
+      var open = detailFoldOpen();
+      try {
+        if (typeof window !== "undefined" && window.localStorage) {
+          window.localStorage.setItem(DETAIL_FOLD_KEY, open ? "1" : "0");
+        }
+      } catch (e) { /* 存不上就只在本次会话生效，不影响功能 */ }
+      applyDetailFold();
+    });
+  }
+
+  // ---------- R151-2：按模型累计区整体折叠 ----------
+  // 交互与「用量明细」同款：默认收起；记住上次选择（localStorage key:
+  // xt_us_model_fold，"1"=收起【缺省】 "0"=展开；读不到 / 坏值一律按收起）。
+  // 收起态标题行仍显示摘要（UsageModelFoldCur 在标题行内，renderQuotaModels 照常更新）；
+  // 区内的排序 / 筛选折叠（UsageQuotaFilterToggle）不受影响，展开后照常用。
+  function modelFoldOpen() {
+    var v = "";
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        v = window.localStorage.getItem(MODEL_FOLD_KEY) || "";
+      }
+    } catch (e) { v = ""; }
+    return v === "0";
+  }
+
+  function applyModelFold() {
+    var tog = byId("UsageModelFold");
+    var body = byId("UsageModelFoldBody");
+    if (!tog || !body) return;
+    var open = modelFoldOpen();
+    tog.className = open ? "xt-us-foldrow open" : "xt-us-foldrow";
+    body.className = open ? "xt-us-foldbody open" : "xt-us-foldbody";
+    tog.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+
+  function bindModelFold() {
+    var tog = byId("UsageModelFold");
+    if (!tog || !tog.addEventListener) return;
+    applyModelFold();   // 挂载即恢复上次选择（缺省收起）
+    tog.addEventListener("click", function () {
+      var open = modelFoldOpen();
+      try {
+        if (typeof window !== "undefined" && window.localStorage) {
+          window.localStorage.setItem(MODEL_FOLD_KEY, open ? "1" : "0");
+        }
+      } catch (e) { /* 存不上就只在本次会话生效，不影响功能 */ }
+      applyModelFold();
+    });
+  }
+
   function bindMore() {
     if (!el.moreBtn || !el.moreBtn.addEventListener) return;
     el.moreBtn.addEventListener("click", function () {
@@ -1732,6 +1861,8 @@
     bindMore();
     bindClearFold();
     bindQuotaFilterFold();
+    bindDetailFold();   // R151：用量明细折叠（默认收起 + 记忆）
+    bindModelFold();    // R151-2：按模型累计区折叠（默认收起 + 记忆）
     bindClear();
     bindExport();
   }
@@ -1748,7 +1879,7 @@
     renderTimer = setTimeout(function () {
       renderTimer = null;
       if (!isPanelActive()) return;   // 期间又切走了就不白做工
-      renderAll();
+      renderAll(true);                // R151：进入「关于」tab 强制重取服务端快照
     }, 0);
   }
 

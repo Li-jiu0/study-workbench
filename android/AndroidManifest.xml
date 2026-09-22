@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.study.workbench"
-    android:versionCode="43"
-    android:versionName="1.42">
+    android:versionCode="44"
+    android:versionName="1.43">
 
     <!-- 预留：将来若连接局域网后端（多人在线模式）需要联网权限；单机离线其实用不到 -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -47,6 +47,17 @@
     <queries>
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
+
+    <!-- 需求D/R152：应用白名单原生桥包可见性。targetSdk 33（Android 11+）下，
+         未声明本 <queries> 时 queryIntentActivities(MAIN/LAUNCHER) 只能看到自身，
+         白名单列表会空。QUERY_ALL_PACKAGES 已另行声明，此处按规范再显式列出
+         桌面启动入口意图，双保险且不与其余 queries 冲突。 -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
         </intent>
     </queries>
 
