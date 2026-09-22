@@ -9,6 +9,7 @@
 - 隐私：state 只回当前坐标（无轨迹）；日志绝不打印 lat/lng。
 - 限流用既有 rate_limit("default")（600/分/IP），**绝不挂 rate_limit("geo")**。
 """
+import math
 import time
 import uuid
 from datetime import datetime
@@ -64,6 +65,76 @@ def _parse_iso(s: str) -> float | None:
         return None
 
 
+# ---- 【R149】WGS-84 → GCJ-02 归一化（**仅**用于没带口径标记的历史客户端兜底）----
+# 口径（三端契约，务必整体理解，防双重偏移）：
+#   · 采集端（安卓 LocationShareService / 网页 watchPosition）自行把 WGS-84 转成 GCJ-02 **一次**，
+#     并在 tick body 里带 coord="gcj02" 明确声明；
+#   · 服务端对**声明了 gcj02** 的原样存；只对**没带 coord 的历史客户端**（升级前发的 WGS-84）
+#     在此补偿一次，使 /api/live/state 的出口**恒为 GCJ-02**；
+#   · 因此所有渲染端（live-location.html）永远不需要、也绝不允许再做任何坐标转换。
+# 🔴 本实现与 android/java/com/study/workbench/CoordTransform.java、
+#    assets 侧 live-location.html 的 wgs84ToGcj02 必须逐点等价（回归 tools/_r149_coord_equiv.py）。
+_COORD_FRAMES = ("wgs84", "gcj02")
+_GCJ_A = 6378245.0                    # 克拉索夫斯基椭球长半轴（米）
+_GCJ_EE = 0.00669342162296594323      # 椭球偏心率平方
+_ACC_MAX_M = 100000.0                 # 精度上限 100km：超过视为无效（前端以 null 表示「未知」）
+
+
+def _out_of_china(lat: float, lng: float) -> bool:
+    """是否在技术包围盒之外（境外不做偏移）。"""
+    return lng < 72.004 or lng > 137.8347 or lat < 0.8293 or lat > 55.8271
+
+
+def _transform_lat(x: float, y: float) -> float:
+    r = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * math.sqrt(abs(x))
+    r += (20.0 * math.sin(6.0 * x * math.pi) + 20.0 * math.sin(2.0 * x * math.pi)) * 2.0 / 3.0
+    r += (20.0 * math.sin(y * math.pi) + 40.0 * math.sin(y / 3.0 * math.pi)) * 2.0 / 3.0
+    r += (160.0 * math.sin(y / 12.0 * math.pi) + 320.0 * math.sin(y * math.pi / 30.0)) * 2.0 / 3.0
+    return r
+
+
+def _transform_lng(x: float, y: float) -> float:
+    r = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * math.sqrt(abs(x))
+    r += (20.0 * math.sin(6.0 * x * math.pi) + 20.0 * math.sin(2.0 * x * math.pi)) * 2.0 / 3.0
+    r += (20.0 * math.sin(x * math.pi) + 40.0 * math.sin(x / 3.0 * math.pi)) * 2.0 / 3.0
+    r += (150.0 * math.sin(x / 12.0 * math.pi) + 300.0 * math.sin(x / 30.0 * math.pi)) * 2.0 / 3.0
+    return r
+
+
+def _wgs84_to_gcj02(lat: float, lng: float):
+    """返回 (lat, lng) 的 GCJ-02 值；境外或非法输入原样返回；绝不抛异常。"""
+    try:
+        if not (math.isfinite(lat) and math.isfinite(lng)) or _out_of_china(lat, lng):
+            return lat, lng
+        d_lat = _transform_lat(lng - 105.0, lat - 35.0)
+        d_lng = _transform_lng(lng - 105.0, lat - 35.0)
+        rad_lat = lat / 180.0 * math.pi
+        magic = math.sin(rad_lat)
+        magic = 1 - _GCJ_EE * magic * magic
+        sqrt_magic = math.sqrt(magic)
+        d_lat = (d_lat * 180.0) / ((_GCJ_A * (1 - _GCJ_EE)) / (magic * sqrt_magic) * math.pi)
+        d_lng = (d_lng * 180.0) / (_GCJ_A / sqrt_magic * math.cos(rad_lat) * math.pi)
+        return lat + d_lat, lng + d_lng
+    except Exception:
+        return lat, lng
+
+
+def _norm_acc(v):
+    """精度（米）清洗：None / 非有限 / <=0 / 超过上限 → None（前端以 null 表示「未知」）。
+
+    🔴 只进内存、不下发到 DB 之外的地方；acc 不是坐标，不构成轨迹信息。
+    """
+    try:
+        if v is None:
+            return None
+        f = float(v)
+        if not math.isfinite(f) or f <= 0 or f > _ACC_MAX_M:
+            return None
+        return round(f, 1)
+    except Exception:
+        return None
+
+
 def _hydrate(row: LiveLocation) -> dict:
     """把 DB 行回填成内存条目（进程重启后 state/tick 兜底用）。
 
@@ -76,6 +147,10 @@ def _hydrate(row: LiveLocation) -> dict:
         "group": row.group_id,
         "lat": row.last_lat,
         "lng": row.last_lng,
+        # 【R149】acc 无 DB 列（绝不新增列）→ 进程重启回填后为 None，前端按「精度未知」处理。
+        # coord 一律记 gcj02：tick 已把历史 WGS-84 归一化，落库的 last_lat/last_lng 同属 GCJ-02 口径。
+        "acc": None,
+        "coord": "gcj02",
         "ts": _parse_iso(row.last_seen) or time.time(),
         "exp": _parse_iso(row.expires_at) or time.time(),
         "ended": (row.state != "active"),
@@ -145,10 +220,18 @@ class StartIn(BaseModel):
 
 
 class TickIn(BaseModel):
-    """tick 入参：shareId + 坐标（**只进内存，不落库**）。"""
+    """tick 入参：shareId + 坐标 + （R149）精度/口径（**只进内存，不落库**）。
+
+    acc：本次定位精度（米，可能为 None）——仅供前端画精度圈 / 判定低精度首点，**不落库**。
+    coord：坐标口径，仅 "wgs84" / "gcj02" 两种取值：
+      · 新版采集端（R149 起）已自行转过坐标系 → 传 "gcj02"，服务端原样存；
+      · 升级前的旧客户端不传（None）→ 视为 "wgs84"，服务端在此补偿一次转换。
+    """
     shareId: str = Field(min_length=1, max_length=36)
     lat: float
     lng: float
+    acc: float | None = None
+    coord: str | None = None
 
 
 class StopIn(BaseModel):
@@ -193,6 +276,8 @@ async def live_start(body: StartIn, user: User = Depends(get_current_user),
     db.commit()
     _LIVE[share_id] = {"owner": user.id, "peer": peer or None, "group": gid or None,
                        "lat": None, "lng": None, "ts": now, "exp": exp, "ended": False,
+                       # 【R149】acc=精度（未知 → None）；coord 恒为 gcj02（tick 已归一化）
+                       "acc": None, "coord": "gcj02",
                        "last_db_hb": now}
     if peer:
         lst = _LIVE_BY_PEER.setdefault(_pair(user.id, peer), [])
@@ -256,14 +341,26 @@ def live_tick(body: TickIn, user: User = Depends(get_current_user),
     if not _active(it, now):
         raise HTTPException(403, "共享已结束")
 
-    it["lat"], it["lng"], it["ts"] = body.lat, body.lng, now
-    # DB 心跳：≥30s 一次，UPDATE 同一行（绝不 INSERT / 绝不追加轨迹）
+    # 【R149】出口口径统一为 GCJ-02：新客户端已自行转过（coord="gcj02"）→ 原样；
+    # 旧客户端没带口径（None / 非法值）→ 按 WGS-84 在此补偿**一次**，落库/下发同为 GCJ-02。
+    # 🔴 只转一次：转换结果才写内存与 DB，绝不把原始 WGS-84 落到任何下游（防双重偏移）。
+    coord = (body.coord or "").strip().lower()
+    if coord not in _COORD_FRAMES:
+        coord = "wgs84"
+    lat, lng = body.lat, body.lng
+    if coord != "gcj02":
+        lat, lng = _wgs84_to_gcj02(lat, lng)
+
+    it["lat"], it["lng"], it["ts"] = lat, lng, now
+    it["acc"] = _norm_acc(body.acc)
+    it["coord"] = "gcj02"
+    # DB 心跳：≥30s 一次，UPDATE 同一行（绝不 INSERT / 绝不追加轨迹；acc 无 DB 列，只进内存）
     if now - it.get("last_db_hb", 0.0) >= _LIVE_DB_HB_SEC:
         it["last_db_hb"] = now
         if row is None:
             row = db.query(LiveLocation).filter(LiveLocation.share_id == body.shareId).first()
         if row is not None:
-            row.last_lat, row.last_lng, row.last_seen = body.lat, body.lng, now_iso()
+            row.last_lat, row.last_lng, row.last_seen = lat, lng, now_iso()
             db.commit()
     return {"ok": True}
 
@@ -368,6 +465,8 @@ def live_state(peerId: int = 0, groupId: int = 0,
             "lat": lat,
             "lng": lng,
             "hasFix": has_fix,
+            # 【R149】精度（米；未知 → None，**绝不补 0**，前端据 null 显示「精度未知」）
+            "acc": _norm_acc(it.get("acc")),
             "updatedAt": _ms(it["ts"]),
             "stale": (now - it["ts"]) > _LIVE_STALE_SEC,
         })

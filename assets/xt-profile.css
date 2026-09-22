@@ -332,13 +332,17 @@ html, body{
   overflow: hidden;
 }
 .xtp-view.on { transform: translateX(0); visibility: visible; }
+/* R145：老 WebView 不认 env()，必须优先 --xt-satop（原生注入真实状态栏高度），
+   否则子视图推入层顶栏被系统状态栏压住。写法与 .xtp-topbar / common.css .topbar 同口径。
+   注意：padding 简写在前、padding-top 单写在后，确保顶部补偿覆盖简写的 top（左右仍 12px）。 */
 .xtp-view-bar {
   flex: none;
-  height: 48px;
+  height: calc(48px + var(--xt-satop, env(safe-area-inset-top, 0px)));
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 0 12px;
+  padding-top: var(--xt-satop, env(safe-area-inset-top, 0px));
   background: var(--xtp-bg);
 }
 .xtp-view-back {
@@ -900,7 +904,7 @@ html, body{
   /* R88-M6：进入时的轻微放大过渡（0.96 → 1），配合 mask 淡入，观感更柔和。 */
   animation: xtpCropperIn 0.22s ease-out both;
   /* R88-M6：安全边距 —— 适配刘海屏 / 底部手势条。 */
-  padding-top: env(safe-area-inset-top, 0px);
+  padding-top: var(--xt-satop, env(safe-area-inset-top, 0px));
   padding-bottom: env(safe-area-inset-bottom, 0px);
   box-sizing: border-box;
 }
@@ -919,7 +923,7 @@ html, body{
   justify-content: space-between;
   min-height: 48px;
   padding: 0 10px;
-  padding-top: env(safe-area-inset-top, 0px);
+  padding-top: var(--xt-satop, env(safe-area-inset-top, 0px));
   box-sizing: border-box;
   background: #000;
 }

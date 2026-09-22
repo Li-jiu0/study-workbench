@@ -77,6 +77,13 @@ public class MainActivity extends Activity {
     private static final boolean WEBVIEW_DEBUG_ENABLED = true;
     // 【R-黑边】最近一次下发到前端的状态栏高度（px）；-1 = 尚未取到（用于页面加载完成后补发与变更去抖）
     private int lastStatusBarTopPx = -1;
+    // 【R147】键盘避让：API30+ edge-to-edge（setDecorFitsSystemWindows(false)）下 adjustResize 失效，
+    //   系统不再缩窗，而是把整页“平移上推”以露出焦点输入框。原生自行消费 IME 底部 inset：
+    //   把 WebView 真实高度调矮 + 把“原生已接管”标记推给 H5（详见 applyImeInsetToWeb / pushImeTakeoverMarkerToWeb）。
+    /** 最近一次取到的 IME 底部 inset(px)；-1 = 尚未取到。px 变化才下发（天然去抖）。 */
+    private int lastImeBottomPx = -1;
+    /** 最近一次下发的 WebView 真实高度(px)；-1 = 尚未取到。用于 --xt-vh 下发去抖。 */
+    private int lastViewportHeightPx = -1;
     private ValueCallback<Uri[]> filePathCallback;
 
     // ---- 【R103 需求1】H5 getUserMedia 麦克风授权：暂存的 WebView 权限请求 ----
@@ -86,7 +93,10 @@ public class MainActivity extends Activity {
     private WebChromeClient.CustomViewCallback customViewCallback = null;
 
     // ---- 原生消息通知（R72 需求5：收到消息弹系统横幅）----
-    private static final String NOTIFY_CHANNEL_ID = "xt_msg";
+    /** 【需求B】历史遗留渠道 id（旧版本创建，显示名同为「消息通知」）。
+     *  只用于启动时一次性删除、消除系统设置里的重复项；绝不再用于发通知。
+     *  发通知一律走 MsgPollService.PUBLIC_MSG_CHANNEL_ID（xt_msg_v2）。 */
+    private static final String LEGACY_NOTIFY_CHANNEL_ID = "xt_msg";
     private static final int NOTIFY_ID = 101;
     private static final int REQ_NOTIFY_PERM = 2003;
     private static final int REQ_LOCATION_PERM = 2004;
@@ -647,6 +657,73 @@ public class MainActivity extends Activity {
                 }
             }
 
+            /** 【需求D】应用白名单：返回本机已安装应用列表（明文应用名 + 包名 + 是否系统应用）。
+             *  前端契约（assets/xt-applist.js 按此解析，任一侧变更需同步）：
+             *    · 成功 {"ok":true,"apps":[{"label":"微信","pkg":"com.tencent.mm","sys":false}, ...]}
+             *    · 失败 {"ok":false,"reason":"error"}
+             *    · apps 按 label 升序；已排除本 App 自身；最多 500 条。
+             *  隐私：本方法只把列表交给页面做本机展示与勾选（页面只写 localStorage、零网络请求），
+             *        不上传服务器、不落库、不打日志；日志里也绝不打印完整包名列表。
+             *  权限：依赖 Manifest 已声明的 QUERY_ALL_PACKAGES（targetSdk33 包可见性），无需运行时授权。 */
+            @JavascriptInterface
+            public String getInstalledAppsForWhitelist() {
+                try {
+                    android.content.pm.PackageManager pm = getPackageManager();
+                    if (pm == null) return "{\"ok\":false,\"reason\":\"error\"}";
+                    java.util.List<android.content.pm.ApplicationInfo> apps;
+                    try {
+                        apps = pm.getInstalledApplications(0);
+                    } catch (Throwable t) {
+                        return "{\"ok\":false,\"reason\":\"error\"}";
+                    }
+                    if (apps == null) return "{\"ok\":false,\"reason\":\"error\"}";
+                    final String self = getPackageName();
+                    java.util.List<org.json.JSONObject> items = new java.util.ArrayList<org.json.JSONObject>();
+                    for (int i = 0; i < apps.size(); i++) {
+                        android.content.pm.ApplicationInfo ai = apps.get(i);
+                        if (ai == null || ai.packageName == null) continue;
+                        // 排除本 App 自身
+                        if (ai.packageName.equals(self)) continue;
+                        String label = "";
+                        try {
+                            CharSequence lc = pm.getApplicationLabel(ai);
+                            if (lc != null) label = String.valueOf(lc);
+                        } catch (Throwable t2) {
+                            label = "";
+                        }
+                        if (label.length() == 0) label = ai.packageName; // 取不到应用名 → 回落包名
+                        org.json.JSONObject it = new org.json.JSONObject();
+                        it.put("label", label);
+                        it.put("pkg", ai.packageName);
+                        it.put("sys", (ai.flags & android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0);
+                        items.add(it);
+                    }
+                    // 按 label 升序；label 相同用 pkg 兜底比较，保证排序稳定
+                    java.util.Collections.sort(items, new java.util.Comparator<org.json.JSONObject>() {
+                        @Override
+                        public int compare(org.json.JSONObject a, org.json.JSONObject b) {
+                            String la = (a == null) ? "" : a.optString("label", "");
+                            String lb = (b == null) ? "" : b.optString("label", "");
+                            int c = la.compareTo(lb);
+                            if (c != 0) return c;
+                            String pa = (a == null) ? "" : a.optString("pkg", "");
+                            String pb = (b == null) ? "" : b.optString("pkg", "");
+                            return pa.compareTo(pb);
+                        }
+                    });
+                    // 上限 500 条
+                    if (items.size() > 500) items = items.subList(0, 500);
+                    org.json.JSONArray arr = new org.json.JSONArray();
+                    for (int i = 0; i < items.size(); i++) arr.put(items.get(i));
+                    org.json.JSONObject o = new org.json.JSONObject();
+                    o.put("ok", true);
+                    o.put("apps", arr);
+                    return o.toString();
+                } catch (Throwable e) {
+                    return "{\"ok\":false,\"reason\":\"error\"}"; // 任何异常都不得抛进 WebView
+                }
+            }
+
             /** 【R106】原生录音桥（预埋，随下次 APK 生效）：开始录音。
              *  前端契约：window.XTAppBridge.startVoiceRecord()（别名脚本转发到本方法）。
              *  权限未授予时先申请(REQ 2002)，授权回调里再启动；结果经 window.__onVoiceRecord(json) 回传，
@@ -1051,6 +1128,8 @@ public class MainActivity extends Activity {
                 injectStatusBarColor(view);
                 // 【R-黑边】补发状态栏高度 CSS 变量：新文档的 documentElement 已丢掉 style，需重设
                 injectStatusBarInset(view);
+                // 【R147】补发键盘避让契约：新文档丢失 data-xt-kb 标记与 --xt-vh，需重设
+                injectKeyboardBridge(view);
                 // 【R3b-A / B2】页面加载成功：隐藏顶部进度条 + 清掉失败占位（若上次判过失败）
                 mainFrameFailed = false;
                 mainFrameErrorView = null;
@@ -1289,6 +1368,9 @@ public class MainActivity extends Activity {
         // 中文文件名用 Uri.encode 保证 Android WebView 正确定位到 asset 文件。
         mainFrameFailed = false;
         mainFrameErrorView = null;
+        // 【R147】监听 WebView 真实高度变化 → 下发 --xt-vh（真实可视高）：键盘弹起时 WebView 已变矮，
+        //   H5 的 .app{height:var(--xt-vh,100dvh)} 随之收敛，页面不再溢出/被顶。可重入（崩溃重建的 WebView 也会重装）。
+        installViewportHeightBridge(w);
         w.loadUrl("file:///android_asset/" + Uri.encode("学习工作台.html"));
     }
 
@@ -1667,6 +1749,7 @@ public class MainActivity extends Activity {
             + "startLocationShare:function(sid){try{return !!(AndroidBridge.startLocationShare&&AndroidBridge.startLocationShare(String(sid==null?'':sid)));}catch(e){return false;}},"
             + "stopLocationShare:function(){try{return !!(AndroidBridge.stopLocationShare&&AndroidBridge.stopLocationShare());}catch(e){return false;}},"
             + "getInstalledAppsForRisk:function(agreed){try{return (AndroidBridge.getInstalledAppsForRisk&&AndroidBridge.getInstalledAppsForRisk(!!agreed))||'{\"ok\":false,\"reason\":\"error\"}';}catch(e){return '{\"ok\":false,\"reason\":\"error\"}';}},"
+            + "getInstalledAppsForWhitelist:function(){try{return (AndroidBridge.getInstalledAppsForWhitelist&&AndroidBridge.getInstalledAppsForWhitelist())||'{\"ok\":false,\"reason\":\"error\"}';}catch(e){return '{\"ok\":false,\"reason\":\"error\"}';}},"
             + "setRiskEnabled:function(enabled){try{AndroidBridge.setRiskEnabled(!!enabled);}catch(e){}},"
             + "isRiskEnabled:function(){try{return !!(AndroidBridge.isRiskEnabled&&AndroidBridge.isRiskEnabled());}catch(e){return true;}},"
             + "logJsError:function(kind,detail){try{AndroidBridge.logJsError(String(kind==null?'':kind),String(detail==null?'':detail));}catch(e){}},"
@@ -2135,6 +2218,11 @@ public class MainActivity extends Activity {
      *  实现：decorView.setOnApplyWindowInsetsListener → 回调里取状态栏 top(px) → 换算 dp(px/density)
      *  → evaluateJavascript 设 documentElement 的 --xt-satop。px 变化才下发（天然去抖）。
      *  API21-29 走 getSystemWindowInsetTop()，API30+ 走 getInsets(Type.statusBars())。
+     *  【R147】同一 listener 顺带处理键盘避让：API30+ 取 Type.ime() 底部 inset → applyImeInsetToWeb
+     *  （调矮 WebView + 给 H5 打「原生已接管」标记）。原状态栏 top 逻辑与 return insets（不消费）保持不变，
+     *  --xt-satop 注入口径完全不受影响；此处不注册第二个 listener 是因为 DecorView 的
+     *  setOnApplyWindowInsetsListener 是「替换式」，且不宜覆盖 WebView 自身的 onApplyWindowInsets
+     *  （会丢掉 viewport-fit=cover 的 env(safe-area-inset-*) 处理）。
      *  全程 try/catch，任何异常都不影响页面渲染与应用启动。 */
     private void installStatusBarInsetBridge() {
         try {
@@ -2158,6 +2246,33 @@ public class MainActivity extends Activity {
                             lastStatusBarTopPx = top;
                             // 密度现场取，避免分屏/显示器切换后 density 变化导致换算失真
                             pushStatusBarInsetToWeb(top, getResources().getDisplayMetrics().density);
+                        }
+                        // 【R147】键盘避让：仅 API30+（该档才启用 setDecorFitsSystemWindows(false)，adjustResize 已失效）。
+                        //   API<30 不处理 —— 老机型 LAYOUT_FULLSCREEN 下 adjustResize 仍会把窗口缩矮，维持既有行为防回归。
+                        //   读 IME 底部 inset → 调矮 WebView 真实高度（applyImeInsetToWeb），
+                        //   使“露出焦点输入框”不再依赖系统把整窗上推。
+                        if (Build.VERSION.SDK_INT >= 30) {
+                            int imeBottom = 0;
+                            try {
+                                final android.graphics.Insets ime =
+                                        insets.getInsets(android.view.WindowInsets.Type.ime());
+                                imeBottom = (ime == null) ? 0 : ime.bottom;
+                            } catch (Throwable t2) { imeBottom = 0; }
+                            if (imeBottom != lastImeBottomPx) {
+                                lastImeBottomPx = imeBottom;
+                                applyImeInsetToWeb(imeBottom);
+                            }
+                            // 【R147】消费 IME inset：不再下发到 WebView，避免 Chromium 依据 IME inset
+                            //   再缩一次视口 → 二次补偿（会比不处理更糟）。仅清零 Type.ime()；
+                            //   statusBars/systemGestures 等原样保留 → .topbar 的 --xt-satop 与
+                            //   env(safe-area-inset-*) 口径完全不受影响。
+                            try {
+                                final android.view.WindowInsets.Builder ib =
+                                        new android.view.WindowInsets.Builder(insets);
+                                ib.setInsets(android.view.WindowInsets.Type.ime(),
+                                        android.graphics.Insets.of(0, 0, 0, 0));
+                                return ib.build();
+                            } catch (Throwable t4) { /* 构造失败：退回原 insets，最坏是潜在二次补偿 */ }
                         }
                     } catch (Throwable t1) { /* 单次取 inset 失败不影响布局分发 */ }
                     return insets; // 不消费，按原样继续分发给子 View（WebView）
@@ -2186,6 +2301,123 @@ public class MainActivity extends Activity {
             @Override public void run() {
                 try {
                     pushStatusBarInsetToWeb(lastStatusBarTopPx, getResources().getDisplayMetrics().density);
+                } catch (Throwable t) { /* 静默 */ }
+            }
+        });
+    }
+
+    /* ================= 【R147】键盘避让（API30+ edge-to-edge 下的 IME inset 补偿） =================
+       背景/契约（H5 侧配合见 assets/chat-local.js 的 imKb* 与 assets/common.css 的 --xt-vh）：
+       · 顶层 Window 在 API30+ 调用了 setDecorFitsSystemWindows(false)（见 applyNonDecorFits），
+         adjustResize 因此失效：系统不再缩窗，而是把整个窗口“上移”以露出焦点输入框 →
+         App 内聊天页表现为“整页被上推、聊天顶栏被推出屏幕、状态栏压到内容上”。
+       · 修法：原生侧自行消费 IME 底部 inset —— 调矮 WebView 真实高度（底部外边距），
+         并把「原生已接管」标记 + 真实可视高推给 H5；H5 据此停用自己的
+         visualViewport 兜底，避免“二次补偿”。
+       向下兼容：API<30 完全不动（老机型 adjustResize 仍有效）；H5 侧对“标记缺失”走旧逻辑。
+       ===================================================================== */
+
+    /** 【R147】把 IME 底部 inset(px) 应用到当前 WebView 的底部外边距，使其真实高度变矮，
+     *  并给 H5 打上「原生已接管键盘避让」标记（data-xt-kb，见 pushImeTakeoverMarkerToWeb）。
+     *  · 用 bottomMargin 而非 padding：必须让 WebView 自身的可视矩形（View rect）离开键盘区，
+     *    系统才不会再“平移整窗”去露出输入框；仅改 padding 时 View rect 不变，无济于事。
+     *  · WebView 的父容器是 android.R.id.content（FrameLayout）；MATCH_PARENT 子项在 FrameLayout
+     *    中会减去 bottomMargin → WebView 高度真实变矮。
+     *  全程 try/catch；失败则退回既有行为。 */
+    private void applyImeInsetToWeb(final int imeBottomPx) {
+        final WebView w = web;
+        if (w == null) return;
+        uiHandler.post(new Runnable() {
+            @Override public void run() {
+                try {
+                    final android.view.ViewGroup.LayoutParams raw = w.getLayoutParams();
+                    final FrameLayout.LayoutParams lp;
+                    if (raw instanceof FrameLayout.LayoutParams) {
+                        lp = (FrameLayout.LayoutParams) raw;
+                    } else {
+                        lp = new FrameLayout.LayoutParams(
+                                (raw == null) ? android.view.ViewGroup.LayoutParams.MATCH_PARENT : raw.width,
+                                (raw == null) ? android.view.ViewGroup.LayoutParams.MATCH_PARENT : raw.height);
+                    }
+                    if (lp.bottomMargin != imeBottomPx) {
+                        lp.bottomMargin = imeBottomPx;
+                        w.setLayoutParams(lp);
+                    }
+                } catch (Throwable t) { /* 设置失败：沿用既有行为 */ }
+            }
+        });
+        pushImeTakeoverMarkerToWeb(w);
+    }
+
+    /** 【R147】原生是否已接管键盘避让 —— 仅 API>=30 为 true。
+     *  依据：setDecorFitsSystemWindows(false)（applyNonDecorFits）与 IME inset 补偿
+     *  （installStatusBarInsetBridge 里的 ime() 分支）都只在 API>=30 生效；API<30 仍靠
+     *  LAYOUT_FULLSCREEN + adjustResize 把窗口真实缩矮，原生并不做任何补偿。
+     *  因此「已接管」这一宣称只能在 API>=30 下发出，否则 H5 会错误停用自身的 visualViewport 兜底。 */
+    private static boolean nativeImeTakeover() {
+        return Build.VERSION.SDK_INT >= 30;
+    }
+
+    /** 【R147】把“原生已接管键盘避让”标记注入 H5 的 documentElement。
+     *  契约（H5 侧 feature-detect，任一侧变更需同步）：
+     *    · document.documentElement 属性 data-xt-kb = "native" —— 原生已接管键盘避让
+     *      （H5 的 assets/chat-local.js:imKbNativeHandled() 据此停用自身 visualViewport 兜底）
+     *  🔴 门槛：仅 API>=30 下发（nativeImeTakeover）；API<30 直接返回、不打标记，H5 继续走旧兜底。
+     *  幂等：重复调用只覆盖同名属性；异常静默。 */
+    private void pushImeTakeoverMarkerToWeb(final WebView w) {
+        if (w == null) return;
+        if (!nativeImeTakeover()) return; // 【R147-fix】非接管档不得宣称「已接管」
+        final String js = "(function(){try{var d=document.documentElement;if(!d)return;"
+                + "d.setAttribute('data-xt-kb','native');"
+                + "}catch(e){}})();";
+        uiHandler.post(new Runnable() { @Override public void run() { evalJs(w, js); } });
+    }
+
+    /** 【R147】监听 WebView 真实高度变化 → 下发 --xt-vh（真实可视高，CSS 长度 dp）。
+     *  H5 的 .app{height:var(--xt-vh,100dvh)} 因此与 WebView 真实高度一致；
+     *  键盘弹起（WebView 变矮）时页面随之收敛，不会溢出/被顶。
+     *  可重入：崩溃重建的新 WebView 会再次调用本方法。无 API 门槛（老内核也受益）。 */
+    private void installViewportHeightBridge(final WebView w) {
+        if (w == null) return;
+        try {
+            w.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+                @Override
+                public void onLayoutChange(View v, int left, int top, int right, int bottom,
+                                           int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                    final int h = bottom - top;
+                    if (h <= 0 || h == lastViewportHeightPx) return;
+                    lastViewportHeightPx = h;
+                    pushViewportHeightToWeb(w, h, getResources().getDisplayMetrics().density);
+                }
+            });
+        } catch (Throwable t) { /* 绑定失败：H5 仍走 dvh 兜底 */ }
+    }
+
+    /** 【R147】把 WebView 真实高度(px→dp)注入 --xt-vh —— 全 API 生效（老内核同样受益，等价于原 100dvh）。
+     *  data-xt-kb 标记则**只在 API>=30 顺带补设**（与 pushImeTakeoverMarkerToWeb 同契约、同门槛）。 */
+    private void pushViewportHeightToWeb(final WebView w, final int heightPx, final float density) {
+        if (w == null) return;
+        final float dp = (density > 0f) ? (heightPx / density) : 0f;
+        // 【R147-fix】标记必须与「原生真的做了 IME 补偿」同档：API>=30 才设，API<30 留空串不注入。
+        final String mark = nativeImeTakeover() ? "d.setAttribute('data-xt-kb','native');" : "";
+        final String js = "(function(){try{var d=document.documentElement;if(!d)return;"
+                + mark
+                + "d.style.setProperty('--xt-vh','" + dp + "px');"
+                + "}catch(e){}})();";
+        uiHandler.post(new Runnable() { @Override public void run() { evalJs(w, js); } });
+    }
+
+    /** 【R147】onPageFinished 后补发一次：新文档的 documentElement 已丢掉属性/样式，需重设标记与变量。 */
+    private void injectKeyboardBridge(final WebView view) {
+        if (view == null) return;
+        uiHandler.post(new Runnable() {
+            @Override public void run() {
+                try {
+                    pushImeTakeoverMarkerToWeb(view);
+                    final int h = view.getHeight();
+                    if (h > 0) {
+                        pushViewportHeightToWeb(view, h, getResources().getDisplayMetrics().density);
+                    }
                 } catch (Throwable t) { /* 静默 */ }
             }
         });
@@ -2283,17 +2515,33 @@ public class MainActivity extends Activity {
 
     /* ================= 原生消息通知（R72 需求5） ================= */
 
-    /** 创建通知渠道（API 26+ 必须；已存在则跳过，创建失败不影响其它功能） */
+    /** 【需求B】确保「唯一」消息渠道存在（id = MsgPollService.PUBLIC_MSG_CHANNEL_ID / xt_msg_v2），
+     *  并删除历史遗留渠道（id = LEGACY_NOTIFY_CHANNEL_ID / xt_msg），消除系统设置里的重复项。
+     *  渠道 id 与描述/振动/铃声/badge 必须与 MsgPollService.ensureChannels() 完全一致 —— 两边
+     *  才是「同一个渠道」，否则会各建一个同名渠道、重复项复现。
+     *  注意：删除历史渠道【每次都执行】，不能被「渠道已存在则跳过创建」的分支跳过。 */
     private void ensureNotifyChannel() {
         try {
             if (Build.VERSION.SDK_INT < 26) return;
             NotificationManager nm = (NotificationManager) getSystemService(android.content.Context.NOTIFICATION_SERVICE);
             if (nm == null) return;
-            if (nm.getNotificationChannel(NOTIFY_CHANNEL_ID) != null) return;
-            NotificationChannel ch = new NotificationChannel(NOTIFY_CHANNEL_ID, "消息通知", NotificationManager.IMPORTANCE_HIGH);
-            ch.setDescription("星途 · 收到新消息时弹出横幅提醒");
-            nm.createNotificationChannel(ch);
-        } catch (Throwable e) { /* 渠道创建失败：静默 */ }
+            // ① 建/复用唯一渠道（与 MsgPollService.ensureChannels() 逐项一致）
+            if (nm.getNotificationChannel(MsgPollService.PUBLIC_MSG_CHANNEL_ID) == null) {
+                NotificationChannel ch = new NotificationChannel(
+                        MsgPollService.PUBLIC_MSG_CHANNEL_ID, "消息通知", NotificationManager.IMPORTANCE_HIGH);
+                ch.setDescription("星途 · 收到新消息时弹出横幅提醒");
+                ch.enableVibration(true);
+                ch.setVibrationPattern(new long[] { 0L, 200L, 100L, 200L });
+                ch.setSound(android.media.RingtoneManager.getDefaultUri(
+                        android.media.RingtoneManager.TYPE_NOTIFICATION), null);
+                ch.setShowBadge(true);
+                nm.createNotificationChannel(ch);
+            }
+            // ② 删除历史遗留渠道（每次尝试；消除系统设置里「两条消息通知」）
+            if (nm.getNotificationChannel(LEGACY_NOTIFY_CHANNEL_ID) != null) {
+                nm.deleteNotificationChannel(LEGACY_NOTIFY_CHANNEL_ID);
+            }
+        } catch (Throwable e) { /* 渠道创建/清理失败：静默 */ }
     }
 
     /** 弹一条原生通知横幅；title 空则用「星途」，text 截断 100 字。
@@ -2331,7 +2579,8 @@ public class MainActivity extends Activity {
                     PendingIntent pi = PendingIntent.getActivity(MainActivity.this, 0, open, piFlags);
                     Notification.Builder builder;
                     if (Build.VERSION.SDK_INT >= 26) {
-                        builder = new Notification.Builder(MainActivity.this, NOTIFY_CHANNEL_ID);
+                        // 【需求B】横幅一律走唯一渠道 xt_msg_v2（历史 xt_msg 已删除，不再使用）
+                        builder = new Notification.Builder(MainActivity.this, MsgPollService.PUBLIC_MSG_CHANNEL_ID);
                     } else {
                         builder = new Notification.Builder(MainActivity.this);
                     }

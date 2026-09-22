@@ -15,20 +15,21 @@
   .ll-map { position: fixed; inset: 0; background: #e9edf3; }
   #llMap { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
   /* 左上角返回：半透明圆形黑底 + 白色箭头，避开状态栏 */
-  .ll-back { position: fixed; z-index: 1100; left: 12px; top: calc(10px + env(safe-area-inset-top, 0px)); width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(0,0,0,.45); color: #fff; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,.25); padding: 0; }
-  .ll-back:active { background: rgba(0,0,0,.62); }
+  .ll-back { position: fixed; z-index: 1100; left: 12px; top: calc(10px + var(--xt-satop, env(safe-area-inset-top, 0px))); width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(0,0,0,.62); color: #fff; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,.25); padding: 0; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+  .ll-back:active { background: rgba(0,0,0,.78); }
   /* 返回键右侧：对方昵称半透明胶囊 */
-  .ll-name { position: fixed; z-index: 1100; left: 62px; top: calc(10px + env(safe-area-inset-top, 0px)); height: 40px; display: flex; align-items: center; padding: 0 16px; border-radius: 20px; background: rgba(0,0,0,.45); color: #fff; font-size: 14px; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,.25); white-space: nowrap; }
+  .ll-name { position: fixed; z-index: 1100; left: 62px; top: calc(10px + var(--xt-satop, env(safe-area-inset-top, 0px))); height: 40px; display: flex; align-items: center; padding: 0 16px; border-radius: 20px; background: rgba(0,0,0,.62); color: #fff; font-size: 15px; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,.25); white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,.6); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
   /* 头像气泡 marker（L.divIcon 自绘）：圆角方形头像白描边 + 底部白三角指向精确坐标 */
   .ll-ava { position: relative; width: 44px; height: 44px; border-radius: 9px; border: 2.5px solid #fff; background: #5B8DEF; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
   .ll-ava-txt { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; font-weight: 700; }
-  .ll-ava img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; }
+  .ll-ava img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: -webkit-optimize-contrast; }
   .ll-marker-tip { width: 0; height: 0; margin: -1px auto 0; border: 6px solid transparent; border-top-color: #fff; }
   /* 底部状态胶囊：底部居中悬浮，半透明深底白字 */
-  .ll-bar { position: fixed; z-index: 1100; left: 50%; transform: translateX(-50%); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; background: rgba(0,0,0,.55); color: #fff; font-size: 13px; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
-  .ll-bar.stale { background: rgba(120,72,0,.72); }
+  .ll-bar { position: fixed; z-index: 1100; left: 50%; transform: translateX(-50%); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; background: rgba(0,0,0,.72); color: #fff; font-size: 14px; font-weight: 600; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,.25); text-shadow: 0 1px 2px rgba(0,0,0,.6); border: 1px solid rgba(255,255,255,.20); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .ll-bar.stale { background: rgba(122,72,0,.88); }
   .ll-bdot { width: 8px; height: 8px; border-radius: 50%; background: #4cd964; flex: 0 0 auto; }
   .ll-bar.stale .ll-bdot { background: #ffb340; }
+  .ll-bar.lowacc .ll-bdot { background: #ffb340; }
   .ll-bspin { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: llspin 0.9s linear infinite; flex: 0 0 auto; }
   @keyframes llspin { to { transform: rotate(360deg); } }
   /* 占位层：坐标尚未就绪时覆盖在地图之上，绝不能留白（修「地图加载不出来」的关键） */
@@ -43,9 +44,9 @@
   /* ===================== R144：多点连线 + 点间直线距离标注 + 导航入口 ===================== */
   /* 距离标签：divIcon 包裹层零尺寸、i 自身 -50%/-50% 平移 → 标签几何中心正落在「线段中点」 */
   .ll-dlabel { background: transparent; border: 0; }
-  .ll-dlabel i { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); display: inline-block; padding: 2px 8px; border-radius: 10px; background: rgba(255,255,255,.95); color: #1f2937; font-size: 11px; font-weight: 700; font-style: normal; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,.3); border: 1px solid rgba(91,141,239,.6); }
+  .ll-dlabel i { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); display: inline-block; padding: 3px 9px; border-radius: 10px; background: #fff; color: #1f2937; font-size: 12px; font-weight: 700; font-style: normal; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,.35); border: 1px solid rgba(91,141,239,.8); }
   /* 汇总标签（≥3 人时落在几何中心）：深底白字，与段距标签区分 */
-  .ll-dlabel.sum i { background: rgba(31,41,55,.9); color: #fff; border-color: rgba(255,255,255,.4); }
+  .ll-dlabel.sum i { font-size: 12px; background: rgba(17,24,39,.95); color: #fff; border-color: rgba(255,255,255,.4); text-shadow: 0 1px 2px rgba(0,0,0,.6); }
   /* 右下角「导航」悬浮按钮：仅当有效位置点 ≥2 时由 JS 加 .on 显示 */
   .ll-nav { position: fixed; z-index: 1100; right: 12px; bottom: calc(60px + env(safe-area-inset-bottom, 0px)); display: none; align-items: center; gap: 6px; height: 40px; padding: 0 16px; border: 0; border-radius: 20px; background: #5B8DEF; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,.3); }
   .ll-nav.on { display: flex; }
@@ -63,7 +64,7 @@
   .ll-origin.on { background: #e8f0ff; border-color: #5B8DEF; color: #2f5fd0; font-weight: 700; }
   .ll-row { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-top: 1px solid #f0f2f6; }
   .ll-row-ava { position: relative; flex: 0 0 auto; width: 34px; height: 34px; border-radius: 8px; background: #5B8DEF; color: #fff; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-  .ll-row-ava img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; }
+  .ll-row-ava img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: -webkit-optimize-contrast; }
   .ll-row-mid { flex: 1 1 auto; min-width: 0; }
   .ll-row-nm { font-size: 14px; color: #1f2937; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .ll-row-sub { font-size: 12px; color: #9aa3b2; margin-top: 2px; }
@@ -75,6 +76,10 @@
   .ll-sheet-ft { padding: 10px 16px 2px; font-size: 11px; color: #b0b7c3; line-height: 1.6; }
   /* Leaflet 默认版权/attribution 在小屏占位，隐藏避免突兀（瓦片已带腾讯来源） */
   .leaflet-control-attribution { display: none; }
+  /* R146：缩放控件由 initMap 改挂到右上（L.control.zoom position:'topright'），
+     并让它同样躲开状态栏；.leaflet-top.leaflet-right .leaflet-control 覆盖 leaflet.css 的 margin-top:10px。
+     右上与左上返回键 .ll-back、右下导航键 .ll-nav 分属不同角，互不重叠。 */
+  .leaflet-top.leaflet-right .leaflet-control { margin-top: calc(10px + var(--xt-satop, env(safe-area-inset-top, 0px))); }
 </style>
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
 <script>window.__XT_PROD__ = true;</script>
@@ -82,8 +87,10 @@
 </head>
 <body data-page-node-id="aNkAbKbhN6JSqQbqhilF5S">
 <div id="llMap" class="ll-map" data-page-node-id="jewfC0U8Oj2rs9IARKM6Si"></div>
-<!-- 智能返回：有历史回上一页，无历史兜底回私聊（本页唯一入口惯例，照抄好友申请.html） -->
-<button class="ll-back" onclick="if(history.length data-page-node-id="zXkaBsjbxPc2K4y7u7P54o">1){history.back()}else{location.href='私聊.html'}" title="返回" aria-label="返回"><span data-icon="arrow-left" data-icon-size="18" style="line-height:1" data-page-node-id="rc1ATE1KTBLHlqNo5P0NV2">&#8592;</span></button>
+<!-- 返回（R146 修复属性被劈开）：按参数显式回上级页（私聊.html?uid=|gid=；本页唯一入口是会话内「查看」，上级页恒为私聊），
+     不再使用「属性值内含 > 的 inline onclick」——它会被可视化编辑器的标签解析劈开，余下代码变正文渲染。
+     行为改由脚本 llBack 通过 addEventListener 绑定（见页面底部 IIFE，含选型理由）。 -->
+<button class="ll-back" id="llBack" type="button" title="返回" aria-label="返回" data-page-node-id="zXkaBsjbxPc2K4y7u7P54o"><span data-icon="arrow-left" data-icon-size="18" style="line-height:1" data-page-node-id="rc1ATE1KTBLHlqNo5P0NV2">&#8592;</span></button>
 <!-- 对方昵称胶囊（chat-local.js 跳转携带 name 参数，缺省显示「对方」） -->
 <div class="ll-name" id="llName" data-page-node-id="LkpiuDXDn8N6f4qowNJ1Gr">对方</div>
 <div class="ll-loading" id="llLoading" data-page-node-id="RFEZJ2OK7NF6yhXVGiZfWD">
@@ -183,6 +190,13 @@
   var NATIVE_HEARTBEAT_MS = 30000;  // 原生心跳 30s 内视为「原生服务存活」，web 侧不兜底
   var TICK_MIN_GAP_MS = 15000;      // 距上次上报 ≥15s 才再报（镜像原生节流）
   var TICK_MIN_DIST_M = 30;         // 位移 >30m 才再报
+
+  /* ===== R149 状态（精度圈 / 低精度首屏 / 底栏低精度提示）=====
+     accLayer 与 markers/linkLayer 分离：精度圈整体挂在独立图层组，重绘时整组替换，绝不误伤 marker。 */
+  var LOW_ACC_M = 100;              // 精度阈值（米）：> 此值视为「低精度」，不参与首次取景
+  var myAcc = null;                 // 本人最近一轮会话的定位精度（米；null = 未知或够准）
+  var accLayer = null;              // 精度圈（L.circle）图层组
+  var accSig = '';                  // 上一轮精度圈签名 → 未变则跳过重建（防闪屏）
 
   /* ===== R3·L2：进页自动「加入共享」（微信式点进即加入）=====
      根因：旧版 live-location.html 从不调 /api/live/start，接收方只围观、不上报自己 → 双方各看各的。
@@ -329,21 +343,31 @@
   }
 
   /* 底部状态胶囊（微信同款三态）：正在获取位置… → 实时共享中 → 对方已结束共享/位置已失效 */
-  function setBar(html, staleCls) {
+  function setBar(html, staleCls, extraCls) {
     var bar = $('llBar');
     if (!bar) return;
-    bar.className = 'll-bar' + (staleCls ? ' stale' : '');
+    bar.className = 'll-bar' + (staleCls ? ' stale' : '') + (extraCls ? ' ' + extraCls : '');
     bar.innerHTML = html;
   }
 
   function updateBar() {
     /* 权限拒绝提示持续追加（不影响继续轮询观看对方坐标） */
     var hint = ownTick.denied ? '（未授权，对方看不到你的位置）' : '';
-    if (stale) setBar('<span class="ll-bdot"></span><span>位置已失效</span>' + hint, true);
-    else setBar('<span class="ll-bdot"></span><span>实时共享中</span>' + hint);
+    /* R149：本人定位精度已知且 > LOW_ACC_M → 追加低精度提示（琥珀色小圆点 + 文案） */
+    var low = (myAcc !== null && myAcc > LOW_ACC_M);
+    var acc = low ? ' · 定位精度 ±' + Math.round(myAcc) + ' 米' : '';
+    var cls = low ? 'lowacc' : '';
+    if (stale) setBar('<span class="ll-bdot"></span><span>位置已失效</span>' + hint + acc, true, cls);
+    else setBar('<span class="ll-bdot"></span><span>实时共享中</span>' + hint + acc, false, cls);
   }
 
-  /* 腾讯栅格瓦片图层（覆写 getTileUrl 翻转 y，子域 rt0/1/2，照抄 xt-region.js _makeTencentTileLayer） */
+  /* R149 高清屏瓦片开关：true → 请求 z+1 瓦片并把 tileSize 减半渲染 → 像素密度翻倍（道路/地名更锐）。
+     若真机发现瓦片异常 / 请求量过大，改 false 即一键回到 1 倍瓦片。 */
+  var RETINA_TILES = true;
+
+  /* 腾讯栅格瓦片图层（覆写 getTileUrl 翻转 y，子域 rt0/1/2，照抄 xt-region.js _makeTencentTileLayer）
+     R149：加 detectRetina —— Leaflet 1.x 在 Browser.retina 为真时自动 tileSize/=2、zoomOffset++、maxZoom--，
+     即请求 z+1 瓦片渲染到一半 CSS 尺寸；getTileUrl 里的 z 走 _getZoomForUrl() 已含 zoomOffset（z 仍 ≤ 18，不 404）。 */
   function makeTencentTileLayer() {
     var Cls = L.TileLayer.extend({
       getTileUrl: function (coords) {
@@ -355,11 +379,15 @@
           '&type=vector&style=0&key=' + encodeURIComponent(TENCENT_KEY);
       }
     });
-    return new Cls('', { subdomains: '012', minZoom: 3, maxZoom: 18, maxNativeZoom: 18 });
+    return new Cls('', { subdomains: '012', minZoom: 3, maxZoom: 18, maxNativeZoom: 18, detectRetina: RETINA_TILES });
   }
 
   function initMap() {
-    map = L.map('llMap', { zoomControl: true, attributionControl: false }).setView([39.9042, 116.4074], 16);
+    /* R146：Leaflet 默认缩放控件挂在左上（.leaflet-top 有 top:0），与左上返回键 .ll-back 直接重叠。
+       关闭默认控件，改挂到右上（配合样式 .leaflet-top.leaflet-right .leaflet-control 躲开状态栏），
+       与右下导航键 .ll-nav 分属不同角、互不遮挡。地图其余行为（setView/marker/fitBounds）不受影响。 */
+    map = L.map('llMap', { zoomControl: false, attributionControl: false }).setView([39.9042, 116.4074], 16);
+    L.control.zoom({ position: 'topright' }).addTo(map);
     makeTencentTileLayer().addTo(map);
   }
 
@@ -405,6 +433,7 @@
   }
 
   function onState(d) {
+    myAcc = null;   // R149：每轮重置，仅当本轮存在本人会话时由下方 isSelf 分支赋回
     var list = (d && Array.isArray(d.sessions)) ? d.sessions : null;
     /* 无活动共享（含 sessions 空数组）且已打过点 → 判定结束；还没打点 → 继续等待。
        R3·L2：本页若已自动加入（joined），且本人会话仍在 sessions 里 → 不判结束（自己还在共享，
@@ -439,8 +468,10 @@
     /* 双（多）marker 渲染：hasFix:true 且坐标有限才画，未就绪的会话跳过——绝不出现 (0,0) */
     var seen = {};
     var anyFix = false, anyUnstale = false;
-    var bounds = null;
-    var pts = [];   // R144：本论有效位置点（身份 + 名称 + 头像 + 坐标），供连线/距离/导航复用
+    var bounds = null;            // 全量点包围盒（兜底取景用）
+    var camBounds = null;         // R149：仅「精确点」包围盒（首次取景用）
+    var bestPt = null;            // R149：精度最好的一点（无精确点时的兜底取景）
+    var pts = [];   // R144：本论有效位置点（身份 + 名称 + 头像 + 坐标 + 精度），供连线/距离/导航复用
     for (i = 0; i < items.length; i++) {
       s = items[i] || {};
       var lat = num(s.lat), lng = num(s.lng);
@@ -451,6 +482,10 @@
       if (!s.stale) anyUnstale = true;
       var isSelf = (myId > 0 && sid === String(myId));
       if (!isSelf) otherActive = true;   // 有非本人的共享方上屏（对方/群成员）
+      /* R149 精度：acc 单位米，可能为 null / 缺省 = 未知；用 num() 判空（禁用 Number(null)） */
+      var accNum = num(s.acc);
+      var acc = (isFinite(accNum) && accNum > 0) ? accNum : null;
+      if (isSelf) myAcc = acc;           // 本人精度存模块级状态，供底栏低精度提示
       var nm, av;
       if (isSelf) { nm = myName || '我'; av = myAvatar; }
       else if (qPeer) { nm = qName || '对方'; av = qAvatar; }   // 私聊对方：沿用 URL 参数
@@ -461,7 +496,13 @@
       else mk.setLatLng(ll);
       if (!bounds) bounds = L.latLngBounds(ll, ll);
       else bounds.extend(ll);
-      pts.push({ id: sid, name: nm, avatar: av, lat: lat, lng: lng, isSelf: isSelf });   // R144
+      /* R149：只有「精确点」（acc 未知或 ≤ LOW_ACC_M）参与首次取景；顺便记录全场精度最好的一点 */
+      if (acc === null || acc <= LOW_ACC_M) {
+        if (!camBounds) camBounds = L.latLngBounds(ll, ll);
+        else camBounds.extend(ll);
+      }
+      if (acc !== null && (bestPt === null || acc < bestPt.acc)) bestPt = { lat: lat, lng: lng, acc: acc };
+      pts.push({ id: sid, name: nm, avatar: av, lat: lat, lng: lng, isSelf: isSelf, acc: acc });   // R144/R149
     }
     /* 移除消失者：上一轮在、本轮没有（或 hasFix 变 false）→ 摘 marker（覆盖单方停止的半结束态） */
     for (var k in markers) {
@@ -472,6 +513,8 @@
     }
     /* R144：重算多点连线与点间直线距离（有效点 <2 → 内部自动清空连线层并收起导航按钮） */
     renderLinks(pts);
+    /* R149：重画精度圈（对所有带 acc 的点；本人 >100m 时底栏另有低精度提示）。无带精度点 → 内部清空 */
+    renderAcc(pts);
     if (!anyFix) {
       /* 有会话但无一就绪：保持「正在获取位置…」占位（原生首报 / web 兜底首报前） */
       if (!revealed) showLoading('正在获取位置…');
@@ -485,10 +528,18 @@
     if (!revealed) {
       revealed = true;
       hideLoading();
-      /* 首次 reveal 视角：≥2 个 marker 用 fitBounds，单个 setView；此后不再每次轮询强制居中 */
-      if (Object.keys(markers).length >= 2) {
-        map.fitBounds(bounds, { maxZoom: 16, padding: [40, 40] });
-      } else {
+      /* R149 首次取景规则（避免低精度首点把镜头拉飞）：
+         ① 有 ≥2 个「精确点」（acc 未知或 ≤ LOW_ACC_M）→ fitBounds(精确点包围盒)（≥2 marker 语义不变）；
+         ② 仅 1 个精确点 → setView 到它（沿用原「单点不改层级」语义）；
+         ③ 一个精确点都没有 → 取精度最好的一点，用较低层级 13 取景（精度圈装得下、看起来不飘）；
+         ④ 兜底：全量包围盒中心 + 当前层级。此后不再每次轮询强制居中。 */
+      if (camBounds && Object.keys(markers).length >= 2) {
+        map.fitBounds(camBounds, { maxZoom: 16, padding: [40, 40] });
+      } else if (camBounds) {
+        map.setView(camBounds.getCenter(), map.getZoom());
+      } else if (bestPt) {
+        map.setView([bestPt.lat, bestPt.lng], 13);
+      } else if (bounds) {
         map.setView(bounds.getCenter(), map.getZoom());
       }
     }
@@ -534,6 +585,8 @@
      上报节流（镜像原生参数，防刷）：首次 fix 立即上报一次；此后位移 >30m 或距上次 ≥15s 才 POST /api/live/tick。
      tick 403（会话已结束/过期）→ 停兜底；网络失败静默；自己的会话从 sessions 消失 → 停兜底。
      查看别人共享 / 群聊未发起者 / 原生壳内 → 不启用。 */
+  /* ⚠️ 契约（R149）：json 里的坐标是**原生已转好的 GCJ-02**，本页**不得再转**；此处刻意只记心跳时间戳、
+     不消费 json 里的任何坐标（保持既有性质）——避免与服务端 GCJ-02 口径重复转换造成二次偏移。 */
   window.__onLocationUpdate = function (json) {
     try {
       nativePushAt = Date.now();
@@ -550,6 +603,50 @@
     var a = Math.sin(dLa / 2) * Math.sin(dLa / 2) +
             Math.cos(la1 * rad) * Math.cos(la2 * rad) * Math.sin(dLo / 2) * Math.sin(dLo / 2);
     return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  /* ===================== R149：坐标系契约（WGS-84 → GCJ-02） =====================
+     🔴 三端分工（务必照此，谁都不许多转一次、也不许漏转）：
+       ① 采集端：把设备原始 WGS-84 **转成 GCJ-02 且只转一次** —— 原生 LocationShareService 负责上报自己；
+          本页 JS 兜底采集（startOwnTick 的 watchPosition）也要在**上报前**转一次。
+       ② 服务端：全站统一 GCJ-02 口径，/api/live/state 下发的 sessions[].lat/lng **已是 GCJ-02**。
+       ③ 渲染端（本页）：对服务端下发的坐标**绝不再做任何转换**，直接画到腾讯矢量瓦片上
+          （瓦片与高德均为 GCJ-02 口径，直接可用；亦不做 BD-09 转换）。
+     ⚠️ window.__onLocationUpdate(json) 收到的是**原生已转好的 GCJ-02**（原生在同批改动中转换），
+        本页拿到它时**绝对不能再转**，且该函数保持「只记心跳时间戳、不消费坐标」的性质。
+     三份实现（本页 JS / android CoordTransform.java / server liveloc.py）常量必须逐字一致，
+     由 tools/_r149_coord_equiv.py 把关（跨语言逐点等价校验）。 */
+  function outOfChina(lat, lng) {
+    return (lng < 72.004 || lng > 137.8347 || lat < 0.8293 || lat > 55.8271);
+  }
+  function transformLat(x, y) {
+    var r = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x));
+    r += (20.0 * Math.sin(6.0 * x * Math.PI) + 20.0 * Math.sin(2.0 * x * Math.PI)) * 2.0 / 3.0;
+    r += (20.0 * Math.sin(y * Math.PI) + 40.0 * Math.sin(y / 3.0 * Math.PI)) * 2.0 / 3.0;
+    r += (160.0 * Math.sin(y / 12.0 * Math.PI) + 320 * Math.sin(y * Math.PI / 30.0)) * 2.0 / 3.0;
+    return r;
+  }
+  function transformLng(x, y) {
+    var r = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x));
+    r += (20.0 * Math.sin(6.0 * x * Math.PI) + 20.0 * Math.sin(2.0 * x * Math.PI)) * 2.0 / 3.0;
+    r += (20.0 * Math.sin(x * Math.PI) + 40.0 * Math.sin(x / 3.0 * Math.PI)) * 2.0 / 3.0;
+    r += (150.0 * Math.sin(x / 12.0 * Math.PI) + 300.0 * Math.sin(x / 30.0 * Math.PI)) * 2.0 / 3.0;
+    return r;
+  }
+  /* 返回 [lat, lng]；境外不转（原样返回）；任何异常原样返回，绝不抛。 */
+  function wgs84ToGcj02(lat, lng) {
+    try {
+      if (!isFinite(lat) || !isFinite(lng) || outOfChina(lat, lng)) return [lat, lng];
+      var dLat = transformLat(lng - 105.0, lat - 35.0);
+      var dLng = transformLng(lng - 105.0, lat - 35.0);
+      var radLat = lat / 180.0 * Math.PI;
+      var magic = Math.sin(radLat);
+      magic = 1 - 0.00669342162296594323 * magic * magic;
+      var sqrtMagic = Math.sqrt(magic);
+      dLat = (dLat * 180.0) / ((6378245.0 * (1 - 0.00669342162296594323)) / (magic * sqrtMagic) * Math.PI);
+      dLng = (dLng * 180.0) / (6378245.0 / sqrtMagic * Math.cos(radLat) * Math.PI);
+      return [lat + dLat, lng + dLng];
+    } catch (e) { return [lat, lng]; }
   }
 
   /* ===================== R144：多点连线 / 点间直线距离 / 导航入口 =====================
@@ -626,6 +723,12 @@
       try { map.removeLayer(linkLayer); } catch (e) { /* 地图可能未初始化 */ }
       linkLayer = null;
     }
+    /* R149：连线清空时精度圈一并清空（共享结束 / 无有效点） */
+    if (accLayer) {
+      try { map.removeLayer(accLayer); } catch (e) { /* 地图可能未初始化 */ }
+      accLayer = null;
+    }
+    accSig = '';
     linkSig = '';
     lastPts = [];
     var nb = $('llNav');
@@ -677,6 +780,36 @@
         icon: llDistIcon(n + ' 人 · 最远 ' + fmtDist(mx) + ' · 最近 ' + fmtDist(mn), 'sum'),
         interactive: false, zIndexOffset: 400
       }).addTo(linkLayer);
+    }
+  }
+
+  /* R149 精度圈：对每个 acc != null 的有效点画一个半径 = acc(米) 的圆。
+     有意做成「所有带精度的点都画」的超集（用户只要求本人，但同一段代码、对群聊他人同样有用）；
+     用 accSig 比对，几何/精度未变则跳过重建（防闪屏）；无带精度点 → 清空图层。 */
+  function renderAcc(pts) {
+    if (!map) return;
+    var arr = pts || [];
+    var parts = [];
+    var i, p;
+    for (i = 0; i < arr.length; i++) {
+      p = arr[i];
+      if (p && p.acc != null) {
+        parts.push(p.id + ':' + p.lat.toFixed(6) + ',' + p.lng.toFixed(6) + ':' + Math.round(p.acc));
+      }
+    }
+    var sig = parts.join('|');
+    if (sig === accSig && accLayer) return;      // 未变 → 不重建
+    accSig = sig;
+    if (accLayer) { try { map.removeLayer(accLayer); } catch (e) { /* noop */ } accLayer = null; }
+    if (!sig) return;                            // 无带精度点 → 已清空
+    accLayer = L.layerGroup().addTo(map);
+    for (i = 0; i < arr.length; i++) {
+      p = arr[i];
+      if (!p || p.acc == null) continue;
+      L.circle([p.lat, p.lng], {
+        radius: p.acc, color: '#5B8DEF', weight: 1, opacity: 0.45,
+        fillColor: '#5B8DEF', fillOpacity: 0.10, interactive: false
+      }).addTo(accLayer);
     }
   }
 
@@ -806,6 +939,28 @@
     sh.addEventListener('click', sheetDelegate);
   }
 
+  /* ===== R146：返回键行为 =====
+     替代原 inline onclick（其属性值内含 '>'，被可视化编辑器的标签解析劈开 → 余下代码变正文被渲染）。
+     采用「按参数显式回上级页」，不再走 history.back()（项目反乒乓约定 + 下列事实）：
+       · 本页唯一入口是 chat-local.js imLiveViewUrl（会话内「查看」），上级页恒为 私聊.html；
+       · 目标旧内核 WebView(≈Chrome58) 无 bfcache，back 会重新解析 私聊.html，
+         而会话上下文 window.currentChatUserId 只在内存、不持久化 → 会退回会话列表、丢失上下文；
+       · 故按本页入口参数 peerId / groupId 拼 私聊.html?uid= / ?gid=
+         （私聊.html maybeAutoOpenChat 读 ?uid= 私聊 / ?gid= 群聊，据此重开原会话），
+         并用 location.replace 就地替换历史项，避免「地图 ↔ 私聊」来回乒乓。 */
+  function llBack() {
+    var url = '私聊.html';
+    if (qPeer) url += '?uid=' + encodeURIComponent(qPeer) + (qName ? '&name=' + encodeURIComponent(qName) : '');
+    else if (qGroup) url += '?gid=' + encodeURIComponent(qGroup) + (qName ? '&name=' + encodeURIComponent(qName) : '');
+    try { location.replace(url); } catch (e) { location.href = url; }
+  }
+  /* 返回键绑定（脚本位于 body 末尾、按钮已在 DOM；loading 时兜底到 DOMContentLoaded） */
+  function bindBackUi() { var b = $('llBack'); if (b) b.addEventListener('click', llBack); }
+  function bindBackOnReady() {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindBackUi);
+    else bindBackUi();
+  }
+
   function syncOwnTick(list) {
     if (ended || !Array.isArray(list) || !(myId > 0)) { stopOwnTick(); return; }
     var own = null;
@@ -831,6 +986,14 @@
       if (!pos || !pos.coords) return;
       var lat = pos.coords.latitude, lng = pos.coords.longitude;
       if (typeof lat !== 'number' || typeof lng !== 'number' || !isFinite(lat) || !isFinite(lng)) return;
+      /* 🔴 R149：watchPosition 给的是设备原始 WGS-84 —— 上报前转成 GCJ-02（本页唯一需要转换的地方，
+         且只转一次）；服务端下发的一律已是 GCJ-02，此处绝不涉及。节流比较与 POST body 都用转换后的值
+         （同一坐标系比较，否则首个节流窗口会误判）。 */
+      var g = wgs84ToGcj02(lat, lng);
+      lat = g[0]; lng = g[1];
+      if (!isFinite(lat) || !isFinite(lng)) return;
+      var acc = (pos.coords && typeof pos.coords.accuracy === 'number' && isFinite(pos.coords.accuracy))
+        ? pos.coords.accuracy : null;
       var now = Date.now();
       var first = (ownTick.lastTs === 0);             // 首次 fix 立即上报一次
       var moved = (ownTick.lastLat !== null &&
@@ -841,7 +1004,9 @@
       fetch(apiBase() + '/api/live/tick', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + tok(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ shareId: ownTick.shareId, lat: lat, lng: lng })
+        /* coord:'gcj02' 是给服务端的口径标记：服务端对「没带该标记的旧客户端」按 WGS-84 兜底归一化，
+           带了就原样存。必须带，否则会被重复归一化。acc 为该 fix 的水平精度（米，取不到则 null）。 */
+        body: JSON.stringify({ shareId: ownTick.shareId, lat: lat, lng: lng, acc: acc, coord: 'gcj02' })
       }).then(function (r) {
         if (r.status === 403) {                       // 会话已结束/过期 → 停兜底，不再重试
           ownTick.ended = true;
@@ -896,6 +1061,10 @@
     if (document.visibilityState === 'hidden' && joined) leaveAndStop();
   });
 
+  /* R146：返回键绑定独立于地图/登录/token —— 与原生 inline onclick 的可用性对齐：
+     即便地图初始化失败或未登录，返回键也必须可点。 */
+  bindBackOnReady();
+
   /* ===== jsdom 验收入口（沿用 assets/chat-local.js 的 __IM_TEST__ 惯例）=====
      浏览器内为只读调试句柄，不改变任何运行行为；jsdom 用它把页面私有状态喂进断言。 */
   window.__LL_TEST__ = {
@@ -904,13 +1073,18 @@
       get lastPts() { return lastPts; },
       get linkSig() { return linkSig; },
       get navOriginId() { return navOriginId; },
-      set navOriginId(v) { navOriginId = v; }
+      set navOriginId(v) { navOriginId = v; },
+      get myAcc() { return myAcc; },
+      get accLayer() { return accLayer; }
     },
-    onState: onState, renderLinks: renderLinks, clearLinks: clearLinks,
+    onState: onState, renderLinks: renderLinks, clearLinks: clearLinks, renderAcc: renderAcc,
     stableOrderPts: stableOrderPts, fmtDist: fmtDist, haversineM: haversineM,
     navUrlFor: navUrlFor, llStartNav: llStartNav, llCopyCoord: llCopyCoord,
     openSheet: openSheet, closeSheet: closeSheet, buildSheet: buildSheet,
-    ptById: ptById, escHtml: escHtml, llAvatarIcon: llAvatarIcon
+    ptById: ptById, escHtml: escHtml, llAvatarIcon: llAvatarIcon,
+    llBack: llBack, bindBackUi: bindBackUi,
+    wgs84ToGcj02: wgs84ToGcj02, outOfChina: outOfChina, transformLat: transformLat, transformLng: transformLng,
+    startOwnTick: startOwnTick, stopOwnTick: stopOwnTick, updateBar: updateBar, LOW_ACC_M: LOW_ACC_M
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

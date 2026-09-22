@@ -19,6 +19,10 @@
   .morepage-list .morepage-card .mpc-title { flex: 1 1 auto; min-width: 0; }
   .morepage-list .morepage-card .mpc-desc { flex: 1 1 100%; min-width: 0; margin-top: 2px; }
 }
+/* ===== R148 需求A：更多页「检测更新」有新版本时亮红点 ===== */
+.mpc-reddot{position:absolute;top:-2px;right:-2px;width:9px;height:9px;border-radius:50%;
+  background:#F43F35;border:1.5px solid #fff;box-sizing:content-box;z-index:2;}
+.mpc-reddot[hidden]{display:none;}
 </style>
 </head>
 <body class="theme-home">
@@ -151,7 +155,7 @@
           </div>
           <!-- R88-G（R88-M2）：检测更新入口。版本号由 assets/xt-update.js 写回 #xtMoreUpdateVer。 -->
           <div class="morepage-card morepage-list-item" id="morepageUpdateCard" onclick="XTUpdate.openUpdatePage()">
-            <div class="mpc-icon"><span class="nav-icon" data-icon="download" data-icon-size="20"></span></div>
+            <div class="mpc-icon" style="position:relative"><span class="nav-icon" data-icon="download" data-icon-size="20"></span><span class="mpc-reddot" id="moreUpdateDot" hidden></span></div>
             <div class="mpc-title">检测更新</div>
             <div class="mpc-desc" id="xtMoreUpdateVer">当前版本 v— · 查看是否有新版本</div>
           </div>
@@ -300,7 +304,7 @@
 <script src="assets/app.js?v=20260925a" defer></script>
 <script src="assets/quest.js?v=20260916O" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/xt-update.js?v=20260926a" defer></script>
+<script src="assets/xt-update.js?v=20260928a" defer></script>
 <script src="assets/api.js?v=20260924a" defer></script>
 <script src="assets/admin.js?v=20260916O" defer></script>
 <script src="assets/study-stats.js?v=20260916O" defer></script>

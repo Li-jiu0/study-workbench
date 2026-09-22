@@ -3840,6 +3840,7 @@
 
   window.imDoSearch = function () {
     var inp = $id('imSearch');
+    if (!inp) return;   // 【需求C】顶部找人搜索行已移除；本函数保留仅作兼容/外部调用入口
     var keyword = (inp.value || '').trim().toLowerCase();
     if (!keyword) { loadChats(); return; }
     var box = $id('imList');
@@ -6364,7 +6365,14 @@
      方案：优先用 viewport meta interactive-widget=resizes-content（现代 WebView）；
      对老 WebView 再叠一层 visualViewport 监听，动态为聊天容器添加
      键盘高度避让。全 ES5、全 try/catch，异常绝不影响页面。
-     仅在手机聊天态（body.im-mobile 且视口宽<=760）生效，桌面双栏零影响。 */
+     仅在手机聊天态（body.im-mobile 且视口宽<=760）生效，桌面双栏零影响。
+
+     【R147 职责划分】新壳（MainActivity API30+）已自行消费 IME inset：调矮 WebView 真实高度
+     并注入 documentElement[data-xt-kb="native"] + --xt-vh。此时本兜底必须停用
+     （见 imKbNativeHandled）：原生把窗口/视口调矮后，顶部栏自然留在屏内，H5 无需也不应再补偿。
+     仅当该标记缺失（老壳 / 手机浏览器）时，才回落到下方 visualViewport 兜底 —— 老组合不回归。
+     注意：data-xt-kb 仅在 API30+ 下发（API<30 仍靠 adjustResize，原生不做 IME 补偿，
+     故不得宣称「已接管」）。 */
   var _kbBound = false;
   function imKbEdgeActive() {
     try {
@@ -6372,10 +6380,24 @@
       return document.body && document.body.className.indexOf('im-mobile') >= 0;
     } catch (e) { return false; }
   }
+  /* R147：原生（新壳）是否已接管键盘避让。
+     标记由 MainActivity 在 API30+ edge-to-edge 下注入：documentElement[data-xt-kb="native"]
+     （同批还注入 --xt-vh=真实可视高；API<30 不下发该标记）。
+     命中时本文件的 visualViewport 兜底必须【停用】，否则与原生补偿叠加 → 二次补偿。
+     标记缺失（老壳 / 手机浏览器 / API<30）→ 返回 false，继续走旧逻辑，保证老组合不回归。 */
+  function imKbNativeHandled() {
+    try {
+      var d = document.documentElement;
+      return !!(d && d.getAttribute && d.getAttribute('data-xt-kb') === 'native');
+    } catch (e) { return false; }
+  }
   function imKbApply() {
     try {
       var conv = document.getElementById('imConv');
       if (!conv) return;
+      /* R147：原生已接管（新壳 API30+）→ 清掉本兜底遗留的内联尺寸并退出，交由原生调矮 WebView 处理，
+         避免与原生补偿叠加成“二次补偿”。标记缺失时继续走下方旧逻辑。 */
+      if (imKbNativeHandled()) { conv.style.paddingBottom = ''; conv.style.height = ''; return; }
       var vv = window.visualViewport;
       if (!vv || !imKbEdgeActive()) { conv.style.paddingBottom = ''; conv.style.height = ''; return; }
       var layoutH = window.innerHeight || 0;      // 布局视口高（不受键盘影响）

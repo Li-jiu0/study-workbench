@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#5B8DEF">
+<title>应用白名单 · 星途</title>
+<link rel="stylesheet" href="assets/common.css?v=20260923c">
+<link rel="stylesheet" href="assets/page-head.css?v=20260922a">
+<link rel="stylesheet" href="assets/states.css?v=20260922a">
+<link rel="stylesheet" href="assets/polish.css?v=20260922a">
+<script src="assets/xt-polyfill.js?v=20260922a"></script>
+<script>window.__XT_PROD__=true;</script>
+<style>
+/* ==================== 应用白名单页局部样式（需求D · 2026-09-28） ====================
+   独立子页（无 [data-subpage]），形态对齐 数据管理.html：
+   顶部说明卡（含「仅保存在本机，不会上传」显眼提示）+ 工具行（搜索 / 系统应用开关 / 已选计数）
+   + 应用列表（首字圆形头像 + 应用名 + 包名 + 右侧勾选）+ 底部操作（全选当前筛选 / 清空）。
+   样式全部走 common.css 既有令牌，深浅色由 body.dark 自动适配；移动优先，桌面 max-width 480px 居中。 */
+.al-wrap{max-width:480px;margin:0 auto;padding-bottom:28px;}
+.al-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:14px}
+/* 顶部说明卡 */
+.al-intro-title{font-size:15px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px}
+.al-intro-desc{font-size:12.5px;color:var(--text-secondary);line-height:1.7;margin-top:8px}
+.al-privacy{display:flex;align-items:center;gap:6px;margin-top:12px;padding:9px 12px;border-radius:10px;
+  background:rgba(91,141,239,.10);color:#5B8DEF;font-size:12.5px;font-weight:600;line-height:1.5}
+.al-privacy .nav-icon{flex-shrink:0}
+/* 工具行 */
+.al-tools{padding:12px 14px}
+.al-search{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);
+  border-radius:10px;padding:8px 12px;color:var(--text-secondary)}
+.al-search-input{flex:1;min-width:0;border:none;outline:none;background:transparent;color:var(--text);
+  font-size:14px;font-family:inherit}
+.al-search-input::placeholder{color:var(--text-muted)}
+.al-tools-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
+.al-count{font-size:12.5px;color:var(--text-secondary);flex-shrink:0;font-variant-numeric:tabular-nums}
+.al-count.on{color:var(--primary);font-weight:700}
+/* 应用列表 */
+.al-list{padding:2px 0}
+.al-item{display:flex;align-items:center;gap:12px;padding:11px 2px;border-bottom:1px solid var(--border);
+  cursor:pointer;-webkit-tap-highlight-color:transparent}
+.al-item:last-child{border-bottom:none}
+.al-av{width:38px;height:38px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-size:16px;font-weight:700}
+.al-main{flex:1;min-width:0}
+.al-name{font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.al-pkg{font-size:11.5px;color:var(--text-secondary);margin-top:2px;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis}
+.al-sys{display:inline-block;margin-left:6px;padding:0 6px;border-radius:6px;font-size:10.5px;
+  background:rgba(91,141,239,.14);color:#5B8DEF}
+.al-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;line-height:1;
+  transition:all .15s ease}
+.al-check.on{background:var(--primary);border-color:var(--primary)}
+/* 底部操作 */
+.al-actions{display:flex;gap:10px;margin-top:14px}
+.al-actions .btn{flex:1;padding:10px 8px;font-size:var(--xt-font-sm,13px)}
+.al-foot{font-size:11.5px;color:var(--text-muted);line-height:1.7;margin-top:12px;padding:0 2px}
+@media (max-width:380px){
+  .al-card{padding:13px 12px}
+  .al-av{width:34px;height:34px;font-size:15px}
+}
+</style>
+</head>
+<body class="theme-home">
+
+<div class="app">
+<nav class="sidebar">
+    <div class="logo">
+      <div class="logo-icon" data-icon="book-open"></div>
+      <div>
+        <div class="logo-text">星途</div>
+        <div class="logo-sub">致追梦的人->修身</div>
+      </div>
+    </div>
+</nav>
+
+  <div class="main">
+<header class="topbar">
+      <div class="topbar-title">应用白名单</div>
+      <div class="topbar-date"></div>
+      <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="18"></span></div>
+    </header>
+    <div class="content">
+      <div class="page active" id="page-applist">
+        <!-- 显式回上级页（全站禁用 history.back，防历史栈乒乓死循环）：入口以 ?from= 传入上级页
+             （白名单校验，缺省回设置页），与 数据管理.html 的 dmBack() 同款写法。 -->
+        <div class="morepage-head">
+          <button class="morepage-back" onclick="alBack()" title="返回" aria-label="返回">←</button>
+          <div class="morepage-title"><span class="nav-icon" data-icon="shield" data-icon-size="18"></span> 应用白名单</div>
+        </div>
+
+        <div class="al-wrap">
+          <!-- ① 顶部说明卡（含「仅保存在本机，不会上传」显眼提示） -->
+          <div class="al-card al-intro">
+            <div class="al-intro-title"><span class="nav-icon" data-icon="smartphone" data-icon-size="16"></span> 选择你要管理的应用</div>
+            <div class="al-intro-desc">读取本机「已安装应用列表」，勾选你要纳入白名单管理的应用。应用名与包名仅用于本页展示与你手动勾选。</div>
+            <div class="al-privacy"><span class="nav-icon" data-icon="locked" data-icon-size="15"></span> 仅保存在本机，不会上传服务器</div>
+          </div>
+
+          <!-- ② 工具行：搜索（本地过滤）+ 系统应用开关 + 已选计数 -->
+          <div class="al-card al-tools">
+            <div class="al-search">
+              <span class="nav-icon" data-icon="search" data-icon-size="16"></span>
+              <input id="alSearch" class="al-search-input" type="text" placeholder="搜索应用名或包名" autocomplete="off" spellcheck="false" aria-label="搜索应用">
+            </div>
+            <div class="al-tools-row">
+              <button id="alSysToggle" class="theme-option" type="button" aria-pressed="false"><span class="nav-icon" data-icon="check" data-icon-size="13"></span> 显示系统应用</button>
+              <span id="alCount" class="al-count">已选 0 个</span>
+            </div>
+          </div>
+
+          <!-- ③ 应用列表（点击整行切换勾选） -->
+          <div class="al-card" style="padding:4px 14px">
+            <div class="al-list" id="alList"></div>
+          </div>
+
+          <!-- ④ 底部操作：全选当前筛选结果 / 清空（清空二次确认） -->
+          <div class="al-actions">
+            <button id="alSelectAll" class="btn btn-outline" type="button"><span class="nav-icon" data-icon="check" data-icon-size="14"></span> 全选当前筛选结果</button>
+            <button id="alClear" class="btn btn-outline" type="button"><span class="nav-icon" data-icon="trash" data-icon-size="14"></span> 清空</button>
+          </div>
+          <div class="al-foot">勾选结果仅保存在你设备的本机存储中（localStorage），不会上传服务器，也不用于任何分析、画像或广告；你可随时清空，卸载 App 即随之删除。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部导航（手机端）：首页 → 互动 → 我的 → AI → 更多 -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-list">
+      <div class="bottom-nav-item" onclick="location.href='学习工作台.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="home" data-icon-size="20"></span></div><div class="bn-label">首页</div>
+      </div>
+      <div class="bottom-nav-item" onclick="gotoChat()">
+        <div class="bn-icon"><span class="nav-icon" data-icon="message-circle" data-icon-size="20"></span></div><div class="bn-label">互动</div>
+      </div>
+      <div class="bottom-nav-item" onclick="location.href='个人中心.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="user" data-icon-size="20"></span></div><div class="bn-label">我的</div>
+      </div>
+      <div class="bottom-nav-item" onclick="location.href='AI.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="sparkles" data-icon-size="20"></span></div><div class="bn-label">AI</div>
+      </div>
+      <div class="bottom-nav-item" onclick="location.href='更多.html'">
+        <div class="bn-icon"><span class="nav-icon" data-icon="menu" data-icon-size="20"></span></div><div class="bn-label">更多</div>
+      </div>
+    </div>
+  </nav>
+</div>
+
+<script src="assets/icon-map.js?v=20260923a" defer></script>
+<script src="assets/xt-toast.js?v=20260923a" defer></script>
+<script src="assets/error-boundary.js?v=20260924a" defer></script>
+<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/xt-applist.js?v=20260928a" defer></script>
+</body>
+</html>

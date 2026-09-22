@@ -42,11 +42,21 @@ import java.util.concurrent.Executors;
  *   故新建独立服务（lead 决策）。
  *
  * 契约（见 _r104e_contract.txt §3 / §5）：
- *   · POST /api/live/tick  body {"shareId":..,"lat":..,"lng":..}  → {ok}   （字段名逐字照契约）
+ *   · POST /api/live/tick  body {"shareId":..,"lat":..,"lng":..,"acc":..,"coord":"gcj02"} → {ok}
  *   · 上报节流：位移 > 30m 或 距上次上报 ≥ 15s 才发一次；首次定位立刻上报
  *   · 共享期间持 PARTIAL_WAKE_LOCK；401/403 自动停服；网络异常不停服但指数退避
- *   · 定位参数：enableHighAccuracy（由 provider 选择体现）、minTime=5000ms、minDistance=0f
- *   · provider 优先 GPS，退 NETWORK；由可见 Activity 点按发起，【不申请】ACCESS_BACKGROUND_LOCATION
+ *   · 定位参数：minTime=5000ms（GPS）/ 15000ms（网络）、minDistance=0f
+ *   · provider：**同时监听 GPS_PROVIDER 与 NETWORK_PROVIDER**，在 onLocationChanged 里
+ *     按 accuracy + 新鲜度取最优（带滞回，防 GPS/网络来回抖）；由可见 Activity 点按发起，
+ *     【不申请】ACCESS_BACKGROUND_LOCATION
+ *
+ * 🔴 坐标口径（本服务是全链路唯一的坐标转换点）：
+ *   · 安卓 LocationManager（GPS / 网络）返回的是 **WGS-84** 原始坐标，而本 App 的底图
+ *     （腾讯 GCJ-02 瓦片）与导航（高德 coordinate=gaode）都按 GCJ-02 解释，不转换会在国内
+ *     产生几十~几百米的系统性固定偏移；故本服务在 onLocationChanged 里借
+ *     CoordTransform 把 WGS-84 **转一次**成 GCJ-02；
+ *   · 下游（doTick / buildTickBody / pushToJs / 服务端 / 所有渲染端）一律只处理 GCJ-02，
+ *     **绝不在下游再转**（防双重偏移）；tick body 带 coord:"gcj02" 显式声明口径。
  *
  * 隐私 / 安全：
  *   · base / token 一律从既有 SharedPreferences（xt_notify_prefs 的 api_base / token）读取，绝不硬编码；
@@ -82,6 +92,13 @@ public class LocationShareService extends Service implements LocationListener {
     /** 上报节流：距上次上报 ≥ 15s。 */
     private static final long THROTTLE_INTERVAL_MS = 15000L;
 
+    /** 融合用：一个 fix 超过该年龄即视为过期，不参与「最优」评选。 */
+    private static final long FIX_MAX_AGE_MS = 30000L;
+    /** 融合用：切换 provider 的滞回系数 —— 候选精度要比当前最优好 30% 以上才切换，防止 GPS/网络来回抖。 */
+    private static final double SWITCH_BETTER_RATIO = 1.3;
+    /** NETWORK_PROVIDER 的请求间隔（比 GPS 稀疏，减少无谓回调）。 */
+    private static final long NET_MIN_TIME_MS = 15000L;
+
     /** 指数退避上限（弱网下最多 60s 重试一次）。 */
     private static final long BACKOFF_MAX_MS = 60000L;
 
@@ -96,10 +113,19 @@ public class LocationShareService extends Service implements LocationListener {
 
     private volatile boolean running = false;
     private volatile String shareId = null;
+    /** 已挂载 provider 的描述串（如 "gps+network"），仅用于日志。 */
     private volatile String activeProvider = null;
 
-    /** 上次成功上报的位置与时间戳（节流用）。仅主线程/网络回调读写，volatile 保证可见性。 */
-    private volatile Location lastReported = null;
+    /** 各 provider 最近一次原始（WGS-84）fix。 */
+    private volatile Location gpsFix = null;
+    private volatile Location netFix = null;
+    /** 当前选用的最优 fix（滞回基准）。 */
+    private volatile Location bestFix = null;
+    /** 上次上报的 GCJ-02 坐标（节流基准，与上报同一坐标系）。null = 尚未上报。 */
+    private volatile Double lastGcjLat = null;
+    private volatile Double lastGcjLng = null;
+
+    /** 上次成功上报的时间戳（节流用）。仅主线程/网络回调读写，volatile 保证可见性。 */
     private volatile long lastReportMs = 0L;
 
     /** 连续网络失败次数（指数退避），成功即归零。 */
@@ -147,7 +173,7 @@ public class LocationShareService extends Service implements LocationListener {
             running = true;
             acquireWakeLock();
             lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            if (!hasLocationPermission() || lm == null || !requestFromBestProvider()) {
+            if (!hasLocationPermission() || lm == null || !attachProviders()) {
                 Log.w(TAG, "无可用定位（权限未授予或定位总开关关闭），停止共享");
                 stopEverything();
                 return START_NOT_STICKY;
@@ -173,55 +199,159 @@ public class LocationShareService extends Service implements LocationListener {
 
     /* ================= 定位 ================= */
 
-    /** 申请/切换到最佳 provider（优先 GPS，退 NETWORK）。返回是否成功挂上监听。 */
-    private boolean requestFromBestProvider() {
+    /** 同时挂载 GPS 与 NETWORK（能挂几个挂几个）；返回是否至少挂上一个。 */
+    private boolean attachProviders() {
         if (lm == null) return false;
-        String provider = pickProvider();
-        if (provider == null) return false;
         try { lm.removeUpdates(this); } catch (Throwable e) { /* 未注册：忽略 */ }
+        StringBuilder ok = new StringBuilder();
+        // GPS 需要 FINE 权限
+        if (hasFinePermission() && isEnabled(LocationManager.GPS_PROVIDER)) {
+            if (requestOne(LocationManager.GPS_PROVIDER, MIN_TIME_MS)) ok.append("gps");
+        }
+        // 网络定位 COARSE 即可
+        if (hasCoarseOrFinePermission() && isEnabled(LocationManager.NETWORK_PROVIDER)) {
+            if (requestOne(LocationManager.NETWORK_PROVIDER, NET_MIN_TIME_MS)) {
+                if (ok.length() > 0) ok.append("+");
+                ok.append("network");
+            }
+        }
+        activeProvider = (ok.length() == 0) ? null : ok.toString();
+        if (activeProvider != null) Log.i(TAG, "定位监听已挂载：" + activeProvider);
+        return activeProvider != null;
+    }
+
+    /** 挂载单个 provider；失败返回 false。日志【只打 provider 名与异常类名，不打坐标】。 */
+    private boolean requestOne(String provider, long minTimeMs) {
         try {
-            lm.requestLocationUpdates(provider, MIN_TIME_MS, MIN_DISTANCE_M, this, Looper.getMainLooper());
-            activeProvider = provider;
-            Log.i(TAG, "定位监听已挂载：" + provider);
+            lm.requestLocationUpdates(provider, minTimeMs, MIN_DISTANCE_M, this, Looper.getMainLooper());
             return true;
         } catch (Throwable e) {
-            activeProvider = null;
-            Log.w(TAG, "requestLocationUpdates 失败：" + e.getClass().getSimpleName());
+            Log.w(TAG, "requestLocationUpdates 失败 provider=" + provider
+                    + " : " + e.getClass().getSimpleName());
             return false;
         }
     }
 
-    /** provider 优先 GPS，其次 NETWORK（均判 isProviderEnabled）。都不可用返回 null。 */
-    private String pickProvider() {
-        if (lm == null) return null;
+    /** 该 provider 是否启用（异常视为不可用）。 */
+    private boolean isEnabled(String provider) {
         try {
-            if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) return LocationManager.GPS_PROVIDER;
-        } catch (Throwable e) { /* 不支持 GPS：退网络 */ }
-        try {
-            if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) return LocationManager.NETWORK_PROVIDER;
-        } catch (Throwable e) { /* 不支持网络定位：无可用 */ }
-        return null;
+            return lm != null && lm.isProviderEnabled(provider);
+        } catch (Throwable e) {
+            return false;
+        }
     }
 
-    private boolean hasLocationPermission() {
+    /** 是否持有精准定位（FINE）权限；API<23 视为已授予。 */
+    private boolean hasFinePermission() {
         if (Build.VERSION.SDK_INT < 23) return true;
         try {
             return checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
-                    == android.content.pm.PackageManager.PERMISSION_GRANTED
-                || checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION)
                     == android.content.pm.PackageManager.PERMISSION_GRANTED;
         } catch (Throwable e) {
             return false;
         }
     }
 
+    /** 是否持有粗略或精准定位（COARSE 或 FINE）权限；API<23 视为已授予。 */
+    private boolean hasCoarseOrFinePermission() {
+        if (Build.VERSION.SDK_INT < 23) return true;
+        try {
+            return checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION)
+                    == android.content.pm.PackageManager.PERMISSION_GRANTED
+                || checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                    == android.content.pm.PackageManager.PERMISSION_GRANTED;
+        } catch (Throwable e) {
+            return false;
+        }
+    }
+
+    /**
+     * 任一定位权限是否已授予（== hasCoarseOrFinePermission）。
+     * 保留此方法作为 onStartCommand 的总入口守卫，语义与旧实现完全等价。
+     */
+    private boolean hasLocationPermission() {
+        return hasCoarseOrFinePermission();
+    }
+
     @Override
     public void onLocationChanged(Location location) {
         if (location == null) return;
-        // 每次定位都回调 JS（不受节流约束，前端自行决定展示）
-        pushToJs(location);
-        // 上报服务端走节流
-        maybeReport(location);
+        // 1) 记录各 provider 的原始（WGS-84）fix
+        String p = location.getProvider();
+        if (LocationManager.GPS_PROVIDER.equals(p)) gpsFix = location;
+        else if (LocationManager.NETWORK_PROVIDER.equals(p)) netFix = location;
+
+        // 2) 融合出最优 fix
+        Location best = pickBestFix();
+        if (best == null) return;
+
+        // 3) 🔴 全工程唯一一次坐标系转换：WGS-84 → GCJ-02。
+        //    下游（doTick / buildTickBody / pushToJs / 服务端 / 渲染端）一律只处理 GCJ-02，绝不再转。
+        double[] gcj = CoordTransform.wgs84ToGcj02(best.getLatitude(), best.getLongitude());
+        double lat = gcj[0], lng = gcj[1];
+
+        // 4) 推 H5（每次定位都推，不受节流约束） + 上报服务端（走节流）
+        pushToJs(lat, lng, best.getAccuracy(), best.getTime());
+        maybeReport(lat, lng, best.getAccuracy());
+    }
+
+    /**
+     * 融合出当前最优 fix：新鲜度过滤 + accuracy 择优 + 滞回；无新鲜候选时用最新的兜底。
+     * 规则：① 只在新信号（age ≤ FIX_MAX_AGE_MS）里评优；② accuracy 最小者胜（<=0/NaN 视为不可信）；
+     *      ③ 滞回：bestFix 仍新鲜且候选不明显更优（cand*1.3 > best）则保留 bestFix；
+     *      ④ 无新鲜候选时返回 getTime() 最新者兜底，绝不返回 null 让上报停摆。
+     */
+    private Location pickBestFix() {
+        Location g = isFresh(gpsFix) ? gpsFix : null;
+        Location n = isFresh(netFix) ? netFix : null;
+        Location candidate = betterOf(g, n);
+
+        if (candidate == null) {
+            // ④ 无任何新鲜候选：用最新的那个兜底（允许稍旧的 fix，但不让上报停摆）
+            Location newest = newerOf(gpsFix, netFix);
+            if (newest == null) return null;
+            bestFix = newest;
+            return bestFix;
+        }
+
+        // ③ 滞回：若当前 bestFix 仍新鲜，且候选不见得明显更好 → 保留 bestFix，不切换
+        if (isFresh(bestFix)) {
+            if (acc(candidate) * SWITCH_BETTER_RATIO > acc(bestFix)) {
+                return bestFix;
+            }
+        }
+        bestFix = candidate;
+        return bestFix;
+    }
+
+    /** fix 是否新鲜（时间有效且未超过 FIX_MAX_AGE_MS）。 */
+    private static boolean isFresh(Location fix) {
+        if (fix == null) return false;
+        long t = fix.getTime();
+        if (t <= 0L) return false;
+        return (System.currentTimeMillis() - t) <= FIX_MAX_AGE_MS;
+    }
+
+    /** accuracy 归一化为「越小越好」；<=0 或 NaN 视为不可信（Float.MAX_VALUE）。 */
+    private static double acc(Location fix) {
+        if (fix == null) return Float.MAX_VALUE;
+        float a = fix.getAccuracy();
+        if (Float.isNaN(a) || a <= 0f) return Float.MAX_VALUE;
+        return a;
+    }
+
+    /** 取 accuracy 更优者（不可信视为最差）。 */
+    private static Location betterOf(Location a, Location b) {
+        if (a == null) return b;
+        if (b == null) return a;
+        return (acc(a) <= acc(b)) ? a : b;
+    }
+
+    /** 取时间更新者（兜底用，允许较旧 fix）。 */
+    private static Location newerOf(Location a, Location b) {
+        if (a == null) return b;
+        if (b == null) return a;
+        return (a.getTime() >= b.getTime()) ? a : b;
     }
 
     @Override
@@ -230,14 +360,14 @@ public class LocationShareService extends Service implements LocationListener {
     @Override
     public void onProviderEnabled(String provider) {
         Log.i(TAG, "定位 provider 已启用，重新挂载");
-        if (running) requestFromBestProvider();
+        if (running) attachProviders();
     }
 
     @Override
     public void onProviderDisabled(String provider) {
         Log.w(TAG, "定位 provider 被禁用：" + provider);
-        // 切到仍可用的另一个 provider；都不行则停服（定位总开关被关）
-        if (running && !requestFromBestProvider()) {
+        // 重新挂载仍可用的 provider；两个都挂不上才停服（定位总开关被关）
+        if (running && !attachProviders()) {
             Log.w(TAG, "已无可用定位 provider，停止共享");
             stopEverything();
         }
@@ -245,18 +375,21 @@ public class LocationShareService extends Service implements LocationListener {
 
     /* ================= 上报节流 + 网络 ================= */
 
-    /** 节流：位移 > 30m 或 距上次上报 ≥ 15s 才发 tick；首次定位立刻上报。 */
-    private void maybeReport(Location loc) {
+    /**
+     * 节流：位移 > 30m 或 距上次上报 ≥ 15s 才发 tick；首次定位立刻上报。
+     * 🔴 入参 (lat,lng) 已是 GCJ-02，禁止在此再做坐标转换。
+     */
+    private void maybeReport(double lat, double lng, float acc) {
         if (!running) return;
         long now = System.currentTimeMillis();
-        boolean first = (lastReported == null);
+        boolean first = (lastGcjLat == null || lastGcjLng == null);
         boolean farEnough = false;
         if (!first) {
             try {
                 float[] out = new float[1];
                 Location.distanceBetween(
-                        lastReported.getLatitude(), lastReported.getLongitude(),
-                        loc.getLatitude(), loc.getLongitude(), out);
+                        lastGcjLat.doubleValue(), lastGcjLng.doubleValue(),
+                        lat, lng, out);
                 farEnough = out[0] > THROTTLE_DISTANCE_M;
             } catch (Throwable e) { farEnough = false; }
         }
@@ -267,21 +400,26 @@ public class LocationShareService extends Service implements LocationListener {
         final String sid = shareId;
         if (sid == null) return;
 
-        // 乐观更新节流基准（按「尝试」节奏节流；失败由退避窗口兜底）
-        lastReported = loc;
+        // 乐观更新节流基准（GCJ-02 坐标系内，按「尝试」节奏节流；失败由退避窗口兜底）
+        lastGcjLat = lat;
+        lastGcjLng = lng;
         lastReportMs = now;
 
-        final double lat = loc.getLatitude();
-        final double lng = loc.getLongitude();
+        final double flat = lat;
+        final double flng = lng;
+        final float facc = acc;
         try {
             executor.execute(new Runnable() {
-                @Override public void run() { doTick(sid, lat, lng); }
+                @Override public void run() { doTick(sid, flat, flng, facc); }
             });
         } catch (Throwable e) { /* 线程池已关：忽略 */ }
     }
 
-    /** 子线程：POST /api/live/tick（字段名逐字照契约 §3）。 */
-    private void doTick(final String sid, final double lat, final double lng) {
+    /**
+     * 子线程：POST /api/live/tick（字段名逐字照契约 §3）。
+     * 🔴 入参 (lat,lng) 已是 GCJ-02，禁止在此再做坐标转换。
+     */
+    private void doTick(final String sid, final double lat, final double lng, final float acc) {
         SharedPreferences sp = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         String base = sp.getString(KEY_BASE, "");
         String token = sp.getString(KEY_TOKEN, "");
@@ -299,7 +437,7 @@ public class LocationShareService extends Service implements LocationListener {
         HttpURLConnection conn = null;
         int code = 0;
         try {
-            byte[] payload = buildTickBody(sid, lat, lng).getBytes("UTF-8");
+            byte[] payload = buildTickBody(sid, lat, lng, acc).getBytes("UTF-8");
             conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setRequestMethod("POST");
             conn.setConnectTimeout(10000);
@@ -333,16 +471,26 @@ public class LocationShareService extends Service implements LocationListener {
         }
     }
 
-    /** body 用 org.json 构造，保证 shareId 转义与字段名精确（shareId / lat / lng）。 */
-    private String buildTickBody(String sid, double lat, double lng) {
+    /**
+     * body 用 org.json 构造，保证 shareId 转义与字段名精确（shareId / lat / lng / acc / coord）。
+     * 🔴 入参 (lat,lng) 已是 GCJ-02，禁止在此再做坐标转换。
+     *
+     * acc：定位精度（米），供服务端下发到前端画「精度圈」与抑制低精度首点拉镜头。
+     * coord：口径标记 "gcj02"。服务端对**没带该标记的旧客户端**按 WGS-84 兜底归一化，
+     *        带了就原样存。两个字段【都必须带】。
+     */
+    private String buildTickBody(String sid, double lat, double lng, float acc) {
         try {
             JSONObject o = new JSONObject();
             o.put("shareId", sid);
             o.put("lat", lat);
             o.put("lng", lng);
+            o.put("acc", (double) acc);
+            o.put("coord", "gcj02");
             return o.toString();
         } catch (Throwable e) {
-            return "{\"shareId\":\"" + escapeJson(sid) + "\",\"lat\":" + lat + ",\"lng\":" + lng + "}";
+            return "{\"shareId\":\"" + escapeJson(sid) + "\",\"lat\":" + lat + ",\"lng\":" + lng
+                    + ",\"acc\":" + acc + ",\"coord\":\"gcj02\"}";
         }
     }
 
@@ -388,14 +536,17 @@ public class LocationShareService extends Service implements LocationListener {
 
     /* ================= JS 回调（前台可见时） ================= */
 
-    /** 每次定位都推 window.__onLocationUpdate(JSON字符串)；JSON 用 JSONObject.quote 转义（见 MainActivity）。 */
-    private void pushToJs(Location loc) {
+    /**
+     * 每次定位都推 window.__onLocationUpdate(JSON字符串)；JSON 用 JSONObject.quote 转义（见 MainActivity）。
+     * 🔴 入参 (lat,lng) 已是 GCJ-02，禁止在此再做坐标转换；payload 字段名保持 lat/lng/acc/t 不变。
+     */
+    private void pushToJs(double lat, double lng, float acc, long t) {
         try {
             JSONObject o = new JSONObject();
-            o.put("lat", loc.getLatitude());
-            o.put("lng", loc.getLongitude());
-            o.put("acc", (double) loc.getAccuracy());
-            o.put("t", loc.getTime());
+            o.put("lat", lat);
+            o.put("lng", lng);
+            o.put("acc", (double) acc);
+            o.put("t", t);
             MainActivity.pushLocationUpdate(o.toString());
         } catch (Throwable e) { /* 回调失败：不影响上报 */ }
     }
@@ -492,6 +643,11 @@ public class LocationShareService extends Service implements LocationListener {
         try { if (lm != null) lm.removeUpdates(this); } catch (Throwable e) { /* 静默 */ }
         lm = null;
         activeProvider = null;
+        lastGcjLat = null;
+        lastGcjLng = null;
+        gpsFix = null;
+        netFix = null;
+        bestFix = null;
         releaseWakeLock();
         try { if (executor != null) executor.shutdownNow(); } catch (Throwable e) { /* 静默 */ }
         try { stopForeground(true); } catch (Throwable e) { /* 静默 */ }

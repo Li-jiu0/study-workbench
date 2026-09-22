@@ -849,6 +849,17 @@
             </div>
             <div class="privacy-row-ctrl" style="color:var(--text-secondary);font-size:16px">›</div>
           </div>
+
+          <!-- 需求D（2026-09-28）：应用白名单入口（独立页 应用白名单.html）。
+               仅读取本机「已安装应用列表」供用户手动勾选，勾选结果只存 localStorage
+               ['xt_app_whitelist_v1']（仅包名数组），绝不上传服务器。 -->
+          <div class="privacy-row" id="privacyAppWhitelistRow" onclick="location.href='应用白名单.html?from=设置'" style="cursor:pointer">
+            <div class="privacy-row-main">
+              <div class="privacy-row-name">应用白名单</div>
+              <div class="privacy-row-sub">读取本机已安装应用列表，勾选你要管理的应用；<b>仅保存在本机，不会上传</b></div>
+            </div>
+            <div class="privacy-row-ctrl" style="color:var(--text-secondary);font-size:16px">›</div>
+          </div>
         </div>
         </section>
 

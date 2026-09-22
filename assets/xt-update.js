@@ -33,7 +33,7 @@
      必须与 android/AndroidManifest.xml 的 android:versionName 一致。
      APK / WebView 前端读不到 manifest，所以这里是唯一的版本来源。
      ======================================================================= */
-  var CURRENT_VERSION = '1.41';
+  var CURRENT_VERSION = '1.42';
 
   /* 需求 A.3（2026-09-22）：版本号单一来源对外暴露。
      关于页 / app.js showAboutDialog 需要读当前版本，但又不能各自再抄一份字符串
@@ -1104,11 +1104,33 @@
     }
   }
 
-  /** 「更多」页检测更新入口：至少写回当前版本号，不让入口显示占位符。 */
+  /**
+   * R148 需求A：把「检测更新」红点同步到最新状态。
+   * 仅当判定为「有新版本」（state === 'new'）时显示，其余状态（latest / starting / error）
+   * 一律隐藏；本函数不弹任何提示 —— 自用小服务器，失败 / 断网 / 超时都必须静默，不打扰用户。
+   * 红点生命周期：升级前持续发亮；升级后 CURRENT_VERSION 变化，比对不再是 new，
+   * 红点自动消失（靠版本比对，不加已读标记）。
+   */
+  function applyMoreDot(state) {
+    var dot = $('moreUpdateDot');
+    if (!dot) { return; }
+    dot.hidden = !(state && state.state === 'new');
+  }
+
+  /** 「更多」页检测更新入口：写回当前版本号 + 缓存秒判红点 + 后台自动检测。 */
   function bootMoreEntry() {
     var el = $('xtMoreUpdateVer');
     if (!el) { return; }
     el.textContent = '当前版本 v' + CURRENT_VERSION + ' · 查看是否有新版本';
+    // 先吃缓存：命中上次成功结果时首屏立即点亮/熄灭红点，不必等网络返回
+    var cached = readCachedResult();
+    if (cached) {
+      applyMoreDot(evaluate(cached));
+    }
+    // 后台检测（12 小时节流）：成功则刷新红点；失败 / 超时 / starting 分支不亮且不弹提示
+    checkAuto(function (state) {
+      applyMoreDot(state);
+    });
   }
 
   /** 初始化失败：在卡片位置渲染失败态，绝不静默消失。 */
