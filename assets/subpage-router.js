@@ -214,24 +214,36 @@
       bc.innerHTML = '';
       return;
     }
-    bc.style.display = '';
+    /* R169-C（2026-09-23）：common.css:2509 对 .subpage-header 写死了 display:none，
+       此处若用 style.display=''（清内联）会回落到该隐藏规则 → 页头行（含返回按钮）
+       在子页上从未显示过（用户反馈「设置所有子页的返回功能都没有」的根因）。
+       必须显式置 'block' 覆盖 CSS。隐藏分支仍用 'none'。 */
+    bc.style.display = 'block';
+    /* R169（2026-09-23 用户反馈）：子页顶部统一为「我的文件」同款页头行
+       （.morepage-head = 圆角方形返回按钮 + 小图标 + 标题），替换原「设置 › 外观」面包屑。
+       ── 返回行为与原面包屑完全等价：onclick 走 SubpageRouter.navigate('list')（页内切回
+          子页列表，不跳 URL、不新增历史）。原 crumbHref 的 ?user= 只作用于 <a href> 的
+          兜底跳转，而原实现已 preventDefault 掉默认跳转，故此处等价删除该分支。
+       ── 容器 .subpage-header 本身保留（多页共用、DOM 不可删），仅去掉它自带的下边线 /
+          内边距 / 13px 小字号，避免与参照页 .morepage-head 的视觉不一致。 */
+    bc.style.padding = '0';
+    bc.style.borderBottom = 'none';
+    bc.style.fontSize = 'inherit';
     var label = this._groupLabel(key);
-    /* 缺口6修复（2026-09-17）：面包屑回到根页时保留 ?user=<uid>。
-       仅当当前 location.search 含「合法数字 user 参数」时才把参数拼回 href，
-       其它页面（无该参数）行为与改动前完全一致 —— 本文件为多页共用，务必零副作用。 */
-    var crumbHref = st.rootHref;
-    try {
-      if (typeof location !== 'undefined' && location.search) {
-        var _uc = new URLSearchParams(location.search).get('user');
-        if (_uc && /^\d+$/.test(String(_uc).trim())) {
-          crumbHref = st.rootHref + (st.rootHref.indexOf('?') >= 0 ? '&' : '?') + 'user=' + encodeURIComponent(String(_uc).trim());
-        }
-      }
-    } catch (e) { crumbHref = st.rootHref; /* URLSearchParams 不可用 → 保持原行为 */ }
+    var icon = this._groupIcon(key);
     bc.innerHTML =
-      '<a class="subpage-crumb" href="' + escHtml(crumbHref) + '" onclick="event.preventDefault();SubpageRouter.navigate(\'list\');return false;">' + escHtml(st.pageTitle) + '</a>' +
-      '<span class="subpage-sep">›</span>' +
-      '<span class="subpage-crumb current">' + escHtml(label) + '</span>';
+      '<div class="morepage-head">' +
+        '<button type="button" class="morepage-back" title="返回" aria-label="返回"' +
+          ' onclick="SubpageRouter.navigate(\'list\');return false;">' +
+          '<span class="nav-icon" data-icon="arrow-left" data-icon-size="18"></span>' +
+        '</button>' +
+        '<div class="morepage-title"><span class="nav-icon" data-icon="' + escHtml(icon) + '" data-icon-size="20"></span> ' +
+          escHtml(label) + '</div>' +
+      '</div>';
+    /* R169-C（2026-09-23 用户反馈「返回按钮没有图标」）：innerHTML 动态插入的
+       data-icon 占位符不会自动转成 SVG —— 全站惯例是插入后手动调一次
+       window.lucideAutoRender()（见 api.js initNotifyBell / cet-read.js 等），此处补上。 */
+    try { if (typeof window.lucideAutoRender === 'function') window.lucideAutoRender(); } catch (e) { }
   };
 
   Router.prototype._groupLabel = function (key) {
@@ -252,6 +264,29 @@
       'local-data': '本机数据'
     };
     return map[key] || key;
+  };
+
+  /* R169（2026-09-23 用户反馈）：子页页头小图标 —— 与各页「分组卡列表」里的图标保持一致
+     （取自 个人中心.html / 设置.html 的 .subpage-group-card > .sgc-icon）。
+     未登记的 key 回退 'file-text'，保证标题行不会出现空白图标位。 */
+  Router.prototype._groupIcon = function (key) {
+    var map = {
+      appearance: 'palette',
+      reading: 'book-open',
+      voice: 'headphones',
+      help: 'info',
+      account: 'locked',
+      privacy: 'locked',
+      content: 'pen',
+      ai: 'sparkles',
+      about: 'info',
+      profile: 'user',
+      posts: 'chart-bar',
+      moments: 'rss',
+      prefs: 'settings',
+      'local-data': 'package'
+    };
+    return map[key] || 'file-text';
   };
 
   // 单例

@@ -24,6 +24,18 @@
   table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .bottom-nav-item .bn-label, .ai-mode-badge, .study-stats-bar b { font-size: 11px; }
 }
+/* ===== R169-C（2026-09-23 用户要求）：删除顶栏红框区域 =====
+   全局搜索框（.gs-wrap）+ 消息通知铃铛 / 私信入口（assets/api.js 动态注入，类名 .notify-bell）
+   + 题库入口大脑按钮（assets/qbank.js 动态注入 #qbTopBtn）。只隐藏不删 DOM。 */
+.gs-wrap{display:none !important}
+.notify-bell{display:none !important}
+#qbTopBtn{display:none !important}
+/* R169-C（2026-09-23 用户要求）：顶部改「词汇打卡」同款实心主题色标题栏
+   （.cet-quiz-top 一族，页内样式不动 common.css）；原白底 .topbar 一并隐藏。 */
+.cet-quiz-top{flex:none;display:flex;align-items:center;gap:12px;padding:calc(12px + var(--xt-satop, env(safe-area-inset-top, 0px))) 16px 12px;background:linear-gradient(135deg,var(--primary),var(--g2, var(--primary)));color:#fff}
+.cet-quiz-top b{flex:1;font-size:15px}
+.cet-quiz-back{background:rgba(255,255,255,.18);border:none;color:#fff;padding:6px 12px;border-radius:8px;font-size:13px;cursor:pointer;line-height:1.4}
+.topbar{display:none !important}
 </style>
 </head>
 <body class="theme-home">
@@ -111,6 +123,11 @@
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
       <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="16"></span></div>
     </header>
+    <!-- R169-C：实心主题色标题栏（词汇打卡 .cet-quiz-top 同款；返回走 location.replace） -->
+    <div class="cet-quiz-top">
+      <button class="cet-quiz-back" onclick="location.replace('行测.html')"><span data-icon="arrow-left" data-icon-size="16" style="vertical-align:-3px"></span> 返回</button>
+      <b>行测刷题中心</b>
+    </div>
 <div class="page active" id="page-exam-center">
       <div class="card">
         <div class="card-header">
@@ -286,9 +303,9 @@
 <script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
-<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/app.js?v=20260930a" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260924a" defer></script>
+<script src="assets/api.js?v=20260930a" defer></script>
 <script src="assets/qbank.js?v=20260916O" defer></script>
 <script>
 /* 【2026-09-15】下拉列表与筛选状态同步：

@@ -14,7 +14,7 @@
 <script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
-<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/app.js?v=20260930a" defer></script>
 <script src="data/mock-papers.js?v=20260916O" defer></script>
 <script src="assets/mock-engine.js?v=20260916O" defer></script>
 <!-- 【批次 20260913m】考试指南并入本页：guide 数据沿用 MINI_BANK（mini-cet.js 的 cet-guide / mini-exam.js 的 exam-guide） -->
@@ -320,19 +320,23 @@ body { height: auto; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scro
 
     var statusHtml = '';
     var actionHtml = '';
+    /* R169-I（2026-09-23 用户报「真题模考返回后又回到真题模考」）：模考链（选卷↔答题↔成绩）
+       的所有跳转统一走 location.replace（onclick 拦截 + href 兜底），使历史栈恒等于
+       [来源页, 当前页]，不再残留旧选卷/答题页记录导致系统返回键撞回模考。 */
+    var RUN_REPLACE = ' onclick="location.replace(this.href);return false"';
     if (inProgress) {
       var rem = (typeof window.MockEngine !== 'undefined' && typeof window.MockEngine.remaining === 'function') ? window.MockEngine.remaining() : 0;
       var answered = Object.keys(currentState.answers || {}).length;
       var mm = window.MockEngine ? window.MockEngine.fmtMMSS(rem) : '--:--';
       statusHtml = '<div class="mpc-tag is-running">进行中 · 已答 ' + answered + '/' + totalQuestions + ' · 剩余 ' + mm + '</div>';
-      actionHtml = '<a class="xt-btn xt-btn-primary" href="mock_exam_run.html?paper=' + encodeURIComponent(paper.id) + '">继续考试</a>';
+      actionHtml = '<a class="xt-btn xt-btn-primary" href="mock_exam_run.html?paper=' + encodeURIComponent(paper.id) + '"' + RUN_REPLACE + '>继续考试</a>';
     } else if (bestRun) {
       statusHtml = '<div class="mpc-tag is-done">已完成 · 最佳 ' + bestRun.score + ' 分</div>';
-      actionHtml = '<a class="xt-btn xt-btn-secondary" href="mock_exam_result.html?paper=' + encodeURIComponent(paper.id) + '&run=' + encodeURIComponent(bestRun.runId) + '">查看成绩</a>' +
-        '<a class="xt-btn xt-btn-primary" href="mock_exam_run.html?paper=' + encodeURIComponent(paper.id) + '">再次挑战</a>';
+      actionHtml = '<a class="xt-btn xt-btn-secondary" href="mock_exam_result.html?paper=' + encodeURIComponent(paper.id) + '&run=' + encodeURIComponent(bestRun.runId) + '"' + RUN_REPLACE + '>查看成绩</a>' +
+        '<a class="xt-btn xt-btn-primary" href="mock_exam_run.html?paper=' + encodeURIComponent(paper.id) + '"' + RUN_REPLACE + '>再次挑战</a>';
     } else {
       statusHtml = '<div class="mpc-tag">未开始</div>';
-      actionHtml = '<a class="xt-btn xt-btn-primary" href="mock_exam_run.html?paper=' + encodeURIComponent(paper.id) + '">开始考试</a>';
+      actionHtml = '<a class="xt-btn xt-btn-primary" href="mock_exam_run.html?paper=' + encodeURIComponent(paper.id) + '"' + RUN_REPLACE + '>开始考试</a>';
     }
 
     var difficultyTag = paper.difficulty ? '<span class="mpc-tag">难度 ' + escHtml(paper.difficulty) + '</span>' : '';
@@ -535,7 +539,10 @@ function goBack() {
   var cat = '';
   try { cat = (new URLSearchParams(window.location.search)).get('cat') || ''; } catch (e) { cat = ''; }
   var target = cat === 'exam-mock' ? '行测.html' : '英语.html';
-  window.location.href = target;
+  /* R169-C（2026-09-23 用户反馈「回退之后又会回退到真题模考页面退不出去」）：
+     原 location.href 是前进式跳转，会把本页留在历史栈里 → 栈变成 …→行测→模考→行测→模考，
+     系统返回键永远撞回真题模考。改用 location.replace 替换当前记录，模考链不在栈里留残页。 */
+  window.location.replace(target);
 }
 </script>
 

@@ -121,6 +121,15 @@ REQUIRED_ASSETS = [
     "xt-toast.js",
     "error-boundary.js",
     "admin.js",
+    # --- R170（2026-09-23）新增：管理后台全能化 + 全站公告 ---
+    #   · admin-ops.js 缺失 → 管理后台「列表 + 点击进子页」「用户治理 8 个操作」
+    #     「内容治理 / 公告 / 群组 / 私聊审计 / 审计日志 / 应用列表」全部静默消失（只留只读观察台）
+    #   · xt-announce.js 缺失 → 首页公告条与「更多 → 公告」入口无数据（静默失效）
+    #   · admin.css 缺失 → 管理后台面板/列表无样式（裸 HTML，可读但不可用）
+    #   三者都是「源目录有、忘加白名单则静默漏包」的同一类坑，故一并硬断言。
+    "admin-ops.js",
+    "admin.css",
+    "xt-announce.js",
     "page-head.css",
     "states.css",
     # --- 子目录资源（build-apk.sh 早期版本用 cp 不带 -r 会静默漏掉） ---

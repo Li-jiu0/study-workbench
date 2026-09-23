@@ -33,7 +33,7 @@
      必须与 android/AndroidManifest.xml 的 android:versionName 一致。
      APK / WebView 前端读不到 manifest，所以这里是唯一的版本来源。
      ======================================================================= */
-  var CURRENT_VERSION = '1.43';
+  var CURRENT_VERSION = '1.44';
 
   /* 需求 A.3（2026-09-22）：版本号单一来源对外暴露。
      关于页 / app.js showAboutDialog 需要读当前版本，但又不能各自再抄一份字符串
@@ -610,40 +610,166 @@
       '</button>';
   }
 
-  /** 把服务端 changelog 渲染到页面下方的「更新日志」卡片。 */
+  /* =====================================================================
+     R167（2026-09-23 用户反馈）：更新日志改微信式 —— 列表只留「版本标题行」，
+     点击版本标题进入内置详情页（整屏面板）查看该版本全部更新说明。
+     数据源不变（/api/app/version 的 changelog），仅改展示与交互。
+     ===================================================================== */
+
+  var _logIndex = {};       // 规范化版本号（必带 v 前缀）→ changelog 条目
+  var _pendingLogVer = '';  // 深链早于数据到达时暂存，数据渲染完成后自动打开
+  /* R168 用户反馈（2026-09-23）：「版本更新说明 → 检测更新 → 版本更新说明」不能正常退出。
+     根因：openLog 用 location.hash='#ver=…' 压入一条历史记录，closeLog 又用 location.hash=''
+     再压入一条；安卓返回键后退时先回到 '#ver=…' 那条 → hashchange → _applyHash 把详情面板
+     重新打开 → 永远退不出去（历史栈被面板自身污染）。
+     修法：openLog 压 hash 时记 _hashPushed=true；closeLog 改为 history.back() 弹回那条记录
+     （hashchange → _applyHash 收口关闭），不再压入新记录；深链直达/老内核降级走
+     history.replaceState 抹掉 hash（不产生新历史）。全 ES5。 */
+  var _hashPushed = false;  // 当前 #ver= 历史记录是否由本页 openLog 压入（决定关闭时 back 还是 replace）
+
+  function _normVer(v) {
+    v = String(v === null || v === undefined ? '' : v).trim();
+    if (v && v.charAt(0) !== 'v') { v = 'v' + v; }
+    return v;
+  }
+
+  /** 把服务端 changelog 渲染成「可点击的版本列表」（每行：版本徽章 + 日期 + 条数 + 摘要 + ›）。 */
   function renderChangelogCard(list) {
     var box = $('xtUpChangelog');
+    _logIndex = {};
     if (!box) { return; }
     if (!list || !list.length) {
       box.innerHTML = '<div class="xt-up-note xt-up-note-empty">暂无历史更新日志。</div>';
+      _consumePendingLog();
       return;
     }
     var out = '';
     for (var i = 0; i < list.length; i++) {
       var it = list[i] || {};
-      var ver = String(it.version || '');
-      // version.json 里版本号自带 v 前缀；老数据可能不带，统一补上避免显示成「vv2.4」
-      if (ver && ver.charAt(0) !== 'v') { ver = 'v' + ver; }
-      // date 可能为空字符串（如 v2.3 及更早没有可靠日期）——有才渲染，绝不编造
+      var ver = _normVer(it.version);
+      if (ver) { _logIndex[ver] = it; }
+      var items = it.notes || [];
+      // 摘要取第一条说明（单行截断，完整内容进详情页）；无说明也给一行占位
+      var summary = items.length ? String(items[0]) : '该版本暂无说明。';
       var head = (ver ? '<span class="xt-up-log-ver">' + esc(ver) + '</span>' : '') +
         (it.date ? '<span class="xt-up-log-date">' + esc(it.date) + '</span>' : '');
-      var body = '';
-      var items = it.notes || [];
-      if (items.length) {
-        for (var j = 0; j < items.length; j++) {
-          body += '<div class="xt-up-note"><span class="xt-up-note-dot"></span><span>' +
-            esc(items[j]) + '</span></div>';
-        }
-      } else {
-        body = '<div class="xt-up-note xt-up-note-empty">该版本暂无说明。</div>';
-      }
-      out += '<div class="xt-up-log-item">' +
-          '<div class="xt-up-log-head">' + head + '</div>' +
-          '<div class="xt-up-notes">' + body + '</div>' +
+      out += '<div class="xt-up-log-item" role="button" tabindex="0"' +
+          ' onclick="XTUpdate.openLog(\'' + esc(ver) + '\')"' +
+          ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();XTUpdate.openLog(\'' + esc(ver) + '\')}">' +
+          '<div class="xt-up-log-head">' + head +
+            '<span class="xt-up-log-count">' + items.length + ' 条</span>' +
+            '<span class="xt-up-log-arrow">›</span>' +
+          '</div>' +
+          '<div class="xt-up-log-summary">' + esc(summary) + '</div>' +
         '</div>';
     }
     box.innerHTML = out;
+    _consumePendingLog();
   }
+
+  /** 详情面板 DOM 只建一次，挂到 body（不依赖页面预置节点，关于/更多页同样可用）。 */
+  function _ensureDetailDom() {
+    var p = $('xtUpLogDetail');
+    if (p) { return p; }
+    p = document.createElement('div');
+    p.id = 'xtUpLogDetail';
+    p.className = 'xt-up-detail';
+    p.innerHTML =
+      '<div class="xt-up-detail-head">' +
+        '<button class="xt-up-detail-back" onclick="XTUpdate.closeLog()" title="返回" aria-label="返回">←</button>' +
+        '<div class="xt-up-detail-title">版本更新说明</div>' +
+      '</div>' +
+      '<div class="xt-up-detail-body" id="xtUpLogDetailBody"></div>';
+    document.body.appendChild(p);
+    return p;
+  }
+
+  function _renderDetail(ver) {
+    var body = $('xtUpLogDetailBody');
+    if (!body) { return; }
+    var it = _logIndex[ver] || {};
+    var items = it.notes || [];
+    var isCurrent = _normVer(ver) === _normVer(CURRENT_VERSION);
+    var h = '<div class="xt-up-detail-card">' +
+        '<div class="xt-up-detail-verrow">' +
+          '<span class="xt-up-log-ver xt-up-detail-ver">' + esc(ver) + '</span>' +
+          (it.date ? '<span class="xt-up-log-date">' + esc(it.date) + '</span>' : '') +
+          '<span class="xt-up-detail-tag' + (isCurrent ? ' is-cur' : '') + '">' +
+            (isCurrent ? '当前安装版本' : '历史版本') + '</span>' +
+        '</div>';
+    if (items.length) {
+      h += '<div class="xt-up-notes">';
+      for (var i = 0; i < items.length; i++) {
+        h += '<div class="xt-up-note"><span class="xt-up-note-dot"></span><span>' +
+          esc(items[i]) + '</span></div>';
+      }
+      h += '</div>';
+    } else {
+      h += '<div class="xt-up-note xt-up-note-empty">该版本暂无说明。</div>';
+    }
+    h += '<div class="xt-up-detail-tip">共 ' + items.length + ' 条更新说明 · 数据来自服务器版本清单</div>' +
+      '</div>';
+    body.innerHTML = h;
+  }
+
+  /** 打开某版本的内置详情页；数据未就位时先记住，等日志渲染完自动打开。 */
+  function openLog(ver) {
+    ver = _normVer(ver);
+    if (!ver || !_logIndex[ver]) {
+      _pendingLogVer = ver;
+      return;
+    }
+    _renderDetail(ver);
+    var p = _ensureDetailDom();
+    p.classList.add('open');
+    var b = p.querySelector('.xt-up-detail-body');
+    if (b && b.scrollTop) { b.scrollTop = 0; }
+    // 同步 hash 深链：安卓返回键 / 浏览器后退都会触发 hashchange → 统一在这里收口。
+    // R168：压入的这条 #ver= 记录由 closeLog 用 history.back() 弹回（见 _hashPushed 注释）。
+    var want = '#ver=' + encodeURIComponent(ver);
+    if (location.hash !== want) {
+      try { location.hash = want; _hashPushed = true; } catch (eHash) { /* 老内核不支持也不影响面板显示 */ }
+    }
+  }
+
+  /** 关闭详情页（面板返回按钮 / hash 变化都会走到这）。 */
+  function closeLog() {
+    var p = $('xtUpLogDetail');
+    if (p) { p.classList.remove('open'); }
+    if (location.hash.indexOf('#ver=') === 0) {
+      if (_hashPushed && window.history && history.back) {
+        // 弹回 openLog 压入的那条 #ver= 记录：hashchange → _applyHash 收口，不再新增历史
+        _hashPushed = false;
+        try { history.back(); return; } catch (eBack) { /* 老内核降级走 replace */ }
+      }
+      _hashPushed = false;
+      try { history.replaceState(null, '', location.pathname + location.search); }
+      catch (eRep) { try { location.hash = ''; } catch (eHash2) { /* 忽略 */ } }
+    }
+  }
+
+  /** 按 hash 开/关详情：#ver=v1.43 打开，无 ver= 关闭。 */
+  function _applyHash() {
+    var m = /[#&]ver=([^&]+)/.exec(location.hash || '');
+    if (m) {
+      openLog(decodeURIComponent(m[1]));
+    } else {
+      var p = $('xtUpLogDetail');
+      if (p) { p.classList.remove('open'); }
+    }
+  }
+
+  function _consumePendingLog() {
+    if (_pendingLogVer && _logIndex[_pendingLogVer]) {
+      var v = _pendingLogVer;
+      _pendingLogVer = '';
+      openLog(v);
+    }
+  }
+
+  try {
+    window.addEventListener('hashchange', _applyHash);
+  } catch (eHashL) { /* 极老内核无 addEventListener 也无需深链 */ }
 
   /** 「查看历史更新日志」：平滑滚动到页面下方的更新日志卡片（老内核降级为直接滚动）。 */
   function showChangelog() {
@@ -1074,10 +1200,15 @@
     recheck: recheck,
     startDownload: startDownload,
     showChangelog: showChangelog,
+    openLog: openLog,
+    closeLog: closeLog,
     getLastState: function () { return lastState; }
   };
 
   window.XTUpdate = api;
+
+  // R167：加载即按 hash 恢复详情页（深链 / 返回键场景；数据未到时暂存待自动打开）
+  try { _applyHash(); } catch (eHashBoot) { /* 忽略 */ }
 
   /* ------------------------------ 页面自启动 ------------------------------ */
 

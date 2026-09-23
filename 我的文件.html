@@ -54,6 +54,11 @@
 /* 老 WebView（Chrome 50~58）不认 CSS inset 简写，.app-modal-mask 会失位；此处显式补齐四边定位 */
 .xtf-mask { top: 0; left: 0; right: 0; bottom: 0; z-index: 1250; }
 .xtf-mask .app-modal { background: var(--card); color: var(--text); }
+/* ===== R169-C（2026-09-23 用户要求）：删除顶栏红框区域 =====
+   全局搜索框（.gs-wrap）+ 消息通知铃铛 / 私信入口（assets/api.js 动态注入，类名 .notify-bell）。
+   只隐藏不删 DOM，其他页面不受影响。 */
+.gs-wrap{display:none !important}
+.notify-bell{display:none !important}
 </style>
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
 <script src="assets/xt-log.js?v=20260928d"></script>
@@ -145,7 +150,7 @@
     <div class="content">
       <div class="page active" id="page-files">
         <div class="morepage-head">
-          <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='学习工作台.html'}" title="返回" aria-label="返回"><span data-icon="arrow-left" data-icon-size="18"></span></button>
+          <button class="morepage-back" onclick="location.replace('学习工作台.html')" title="返回" aria-label="返回"><span data-icon="arrow-left" data-icon-size="18"></span></button>
           <div class="morepage-title"><span class="nav-icon" data-icon="folder" data-icon-size="20"></span> 我的文件</div>
         </div>
 
@@ -356,10 +361,10 @@
 <script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
-<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/app.js?v=20260930a" defer></script>
 <script src="assets/quest.js?v=20260916O" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260924a" defer></script>
+<script src="assets/api.js?v=20260930a" defer></script>
 <script src="assets/study-stats.js?v=20260916O" defer></script>
 <script src="assets/ai-config.js?v=20260925a"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>

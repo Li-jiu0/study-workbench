@@ -270,10 +270,12 @@
       page.id = 'page-exam-topic';
       page.innerHTML = `
         <div class="te-panel" id="tePanel">
-          <div id="teContent"></div>
-          <div class="te-page-footer">
-            <button class="btn btn-outline" onclick="TopicExpress.close()">← 返回笔试</button>
+          <!-- R169-C（2026-09-23 用户要求）：返回改「词汇打卡」同款实心主题色标题栏（原底部返回按钮由本栏承担） -->
+          <div class="cet-quiz-top">
+            <button class="cet-quiz-back" onclick="TopicExpress.close()"><span data-icon="arrow-left" data-icon-size="16" style="vertical-align:-3px"></span> 返回</button>
+            <b>话题表达训练</b>
           </div>
+          <div id="teContent"></div>
         </div>
       `;
       const contentEl = document.querySelector('.content');
@@ -468,6 +470,10 @@
         display: flex; flex-direction: column;
       }
       .te-page-footer { padding: 16px 20px 4px; text-align: center; }
+      /* R169-C：实心主题色标题栏（词汇打卡 .cet-quiz-top 同款；面板在页内 chrome 内，无需安全区） */
+      .cet-quiz-top{flex:none;display:flex;align-items:center;gap:12px;padding:12px 16px;background:linear-gradient(135deg,var(--primary,#5B8DEF),var(--g2,var(--primary,#5B8DEF)));color:#fff}
+      .cet-quiz-top b{flex:1;font-size:15px}
+      .cet-quiz-back{background:rgba(255,255,255,.18);border:none;color:#fff;padding:6px 12px;border-radius:8px;font-size:13px;cursor:pointer;line-height:1.4}
       #teContent { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
       
       .te-header { padding: 24px 20px 12px; text-align: center; }

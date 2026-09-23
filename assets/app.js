@@ -8464,16 +8464,16 @@ function renderPostStatsOnly(container) {
   const totalNotes = pub.length + draft.length + arch.length;
 
   container.innerHTML = `
-    <div class="pp-card">
-      <div class="card-header" style="margin-bottom:12px">
-        <div class="card-title" style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:6px">${icSpan('chart-bar', 15)} 发贴统计</div>
-        <div class="card-action" style="font-size:12px;color:var(--text-secondary)">共 ${totalNotes} 篇</div>
+    <div class="study-stats-card">
+      <div class="study-stats-head"><span>${icSpan('chart-bar', 16)} 发贴概况</span><span class="study-stats-week">共 ${totalNotes} 篇</span></div>
+      <div class="study-stats-grid" style="grid-template-columns:repeat(3,1fr)">
+        ${[['pub', pub.length, '已发布'], ['draft', draft.length, '草稿'], ['arch', arch.length, '已归档'], ['likes', totalLikes, '总点赞'], ['comments', totalComments, '总评论'], ['views', totalViews, '总阅读']].map(([k, num, lb]) =>
+          `<div class="study-stats-cell"><b>${num}</b><span>${lb}</span></div>`).join('')}
       </div>
-      <div class="profile-grid">
-        ${[['pencil', pub.length, '已发布'], ['bookmark', draft.length, '草稿'], ['inbox', arch.length, '已归档'], ['thumbs-up', totalLikes, '总点赞'], ['message-circle', totalComments, '总评论'], ['eye', totalViews, '总阅读']].map(([ic, num, lb]) =>
-          `<div class="profile-stat"><div class="ps-num" style="display:flex;align-items:center;justify-content:center;gap:6px">${icSpan(ic, 18)} ${num}</div><div class="ps-label">${lb}</div></div>`).join('')}
-      </div>
-      <div style="display:flex;align-items:center;gap:6px;margin-top:16px"><div style="font-size:13px;font-weight:700;color:var(--text)">${icSpan('book-open', 14)}</div><div style="font-size:13px;font-weight:700;color:var(--text)">发贴分类分布</div></div>${catBars}
+    </div>
+    <div class="study-stats-card">
+      <div class="study-stats-head"><span>${icSpan('book-open', 16)} 分类分布</span><span class="study-stats-week">按发贴分类</span></div>
+      ${catBars}
       <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
         <button class="btn btn-outline" onclick="exportAllNotesMd()">${icSpan('file-text', 14)} 导出 Markdown</button>
         <button class="btn btn-outline" onclick="navigateTo('blog')">${icSpan('pen', 14)} 去写发贴</button>

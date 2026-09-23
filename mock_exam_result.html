@@ -14,10 +14,10 @@
 <script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
-<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/app.js?v=20260930a" defer></script>
 <script src="data/mock-papers.js?v=20260916O" defer></script>
 <script src="assets/mock-engine.js?v=20260916O" defer></script>
-<script src="assets/mock-result.js?v=20260916O" defer></script>
+<script src="assets/mock-result.js?v=20260930a" defer></script>
 <style>
 body { background: var(--xt-bg); margin: 0; color: var(--xt-text); }
 
@@ -266,7 +266,7 @@ body { height: auto; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scro
   <!-- 错误占位 -->
   <div id="errorState" class="xt-error" style="display:none;margin-top:var(--xt-space-4)">
     <div class="xt-error-msg">未找到本次成绩数据。请确认链接是否有效。</div>
-    <a class="xt-error-retry" href="mock_exam.html">返回选卷</a>
+    <a class="xt-error-retry" href="mock_exam.html" onclick="location.replace('mock_exam.html');return false">返回选卷</a>
   </div>
 
   <!-- 空数据占位 -->
@@ -274,7 +274,7 @@ body { height: auto; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scro
     <div class="xt-empty-icon" data-icon="clipboard"></div>
     <div class="xt-empty-title">暂无成绩</div>
     <div class="xt-empty-desc">本次考试未记录到成绩，请重新挑战一次。</div>
-    <a class="xt-btn xt-btn-primary" href="mock_exam.html">返回选卷</a>
+    <a class="xt-btn xt-btn-primary" href="mock_exam.html" onclick="location.replace('mock_exam.html');return false">返回选卷</a>
   </div>
 
 </div>
@@ -339,7 +339,9 @@ function goBack() {
       else if (cls === 'cet4') cat = 'cet-mock';
     }
   } catch (e) { /* 静默，兜底 cet-mock */ }
-  window.location.href = 'mock_exam.html?cat=' + encodeURIComponent(cat);
+  /* R169-C（2026-09-23）：返回改 location.replace —— 替换当前记录而非新增，
+     否则成绩页残留在历史栈里，系统返回键会撞回成绩/模考页退不出去。 */
+  window.location.replace('mock_exam.html?cat=' + encodeURIComponent(cat));
 }
 </script>
 

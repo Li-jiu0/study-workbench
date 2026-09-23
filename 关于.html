@@ -67,6 +67,19 @@
 .xt-inline-form .form-group{margin-bottom:12px;}
 .xt-inline-form .form-input{background:var(--card);}
 .xt-inline-form .modal-actions{margin-top:16px;}
+/* ===== R169-K（2026-09-23 用户要求）：正文重新用卡片（.ab-card）封装 =====
+   .ab-p    = 卡片内正文段落样式（备用；多数段落用现有 .ab-text）
+   .ab-link = 卡内可点文字（功能入口的行内链接样式，保持可点、不删功能）
+   头部 .ab-hero 已放回 .ab-card 内，故撤掉「去卡片」时补的 margin-top。 */
+.ab-p{font-size:13px;color:var(--text-secondary,#4b5563);line-height:1.9;margin-top:12px;}
+.ab-p b{color:var(--text,#1a1b1c);font-weight:700;}
+.ab-link{color:var(--primary,#2F6BFF);cursor:pointer;border-bottom:1px dashed var(--primary,#2F6BFF);}
+
+/* ===== R169-C（2026-09-23 用户要求）：删除顶栏红框区域 =====
+   全局搜索框（.gs-wrap）+ 消息通知铃铛 / 私信入口（assets/api.js 动态注入，类名 .notify-bell）。
+   只隐藏不删 DOM，其他页面不受影响。 */
+.gs-wrap{display:none !important}
+.notify-bell{display:none !important}
 </style>
 </head>
 <body class="theme-home">
@@ -157,14 +170,18 @@
     </header>
     <div class="content">
       <div class="page active" id="page-about">
-        <!-- 顶部返回（独立页，history.back 回上一页；无历史时回更多页） -->
+        <!-- 顶部返回（R169-J：统一 location.replace，整页跳回「更多」；不再走 history.back 弹栈） -->
         <div class="morepage-head">
-          <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='更多.html'}" title="返回" aria-label="返回">←</button>
+          <button class="morepage-back" onclick="location.replace('更多.html')" title="返回" aria-label="返回">←</button>
           <div class="morepage-title"><span class="nav-icon" data-icon="info" data-icon-size="18"></span> 关于</div>
         </div>
 
         <div class="ab-wrap">
-          <!-- ===== ① 头部：Logo + 定位语 + 版本号（单一来源 window.XT_VERSION，见页尾脚本） ===== -->
+          <!-- ===== ① 头部卡片（R169-K：按用户要求恢复卡片封装）=====
+               ⚠️ 定位语文案「君见此言 · 祝愿每日开心 · 修身」按用户要求原样保留、一字不改；
+                  版本徽标 #aboutVersion 由页尾脚本（单一来源 window.XT_VERSION）写入，勿删节点。
+               ⚠️ 注释里禁止出现「连续三短横 + 尖括号」的写法——其中的注释结束符会提前闭合注释、
+                  把后面的注释文字当成正文渲染出来（2026-09-23 本页踩过此坑）。 -->
           <div class="ab-card">
             <div class="ab-hero">
               <div class="ab-hero-icon"><span class="nav-icon" data-icon="rocket" data-icon-size="26"></span></div>
@@ -176,121 +193,72 @@
             </div>
           </div>
 
-          <!-- ===== ② 作者的话 ===== -->
+          <!-- ===== ② 作者的话（R169-K：与「关于星途」互换位置，作者的话上移到头部卡片下方） ===== -->
           <div class="ab-card">
             <div class="ab-card-title"><span class="ab-ti"><span class="nav-icon" data-icon="compass" data-icon-size="16"></span></span>作者的话</div>
             <div class="ab-desc" style="margin-top:0">人说的话、干的事，都是基于自己的认知。视其所以，观其所由，察其所安，难听的话，听的时候不要带情绪，注意听内容，不好的事，回头再看也没什么，譬如昨日死 譬如今日生,人的一生，太长也太短，祝乐观向上。</div>
           </div>
 
-          <!-- ===== ③ 核心功能（四分区） ===== -->
+          <!-- ===== ③ 关于星途（R169-K：与「作者的话」互换位置） ===== -->
+          <div class="ab-card">
+            <div class="ab-card-title"><span class="ab-ti"><span class="nav-icon" data-icon="info" data-icon-size="16"></span></span>关于星途</div>
+            <div class="ab-p">星途是一款为备考与自我提升而做的随身学习工具，把「学、练、测、记」四件事收进一个应用：词汇与听说训练打底，行测、申论、时政按考点成体系刷题，错题本自动沉淀薄弱项，AI 负责讲解、批改与模拟面试，社区让一个人备考也不孤单。</div>
+            <div class="ab-p">它不追求功能堆砌，而是尽量让每个模块都能独立闭环：打开就能学、学完能测、错了能回看、回头能比较。学习记录优先保存在你自己的设备上，<b>不登录也能用</b>；登录后发贴、私信与 AI 记录会跟着账号走，换设备也能接着学。</div>
+            <div class="ab-p">所有题库、范文与知识点由公开资料整理与用户共建，仅供学习参考；AI 回答由大模型生成，可能存在不准确之处，涉及报考条件、政策条款、成绩录取等关键事项，请以官方发布为准。</div>
+          </div>
+
+          <!-- ===== ④ 学习训练（R169-K：按用户要求恢复卡片封装，并把每项说明写详细） ===== -->
           <div class="ab-card">
             <div class="ab-card-title"><span class="ab-ti"><span class="nav-icon" data-icon="book-open" data-icon-size="16"></span></span>学习训练</div>
-            <div class="ab-grid">
-              <span class="ab-chip">四级词汇与听说</span>
-              <span class="ab-chip">行测刷题</span>
-              <span class="ab-chip">申论刷题与批改</span>
-              <span class="ab-chip">错题本</span>
-              <span class="ab-chip">时政热点</span>
-              <span class="ab-chip">AI 模拟面试</span>
-              <span class="ab-chip">面试题库</span>
-              <span class="ab-chip">央国企定向库</span>
-              <span class="ab-chip">万能金句 / 场景话术</span>
-              <span class="ab-chip">PPT 训练</span>
-              <span class="ab-chip">我的文件</span>
-              <span class="ab-chip">导入题库</span>
-              <span class="ab-chip">学习统计</span>
-            </div>
+            <div class="ab-text"><b>四级词汇与听说</b>：50 个高频核心词卡片式打卡，点开看释义、标记认识进度；听力训练提供精听与口语跟读双模式，多场景逐句跟练。</div>
+            <div class="ab-text" style="margin-top:6px"><b>行测刷题</b>：按题型分模块成体系刷题，覆盖行测常见题型；真题模考带计时、答题卡与成绩页，做完即知强弱项。</div>
+            <div class="ab-text" style="margin-top:6px"><b>申论刷题与批改</b>：按题型作答并给出批改与改进方向，练的是答题结构而不是背模板。</div>
+            <div class="ab-text" style="margin-top:6px"><b>错题本</b>：做错的题自动收集，按科目与题型回看、重做，让薄弱项反复过手。</div>
+            <div class="ab-text" style="margin-top:6px"><b>时政热点</b>：实时榜单 + 分类筛选 + 详情 + 收藏，考前集中过一遍重点。</div>
+            <div class="ab-text" style="margin-top:6px"><b>AI 模拟面试</b>：结构化追问式演练，练临场表达与答题节奏，事后可回看复盘。</div>
+            <div class="ab-text" style="margin-top:6px"><b>面试题库</b>：面试高频问题集中整理，考前快速过题。</div>
+            <div class="ab-text" style="margin-top:6px"><b>央国企定向库</b>：按企业定向收录笔面试资料，适合目标明确的定向准备。</div>
+            <div class="ab-text" style="margin-top:6px"><b>万能金句 / 场景话术</b>：表达题与面试的素材库，临场取用不慌。</div>
+            <div class="ab-text" style="margin-top:6px"><b>PPT 训练</b>：版式库 + 案例拆解，练结构化表达与汇报。</div>
+            <div class="ab-text" style="margin-top:6px"><b>我的文件 / 导入题库</b>：资料集中存放与分类管理；自己整理的题库导入后即可按模块练习。</div>
+            <div class="ab-text" style="margin-top:6px"><b>学习统计</b>：连续打卡、今日时长、分类分布与发帖统计，进度看得见。</div>
           </div>
 
+          <!-- ===== ⑤ AI 能力 ===== -->
           <div class="ab-card">
             <div class="ab-card-title"><span class="ab-ti"><span class="nav-icon" data-icon="sparkles" data-icon-size="16"></span></span>AI 能力</div>
-            <div class="ab-grid">
-              <span class="ab-chip">AI 问答（自动 / 手动选模型 · MAX 模式 · 深度思考）</span>
-              <span class="ab-chip">AI 伙伴（小助手 / 暖心学伴）</span>
-              <span class="ab-chip">翻译</span>
-              <span class="ab-chip">图片生成</span>
-              <span class="ab-chip">视频生成</span>
-              <span class="ab-chip">3D 生成</span>
-              <span class="ab-chip">语音朗读</span>
-            </div>
+            <div class="ab-text"><b>AI 问答</b>：可选自动路由或手动指定模型，支持 MAX 模式与深度思考，多轮上下文连续追问，讲题、批改、归纳知识点都能用。</div>
+            <div class="ab-text" style="margin-top:6px"><b>AI 伙伴</b>：首页小助手与暖心学伴两种人格，随时提问、随时陪练。</div>
+            <div class="ab-text" style="margin-top:6px"><b>翻译</b>：中英互译，长句与专业表述也能处理。</div>
+            <div class="ab-text" style="margin-top:6px"><b>图片 / 视频 / 3D 生成</b>：按提示词生成素材，用于讲义配图、记忆卡片或素材演示。</div>
+            <div class="ab-text" style="margin-top:6px"><b>语音朗读</b>：把文本读出来，配合听力跟读练发音与语感。</div>
+            <div class="ab-text" style="margin-top:6px">AI 功能按调用额度使用，平台提供免费额度；额度用尽时可切换其他模型或等待额度恢复。所有 AI 回答均由大模型生成，仅供参考，不构成专业建议。</div>
           </div>
 
+          <!-- ===== ⑥ 社区互动 ===== -->
           <div class="ab-card">
             <div class="ab-card-title"><span class="ab-ti"><span class="nav-icon" data-icon="users" data-icon-size="16"></span></span>社区互动</div>
-            <div class="ab-grid">
-              <span class="ab-chip">动态空间（朋友圈）</span>
-              <span class="ab-chip">发贴博客</span>
-              <span class="ab-chip">评论点赞</span>
-              <span class="ab-chip">通讯录好友</span>
-              <span class="ab-chip">私聊</span>
-              <span class="ab-chip">群聊</span>
-              <span class="ab-chip">实时位置共享</span>
-            </div>
+            <div class="ab-text"><b>动态空间（朋友圈）</b>：发图文动态记录备考日常，可见范围可控。</div>
+            <div class="ab-text" style="margin-top:6px"><b>发贴博客</b>：写长文发贴，把经验与方法沉淀下来，也能看到别人的备考路。</div>
+            <div class="ab-text" style="margin-top:6px"><b>评论点赞</b>：互相打气、交流方法，消息会及时提醒。</div>
+            <div class="ab-text" style="margin-top:6px"><b>通讯录好友 · 私聊 · 群聊</b>：从加好友到单聊、组队学习都有；搭子可以一起打卡。</div>
+            <div class="ab-text" style="margin-top:6px"><b>实时位置共享</b>：仅好友之间自愿开启、可随时停止；只保留最近一次位置，<b>不保存历史轨迹</b>。</div>
           </div>
 
+          <!-- ===== ⑦ 工具与管理 ===== -->
           <div class="ab-card">
             <div class="ab-card-title"><span class="ab-ti"><span class="nav-icon" data-icon="wrench" data-icon-size="16"></span></span>工具与管理</div>
-            <div class="ab-grid">
-              <span class="ab-chip">数据管理（存储占用 / 清理 / 备份）</span>
-              <span class="ab-chip">我的文件</span>
-              <span class="ab-chip">错题本</span>
-              <span class="ab-chip">检测更新</span>
-            </div>
+            <div class="ab-text"><b>数据管理</b>：查看存储占用、按类清理、导出备份，换设备前建议先导一份。</div>
+            <div class="ab-text" style="margin-top:6px"><b>我的文件</b>：资料集中存放与分类管理，随用随取。</div>
+            <div class="ab-text" style="margin-top:6px"><b>错题本</b>：错题与答题记录的集中入口，复习时优先回看。</div>
+            <div class="ab-text" style="margin-top:6px"><b>检测更新</b>：查看当前版本与更新日志，有新版本时可一键更新。</div>
           </div>
 
-          <!-- ===== ④ 协议与条款（需求 2：协议全文独立页 协议.html） ===== -->
-          <div class="ab-card" style="padding:6px 16px">
-            <div class="ab-row" onclick="location.href='协议.html?tab=ua'">
-              <span class="ab-row-ic"><span class="nav-icon" data-icon="file-text" data-icon-size="18"></span></span>
-              <span class="ab-row-tx">用户协议</span>
-              <span class="ab-row-st">服务条款全文</span>
-              <span class="ab-row-ar">›</span>
-            </div>
-            <div class="ab-row" onclick="location.href='协议.html?tab=privacy'">
-              <span class="ab-row-ic"><span class="nav-icon" data-icon="lock" data-icon-size="18"></span></span>
-              <span class="ab-row-tx">隐私政策</span>
-              <span class="ab-row-st">信息如何收集与使用</span>
-              <span class="ab-row-ar">›</span>
-            </div>
-          </div>
+          <!-- ===== ⑧ 协议入口已迁走（R169-J）：《用户协议》《隐私政策》现位于
+               「设置 → 隐私与安全」子页（设置.html 的 #privacyAgreementRow / #privacyPolicyRow），
+               指向独立页 协议.html?tab=ua|privacy。本页不再重复放置入口。 -->
 
-          <!-- ===== ⑤ 帮助与反馈（指向设置页既有反馈卡，不新建） ===== -->
-          <div class="ab-card" style="padding:6px 16px">
-            <div class="ab-row" onclick="location.href='设置.html'">
-              <span class="ab-row-ic"><span class="nav-icon" data-icon="message-circle" data-icon-size="18"></span></span>
-              <span class="ab-row-tx">问题反馈 · 常见问题</span>
-              <span class="ab-row-st">设置页反馈卡</span>
-              <span class="ab-row-ar">›</span>
-            </div>
-          </div>
-
-          <!-- ===== ⑥ 检测更新（自设置页维护卡迁入；XTUpdate 缺失时回退设置页） ===== -->
-          <div class="ab-card" style="padding:6px 16px">
-            <div class="ab-row" onclick="if(window.XTUpdate&&XTUpdate.openUpdatePage){XTUpdate.openUpdatePage()}else{location.href='设置.html'}">
-              <span class="ab-row-ic"><span class="nav-icon" data-icon="refresh-cw" data-icon-size="18"></span></span>
-              <span class="ab-row-tx">检测更新</span>
-              <span class="ab-row-st" id="aboutUpdateVer">当前版本</span>
-              <span class="ab-row-ar">›</span>
-            </div>
-          </div>
-
-          <!-- ===== ⑦ 赞助与联系 ===== -->
-          <div class="ab-card" style="padding:6px 16px">
-            <div class="ab-row" onclick="location.href='赞助.html'">
-              <span class="ab-row-ic"><span class="nav-icon" data-icon="heart" data-icon-size="18"></span></span>
-              <span class="ab-row-tx">赞助支持</span>
-              <span class="ab-row-st">请开发者喝杯咖啡</span>
-              <span class="ab-row-ar">›</span>
-            </div>
-            <div class="ab-row" onclick="location.href='更多.html'">
-              <span class="ab-row-ic"><span class="nav-icon" data-icon="menu" data-icon-size="18"></span></span>
-              <span class="ab-row-tx">更多入口</span>
-              <span class="ab-row-st">全部功能</span>
-              <span class="ab-row-ar">›</span>
-            </div>
-          </div>
-
-          <!-- ===== ⑧ 说明与免责 ===== -->
+          <!-- ===== ⑨ 说明与免责（R169-K：恢复卡片封装，四条条文与备份提示一字不改） ===== -->
           <div class="ab-card">
             <div class="ab-card-title"><span class="ab-ti"><span class="nav-icon" data-icon="alert-triangle" data-icon-size="16"></span></span>说明与免责</div>
             <div class="ab-text">1. 本站题库、范文、知识点等内容由公开资料整理与用户共建，仅供学习参考，不保证与最新考纲或官方标准答案完全一致，请以官方发布为准。</div>
@@ -298,6 +266,14 @@
             <div class="ab-text" style="margin-top:6px">3. 本站不收集与学习无关的个人信息，也不出售任何数据；账号相关数据的使用范围仅限为你提供同步与备份服务。不登录也能用，数据存在你本机浏览器里；登录后发贴、私信、AI 记录会跟着账号走，换设备也能接着学。</div>
             <div class="ab-text" style="margin-top:6px">4. 请勿在本站发布违反法律法规或侵犯他人权益的内容，违规内容会被移除。</div>
             <div class="ab-note">清理浏览器数据会一并清掉本地学习记录，重要内容建议先在「数据管理」导出一份备份。</div>
+          </div>
+
+          <!-- ===== ⑩ 反馈与支持（R169-K：入口保留，收进卡片里用可点文字呈现；
+               #aboutUpdateVer 节点必须保留，页尾脚本会写入当前版本号。） ===== -->
+          <div class="ab-card">
+            <div class="ab-card-title"><span class="ab-ti"><span class="nav-icon" data-icon="message-circle" data-icon-size="16"></span></span>反馈与支持</div>
+            <div class="ab-text">遇到问题、发现错误或有功能建议，都可以到 <span class="ab-link" onclick="location.href='设置.html'">设置页的问题反馈</span> 提交；想看自己用的是不是最新版，点 <span class="ab-link" onclick="if(window.XTUpdate&&XTUpdate.openUpdatePage){XTUpdate.openUpdatePage()}else{location.href='设置.html'}">检测更新</span>（<span id="aboutUpdateVer">当前版本</span>）即可查看更新日志；全部功能入口见 <span class="ab-link" onclick="location.href='更多.html'">更多</span>。</div>
+            <div class="ab-text" style="margin-top:6px">如果想支持这个项目，可以去 <span class="ab-link" onclick="location.href='赞助.html'">赞助支持</span> 请开发者喝杯咖啡。《用户协议》与《隐私政策》全文，在 <span class="ab-link" onclick="location.href='设置.html'">设置 → 隐私与安全</span> 中查看。</div>
           </div>
 
           <div class="ab-sign">——树枝子</div>
@@ -438,10 +414,10 @@
 <script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
-<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/app.js?v=20260930a" defer></script>
 <script src="assets/quest.js?v=20260916O" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260924a" defer></script>
+<script src="assets/api.js?v=20260930a" defer></script>
 <script src="assets/study-stats.js?v=20260916O" defer></script>
 <script src="assets/ai-config.js?v=20260925a"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
@@ -454,7 +430,7 @@
 <script src="assets/ai-cap-translate.js?v=20260920c"></script>
 <script src="assets/ai-cap-video.js?v=20260920c"></script>
 <script src="assets/ai-cap-3d.js?v=20260922a"></script>
-<script src="assets/xt-update.js?v=20260928e"></script>
+<script src="assets/xt-update.js?v=20260930b"></script>
 <script>
 /* 需求A（2026-09-22）：版本号单一来源 —— window.XT_VERSION（由 assets/xt-update.js 顶部
    定义一处维护）。取数三级回退，杜绝再次出现 v2.3/v1.23 之类写死漂移：

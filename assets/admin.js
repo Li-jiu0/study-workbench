@@ -509,7 +509,11 @@
 
   /* ---------------- tab 切换 / 刷新 ---------------- */
   function syncTabs() {
-    var map = { users: 'admTabUsers', online: 'admTabOnline', feedback: 'admTabFeedback', devices: 'admTabDevices' };
+    // R170-C：新增 5 个 tab（内容治理/公告/群组/私聊/审计日志）纳入显隐白名单
+    var map = {
+      users: 'admTabUsers', online: 'admTabOnline', feedback: 'admTabFeedback', devices: 'admTabDevices',
+      content: 'admTabContent', announcements: 'admTabAnn', groups: 'admTabGroup', chat: 'admTabChat', logs: 'admTabLog'
+    };
     for (var k in map) {
       var n = $(map[k]);
       if (n) n.className = 'adm-tab' + (PAGE.tab === k ? ' active' : '');
@@ -520,9 +524,29 @@
     if (fl) fl.style.display = (PAGE.tab === 'feedback') ? '' : 'none';
     var dl = $('admDevicePanel');
     if (dl) dl.style.display = (PAGE.tab === 'devices') ? '' : 'none';
+    // R170-C：5 个新面板显隐
+    var cp = $('admContentPanel');
+    if (cp) cp.style.display = (PAGE.tab === 'content') ? '' : 'none';
+    var ap = $('admAnnPanel');
+    if (ap) ap.style.display = (PAGE.tab === 'announcements') ? '' : 'none';
+    var gp = $('admGroupPanel');
+    if (gp) gp.style.display = (PAGE.tab === 'groups') ? '' : 'none';
+    var hp = $('admChatPanel');
+    if (hp) hp.style.display = (PAGE.tab === 'chat') ? '' : 'none';
+    var lp = $('admLogPanel');
+    if (lp) lp.style.display = (PAGE.tab === 'logs') ? '' : 'none';
   }
 
   window.admSwitchTab = function (tab) {
+    // R170-C：新增 5 个 tab 交由 assets/admin-ops.js 渲染
+    if (tab === 'content' || tab === 'announcements' || tab === 'groups' || tab === 'chat' || tab === 'logs') {
+      if (PAGE.tab === tab) return;
+      PAGE.tab = tab;
+      PAGE.expandedId = null;
+      syncTabs();
+      try { if (window.XTADMOPS && typeof window.XTADMOPS.onTab === 'function') window.XTADMOPS.onTab(tab); } catch (e) { /* R170-C 忽略 */ }
+      return;
+    }
     if (tab !== 'users' && tab !== 'online' && tab !== 'feedback' && tab !== 'devices') tab = 'users';
     if (PAGE.tab === tab) return;
     PAGE.tab = tab;

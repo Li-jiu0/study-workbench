@@ -12,7 +12,8 @@ from sqlalchemy import func, or_, text
 from sqlalchemy.orm import Session
 
 from config import AVATAR_DIR
-from database import User, engine, get_db, is_admin_user, is_friend, now_iso
+from database import (User, admin_hidden_clause, engine, get_db, is_friend,
+                      is_hidden_from_public, now_iso)
 from filecheck import ext_for
 from rate_limit import rate_limit
 from schemas import AccountIn, PrivacyIn, ProfileIn, note_card, privacy_of, user_brief
@@ -467,8 +468,8 @@ def presence(ids: str = Query(default=""), user: User = Depends(get_current_user
             continue
         seen.add(uid)
         t = db.get(User, uid)
-        # 需求01：管理员的在线状态对普通用户完全不可见（跳过，不返回任何条目）
-        if t and not is_admin_user(t):
+        # 需求01 / R170：隐身管理员的在线状态对普通用户不可见（现身的管理员可见）
+        if t and not is_hidden_from_public(t):
             out.append({"id": t.id, **_presence_fields(t)})
     return {"items": out}
 
@@ -488,8 +489,9 @@ def public_profile(user_id: int, user: User = Depends(get_current_user), db: Ses
     from database import Note
 
     target = db.get(User, user_id)
-    # 需求01：管理员的资料与状态对普通用户完全不可见 → 一律按不存在处理
-    if not target or is_admin_user(target):
+    # 需求01 / R170：仅「隐身管理员」的资料与状态对普通用户不可见（按不存在处理）；
+    # 现身的管理员（admin_hidden=False）其公开主页对普通用户可见（返回其 public 笔记）。
+    if not target or is_hidden_from_public(target):
         raise HTTPException(404, "用户不存在")
     notes = (
         db.query(Note)

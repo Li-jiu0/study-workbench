@@ -25,10 +25,11 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 import config
-from database import (Feedback, Note, SessionLocal, StudyLog, User, get_db,
+from database import (Feedback, Note, Notification, SessionLocal, StudyLog, User, get_db,
                       is_admin_user, now_iso, now_str)
 from routers import feedback_public
 from security import get_current_user, hash_password
@@ -163,6 +164,15 @@ def _user_row(db: Session, u: User) -> dict:
         "is_online": online,
         "isAdmin": admin,
         "is_admin": admin,
+        # R170-A（2026-09-23）：账号治理状态（getattr 兜底，camelCase + snake_case 双写）
+        "isBanned": bool(getattr(u, "is_banned", False)),
+        "is_banned": bool(getattr(u, "is_banned", False)),
+        "bannedAt": getattr(u, "banned_at", "") or "",
+        "banned_at": getattr(u, "banned_at", "") or "",
+        "bannedReason": getattr(u, "banned_reason", "") or "",
+        "banned_reason": getattr(u, "banned_reason", "") or "",
+        "muteUntil": getattr(u, "mute_until", "") or "",
+        "mute_until": getattr(u, "mute_until", "") or "",
         "stats": {"notes": notes, "studyEvents": study},
     }
 
@@ -224,6 +234,9 @@ def user_detail(user_id: int, user: User = Depends(_require_admin), db: Session 
         "goal": t.goal or "",
         "tags": t.tags or "",
         "avatarUrl": t.avatar,
+        # R170-A（2026-09-23）：账号 / 邮箱（管理员可见全量资料）
+        "account": t.account or "",
+        "email": t.email or "",
     }
 
 
@@ -312,12 +325,60 @@ def _split_feedback_id(feedback_id: str, source: str) -> tuple[str, int]:
     return src, fid
 
 
+def _resolve_public_recipient(db: Session, item: dict):
+    """R171-D1 兜底：public 条目没有 userId 时，用 username 唯一匹配 users 表。
+
+    匹配字段（登录标识口径，见 auth.login）：
+      - User.username：精确匹配（注册账号；feedback_public 落盘写的就是它，唯一不可变）；
+      - User.account ：大小写不敏感匹配（R141/R142 的「账号」，亦为登录标识）。
+      邮箱（email）不纳入：仅当登录标识含 '@' 时才用它，且 feedback 落盘的 username
+      恒为注册用户名、不会是邮箱。
+
+    **仅当恰好命中 1 个用户时**返回其 id；命中 0 个或多个 → 返回 None（静默跳过，绝不猜人）。
+    条目自带 userId 时直接以 userId 为准（不查询）。
+    """
+    uid = item.get("userId")
+    if uid is not None:
+        return int(uid)
+    uname = (item.get("username") or "").strip()
+    if not uname:
+        return None
+    rows = (
+        db.query(User)
+        .filter(or_(User.username == uname, func.lower(User.account) == uname.lower()))
+        .all()
+    )
+    return rows[0].id if len(rows) == 1 else None
+
+
+def _notify_feedback_reply(db: Session, recipient_id, admin: User,
+                           reply: str, old_reply: str) -> None:
+    """R171-D1：回复成功后给反馈提交者写一条站内通知（best-effort，绝不干扰回复主流程）。
+
+    规则：
+      - 收信人缺失（public 源无 userId）或收信人即管理员本人 → 跳过；
+      - 去重：旧回复非空且与新回复完全相同时 → 跳过（避免重复提交同一段文本刷通知）；
+      - 落库独立 try/except：通知失败仅回滚本次通知，绝不影响已提交的回复。
+    """
+    if not recipient_id or recipient_id == admin.id:
+        return
+    if old_reply and old_reply == reply:
+        return
+    try:
+        db.add(Notification(user_id=int(recipient_id), actor_id=admin.id, type="feedback",
+                            note_id=None, is_read=False, created_at=now_str()))
+        db.commit()
+    except Exception:
+        db.rollback()
+
+
 @router.post("/feedback/{feedback_id}/reply")
 def reply_feedback(feedback_id: str, body: ReplyIn, source: str = Query(default=""),
                    user: User = Depends(_require_admin), db: Session = Depends(get_db)):
     """管理员回复一条反馈 → 写 reply / replied_at，status 置为已处理（replied）。
 
     public 源走 feedback.json（沿用其原子写 + UTF-8 无 BOM），account 源走 feedbacks 表。
+    R171-D1：回复落库成功后，给反馈提交者补一条站内通知（失败不影响回复本身）。
     """
     src, fid = _split_feedback_id(feedback_id, source)
     reply = (body.reply or "").strip()
@@ -335,18 +396,24 @@ def reply_feedback(feedback_id: str, body: ReplyIn, source: str = Query(default=
                     break
             if hit is None:
                 raise HTTPException(404, "反馈不存在")
+            old_reply = (hit.get("reply") or "").strip()
             hit["reply"] = reply
             hit["repliedAt"] = at
             hit["replied_at"] = at
             hit["status"] = "replied"
             feedback_public._save_all(items)
+        # R171-D1：public 源先按 userId 定位；无 userId 时用 username 唯一匹配兜底；都没有则跳过。
+        _notify_feedback_reply(db, _resolve_public_recipient(db, hit), user, reply, old_reply)
         return {"ok": True, "source": src, "id": fid, "status": "replied", "repliedAt": at}
 
     f = db.get(Feedback, fid)
     if not f:
         raise HTTPException(404, "反馈不存在")
+    old_reply = (f.reply or "").strip()
     f.reply = reply
     f.replied_at = at
     f.status = "replied"
     db.commit()
+    # R171-D1：回复已提交，再独立写通知（独立事务，失败不回滚回复）。
+    _notify_feedback_reply(db, f.user_id, user, reply, old_reply)
     return {"ok": True, "source": src, "id": fid, "status": "replied", "repliedAt": at}

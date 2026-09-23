@@ -113,6 +113,11 @@
   table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .bottom-nav-item .bn-label, .ai-mode-badge, .study-stats-bar b { font-size: 11px; }
 }
+/* ===== R169-C（2026-09-23 用户要求）：删除顶栏红框区域 =====
+   全局搜索框（.gs-wrap）+ 消息通知铃铛 / 私信入口（assets/api.js 动态注入，类名 .notify-bell）。
+   只隐藏不删 DOM，其他页面不受影响。 */
+.gs-wrap{display:none !important}
+.notify-bell{display:none !important}
 </style>
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
 <script src="assets/xt-log.js?v=20260928d"></script>
@@ -377,9 +382,9 @@
 <script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
-<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/app.js?v=20260930a" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260924a" defer></script>
+<script src="assets/api.js?v=20260930a" defer></script>
 
 <script src="assets/mini-comm.js?v=20260916O" defer></script>
 <!-- ===== R48 第 3 批（A3 案例拆解库「做真内容」） =====

@@ -95,6 +95,18 @@
 .blog-loc-chip .blog-loc-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .blog-loc-chip .blog-loc-x { cursor: pointer; font-weight: 700; opacity: .7; }
 .blog-loc-chip .blog-loc-x:hover { opacity: 1; }
+/* ===== R169-C（2026-09-23 用户要求）：顶端主导航（社区/我的文章/写发贴/统计）改形 =====
+   ① 圆弧形(20px胶囊) → 圆角方形(10px)；② 四个按钮等分铺满整行屏幕宽度，不再换行；
+   ③ 进入帖子详情视图时整排隐藏（showBlogView 包装，见页尾脚本）。共享 common.css 不动。 */
+.blog-subnav{flex-wrap:nowrap;gap:8px}
+.blog-subnav .sb-tab{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:10px;padding:9px 6px}
+.blog-subnav .sb-tab .nav-icon svg{width:16px;height:16px}
+.blog-subnav .sb-tab span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ===== R169-C：删除顶栏红框区域 =====
+   全局搜索框（.gs-wrap）+ 消息通知铃铛 / 私信入口（assets/api.js 动态注入，类名 .notify-bell）。
+   只隐藏不删 DOM，其他页面不受影响。 */
+.gs-wrap{display:none !important}
+.notify-bell{display:none !important}
 </style>
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
 <script src="assets/xt-log.js?v=20260928d"></script>
@@ -455,10 +467,10 @@
 <script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
-<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/app.js?v=20260930a" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
 <script src="assets/xt-region.js?v=20260919j" defer></script>
-<script src="assets/api.js?v=20260924a" defer></script>
+<script src="assets/api.js?v=20260930a" defer></script>
 <script>
 /* ===================================================================
    社区（发贴）编辑页增强：【字数统计 / 阅读时长 / 草稿自动保存 / 快速模板】
@@ -891,6 +903,30 @@
   function init() { window.blogRenderLocChip(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
+})();
+</script>
+
+<script>
+/* R169-C（2026-09-23 用户要求）：进入帖子详情视图时隐藏顶端主导航（社区/我的文章/写发贴/统计）。
+   包装 window.showBlogView（app.js 定义、api.js 调用），view==='detail' 时整排隐藏、其余恢复。
+   资产脚本为 defer 加载，这里轮询等待安装；深链 #note= 直达详情时由兜底显隐检查补一次。 */
+(function () {
+  function install() {
+    if (window.__xtSbvWrapped) return;
+    if (typeof window.showBlogView !== 'function') { setTimeout(install, 60); return; }
+    var _sbv = window.showBlogView;
+    window.showBlogView = function (v) {
+      var r = _sbv.apply(this, arguments);
+      var nav = document.querySelector('.blog-subnav');
+      if (nav) nav.style.display = (v === 'detail') ? 'none' : '';
+      return r;
+    };
+    window.__xtSbvWrapped = true;
+    var d = document.getElementById('blogViewDetail');
+    var nav = document.querySelector('.blog-subnav');
+    if (d && nav && d.style.display === 'flex') nav.style.display = 'none';
+  }
+  install();
 })();
 </script>
 </body>

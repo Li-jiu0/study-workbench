@@ -411,3 +411,545 @@ body.dark .adm-row.open { background: rgba(91, 141, 239, .12); }
 body.dark .adm-dev-table th { background: rgba(255, 255, 255, .04); }
 body.dark .adm-dist-bar span { background: var(--primary); }
 
+/* ===================== R170-C 全能管理台（追加，不改既有选择器） =====================
+   前缀约定：.adm-op-* / .adm-ann-* / .adm-grp-* / .adm-chat-* / .adm-log-*
+   全部使用 var(--*) 主题变量，明暗主题共用；老 WebView 兼容：不用 clamp()/min()/max()。 */
+
+/* ---------- 顶部工具条（管理员身份 + 隐身开关） ---------- */
+.adm-op-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 10px 14px;
+  margin-bottom: 16px;
+}
+.adm-op-who { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.adm-op-badge {
+  flex-shrink: 0;
+  font-size: 11px;
+  line-height: 18px;
+  padding: 0 8px;
+  border-radius: 9px;
+  background: var(--primary-light);
+  color: var(--primary);
+  font-weight: 700;
+}
+.adm-op-whoname {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.adm-op-vis {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.adm-op-vis:hover { border-color: var(--primary); color: var(--primary); }
+.adm-op-vis:disabled { opacity: .55; cursor: default; }
+
+/* ---------- 通用按钮 / 输入 ---------- */
+.adm-op-rowacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 14px 10px;
+}
+.adm-op-btn {
+  padding: 4px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.adm-op-btn:hover { border-color: var(--primary); color: var(--primary); }
+.adm-op-btn.warn { color: #c8841b; border-color: #f0d9b0; }
+.adm-op-btn.ok { color: #22a55e; border-color: #bfe6cf; }
+.adm-op-btn.danger { color: var(--danger); border-color: #f3c9c4; }
+.adm-op-btn.danger:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
+
+.adm-op-input, .adm-op-textarea {
+  flex: 1 1 140px;
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  font-size: 13px;
+  font-family: inherit;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  box-sizing: border-box;
+}
+.adm-op-textarea { resize: vertical; width: 100%; }
+.adm-op-input:focus, .adm-op-textarea:focus { border-color: var(--primary); }
+
+/* ---------- 面板骨架 ---------- */
+.adm-op-panelwrap { padding: 12px 14px 8px; }
+.adm-op-panelhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.adm-op-panel-title { font-size: 14px; font-weight: 700; color: var(--text); }
+.adm-op-subtabs { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; flex: 1 1 auto; min-width: 0; }
+.adm-op-subtab {
+  padding: 5px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.adm-op-subtab:hover { border-color: var(--primary); color: var(--primary); }
+.adm-op-subtab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.adm-op-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.adm-op-summaryline { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.adm-op-chip {
+  font-size: 11px;
+  line-height: 18px;
+  padding: 0 8px;
+  border-radius: 9px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.adm-op-muted { color: var(--text-muted); font-size: 12px; }
+.adm-op-retry { color: var(--primary); text-decoration: none; font-weight: 600; }
+.adm-op-flag {
+  font-size: 10px;
+  line-height: 16px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: #fdf3e2;
+  color: #c8841b;
+  flex-shrink: 0;
+}
+.adm-op-flag.on { background: #e8f8ee; color: #22a55e; }
+.adm-op-flag.off { background: var(--bg); color: var(--text-muted); }
+.adm-op-subhead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+/* ---------- 列表项 ---------- */
+.adm-op-list { padding: 0; }
+.adm-op-item { border-bottom: 1px solid var(--border); padding: 10px 0; }
+.adm-op-item:last-child { border-bottom: none; }
+.adm-op-item-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.adm-op-item-who {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.adm-op-item-time { margin-left: auto; font-size: 11px; color: var(--text-muted); }
+.adm-op-item-body {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin: 6px 0;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.adm-op-item-acts { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.adm-op-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 4px;
+  flex-wrap: wrap;
+}
+.adm-op-pager-info { font-size: 12px; color: var(--text-secondary); }
+
+/* ---------- 用户行内联：数据概览 / 改资料 ---------- */
+.adm-op-summary {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 0 14px 10px;
+}
+.adm-op-summary-head { font-size: 13px; color: var(--text); margin-bottom: 8px; display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+.adm-op-summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.adm-op-summary-cell { background: var(--bg); border: 1px solid var(--border); border-radius: 9px; padding: 8px 6px; text-align: center; }
+.adm-op-summary-num { font-size: 16px; font-weight: 800; color: var(--primary); }
+.adm-op-summary-lab { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.adm-op-profileform { padding: 0 14px 10px; }
+.adm-op-form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 8px; }
+.adm-op-field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.adm-op-field > span { font-size: 11px; color: var(--text-muted); }
+.adm-op-form-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* ---------- 公告 ---------- */
+.adm-ann-form {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.adm-ann-form-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.adm-ann-item { border-bottom: 1px solid var(--border); padding: 10px 0; }
+.adm-ann-item:last-child { border-bottom: none; }
+.adm-ann-item.editing { background: var(--primary-light); border-radius: 10px; padding: 10px; }
+.adm-ann-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.adm-ann-title { font-size: 13.5px; font-weight: 700; color: var(--text); }
+.adm-ann-body { font-size: 12.5px; line-height: 1.6; color: var(--text-secondary); margin: 6px 0; white-space: pre-wrap; word-break: break-word; }
+
+/* ---------- 群组 ---------- */
+.adm-grp-item { border-bottom: 1px solid var(--border); padding: 10px 0; }
+.adm-grp-item:last-child { border-bottom: none; }
+.adm-grp-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.adm-grp-name { font-size: 13.5px; font-weight: 700; color: var(--text); }
+.adm-grp-ann { font-size: 12.5px; color: var(--text-secondary); margin: 6px 0; word-break: break-word; }
+.adm-grp-members {
+  margin-top: 8px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 8px;
+  background: var(--bg);
+}
+.adm-grp-member { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 5px 0; border-bottom: 1px solid var(--border); }
+.adm-grp-member:last-child { border-bottom: none; }
+.adm-grp-mname { font-size: 12.5px; font-weight: 600; color: var(--text); }
+
+/* ---------- 私聊 ---------- */
+.adm-chat-thread { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); padding: 10px 0; }
+.adm-chat-thread:last-child { border-bottom: none; }
+.adm-chat-thread-main { flex: 1; min-width: 0; cursor: pointer; }
+.adm-chat-thread-names { font-size: 13px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.adm-chat-stream {
+  max-height: 460px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 8px 2px;
+  background: var(--bg);
+  border-radius: 10px;
+}
+.adm-chat-line { display: flex; margin: 6px 0; }
+.adm-chat-line.left { justify-content: flex-start; }
+.adm-chat-line.right { justify-content: flex-end; }
+.adm-chat-bubble { position: relative; max-width: 78%; border-radius: 12px; padding: 8px 10px; border: 1px solid var(--border); background: var(--card); }
+.adm-chat-line.right .adm-chat-bubble { background: var(--primary-light); border-color: transparent; }
+.adm-chat-who { font-size: 11px; color: var(--text-muted); margin-bottom: 3px; }
+.adm-chat-text { font-size: 13px; line-height: 1.55; color: var(--text); word-break: break-word; white-space: pre-wrap; }
+.adm-chat-kind { color: var(--text-secondary); font-style: italic; }
+.adm-chat-time { font-size: 10.5px; color: var(--text-muted); margin-top: 4px; }
+.adm-chat-del { margin-top: 6px; }
+
+/* ---------- 审计日志 ---------- */
+.adm-log-tablewrap { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 0 2px; }
+.adm-log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.adm-log-table th, .adm-log-table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  vertical-align: top;
+}
+.adm-log-table th { font-size: 11.5px; color: var(--text-muted); font-weight: 600; background: var(--bg); position: sticky; top: 0; }
+.adm-log-table tbody tr:hover { background: var(--bg); }
+.adm-log-detail { white-space: normal; max-width: 320px; word-break: break-word; }
+
+/* ---------- 窄屏（≤768px）必须可用 ---------- */
+@media (max-width: 768px) {
+  .adm-op-rowacts { padding: 0 12px 10px; }
+  .adm-op-summary-grid { grid-template-columns: repeat(2, 1fr); }
+  .adm-op-form-grid { grid-template-columns: 1fr; }
+  .adm-op-summary { margin: 0 12px 10px; }
+  .adm-op-field { min-width: 0; }
+  .adm-chat-bubble { max-width: 88%; }
+  .adm-op-item-who { max-width: 60%; }
+  .adm-log-table { min-width: 520px; }
+  .adm-op-btn { padding: 5px 10px; }
+}
+
+/* 深色主题微调 */
+body.dark .adm-op-btn { background: rgba(255, 255, 255, .04); }
+body.dark .adm-op-summary-cell { background: rgba(255, 255, 255, .04); }
+body.dark .adm-log-table th { background: rgba(255, 255, 255, .04); }
+body.dark .adm-op-vis { color: var(--text-secondary); }
+
+
+/* ==================================================================
+   R170-E 管理后台「列表导航 + 子页」
+   主页：#admMenuList（9 项模块列表）；子页：#admSubHead 顶栏 + 对应面板。
+   通过 #adminRoot 上的 adm-home / adm-sub 类切换显隐；原 tab 条 DOM 保留。
+   ================================================================== */
+
+/* ---- 主页：模块导航列表 ---- */
+#admMenuList { margin-top: 4px; }
+.adm-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 13px 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.adm-menu-item:active { background: var(--primary-light); }
+.adm-menu-main { min-width: 0; }
+.adm-menu-title { font-size: 15px; font-weight: 600; color: var(--text); }
+.adm-menu-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.adm-menu-arrow { font-size: 20px; color: var(--text-muted); flex-shrink: 0; }
+
+/* ---- 子页顶栏 ---- */
+.adm-subhead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+.adm-subhead-back {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.adm-subhead-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.adm-subhead-refresh {
+  padding: 6px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* ---- 模式切换显隐（不用 :not，兼容旧 WebView） ---- */
+/* 主页模式：隐藏内容卡片与子页顶栏 */
+#adminRoot.adm-home .adm-card,
+#adminRoot.adm-home #admSubHead { display: none !important; }
+/* 子页模式：隐藏概览卡片、导航列表、原 tab 条（面板按 admSwitchTab 正常显隐） */
+#adminRoot.adm-sub #admMenuList { display: none !important; }
+#adminRoot.adm-sub .adm-overview { display: none !important; }
+#adminRoot.adm-sub .adm-card-head { display: none !important; }
+
+/* ---- 窄屏 ---- */
+@media (max-width: 768px) {
+  .adm-menu-item { padding: 12px 13px; border-radius: 12px; }
+  .adm-menu-title { font-size: 14px; }
+  .adm-menu-desc { font-size: 11px; }
+}
+
+/* ==================================================================
+   R171-C2 管理后台「某用户应用列表」弹层
+   由 assets/admin-ops.js 动态创建（#admAppsModal），仅本弹层使用。
+   z-index 1100：高于本页既有 .modal-overlay(1000)/.modal(1001)，低于 toast。
+   ================================================================== */
+.adm-apps-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(15, 18, 30, .5);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(16px + var(--xt-satop, env(safe-area-inset-top, 0px))) 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  overscroll-behavior: contain;
+}
+.adm-apps-panel {
+  width: 100%;
+  max-width: 560px;
+  max-height: 84vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+.adm-apps-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.adm-apps-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.adm-apps-close {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text-secondary);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.adm-apps-close:hover { border-color: var(--danger); color: var(--danger); }
+.adm-apps-meta { font-size: 12px; color: var(--text-secondary); padding: 10px 16px 0; }
+.adm-apps-off { font-size: 12px; color: var(--danger); font-weight: 600; padding: 4px 16px 0; }
+.adm-apps-search {
+  margin: 10px 16px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+  transition: var(--transition);
+}
+.adm-apps-search:focus { border-color: var(--primary); }
+.adm-apps-list {
+  flex: 1;
+  min-height: 0;
+  max-height: 60vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  border-top: 1px solid var(--border);
+  padding: 2px 16px 12px;
+}
+.adm-apps-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.adm-apps-row:last-child { border-bottom: none; }
+.adm-apps-ico {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  object-fit: contain;
+  background: var(--primary-light);
+  display: block;
+}
+.adm-apps-ico-fb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+}
+.adm-apps-info { min-width: 0; }
+.adm-apps-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.adm-apps-pkg {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  word-break: break-all;
+}
+.adm-apps-empty { padding: 24px 0; text-align: center; color: var(--text-muted); font-size: 13px; }
+.adm-apps-empty.err { color: var(--danger); }
+
+/* ---- 窄屏（≤768px） ---- */
+@media (max-width: 768px) {
+  .adm-apps-panel { max-width: 100%; max-height: 88vh; border-radius: 14px; }
+  .adm-apps-ico { width: 32px; height: 32px; }
+  .adm-apps-list { max-height: 62vh; }
+}
+
+/* 深色主题微调 */
+body.dark .adm-apps-ico { background: rgba(255, 255, 255, .06); }
+body.dark .adm-apps-close { background: rgba(255, 255, 255, .04); }
+

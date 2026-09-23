@@ -596,7 +596,8 @@ body.theme-interview { --primary: #1A73E8; --primary-light: #E8F0FE; --primary-d
 
 <!-- 顶部栏：返回 + 标题 + 进度点 + 第 x/5 题 -->
 <div class="header">
-  <button class="header-back" onclick="goBack()" title="返回" aria-label="返回"><span data-icon="arrow-left" data-icon-size="18" style="vertical-align:-3px"></span></button>
+  <!-- R169-C（2026-09-23 用户要求）：返回按钮对齐「面试准备」同款（outline「← 返回」按钮，带文字） -->
+  <button class="btn btn-outline btn-sm" onclick="goBack()" title="返回" aria-label="返回" style="flex-shrink:0"><span data-icon="arrow-left" data-icon-size="16" style="vertical-align:-3px"></span> 返回</button>
   <div class="header-title">AI模拟面试</div>
   <div class="header-right hidden" id="topProgress">
     <div class="progress-dots" id="progressDots"></div>

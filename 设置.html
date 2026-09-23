@@ -140,7 +140,7 @@
           </div>
           <div class="subpage-group-card" onclick="SubpageRouter.navigate('privacy')">
             <div class="sgc-icon"><span class="nav-icon" data-icon="locked" data-icon-size="20"></span></div>
-            <div class="sgc-main"><div class="sgc-title">隐私与安全</div><div class="sgc-desc">动态可见范围、谁可加我、能否被搜到、黑名单</div></div>
+            <div class="sgc-main"><div class="sgc-title">隐私与安全</div><div class="sgc-desc">动态可见范围、谁可加我、能否被搜到</div></div>
             <div class="sgc-arrow">›</div>
           </div>
           <div class="subpage-group-card" onclick="SubpageRouter.navigate('content')">
@@ -153,11 +153,7 @@
             <div class="sgc-main"><div class="sgc-title">AI 模型</div><div class="sgc-desc">服务端密钥、AI 模型选择</div></div>
             <div class="sgc-arrow">›</div>
           </div>
-          <div class="subpage-group-card" onclick="SubpageRouter.navigate('about')">
-            <div class="sgc-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div>
-            <div class="sgc-main"><div class="sgc-title">数据与关于</div><div class="sgc-desc">存储空间、帮助反馈、关于</div></div>
-            <div class="sgc-arrow">›</div>
-          </div>
+          <!-- R169-C（2026-09-23 用户要求）：「数据与关于」菜单卡已删除（data-subpage="about" 区块保留但不再有列表入口） -->
         </div>
 
         <!-- 外观设置 -->
@@ -766,21 +762,16 @@
         </div>
         </section>
 
-        <!-- 隐私与安全（T01 增量 2026-09-11；需求9 20260917 精简文案）：① 黑名单管理（真实走
-             GET /api/friends/blocked 读取、DELETE /api/friends/block/{id} 移出，非本地假成功）
-             ②「动态可见范围 / 谁可加我好友 / 能否被搜索到」三项可见性控件（读取 GET /api/auth/me，
-             保存 PUT /api/users/me/privacy，见脚本 stSetMomentScope / stSetFriendPolicy / stSetSearchable）。 -->
+        <!-- 隐私与安全（T01 增量 2026-09-11；需求9 20260917 精简文案）：
+             「动态可见范围 / 谁可加我好友 / 能否被搜索到」三项可见性控件（读取 GET /api/auth/me，
+             保存 PUT /api/users/me/privacy，见脚本 stSetMomentScope / stSetFriendPolicy / stSetSearchable）。
+             R169-L（2026-09-23）：原「① 黑名单管理」区块已按用户要求整块移除（含 stLoadBlocked/stUnblock
+             与初始化调用），本页不再渲染黑名单。 -->
         <section data-subpage="privacy">
         <div class="card privacy-card" id="privacyCard">
           <div class="card-header">
             <div class="card-title"><span class="title-icon" data-icon="locked"></span>隐私与安全</div>
             <div class="card-action">仅你可见</div>
-          </div>
-
-          <!-- ① 黑名单管理 -->
-          <div class="privacy-sec-title"><span class="nav-icon" data-icon="ban" data-icon-size="16"></span> 黑名单</div>
-          <div class="privacy-list" id="stBlockedList">
-            <div class="privacy-empty">加载中…</div>
           </div>
 
           <!-- ③ 可见性控件（T05 接线 2026-09-11：读取 GET /api/auth/me、保存 PUT /api/users/me/privacy） -->
@@ -842,19 +833,46 @@
             </div>
           </div>
 
-          <!-- 需求 2（协议重写）：新增《用户协议》《隐私政策》全文页入口（独立页 协议.html，?tab=ua|privacy） -->
-          <div class="privacy-row" id="privacyAgreementRow" onclick="location.href='协议.html?tab=ua'" style="cursor:pointer">
+          <!-- R171-C1：上报应用列表（应用名 + 图标）。默认开启；关闭后停用原生采集并向服务端同步 toggle
+               （服务端会清空已存列表）。取值优先级：原生桥 isAppListEnabled() → localStorage['xt_applist_enabled'] → 默认开。 -->
+          <div class="privacy-row" id="privacyAppListRow">
             <div class="privacy-row-main">
-              <div class="privacy-row-name">用户协议与隐私政策</div>
-              <div class="privacy-row-sub">查看《星途用户服务协议》与《星途隐私政策》全文</div>
+              <div class="privacy-row-name">上报应用列表（应用名 + 图标）</div>
+              <div class="privacy-row-sub">用于设备安全与管理员风控，默认开启；关闭后将停止上报并清除服务端已存列表</div>
+            </div>
+            <div class="privacy-row-ctrl">
+              <div class="privacy-seg" id="stAppListSeg">
+                <button class="theme-option" data-val="1" onclick="stAppListToggle(true)"><span class="nav-icon" data-icon="check" data-icon-size="14"></span> 开启</button>
+                <button class="theme-option" data-val="0" onclick="stAppListToggle(false)"><span class="nav-icon" data-icon="close" data-icon-size="14"></span> 关闭</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 需求 2（协议重写）：《用户协议》《隐私政策》全文页入口（独立页 协议.html，?tab=ua|privacy）。
+               R169-J（2026-09-23 用户指令）：入口自「关于」页迁回本页，并按两份文档拆成两行。
+               R169-L（2026-09-23）：进场改 location.replace —— 协议.html 的返回已是 replace 回本页，
+               若进场用 href 会在栈里留下重复的本页记录，系统返回键要按两次才出得去。 -->
+          <div class="privacy-row" id="privacyAgreementRow" onclick="location.replace('协议.html?tab=ua')" style="cursor:pointer">
+            <div class="privacy-row-main">
+              <div class="privacy-row-name">用户协议</div>
+              <div class="privacy-row-sub">查看《星途用户服务协议》全文</div>
+            </div>
+            <div class="privacy-row-ctrl" style="color:var(--text-secondary);font-size:16px">›</div>
+          </div>
+
+          <div class="privacy-row" id="privacyPolicyRow" onclick="location.replace('协议.html?tab=privacy')" style="cursor:pointer">
+            <div class="privacy-row-main">
+              <div class="privacy-row-name">隐私政策</div>
+              <div class="privacy-row-sub">查看《星途隐私政策》全文 · 信息如何收集与使用</div>
             </div>
             <div class="privacy-row-ctrl" style="color:var(--text-secondary);font-size:16px">›</div>
           </div>
 
           <!-- 需求D（2026-09-28）：应用白名单入口（独立页 应用白名单.html）。
                仅读取本机「已安装应用列表」供用户手动勾选，勾选结果只存 localStorage
-               ['xt_app_whitelist_v1']（仅包名数组），绝不上传服务器。 -->
-          <div class="privacy-row" id="privacyAppWhitelistRow" onclick="location.href='应用白名单.html?from=设置'" style="cursor:pointer">
+               ['xt_app_whitelist_v1']（仅包名数组），绝不上传服务器。
+               R169-L（2026-09-23）：进场改 location.replace —— 该页返回（alBack）已是 replace 回本页。 -->
+          <div class="privacy-row" id="privacyAppWhitelistRow" onclick="location.replace('应用白名单.html?from=设置')" style="cursor:pointer">
             <div class="privacy-row-main">
               <div class="privacy-row-name">应用白名单</div>
               <div class="privacy-row-sub">读取本机已安装应用列表，勾选你要管理的应用；<b>仅保存在本机，不会上传</b></div>
@@ -983,11 +1001,11 @@
 <script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923b" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
-<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/app.js?v=20260930a" defer></script>
 <script src="assets/config.js?v=20260923b" defer></script>
 <!-- 【需求B】检测更新入口已从设置页移除（收敛到 数据管理页 / 关于页），xt-update.js 引用同步移除 -->
-<script src="assets/api.js?v=20260924a" defer></script>
-<script src="assets/subpage-router.js?v=20260923d" defer></script>
+<script src="assets/api.js?v=20260930a" defer></script>
+<script src="assets/subpage-router.js?v=20260930a" defer></script>
 <script src="assets/qbank.js?v=20260923b" defer></script>
 <script src="assets/importer.js?v=20260923b" defer></script>
 <script>
@@ -1180,10 +1198,62 @@ function stRiskToggle(on) {
   showToast(on ? '✅ 已开启设备安全（读取已安装应用列表）' : '已关闭设备安全，将不再读取已安装应用列表');
 }
 
+/* R171-C1：上报应用列表（应用名 + 图标）—— 默认开启。
+   取值优先级：原生桥 isAppListEnabled() → localStorage['xt_applist_enabled'] → 默认 true（默认开）。
+   切换：① 原生可用则 setAppListEnabled(v)；② 写 localStorage；③ POST /api/user/app-list/toggle。
+   服务端同步失败 → 容错：本地设置已生效，toast 提示「稍后重试」，不回滚开关、不报错白屏。
+   关闭时顺带清除本地 'xt_applist_reported_at'（当天已上报标记），下次登录可重新上报。 */
+var APP_LIST_ENABLED_KEY = 'xt_applist_enabled';       // 与 登录.html 同键
+var APP_LIST_REPORTED_KEY = 'xt_applist_reported_at';
+function stAppListOn() {
+  try {
+    if (window.XTAppBridge && typeof window.XTAppBridge.isAppListEnabled === 'function') {
+      return !!window.XTAppBridge.isAppListEnabled();
+    }
+  } catch (e) { /* 桥异常 → 回退 localStorage */ }
+  try { return localStorage.getItem(APP_LIST_ENABLED_KEY) !== '0'; } catch (e) { return true; }
+}
+function stRenderAppListUI() {
+  var on = stAppListOn();
+  var wrap = document.getElementById('stAppListSeg'); if (!wrap) return;
+  wrap.querySelectorAll('.theme-option').forEach(function (b) {
+    b.classList.toggle('active', (b.getAttribute('data-val') === '1') === on);
+  });
+}
+function stAppListToggle(on) {
+  on = !!on;
+  try { localStorage.setItem(APP_LIST_ENABLED_KEY, on ? '1' : '0'); } catch (e) { /* 无痕模式忽略 */ }
+  try {
+    if (window.XTAppBridge && typeof window.XTAppBridge.setAppListEnabled === 'function') {
+      window.XTAppBridge.setAppListEnabled(on);
+    }
+  } catch (e2) { /* 桥异常也不影响开关状态与 UI */ }
+  if (!on) { try { localStorage.removeItem(APP_LIST_REPORTED_KEY); } catch (e3) { /* 忽略 */ } }
+  stRenderAppListUI();
+  /* 同步服务端：需要登录态；未登录 → 仅本机生效（不报错） */
+  var token = stPrivacyToken();
+  if (!token) {
+    showToast(on ? '✅ 已开启上报应用列表（本机生效）' : '已关闭上报应用列表（本机生效）');
+    return;
+  }
+  fetch(stPrivacyBase() + '/api/user/app-list/toggle', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: JSON.stringify({ enabled: on })
+  }).then(function (r) {
+    if (!r.ok) throw new Error('toggle failed');
+    showToast(on ? '✅ 已开启上报应用列表' : '已关闭上报应用列表，服务端已存列表已清除');
+  }).catch(function () {
+    /* 容错：本地已生效，不回滚、不白屏 */
+    showToast('设置已在本机生效，服务端稍后重试');
+  });
+}
+
 (function initSettingsUI() {
   stRenderAiFabUI();
   stRenderMsgNotifyUI();
   stRenderRiskUI();
+  stRenderAppListUI();
   var set = loadAllSettings();
   var pick = function (id, v) { var el = document.getElementById(id); if (el) el.value = v; };
   pick('stDailyNew', set.dailyNew);
@@ -1913,9 +1983,10 @@ function stClearBindCodeGroup() {
   if (codeEl) codeEl.value = '';
 }
 
-/* ---------- 隐私与安全 · 黑名单（T01 增量 2026-09-11） ----------
-   列表：GET /api/friends/blocked（字段 id/nickname/avatarUrl/motto/since，接口 _peer_brief 不含 username）；
-   移出：DELETE /api/friends/block/{uid}。地址统一走 assets/config.js。 */
+/* ---------- 隐私与安全 · 可见性控件通用请求助手 ----------
+   地址统一走 assets/config.js（stPrivacyBase / stPrivacyToken 由可见性三控件共用）。
+   R169-L（2026-09-23）：原「黑名单」区块已按用户要求整块删除，本页不再请求
+   GET /api/friends/blocked、也不再渲染 #stBlockedList（节点已从 DOM 移除）。 */
 function stPrivacyBase() {
   return (typeof window.getApiBase === 'function') ? window.getApiBase()
     : (window.STUDY_API_BASE != null ? window.STUDY_API_BASE : '');
@@ -1923,53 +1994,6 @@ function stPrivacyBase() {
 function stPrivacyToken() {
   try { if (typeof apiGetToken === 'function') return apiGetToken() || ''; } catch (e) { }
   return localStorage.getItem('study_workbench_token') || '';
-}
-function stAvatarFallback(name) {
-  var s = String(name == null ? '' : name).trim();
-  return s ? s.slice(0, 1) : '？';
-}
-function stLoadBlocked() {
-  var box = document.getElementById('stBlockedList');
-  if (!box) return;
-  var token = stPrivacyToken();
-  if (!token) { box.innerHTML = '<div class="privacy-empty">登录后可管理黑名单</div>'; return; }
-  box.innerHTML = '<div class="privacy-empty">加载中…</div>';
-  fetch(stPrivacyBase() + '/api/friends/blocked', { headers: { 'Authorization': 'Bearer ' + token } })
-    .then(function (r) { return r.json(); })
-    .then(function (d) {
-      var items = (d && d.items) || [];
-      if (!items.length) { box.innerHTML = '<div class="privacy-empty">黑名单为空，暂时没有拉黑的用户</div>'; return; }
-      // 接口 _peer_brief 不返回 username，行内只展示头像 + 昵称，避免出现空白 @账号
-      box.innerHTML = items.map(function (u) {
-        var name = u.nickname || ('用户 ' + u.id);
-        var av = u.avatarUrl
-          ? '<img class="privacy-av" src="' + stEsc(u.avatarUrl) + '" alt="">'
-          : '<div class="privacy-av privacy-av-text">' + stEsc(stAvatarFallback(name)) + '</div>';
-        return '<div class="privacy-row privacy-item">' + av +
-          '<div class="privacy-row-main"><div class="privacy-row-name">' + stEsc(name) + '</div>' +
-          '<div class="privacy-row-sub">已拉黑</div></div>' +
-          '<button class="btn btn-outline privacy-row-btn" onclick="stUnblock(' + u.id + ')">移出</button>' +
-          '</div>';
-      }).join('');
-    })
-    .catch(function () { box.innerHTML = '<div class="privacy-empty">加载失败，请稍后重试</div>'; });
-}
-function stUnblock(uid) {
-  if (!uid) return;
-  var token = stPrivacyToken();
-  if (!token) { if (typeof showToast === 'function') showToast('请先登录'); return; }
-  fetch(stPrivacyBase() + '/api/friends/block/' + uid, {
-    method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token }
-  })
-    .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error((d && d.detail) || '移出失败'); return d; }); })
-    .then(function () {
-      if (typeof showToast === 'function') showToast('✅ 已移出黑名单');
-      stLoadBlocked();
-    })
-    .catch(function (e) {
-      if (typeof showToast === 'function') showToast('移出失败：' + (e.message || ''));
-      else if (typeof uiAlert === 'function') uiAlert('移出失败');
-    });
 }
 /* ---------- 隐私与安全 · 可见性三控件（T05 接线 2026-09-11） ----------
    读取：GET /api/auth/me 的 privacy；保存：PUT /api/users/me/privacy（部分更新，只传变更字段）。
@@ -2077,8 +2101,6 @@ function stSetSearchable(on) {
   stSavePrivacy({ searchable: on });
 }
 if (typeof window !== 'undefined') {
-  window.stLoadBlocked = stLoadBlocked;
-  window.stUnblock = stUnblock;
   window.stLoadPrivacy = stLoadPrivacy;
   window.stSetMomentScope = stSetMomentScope;
   window.stSetFriendPolicy = stSetFriendPolicy;
@@ -2101,7 +2123,7 @@ if (typeof window !== 'undefined') {
   apply('swStudyRemind', s.studyRemind);
   /* 【需求 3】stRefreshOverview() 已随数据总览卡迁入 数据管理.html，此处调用移除 */
   applyStudyReminder();
-  stLoadBlocked();
+  /* R169-L（2026-09-23）：黑名单区块已删除，原 stLoadBlocked() 初始化调用一并移除 */
   stLoadPrivacy();
 })();
 
@@ -2381,6 +2403,13 @@ if (typeof stInitAccount === 'function') {
 </script>
 
 <style>
+/* ==================== R169-C（2026-09-23 用户要求）：删除顶栏红框区域 ====================
+   全局搜索框（.gs-wrap）+ 消息通知铃铛 / 私信入口（assets/api.js initNotifyBell /
+   initChatEntry 动态注入，类名均为 .notify-bell）。子页与本页共用同一顶栏 DOM，一并生效。
+   只隐藏不删 DOM（保留 data-page-node-id），其他页面不受影响。 */
+.gs-wrap{display:none !important}
+.notify-bell{display:none !important}
+
 /* ==================== 帮助与反馈卡样式（T6 增量） ==================== */
 .fb-faq{padding:4px 0}
 .fb-faq-item{border-bottom:1px solid var(--border)}
@@ -2410,6 +2439,9 @@ if (typeof stInitAccount === 'function') {
 .fb-mine-content{font-size:var(--xt-font-base);color:var(--text);line-height:1.7;word-break:break-word;white-space:pre-wrap}
 .fb-mine-reply{margin-top:6px;padding:8px 10px;border-radius:10px;background:var(--primary-light);font-size:12.5px;line-height:1.7;color:var(--text);word-break:break-word;white-space:pre-wrap}
 .fb-mine-wait{margin-top:6px;font-size:12px;color:var(--text-muted)}
+/* R171-D2（2026-09-30）：站内铃铛跳「我的反馈」落点短暂高亮（仅本页 <style>，不入共享 css） */
+.fb-mine-flash{border-radius:10px;animation:fbMineFlash 1.8s ease-out 1}
+@keyframes fbMineFlash{0%{background:var(--primary-light)}70%{background:var(--primary-light)}100%{background:transparent}}
 /* 给创作者提优化建议：类型三选一 chip（对齐全站设计令牌） */
 .cf-chips{display:flex;gap:8px;flex-wrap:wrap}
 .cf-chip{border:1px solid var(--border);background:var(--bg);color:var(--text-secondary);border-radius:999px;padding:5px 14px;font-size:12.5px;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
@@ -2467,6 +2499,38 @@ if (typeof stInitAccount === 'function') {
 <script>
 /* T02 批次五（寇豆码 2026-09-12）：hash 路由初始化 */
 (function () {
+  /* R171-D2（2026-09-30 站内铃铛）：「管理员回复了你的反馈」跳转落地支持。
+     ── 铃铛/动态页条目跳 设置.html#myFeedback；本页「我的反馈」位于 SubpageRouter 的
+        「帮助与反馈」子页（key = 'help'）内，'myFeedback' 本身不是路由 key。
+     ── 最小转译：进页时若 hash 为 #myFeedback，改写为 #help（replaceState 不触发 hashchange，
+        由随后 SubpageRouter.init 读取正确 key），并记一次性标志，待渲染后滚到「我的反馈」+ 短暂高亮。
+     ── 从列表正常进入「帮助与反馈」（无 #myFeedback）行为完全不变，零侵入 settingsSubpageHandler。 */
+  var FB_MY_HASH = '#myFeedback';
+  var fbWantScrollMine = (location.hash === FB_MY_HASH);
+  if (fbWantScrollMine) {
+    try { history.replaceState(null, '', '#help'); }
+    catch (e0) { try { location.hash = '#help'; } catch (e1) { } }
+  }
+  /* 供同页/外页调用：滚到「我的反馈」区块 + 短暂高亮（幂等，重复调用仅清标志）。 */
+  window.xtmScrollMyFeedback = function () {
+    fbWantScrollMine = false;
+    try {
+      var box = document.querySelector('.fb-mine');
+      var title = document.querySelector('.fb-mine-title') || box;
+      if (title && title.scrollIntoView) {
+        try { title.scrollIntoView({ block: 'center' }); }
+        catch (e2) { try { title.scrollIntoView(); } catch (e3) { } }
+      }
+      if (box && box.classList) {
+        box.classList.add('fb-mine-flash');
+        setTimeout(function () { try { box.classList.remove('fb-mine-flash'); } catch (e4) { } }, 1800);
+      }
+    } catch (e5) { }
+  };
+  if (fbWantScrollMine) {
+    /* 待 SubpageRouter 首次渲染出 help 子页后再滚动（与 handler 解耦）。 */
+    setTimeout(function () { if (fbWantScrollMine) { try { window.xtmScrollMyFeedback(); } catch (e6) { } } }, 120);
+  }
   function bootSubpage() {
     /* R7b nav-trace（2026-09-20）：App 内子页空白取证打点（浏览器 console，App 内落盘） */
     try { if (window.errorBoundary && typeof window.errorBoundary.report === 'function') window.errorBoundary.report('nav-trace: settings boot, SubpageRouter=' + (typeof SubpageRouter), '', 'nav-trace'); } catch (e) {}
@@ -2480,7 +2544,10 @@ if (typeof stInitAccount === 'function') {
       rootHref: '设置.html'
     });
     try { if (window.errorBoundary && typeof window.errorBoundary.report === 'function') window.errorBoundary.report('nav-trace: settings subpage init ok', '', 'nav-trace'); } catch (e) {}
-    SubpageRouter.onSubpageChange(function (key, params) {
+    /* R169-E（2026-09-23）：回调提为具名函数 —— 刷新带 #privacy/#account 等 hash 直达时，
+       init 的首次 _render 早于 onSubpageChange 注册 → 回调不触发（stLoadPrivacy/stInitAccount
+       等都不跑）。注册完成后按当前 key 手动补一次（幂等，与页内切换同路径）。 */
+    var settingsSubpageHandler = function (key, params) {
       try { if (window.errorBoundary && typeof window.errorBoundary.report === 'function') window.errorBoundary.report('nav-trace: settings subpage render: ' + key, '', 'nav-trace'); } catch (e) {}
       /* 需求20-B：子页切换后滚动位置归零，避免停留在上一子页的滚动位置（错位观感） */
       try { window.scrollTo(0, 0); } catch (e0) { }
@@ -2499,7 +2566,9 @@ if (typeof stInitAccount === 'function') {
         /* 在线模式：从服务端拉取已绑定邮箱，避免只显示本地缓存 */
         try { if (typeof stLoadBindingsRemote === 'function') stLoadBindingsRemote(); } catch (e2) { if (window.console) console.warn('stLoadBindingsRemote error', e2); }
       }
-    });
+    };
+    SubpageRouter.onSubpageChange(settingsSubpageHandler);
+    try { settingsSubpageHandler(SubpageRouter.getCurrent() || 'list', SubpageRouter.getParams ? SubpageRouter.getParams() : {}); } catch (e) { if (window.console) console.warn('settings subpage replay error', e); }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootSubpage);
   else bootSubpage();

@@ -242,9 +242,11 @@
 
   /** 操作按钮 */
   function renderActionBar(container, paperId) {
+    /* R169-C（2026-09-23）：「返回选卷」改 location.replace —— 替换当前记录而非新增，
+       避免成绩页残留在历史栈里，系统返回键撞回成绩/模考页退不出去。「再次挑战」是前进方向，保留 href。 */
     var html = '' +
       '<div class="rb-actions">' +
-        '<a class="xt-btn xt-btn-secondary" href="mock_exam.html?cat=' + catFromPaper(paperId) + '">返回选卷</a>' +
+        '<a class="xt-btn xt-btn-secondary" href="mock_exam.html?cat=' + catFromPaper(paperId) + '" onclick="location.replace(this.href);return false">返回选卷</a>' +
         '<a class="xt-btn xt-btn-primary" href="mock_exam_run.html?paper=' + encodeURIComponent(paperId) + '">再次挑战</a>' +
       '</div>';
     container.innerHTML = html;

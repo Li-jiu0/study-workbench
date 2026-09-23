@@ -15,8 +15,10 @@ from sqlalchemy import Column, Integer, String, Text, and_, or_
 from sqlalchemy.orm import Session
 
 from database import (Base, Moment, MomentComment, MomentLike, Notification,
-                      User, UserBlock, engine, friend_ids_of, get_db,
-                      is_admin_user, is_friend, now_str)
+                      User, UserBlock, admin_hidden_clause, engine, friend_ids_of,
+                      get_db, is_friend, is_hidden_from_public, now_str)
+# R170：发内容前的封禁 / 禁言闸门（moderation 模块由 R170-A 落地）
+from moderation import assert_can_post
 from schemas import MomentCommentIn, MomentIn, user_brief
 from security import get_current_user
 
@@ -151,8 +153,13 @@ def _blocked_ids_either(db: Session, me_id: int) -> set[int]:
 
 
 def _public_author_ids(db: Session) -> set[int]:
-    """moment_visibility='public' 的作者 id 集合（feed 可见集扩展用）。"""
-    return {r[0] for r in db.query(User.id).filter(User.moment_visibility == "public").all()}
+    """moment_visibility='public' 且未隐身的作者 id 集合（feed 可见集扩展用）。
+
+    R170：追加 admin_hidden_clause() —— 隐身管理员即使把动态设为 public，其动态也不进入
+    普通用户 feed（现身后可见）。feed 的作者可见集不经过 _can_view，故此处需独立过滤。
+    """
+    return {r[0] for r in db.query(User.id).filter(
+        User.moment_visibility == "public", admin_hidden_clause()).all()}
 
 
 def _private_author_ids(db: Session) -> set[int]:
@@ -173,8 +180,9 @@ def _can_view(db: Session, viewer_id: int, author_id: int) -> bool:
     if _is_blocked_either(db, viewer_id, author_id):
         return False
     author = db.get(User, author_id)
-    # 需求01：管理员单向可见——其动态对任何其他人（含好友）均不可见
-    if is_admin_user(author):
+    # 需求01 / R170：管理员的动态对普通用户不可见 —— 仅当该管理员处于「隐身」时（统一走 helper）；
+    # 现身的管理员（admin_hidden=False）其动态对普通用户可见。
+    if is_hidden_from_public(author):
         return False
     vis = (author.moment_visibility if author else None) or "friends"
     if vis == "public":
@@ -197,10 +205,11 @@ def moment_dict(m: Moment, author: User, me_id: int, db: Session) -> dict:
         .order_by(MomentLike.id)
         .all()
     )
+    # R170：被管理员隐藏的评论对普通用户不可见（feed / user_moments 详情共用此序列化）
     comments = (
         db.query(MomentComment, User.nickname, User.avatar)
         .join(User, MomentComment.user_id == User.id)
-        .filter(MomentComment.moment_id == m.id)
+        .filter(MomentComment.moment_id == m.id, MomentComment.hidden_at == "")
         .order_by(MomentComment.id)
         .all()
     )
@@ -241,9 +250,15 @@ def moment_dict(m: Moment, author: User, me_id: int, db: Session) -> dict:
 
 
 def _visible_moment(db: Session, mid: int, me_id: int) -> Moment:
-    """按作者可见性三档 + 双向拉黑判定，不可见则 404/403。"""
+    """按作者可见性三档 + 双向拉黑判定，不可见则 404/403。
+
+    R170：被管理员隐藏（hidden_at 非空）的动态，普通用户一律按「不存在」处理 ——
+    本函数是点赞 / 评论 / 回复 / 评论列表的统一入口，挡此处即挡住全部详情路径。
+    """
     m = db.get(Moment, mid)
     if not m:
+        raise HTTPException(404, "动态不存在或已删除")
+    if (getattr(m, "hidden_at", "") or "") != "":
         raise HTTPException(404, "动态不存在或已删除")
     if not _can_view(db, me_id, m.user_id):
         raise HTTPException(403, "仅好友可见该动态")
@@ -261,6 +276,7 @@ def _notify_moment(db: Session, author_id: int, actor: User, ntype: str) -> None
 @router.post("")
 def publish(body: MomentIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """发布动态：文字 + ≤9 张图（URL 必须以 /uploads/images/ 开头，复用 uploads 上传）。"""
+    assert_can_post(user)  # R170：封禁 / 禁言拦截（发内容前）
     content = body.content.strip()
     if not content and not body.images:
         raise HTTPException(400, "内容不能为空")
@@ -284,7 +300,8 @@ def feed(before_id: int = 0, limit: int = 20,
     # BUG-1 修复：好友关系不覆盖 privacy 承诺 —— 剔除「仅自己可见」的作者（本人除外）。
     ids -= _private_author_ids(db) - {user.id}
     ids -= _blocked_ids_either(db, user.id)  # 现状 feed 未剔除黑名单
-    cond = Moment.user_id.in_(ids)
+    # R170：管理员隐藏（hidden_at 非空）的动态对普通用户不可见（治理接口在同事文件里，不走此路径）
+    cond = and_(Moment.user_id.in_(ids), Moment.hidden_at == "")
     if before_id:
         cond = cond & (Moment.id < before_id)
     rows = db.query(Moment, User).join(User, Moment.user_id == User.id).filter(
@@ -310,7 +327,8 @@ def user_moments(uid: int, before_id: int = 0, limit: int = 20,
     if not _can_view(db, user.id, uid):
         raise HTTPException(403, "仅好友可见该动态")
     limit = min(max(limit, 1), 50)
-    cond = Moment.user_id == uid
+    # R170：管理员隐藏（hidden_at 非空）的动态不出现在他人动态列表
+    cond = and_(Moment.user_id == uid, Moment.hidden_at == "")
     if before_id:
         cond = cond & (Moment.id < before_id)
     rows = db.query(Moment).filter(cond).order_by(Moment.id.desc()).limit(limit + 1).all()
@@ -350,7 +368,8 @@ def list_comments(mid: int, user: User = Depends(get_current_user), db: Session 
     rows = (
         db.query(MomentComment, User.nickname, User.avatar)
         .join(User, MomentComment.user_id == User.id)
-        .filter(MomentComment.moment_id == m.id)
+        # R170：被管理员隐藏的评论对普通用户不可见
+        .filter(MomentComment.moment_id == m.id, MomentComment.hidden_at == "")
         .order_by(MomentComment.id)
         .all()
     )
@@ -369,6 +388,7 @@ def list_comments(mid: int, user: User = Depends(get_current_user), db: Session 
 def add_comment(mid: int, body: MomentCommentIn,
                 user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """发表评论（≤500 字）；通知作者 type='moment_comment'。"""
+    assert_can_post(user)  # R170：封禁 / 禁言拦截
     m = _visible_moment(db, mid, user.id)
     content = body.content.strip()
     if not content:
@@ -468,6 +488,7 @@ def publish_rich(body: MomentPublishIn, user: User = Depends(get_current_user),
     - 与既有 POST /api/moments 并存，互不影响；均写入 moments 表，天然进入同一条信息流。
     - 扩展字段写入旁路表 moment_meta（1:1）；旧数据无 meta 行 → 读取回退默认。
     """
+    assert_can_post(user)  # R170：封禁 / 禁言拦截
     content = (body.content or "").strip()
     images = [u for u in (body.images or [])
               if isinstance(u, str) and u.startswith(_IMAGE_PREFIX)][:9]
@@ -513,6 +534,7 @@ def publish_rich(body: MomentPublishIn, user: User = Depends(get_current_user),
 def reply_comment(mid: int, body: MomentReplyIn,
                   user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """回复某条评论（需求11，嵌套评论）：parent_id 落旁路表，通知动态作者与父评论作者。"""
+    assert_can_post(user)  # R170：封禁 / 禁言拦截
     m = _visible_moment(db, mid, user.id)
     content = (body.content or "").strip()
     if not content:

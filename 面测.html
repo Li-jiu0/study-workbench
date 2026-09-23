@@ -348,6 +348,11 @@
   .qtab-tab { flex: 0 0 auto; }
   .iv-submit-btn { min-width: 0; max-width: 100%; white-space: normal; }
 }
+/* ===== R169-C（2026-09-23 用户要求）：删除顶栏红框区域 =====
+   全局搜索框（.gs-wrap）+ 消息通知铃铛 / 私信入口（assets/api.js 动态注入，类名 .notify-bell）。
+   只隐藏不删 DOM，其他页面不受影响。 */
+.gs-wrap{display:none !important}
+.notify-bell{display:none !important}
 </style>
 
       <div class="page" id="page-iv-prep">
@@ -496,9 +501,9 @@
 <script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
-<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/app.js?v=20260930a" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260924a" defer></script>
+<script src="assets/api.js?v=20260930a" defer></script>
 
 <script src="assets/mini-interview.js?v=20260916O" defer></script>
 <!-- ===== R48 第 3 批（A4 面试准备 / A5 面试后「做真内容」） =====

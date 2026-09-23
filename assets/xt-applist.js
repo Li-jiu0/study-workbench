@@ -305,12 +305,14 @@
     doClear();
   }
 
-  /* 显式回上级页（全站禁用 history.back，防历史栈乒乓）：解析 ?from=（仅白名单值），缺省回设置页 */
+  /* 显式回上级页（全站禁用 history.back，防历史栈乒乓）：解析 ?from=（仅白名单值），缺省回设置页
+     R169-C（2026-09-23）：改 location.replace —— 替换当前记录而非新增，避免本页残留历史栈，
+     系统返回键撞回本页退不出去（同 真题模考/企业定向库 死循环根因）。 */
   function alBack() {
     var m = /[?&]from=([^&]+)/.exec(location.search || '');
     var from = m ? decodeURIComponent(m[1]) : '';
     var ok = { '设置': 1 };
-    location.href = (ok[from] ? from : '设置') + '.html';
+    location.replace((ok[from] ? from : '设置') + '.html');
   }
 
   /* ===================================================================

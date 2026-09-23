@@ -175,9 +175,9 @@
 <script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
-<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/app.js?v=20260930a" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260924a" defer></script>
+<script src="assets/api.js?v=20260930a" defer></script>
 <script>
 /* ==================== 日志页逻辑（R9 · 2026-09-21） ====================
    应用日志：assets/xt-log.js 的前端缓存（本页打开期间的 console/边界/接口告警都在内）。
@@ -195,7 +195,9 @@
     var m = /[?&]from=([^&]+)/.exec(location.search || '');
     var from = m ? decodeURIComponent(m[1]) : '';
     var ok = { '个人中心': 1, '数据管理': 1, '设置': 1 };
-    location.href = (ok[from] ? from : '个人中心') + '.html';
+    /* R169-C（2026-09-23）：返回改 location.replace —— 替换当前记录而非新增，
+       避免本页残留在历史栈里，系统返回键撞回本页退不出去。 */
+    location.replace((ok[from] ? from : '个人中心') + '.html');
   };
   function toast(msg) { if (typeof window.showToast === 'function') window.showToast(msg); }
   function esc(s) {

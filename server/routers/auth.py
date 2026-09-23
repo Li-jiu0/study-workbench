@@ -10,13 +10,15 @@ from sqlalchemy.orm import Session
 from config import smtp_configured
 from database import EmailCode, User, get_db, is_admin_user, now_str
 from mailer import EmailNotConfigured, EmailSendError, send_code_email
+# R170：封禁拦截（登录闸门）—— moderation.is_banned 由 R170-A 落地
+from moderation import is_banned
 from rate_limit import rate_limit
 from schemas import (ChangePasswordIn, EmailBindIn, EmailSendCodeIn,
                      EmailVerifyIn, FindAccountIn, LoginIn, RefreshIn,
                      RegisterIn, privacy_of)
 from security import (TYPE_ACCESS, TYPE_REFRESH, create_token,
                       get_current_user, hash_password, verify_password,
-                      verify_refresh_token)
+                      verify_refresh_token_v2)
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -43,9 +45,11 @@ def _auth_payload(user: User, db: Session) -> dict:
     """
     admin = is_admin_user(user)
     account = _ensure_account_of(user, db)
+    # R170：签发令牌统一带上当前 token_version，供后续失效校验比对
+    tv = getattr(user, "token_version", 0) or 0
     return {
-        "token": create_token(user.id, TYPE_ACCESS),
-        "refreshToken": create_token(user.id, TYPE_REFRESH),
+        "token": create_token(user.id, TYPE_ACCESS, tv=tv),
+        "refreshToken": create_token(user.id, TYPE_REFRESH, tv=tv),
         # 需求01：管理员标记（camelCase 与 snake_case 双写，前端与验收脚本各自取用）
         "isAdmin": admin,
         "is_admin": admin,
@@ -107,18 +111,34 @@ def login(body: LoginIn, db: Session = Depends(get_db), _rl: None = Depends(rate
         user = db.query(User).filter(func.lower(User.account) == ident.lower()).first()
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(400, "账号或密码错误")
+    # R170：密码校验通过后、签发令牌前拦封禁。用 403（而非 401）便于前端区分「被封禁」与「密码错」。
+    if is_banned(user):
+        raise HTTPException(
+            403, "账号已被封禁"
+            + ("：" + user.banned_reason if (user.banned_reason or "").strip() else ""))
     return _auth_payload(user, db)
 
 
 @router.post("/refresh")
 def refresh(body: RefreshIn, db: Session = Depends(get_db), _rl: None = Depends(rate_limit("auth"))):
-    """用 refresh 令牌换取新的令牌对（轮换：本次发的新 refresh 会顶替旧的）。"""
-    user_id = verify_refresh_token(body.refresh)
-    if not user_id:
+    """用 refresh 令牌换取新的令牌对（轮换：本次发的新 refresh 会顶替旧的）。
+
+    R170：校验令牌版本 tv 与库内 token_version 一致（改密 / 踢下线后旧 refresh 立即失效）；
+    并顺带拦截封禁 —— 被封禁后即使持有 refresh 令牌也不能续期。
+    """
+    verified = verify_refresh_token_v2(body.refresh)
+    if not verified:
         raise HTTPException(401, "刷新令牌无效或已过期，请重新登录")
+    user_id, tv = verified
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(401, "账号不存在，请重新登录")
+    if int(getattr(user, "token_version", 0) or 0) != int(tv or 0):
+        raise HTTPException(401, "登录状态已失效，请重新登录")
+    if is_banned(user):
+        raise HTTPException(
+            403, "账号已被封禁"
+            + ("：" + user.banned_reason if (user.banned_reason or "").strip() else ""))
     return _auth_payload(user, db)
 
 
@@ -187,13 +207,15 @@ def change_password(body: ChangePasswordIn, user: User = Depends(get_current_use
 
     - 旧密码错 → 400「当前密码不正确」
     - 新密码与旧密码相同 → 400
-    - token_version 本批只加列不启用（B3「退出所有设备」再落地），此处不递增。
+    R170：改密成功后 token_version += 1 —— 使其它设备已签发的旧令牌立即失效（改密即踢下线）。
     """
     if not verify_password(body.oldPassword, user.password_hash):
         raise HTTPException(400, "当前密码不正确")
     if body.newPassword == body.oldPassword:
         raise HTTPException(400, "新密码不能与当前密码相同")
     user.password_hash = hash_password(body.newPassword)
+    # R170：递增令牌版本，踢掉其它设备的旧令牌（当前令牌同时失效，前端会走重新登录）
+    user.token_version = int(getattr(user, "token_version", 0) or 0) + 1
     db.commit()
     return {"ok": True}
 

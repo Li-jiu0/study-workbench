@@ -1,0 +1,84 @@
+/* assets/xt-topbar.css —— R168（2026-09-23）实心主题色标题栏
+ * ---------------------------------------------------------------------------
+ * 用户指令：所有页面「顶部 = 实心主题色标题栏（← 返回 + 标题）」，颜色跟随主题变化。
+ * 范本 = 英语.html 页内全屏视图 .cet-quiz-top（20260913k，用户截图确认）：
+ *   background: linear-gradient(135deg, var(--primary), var(--g2)); color:#fff;
+ *   返回 = 白 18% 透明胶囊；标题 = 白色加粗。
+ *
+ * 颜色跟随主题的原理：
+ *   --primary / --g2 由 assets/common.css（body.theme-*）+ assets/polish.css（body.skin-*）定义，
+ *   「界面配色」（森林/暮紫/暖阳/深蓝/极简/樱花…）与各页主题类切换时这两个变量同步变化，
+ *   本标题栏只引用变量、不写死任何颜色 → 天然跟随。
+ *
+ * 使用方式（每个页面两处改动）：
+ *   ① <head> 内引入本文件：<link rel="stylesheet" href="assets/xt-topbar.css?v=20260923a">
+ *   ② 在 .main 内、</header> 之后（页面内容容器之前）插入：
+ *      <div class="xt-topbar">
+ *        <button class="xt-topbar-back" type="button" onclick="location.href='父页面.html'">
+ *          <span data-icon="arrow-left" data-icon-size="16" style="vertical-align:-3px"></span> 返回
+ *        </button>
+ *        <b class="xt-topbar-title">页面标题</b>
+ *      </div>
+ *   布局位置之所以放 .main 直属子节点：标题栏满宽贴屏（不被 .content 的 16px 内边距内缩），
+ *   且处于独立滚动的 .page/.content 之外 → 滚动时恒定可见。
+ *
+ * 引入本文件的页面会隐藏全站白色顶栏（.topbar）：页面顶部由本标题栏全权承担，
+ * 避免「白色顶栏 + 主题色标题栏」两层标题重复。不引入本文件的页面完全不受影响。
+ *
+ * 老内核安全：零 clamp/min/max、零 CSS 变量内嵌函数（var() 仅作值引用，common.css 早已全站使用）。
+ */
+
+/* 引入本文件的页面：隐藏全站白色顶栏 */
+.topbar { display: none !important; }
+
+/* 实心主题色标题栏 */
+.xt-topbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  /* 安全区：真机透明状态栏下由原生注入 --xt-satop；老内核不支持 env() 时取 0 */
+  padding: calc(12px + var(--xt-satop, 0px)) 16px 12px;
+  background: linear-gradient(135deg, var(--primary), var(--g2, var(--primary)));
+  color: #fff;
+  /* 深色模式与浅色模式一致：主题色实心，白字 */
+}
+
+.xt-topbar-back {
+  background: rgba(255, 255, 255, .18);
+  border: none;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  cursor: pointer;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.xt-topbar-back:active { background: rgba(255, 255, 255, .3); }
+
+.xt-topbar-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 标题栏内图标（data-icon 渲染出的 svg/i）随白字取色 */
+.xt-topbar .nav-icon,
+.xt-topbar .xt-topbar-back span[data-icon] { color: #fff; }
+.xt-topbar .nav-icon svg,
+.xt-topbar .xt-topbar-back svg { stroke: currentColor; }
+
+/* 桌面宽屏：标题栏与内容同宽居中，避免通栏过长 */
+@media (min-width: 900px) {
+  .xt-topbar { padding-left: 24px; padding-right: 24px; }
+}

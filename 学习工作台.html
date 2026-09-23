@@ -98,6 +98,7 @@
       <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0" data-page-node-id="uHcuV1Qzg4DOzE5YGc1KzM"><span class="nav-icon" data-icon="moon" data-icon-size="16"></span></div>
     </header>
     <div class="content" data-page-node-id="5fOW16DlNwYgJhwfeKqEpX">
+<div id="xtAnnBanner"></div>
 <div class="page active" id="page-home" data-page-node-id="dG03grZB6LMU4OxjTrRv0B">
         <div class="home-greeting" data-page-node-id="3E0il9sLclj5oIRliAi6D0"><span class="wave" data-page-node-id="VA4kKvjdFAyXikFFUeOh8M">👋</span> <span id="greetingText" data-page-node-id="IsQg7FBjU06SPOwTalj90e">早上好</span>，同学！</div>
         <div class="home-subtitle" data-page-node-id="kW8nDtQpfn6MrHjo6ckSCx">今天也要加油哦，一步一步来，你可以的！</div>
@@ -438,10 +439,11 @@
 <script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
-<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/app.js?v=20260930a" defer></script>
 <script src="assets/quest.js?v=20260916O" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260924a" defer></script>
+<script src="assets/api.js?v=20260930a" defer></script>
+<script src="assets/xt-announce.js?v=20260930a" defer></script>
 <script src="assets/study-stats.js?v=20260916O" defer></script>
 <script>
 /* ==================== T7 增量（P0-14）：更多工具使用痕迹 + 按最近使用排序 ==================== */
@@ -499,6 +501,11 @@
 </script>
 
 <style id="xtHomeEnhanceCss">
+/* ========== R169-C（2026-09-23 用户要求）：删除顶栏红框区域 ==========
+   全局搜索框（.gs-wrap）+ 消息通知铃铛 / 私信入口（assets/api.js 动态注入，类名 .notify-bell）。
+   只隐藏不删 DOM，其他页面不受影响。 */
+.gs-wrap{display:none !important}
+.notify-bell{display:none !important}
 /* ========== 首页增强（kou-l-home）：任务卡自定义任务 + 各模块进度布局重构 ==========
    纯增量覆盖：不改共享 CSS，页内样式在文档序上晚于 common.css，同特异性下优先生效。 */
 

@@ -10,6 +10,8 @@ from sqlalchemy.orm import Session
 
 from database import (ChatGroup, ChatGroupMember, Message, User,
                       friend_ids_of, get_db, is_admin_user, now_iso)
+# R170-B（2026-09-23）：发群消息前的封禁 / 禁言统一拦截
+from moderation import assert_can_post
 from rate_limit import rate_limit
 # R3b-C U9：复用 chat.py 的引用解析 / 摘要工具（chat.py 不反向 import groups，无循环依赖）。
 from routers.chat import resolve_reply
@@ -377,6 +379,7 @@ async def group_messages(gid: int, before_id: int = 0, limit: int = 30, mark_rea
 async def send_group_message(gid: int, body: GroupMsgIn,
                              user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """发群消息：写库后对除发送者外全部在线成员推送 groupMsg（离线靠轮询兜底）。"""
+    assert_can_post(user)  # R170-B（2026-09-23）：禁言/封禁统一拦截
     require_group(db, gid)
     require_member(db, gid, user.id)
     content = body.content.strip()

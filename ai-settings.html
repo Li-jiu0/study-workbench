@@ -655,7 +655,10 @@ body.dark .xt-stars{color:#4a4f58;}
 <body class="xt-settings-page">
 
 <header class="xt-set-top">
-  <button class="xt-set-back" id="setBackBtn" onclick="if (history.length > 1) { history.back(); } else { location.href='AI.html'; }">
+  <!-- R169-J（2026-09-23 用户指令：全站返回统一 location.replace）：原为
+       history.length>1?history.back():location.href —— 弹栈在 WebView 里可能命中 bfcache
+       回放半页，且与全站 replace 口径不一致。统一为 location.replace（整页重新跳转）。 -->
+  <button class="xt-set-back" id="setBackBtn" onclick="location.replace('AI.html')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
     返回
   </button>
@@ -852,9 +855,9 @@ body.dark .xt-stars{color:#4a4f58;}
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/layer-stack.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
-<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/app.js?v=20260930a" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260924a" defer></script>
+<script src="assets/api.js?v=20260930a" defer></script>
 <script src="assets/ai-config.js?v=20260925a" defer></script>
   <!-- R70：连通性检测依赖 ai-service.js 导出的 window.aiHealthCheck。
        该页此前未加载底座 → typeof window.aiHealthCheck !== 'function'

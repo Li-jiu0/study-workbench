@@ -15,7 +15,7 @@
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/layer-stack.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
-<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/app.js?v=20260930a" defer></script>
 <script src="data/mock-papers.js?v=20260916O" defer></script>
 <script src="assets/mock-engine.js?v=20260916O" defer></script>
 <style>
@@ -536,7 +536,7 @@ body { height: auto; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scro
   <div class="xt-empty-icon" data-icon="alert-triangle"></div>
   <div class="xt-empty-title">考试页加载失败</div>
   <div class="xt-empty-desc" id="loadFailedMsg">题库或引擎未就绪</div>
-  <a class="xt-btn xt-btn-secondary" href="mock_exam.html">返回选卷</a>
+  <a class="xt-btn xt-btn-secondary" href="mock_exam.html" onclick="location.replace('mock_exam.html');return false">返回选卷</a>
 </div>
 
 <!-- 确认条（轻量，按需动态插入） -->
@@ -905,7 +905,9 @@ function goBack() {
       else if (cls === 'cet4') cat = 'cet-mock';
     }
   } catch (e) { /* 静默，兜底 cet-mock */ }
-  window.location.href = 'mock_exam.html?cat=' + encodeURIComponent(cat);
+  /* R169-C（2026-09-23）：返回改 location.replace —— 替换当前记录而非新增，
+     否则答题页残留在历史栈里，系统返回键会在 选卷↔答题 间乒乓退不出去。 */
+  window.location.replace('mock_exam.html?cat=' + encodeURIComponent(cat));
 }
 </script>
 

@@ -24,6 +24,11 @@
 .mpc-reddot{position:absolute;top:-2px;right:-2px;width:9px;height:9px;border-radius:50%;
   background:#F43F35;border:1.5px solid #fff;box-sizing:content-box;z-index:2;}
 .mpc-reddot[hidden]{display:none;}
+/* ===== R169-C（2026-09-23 用户要求）：删除顶栏红框区域 =====
+   全局搜索框（.gs-wrap）+ 消息通知铃铛 / 私信入口（assets/api.js 动态注入，类名 .notify-bell）。
+   只隐藏不删 DOM，其他页面不受影响。 */
+.gs-wrap{display:none !important}
+.notify-bell{display:none !important}
 </style>
 </head>
 <body class="theme-home">
@@ -110,9 +115,9 @@
     </header>
     <div class="content">
       <div class="page active" id="page-more">
-        <!-- 顶部返回（独立页，history.back 回上一页；无历史时回首页） -->
+        <!-- 顶部返回（R169-J：统一 location.replace 整页跳回「学习工作台」） -->
         <div class="morepage-head">
-          <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='学习工作台.html'}" title="返回" aria-label="返回">←</button>
+          <button class="morepage-back" onclick="location.replace('学习工作台.html')" title="返回" aria-label="返回">←</button>
           <div class="morepage-title">☰ 更多功能</div>
         </div>
 
@@ -153,6 +158,12 @@
             <div class="mpc-icon"><span class="nav-icon" data-icon="info" data-icon-size="20"></span></div>
             <div class="mpc-title">关于</div>
             <div class="mpc-desc">版本 · 功能清单与说明</div>
+          </div>
+          <!-- R170-D：全站公告入口（未读时红点由 assets/xt-announce.js 控制） -->
+          <div class="morepage-card morepage-list-item" onclick="if(window.XTANN){window.XTANN.open()}">
+            <div class="mpc-icon" style="position:relative"><span class="nav-icon" data-icon="bell" data-icon-size="20"></span><span class="mpc-reddot" id="xtAnnEntryDot" hidden></span></div>
+            <div class="mpc-title">公告</div>
+            <div class="mpc-desc">全站公告 · 更新与通知</div>
           </div>
           <!-- R88-G（R88-M2）：检测更新入口。版本号由 assets/xt-update.js 写回 #xtMoreUpdateVer。 -->
           <div class="morepage-card morepage-list-item" id="morepageUpdateCard" onclick="XTUpdate.openUpdatePage()">
@@ -302,12 +313,13 @@
 <script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
-<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/app.js?v=20260930a" defer></script>
 <script src="assets/quest.js?v=20260916O" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/xt-update.js?v=20260928e" defer></script>
-<script src="assets/api.js?v=20260924a" defer></script>
-<script src="assets/admin.js?v=20260916O" defer></script>
+<script src="assets/xt-update.js?v=20260930b" defer></script>
+<script src="assets/api.js?v=20260930a" defer></script>
+<script src="assets/xt-announce.js?v=20260930a" defer></script>
+<script src="assets/admin.js?v=20260930a" defer></script>
 <script src="assets/study-stats.js?v=20260916O" defer></script>
 <script src="assets/ai-config.js?v=20260925a"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>

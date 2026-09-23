@@ -201,9 +201,9 @@
     </header>
     <div class="content">
       <div class="page active" id="page-summary">
-        <!-- 顶部返回（独立页，history.back 回上一页；无历史时回更多页） -->
+        <!-- 顶部返回（R169-J：统一 location.replace 整页跳回「更多」） -->
         <div class="morepage-head">
-          <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='更多.html'}" title="返回" aria-label="返回">←</button>
+          <button class="morepage-back" onclick="location.replace('更多.html')" title="返回" aria-label="返回">←</button>
           <div class="morepage-title"><span class="nav-icon" data-icon="chart-bar" data-icon-size="18"></span> 学习概括</div>
         </div>
 
@@ -432,10 +432,10 @@
 <script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
-<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/app.js?v=20260930a" defer></script>
 <script src="assets/quest.js?v=20260916O" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260924a" defer></script>
+<script src="assets/api.js?v=20260930a" defer></script>
 <script src="assets/study-stats.js?v=20260916O" defer></script>
 <script src="assets/ai-config.js?v=20260925a"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>

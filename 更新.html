@@ -120,6 +120,45 @@
   .xt-up-brand-name{font-size:15px;}
   .xt-up-brand-sub{font-size:12px;}
 }
+
+/* ===== R167（2026-09-23 用户反馈）：微信式更新日志 —— 版本行可点 → 内置详情页 ===== */
+.xt-up-log-item{padding:11px 2px;border-top:1px dashed var(--border,#e4e3dd);cursor:pointer;
+  border-radius:10px;-webkit-transition:background .15s ease;transition:background .15s ease;}
+.xt-up-log-item:first-child{border-top:none;padding-top:2px;}
+.xt-up-log-item:active{background:var(--bg-sub,#f3f4f6);}
+.xt-up-log-head{display:-webkit-box;display:flex;-webkit-box-align:center;align-items:center;gap:8px;margin-bottom:4px;}
+.xt-up-log-count{-webkit-box-flex:0;flex:0 0 auto;margin-left:auto;font-size:12px;color:var(--text-secondary,#9ca3af);}
+.xt-up-log-arrow{-webkit-box-flex:0;flex:0 0 auto;font-size:16px;line-height:1;color:var(--text-secondary,#9ca3af);}
+.xt-up-log-summary{font-size:12.5px;color:var(--text-secondary,#6b7280);line-height:1.7;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* 内置详情页：整屏面板（含返回栏），顶栏自接 --xt-satop 避让状态栏 */
+.xt-up-detail{position:fixed;left:0;right:0;top:0;bottom:0;z-index:2600;display:none;
+  background:var(--bg,#f6f7f8);
+  padding-top:var(--xt-satop, env(safe-area-inset-top, 0px));}
+.xt-up-detail.open{display:block;}
+.xt-up-detail-head{display:-webkit-box;display:flex;-webkit-box-align:center;align-items:center;gap:10px;
+  height:52px;padding:0 12px;background:var(--card,#fff);border-bottom:1px solid var(--border,#e5e7eb);}
+.xt-up-detail-back{background:none;border:none;font-family:inherit;font-size:20px;line-height:1;
+  color:var(--text,#1a1b1c);padding:6px 10px;cursor:pointer;}
+.xt-up-detail-title{font-size:16px;font-weight:800;color:var(--text,#1a1b1c);}
+.xt-up-detail-body{position:absolute;left:0;right:0;top:52px;bottom:0;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;padding:12px 14px 28px;}
+.xt-up-detail-card{background:var(--card,#fff);border:1px solid var(--border,#e5e7eb);
+  border-radius:14px;padding:16px;}
+.xt-up-detail-verrow{display:-webkit-box;display:flex;-webkit-box-align:center;align-items:center;gap:8px;
+  -webkit-flex-wrap:wrap;flex-wrap:wrap;margin-bottom:10px;}
+.xt-up-detail-ver{font-size:15px;padding:2px 10px;}
+.xt-up-detail-tag{font-size:11.5px;color:var(--text-secondary,#9ca3af);
+  background:var(--bg-sub,#f3f4f6);border-radius:8px;padding:2px 8px;}
+.xt-up-detail-tag.is-cur{color:var(--success,#52C41A);background:var(--primary-soft,#EDF3FF);}
+.xt-up-detail-tip{border-top:1px dashed var(--border,#e4e3dd);margin-top:12px;padding-top:10px;
+  font-size:12px;color:var(--text-secondary,#9ca3af);}
+/* ===== R169-C（2026-09-23 用户要求）：删除顶栏红框区域 =====
+   全局搜索框（.gs-wrap）+ 消息通知铃铛 / 私信入口（assets/api.js 动态注入，类名 .notify-bell）。
+   只隐藏不删 DOM，其他页面不受影响。 */
+.gs-wrap{display:none !important}
+.notify-bell{display:none !important}
 </style>
 </head>
 <body class="theme-home">
@@ -210,9 +249,9 @@
     </header>
     <div class="content">
       <div class="page active" id="page-update">
-        <!-- 顶部返回（独立页：有历史回上一层，无历史回设置页） -->
+        <!-- 顶部返回（R169-J：统一 location.replace 整页跳回「设置」） -->
         <div class="morepage-head">
-          <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='设置.html'}" title="返回设置" aria-label="返回设置">←</button>
+          <button class="morepage-back" onclick="location.replace('设置.html')" title="返回设置" aria-label="返回设置">←</button>
           <div class="morepage-title"><span class="nav-icon" data-icon="download" data-icon-size="18"></span> 检测更新</div>
         </div>
 
@@ -235,10 +274,7 @@
             </div>
           </div>
 
-          <div class="xt-up-card">
-            <div class="xt-up-card-title"><span class="xt-up-ti"><span class="nav-icon" data-icon="info" data-icon-size="16"></span></span>关于更新</div>
-            <div class="xt-up-tip">1. 进入设置页会自动检测一次（同一版本 12 小时内不重复检测），你也可以在这里随时点「重新检测」。<br>2. 有新版本时点「下载更新」，下载完成后按页面提示安装；安卓需允许「未知来源应用」权限。<br>3. 检测失败只会影响是否能发现新版本，不会影响已保存的学习数据。</div>
-          </div>
+          <!-- R169-C（2026-09-23 用户要求）：「关于更新」说明卡已按用户要求删除 -->
 
           <!-- 更新日志（数据源：服务端 version.json 的 changelog 字段，由 xt-update.js 渲染） -->
           <div class="xt-up-card" id="xtUpChangelogCard">
@@ -380,8 +416,8 @@
 <script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
-<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/app.js?v=20260930a" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/xt-update.js?v=20260928e" defer></script>
+<script src="assets/xt-update.js?v=20260930b" defer></script>
 </body>
 </html>

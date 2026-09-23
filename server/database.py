@@ -79,6 +79,13 @@ class User(Base):
     #   （_auth_payload）、以及「本人或好友」查看资料时（users.public_profile）可见**；
     #   用户搜索 / 好友列表 / 陌生人主页一律不返回（用户要求：好友能互看账号）。
     account = Column(String(32), unique=True, nullable=True, index=True)
+    # R170（2026-09-23）管理员全能化：账号治理字段（全部守卫式 ALTER，存量行零变化）
+    is_banned = Column(Boolean, nullable=False, default=False)          # 1=已封禁
+    banned_at = Column(String(19), nullable=False, default="")          # 封禁时间
+    banned_reason = Column(String(200), nullable=False, default="")     # 封禁原因（展示给被封者）
+    mute_until = Column(String(19), nullable=False, default="")         # 禁言到期（'' = 未禁言）
+    admin_hidden = Column(Boolean, nullable=False, default=True)        # 管理员对普通用户是否隐形（仅 is_admin 有意义）
+    ann_read_at = Column(String(19), nullable=False, default="")        # 全站公告已读水位线
     created_at = Column(String(16), nullable=False)
 
     notes = relationship("Note", back_populates="author", cascade="all, delete-orphan")
@@ -305,6 +312,8 @@ class Moment(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     content = Column(Text, nullable=False, default="")
     images = Column(Text, nullable=False, default="[]")
+    # R170：内容治理隐藏标记（'' = 正常；非空 = 管理员隐藏时间）。守卫式加列，存量行零变化。
+    hidden_at = Column(String(19), nullable=False, default="")
     created_at = Column(String(19), nullable=False)
 
 
@@ -325,6 +334,8 @@ class MomentComment(Base):
     moment_id = Column(Integer, ForeignKey("moments.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     content = Column(String(500), nullable=False)
+    # R170：内容治理隐藏标记（'' = 正常；非空 = 管理员隐藏时间）。守卫式加列，存量行零变化。
+    hidden_at = Column(String(19), nullable=False, default="")
     created_at = Column(String(19), nullable=False)
 
 
@@ -361,6 +372,8 @@ class BoardMessage(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     content = Column(String(500), nullable=False)
+    # R170：内容治理隐藏标记（'' = 正常；非空 = 管理员隐藏时间）。守卫式加列，存量行零变化。
+    hidden_at = Column(String(19), nullable=False, default="")
     created_at = Column(String(16), nullable=False)
     likes_count = Column(Integer, nullable=False, default=0)
     replies_count = Column(Integer, nullable=False, default=0)
@@ -384,6 +397,8 @@ class BoardReply(Base):
     message_id = Column(Integer, ForeignKey("board_messages.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     content = Column(String(300), nullable=False)
+    # R170：内容治理隐藏标记（'' = 正常；非空 = 管理员隐藏时间）。守卫式加列，存量行零变化。
+    hidden_at = Column(String(19), nullable=False, default="")
     created_at = Column(String(16), nullable=False)
     author = relationship("User", foreign_keys=[user_id])
 
@@ -472,6 +487,49 @@ class UserAppSig(Base):
     updated_at = Column(String(19), nullable=False)
 
 
+class UserAppList(Base):
+    """R171：用户已安装应用列表（应用名 + 图标），每用户一行。
+
+    - user_id 主键：重复上报 = upsert，不膨胀；
+    - apps：JSON 数组字符串 [{"label","pkg","icon"}]，icon 为 base64 data URL 或 ""；
+    - app_count：本次上报条数；
+    - enabled：用户是否允许上报（默认 True=开启，设计为「无行即视为开启」）；
+    - updated_at：now_iso()（'YYYY-MM-DD HH:MM:SS'）。
+    新表由 init_db 的 create_all 自动建，存量库零 ALTER。
+    ⚠️ 隐私：仅用于账号安全与管理员风控，严禁对外公开、严禁用于画像/广告。
+    """
+    __tablename__ = "user_app_lists"
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    apps = Column(Text, nullable=False, default="[]")
+    app_count = Column(Integer, nullable=False, default=0)
+    enabled = Column(Boolean, nullable=False, default=True)
+    updated_at = Column(String(19), nullable=False, default="")
+
+
+class Announcement(Base):
+    """R170 全站公告（管理员发布，全员可见）。active=False 即下线（不删数据）。"""
+    __tablename__ = "announcements"
+    id = Column(Integer, primary_key=True)
+    title = Column(String(80), nullable=False, default="")
+    content = Column(Text, nullable=False, default="")
+    active = Column(Boolean, nullable=False, default=True)
+    author_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(String(19), nullable=False, default="")
+    updated_at = Column(String(19), nullable=False, default="")
+
+
+class AdminOpLog(Base):
+    """R170 管理员操作审计（所有写操作落一条）。"""
+    __tablename__ = "admin_op_logs"
+    id = Column(Integer, primary_key=True)
+    admin_id = Column(Integer, nullable=False)
+    action = Column(String(32), nullable=False, default="")
+    target_type = Column(String(16), nullable=False, default="")
+    target_id = Column(Integer, nullable=True)
+    detail = Column(Text, nullable=False, default="")
+    created_at = Column(String(19), nullable=False, default="")
+
+
 def friend_pair(a: int, b: int) -> tuple[int, int]:
     """好友表里一律存小号在前，保证 (A,B) 与 (B,A) 是同一行。"""
     return (a, b) if a < b else (b, a)
@@ -496,6 +554,26 @@ def is_admin_user(user) -> bool:
     避免管理员判断把请求打挂。
     """
     return bool(getattr(user, "is_admin", False))
+
+
+def is_hidden_from_public(u) -> bool:
+    """R170：管理员是否对普通用户隐形（admin_hidden 缺省 True=隐形，兼容老行/None）。"""
+    if not is_admin_user(u):
+        return False
+    return bool(getattr(u, "admin_hidden", True) is not False)  # 注意 None/缺失按隐形处理
+
+
+def admin_hidden_clause():
+    """R170：普通用户视角「可见用户」过滤条件（非管理员 OR 管理员且未隐身）。
+
+    用法：db.query(User).filter(admin_hidden_clause())，替换原来写死的
+    or_(User.is_admin.is_(None), User.is_admin.is_(False))。
+
+    admin_hidden 为 False（现身）的管理员 → 可见。老行 ALTER 默认 1（隐形）→ 行为与现在完全一致。
+    """
+    from sqlalchemy import or_
+    return or_(User.is_admin.is_(None), User.is_admin.is_(False),
+               User.admin_hidden.is_(False))
 
 
 def can_message(db: Session, a: int, b: int) -> bool:
@@ -698,6 +776,31 @@ def _upgrade_legacy_schema() -> None:
                 "sigs TEXT NOT NULL DEFAULT '[]', "
                 "app_count INTEGER NOT NULL DEFAULT 0, "
                 "updated_at TEXT NOT NULL)"))
+    # R170（2026-09-23）管理员全能化：users 补 6 个账号治理列（守卫式、幂等、无损）。
+    # SQLite 无 ADD COLUMN IF NOT EXISTS，故先 PRAGMA 判断列存在再 ALTER；
+    # 默认值与现状行为一致：未封禁 / 未禁言 / 管理员隐形 / 公告未读。announcements 与
+    # admin_op_logs 两张新表由 create_all 自动建，无需手写 CREATE。
+    if "users" in names:
+        r170cols = _table_columns("users")
+        with engine.begin() as conn:
+            if "is_banned" not in r170cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN is_banned BOOLEAN NOT NULL DEFAULT 0"))
+            if "banned_at" not in r170cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN banned_at TEXT NOT NULL DEFAULT ''"))
+            if "banned_reason" not in r170cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN banned_reason TEXT NOT NULL DEFAULT ''"))
+            if "mute_until" not in r170cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN mute_until TEXT NOT NULL DEFAULT ''"))
+            if "admin_hidden" not in r170cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN admin_hidden BOOLEAN NOT NULL DEFAULT 1"))
+            if "ann_read_at" not in r170cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN ann_read_at TEXT NOT NULL DEFAULT ''"))
+    # R170 内容治理：moments / moment_comments / board_messages / board_replies 各补
+    # hidden_at（守卫式、幂等、无损；'' = 正常，非空 = 隐藏时间）。存量行自动填 ''，行为不变。
+    for _tbl in ("moments", "moment_comments", "board_messages", "board_replies"):
+        if _tbl in names and "hidden_at" not in _table_columns(_tbl):
+            with engine.begin() as conn:
+                conn.execute(text(f"ALTER TABLE {_tbl} ADD COLUMN hidden_at TEXT NOT NULL DEFAULT ''"))
 
 
 def init_db() -> None:

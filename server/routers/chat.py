@@ -13,6 +13,8 @@ from sqlalchemy.orm import Session
 from database import (ChatGroup, ChatGroupMember, FriendRemark, Message, User,
                      can_message, friend_ids_of, get_db, is_admin_user,
                      is_friend, now_iso)
+# R170：发内容前的封禁 / 禁言闸门（moderation 模块由 R170-A 落地）
+from moderation import assert_can_post
 from routers.friends import is_blocked
 from schemas import ReplyIn, clamp_duration
 from security import get_current_user
@@ -225,6 +227,7 @@ async def list_messages(peer_id: int, before_id: int = 0, limit: int = 30, mark_
 @router.post("/{peer_id}/messages")
 async def send_message(peer_id: int, body: SendMsgIn, user: User = Depends(get_current_user),
                        db: Session = Depends(get_db)):
+    assert_can_post(user)  # R170：封禁 / 禁言拦截（仅拦「发送」，不拦读消息 / 已读回执）
     # 需求01：好友照旧；任一方是管理员也放行（普通用户可主动给管理员发私信）
     if not can_message(db, user.id, peer_id):
         raise HTTPException(403, "仅好友之间可以私聊")

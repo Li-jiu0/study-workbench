@@ -4,7 +4,9 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from database import (BoardLike, BoardMessage, BoardReply, Comment, Favorite, Like, Note, Notification, User,
-                      get_db, now_str)
+                      admin_hidden_clause, get_db, now_str)
+# R170：发内容前的封禁 / 禁言闸门（moderation 模块由 R170-A 落地）
+from moderation import assert_can_post
 from schemas import CommentIn
 from security import get_current_user
 
@@ -84,6 +86,7 @@ def list_comments(note_id: int, offset: int = 0, limit: int = 50,
 
 @router.post("/api/notes/{note_id}/comments")
 def add_comment(note_id: int, body: CommentIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    assert_can_post(user)  # R170：封禁 / 禁言拦截（笔记评论）
     n = _visible_note(note_id, user, db)
     parent_id = body.parent_id
     if parent_id:
@@ -124,14 +127,23 @@ def list_notifications(user: User = Depends(get_current_user), db: Session = Dep
         .limit(50)
         .all()
     )
+    def _note_title(x: Notification) -> str:
+        """通知标题：有笔记用其标题；R171-D1 的 feedback 用固定文案；否则按类型给删除占位。"""
+        if x.note:
+            return x.note.title
+        if str(x.type or "") == "feedback":
+            return "管理员回复了你的反馈"
+        return "（动态已删除）" if str(x.type or "").startswith("moment") else "（笔记已删除）"
+
     return {"items": [
         {
             "id": x.id,
             "type": x.type,
             "actor": x.actor.nickname if x.actor else "已注销用户",
             "noteId": x.note_id,
-            "noteTitle": x.note.title if x.note else (
-                "（动态已删除）" if str(x.type or "").startswith("moment") else "（笔记已删除）"),
+            "noteTitle": _note_title(x),
+            # R171-D1：feedback 通知带跳转标识（前端据此跳「我的反馈」）；其它类型固定空串。
+            "link": "feedback" if str(x.type or "") == "feedback" else "",
             "isRead": bool(x.is_read),
             "createdAt": x.created_at,
         }
@@ -152,9 +164,11 @@ def list_board(offset: int = 0, limit: int = 50,
                user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     rows = (
         db.query(BoardMessage)
-        # 需求01：管理员单向可见——其留言不出现在公开留言板（LEFT JOIN 兼容无作者脏数据）
+        # 需求01 / R170：隐身管理员的留言不出现在公开留言板（现身的管理员可见；LEFT JOIN 兼容无作者脏数据）
         .outerjoin(User, BoardMessage.user_id == User.id)
-        .filter(or_(User.id.is_(None), User.is_admin.is_(None), User.is_admin.is_(False)))
+        .filter(or_(User.id.is_(None), admin_hidden_clause()))
+        # R170：被管理员隐藏（hidden_at 非空）的留言对普通用户不可见
+        .filter(BoardMessage.hidden_at == "")
         .order_by(BoardMessage.id.desc())
         .offset(offset)
         .limit(min(max(limit, 1), 100))
@@ -163,7 +177,9 @@ def list_board(offset: int = 0, limit: int = 50,
     total = (
         db.query(BoardMessage)
         .outerjoin(User, BoardMessage.user_id == User.id)
-        .filter(or_(User.id.is_(None), User.is_admin.is_(None), User.is_admin.is_(False)))
+        .filter(or_(User.id.is_(None), admin_hidden_clause()))
+        # R170：total 口径须与列表一致（同样排除被隐藏留言）
+        .filter(BoardMessage.hidden_at == "")
         .count()
     )
     liked_ids = set()
@@ -196,6 +212,7 @@ def list_board(offset: int = 0, limit: int = 50,
 
 @router.post("/api/board")
 def add_board(body: dict, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    assert_can_post(user)  # R170：封禁 / 禁言拦截（留言板）
     content = (body.get("content") or "").strip()
     if not content:
         raise HTTPException(400, "留言内容不能为空")
@@ -253,7 +270,10 @@ def list_board_replies(msg_id: int, user: User = Depends(get_current_user), db: 
     m = db.get(BoardMessage, msg_id)
     if not m:
         raise HTTPException(404, "留言不存在")
-    rows = db.query(BoardReply).filter(BoardReply.message_id == msg_id).order_by(BoardReply.id.asc()).all()
+    # R170：被管理员隐藏（hidden_at 非空）的回复对普通用户不可见
+    rows = db.query(BoardReply).filter(
+        BoardReply.message_id == msg_id, BoardReply.hidden_at == ""
+    ).order_by(BoardReply.id.asc()).all()
     return {
         "items": [
             {
@@ -272,6 +292,7 @@ def list_board_replies(msg_id: int, user: User = Depends(get_current_user), db: 
 
 @router.post("/api/board/{msg_id}/replies")
 def add_board_reply(msg_id: int, body: dict, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    assert_can_post(user)  # R170：封禁 / 禁言拦截（留言板回复）
     m = db.get(BoardMessage, msg_id)
     if not m:
         raise HTTPException(404, "留言不存在")

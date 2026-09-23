@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="assets/page-head.css?v=20260916O">
 <link rel="stylesheet" href="assets/states.css?v=20260916O">
 <link rel="stylesheet" href="assets/polish.css?v=20260916O">
-<link rel="stylesheet" href="assets/admin.css?v=20260916O">
+<link rel="stylesheet" href="assets/admin.css?v=20260930a">
 <script src="assets/xt-polyfill.js?v=20260916O"></script>
 <script src="assets/xt-log.js?v=20260928d"></script>
 <script>window.__XT_PROD__=true;</script>
@@ -114,9 +114,9 @@
     </header>
     <div class="content">
       <div class="page active" id="page-admin">
-        <!-- 顶部返回（独立页，history.back 回上一页；无历史时回首页） -->
+        <!-- 顶部返回（R169-J：统一 location.replace 整页跳回「学习工作台」） -->
         <div class="morepage-head">
-          <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='学习工作台.html'}" title="返回" aria-label="返回">←</button>
+          <button class="morepage-back" onclick="location.replace('学习工作台.html')" title="返回" aria-label="返回">←</button>
           <div class="morepage-title"><span class="nav-icon" data-icon="shield" data-icon-size="18">🛡️</span> 管理后台</div>
         </div>
 
@@ -147,6 +147,15 @@
             </div>
           </div>
 
+          <!-- R170-C：顶部工具条（管理员身份 + 隐身/现身开关，由 assets/admin-ops.js 渲染） -->
+          <div id="admOpsBar"></div>
+
+          <!-- R170-E：主页模块导航列表（列表样式，点击进入子页；由 assets/admin-ops.js 渲染） -->
+          <div class="adm-menu" id="admMenuList"></div>
+
+          <!-- R170-E：子页顶栏（返回 + 标题 + 刷新；由 assets/admin-ops.js 渲染） -->
+          <div id="admSubHead"></div>
+
           <!-- 单一 tab 条 + 两个列表容器（全部用户 / 在线用户 / 用户反馈）
                用户：GET /api/admin/users、/api/admin/online、/api/admin/users/{id}
                反馈：GET /api/admin/feedback + POST /api/admin/feedback/{id}/reply -->
@@ -157,6 +166,12 @@
                 <button class="adm-tab" id="admTabOnline" onclick="admSwitchTab('online')">在线用户</button>
                 <button class="adm-tab" id="admTabFeedback" onclick="admSwitchTab('feedback')">用户反馈</button>
                 <button class="adm-tab" id="admTabDevices" onclick="admSwitchTab('devices')">设备统计</button>
+                <!-- R170-C：新增 5 个 tab（面板由 assets/admin-ops.js 渲染） -->
+                <button class="adm-tab" id="admTabContent" onclick="admSwitchTab('content')">内容治理</button>
+                <button class="adm-tab" id="admTabAnn" onclick="admSwitchTab('announcements')">公告</button>
+                <button class="adm-tab" id="admTabGroup" onclick="admSwitchTab('groups')">群组</button>
+                <button class="adm-tab" id="admTabChat" onclick="admSwitchTab('chat')">私聊</button>
+                <button class="adm-tab" id="admTabLog" onclick="admSwitchTab('logs')">审计日志</button>
               </div>
               <button class="btn btn-sm btn-secondary" onclick="admRefresh()">刷新</button>
             </div>
@@ -168,6 +183,12 @@
               <div id="admDeviceFilters"></div>
               <div id="admDeviceTable"></div>
             </div>
+            <!-- R170-C：5 个新面板容器（默认隐藏，内部留空由 assets/admin-ops.js 渲染） -->
+            <div class="adm-ops" id="admContentPanel" style="display:none"></div>
+            <div class="adm-ops" id="admAnnPanel" style="display:none"></div>
+            <div class="adm-ops" id="admGroupPanel" style="display:none"></div>
+            <div class="adm-ops" id="admChatPanel" style="display:none"></div>
+            <div class="adm-ops" id="admLogPanel" style="display:none"></div>
           </div>
         </div>
         <!-- 【后续扩展点：封禁/禁言、按注册时间筛选】本轮只做只读概览 + 反馈回复 + 设备统计。 -->
@@ -306,11 +327,13 @@
 <script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
-<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/app.js?v=20260930a" defer></script>
 <script src="assets/quest.js?v=20260916O" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260924a" defer></script>
-<script src="assets/admin.js?v=20260916O" defer></script>
+<script src="assets/api.js?v=20260930a" defer></script>
+<script src="assets/admin.js?v=20260930a" defer></script>
+<!-- R170-C：全能管理台逻辑（5 个新 tab / 用户治理 / 内容治理 / 公告 / 群组 / 私聊 / 审计日志） -->
+<script src="assets/admin-ops.js?v=20260930a" defer></script>
 <script src="assets/study-stats.js?v=20260916O" defer></script>
 <script src="assets/ai-config.js?v=20260925a"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>

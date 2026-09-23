@@ -124,8 +124,17 @@
 .wb-ai-meta{margin-top:10px;padding-top:8px;border-top:1px dashed var(--border);font-size:12px;color:var(--text-secondary);display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .wb-ai-thinking{font-size:13px;color:var(--text-secondary)}
 .wb-ai-empty{font-size:13px;line-height:1.75;color:var(--text-secondary)}
+/* ===== R169-C（2026-09-23 用户要求）：删除顶栏红框区域 =====
+   全局搜索框（.gs-wrap）+ 消息通知铃铛 / 私信入口（assets/api.js 动态注入，类名 .notify-bell）。
+   只隐藏不删 DOM，其他页面不受影响。 */
+.gs-wrap{display:none !important}
+.notify-bell{display:none !important}
 </style>
 <div class="page active" id="page-wrong-book">
+        <div class="morepage-head">
+          <button class="morepage-back" onclick="location.replace('学习工作台.html')" title="返回" aria-label="返回"><span data-icon="arrow-left" data-icon-size="18"></span></button>
+          <div class="morepage-title"><span class="nav-icon" data-icon="x-circle" data-icon-size="20"></span> 错题本</div>
+        </div>
       <div class="card">
         <div class="card-header">
           <div class="card-title"><span class="title-icon"><span class="nav-icon" data-icon="book" data-icon-size="20"></span></span>错题本</div>
@@ -272,9 +281,9 @@
 <script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
-<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/app.js?v=20260930a" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260924a" defer></script>
+<script src="assets/api.js?v=20260930a" defer></script>
 <script src="assets/ai-config.js?v=20260925a"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>
 <script src="assets/ai-service.js?v=20260925a"></script>

@@ -109,6 +109,21 @@ public class MainActivity extends Activity {
      *  ⚠️ 隐私红线：只对「第三方应用包名」做哈希后上报，绝不落盘 / 上传明文包名。 */
     private static final String RISK_SIG_SALT = "xt_risk_pkg_v1:";
 
+    // ---- 【R171-A】「已安装应用列表（含应用名 + 图标）」采集参数 ----
+    /** 独立门控 SharedPreferences（与 risk 门控解耦）：键 app_list_enabled，默认 true（开启）。 */
+    private static final String APPLIST_PREFS = "xt_applist_prefs";
+    private static final String APPLIST_KEY = "app_list_enabled";
+    /** 最多下发条目数；超出丢弃尾部（因系统应用已排后，尾部即优先被丢的系统应用）。 */
+    private static final int USER_APP_CAP = 200;
+    /** 应用名最大字符数（超出截断）。 */
+    private static final int USER_LABEL_MAX = 64;
+    /** 包名最大字符数（超出截断）。 */
+    private static final int USER_PKG_MAX = 128;
+    /** 下发图标边长（px），正方形。 */
+    private static final int USER_ICON_DIM = 48;
+    /** 单条图标 data URL 最大字符数（8KB）；超出则该条 icon 置空并置 iconDropped=true。 */
+    private static final int USER_ICON_MAX_CHARS = 8 * 1024;
+
     // ---- 【应用内更新下载】R101：系统 DownloadManager 后台下载 APK + 完成广播自动弹安装 ----
     private BroadcastReceiver apkDoneReceiver = null;
     private volatile String pendingNotifyTitle = null;
@@ -742,6 +757,204 @@ public class MainActivity extends Activity {
                     return o.toString();
                 } catch (Throwable e) {
                     return "{\"ok\":false,\"reason\":\"error\"}"; // 任何异常都不得抛进 WebView
+                }
+            }
+
+            /** 【R171-A】「已安装应用列表（含应用名 + 图标）」门控开关读取。
+             *  与设备安全风控（risk）门控【解耦】：独立 SharedPreferences 文件 xt_applist_prefs，
+             *  键 app_list_enabled，默认 true（开启）；读不到/异常一律回落 true。
+             *  前端契约：XTAppBridge.isAppListEnabled() → boolean。 */
+            @JavascriptInterface
+            public boolean isAppListEnabled() {
+                try {
+                    android.content.SharedPreferences sp = getSharedPreferences(
+                            APPLIST_PREFS, android.content.Context.MODE_PRIVATE);
+                    return sp.getBoolean(APPLIST_KEY, true);
+                } catch (Throwable e) {
+                    return true; // 读取失败：保守回落「开启」，符合 getter 默认 true 的契约
+                }
+            }
+
+            /** 【R171-A】「已安装应用列表」门控开关写盘。
+             *  true=允许采集（默认）；false=关闭后 getInstalledAppsForUser() 直接返回 "[]"。
+             *  前端契约：XTAppBridge.setAppListEnabled(v)。 */
+            @JavascriptInterface
+            public void setAppListEnabled(final boolean enabled) {
+                try {
+                    android.content.SharedPreferences sp = getSharedPreferences(
+                            APPLIST_PREFS, android.content.Context.MODE_PRIVATE);
+                    sp.edit().putBoolean(APPLIST_KEY, enabled).apply();
+                } catch (Throwable e) { /* 写配置失败：静默，不影响页面 */ }
+            }
+
+            /** 【R171-A】「已安装应用列表（含应用名 + 图标）」采集桥。
+             *  前端契约（assets 侧按此解析，任一侧变更需同步）：
+             *    · 门控关闭    → "[]"
+             *    · 成功        → {"apps":[{"label":"微信","pkg":"com.tencent.mm","icon":"data:image/png;base64,…"}, …],
+             *                      "appCount":187,"truncated":false,"iconDropped":false}
+             *                    其中 appCount = 截断前实际枚举到的应用总数；
+             *                         truncated = 是否因超 200 条被截断；
+             *                         iconDropped = 是否有条目因图标 data URL 超 8KB 被置空。
+             *    · 系统性异常  → "[]"
+             *  口径：复用「应用白名单」的枚举（queryIntentActivities MAIN/LAUNCHER）+ label 取值逻辑，
+             *        但【不改动】getInstalledAppsForWhitelist() 本身；按 pkg 去重、排除本 App 自身。
+             *  字段：label 超 64 字符截断；pkg 超 128 字符截断；icon 为 48x48 PNG 的 base64 data URL，
+             *        超 8KB 或取图标异常一律置空字符串（绝不让整次采集失败）；sys 仅内部排序用，不下发。
+             *  排序：系统应用排后，同类按 label 升序（同则 pkg 兜底），稳定可重复。
+             *  隐私：本方法只供页面本机展示，前端约定零上传；不落盘、不打日志。
+             *  线程：JavascriptInterface 回调本身运行在 WebView 的 JavaBridge 工作线程（非 UI 主线程），
+             *        故枚举 + 图标解码虽较重也不会 ANR；所有异常均被吞掉、绝不抛进 WebView。 */
+            @JavascriptInterface
+            public String getInstalledAppsForUser() {
+                boolean iconDropped = false;
+                try {
+                    // 门控：默认开启；关闭即返回空列表（原生侧把关，不依赖前端自觉）
+                    if (!isAppListEnabled()) return "[]";
+                    android.content.pm.PackageManager pm = getPackageManager();
+                    if (pm == null) return "[]";
+                    // 只列「有桌面启动入口」的应用（同白名单逻辑）
+                    android.content.Intent launchIntent =
+                            new android.content.Intent(android.content.Intent.ACTION_MAIN);
+                    launchIntent.addCategory(android.content.Intent.CATEGORY_LAUNCHER);
+                    java.util.List<android.content.pm.ResolveInfo> ris;
+                    try {
+                        ris = pm.queryIntentActivities(launchIntent, 0);
+                    } catch (Throwable t) {
+                        return "[]";
+                    }
+                    if (ris == null) return "[]";
+                    final String self = getPackageName();
+                    java.util.HashSet<String> seen = new java.util.HashSet<String>(); // 按 pkg 去重
+                    java.util.List<org.json.JSONObject> items =
+                            new java.util.ArrayList<org.json.JSONObject>();
+                    for (int i = 0; i < ris.size(); i++) {
+                        android.content.pm.ResolveInfo ri = ris.get(i);
+                        if (ri == null || ri.activityInfo == null) continue;
+                        String pkg = ri.activityInfo.packageName;
+                        if (pkg == null || pkg.length() == 0) continue;
+                        if (pkg.equals(self)) continue;            // 排除本 App 自身
+                        if (!seen.add(pkg)) continue;              // 同一应用多入口只保留首个
+                        boolean sys = false;
+                        android.content.pm.ApplicationInfo ai = ri.activityInfo.applicationInfo;
+                        if (ai != null) {
+                            sys = (ai.flags & android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0;
+                        }
+                        String label = "";
+                        try {
+                            CharSequence lc = ri.loadLabel(pm);
+                            if (lc != null) label = String.valueOf(lc);
+                        } catch (Throwable t2) {
+                            label = "";
+                        }
+                        if (label.length() == 0) label = pkg;      // 取不到应用名 → 回落包名
+                        if (label.length() > USER_LABEL_MAX) label = label.substring(0, USER_LABEL_MAX);
+                        if (pkg.length() > USER_PKG_MAX) pkg = pkg.substring(0, USER_PKG_MAX);
+                        // 图标：48x48 PNG → base64 data URL；失败置空、超 8KB 置空并标记
+                        String icon = "";
+                        byte[] png = userAppIconPng(pm, ri);
+                        if (png != null && png.length > 0) {
+                            String b64 = android.util.Base64.encodeToString(
+                                    png, android.util.Base64.NO_WRAP);
+                            String dataUrl = "data:image/png;base64," + b64;
+                            if (dataUrl.length() > USER_ICON_MAX_CHARS) {
+                                iconDropped = true;                // 超限：置空并标记
+                            } else {
+                                icon = dataUrl;
+                            }
+                        }
+                        org.json.JSONObject it = new org.json.JSONObject();
+                        it.put("label", label);
+                        it.put("pkg", pkg);
+                        it.put("icon", icon);
+                        it.put("sys", sys);                        // 仅内部排序用，下发时剔除
+                        items.add(it);
+                    }
+                    final int totalCount = items.size();           // 截断前总数
+                    // 排序：系统应用靠后；同类按 label 升序（同则 pkg 兜底），保证稳定可重复
+                    java.util.Collections.sort(items, new java.util.Comparator<org.json.JSONObject>() {
+                        @Override
+                        public int compare(org.json.JSONObject a, org.json.JSONObject b) {
+                            boolean sa = (a != null) && a.optBoolean("sys", false);
+                            boolean sb = (b != null) && b.optBoolean("sys", false);
+                            if (sa != sb) return sa ? 1 : -1;
+                            String la = (a == null) ? "" : a.optString("label", "");
+                            String lb = (b == null) ? "" : b.optString("label", "");
+                            int c = la.compareTo(lb);
+                            if (c != 0) return c;
+                            String pa = (a == null) ? "" : a.optString("pkg", "");
+                            String pb = (b == null) ? "" : b.optString("pkg", "");
+                            return pa.compareTo(pb);
+                        }
+                    });
+                    // 上限 200：超出丢弃尾部（系统应用已排后，尾部即优先被丢的系统应用）
+                    boolean truncated = items.size() > USER_APP_CAP;
+                    int cap = Math.min(items.size(), USER_APP_CAP);
+                    org.json.JSONArray arr = new org.json.JSONArray();
+                    for (int i = 0; i < cap; i++) {
+                        org.json.JSONObject src = items.get(i);
+                        org.json.JSONObject out = new org.json.JSONObject();
+                        out.put("label", (src == null) ? "" : src.optString("label", ""));
+                        out.put("pkg", (src == null) ? "" : src.optString("pkg", ""));
+                        out.put("icon", (src == null) ? "" : src.optString("icon", ""));
+                        arr.put(out);
+                    }
+                    org.json.JSONObject o = new org.json.JSONObject();
+                    o.put("apps", arr);
+                    o.put("appCount", totalCount);
+                    o.put("truncated", truncated);
+                    o.put("iconDropped", iconDropped);
+                    return o.toString();
+                } catch (Throwable e) {
+                    return "[]"; // 任何异常都不得抛进 WebView
+                }
+            }
+
+            /** 【R171-A】把单个应用图标解码为 48x48 PNG 字节（零第三方依赖，仅用系统 API）。
+             *  任何异常（取图标失败 / 解码失败 / OOM）返回 null；调用方据此置空 icon，绝不让整次采集失败。
+             *  说明：
+             *   · 优先复用 BitmapDrawable 持有的位图（不回收，避免误回收系统资源缓存）；
+             *   · 非位图 Drawable 则新建 ARGB_8888 画布绘制后再缩放；
+             *   · createScaledBitmap 在源尺寸已等于目标尺寸时可能直接返回源位图，故仅在
+             *     scaled != src 时才回收，避免误回收；其余位图交 GC。 */
+            private byte[] userAppIconPng(final android.content.pm.PackageManager pm,
+                                          final android.content.pm.ResolveInfo ri) {
+                android.graphics.Bitmap src = null;
+                android.graphics.Bitmap scaled = null;
+                try {
+                    android.graphics.drawable.Drawable dr = ri.loadIcon(pm);
+                    if (dr == null) return null;
+                    if (dr instanceof android.graphics.drawable.BitmapDrawable) {
+                        src = ((android.graphics.drawable.BitmapDrawable) dr).getBitmap();
+                    }
+                    if (src == null) {
+                        int w = dr.getIntrinsicWidth();
+                        int h = dr.getIntrinsicHeight();
+                        if (w <= 0) w = USER_ICON_DIM;
+                        if (h <= 0) h = USER_ICON_DIM;
+                        src = android.graphics.Bitmap.createBitmap(
+                                w, h, android.graphics.Bitmap.Config.ARGB_8888);
+                        android.graphics.Canvas cv = new android.graphics.Canvas(src);
+                        dr.setBounds(0, 0, w, h);
+                        dr.draw(cv);
+                    }
+                    scaled = android.graphics.Bitmap.createScaledBitmap(
+                            src, USER_ICON_DIM, USER_ICON_DIM, true);
+                    java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+                    boolean ok = scaled.compress(
+                            android.graphics.Bitmap.CompressFormat.PNG, 100, bos);
+                    if (!ok) {
+                        try { bos.close(); } catch (Throwable ignored) {}
+                        return null;
+                    }
+                    byte[] out = bos.toByteArray();
+                    try { bos.close(); } catch (Throwable ignored) {}
+                    return (out != null && out.length > 0) ? out : null;
+                } catch (Throwable t) {
+                    return null;
+                } finally {
+                    if (scaled != null && scaled != src) {
+                        try { scaled.recycle(); } catch (Throwable ignored) {}
+                    }
                 }
             }
 
@@ -1780,6 +1993,9 @@ public class MainActivity extends Activity {
             + "stopLocationShare:function(){try{return !!(AndroidBridge.stopLocationShare&&AndroidBridge.stopLocationShare());}catch(e){return false;}},"
             + "getInstalledAppsForRisk:function(agreed){try{return (AndroidBridge.getInstalledAppsForRisk&&AndroidBridge.getInstalledAppsForRisk(!!agreed))||'{\"ok\":false,\"reason\":\"error\"}';}catch(e){return '{\"ok\":false,\"reason\":\"error\"}';}},"
             + "getInstalledAppsForWhitelist:function(){try{return (AndroidBridge.getInstalledAppsForWhitelist&&AndroidBridge.getInstalledAppsForWhitelist())||'{\"ok\":false,\"reason\":\"error\"}';}catch(e){return '{\"ok\":false,\"reason\":\"error\"}';}},"
+            + "getInstalledAppsForUser:function(){try{return (AndroidBridge.getInstalledAppsForUser&&AndroidBridge.getInstalledAppsForUser())||'[]';}catch(e){return '[]';}},"
+            + "isAppListEnabled:function(){try{var f=AndroidBridge.isAppListEnabled;return f?!!f():true;}catch(e){return true;}},"
+            + "setAppListEnabled:function(v){try{AndroidBridge.setAppListEnabled(!!v);}catch(e){}},"
             + "setRiskEnabled:function(enabled){try{AndroidBridge.setRiskEnabled(!!enabled);}catch(e){}},"
             + "isRiskEnabled:function(){try{return !!(AndroidBridge.isRiskEnabled&&AndroidBridge.isRiskEnabled());}catch(e){return true;}},"
             + "logJsError:function(kind,detail){try{AndroidBridge.logJsError(String(kind==null?'':kind),String(detail==null?'':detail));}catch(e){}},"

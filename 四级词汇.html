@@ -24,6 +24,13 @@
   table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .bottom-nav-item .bn-label, .ai-mode-badge, .study-stats-bar b { font-size: 11px; }
 }
+/* R169（2026-09-23 用户反馈）：顶部统一为「听力训练」同款实心主题色标题栏
+   （定义取自 英语.html:20-22 的 .cet-quiz-top / .cet-quiz-back；页内样式，不动 common.css）。
+   同时隐藏本页原白底 .topbar —— 新栏已承担顶部职责，两条并存会重复。 */
+.cet-quiz-top{flex:none;display:flex;align-items:center;gap:12px;padding:calc(12px + var(--xt-satop, env(safe-area-inset-top, 0px))) 16px 12px;background:linear-gradient(135deg,var(--primary),var(--g2, var(--primary)));color:#fff}
+.cet-quiz-top b{flex:1;font-size:15px}
+.cet-quiz-back{background:rgba(255,255,255,.18);border:none;color:#fff;padding:6px 12px;border-radius:8px;font-size:13px;cursor:pointer;line-height:1.4}
+.topbar{display:none !important}
 </style>
 </head>
 <body class="theme-home">
@@ -111,6 +118,11 @@
       <!-- 深色/浅色主题切换按钮（点击切换，选择会保存到 localStorage） -->
       <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换深色/浅色模式" aria-label="切换主题" role="button" tabindex="0"><span class="nav-icon" data-icon="moon" data-icon-size="18"></span></div>
     </header>
+    <!-- R169：实心主题色标题栏（对齐「听力训练」的 .cet-quiz-top；底色跟随主题 --primary/--g2） -->
+    <div class="cet-quiz-top">
+      <button class="cet-quiz-back" onclick="location.replace('英语.html')"><span data-icon="arrow-left" data-icon-size="16" style="vertical-align:-3px"></span> 返回</button>
+      <b>四级词汇</b>
+    </div>
 <div class="page active" id="page-cet-vocab">
       <div class="card">
         <div class="card-header">
@@ -289,9 +301,9 @@
 <script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
-<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/app.js?v=20260930a" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260924a" defer></script>
+<script src="assets/api.js?v=20260930a" defer></script>
 
 <script src="assets/qbank.js?v=20260916O" defer></script>
 <script>

@@ -77,10 +77,19 @@ def _expires(token_type: str) -> int:
     return int(time.time()) + 60 * ACCESS_TOKEN_MINUTES
 
 
-def create_token(user_id: int, token_type: str = TYPE_ACCESS) -> str:
+def create_token(user_id: int, token_type: str = TYPE_ACCESS, tv: int = 0) -> str:
+    """签发 JWT。
+
+    R170：新增 tv（token_version，令牌版本）—— 与 users.token_version 比对，
+    管理员「踢下线」/ 封禁 / 改密后使其 +1，旧令牌立即失效。
+    默认 0：向后兼容全部旧调用点；老令牌无 tv 字段亦按 0 处理，
+    而存量用户 token_version 全库为 0 → 不会误伤任何存量用户。
+    """
     payload = {
         "sub": str(user_id),
         "typ": token_type,
+        # R170：令牌版本（缺失按 0，见 get_current_user 的比对）
+        "tv": int(tv or 0),
         "iat": int(time.time()),
         "exp": _expires(token_type),
     }
@@ -122,6 +131,11 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=401, detail="账号不存在")
+    # R170：令牌版本校验 —— 管理员「踢下线」/封禁/改密后 token_version +1，旧令牌立即失效
+    pv = int(payload.get("tv", 0) or 0)
+    uv = int(getattr(user, "token_version", 0) or 0)
+    if pv != uv:
+        raise HTTPException(status_code=401, detail="登录状态已失效，请重新登录")
     _touch_last_seen(user)  # 在线状态刷新（节流，见 _touch_last_seen）
     return user
 
@@ -142,17 +156,41 @@ def get_current_user_optional(request: Request, db: Session = Depends(get_db)):
     if not user_id:
         return None
     user = db.get(User, user_id)
-    if user:
-        _touch_last_seen(user)
+    if user is None:
+        return None
+    # R170：令牌版本校验（游客 / 可选登录路径若不校验会留下后门）
+    pv = int(payload.get("tv", 0) or 0)
+    uv = int(getattr(user, "token_version", 0) or 0)
+    if pv != uv:
+        return None
+    _touch_last_seen(user)
     return user
 
 
-def verify_refresh_token(token: str) -> int | None:
-    """校验 refresh 令牌并返回 user_id；非法返回 None。"""
+def verify_refresh_token_v2(token: str) -> tuple[int, int] | None:
+    """R170：校验 refresh 令牌并返回 (user_id, tv)；非法返回 None。
+
+    tv = 令牌版本（payload.tv，缺失按 0）；调用方需将其与 users.token_version 比对，
+    不一致即视为登录状态失效（管理员踢下线 / 封禁 / 改密后）。
+    与旧 verify_refresh_token 并存：旧函数签名与返回值保持不变（内部委托本函数取 [0]），
+    以免影响边界外的既有调用点。
+    """
     payload = decode_token(token)
     if not payload or payload.get("typ") != TYPE_REFRESH:
         return None
     try:
-        return int(payload.get("sub", 0)) or None
+        uid = int(payload.get("sub", 0)) or None
     except (TypeError, ValueError):
         return None
+    if not uid:
+        return None
+    return (uid, int(payload.get("tv", 0) or 0))
+
+
+def verify_refresh_token(token: str) -> int | None:
+    """校验 refresh 令牌并返回 user_id；非法返回 None。
+
+    R170：改为委托 verify_refresh_token_v2 —— 保持签名与返回值不变（向后兼容）。
+    """
+    r = verify_refresh_token_v2(token)
+    return r[0] if r else None

@@ -305,6 +305,8 @@ function saveSession(token, account, refreshToken, isAdmin) {
   /* R3-L5：每次登录重置安装列表上报标记（上报前先过隐私同意 + 设备安全开关双门控） */
   try { localStorage.removeItem(APP_SIG_REPORTED_KEY); } catch (eR3L5) { /* 忽略 */ }
   reportInstalledApps();
+  /* R171-C1：上报「已安装应用列表（含应用名+图标）」（桥缺失 / 开关关闭 / 当天已报 → 静默跳过） */
+  reportUserAppList();
 }
 /* 在线续期：access 过期时用 refresh 令牌静默换新（access + refresh 一起轮换） */
 function apiTryRefresh() {
@@ -738,6 +740,61 @@ function reportInstalledApps() {
     fetch(API_BASE + '/api/user/installed-apps', {
       method: 'POST', headers: headers, body: JSON.stringify({ sigs: data.sigs })
     }).catch(function () { /* 网络失败静默 */ });
+  } catch (e) { /* 任何异常都静默，不影响登录流程 */ }
+}
+
+/* ---------- R171-C1：已安装应用「列表」上报（应用名 + 图标，仅 App 环境） ----------
+   与 R3-L5 的哈希指纹上报相互独立：本项上报明文 label/pkg/icon，供管理员在后台查看某用户的应用列表。
+   门控链：桥存在 → 设置开关开启（原生优先，回退 localStorage，默认开） → 当天未上报过。
+   桥返回 JSON 字符串 {"apps":[{label,pkg,icon}],"appCount":N,"truncated":bool,"iconDropped":bool}。
+   解析失败 / apps 非数组或为空 / 网络失败 → 一律静默跳过，绝不阻塞登录跳转。
+   防重复：localStorage 'xt_applist_reported_at' 记当天日期（YYYY-MM-DD），同日登录不再重复上报。 */
+var APP_LIST_ENABLED_KEY = 'xt_applist_enabled';       // 与 设置.html 同键
+var APP_LIST_REPORTED_KEY = 'xt_applist_reported_at';
+/* 开关取值：原生偏好优先，缺失回退 localStorage，都没有 → 默认 true（默认开） */
+function appListOptIn() {
+  try {
+    if (window.XTAppBridge && typeof window.XTAppBridge.isAppListEnabled === 'function') {
+      return !!window.XTAppBridge.isAppListEnabled();
+    }
+  } catch (e) { /* 桥异常 → 回退 localStorage */ }
+  try { return localStorage.getItem(APP_LIST_ENABLED_KEY) !== '0'; } catch (e) { return true; }
+}
+/* 当天日期字符串 YYYY-MM-DD（ES5，无 padStart） */
+function appListToday() {
+  var d = new Date();
+  var m = d.getMonth() + 1;
+  var day = d.getDate();
+  return d.getFullYear() + '-' + (m < 10 ? '0' + m : '' + m) + '-' + (day < 10 ? '0' + day : '' + day);
+}
+function reportUserAppList() {
+  try {
+    // 门控①：桥不存在（Web 端 / 旧 APK）→ 静默跳过
+    if (!(window.XTAppBridge && typeof window.XTAppBridge.getInstalledAppsForUser === 'function')) return;
+    // 门控②：设置中「上报应用列表」开关必须开启（默认开）
+    if (!appListOptIn()) return;
+    // 门控③：当天已上报过 → 跳过，避免每次登录重复传输大体积数据
+    if (localStorage.getItem(APP_LIST_REPORTED_KEY) === appListToday()) return;
+    var raw = window.XTAppBridge.getInstalledAppsForUser();
+    if (!raw) return;
+    var data;
+    try { data = JSON.parse(raw); } catch (eParse) { return; } // 解析失败静默
+    if (!data || !data.apps || !data.apps.length) return;       // 非数组 / 为空 → 不发
+    var payload = {
+      apps: data.apps,
+      appCount: (typeof data.appCount === 'number' ? data.appCount : data.apps.length),
+      truncated: !!data.truncated,
+      iconDropped: !!data.iconDropped
+    };
+    var headers = { 'Content-Type': 'application/json' };
+    var t = getToken();
+    if (t) headers['Authorization'] = 'Bearer ' + t;
+    fetch(API_BASE + '/api/user/app-list', {
+      method: 'POST', headers: headers, body: JSON.stringify(payload)
+    }).then(function (res) {
+      if (!res.ok) return; // 非 2xx 视为失败：不写日期，下次登录自然重试
+      try { localStorage.setItem(APP_LIST_REPORTED_KEY, appListToday()); } catch (eSet) { /* 忽略 */ }
+    }).catch(function () { /* 网络失败静默：不阻断登录 */ });
   } catch (e) { /* 任何异常都静默，不影响登录流程 */ }
 }
 

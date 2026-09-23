@@ -408,6 +408,14 @@
     var el = ensureOverlay('xtmNotif', 'xtm-overlay');
     var rows = (S.notif || []).map(function (n) {
       var t = String(n.type || '');
+      /* R171-D2（2026-09-30）：管理员回复反馈通知 —— 可点击，跳「我的反馈」
+         （与 api.js 铃铛同一落点：设置.html#myFeedback → 帮助与反馈子页内的我的反馈区块）。
+         like/comment/moment 既有渲染保持逐字不变。 */
+      if (t === 'feedback') {
+        return '<div class="xtm-cmt-item" onclick="XTM.goMyFeedback()"><div class="xtm-cmt-hd"><span class="xtm-cmt-nm">管理员</span>' +
+          '<span class="xtm-cmt-tm">' + esc(fmtTime(n.createdAt)) + '</span></div>' +
+          '<div class="xtm-cmt-tx">回复了你的反馈，点击查看</div></div>';
+      }
       var verb = t === 'moment_like' ? '赞了你的动态' : (t === 'moment_comment' ? '评论了你的动态' : '与你互动');
       return '<div class="xtm-cmt-item"><div class="xtm-cmt-hd"><span class="xtm-cmt-nm">' + esc(n.actor) + '</span>' +
         '<span class="xtm-cmt-tm">' + esc(fmtTime(n.createdAt)) + '</span></div>' +
@@ -422,6 +430,11 @@
     el.onclick = function () { closeNotif(); };
   }
   function closeNotif() { var el = $('xtmNotif'); if (el) el.style.display = 'none'; }
+  /* R171-D2（2026-09-30）：「管理员回复了你的反馈」→ 关闭面板并打开「我的反馈」。 */
+  function goMyFeedback() {
+    closeNotif();
+    location.href = '设置.html#myFeedback';
+  }
   function readAllNotif() {
     api('POST', '/api/notifications/read-all').then(function () {
       (S.notif || []).forEach(function (n) { n.isRead = true; });
@@ -657,7 +670,12 @@
   function loadNotif() {
     if (!S.online) return;
     api('GET', '/api/notifications').then(function (d) {
-      S.notif = (d.items || []).filter(function (x) { return String(x.type || '').indexOf('moment') === 0; });
+      /* R171-D2（2026-09-30）：本页铃铛此前只收 moment* 互动；现额外纳入 feedback
+         （管理员回复反馈），与 api.js 铃铛同源同落点；未读数随之包含该类型。 */
+      S.notif = (d.items || []).filter(function (x) {
+        var t = String(x.type || '');
+        return t.indexOf('moment') === 0 || t === 'feedback';
+      });
       renderBellDot();
     }).catch(function () {});
   }
@@ -909,6 +927,10 @@
     S.page = 'feed';
     heroInit(); /* R78：页顶背景自定义；R84：动态空间页的换背景/恢复默认入口已移除，模块保留待 R80 迁移到 我的动态.html 复用（feed 页无 #xtmHero 时自动跳过） */
     var back = $('xtmBack');
+    /* R169-J（2026-09-23）：本处「返回」是**视图内返回**（动态空间 feed 页 / 我的动态 mine 页），
+       入口一定是上一页 push 进来的，弹栈回上一页才正确。曾试改 location.replace('动态空间.html')，
+       但在 动态空间.html（data-xtm="feed"）里等于**自己跳回自己** = 用户报的「退不出去」，
+       故保持原弹栈写法；无历史时兜底回动态空间首页。 */
     if (back) back.onclick = function () { if (history.length > 1) history.back(); else location.href = '动态空间.html'; };
     var cam = $('xtmCam');
     if (cam) {
@@ -928,6 +950,10 @@
   function initMinePage() {
     S.page = 'mine';
     var back = $('xtmBack');
+    /* R169-J（2026-09-23）：本处「返回」是**视图内返回**（动态空间 feed 页 / 我的动态 mine 页），
+       入口一定是上一页 push 进来的，弹栈回上一页才正确。曾试改 location.replace('动态空间.html')，
+       但在 动态空间.html（data-xtm="feed"）里等于**自己跳回自己** = 用户报的「退不出去」，
+       故保持原弹栈写法；无历史时兜底回动态空间首页。 */
     if (back) back.onclick = function () { if (history.length > 1) history.back(); else location.href = '动态空间.html'; };
     var cam = $('xtmCam');
     if (cam) cam.onclick = function () { location.href = '朋友圈发布.html'; };
@@ -1158,7 +1184,7 @@
     /* 查看器 */
     viewer: viewer, viewerSrc: viewerSrc, closeViewer: closeViewer,
     /* 弹层 */
-    closeInput: closeInput, closeNotif: closeNotif, readAllNotif: readAllNotif,
+    closeInput: closeInput, closeNotif: closeNotif, readAllNotif: readAllNotif, goMyFeedback: goMyFeedback,
     closePicker: closePicker, closeVis: closeVis,
     /* 发布页 */
     removePicked: function (i) { if (P) { P.picked.splice(i, 1); renderPicked(); } },

@@ -17,6 +17,12 @@
    → 点进子页整页空白；1.37 真机 nav-trace 日志已实证 render 全触发仍空白。
    注意：仅 [data-subpage] 生效，不含 .subpage-list（它由 subpageList 单独控制）。） */
 body:not(.sp-ready) [data-subpage]{display:none}
+/* ==================== R169-C（2026-09-23 用户要求）：删除顶栏红框区域 ====================
+   全局搜索框（.gs-wrap）+ 消息通知铃铛 / 私信入口（assets/api.js initNotifyBell /
+   initChatEntry 动态注入，类名均为 .notify-bell）。子页与本页共用同一顶栏 DOM，一并生效。
+   只隐藏不删 DOM（保留 data-page-node-id），其他页面不受影响。 */
+.gs-wrap{display:none !important}
+.notify-bell{display:none !important}
 /* ==================== 个人中心页内补充样式（K14 / K15，批次 20260913K） ==================== */
 /* K15-html：posts 子页与 profile 共享 #profileBox——进入 posts 时给 profileBox 加 .posts-mode，
    隐藏其余资料卡、只保留「发贴统计」卡（id="ppStatsCard" 由 assets/app.js renderProfilePage 添加，
@@ -534,11 +540,11 @@ body:not(.sp-ready) [data-subpage]{display:none}
 <script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923b" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
-<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/app.js?v=20260930a" defer></script>
 <script src="assets/quest.js?v=20260923b" defer></script>
 <script src="assets/config.js?v=20260923b" defer></script>
-<script src="assets/api.js?v=20260924a" defer></script>
-<script src="assets/subpage-router.js?v=20260923d" defer></script>
+<script src="assets/api.js?v=20260930a" defer></script>
+<script src="assets/subpage-router.js?v=20260930a" defer></script>
 
 <script>
 function overviewGo(key) {
@@ -902,7 +908,11 @@ window.addEventListener('load', function() {
     var profSec = document.querySelector('#page-profile [data-subpage="profile"]');
     var postsSec = document.querySelector('#page-profile [data-subpage="posts"]');
     var postsHost = document.getElementById('profileBoxPostsHost');
-    SubpageRouter.onSubpageChange(function (key) {
+    /* R169-E（2026-09-23）：回调提为具名函数 —— 刷新带 #posts 等 hash 直达时，init 的
+       首次 _render 早于 onSubpageChange 注册 → 回调不触发，子页内容渲染不出来
+       （诊断实测 #profileBoxPostsHost hostHTMLlen=0、无 JS 报错，断点即在此）。
+       注册完成后按当前 key 手动补一次渲染（与页内切换同一条路径，幂等）。 */
+    var profileSubpageHandler = function (key) {
       try { if (window.errorBoundary && typeof window.errorBoundary.report === 'function') window.errorBoundary.report('nav-trace: profile subpage render: ' + key, '', 'nav-trace'); } catch (e) {}
       /* K15-html（批次 20260913K）：posts 子页与 profile 共享 #profileBox——
          进入 posts 时给 profileBox 加 .posts-mode（页首 <style> 据此只保留「发贴统计」卡
@@ -935,7 +945,9 @@ window.addEventListener('load', function() {
       } else if (key === 'prefs' || key === 'local-data') {
         try { if (typeof renderProfileOverview === 'function') renderProfileOverview(); } catch (e) {}
       }
-    });
+    };
+    SubpageRouter.onSubpageChange(profileSubpageHandler);
+    try { profileSubpageHandler(SubpageRouter.getCurrent() || 'list'); } catch (e) { if (window.console) console.warn('profile subpage replay error', e); }
     /* fix-bug4（2026-09-15）：解析 ?user=<uid>，直达 TA 的公开主页。
        根因：SubpageRouter 初始化后默认停在 'list'（分组卡列表），而 #profileBox 位于
        [data-subpage="profile"] 内，在 list 态是被 display:none 的；api.js renderProfilePage()

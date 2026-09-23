@@ -67,6 +67,11 @@
 .xt-inline-form .form-group{margin-bottom:12px;}
 .xt-inline-form .form-input{background:var(--card);}
 .xt-inline-form .modal-actions{margin-top:16px;}
+/* ===== R169-C（2026-09-23 用户要求）：删除顶栏红框区域 =====
+   全局搜索框（.gs-wrap）+ 消息通知铃铛 / 私信入口（assets/api.js 动态注入，类名 .notify-bell）。
+   只隐藏不删 DOM，其他页面不受影响。 */
+.gs-wrap{display:none !important}
+.notify-bell{display:none !important}
 </style>
 </head>
 <body class="theme-home">
@@ -157,9 +162,9 @@
     </header>
     <div class="content">
       <div class="page active" id="page-sponsor">
-        <!-- 顶部返回（独立页，history.back 回上一页；无历史时回更多页） -->
+        <!-- 顶部返回（R169-J：统一 location.replace 整页跳回「更多」） -->
         <div class="morepage-head">
-          <button class="morepage-back" onclick="if(history.length>1){history.back()}else{location.href='更多.html'}" title="返回" aria-label="返回">←</button>
+          <button class="morepage-back" onclick="location.replace('更多.html')" title="返回" aria-label="返回">←</button>
           <div class="morepage-title"><span class="nav-icon" data-icon="heart" data-icon-size="18"></span> 赞助</div>
         </div>
 
@@ -320,10 +325,10 @@
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/layer-stack.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
-<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/app.js?v=20260930a" defer></script>
 <script src="assets/quest.js?v=20260916O" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260924a" defer></script>
+<script src="assets/api.js?v=20260930a" defer></script>
 <script src="assets/study-stats.js?v=20260916O" defer></script>
 <script src="assets/ai-config.js?v=20260925a"></script>
 <script src="assets/ai-presets.js?v=20260916O"></script>

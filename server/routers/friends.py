@@ -10,8 +10,8 @@ from sqlalchemy.orm import Session
 from typing import Optional
 
 from database import (Friend, FriendRemark, FriendRequest, User, UserBlock,
-                      can_message, friend_pair, get_db, is_admin_user, is_friend,
-                      now_iso)
+                      admin_hidden_clause, can_message, friend_pair, get_db,
+                      is_friend, is_hidden_from_public, now_iso)
 from rate_limit import rate_limit
 from schemas import FriendRemarkIn, user_brief
 from security import get_current_user
@@ -32,13 +32,14 @@ def _peer_brief(u: User) -> dict:
 
 
 def _visible_peer(db: Session, uid: int) -> Optional[User]:
-    """需求01：取一个「对普通用户可见」的用户；管理员或不存在一律返回 None。
+    """需求01 / R170：取一个「对普通用户可见」的用户；隐身管理员或不存在一律返回 None。
 
-    单向可见：管理员不出现在好友列表 / 搜索 / 申请 / 黑名单等任何普通用户可见的返回里。
+    单向可见：**隐身**管理员不出现在好友列表 / 申请 / 黑名单等任何普通用户可见的返回里；
+    现身的管理员（admin_hidden=False）与普通用户同样可见（统一走 helper）。
     管理员自己调用时不受影响（他要能看全、看真，见 /api/admin/*）。
     """
     u = db.get(User, uid)
-    if u is None or is_admin_user(u):
+    if u is None or is_hidden_from_public(u):
         return None
     return u
 
@@ -58,8 +59,8 @@ def is_blocked(db: Session, blocker: int, blocked: int) -> bool:
 @router.post("/requests")
 def send_request(body: ReqIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     to = db.get(User, body.toUserId)
-    # 需求01：管理员对普通用户完全不可见，加好友一律按「用户不存在」处理
-    if not to or is_admin_user(to):
+    # 需求01 / R170：隐身管理员对普通用户不可见，加好友一律按「用户不存在」处理（现身的管理员可加）
+    if not to or is_hidden_from_public(to):
         raise HTTPException(404, "用户不存在")
     if to.id == user.id:
         raise HTTPException(400, "不能添加自己为好友")
@@ -110,8 +111,8 @@ def send_request(body: ReqIn, user: User = Depends(get_current_user), db: Sessio
 def list_requests(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     def _row(r: FriendRequest, me_id: int) -> Optional[dict]:
         peer = r.from_user if r.to_user_id == me_id else r.to_user
-        # 需求01：管理员不出现在申请列表里（双向都过滤）
-        if peer is None or is_admin_user(peer):
+        # 需求01 / R170：隐身管理员不出现在申请列表里（双向都过滤；现身的管理员可见）
+        if peer is None or is_hidden_from_public(peer):
             return None
         return {"id": r.id, "fromMe": r.from_user_id == me_id,
                 "status": r.status,
@@ -236,8 +237,8 @@ def search_users(q: str = "", user: User = Depends(get_current_user), db: Sessio
         db.query(User)
         .filter(User.id != user.id)
         .filter(or_(User.username.like(like), User.nickname.like(like), User.account.like(like)))
-        # 需求01：管理员账号不参与用户搜索（对普通用户完全不可见）
-        .filter(or_(User.is_admin.is_(None), User.is_admin.is_(False)))
+        # 需求01 / R170：仅隐身管理员不参与用户搜索（现身的管理员可被搜到）
+        .filter(admin_hidden_clause())
         # searchable 过滤（T03 增量，C3）：只收窄搜索路径。
         # 双保险写法：or_(is_(None), !=0) —— 存量历史 NULL 行视为可搜（兼容老库）。
         .filter(or_(User.searchable.is_(None), User.searchable != 0))

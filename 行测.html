@@ -24,6 +24,13 @@
   table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .bottom-nav-item .bn-label, .ai-mode-badge, .study-stats-bar b { font-size: 11px; }
 }
+/* ===== R169-C（2026-09-23 用户要求）：删除顶栏红框区域 =====
+   全局搜索框（.gs-wrap）+ 消息通知铃铛 / 私信入口（assets/api.js 动态注入，类名 .notify-bell）
+   + 题库入口大脑按钮（assets/qbank.js 动态注入 #qbTopBtn，用户红框一并圈入）。
+   只隐藏不删 DOM，其他页面不受影响。 */
+.gs-wrap{display:none !important}
+.notify-bell{display:none !important}
+#qbTopBtn{display:none !important}
 </style>
 </head>
 <body class="theme-exam">
@@ -356,14 +363,14 @@
 <script src="assets/icon-map.js?v=20260929a" defer></script>
 <script src="assets/xt-toast.js?v=20260923a" defer></script>
 <script src="assets/error-boundary.js?v=20260924a" defer></script>
-<script src="assets/app.js?v=20260925a" defer></script>
+<script src="assets/app.js?v=20260930a" defer></script>
 <script src="assets/config.js?v=20260916O" defer></script>
-<script src="assets/api.js?v=20260924a" defer></script>
+<script src="assets/api.js?v=20260930a" defer></script>
 
 <script src="assets/mini-exam.js?v=20260916O" defer></script>
 <!-- 【P0-B T03-06】删除弹窗版 mock-exam.js 引入（mock 已迁到 mock_exam.html 三独立页） -->
 <script src="assets/mini.js?v=20260916O" defer></script>
-<script src="assets/topic-express.js?v=20260916O" defer></script>
+<script src="assets/topic-express.js?v=20260930a" defer></script>
 
 <script src="assets/qbank.js?v=20260916O" defer></script>
 <script src="assets/hotnews.js?v=20260916O" defer></script>

@@ -13,12 +13,13 @@ from fastapi.staticfiles import StaticFiles
 
 from config import AVATAR_DIR, BASE_DIR, FILE_DIR, IMAGE_DIR, UPLOAD_DIR, VIDEO_DIR
 from database import init_db
-from routers import (admin, ai, auth, chat, feedback, feedback_public, friends,
-                     geo, groups, migrate, moments, news, notes, social, study,
-                     uploads, users)
+from routers import (admin, admin_ops, ai, auth, chat, feedback, feedback_public,
+                     friends, geo, groups, migrate, moments, news, notes, social,
+                     study, uploads, users)
 from routers import update  # R86-F：客户端检测更新 GET /api/app/version
 from routers import device  # R105：设备上报 POST /api/user/device
 from routers import installed_apps  # R3-L5：安装列表风控 POST /api/user/installed-apps
+from routers import app_list  # R171-B：已安装应用列表（用户上报/开关/状态 + 管理员查看）
 from routers import admin_devices  # R3-L4：管理员设备统计 /api/admin/devices*
 from routers import liveloc  # 批5：实时位置共享 /api/live/*
 import ws
@@ -46,6 +47,8 @@ app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(device.router)  # R105：设备上报 POST /api/user/device
 app.include_router(installed_apps.router)  # R3-L5：安装列表风控 POST /api/user/installed-apps
+app.include_router(app_list.router)  # R171-B：用户侧 /api/user/app-list*（上报/开关/状态）
+app.include_router(app_list.router_admin)  # R171-B：管理侧 /api/admin/users/{uid}/apps
 app.include_router(liveloc.router)  # 批5：实时位置共享（/api/live/*，rate_limit default）
 app.include_router(notes.router)
 app.include_router(social.router)
@@ -64,6 +67,8 @@ app.include_router(migrate.router)
 app.include_router(ws.router)
 app.include_router(admin.router)  # 需求01：管理员观察台（/api/admin/*，非管理员 403）
 app.include_router(admin_devices.router)  # R3-L4：设备统计（/api/admin/devices*，仅管理员）
+app.include_router(admin_ops.router)  # R170：管理员全能治理台（/api/admin/* 写操作全量）
+app.include_router(admin_ops.router_public)  # R170：全站公告（普通用户 /api/announcements）
 app.include_router(update.router)  # R86-F：客户端检测更新 GET /api/app/version
 
 # 头像 / 笔记插图 / 视频 / 通用文档静态目录（数据库只存相对 URL）

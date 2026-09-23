@@ -1303,9 +1303,21 @@ function renderNotifyPanel(items) {
   var html = '<div class="notify-head"><b><span class="nav-icon" data-icon="bell" data-icon-size="16"></span> 消息通知</b><button class="btn btn-outline" style="padding:4px 10px;font-size:12px" onclick="markAllRead()">全部已读</button></div>';
   if (!items || !items.length) html += '<div class="gs-empty">暂无消息，收到点赞 / 评论会在这里提醒</div>';
   else html += items.map(function (x) {
-    var icon = '<span class="nav-icon" data-icon="' + (x.type === 'like' ? 'thumbs-up' : 'message-square') + '" data-icon-size="14" style="vertical-align:-2px"></span>';
-    var txt = icon + ' <b>' + esc(x.actor) + '</b> ' + (x.type === 'like' ? '赞了你的发贴' : '评论了你的发贴') + '《' + esc(x.noteTitle) + '》';
-    return '<div class="notify-item' + (x.isRead ? '' : ' unread') + '" onclick="openNotifyNote(' + (x.noteId || 0) + ')">' +
+    var isFb = (x.type === 'feedback');
+    var icon, txt, onclick;
+    if (isFb) {
+      /* R171-D2（2026-09-30）：管理员回复反馈通知 —— 图标 mail、文案固定，
+         点击直达「我的反馈」（不复用 openNotifyNote：feedback 无 noteId，会被当无效直接 return，
+         也不再拼接 noteTitle，避免出现《（笔记已删除）》/空书名号）。 */
+      icon = '<span class="nav-icon" data-icon="mail" data-icon-size="14" style="vertical-align:-2px"></span>';
+      txt = icon + ' <b>管理员</b> 回复了你的反馈，点击查看';
+      onclick = 'openMyFeedback()';
+    } else {
+      icon = '<span class="nav-icon" data-icon="' + (x.type === 'like' ? 'thumbs-up' : 'message-square') + '" data-icon-size="14" style="vertical-align:-2px"></span>';
+      txt = icon + ' <b>' + esc(x.actor) + '</b> ' + (x.type === 'like' ? '赞了你的发贴' : '评论了你的发贴') + '《' + esc(x.noteTitle) + '》';
+      onclick = 'openNotifyNote(' + (x.noteId || 0) + ')';
+    }
+    return '<div class="notify-item' + (x.isRead ? '' : ' unread') + '" onclick="' + onclick + '">' +
       '<div class="notify-text">' + txt + '</div><div class="notify-time">' + fmtTime(x.createdAt) + '</div></div>';
   }).join('');
   panel.innerHTML = html;
@@ -1316,6 +1328,24 @@ function openNotifyNote(noteId) {
   if (!noteId) return;
   if (document.getElementById('page-blog')) { openBlogDetail(noteId); }
   else location.href = '社区.html#note=' + noteId;
+}
+/* R171-D2（2026-09-30）：站内铃铛「管理员回复了你的反馈」→ 打开「我的反馈」。
+   ── 不复用 openNotifyNote（feedback 通知无 noteId，会被当无效直接 return）。
+   ── 落点：设置.html 的「帮助与反馈」子页（SubpageRouter key = 'help'）内的「我的反馈」区块；
+      设置.html 内已做最小转译：把 hash #myFeedback 映射到 help 子页并滚动到该区块。
+   ── 本页即设置页时不重新导航，直接切子页 + 调用落地辅助滚动（复用已加载逻辑）。
+   跳转一律用 location.href（不使用 history.back）。 */
+function openMyFeedback() {
+  var panel = document.getElementById('notifyPanel'); if (panel) panel.classList.remove('open');
+  var isSettingsPage = !!document.getElementById('page-settings');
+  if (isSettingsPage && typeof SubpageRouter !== 'undefined' && SubpageRouter && typeof SubpageRouter.navigate === 'function') {
+    try {
+      SubpageRouter.navigate('help');
+      if (typeof window.xtmScrollMyFeedback === 'function') { window.xtmScrollMyFeedback(); }
+      return;
+    } catch (e) { /* 兜底：走 URL 跳转 */ }
+  }
+  location.href = '设置.html#myFeedback';
 }
 async function markAllRead() {
   try { await api('/api/notifications/read-all', { method: 'POST' }); await loadNotifications(true); showToast('✅ 已全部标记为已读'); }
